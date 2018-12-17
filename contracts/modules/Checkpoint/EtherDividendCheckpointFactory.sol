@@ -37,7 +37,7 @@ contract EtherDividendCheckpointFactory is ModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(
-        bytes /* _data */
+        bytes calldata /* _data */
     ) external returns(address) {
         address polyToken = _takeFee();
         address ethDividendCheckpoint = new EtherDividendCheckpointProxy(msg.sender, polyToken, logicContract);

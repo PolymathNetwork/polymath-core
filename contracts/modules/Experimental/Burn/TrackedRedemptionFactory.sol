@@ -31,7 +31,7 @@ contract TrackedRedemptionFactory is ModuleFactory {
      * @return Address Contract address of the Module
      */
     function deploy(
-        bytes /* _data */
+        bytes calldata /* _data */
     ) external returns(address) {
         address polyToken = _takeFee();
         address trackedRedemption = new TrackedRedemption(msg.sender, polyToken);

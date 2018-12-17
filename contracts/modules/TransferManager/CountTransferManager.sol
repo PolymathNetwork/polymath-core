@@ -30,7 +30,7 @@ contract CountTransferManager is ITransferManager {
         address _from,
         address _to,
         uint256 _amount,
-        bytes, /* _data */
+        bytes memory, /* _data */
         bool /* _isTransfer */
     ) public returns(Result) {
         if (!paused) {

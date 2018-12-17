@@ -65,7 +65,7 @@ contract LockupVolumeRestrictionTM is ITransferManager {
         address _from,
         address, /* _to*/
         uint256 _amount,
-        bytes, /* _data */
+        bytes memory, /* _data */
         bool _isTransfer
     ) public returns(Result) {
         // only attempt to verify the transfer if the token is unpaused, this isn't a mint txn, and there exists a lockup for this user

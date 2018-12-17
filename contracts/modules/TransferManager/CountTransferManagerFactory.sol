@@ -32,7 +32,7 @@ contract CountTransferManagerFactory is ModuleFactory {
      * @param _data Data used for the intialization of the module factory variables
      * @return address Contract address of the Module
      */
-    function deploy(bytes _data) external returns(address) {
+    function deploy(bytes calldata _data) external returns(address) {
         address polyToken = _takeFee();
         CountTransferManager countTransferManager = new CountTransferManager(msg.sender, polyToken);
         require(Util.getSig(_data) == countTransferManager.getInitFunction(), "Provided data is not valid");

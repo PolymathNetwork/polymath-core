@@ -50,7 +50,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     * @param _requestId requestId corresponding to Oraclize query
     * @param _result data returned by Oraclize URL query
     */
-    function __callback(bytes32 _requestId, string _result) public {
+    function __callback(bytes32 _requestId, string memory _result) public {
         require(msg.sender == oraclize_cbAddress(), "Only Oraclize can access this method");
         require(!freezeOracle, "Oracle is frozen");
         require(!ignoreRequestIds[_requestId], "Ignoring requestId");
@@ -155,7 +155,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     * @notice Allows owner to set URL used in Oraclize queries
     * @param _oracleURL URL to use
     */
-    function setOracleURL(string _oracleURL) public onlyOwner {
+    function setOracleURL(string memory _oracleURL) public onlyOwner {
         oracleURL = _oracleURL;
     }
 
@@ -163,7 +163,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     * @notice Allows owner to set type used in Oraclize queries
     * @param _oracleQueryType to use
     */
-    function setOracleQueryType(string _oracleQueryType) public onlyOwner {
+    function setOracleQueryType(string memory _oracleQueryType) public onlyOwner {
         oracleQueryType = _oracleQueryType;
     }
 

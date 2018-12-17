@@ -87,7 +87,7 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
         address, /* _from */
         address, /* _to */
         uint256, /* _amount */
-        bytes, /* _data */
+        bytes memory, /* _data */
         bool _isTransfer
     ) public returns(Result) {
         require(_isTransfer == false || msg.sender == securityToken, "Sender is not owner");

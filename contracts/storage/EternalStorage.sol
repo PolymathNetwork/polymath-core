@@ -52,7 +52,7 @@ contract EternalStorage {
         bytes32Storage[_key] = _value;
     }
 
-    function set(bytes32 _key, string _value) internal {
+    function set(bytes32 _key, string memory _value) internal {
         stringStorage[_key] = _value;
     }
 
@@ -148,7 +148,7 @@ contract EternalStorage {
         bytes32ArrayStorage[_key].push(_value);
     }
 
-    function pushArray(bytes32 _key, string _value) internal {
+    function pushArray(bytes32 _key, string memory _value) internal {
         stringArrayStorage[_key].push(_value);
     }
 
@@ -225,7 +225,7 @@ contract EternalStorage {
         bytes32ArrayStorage[_key][_index] = _value;
     }
 
-    function setArrayIndexValue(bytes32 _key, uint256 _index, string _value) internal {
+    function setArrayIndexValue(bytes32 _key, uint256 _index, string memory _value) internal {
         stringArrayStorage[_key][_index] = _value;
     }
 

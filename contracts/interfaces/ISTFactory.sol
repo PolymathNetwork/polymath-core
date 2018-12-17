@@ -16,10 +16,10 @@ interface ISTFactory {
      * @param _polymathRegistry is the address of the Polymath Registry contract
      */
     function deployToken(
-        string _name,
-        string _symbol,
+        string calldata _name,
+        string calldata _symbol,
         uint8 _decimals,
-        string _tokenDetails,
+        string calldata _tokenDetails,
         address _issuer,
         bool _divisible,
         address _polymathRegistry

@@ -80,7 +80,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @notice Updates the title of the ModuleFactory
      * @param _newTitle New Title that will replace the old one.
      */
-    function changeTitle(string _newTitle) public onlyOwner {
+    function changeTitle(string memory _newTitle) public onlyOwner {
         require(bytes(_newTitle).length > 0, "Invalid title");
         title = _newTitle;
     }
@@ -89,7 +89,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @notice Updates the description of the ModuleFactory
      * @param _newDesc New description that will replace the old one.
      */
-    function changeDescription(string _newDesc) public onlyOwner {
+    function changeDescription(string memory _newDesc) public onlyOwner {
         require(bytes(_newDesc).length > 0, "Invalid description");
         description = _newDesc;
     }
@@ -107,7 +107,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @notice Updates the version of the ModuleFactory
      * @param _newVersion New name that will replace the old one.
      */
-    function changeVersion(string _newVersion) public onlyOwner {
+    function changeVersion(string memory _newVersion) public onlyOwner {
         require(bytes(_newVersion).length > 0, "Invalid version");
         version = _newVersion;
     }
@@ -117,7 +117,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @param _boundType Type of bound
      * @param _newVersion new version array
      */
-    function changeSTVersionBounds(string _boundType, uint8[] calldata _newVersion) external onlyOwner {
+    function changeSTVersionBounds(string calldata _boundType, uint8[] calldata _newVersion) external onlyOwner {
         require(
             keccak256(abi.encodePacked(_boundType)) == keccak256(abi.encodePacked("lowerBound")) || keccak256(
                 abi.encodePacked(_boundType)

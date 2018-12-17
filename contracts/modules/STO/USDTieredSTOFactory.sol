@@ -38,7 +38,7 @@ contract USDTieredSTOFactory is ModuleFactory {
      * @notice Used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
-    function deploy(bytes _data) external returns(address) {
+    function deploy(bytes calldata _data) external returns(address) {
         address polyToken = _takeFee();
         address usdTieredSTO = new USDTieredSTOProxy(msg.sender, polyToken, logicContract);
         //Checks that _data is valid (not calling anything it shouldn't)

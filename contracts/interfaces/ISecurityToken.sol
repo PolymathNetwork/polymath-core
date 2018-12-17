@@ -35,7 +35,7 @@ interface ISecurityToken {
      * @param _value is The amount of tokens that will be minted to the investor
      * @param _data Data to indicate validation
      */
-    function mintWithData(address _investor, uint256 _value, bytes _data) external returns(bool success);
+    function mintWithData(address _investor, uint256 _value, bytes calldata _data) external returns(bool success);
 
     /**
      * @notice Used to burn the securityToken on behalf of someone else
@@ -43,14 +43,14 @@ interface ISecurityToken {
      * @param _value No. of tokens to be burned
      * @param _data Data to indicate validation
      */
-    function burnFromWithData(address _from, uint256 _value, bytes _data) external;
+    function burnFromWithData(address _from, uint256 _value, bytes calldata _data) external;
 
     /**
      * @notice Used to burn the securityToken
      * @param _value No. of tokens to be burned
      * @param _data Data to indicate validation
      */
-    function burnWithData(uint256 _value, bytes _data) external;
+    function burnWithData(uint256 _value, bytes calldata _data) external;
 
     event Minted(address indexed _to, uint256 _value);
     event Burnt(address indexed _burner, uint256 _value);
@@ -162,7 +162,7 @@ interface ISecurityToken {
      * @notice Changes the tokenDetails
      * @param _newTokenDetails New token details
      */
-    function updateTokenDetails(string _newTokenDetails) external;
+    function updateTokenDetails(string calldata _newTokenDetails) external;
 
     /**
     * @notice Allows the owner to change token granularity
@@ -213,7 +213,7 @@ interface ISecurityToken {
      * @param _data is data packed into bytes used to further configure the module (See STO usage)
      * @param _maxCost max amount of POLY willing to pay to module. (WIP)
      */
-    function addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256 _budget) external;
+    function addModule(address _moduleFactory, bytes calldata _data, uint256 _maxCost, uint256 _budget) external;
 
     /**
     * @notice Archives a module attached to the SecurityToken
@@ -247,7 +247,7 @@ interface ISecurityToken {
      * @param _data data to indicate validation
      * @param _log data attached to the transfer by controller to emit in event
      */
-    function forceTransfer(address _from, address _to, uint256 _value, bytes _data, bytes _log) external;
+    function forceTransfer(address _from, address _to, uint256 _value, bytes calldata _data, bytes calldata _log) external;
 
     /**
      * @notice Used by a controller to execute a foced burn
@@ -256,7 +256,7 @@ interface ISecurityToken {
      * @param _data data to indicate validation
      * @param _log data attached to the transfer by controller to emit in event
      */
-    function forceBurn(address _from, uint256 _value, bytes _data, bytes _log) external;
+    function forceBurn(address _from, uint256 _value, bytes calldata _data, bytes calldata _log) external;
 
     /**
      * @notice Used by the issuer to permanently disable controller functionality
@@ -281,7 +281,7 @@ interface ISecurityToken {
       * @param _data data to indicate validation
       * @return bool success
       */
-    function transferWithData(address _to, uint256 _value, bytes _data) external returns(bool success);
+    function transferWithData(address _to, uint256 _value, bytes calldata _data) external returns(bool success);
 
     /**
       * @notice Overloaded version of the transferFrom function
@@ -291,7 +291,7 @@ interface ISecurityToken {
       * @param _data data to indicate validation
       * @return bool success
       */
-    function transferFromWithData(address _from, address _to, uint256 _value, bytes _data) external returns(bool);
+    function transferFromWithData(address _from, address _to, uint256 _value, bytes calldata _data) external returns(bool);
 
     /**
       * @notice Provides the granularity of the token

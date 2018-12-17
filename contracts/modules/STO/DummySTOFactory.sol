@@ -31,7 +31,7 @@ contract DummySTOFactory is ModuleFactory {
      * @notice Used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
-    function deploy(bytes _data) external returns(address) {
+    function deploy(bytes calldata _data) external returns(address) {
         address polyToken = _takeFee();
         //Check valid bytes - can only call module init function
         DummySTO dummySTO = new DummySTO(msg.sender, polyToken);

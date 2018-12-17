@@ -37,7 +37,7 @@ contract ERC20DividendCheckpointFactory is ModuleFactory {
      * @return Address Contract address of the Module
      */
     function deploy(
-        bytes /* _data */
+        bytes calldata /* _data */
     ) external returns(address) {
         address polyToken = _takeFee();
         address erc20DividendCheckpoint = new ERC20DividendCheckpointProxy(msg.sender, polyToken, logicContract);

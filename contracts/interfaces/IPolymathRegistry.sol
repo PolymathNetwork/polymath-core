@@ -6,6 +6,6 @@ interface IPolymathRegistry {
      * @param _nameKey is the key for the contract address mapping
      * @return address
      */
-    function getAddress(string _nameKey) external view returns(address);
+    function getAddress(string calldata _nameKey) external view returns(address);
 
 }

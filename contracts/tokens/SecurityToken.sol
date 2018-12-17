@@ -166,7 +166,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         _;
     }
 
-    modifier isEnabled(string _nameKey) {
+    modifier isEnabled(string memory _nameKey) {
         require(IFeatureRegistry(featureRegistry).getFeatureStatus(_nameKey));
         _;
     }
@@ -190,11 +190,11 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @param _polymathRegistry Contract address of the polymath registry
      */
     constructor(
-        string _name,
-        string _symbol,
+        string memory _name,
+        string memory _symbol,
         uint8 _decimals,
         uint256 _granularity,
-        string _tokenDetails,
+        string memory _tokenDetails,
         address _polymathRegistry
     ) public ERC20Detailed(_name, _symbol, _decimals) RegistryUpdater(_polymathRegistry) {
         //When it is created, the owner is the STR
@@ -217,7 +217,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
 
     function addModuleWithLabel(
         address _moduleFactory,
-        bytes _data,
+        bytes memory _data,
         uint256 _maxCost,
         uint256 _budget,
         bytes32 _label
@@ -262,7 +262,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     /**
     * @notice addModule function will call addModuleWithLabel() with an empty label for backward compatible
     */
-    function addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256 _budget) external {
+    function addModule(address _moduleFactory, bytes calldata _data, uint256 _maxCost, uint256 _budget) external {
         addModuleWithLabel(_moduleFactory, _data, _maxCost, _budget, "");
     }
 
@@ -397,7 +397,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @notice updates the tokenDetails associated with the token
      * @param _newTokenDetails New token details
      */
-    function updateTokenDetails(string _newTokenDetails) external onlyOwner {
+    function updateTokenDetails(string calldata _newTokenDetails) external onlyOwner {
         emit UpdateTokenDetails(tokenDetails, _newTokenDetails);
         tokenDetails = _newTokenDetails;
     }
@@ -534,7 +534,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @param _data data to indicate validation
      * @return bool success
      */
-    function transferWithData(address _to, uint256 _value, bytes _data) public returns(bool success) {
+    function transferWithData(address _to, uint256 _value, bytes memory _data) public returns(bool success) {
         require(_updateTransfer(msg.sender, _to, _value, _data), "Transfer invalid");
         require(super.transfer(_to, _value));
         return true;
@@ -559,7 +559,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @param _data data to indicate validation
      * @return bool success
      */
-    function transferFromWithData(address _from, address _to, uint256 _value, bytes _data) public returns(bool) {
+    function transferFromWithData(address _from, address _to, uint256 _value, bytes memory _data) public returns(bool) {
         require(_updateTransfer(_from, _to, _value, _data), "Transfer invalid");
         require(super.transferFrom(_from, _to, _value));
         return true;
@@ -573,7 +573,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @param _data data to indicate validation
      * @return bool success
      */
-    function _updateTransfer(address _from, address _to, uint256 _value, bytes _data) internal nonReentrant returns(bool) {
+    function _updateTransfer(address _from, address _to, uint256 _value, bytes memory _data) internal nonReentrant returns(bool) {
         // NB - the ordering in this function implies the following:
         //  - investor counts are updated before transfer managers are called - i.e. transfer managers will see
         //investor counts including the current transfer.
@@ -606,7 +606,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         address _from,
         address _to,
         uint256 _value,
-        bytes _data,
+        bytes memory _data,
         bool _isTransfer
     ) internal checkGranularity(_value) returns(bool) {
         if (!transfersFrozen) {
@@ -644,7 +644,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @param _data data to indicate validation
      * @return bool
      */
-    function verifyTransfer(address _from, address _to, uint256 _value, bytes _data) public returns(bool) {
+    function verifyTransfer(address _from, address _to, uint256 _value, bytes memory _data) public returns(bool) {
         return _verifyTransfer(_from, _to, _value, _data, false);
     }
 
@@ -677,9 +677,11 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @param _data data to indicate validation
      * @return success
      */
-    function mintWithData(address _investor, uint256 _value, bytes _data) public onlyModuleOrOwner(MINT_KEY) isMintingAllowed returns(
-        bool success
-    ) {
+    function mintWithData(
+        address _investor,
+        uint256 _value,
+        bytes memory _data
+    ) public onlyModuleOrOwner(MINT_KEY) isMintingAllowed returns(bool success) {
         require(_updateTransfer(address(0), _investor, _value, _data), "Transfer invalid");
         _adjustTotalSupplyCheckpoints();
         _mint(_investor, _value);
@@ -723,7 +725,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         return false;
     }
 
-    function _checkAndBurn(address _from, uint256 _value, bytes _data) internal returns(bool) {
+    function _checkAndBurn(address _from, uint256 _value, bytes memory _data) internal returns(bool) {
         bool verified = _updateTransfer(_from, address(0), _value, _data);
         _adjustTotalSupplyCheckpoints();
         _burn(_from, _value);
@@ -736,11 +738,11 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @param _value No. of tokens that get burned
      * @param _data data to indicate validation
      */
-    function burnWithData(uint256 _value, bytes _data) public onlyModule(BURN_KEY) {
+    function burnWithData(uint256 _value, bytes memory _data) public onlyModule(BURN_KEY) {
         require(_checkAndBurn(msg.sender, _value, _data), "Burn invalid");
     }
 
-    function _checkAndBurnFrom(address _from, uint256 _value, bytes _data) internal returns(bool) {
+    function _checkAndBurnFrom(address _from, uint256 _value, bytes memory _data) internal returns(bool) {
         bool verified = _updateTransfer(_from, address(0), _value, _data);
         _adjustTotalSupplyCheckpoints();
         _burnFrom(_from, _value);
@@ -754,7 +756,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @param _value No. of tokens that get burned
      * @param _data data to indicate validation
      */
-    function burnFromWithData(address _from, uint256 _value, bytes _data) public onlyModule(BURN_KEY) {
+    function burnFromWithData(address _from, uint256 _value, bytes memory _data) public onlyModule(BURN_KEY) {
         require(_checkAndBurnFrom(_from, _value, _data), "Burn invalid");
     }
 
@@ -830,7 +832,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @param _data data to indicate validation
      * @param _log data attached to the transfer by controller to emit in event
      */
-    function forceTransfer(address _from, address _to, uint256 _value, bytes _data, bytes _log) public onlyController {
+    function forceTransfer(address _from, address _to, uint256 _value, bytes memory _data, bytes memory _log) public onlyController {
         bool verified = _updateTransfer(_from, _to, _value, _data);
         _transfer(_from, _to, _value);
         emit ForceTransfer(msg.sender, _from, _to, _value, verified, _log);
@@ -843,7 +845,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @param _data data to indicate validation
      * @param _log data attached to the transfer by controller to emit in event
      */
-    function forceBurn(address _from, uint256 _value, bytes _data, bytes _log) public onlyController {
+    function forceBurn(address _from, uint256 _value, bytes memory _data, bytes memory _log) public onlyController {
         bool verified = _checkAndBurn(_from, _value, _data);
         emit ForceBurn(msg.sender, _from, _value, verified, _log);
     }

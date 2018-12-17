@@ -27,7 +27,7 @@ contract MockBurnFactory is TrackedRedemptionFactory {
      * @return Address Contract address of the Module
      */
     function deploy(
-        bytes /*_data*/
+        bytes calldata /*_data*/
     ) external returns(address) {
         address polyToken = _takeFee();
         //Check valid bytes - can only call module init function

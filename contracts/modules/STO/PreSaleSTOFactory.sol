@@ -32,7 +32,7 @@ contract PreSaleSTOFactory is ModuleFactory {
      * @param _data Data used for the intialization of the module factory variables
      * @return address Contract address of the Module
      */
-    function deploy(bytes _data) external returns(address) {
+    function deploy(bytes calldata _data) external returns(address) {
         address polyToken = _takeFee();
         //Check valid bytes - can only call module init function
         PreSaleSTO preSaleSTO = new PreSaleSTO(msg.sender, polyToken);

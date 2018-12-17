@@ -133,7 +133,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
      * @param _perm Permission flag
      * @return address[]
      */
-    function getAllDelegatesWithPerm(address _module, bytes32 _perm) external view returns(address[]) {
+    function getAllDelegatesWithPerm(address _module, bytes32 _perm) external view returns(address[] memory) {
         uint256 counter = 0;
         uint256 i = 0;
         for (i = 0; i < allDelegates.length; i++) {
@@ -160,7 +160,10 @@ contract GeneralPermissionManager is IPermissionManager, Module {
      * @return address[] the address array of Modules this delegate has permission
      * @return bytes32[] the permission array of the corresponding Modules
      */
-    function getAllModulesAndPermsFromTypes(address _delegate, uint8[] calldata _types) external view returns(address[], bytes32[]) {
+    function getAllModulesAndPermsFromTypes(address _delegate, uint8[] calldata _types) external view returns(
+        address[] memory,
+        bytes32[] memory
+    ) {
         uint256 counter = 0;
         // loop through _types and get their modules from securityToken->getModulesByType
         for (uint256 i = 0; i < _types.length; i++) {
@@ -216,7 +219,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
      * @notice Used to get all delegates
      * @return address[]
      */
-    function getAllDelegates() external view returns(address[]) {
+    function getAllDelegates() external view returns(address[] memory) {
         return allDelegates;
     }
 
@@ -224,7 +227,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
     * @notice Returns the Permission flag related the `this` contract
     * @return Array of permission flags
     */
-    function getPermissions() public view returns(bytes32[]) {
+    function getPermissions() public view returns(bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](1);
         allPermissions[0] = CHANGE_PERMISSION;
         return allPermissions;

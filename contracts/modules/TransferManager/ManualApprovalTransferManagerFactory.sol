@@ -43,7 +43,7 @@ contract ManualApprovalTransferManagerFactory is ModuleFactory {
     /**
      * @notice Type of the Module factory
      */
-    function getTypes() external view returns(uint8[]) {
+    function getTypes() external view returns(uint8[] memory) {
         uint8[] memory res = new uint8[](1);
         res[0] = 2;
         return res;
@@ -52,7 +52,7 @@ contract ManualApprovalTransferManagerFactory is ModuleFactory {
     /**
      * @notice Returns the instructions associated with the module
      */
-    function getInstructions() external view returns(string) {
+    function getInstructions() external view returns(string memory) {
         /*solium-disable-next-line max-len*/
         return "Allows an issuer to set manual approvals or blocks for specific pairs of addresses and amounts. Init function takes no parameters.";
     }
@@ -60,7 +60,7 @@ contract ManualApprovalTransferManagerFactory is ModuleFactory {
     /**
      * @notice Get the tags related to the module factory
      */
-    function getTags() external view returns(bytes32[]) {
+    function getTags() external view returns(bytes32[] memory) {
         bytes32[] memory availableTags = new bytes32[](2);
         availableTags[0] = "ManualApproval";
         availableTags[1] = "Transfer Restriction";

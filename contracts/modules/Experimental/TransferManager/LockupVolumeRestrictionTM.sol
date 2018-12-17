@@ -67,7 +67,7 @@ contract LockupVolumeRestrictionTM is ITransferManager {
         uint256 _amount,
         bytes memory, /* _data */
         bool _isTransfer
-    ) public returns(Result) {
+    ) public returns(Result memory) {
         // only attempt to verify the transfer if the token is unpaused, this isn't a mint txn, and there exists a lockup for this user
         if (!paused && _from != address(0) && lockUps[_from].length != 0) {
             // check if this transfer is valid
@@ -235,7 +235,7 @@ contract LockupVolumeRestrictionTM is ITransferManager {
      * @notice Takes a userAddress as input, and returns a uint that represents the number of tokens allowed to be withdrawn right now
      * @param userAddress Address of the user whose lock ups should be checked
      */
-    function _checkIfValidTransfer(address userAddress, uint amount, bool isTransfer) internal returns(Result) {
+    function _checkIfValidTransfer(address userAddress, uint amount, bool isTransfer) internal returns(Result memory) {
         // get lock up array for this user
         LockUp[] storage userLockUps = lockUps[userAddress];
 
@@ -320,7 +320,7 @@ contract LockupVolumeRestrictionTM is ITransferManager {
         uint amount,
         uint totalSum,
         uint alreadyWithdrawnSum
-    ) internal view returns(Result) {
+    ) internal view returns(Result memory) {
         // the amount the user wants to withdraw is greater than their allowed amounts according to the lockups.  however, if the user has like, 10 tokens, but only 4 are locked up, we should let the transfer go through for those 6 that aren't locked up
         uint currentUserBalance = ISecurityToken(securityToken).balanceOf(userAddress);
         uint stillLockedAmount = totalSum.sub(alreadyWithdrawnSum);
@@ -379,7 +379,7 @@ contract LockupVolumeRestrictionTM is ITransferManager {
     /**
      * @notice Returns the permissions flag that are associated with Percentage transfer Manager
      */
-    function getPermissions() public view returns(bytes32[]) {
+    function getPermissions() public view returns(bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](1);
         allPermissions[0] = ADMIN;
         return allPermissions;

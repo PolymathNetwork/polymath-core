@@ -236,7 +236,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @return list of tags
      * @return corresponding list of module factories
      */
-    function getTagsByTypeAndToken(uint8 _moduleType, address _securityToken) external view returns(bytes32[], address[]) {
+    function getTagsByTypeAndToken(uint8 _moduleType, address _securityToken) external view returns(bytes32[] memory, address[] memory) {
         address[] memory modules = getModulesByTypeAndToken(_moduleType, _securityToken);
         return _tagsByModules(modules);
     }
@@ -247,7 +247,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @return list of tags
      * @return corresponding list of module factories
      */
-    function getTagsByType(uint8 _moduleType) external view returns(bytes32[], address[]) {
+    function getTagsByType(uint8 _moduleType) external view returns(bytes32[] memory, address[] memory) {
         address[] memory modules = getModulesByType(_moduleType);
         return _tagsByModules(modules);
     }
@@ -258,7 +258,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @return list of tags
      * @return corresponding list of module factories
      */
-    function _tagsByModules(address[] memory _modules) internal view returns(bytes32[], address[]) {
+    function _tagsByModules(address[] memory _modules) internal view returns(bytes32[] memory, address[] memory) {
         uint256 counter = 0;
         uint256 i;
         uint256 j;
@@ -285,7 +285,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @param _factoryAddress is the address of the module factory
      * @return address array which contains the list of securityTokens that use that module factory
      */
-    function getReputationByFactory(address _factoryAddress) external view returns(address[]) {
+    function getReputationByFactory(address _factoryAddress) external view returns(address[] memory) {
         return getArrayAddress(Encoder.getKey("reputation", _factoryAddress));
     }
 
@@ -294,7 +294,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @param _moduleType Type of Module
      * @return address array that contains the list of addresses of module factory contracts.
      */
-    function getModulesByType(uint8 _moduleType) public view returns(address[]) {
+    function getModulesByType(uint8 _moduleType) public view returns(address[] memory) {
         return getArrayAddress(Encoder.getKey("moduleList", uint256(_moduleType)));
     }
 
@@ -304,7 +304,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @param _securityToken is the address of SecurityToken
      * @return address array that contains the list of available addresses of module factory contracts.
      */
-    function getModulesByTypeAndToken(uint8 _moduleType, address _securityToken) public view returns(address[]) {
+    function getModulesByTypeAndToken(uint8 _moduleType, address _securityToken) public view returns(address[] memory) {
         uint256 _len = getArrayAddress(Encoder.getKey("moduleList", uint256(_moduleType))).length;
         address[] memory _addressList = getArrayAddress(Encoder.getKey("moduleList", uint256(_moduleType)));
         bool _isCustomModuleAllowed = IFeatureRegistry(getAddress(Encoder.getKey("featureRegistry"))).getFeatureStatus(

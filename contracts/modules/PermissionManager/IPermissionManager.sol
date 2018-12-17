@@ -64,7 +64,7 @@ interface IPermissionManager {
     * @param _perm Permission flag
     * @return address[]
     */
-    function getAllDelegatesWithPerm(address _module, bytes32 _perm) external view returns(address[]);
+    function getAllDelegatesWithPerm(address _module, bytes32 _perm) external view returns(address[] memory);
 
     /**
     * @notice Used to return all permission of a single or multiple module
@@ -74,18 +74,21 @@ interface IPermissionManager {
     * @return address[] the address array of Modules this delegate has permission
     * @return bytes32[] the permission array of the corresponding Modules
     */
-    function getAllModulesAndPermsFromTypes(address _delegate, uint8[] calldata _types) external view returns(address[], bytes32[]);
+    function getAllModulesAndPermsFromTypes(address _delegate, uint8[] calldata _types) external view returns(
+        address[] memory,
+        bytes32[] memory
+    );
 
     /**
     * @notice Used to get the Permission flag related the `this` contract
     * @return Array of permission flags
     */
-    function getPermissions() external view returns(bytes32[]);
+    function getPermissions() external view returns(bytes32[] memory);
 
     /**
     * @notice Used to get all delegates
     * @return address[]
     */
-    function getAllDelegates() external view returns(address[]);
+    function getAllDelegates() external view returns(address[] memory);
 
 }

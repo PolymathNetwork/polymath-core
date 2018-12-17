@@ -48,7 +48,7 @@ contract PercentageTransferManagerFactory is ModuleFactory {
      * @notice Type of the Module factory
      * @return uint8
      */
-    function getTypes() external view returns(uint8[]) {
+    function getTypes() external view returns(uint8[] memory) {
         uint8[] memory res = new uint8[](1);
         res[0] = 2;
         return res;
@@ -57,14 +57,14 @@ contract PercentageTransferManagerFactory is ModuleFactory {
     /**
      * @notice Returns the instructions associated with the module
      */
-    function getInstructions() external view returns(string) {
+    function getInstructions() external view returns(string memory) {
         return "Allows an issuer to restrict the total number of non-zero token holders";
     }
 
     /**
      * @notice Get the tags related to the module factory
      */
-    function getTags() external view returns(bytes32[]) {
+    function getTags() external view returns(bytes32[] memory) {
         bytes32[] memory availableTags = new bytes32[](2);
         availableTags[0] = "Percentage";
         availableTags[1] = "Transfer Restriction";

@@ -422,7 +422,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @notice Returns the list of tickers owned by the selected address
      * @param _owner is the address which owns the list of tickers
      */
-    function getTickersByOwner(address _owner) external view returns(bytes32[]) {
+    function getTickersByOwner(address _owner) external view returns(bytes32[] memory) {
         uint counter = 0;
         // accessing the data structure userTotickers[_owner].length
         bytes32[] memory tickers = getArrayBytes32(Encoder.getKey("userToTickers", _owner));
@@ -451,7 +451,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @param _owner is the address which owns the list of tickers
      * @dev Intention is that this is called off-chain so block gas limit is not relevant
      */
-    function getTokensByOwner(address _owner) external view returns(address[]) {
+    function getTokensByOwner(address _owner) external view returns(address[] memory) {
         // Loop over all active users, then all associated tickers of those users
         // This ensures we find tokens, even if their owner has been modified
         address[] memory activeUsers = getArrayAddress(Encoder.getKey("activeUsers"));
@@ -497,7 +497,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @return string
      * @return bool
      */
-    function getTickerDetails(string calldata _ticker) external view returns(address, uint256, uint256, string, bool) {
+    function getTickerDetails(string calldata _ticker) external view returns(address, uint256, uint256, string memory, bool) {
         string memory ticker = Util.upper(_ticker);
         bool tickerStatus = _tickerStatus(ticker);
         uint256 expiryDate = getUint(Encoder.getKey("registeredTickers_expiryDate", ticker));
@@ -634,7 +634,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @return string is the details of the security token.
      * @return uint256 is the timestamp at which security Token was deployed.
      */
-    function getSecurityTokenData(address _securityToken) external view returns(string, address, string, uint256) {
+    function getSecurityTokenData(address _securityToken) external view returns(string memory, address, string memory, uint256) {
         return (getString(Encoder.getKey("securityTokens_ticker", _securityToken)), IOwnable(_securityToken).owner(), getString(
             Encoder.getKey("securityTokens_tokenDetails", _securityToken)
         ), getUint(Encoder.getKey("securityTokens_deployedAt", _securityToken)));
@@ -743,7 +743,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     /**
      * @notice Gets Protocol version
      */
-    function getProtocolVersion() public view returns(uint8[]) {
+    function getProtocolVersion() public view returns(uint8[] memory) {
         return VersionUtils.unpack(uint24(getUint(Encoder.getKey("latestVersion"))));
     }
 

@@ -144,7 +144,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
         uint256, /*_amount*/
         bytes memory, /* _data */
         bool /* _isTransfer */
-    ) public returns(Result) {
+    ) public returns(Result memory) {
         if (!paused) {
             if (allowAllTransfers) {
                 //All transfers allowed, regardless of whitelist
@@ -329,14 +329,20 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
     /**
      * @dev Returns list of all investors
      */
-    function getInvestors() external view returns(address[]) {
+    function getInvestors() external view returns(address[] memory) {
         return investors;
     }
 
     /**
      * @dev Returns list of all investors data
      */
-    function getAllInvestorsData() external view returns(address[], uint256[], uint256[], uint256[], bool[]) {
+    function getAllInvestorsData() external view returns(
+        address[] memory,
+        uint256[] memory,
+        uint256[] memory,
+        uint256[] memory,
+        bool[] memory
+    ) {
         (uint256[] fromTimes, uint256[] toTimes, uint256[] expiryTimes, bool[] canBuyFromSTOs) = _investorsData(investors);
         return (investors, fromTimes, toTimes, expiryTimes, canBuyFromSTOs);
 
@@ -345,11 +351,21 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
     /**
      * @dev Returns list of specified investors data
      */
-    function getInvestorsData(address[] calldata _investors) external view returns(uint256[], uint256[], uint256[], bool[]) {
+    function getInvestorsData(address[] calldata _investors) external view returns(
+        uint256[] memory,
+        uint256[] memory,
+        uint256[] memory,
+        bool[] memory
+    ) {
         return _investorsData(_investors);
     }
 
-    function _investorsData(address[] memory _investors) internal view returns(uint256[], uint256[], uint256[], bool[]) {
+    function _investorsData(address[] memory _investors) internal view returns(
+        uint256[] memory,
+        uint256[] memory,
+        uint256[] memory,
+        bool[] memory
+    ) {
         uint256[] memory fromTimes = new uint256[](_investors.length);
         uint256[] memory toTimes = new uint256[](_investors.length);
         uint256[] memory expiryTimes = new uint256[](_investors.length);
@@ -370,7 +386,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
     /**
      * @notice Return the permissions flag that are associated with general trnasfer manager
      */
-    function getPermissions() public view returns(bytes32[]) {
+    function getPermissions() public view returns(bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](2);
         allPermissions[0] = WHITELIST;
         allPermissions[1] = FLAGS;

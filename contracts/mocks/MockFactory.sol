@@ -26,7 +26,7 @@ contract MockFactory is DummySTOFactory {
     /**
      * @notice Type of the Module factory
      */
-    function getTypes() external view returns(uint8[]) {
+    function getTypes() external view returns(uint8[] memory) {
         if (!switchTypes) {
             uint8[] memory types = new uint8[](0);
             return types;

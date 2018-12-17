@@ -97,7 +97,7 @@ library VersionUtils {
      * @notice Used to convert packed data into uint8 array
      * @param _packedVersion Packed data
      */
-    function unpack(uint24 _packedVersion) internal pure returns(uint8[]) {
+    function unpack(uint24 _packedVersion) internal pure returns(uint8[] memory) {
         uint8[] memory _unpackVersion = new uint8[](3);
         _unpackVersion[0] = uint8(_packedVersion >> 16);
         _unpackVersion[1] = uint8(_packedVersion >> 8);

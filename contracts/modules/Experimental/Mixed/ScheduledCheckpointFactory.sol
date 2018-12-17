@@ -42,7 +42,7 @@ contract ScheduledCheckpointFactory is ModuleFactory {
     /**
      * @notice Type of the Module factory
      */
-    function getTypes() external view returns(uint8[]) {
+    function getTypes() external view returns(uint8[] memory) {
         uint8[] memory res = new uint8[](2);
         res[0] = 4;
         res[1] = 2;
@@ -59,21 +59,21 @@ contract ScheduledCheckpointFactory is ModuleFactory {
     /**
      * @notice Get the description of the Module
      */
-    function getDescription() external view returns(string) {
+    function getDescription() external view returns(string memory) {
         return description;
     }
 
     /**
      * @notice Get the title of the Module
      */
-    function getTitle() external view returns(string) {
+    function getTitle() external view returns(string memory) {
         return title;
     }
 
     /**
      * @notice Get the version of the Module
      */
-    function getVersion() external view returns(string) {
+    function getVersion() external view returns(string memory) {
         return version;
     }
 
@@ -87,14 +87,14 @@ contract ScheduledCheckpointFactory is ModuleFactory {
     /**
      * @notice Get the Instructions that helped to used the module
      */
-    function getInstructions() external view returns(string) {
+    function getInstructions() external view returns(string memory) {
         return "Schedule a series of future checkpoints by specifying a start time and interval of each checkpoint";
     }
 
     /**
      * @notice Get the tags related to the module factory
      */
-    function getTags() external view returns(bytes32[]) {
+    function getTags() external view returns(bytes32[] memory) {
         bytes32[] memory availableTags = new bytes32[](2);
         availableTags[0] = "Scheduled";
         availableTags[1] = "Checkpoint";

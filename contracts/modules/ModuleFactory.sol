@@ -137,7 +137,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @notice Used to get the lower bound
      * @return lower bound
      */
-    function getLowerSTVersionBounds() external view returns(uint8[]) {
+    function getLowerSTVersionBounds() external view returns(uint8[] memory) {
         return VersionUtils.unpack(compatibleSTVersionRange["lowerBound"]);
     }
 
@@ -145,7 +145,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @notice Used to get the upper bound
      * @return upper bound
      */
-    function getUpperSTVersionBounds() external view returns(uint8[]) {
+    function getUpperSTVersionBounds() external view returns(uint8[] memory) {
         return VersionUtils.unpack(compatibleSTVersionRange["upperBound"]);
     }
 

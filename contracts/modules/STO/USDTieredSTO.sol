@@ -702,7 +702,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
      * param _tier The tier to return minted tokens for
      * @return uint256[] array of minted tokens in each fund raise type
      */
-    function getTokensMintedByTier(uint256 _tier) public view returns(uint256[]) {
+    function getTokensMintedByTier(uint256 _tier) public view returns(uint256[] memory) {
         require(_tier < tiers.length, "Invalid tier");
         uint256[] memory tokensMinted = new uint256[](3);
         tokensMinted[0] = tiers[_tier].minted[uint8(FundRaiseType.ETH)];
@@ -736,7 +736,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
     /**
      * @notice Return the permissions flag that are associated with STO
      */
-    function getPermissions() public view returns(bytes32[]) {
+    function getPermissions() public view returns(bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](0);
         return allPermissions;
     }
@@ -753,7 +753,17 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
      * @return Amount of tokens sold.
      * @return Array of bools to show if funding is allowed in ETH, POLY, DAI respectively
      */
-    function getSTODetails() public view returns(uint256, uint256, uint256, uint256[], uint256[], uint256, uint256, uint256, bool[]) {
+    function getSTODetails() public view returns(
+        uint256,
+        uint256,
+        uint256,
+        uint256[] memory,
+        uint256[] memory,
+        uint256,
+        uint256,
+        uint256,
+        bool[] memory
+    ) {
         uint256[] memory cap = new uint256[](tiers.length);
         uint256[] memory rate = new uint256[](tiers.length);
         for (uint256 i = 0; i < tiers.length; i++) {

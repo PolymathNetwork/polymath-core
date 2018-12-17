@@ -60,7 +60,7 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
         uint256 _amount,
         bytes memory, /* _data */
         bool /* _isTransfer */
-    ) public returns(Result) {
+    ) public returns(Result memory) {
         bool validTransfer;
 
         if (exemptWallets[_from] || paused) return Result.NA;
@@ -324,7 +324,7 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
     /**
     * @notice Returns the permissions flag that are associated with SingleTradeVolumeRestrictionManager
     */
-    function getPermissions() public view returns(bytes32[]) {
+    function getPermissions() public view returns(bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](1);
         allPermissions[0] = ADMIN;
         return allPermissions;

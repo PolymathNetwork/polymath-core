@@ -25,14 +25,14 @@ contract TestSTOFactory is DummySTOFactory {
     /**
      * @notice Returns the instructions associated with the module
      */
-    function getInstructions() external view returns(string) {
+    function getInstructions() external view returns(string memory) {
         return "Test STO - you can mint tokens at will";
     }
 
     /**
      * @notice Gets the tags related to the module factory
      */
-    function getTags() external view returns(bytes32[]) {
+    function getTags() external view returns(bytes32[] memory) {
         bytes32[] memory availableTags = new bytes32[](4);
         availableTags[0] = "Test";
         availableTags[1] = "Non-refundable";

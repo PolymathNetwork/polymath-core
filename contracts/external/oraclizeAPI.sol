@@ -888,7 +888,7 @@ contract usingOraclize {
     }
 
     function strConcat(string memory _a, string memory _b, string memory _c, string memory _d, string memory _e) internal pure returns(
-        string
+        string memory
     ) {
         bytes memory _ba = bytes(_a);
         bytes memory _bb = bytes(_b);
@@ -906,15 +906,15 @@ contract usingOraclize {
         return string(babcde);
     }
 
-    function strConcat(string memory _a, string memory _b, string memory _c, string memory _d) internal pure returns(string) {
+    function strConcat(string memory _a, string memory _b, string memory _c, string memory _d) internal pure returns(string memory) {
         return strConcat(_a, _b, _c, _d, "");
     }
 
-    function strConcat(string memory _a, string memory _b, string memory _c) internal pure returns(string) {
+    function strConcat(string memory _a, string memory _b, string memory _c) internal pure returns(string memory) {
         return strConcat(_a, _b, _c, "", "");
     }
 
-    function strConcat(string memory _a, string memory _b) internal pure returns(string) {
+    function strConcat(string memory _a, string memory _b) internal pure returns(string memory) {
         return strConcat(_a, _b, "", "", "");
     }
 
@@ -942,7 +942,7 @@ contract usingOraclize {
         return mint;
     }
 
-    function uint2str(uint i) internal pure returns(string) {
+    function uint2str(uint i) internal pure returns(string memory) {
         if (i == 0) return "0";
         uint j = i;
         uint len;
@@ -960,7 +960,7 @@ contract usingOraclize {
     }
 
     using CBOR for Buffer.buffer;
-    function stra2cbor(string[] memory arr) internal pure returns(bytes) {
+    function stra2cbor(string[] memory arr) internal pure returns(bytes memory) {
         safeMemoryCleaner();
         Buffer.buffer memory buf;
         Buffer.init(buf, 1024);
@@ -972,7 +972,7 @@ contract usingOraclize {
         return buf.buf;
     }
 
-    function ba2cbor(bytes[] memory arr) internal pure returns(bytes) {
+    function ba2cbor(bytes[] memory arr) internal pure returns(bytes memory) {
         safeMemoryCleaner();
         Buffer.buffer memory buf;
         Buffer.init(buf, 1024);
@@ -989,7 +989,7 @@ contract usingOraclize {
         oraclize_network_name = _network_name;
     }
 
-    function oraclize_getNetworkName() internal view returns(string) {
+    function oraclize_getNetworkName() internal view returns(string memory) {
         return oraclize_network_name;
     }
 
@@ -1192,7 +1192,9 @@ contract usingOraclize {
     }
 
     // the following function has been written by Alex Beregszaszi (@axic), use it under the terms of the MIT license
-    function copyBytes(bytes memory from, uint fromOffset, uint length, bytes memory to, uint toOffset) internal pure returns(bytes) {
+    function copyBytes(bytes memory from, uint fromOffset, uint length, bytes memory to, uint toOffset) internal pure returns(
+        bytes memory
+    ) {
         uint minLength = length + toOffset;
 
         // Buffer too small

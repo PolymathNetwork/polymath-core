@@ -49,7 +49,7 @@ contract ERC20DividendCheckpointFactory is ModuleFactory {
     /**
      * @notice Type of the Module factory
      */
-    function getTypes() external view returns(uint8[]) {
+    function getTypes() external view returns(uint8[] memory) {
         uint8[] memory res = new uint8[](1);
         res[0] = 4;
         return res;
@@ -58,14 +58,14 @@ contract ERC20DividendCheckpointFactory is ModuleFactory {
     /**
      * @notice Returns the instructions associated with the module
      */
-    function getInstructions() external view returns(string) {
+    function getInstructions() external view returns(string memory) {
         return "Create ERC20 dividend to be paid out to token holders based on their balances at dividend creation time";
     }
 
     /**
      * @notice Get the tags related to the module factory
      */
-    function getTags() external view returns(bytes32[]) {
+    function getTags() external view returns(bytes32[] memory) {
         bytes32[] memory availableTags = new bytes32[](3);
         availableTags[0] = "ERC20";
         availableTags[1] = "Dividend";

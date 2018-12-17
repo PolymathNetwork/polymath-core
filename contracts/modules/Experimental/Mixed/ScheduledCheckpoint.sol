@@ -89,7 +89,7 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
         uint256, /* _amount */
         bytes memory, /* _data */
         bool _isTransfer
-    ) public returns(Result) {
+    ) public returns(Result memory) {
         require(_isTransfer == false || msg.sender == securityToken, "Sender is not owner");
         if (paused || !_isTransfer) {
             return Result.NA;
@@ -102,7 +102,15 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
      * @notice gets schedule details
      * @param _name name of the schedule
      */
-    function getSchedule(bytes32 _name) external view returns(bytes32, uint256, uint256, uint256, uint256[], uint256[], uint256[]) {
+    function getSchedule(bytes32 _name) external view returns(
+        bytes32,
+        uint256,
+        uint256,
+        uint256,
+        uint256[] memory,
+        uint256[] memory,
+        uint256[] memory
+    ) {
         return (schedules[_name].name, schedules[_name].startTime, schedules[_name].nextTime, schedules[_name].interval, schedules[_name].checkpointIds, schedules[_name].timestamps, schedules[_name].periods);
     }
 
@@ -143,7 +151,7 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
     /**
      * @notice Return the permissions flag that are associated with CountTransferManager
      */
-    function getPermissions() external view returns(bytes32[]) {
+    function getPermissions() external view returns(bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](0);
         return allPermissions;
     }

@@ -70,7 +70,7 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
     * @dev Tells the version name of the current implementation
     * @return string representing the name of the current version
     */
-    function version() external ifOwner returns(string) {
+    function version() external ifOwner returns(string memory) {
         return __version;
     }
 

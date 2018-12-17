@@ -80,7 +80,7 @@ interface ISecurityTokenRegistry {
      * @return string Details of the Token.
      * @return uint256 Timestamp at which Security Token get launched on Polymath platform.
      */
-    function getSecurityTokenData(address _securityToken) external view returns(string, address, string, uint256);
+    function getSecurityTokenData(address _securityToken) external view returns(string memory, address, string memory, uint256);
 
     /**
      * @notice Get the current STFactory Address
@@ -90,20 +90,20 @@ interface ISecurityTokenRegistry {
     /**
      * @notice Get Protocol version
      */
-    function getProtocolVersion() external view returns(uint8[]);
+    function getProtocolVersion() external view returns(uint8[] memory);
 
     /**
      * @notice Used to get the ticker list as per the owner
      * @param _owner Address which owns the list of tickers
      */
-    function getTickersByOwner(address _owner) external view returns(bytes32[]);
+    function getTickersByOwner(address _owner) external view returns(bytes32[] memory);
 
     /**
      * @notice Returns the list of tokens owned by the selected address
      * @param _owner is the address which owns the list of tickers
      * @dev Intention is that this is called off-chain so block gas limit is not relevant
      */
-    function getTokensByOwner(address _owner) external view returns(address[]);
+    function getTokensByOwner(address _owner) external view returns(address[] memory);
 
     /**
      * @notice Returns the owner and timestamp for a given ticker
@@ -114,7 +114,7 @@ interface ISecurityTokenRegistry {
      * @return string
      * @return bool
      */
-    function getTickerDetails(string calldata _ticker) external view returns(address, uint256, uint256, string, bool);
+    function getTickerDetails(string calldata _ticker) external view returns(address, uint256, uint256, string memory, bool);
 
     /**
      * @notice Modifies the ticker details. Only polymath account has the ability

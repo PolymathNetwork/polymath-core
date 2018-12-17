@@ -47,7 +47,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @notice Return the default excluded addresses
      * @return List of excluded addresses
      */
-    function getDefaultExcluded() external view returns(address[]) {
+    function getDefaultExcluded() external view returns(address[] memory) {
         return excluded;
     }
 
@@ -192,7 +192,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @param _checkpointId Checkpoint id to query
      * @return uint256[]
      */
-    function getDividendIndex(uint256 _checkpointId) public view returns(uint256[]) {
+    function getDividendIndex(uint256 _checkpointId) public view returns(uint256[] memory) {
         uint256 counter = 0;
         for (uint256 i = 0; i < dividends.length; i++) {
             if (dividends[i].checkpointId == _checkpointId) {
@@ -221,7 +221,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @notice Return the permissions flag that are associated with this module
      * @return bytes32 array
      */
-    function getPermissions() public view returns(bytes32[]) {
+    function getPermissions() public view returns(bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](2);
         allPermissions[0] = DISTRIBUTE;
         allPermissions[1] = MANAGE;

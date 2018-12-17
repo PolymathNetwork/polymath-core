@@ -8,7 +8,7 @@ library Util {
     * @notice Changes a string to upper case
     * @param _base String to change
     */
-    function upper(string memory _base) internal pure returns(string) {
+    function upper(string memory _base) internal pure returns(string memory) {
         bytes memory _baseBytes = bytes(_base);
         for (uint i = 0; i < _baseBytes.length; i++) {
             bytes1 b1 = _baseBytes[i];
@@ -48,7 +48,7 @@ library Util {
      * @notice Changes the bytes32 into string
      * @param _source that need to convert into string
      */
-    function bytes32ToString(bytes32 _source) internal pure returns(string) {
+    function bytes32ToString(bytes32 _source) internal pure returns(string memory) {
         bytes memory bytesString = new bytes(32);
         uint charCount = 0;
         for (uint j = 0; j < 32; j++) {

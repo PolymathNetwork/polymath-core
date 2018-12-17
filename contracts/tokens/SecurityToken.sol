@@ -338,7 +338,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @return bool module archived
      * @return uint8 module type
      */
-    function getModule(address _module) external view returns(bytes32, address, address, bool, uint8[], bytes32) {
+    function getModule(address _module) external view returns(bytes32, address, address, bool, uint8[] memory, bytes32) {
         return (modulesToData[_module].name, modulesToData[_module].module, modulesToData[_module].moduleFactory, modulesToData[_module].isArchived, modulesToData[_module].moduleTypes, modulesToData[_module].label);
     }
 
@@ -347,7 +347,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @param _name name of the module
      * @return address[] list of modules with this name
      */
-    function getModulesByName(bytes32 _name) external view returns(address[]) {
+    function getModulesByName(bytes32 _name) external view returns(address[] memory) {
         return names[_name];
     }
 
@@ -356,7 +356,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @param _type type of the module
      * @return address[] list of modules with this type
      */
-    function getModulesByType(uint8 _type) external view returns(address[]) {
+    function getModulesByType(uint8 _type) external view returns(address[] memory) {
         return modules[_type];
     }
 
@@ -427,7 +427,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * NB - this length may differ from investorCount as it contains all investors that ever held tokens
      * @return list of addresses
      */
-    function getInvestors() external view returns(address[]) {
+    function getInvestors() external view returns(address[] memory) {
         return investorData.investors;
     }
 
@@ -437,7 +437,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @param _checkpointId Checkpoint id at which investor list is to be populated
      * @return list of investors
      */
-    function getInvestorsAt(uint256 _checkpointId) external view returns(address[]) {
+    function getInvestorsAt(uint256 _checkpointId) external view returns(address[] memory) {
         uint256 count = 0;
         uint256 i;
         for (i = 0; i < investorData.investors.length; i++) {
@@ -463,7 +463,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @param _end Position of investor to stop iteration at
      * @return list of investors
      */
-    function iterateInvestors(uint256 _start, uint256 _end) external view returns(address[]) {
+    function iterateInvestors(uint256 _start, uint256 _end) external view returns(address[] memory) {
         require(_end <= investorData.investors.length, "Invalid end");
         address[] memory investors = new address[](_end.sub(_start));
         uint256 index = 0;
@@ -778,7 +778,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @notice Gets list of times that checkpoints were created
      * @return List of checkpoint times
      */
-    function getCheckpointTimes() external view returns(uint256[]) {
+    function getCheckpointTimes() external view returns(uint256[] memory) {
         return checkpointTimes;
     }
 
@@ -853,7 +853,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     /**
      * @notice Returns the version of the SecurityToken
      */
-    function getVersion() external view returns(uint8[]) {
+    function getVersion() external view returns(uint8[] memory) {
         uint8[] memory _version = new uint8[](3);
         _version[0] = securityTokenVersion.major;
         _version[1] = securityTokenVersion.minor;

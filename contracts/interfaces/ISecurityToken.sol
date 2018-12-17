@@ -79,14 +79,14 @@ interface ISecurityToken {
      * @param _name Name of the module
      * @return address[] List of modules with this name
      */
-    function getModulesByName(bytes32 _name) external view returns(address[]);
+    function getModulesByName(bytes32 _name) external view returns(address[] memory);
 
     /**
      * @notice Returns module list for a module type
      * @param _type Type of the module
      * @return address[] List of modules with this type
      */
-    function getModulesByType(uint8 _type) external view returns(address[]);
+    function getModulesByType(uint8 _type) external view returns(address[] memory);
 
     /**
      * @notice Queries totalSupply at a specified checkpoint
@@ -111,7 +111,7 @@ interface ISecurityToken {
      * NB - this length may differ from investorCount if the list has not been pruned of zero-balance investors
      * @return Length
      */
-    function getInvestors() external view returns(address[]);
+    function getInvestors() external view returns(address[] memory);
 
     /**
      * @notice returns an array of investors at a given checkpoint
@@ -119,7 +119,7 @@ interface ISecurityToken {
      * @param _checkpointId Checkpoint id at which investor list is to be populated
      * @return list of investors
      */
-    function getInvestorsAt(uint256 _checkpointId) external view returns(address[]);
+    function getInvestorsAt(uint256 _checkpointId) external view returns(address[] memory);
 
     /**
      * @notice generates subset of investors
@@ -128,7 +128,7 @@ interface ISecurityToken {
      * @param _end Position of investor to stop iteration at
      * @return list of investors
      */
-    function iterateInvestors(uint256 _start, uint256 _end) external view returns(address[]);
+    function iterateInvestors(uint256 _start, uint256 _end) external view returns(address[] memory);
 
     /**
      * @notice Gets current checkpoint ID
@@ -267,7 +267,7 @@ interface ISecurityToken {
     /**
      * @notice Used to get the version of the securityToken
      */
-    function getVersion() external view returns(uint8[]);
+    function getVersion() external view returns(uint8[] memory);
 
     /**
      * @notice Gets the investor count

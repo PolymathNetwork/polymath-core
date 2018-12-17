@@ -80,7 +80,7 @@ contract EternalStorage {
         return addressStorage[_key];
     }
 
-    function getString(bytes32 _key) internal view returns(string) {
+    function getString(bytes32 _key) internal view returns(string memory) {
         return stringStorage[_key];
     }
 
@@ -189,19 +189,19 @@ contract EternalStorage {
     /// Ex2- uint256 _len =  tokensOwnedByOwner[0x1].length; replace with
     /// getArrayBytes32(keccak256(abi.encodePacked("tokensOwnedByOwner", 0x1)).length;
 
-    function getArrayAddress(bytes32 _key) internal view returns(address[]) {
+    function getArrayAddress(bytes32 _key) internal view returns(address[] memory) {
         return addressArrayStorage[_key];
     }
 
-    function getArrayBytes32(bytes32 _key) internal view returns(bytes32[]) {
+    function getArrayBytes32(bytes32 _key) internal view returns(bytes32[] memory) {
         return bytes32ArrayStorage[_key];
     }
 
-    function getArrayString(bytes32 _key) internal view returns(string[]) {
+    function getArrayString(bytes32 _key) internal view returns(string[] memory) {
         return stringArrayStorage[_key];
     }
 
-    function getArrayUint(bytes32 _key) internal view returns(uint[]) {
+    function getArrayUint(bytes32 _key) internal view returns(uint[] memory) {
         return uintArrayStorage[_key];
     }
 
@@ -241,7 +241,7 @@ contract EternalStorage {
         return boolStorage[_variable];
     }
 
-    function getStringValues(bytes32 _variable) public view returns(string) {
+    function getStringValues(bytes32 _variable) public view returns(string memory) {
         return stringStorage[_variable];
     }
 
@@ -253,7 +253,7 @@ contract EternalStorage {
         return bytes32Storage[_variable];
     }
 
-    function getBytesValues(bytes32 _variable) public view returns(bytes) {
+    function getBytesValues(bytes32 _variable) public view returns(bytes memory) {
         return bytesStorage[_variable];
     }
 

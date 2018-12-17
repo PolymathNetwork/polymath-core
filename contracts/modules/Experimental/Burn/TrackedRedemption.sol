@@ -44,7 +44,7 @@ contract TrackedRedemption is IBurn, Module {
     /**
      * @notice Returns the permissions flag that are associated with CountTransferManager
      */
-    function getPermissions() public view returns(bytes32[]) {
+    function getPermissions() public view returns(bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](0);
         return allPermissions;
     }

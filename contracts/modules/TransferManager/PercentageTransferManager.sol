@@ -52,7 +52,7 @@ contract PercentageTransferManager is ITransferManager {
         uint256 _amount,
         bytes memory, /* _data */
         bool /* _isTransfer */
-    ) public returns(Result) {
+    ) public returns(Result memory) {
         if (!paused) {
             if (_from == address(0) && allowPrimaryIssuance) {
                 return Result.NA;
@@ -132,7 +132,7 @@ contract PercentageTransferManager is ITransferManager {
     /**
      * @notice Return the permissions flag that are associated with Percentage transfer Manager
      */
-    function getPermissions() public view returns(bytes32[]) {
+    function getPermissions() public view returns(bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](2);
         allPermissions[0] = WHITELIST;
         allPermissions[1] = ADMIN;

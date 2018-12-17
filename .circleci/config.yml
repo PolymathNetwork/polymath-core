@@ -49,6 +49,8 @@ jobs:
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
       - run: sudo apt install snapd
+      - run: sudo systemctl start snapd
+      - run: sudo systemctl status snapd
       - run: sudo snap install solc
       - run: yarn install
       - run: sudo npm i truffle -g

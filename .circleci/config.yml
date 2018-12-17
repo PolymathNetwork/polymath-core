@@ -2,15 +2,13 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/node:8-stretch
+      - image: circleci/node:8
     steps:
       - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
-      - run: sudo apt-get install -y software-properties-common
-      - run: echo -ne '\n' | sudo add-apt-repository ppa:ethereum/ethereum
-      - run: sudo apt-get update
-      - run: sudo apt-get install solc
+      - run: sudo apt install snapd
+      - run: sudo snap install solc
       - run: yarn install
       - run: sudo npm i truffle -g
       - run: node --version
@@ -22,16 +20,14 @@ jobs:
             - node_modules
   test:
     docker:
-      - image: circleci/node:8-stretch
+      - image: circleci/node:8
     parallelism: 2
     steps:
       - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
-      - run: sudo apt-get install -y software-properties-common
-      - run: echo -ne '\n' | sudo add-apt-repository ppa:ethereum/ethereum
-      - run: sudo apt-get update
-      - run: sudo apt-get install solc
+      - run: sudo apt install snapd
+      - run: sudo snap install solc
       - run: yarn install
       - run: sudo npm i truffle -g
       - run: node --version
@@ -47,15 +43,13 @@ jobs:
           path: ./test-results/mocha/results.xml
   coverage:
     docker:
-      - image: circleci/node:8-stretch
+      - image: circleci/node:8
     steps:
       - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
-      - run: sudo apt-get install -y software-properties-common
-      - run: echo -ne '\n' | sudo add-apt-repository ppa:ethereum/ethereum
-      - run: sudo apt-get update
-      - run: sudo apt-get install solc
+      - run: sudo apt install snapd
+      - run: sudo snap install solc
       - run: yarn install
       - run: sudo npm i truffle -g
       - run: node --version
@@ -71,15 +65,13 @@ jobs:
           path: ./coverage/lcov.info
   docs:
     docker:
-      - image: circleci/node:8-stretch
+      - image: circleci/node:8
     steps:
       - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
-      - run: sudo apt-get install -y software-properties-common
-      - run: echo -ne '\n' | sudo add-apt-repository ppa:ethereum/ethereum
-      - run: sudo apt-get update
-      - run: sudo apt-get install solc
+      - run: sudo apt install snapd
+      - run: sudo snap install solc
       - run: yarn install
       - run: sudo npm i truffle -g
       - run: node --version

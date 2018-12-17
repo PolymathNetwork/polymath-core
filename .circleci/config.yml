@@ -7,6 +7,9 @@ jobs:
       - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
+      - run: sudo add-apt-repository ppa:ethereum/ethereum
+      - run: sudo apt-get update
+      - run: sudo apt-get install solc
       - run: yarn install
       - run: sudo npm i truffle -g
       - run: node --version
@@ -24,6 +27,9 @@ jobs:
       - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
+      - run: sudo add-apt-repository ppa:ethereum/ethereum
+      - run: sudo apt-get update
+      - run: sudo apt-get install solc
       - run: yarn install
       - run: sudo npm i truffle -g
       - run: node --version
@@ -44,6 +50,9 @@ jobs:
       - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
+      - run: sudo add-apt-repository ppa:ethereum/ethereum
+      - run: sudo apt-get update
+      - run: sudo apt-get install solc
       - run: yarn install
       - run: sudo npm i truffle -g
       - run: node --version
@@ -64,6 +73,9 @@ jobs:
       - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
+      - run: sudo add-apt-repository ppa:ethereum/ethereum
+      - run: sudo apt-get update
+      - run: sudo apt-get install solc
       - run: yarn install
       - run: sudo npm i truffle -g
       - run: node --version

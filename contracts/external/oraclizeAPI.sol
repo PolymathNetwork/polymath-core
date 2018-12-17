@@ -899,10 +899,10 @@ contract usingOraclize {
         bytes memory babcde = bytes(abcde);
         uint k = 0;
         for (uint i = 0; i < _ba.length; i++) babcde[k++] = _ba[i];
-        for (i = 0; i < _bb.length; i++) babcde[k++] = _bb[i];
-        for (i = 0; i < _bc.length; i++) babcde[k++] = _bc[i];
-        for (i = 0; i < _bd.length; i++) babcde[k++] = _bd[i];
-        for (i = 0; i < _be.length; i++) babcde[k++] = _be[i];
+        for (uint i = 0; i < _bb.length; i++) babcde[k++] = _bb[i];
+        for (uint i = 0; i < _bc.length; i++) babcde[k++] = _bc[i];
+        for (uint i = 0; i < _bd.length; i++) babcde[k++] = _bd[i];
+        for (uint i = 0; i < _be.length; i++) babcde[k++] = _be[i];
         return string(babcde);
     }
 

@@ -6130,10 +6130,10 @@ preserve@^0.2.0:
   resolved "https://registry.yarnpkg.com/preserve/-/preserve-0.2.0.tgz#815ed1f6ebc65926f865b310c0713bcb3315ce4b"
   integrity sha1-gV7R9uvGWSb4ZbMQwHE7yzMVzks=
 
-prettier-plugin-solidity-refactor@^1.0.0-alpha.4:
-  version "1.0.0-alpha.4"
-  resolved "https://registry.yarnpkg.com/prettier-plugin-solidity-refactor/-/prettier-plugin-solidity-refactor-1.0.0-alpha.4.tgz#c5b0ac490e4896c6c71ee99f4a40b5357138d1c5"
-  integrity sha512-Dik3+ETxV0iw5cc5SOlZI11+zULCDAgS38G78Hz6YAZ/3NPINiLY7Xs2GP3o2R3lsYixZpcVVctg8Vnuzq1eOg==
+prettier-plugin-solidity-refactor@^1.0.0-alpha.6:
+  version "1.0.0-alpha.6"
+  resolved "https://registry.yarnpkg.com/prettier-plugin-solidity-refactor/-/prettier-plugin-solidity-refactor-1.0.0-alpha.6.tgz#fc4e3b59027e1de0ab796368d2a3c592c818efc3"
+  integrity sha512-KYgys2flPUfIVBvcvdPaGPzpc/GItw2xMtMCUy+F/m71nAAbB0Qt2X04F+pU6tL36DnDJOUFj275p2afdxP2IQ==
   dependencies:
     emoji-regex "^7.0.1"
     escape-string-regexp "^1.0.5"

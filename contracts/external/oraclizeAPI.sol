@@ -47,7 +47,7 @@ contract OraclizeI {
     function getPrice(string _datasource, uint gaslimit) public returns(uint _dsprice);
     function setProofType(byte _proofType) external;
     function setCustomGasPrice(uint _gasPrice) external;
-    function randomDS_getSessionPubKeyHash() external constant returns(bytes32);
+    function randomDS_getSessionPubKeyHash() external view returns(bytes32);
 }
 
 

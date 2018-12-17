@@ -89,7 +89,7 @@
     "ganache-cli": "^6.1.8",
     "mocha-junit-reporter": "^1.18.0",
     "prettier": "^1.15.3",
-    "prettier-plugin-solidity-refactor": "^1.0.0-alpha.4",
+    "prettier-plugin-solidity-refactor": "^1.0.0-alpha.6",
     "sol-merger": "^0.1.2",
     "solidity-coverage": "^0.5.11",
     "solidity-docgen": "^0.1.0",

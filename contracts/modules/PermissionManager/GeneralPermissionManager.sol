@@ -184,11 +184,11 @@ contract GeneralPermissionManager is IPermissionManager, Module {
         bytes32[] memory _allPerms = new bytes32[](counter);
         counter = 0;
 
-        for (i = 0; i < _types.length; i++) {
-            _currentTypeModules = ISecurityToken(securityToken).getModulesByType(_types[i]);
-            for (j = 0; j < _currentTypeModules.length; j++) {
-                _allModulePerms = IModule(_currentTypeModules[j]).getPermissions();
-                for (k = 0; k < _allModulePerms.length; k++) {
+        for (uint256 i = 0; i < _types.length; i++) {
+            address[] memory _currentTypeModules = ISecurityToken(securityToken).getModulesByType(_types[i]);
+            for (uint256 j = 0; j < _currentTypeModules.length; j++) {
+                bytes32[] memory _allModulePerms = IModule(_currentTypeModules[j]).getPermissions();
+                for (uint256 k = 0; k < _allModulePerms.length; k++) {
                     if (perms[_currentTypeModules[j]][_delegate][_allModulePerms[k]]) {
                         _allModules[counter] = _currentTypeModules[j];
                         _allPerms[counter] = _allModulePerms[k];

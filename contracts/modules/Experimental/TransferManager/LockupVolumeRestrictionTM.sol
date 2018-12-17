@@ -293,8 +293,8 @@ contract LockupVolumeRestrictionTM is ITransferManager {
             require(msg.sender == securityToken, "Sender is not securityToken");
 
             // subtract amounts so they are now known to be withdrawen
-            for (i = 0; i < userLockUps.length; i++) {
-                aLockUp = userLockUps[i];
+            for (uint256 i = 0; i < userLockUps.length; i++) {
+                LockUp[] storage aLockUp = userLockUps[i];
 
                 // tokenSums[0] is allowed sum
                 if (allowedAmountPerLockup[i] >= tokenSums[0]) {

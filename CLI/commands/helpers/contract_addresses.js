@@ -7,7 +7,7 @@ function getPolymathRegistryAddress(networkId) {
   let result;
   switch (networkId) {
     case 1: // MAINNET
-      result = "0x06595656b93ce14834f0d22b7bbda4382d5ab510";
+      result = "0xdfabf3e4793cd30affb47ab6fa4cf4eef26bbc27";
       break;
     case 3: // ROPSTEN
       result = "";

@@ -118,10 +118,10 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
         ] = instances;
 
         // STEP 4: Deploy the GeneralDelegateManagerFactory
-        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(POLYMATH, I_MRProxied, I_PolyToken.address, 0);
+        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(POLYMATH, I_MRProxied, 0);
 
         // STEP 5: Deploy the CappedSTOFactory
-        [I_CappedSTOFactory] = await deployCappedSTOAndVerifyed(POLYMATH, I_MRProxied, I_PolyToken.address, STOSetupCost);
+        [I_CappedSTOFactory] = await deployCappedSTOAndVerifyed(POLYMATH, I_MRProxied, STOSetupCost);
 
         // Step 12: Mint tokens to ISSUERs
         await I_PolyToken.getTokens(REGFEE * 2, ISSUER1);
@@ -219,7 +219,6 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
         it("Should successfully deploy USDTieredSTOFactory", async () => {
             I_USDTieredSTOProxyFactory = await USDTieredSTOProxyFactory.new();
             I_USDTieredSTOFactory = await USDTieredSTOFactory.new(
-                I_PolyToken.address,
                 STOSetupCost,
                 0,
                 0,
@@ -247,7 +246,7 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
     describe("CappedSTOFactory deploy", async () => {
         // Step 1: Deploy new CappedSTOFactory
         it("Should successfully deploy CappedSTOFactory", async () => {
-            I_UpgradedCappedSTOFactory = await CappedSTOFactory.new(I_PolyToken.address, STOSetupCost, 0, 0, { from: POLYMATH });
+            I_UpgradedCappedSTOFactory = await CappedSTOFactory.new(STOSetupCost, 0, 0, { from: POLYMATH });
             assert.notEqual(
                 I_UpgradedCappedSTOFactory.address.valueOf(),
                 address_zero,
@@ -277,7 +276,7 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
     describe("ManualApprovalTransferManagerFactory deploy", async () => {
         // Step 1: Deploy new ManualApprovalTransferManager
         it("Should successfully deploy ManualApprovalTransferManagerFactory", async () => {
-            I_ManualApprovalTransferManagerFactory = await ManualApprovalTransferManagerFactory.new(I_PolyToken.address, 0, 0, 0, {
+            I_ManualApprovalTransferManagerFactory = await ManualApprovalTransferManagerFactory.new(0, 0, 0, {
                 from: POLYMATH
             });
             assert.notEqual(

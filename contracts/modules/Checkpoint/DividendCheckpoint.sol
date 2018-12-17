@@ -8,6 +8,7 @@
 pragma solidity ^0.4.24;
 
 import "./ICheckpoint.sol";
+import "./DividendCheckpointStorage.sol";
 import "../Module.sol";
 import "../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
@@ -17,42 +18,8 @@ import "openzeppelin-solidity/contracts/math/Math.sol";
  * @title Checkpoint module for issuing ether dividends
  * @dev abstract contract
  */
-contract DividendCheckpoint is ICheckpoint, Module {
+contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
     using SafeMath for uint256;
-
-    uint256 public EXCLUDED_ADDRESS_LIMIT = 50;
-    bytes32 public constant DISTRIBUTE = "DISTRIBUTE";
-    bytes32 public constant MANAGE = "MANAGE";
-    bytes32 public constant CHECKPOINT = "CHECKPOINT";
-
-    struct Dividend {
-        uint256 checkpointId;
-        uint256 created; // Time at which the dividend was created
-        uint256 maturity; // Time after which dividend can be claimed - set to 0 to bypass
-        uint256 expiry;  // Time until which dividend can be claimed - after this time any remaining amount can be withdrawn by issuer -
-                         // set to very high value to bypass
-        uint256 amount; // Dividend amount in WEI
-        uint256 claimedAmount; // Amount of dividend claimed so far
-        uint256 totalSupply; // Total supply at the associated checkpoint (avoids recalculating this)
-        bool reclaimed;  // True if expiry has passed and issuer has reclaimed remaining dividend
-        uint256 dividendWithheld;
-        uint256 dividendWithheldReclaimed;
-        mapping (address => bool) claimed; // List of addresses which have claimed dividend
-        mapping (address => bool) dividendExcluded; // List of addresses which cannot claim dividends
-        bytes32 name; // Name/title - used for identification
-    }
-
-    // List of all dividends
-    Dividend[] public dividends;
-
-    // List of addresses which cannot claim dividends
-    address[] public excluded;
-
-    // Mapping from address to withholding tax as a percentage * 10**16
-    mapping (address => uint256) public withholdingTax;
-
-    // Total amount of ETH withheld per investor
-    mapping (address => uint256) public investorWithheld;
 
     event SetDefaultExcludedAddresses(address[] _excluded, uint256 _timestamp);
     event SetWithholding(address[] _investors, uint256[] _withholding, uint256 _timestamp);

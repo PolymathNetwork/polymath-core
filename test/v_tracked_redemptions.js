@@ -102,10 +102,10 @@ contract("TrackedRedemption", accounts => {
            I_STRProxied
        ] = instances;
 
-      
+
         // STEP 4: Deploy the TrackedRedemption
-        [I_TrackedRedemptionFactory] = await deployRedemptionAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
-        [P_TrackedRedemptionFactory] = await deployRedemptionAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, web3.utils.toWei("500"));
+        [I_TrackedRedemptionFactory] = await deployRedemptionAndVerifyed(account_polymath, I_MRProxied, 0);
+        [P_TrackedRedemptionFactory] = await deployRedemptionAndVerifyed(account_polymath, I_MRProxied, web3.utils.toWei("500"));
 
         // Printing all the contract addresses
         console.log(`

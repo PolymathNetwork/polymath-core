@@ -1,0 +1,37 @@
+# type -> 'CappedSTO' for cappedSTO, 'USDTieredSTO' for USDTieredSTO
+type: 'USDTieredSTO'
+
+funding:
+    # fundigType -> Types of currency used to collect the funds, 0 for ETH, 1 for POLY, 2 for DAI, any combination of them for more than one (i.e. [0, 1, 2] for all of them)
+    raiseType: [0, 1]
+    
+addresses:
+    # wallet -> Ethereum account address to hold the funds.
+    wallet: '0x0a519b4b6501f92e8f516230b97aca83257b0c01'
+    # reserveWallet -> Ethereum account address to receive unsold tokens.
+    reserveWallet: '0x0a519b4b6501f92e8f516230b97aca83257b0c01'
+    # usdToken -> Contract address of the stable coin.
+    usdToken: '0x0000000000000000000000000000000000000000'
+
+    
+tiers:
+    # tokensPerTiers -> Total tokens for each tier
+    tokensPerTier: !!seq [ 190000000, 100000000, 200000000 ]
+    # ratePerTiers -> Rate for each tier (in USD)
+    ratePerTier: !!seq [ 0.05, 0.10, 0.15 ]
+    # discountedTokensPerTiers -> Tokens for discounted rate for POLY investments. 0 for no discounted tokens
+    tokensPerTierDiscountPoly: !!seq [ 0, 0, 100000000 ]
+    # discountedRatePerTiers -> Discounted rate for POLY investments for each tier. 0 for no discounted rate
+    ratePerTierDiscountPoly: !!seq [ 0, 0, 0.075 ]
+    
+limits:
+    # minimumInvestmentUSD -> Minimun investment in USD.
+    minimumInvestmentUSD: 5
+    # nonAccreditedLimitUSD -> Limit in USD for non-accredited investors
+    nonAccreditedLimitUSD: 10000
+    
+times:
+    # startTime -> Unix timestamp at which offering get started. '' for CLI default (one minute from now)
+    startTime: ''
+    # endTime -> Unix timestamp at which offering get ended. '' for CLI default (one month from now)
+    endTime: ''

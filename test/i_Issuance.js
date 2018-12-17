@@ -72,7 +72,7 @@ contract("Issuance", accounts => {
     //let startTime;           // Start time will be 5000 seconds more than the latest time
     //let endTime;                    // Add 30 days more
     const cap = web3.utils.toWei("10000");
-    const rate = 1000;
+    const rate = web3.utils.toWei("1000");
     const fundRaiseType = [0];
     const cappedSTOSetupCost = web3.utils.toWei("20000", "ether");
     const maxCost = cappedSTOSetupCost;
@@ -108,9 +108,9 @@ contract("Issuance", accounts => {
         ] = instances;
 
         // STEP 2: Deploy the GeneralDelegateManagerFactory
-        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
+        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
         // STEP 3: Deploy the CappedSTOFactory
-        [I_CappedSTOFactory] = await deployCappedSTOAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
+        [I_CappedSTOFactory] = await deployCappedSTOAndVerifyed(account_polymath, I_MRProxied, 0);
 
         // Printing all the contract addresses
         console.log(`
@@ -168,7 +168,7 @@ contract("Issuance", accounts => {
             it("POLYMATH: Should successfully attach the STO factory with the security token", async () => {
                 // STEP 4: Deploy the CappedSTOFactory
 
-                I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyToken.address, cappedSTOSetupCost, 0, 0, { from: account_polymath });
+                I_CappedSTOFactory = await CappedSTOFactory.new(cappedSTOSetupCost, 0, 0, { from: account_polymath });
 
                 assert.notEqual(
                     I_CappedSTOFactory.address.valueOf(),

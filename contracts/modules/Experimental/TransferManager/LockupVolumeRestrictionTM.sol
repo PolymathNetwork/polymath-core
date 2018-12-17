@@ -53,11 +53,10 @@ contract LockupVolumeRestrictionTM is ITransferManager {
     /**
      * @notice Constructor
      * @param _securityToken Address of the security token
-     * @param _polyAddress Address of the polytoken
      */
-    constructor (address _securityToken, address _polyAddress)
+    constructor (address _securityToken, address _polyToken)
     public
-    Module(_securityToken, _polyAddress)
+    Module(_securityToken, _polyToken)
     {
     }
 
@@ -130,7 +129,7 @@ contract LockupVolumeRestrictionTM is ITransferManager {
         require(
             _userAddresses.length == _lockUpPeriodsSeconds.length && /*solium-disable-line operator-whitespace*/
             _userAddresses.length == _releaseFrequenciesSeconds.length && /*solium-disable-line operator-whitespace*/
-            _userAddresses.length == _startTimes.length && 
+            _userAddresses.length == _startTimes.length &&
             _userAddresses.length == _totalAmounts.length,
             "Input array length mismatch"
         );

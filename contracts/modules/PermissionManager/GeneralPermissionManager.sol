@@ -8,7 +8,7 @@ import "../Module.sol";
  */
 contract GeneralPermissionManager is IPermissionManager, Module {
 
-    // Mapping used to hold the permissions on the modules provided to delegate, module add => delegate add => permission bytes32 => bool 
+    // Mapping used to hold the permissions on the modules provided to delegate, module add => delegate add => permission bytes32 => bool
     mapping (address => mapping (address => mapping (bytes32 => bool))) public perms;
     // Mapping hold the delagate details
     mapping (address => bytes32) public delegateDetails;
@@ -26,8 +26,8 @@ contract GeneralPermissionManager is IPermissionManager, Module {
 
 
     /// @notice constructor
-    constructor (address _securityToken, address _polyAddress) public
-    Module(_securityToken, _polyAddress)
+    constructor (address _securityToken, address _polyToken) public
+    Module(_securityToken, _polyToken)
     {
     }
 
@@ -243,7 +243,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
     function getAllDelegates() external view returns(address[]) {
         return allDelegates;
     }
-    
+
     /**
     * @notice Returns the Permission flag related the `this` contract
     * @return Array of permission flags

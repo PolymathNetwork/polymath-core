@@ -46,7 +46,7 @@ contract("SecurityTokenRegistryProxy", accounts => {
     const decimals = 18;
 
     const transferManagerKey = 2;
-    const STRProxyParameters = ["address", "address", "uint256", "uint256", "address", "address"];
+    const STRProxyParameters = ["address", "address", "uint256", "uint256", "address"];
 
     async function readStorage(contractAddress, slot) {
         return await web3.eth.getStorageAt(contractAddress, slot);
@@ -105,7 +105,6 @@ contract("SecurityTokenRegistryProxy", accounts => {
                 I_STFactory.address,
                 initRegFee,
                 initRegFee,
-                I_PolyToken.address,
                 account_polymath
             ]);
             await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {

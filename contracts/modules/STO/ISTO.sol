@@ -3,30 +3,16 @@ pragma solidity ^0.4.24;
 import "../../Pausable.sol";
 import "../Module.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
+import "./ISTOStorage.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
  * @title Interface to be implemented by all STO modules
  */
-contract ISTO is Module, Pausable  {
+contract ISTO is ISTOStorage, Module, Pausable  {
     using SafeMath for uint256;
 
     enum FundRaiseType { ETH, POLY, DAI }
-    mapping (uint8 => bool) public fundRaiseTypes;
-    mapping (uint8 => uint256) public fundsRaised;
-
-    // Start time of the STO
-    uint256 public startTime;
-    // End time of the STO
-    uint256 public endTime;
-    // Time STO was paused
-    uint256 public pausedTime;
-    // Number of individual investors
-    uint256 public investorCount;
-    // Address where ETH & POLY funds are delivered
-    address public wallet;
-     // Final amount of tokens sold
-    uint256 public totalTokensSold;
 
     // Event
     event SetFundRaiseTypes(FundRaiseType[] _fundRaiseTypes);

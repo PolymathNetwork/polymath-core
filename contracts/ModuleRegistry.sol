@@ -51,6 +51,8 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     event ModuleVerified(address indexed _moduleFactory, bool _verified);
     // Emit when a ModuleFactory is removed by Polymath
     event ModuleRemoved(address indexed _moduleFactory, address indexed _decisionMaker);
+    // Emit when ownership gets transferred
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     ///////////////
     //// Modifiers
@@ -372,6 +374,16 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         set(Encoder.getKey("securityTokenRegistry"), IPolymathRegistry(_polymathRegistry).getAddress("SecurityTokenRegistry"));
         set(Encoder.getKey("featureRegistry"), IPolymathRegistry(_polymathRegistry).getAddress("FeatureRegistry"));
         set(Encoder.getKey("polyToken"), IPolymathRegistry(_polymathRegistry).getAddress("PolyToken"));
+    }
+
+    /**
+    * @dev Allows the current owner to transfer control of the contract to a newOwner.
+    * @param _newOwner The address to transfer ownership to.
+    */
+    function transferOwnership(address _newOwner) external onlyOwner {
+        require(_newOwner != address(0), "Invalid address");
+        emit OwnershipTransferred(owner(), _newOwner);
+        set(Encoder.getKey("owner"), _newOwner);
     }
 
     /**

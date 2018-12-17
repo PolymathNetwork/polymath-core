@@ -1,46 +1,15 @@
 pragma solidity ^0.4.24;
 
 import "./ITransferManager.sol";
+import "./GeneralTransferManagerStorage.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
  * @title Transfer Manager module for core transfer validation functionality
  */
-contract GeneralTransferManager is ITransferManager {
+contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManager {
 
     using SafeMath for uint256;
-
-    //Address from which issuances come
-    address public issuanceAddress = address(0);
-
-    //Address which can sign whitelist changes
-    address public signingAddress = address(0);
-
-    bytes32 public constant WHITELIST = "WHITELIST";
-    bytes32 public constant FLAGS = "FLAGS";
-
-    //from and to timestamps that an investor can send / receive tokens respectively
-    struct TimeRestriction {
-        uint256 fromTime;
-        uint256 toTime;
-        uint256 expiryTime;
-        bool canBuyFromSTO;
-    }
-
-    // An address can only send / receive tokens once their corresponding uint256 > block.number
-    // (unless allowAllTransfers == true or allowAllWhitelistTransfers == true)
-    mapping (address => TimeRestriction) public whitelist;
-    // Map of used nonces by customer
-    mapping(address => mapping(uint256 => bool)) public nonceMap;  
-
-    //If true, there are no transfer restrictions, for any addresses
-    bool public allowAllTransfers = false;
-    //If true, time lock is ignored for transfers (address must still be on whitelist)
-    bool public allowAllWhitelistTransfers = false;
-    //If true, time lock is ignored for issuances (address must still be on whitelist)
-    bool public allowAllWhitelistIssuances = true;
-    //If true, time lock is ignored for burn transactions
-    bool public allowAllBurnTransfers = false;
 
     // Emit when Issuance address get changed
     event ChangeIssuanceAddress(address _issuanceAddress);
@@ -55,6 +24,13 @@ contract GeneralTransferManager is ITransferManager {
     // Emit when there is change in the flag variable called signingAddress
     event ChangeSigningAddress(address _signingAddress);
     // Emit when investor details get modified related to their whitelisting
+    event ChangeDefaults(uint64 _defaultFromTime, uint64 _defaultToTime);
+
+    // _fromTime is the time from which the _investor can send tokens
+    // _toTime is the time from which the _investor can receive tokens
+    // if allowAllWhitelistIssuances is TRUE, then _toTime is ignored when receiving tokens from the issuance address
+    // if allowAllWhitelistTransfers is TRUE, then _toTime and _fromTime is ignored when sending or receiving tokens
+    // in any case, any investor sending or receiving tokens, must have a _expiryTime in the future
     event ModifyWhitelist(
         address _investor,
         uint256 _dateAdded,
@@ -68,11 +44,10 @@ contract GeneralTransferManager is ITransferManager {
     /**
      * @notice Constructor
      * @param _securityToken Address of the security token
-     * @param _polyAddress Address of the polytoken
      */
-    constructor (address _securityToken, address _polyAddress)
+    constructor (address _securityToken, address _polyToken)
     public
-    Module(_securityToken, _polyAddress)
+    Module(_securityToken, _polyToken)
     {
     }
 
@@ -81,6 +56,17 @@ contract GeneralTransferManager is ITransferManager {
      */
     function getInitFunction() public pure returns (bytes4) {
         return bytes4(0);
+    }
+
+    /**
+     * @notice Used to change the default times used when fromTime / toTime are zero
+     * @param _defaultFromTime default for zero fromTime
+     * @param _defaultToTime default for zero toTime
+     */
+    function changeDefaults(uint64 _defaultFromTime, uint64 _defaultToTime) public withPerm(FLAGS) {
+        defaults.fromTime = _defaultFromTime;
+        defaults.toTime = _defaultToTime;
+        emit ChangeDefaults(_defaultFromTime, _defaultToTime);
     }
 
     /**
@@ -168,16 +154,25 @@ contract GeneralTransferManager is ITransferManager {
                 //Anyone on the whitelist can transfer, regardless of time
                 return (_onWhitelist(_to) && _onWhitelist(_from)) ? Result.VALID : Result.NA;
             }
-            if (allowAllWhitelistIssuances && _from == issuanceAddress) {
-                if (!whitelist[_to].canBuyFromSTO && _isSTOAttached()) {
+
+            (uint64 adjustedFromTime, uint64 adjustedToTime) = _adjustTimes(whitelist[_from].fromTime, whitelist[_to].toTime);
+            if (_from == issuanceAddress) {
+                // Possible STO transaction, but investor not allowed to purchased from STO
+                if ((whitelist[_to].canBuyFromSTO == 0) && _isSTOAttached()) {
                     return Result.NA;
                 }
-                return _onWhitelist(_to) ? Result.VALID : Result.NA;
+                // if allowAllWhitelistIssuances is true, so time stamp ignored
+                if (allowAllWhitelistIssuances) {
+                    return _onWhitelist(_to) ? Result.VALID : Result.NA;
+                } else {
+                    return (_onWhitelist(_to) && (adjustedToTime <= uint64(now))) ? Result.VALID : Result.NA;
+                }
             }
+
             //Anyone on the whitelist can transfer provided the blocknumber is large enough
             /*solium-disable-next-line security/no-block-members*/
-            return ((_onWhitelist(_from) && whitelist[_from].fromTime <= now) &&
-                (_onWhitelist(_to) && whitelist[_to].toTime <= now)) ? Result.VALID : Result.NA; /*solium-disable-line security/no-block-members*/
+            return ((_onWhitelist(_from) && (adjustedFromTime <= uint64(now))) &&
+                (_onWhitelist(_to) && (adjustedToTime <= uint64(now)))) ? Result.VALID : Result.NA; /*solium-disable-line security/no-block-members*/
         }
         return Result.NA;
     }
@@ -200,9 +195,35 @@ contract GeneralTransferManager is ITransferManager {
         public
         withPerm(WHITELIST)
     {
-        //Passing a _time == 0 into this function, is equivalent to removing the _investor from the whitelist
-        whitelist[_investor] = TimeRestriction(_fromTime, _toTime, _expiryTime, _canBuyFromSTO);
-        /*solium-disable-next-line security/no-block-members*/
+        _modifyWhitelist(_investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
+    }
+
+    /**
+    * @notice Adds or removes addresses from the whitelist.
+    * @param _investor is the address to whitelist
+    * @param _fromTime is the moment when the sale lockup period ends and the investor can freely sell his tokens
+    * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
+    * @param _expiryTime is the moment till investors KYC will be validated. After that investor need to do re-KYC
+    * @param _canBuyFromSTO is used to know whether the investor is restricted investor or not.
+    */
+    function _modifyWhitelist(
+        address _investor,
+        uint256 _fromTime,
+        uint256 _toTime,
+        uint256 _expiryTime,
+        bool _canBuyFromSTO
+    )
+        internal
+    {
+        require(_investor != address(0), "Invalid investor");
+        uint8 canBuyFromSTO = 0;
+        if (_canBuyFromSTO) {
+            canBuyFromSTO = 1;
+        }
+        if (whitelist[_investor].added == uint8(0)) {
+            investors.push(_investor);
+        }
+        whitelist[_investor] = TimeRestriction(uint64(_fromTime), uint64(_toTime), uint64(_expiryTime), canBuyFromSTO, uint8(1));
         emit ModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
     }
 
@@ -226,7 +247,7 @@ contract GeneralTransferManager is ITransferManager {
         require(_toTimes.length == _expiryTimes.length, "Mismatched input lengths");
         require(_canBuyFromSTO.length == _toTimes.length, "Mismatched input length");
         for (uint256 i = 0; i < _investors.length; i++) {
-            modifyWhitelist(_investors[i], _fromTimes[i], _toTimes[i], _expiryTimes[i], _canBuyFromSTO[i]);
+            _modifyWhitelist(_investors[i], _fromTimes[i], _toTimes[i], _expiryTimes[i], _canBuyFromSTO[i]);
         }
     }
 
@@ -267,10 +288,7 @@ contract GeneralTransferManager is ITransferManager {
             abi.encodePacked(this, _investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO, _validFrom, _validTo, _nonce)
         );
         _checkSig(hash, _v, _r, _s);
-        //Passing a _time == 0 into this function, is equivalent to removing the _investor from the whitelist
-        whitelist[_investor] = TimeRestriction(_fromTime, _toTime, _expiryTime, _canBuyFromSTO);
-        /*solium-disable-next-line security/no-block-members*/
-        emit ModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
+        _modifyWhitelist(_investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
     }
 
     /**
@@ -289,8 +307,7 @@ contract GeneralTransferManager is ITransferManager {
      * @param _investor Address of the investor
      */
     function _onWhitelist(address _investor) internal view returns(bool) {
-        return (((whitelist[_investor].fromTime != 0) || (whitelist[_investor].toTime != 0)) &&
-            (whitelist[_investor].expiryTime >= now)); /*solium-disable-line security/no-block-members*/
+        return (whitelist[_investor].expiryTime >= uint64(now)); /*solium-disable-line security/no-block-members*/
     }
 
     /**
@@ -299,6 +316,63 @@ contract GeneralTransferManager is ITransferManager {
     function _isSTOAttached() internal view returns(bool) {
         bool attached = ISecurityToken(securityToken).getModulesByType(3).length > 0;
         return attached;
+    }
+
+    /**
+     * @notice Internal function to adjust times using default values
+     */
+    function _adjustTimes(uint64 _fromTime, uint64 _toTime) internal view returns(uint64, uint64) {
+        uint64 adjustedFromTime = _fromTime;
+        uint64 adjustedToTime = _toTime;
+        if (_fromTime == 0) {
+            adjustedFromTime = defaults.fromTime;
+        }
+        if (_toTime == 0) {
+            adjustedToTime = defaults.toTime;
+        }
+        return (adjustedFromTime, adjustedToTime);
+    }
+
+    /**
+     * @dev Returns list of all investors
+     */
+    function getInvestors() external view returns(address[]) {
+        return investors;
+    }
+
+    /**
+     * @dev Returns list of all investors data
+     */
+    function getAllInvestorsData() external view returns(address[], uint256[], uint256[], uint256[], bool[]) {
+        (uint256[] memory fromTimes, uint256[] memory toTimes, uint256[] memory expiryTimes, bool[] memory canBuyFromSTOs)
+          = _investorsData(investors);
+        return (investors, fromTimes, toTimes, expiryTimes, canBuyFromSTOs);
+
+    }
+
+    /**
+     * @dev Returns list of specified investors data
+     */
+    function getInvestorsData(address[] _investors) external view returns(uint256[], uint256[], uint256[], bool[]) {
+        return _investorsData(_investors);
+    }
+
+    function _investorsData(address[] _investors) internal view returns(uint256[], uint256[], uint256[], bool[]) {
+        uint256[] memory fromTimes = new uint256[](_investors.length);
+        uint256[] memory toTimes = new uint256[](_investors.length);
+        uint256[] memory expiryTimes = new uint256[](_investors.length);
+        bool[] memory canBuyFromSTOs = new bool[](_investors.length);
+        for (uint256 i = 0; i < _investors.length; i++) {
+            fromTimes[i] = whitelist[_investors[i]].fromTime;
+            toTimes[i] = whitelist[_investors[i]].toTime;
+            expiryTimes[i] = whitelist[_investors[i]].expiryTime;
+            if (whitelist[_investors[i]].canBuyFromSTO == 0) {
+                canBuyFromSTOs[i] = false;
+            } else {
+                canBuyFromSTOs[i] = true;
+            }
+        }
+        return (fromTimes, toTimes, expiryTimes, canBuyFromSTOs);
     }
 
     /**

@@ -100,9 +100,9 @@ contract("PreSaleSTO", accounts => {
         ] = instances;
 
         // STEP 4: Deploy the PreSaleSTOFactory
-        [I_PreSaleSTOFactory] = await deployPresaleSTOAndVerified(account_polymath, I_MRProxied, I_PolyToken.address, 0);
+        [I_PreSaleSTOFactory] = await deployPresaleSTOAndVerified(account_polymath, I_MRProxied, 0);
         // STEP 5: Deploy the paid PresaleSTOFactory
-        [P_PreSaleSTOFactory] = await deployPresaleSTOAndVerified(account_polymath, I_MRProxied, I_PolyToken.address, 0);
+        [P_PreSaleSTOFactory] = await deployPresaleSTOAndVerified(account_polymath, I_MRProxied, 0);
 
         // Printing all the contract addresses
         console.log(`

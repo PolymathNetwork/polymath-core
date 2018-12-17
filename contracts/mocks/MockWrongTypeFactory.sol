@@ -10,12 +10,14 @@ import "../libraries/Util.sol";
 
 contract MockWrongTypeFactory is MockBurnFactory {
 
-     /**
-     * @notice Constructor
-     * @param _polyAddress Address of the polytoken
-     */
-    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-      MockBurnFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+    /**
+    * @notice Constructor
+    * @param _setupCost Setup cost of the module
+    * @param _usageCost Usage cost of the module
+    * @param _subscriptionCost Subscription cost of the module
+    */
+    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
+      MockBurnFactory(_setupCost, _usageCost, _subscriptionCost)
     {
     }
 

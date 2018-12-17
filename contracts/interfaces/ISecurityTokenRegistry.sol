@@ -170,12 +170,6 @@ interface ISecurityTokenRegistry {
    function changeSecurityLaunchFee(uint256 _stLaunchFee) external;
 
     /**
-     * @notice Change the PolyToken address
-     * @param _newAddress Address of the polytoken
-     */
-    function updatePolyTokenAddress(address _newAddress) external;
-
-    /**
      * @notice Gets the security token launch fee
      * @return Fee amount
      */

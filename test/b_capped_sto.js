@@ -86,7 +86,7 @@ contract("CappedSTO", accounts => {
     let startTime_ETH2;
     let endTime_ETH2;
     const cap = web3.utils.toWei("10000");
-    const rate = 1000;
+    const rate = web3.utils.toWei("1000");
     const E_fundRaiseType = 0;
     const address_zero = "0x0000000000000000000000000000000000000000";
 
@@ -97,7 +97,7 @@ contract("CappedSTO", accounts => {
     let blockNo;
     const P_cap = web3.utils.toWei("50000");
     const P_fundRaiseType = 1;
-    const P_rate = 5;
+    const P_rate = web3.utils.toWei("5");
     const cappedSTOSetupCost = web3.utils.toWei("20000", "ether");
     const maxCost = cappedSTOSetupCost;
     const STOParameters = ["uint256", "uint256", "uint256", "uint256", "uint8[]", "address"];
@@ -129,11 +129,11 @@ contract("CappedSTO", accounts => {
         ] = instances;
 
         // STEP 5: Deploy the GeneralDelegateManagerFactory
-        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
-        
+        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
+
         // STEP 6: Deploy the CappedSTOFactory
 
-        I_CappedSTOFactory = await CappedSTOFactory.new(I_PolyToken.address, cappedSTOSetupCost, 0, 0, { from: token_owner });
+        I_CappedSTOFactory = await CappedSTOFactory.new(cappedSTOSetupCost, 0, 0, { from: token_owner });
 
         assert.notEqual(
             I_CappedSTOFactory.address.valueOf(),
@@ -298,7 +298,7 @@ contract("CappedSTO", accounts => {
             assert.equal(await I_CappedSTO_Array_ETH[0].startTime.call(), startTime_ETH1, "STO Configuration doesn't set as expected");
             assert.equal(await I_CappedSTO_Array_ETH[0].endTime.call(), endTime_ETH1, "STO Configuration doesn't set as expected");
             assert.equal((await I_CappedSTO_Array_ETH[0].cap.call()).toNumber(), cap, "STO Configuration doesn't set as expected");
-            assert.equal(await I_CappedSTO_Array_ETH[0].rate.call(), rate, "STO Configuration doesn't set as expected");
+            assert.equal((await I_CappedSTO_Array_ETH[0].rate.call()).toNumber(), rate, "STO Configuration doesn't set as expected");
             assert.equal(
                 await I_CappedSTO_Array_ETH[0].fundRaiseTypes.call(E_fundRaiseType),
                 true,
@@ -334,16 +334,6 @@ contract("CappedSTO", accounts => {
                     from: account_investor1,
                     to: I_CappedSTO_Array_ETH[0].address,
                     value: web3.utils.toWei("1", "ether")
-                })
-            );
-        });
-
-        it("Should buy the tokens -- Failed due to wrong granularity", async () => {
-            await catchRevert(
-                web3.eth.sendTransaction({
-                    from: account_investor1,
-                    to: I_CappedSTO_Array_ETH[0].address,
-                    value: web3.utils.toWei("0.1111", "ether")
                 })
             );
         });
@@ -427,17 +417,8 @@ contract("CappedSTO", accounts => {
             assert.isFalse(await I_CappedSTO_Array_ETH[0].paused.call());
         });
 
-        it("Should buy the tokens -- Failed due to wrong granularity", async () => {
-            await catchRevert(
-                web3.eth.sendTransaction({
-                    from: account_investor1,
-                    to: I_CappedSTO_Array_ETH[0].address,
-                    value: web3.utils.toWei("0.1111", "ether")
-                })
-            );
-        });
-
-        it("Should restrict to buy tokens after hiting the cap in second tx first tx pass", async () => {
+        it("Should buy the granular unit tokens and refund pending amount", async () => {
+            await I_SecurityToken_ETH.changeGranularity(10 ** 21, {from: token_owner});
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor2,
                 fromTime,
@@ -448,15 +429,26 @@ contract("CappedSTO", accounts => {
                     from: account_issuer
                 }
             );
-
             assert.equal(tx.logs[0].args._investor, account_investor2, "Failed in adding the investor in whitelist");
+            const initBalance = BigNumber(await web3.eth.getBalance(account_investor2));
+            tx = await I_CappedSTO_Array_ETH[0].buyTokens(account_investor2, {from: account_investor2, value: web3.utils.toWei("1.5", "ether"), gasPrice: 1});
+            const finalBalance = BigNumber(await web3.eth.getBalance(account_investor2));
+            assert.equal(finalBalance.add(BigNumber(tx.receipt.gasUsed)).add(web3.utils.toWei("1", "ether")).toNumber(), initBalance.toNumber());
+            await I_SecurityToken_ETH.changeGranularity(1, {from: token_owner});
+            assert.equal((await I_CappedSTO_Array_ETH[0].getRaised.call(ETH)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 2);
+
+            assert.equal((await I_SecurityToken_ETH.balanceOf(account_investor2)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 1000);
+        });
+
+        it("Should restrict to buy tokens after hiting the cap in second tx first tx pass", async () => {
+
 
             // Fallback transaction
             await web3.eth.sendTransaction({
                 from: account_investor2,
                 to: I_CappedSTO_Array_ETH[0].address,
                 gas: 2100000,
-                value: web3.utils.toWei("9", "ether")
+                value: web3.utils.toWei("8", "ether")
             });
 
             assert.equal((await I_CappedSTO_Array_ETH[0].getRaised.call(ETH)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 10);
@@ -554,7 +546,7 @@ contract("CappedSTO", accounts => {
             assert.equal(await I_CappedSTO_Array_ETH[1].startTime.call(), startTime_ETH2, "STO Configuration doesn't set as expected");
             assert.equal(await I_CappedSTO_Array_ETH[1].endTime.call(), endTime_ETH2, "STO Configuration doesn't set as expected");
             assert.equal((await I_CappedSTO_Array_ETH[1].cap.call()).toNumber(), cap, "STO Configuration doesn't set as expected");
-            assert.equal(await I_CappedSTO_Array_ETH[1].rate.call(), rate, "STO Configuration doesn't set as expected");
+            assert.equal((await I_CappedSTO_Array_ETH[1].rate.call()).toNumber(), rate, "STO Configuration doesn't set as expected");
             assert.equal(
                 await I_CappedSTO_Array_ETH[1].fundRaiseTypes.call(E_fundRaiseType),
                 true,
@@ -793,8 +785,8 @@ contract("CappedSTO", accounts => {
                 await I_CappedSTO_Array_POLY[0].unpause({ from: account_issuer });
             });
 
-
-            it("Should restrict to buy tokens after hiting the cap in second tx first tx pass", async () => {
+            it("Should buy the granular unit tokens and charge only required POLY", async () => {
+                await I_SecurityToken_POLY.changeGranularity(10 ** 22, {from: token_owner});
                 let tx = await I_GeneralTransferManager.modifyWhitelist(
                     account_investor2,
                     P_fromTime,
@@ -806,15 +798,25 @@ contract("CappedSTO", accounts => {
                         gas: 500000
                     }
                 );
-
+                console.log((await I_SecurityToken_POLY.balanceOf(account_investor2)).dividedBy(new BigNumber(10).pow(18)).toNumber());
                 assert.equal(tx.logs[0].args._investor, account_investor2, "Failed in adding the investor in whitelist");
-
                 await I_PolyToken.getTokens(10000 * Math.pow(10, 18), account_investor2);
-
                 await I_PolyToken.approve(I_CappedSTO_Array_POLY[0].address, 9000 * Math.pow(10, 18), { from: account_investor2 });
+                const initRaised = (await I_CappedSTO_Array_POLY[0].getRaised.call(POLY)).dividedBy(new BigNumber(10).pow(18)).toNumber();
+                tx = await I_CappedSTO_Array_POLY[0].buyTokensWithPoly(3000 * Math.pow(10, 18), { from: account_investor2 });
+                await I_SecurityToken_POLY.changeGranularity(1, {from: token_owner});
+                assert.equal((await I_CappedSTO_Array_POLY[0].getRaised.call(POLY)).dividedBy(new BigNumber(10).pow(18)).toNumber(), initRaised + 2000); //2000 this call, 1000 earlier
+                assert.equal((await I_PolyToken.balanceOf(account_investor2)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 8000);
+                assert.equal(
+                    (await I_SecurityToken_POLY.balanceOf(account_investor2)).dividedBy(new BigNumber(10).pow(18)).toNumber(),
+                    10000
+                );
+            });
 
+
+            it("Should restrict to buy tokens after hiting the cap in second tx first tx pass", async () => {
                 // buyTokensWithPoly transaction
-                await I_CappedSTO_Array_POLY[0].buyTokensWithPoly(9000 * Math.pow(10, 18), { from: account_investor2 });
+                await I_CappedSTO_Array_POLY[0].buyTokensWithPoly(7000 * Math.pow(10, 18), { from: account_investor2 });
 
                 assert.equal((await I_CappedSTO_Array_POLY[0].getRaised.call(POLY)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 10000);
 
@@ -855,7 +857,7 @@ contract("CappedSTO", accounts => {
                 assert.equal(web3.utils.hexToString(await I_CappedSTOFactory.getName.call()), "CappedSTO", "Wrong Module added");
                 assert.equal(
                     await I_CappedSTOFactory.description.call(),
-                    "Use to collects the funds and once the cap is reached then investment will be no longer entertained",
+                    "This smart contract creates a maximum number of tokens (i.e. hard cap) which the total aggregate of tokens acquired by all investors cannot exceed. Security tokens are sent to the investor upon reception of the funds (ETH or POLY), and any security tokens left upon termination of the offering will not be minted.",
                     "Wrong Module added"
                 );
                 assert.equal(await I_CappedSTOFactory.title.call(), "Capped STO", "Wrong Module added");
@@ -993,7 +995,7 @@ contract("CappedSTO", accounts => {
 
         it("Should successfully invest in second STO", async () => {
             const polyToInvest = 1000;
-            const stToReceive = polyToInvest * P_rate;
+            const stToReceive = (polyToInvest * P_rate)/Math.pow(10, 18);
 
             await I_PolyToken.getTokens(polyToInvest * Math.pow(10, 18), account_investor3);
 

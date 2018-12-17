@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/node:8
+      - image: circleci/node:8-stretch
     steps:
       - checkout
       - restore_cache:
@@ -22,7 +22,7 @@ jobs:
             - node_modules
   test:
     docker:
-      - image: circleci/node:8
+      - image: circleci/node:8-stretch
     parallelism: 2
     steps:
       - checkout
@@ -47,7 +47,7 @@ jobs:
           path: ./test-results/mocha/results.xml
   coverage:
     docker:
-      - image: circleci/node:8
+      - image: circleci/node:8-stretch
     steps:
       - checkout
       - restore_cache:
@@ -71,7 +71,7 @@ jobs:
           path: ./coverage/lcov.info
   docs:
     docker:
-      - image: circleci/node:8
+      - image: circleci/node:8-stretch
     steps:
       - checkout
       - restore_cache:

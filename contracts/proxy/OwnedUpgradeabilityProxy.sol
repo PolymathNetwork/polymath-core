@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.5.0;
 
 import "./UpgradeabilityProxy.sol";
 
@@ -7,7 +7,6 @@ import "./UpgradeabilityProxy.sol";
  * @dev This contract combines an upgradeability proxy with basic authorization control functionalities
  */
 contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
-
     // Owner of the contract
     address private __upgradeabilityOwner;
 
@@ -40,7 +39,7 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
     * @dev Tells the address of the owner
     * @return the address of the owner
     */
-    function _upgradeabilityOwner() internal view returns (address) {
+    function _upgradeabilityOwner() internal view returns(address) {
         return __upgradeabilityOwner;
     }
 
@@ -55,7 +54,7 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
     /**
     * @notice Internal function to provide the address of the implementation contract
     */
-    function _implementation() internal view returns (address) {
+    function _implementation() internal view returns(address) {
         return __implementation;
     }
 
@@ -63,7 +62,7 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
     * @dev Tells the address of the proxy owner
     * @return the address of the proxy owner
     */
-    function proxyOwner() external ifOwner returns (address) {
+    function proxyOwner() external ifOwner returns(address) {
         return _upgradeabilityOwner();
     }
 
@@ -71,7 +70,7 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
     * @dev Tells the version name of the current implementation
     * @return string representing the name of the current version
     */
-    function version() external ifOwner returns (string) {
+    function version() external ifOwner returns(string) {
         return __version;
     }
 
@@ -79,7 +78,7 @@ contract OwnedUpgradeabilityProxy is UpgradeabilityProxy {
     * @dev Tells the address of the current implementation
     * @return address of the current implementation
     */
-    function implementation() external ifOwner returns (address) {
+    function implementation() external ifOwner returns(address) {
         return _implementation();
     }
 

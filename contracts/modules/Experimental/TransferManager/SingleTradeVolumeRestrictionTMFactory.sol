@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "./../../ModuleFactory.sol";
 import "./SingleTradeVolumeRestrictionTM.sol";
@@ -8,17 +8,17 @@ import "../../../libraries/Util.sol";
  * @title Factory for deploying SingleTradeVolumeRestrictionManager
  */
 contract SingleTradeVolumeRestrictionTMFactory is ModuleFactory {
-
-
     /**
     * @notice Constructor
     * @param _setupCost Setup cost of the module
     * @param _usageCost Usage cost of the module
     * @param _subscriptionCost Subscription cost of the module
     */
-    constructor(uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-    ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
-    {
+    constructor(
+        uint256 _setupCost,
+        uint256 _usageCost,
+        uint256 _subscriptionCost
+    ) public ModuleFactory(_setupCost, _usageCost, _subscriptionCost) {
         version = "1.0.0";
         name = "SingleTradeVolumeRestrictionTM";
         title = "Single Trade Volume Restriction Manager";

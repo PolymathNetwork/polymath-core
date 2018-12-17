@@ -1,10 +1,9 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 /**
  * @title Interface that every module factory contract should implement
  */
 interface IModuleFactory {
-
     event ChangeFactorySetupFee(uint256 _oldSetupCost, uint256 _newSetupCost, address _moduleFactory);
     event ChangeFactoryUsageFee(uint256 _oldUsageCost, uint256 _newUsageCost, address _moduleFactory);
     event ChangeFactorySubscriptionFee(uint256 _oldSubscriptionCost, uint256 _newMonthlySubscriptionCost, address _moduleFactory);
@@ -34,12 +33,12 @@ interface IModuleFactory {
     /**
      * @notice Returns the instructions associated with the module
      */
-    function getInstructions() external view returns (string);
+    function getInstructions() external view returns(string);
 
     /**
      * @notice Get the tags related to the module factory
      */
-    function getTags() external view returns (bytes32[]);
+    function getTags() external view returns(bytes32[]);
 
     /**
      * @notice Used to change the setup fee
@@ -64,12 +63,12 @@ interface IModuleFactory {
      * @param _boundType Type of bound
      * @param _newVersion New version array
      */
-    function changeSTVersionBounds(string _boundType, uint8[] _newVersion) external;
+    function changeSTVersionBounds(string _boundType, uint8[] calldata _newVersion) external;
 
-   /**
+    /**
      * @notice Get the setup cost of the module
      */
-    function getSetupCost() external view returns (uint256);
+    function getSetupCost() external view returns(uint256);
 
     /**
      * @notice Used to get the lower bound
@@ -77,7 +76,7 @@ interface IModuleFactory {
      */
     function getLowerSTVersionBounds() external view returns(uint8[]);
 
-     /**
+    /**
      * @notice Used to get the upper bound
      * @return Upper bound
      */

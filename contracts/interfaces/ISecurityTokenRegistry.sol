@@ -1,11 +1,10 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 /**
  * @title Interface for the Polymath Security Token Registry contract
  */
 interface ISecurityTokenRegistry {
-
-   /**
+    /**
      * @notice Creates a new Security Token and saves it to the registry
      * @param _name Name of the token
      * @param _ticker Ticker ticker of the security token
@@ -30,8 +29,7 @@ interface ISecurityTokenRegistry {
         address _securityToken,
         string _tokenDetails,
         uint256 _deployedAt
-    )
-        external;
+    ) external;
 
     /**
      * @notice Registers the token ticker for its particular owner
@@ -59,7 +57,7 @@ interface ISecurityTokenRegistry {
     * @param _securityToken Address of the Scurity token
     * @return bool
     */
-    function isSecurityToken(address _securityToken) external view returns (bool);
+    function isSecurityToken(address _securityToken) external view returns(bool);
 
     /**
     * @dev Allows the current owner to transfer control of the contract to a newOwner.
@@ -72,9 +70,9 @@ interface ISecurityTokenRegistry {
      * @param _ticker Symbol of the Scurity token
      * @return address
      */
-    function getSecurityTokenAddress(string _ticker) external view returns (address);
+    function getSecurityTokenAddress(string _ticker) external view returns(address);
 
-     /**
+    /**
      * @notice Get security token data by its address
      * @param _securityToken Address of the Scurity token.
      * @return string Symbol of the Security Token.
@@ -82,7 +80,7 @@ interface ISecurityTokenRegistry {
      * @return string Details of the Token.
      * @return uint256 Timestamp at which Security Token get launched on Polymath platform.
      */
-    function getSecurityTokenData(address _securityToken) external view returns (string, address, string, uint256);
+    function getSecurityTokenData(address _securityToken) external view returns(string, address, string, uint256);
 
     /**
      * @notice Get the current STFactory Address
@@ -116,7 +114,7 @@ interface ISecurityTokenRegistry {
      * @return string
      * @return bool
      */
-    function getTickerDetails(string _ticker) external view returns (address, uint256, uint256, string, bool);
+    function getTickerDetails(string _ticker) external view returns(address, uint256, uint256, string, bool);
 
     /**
      * @notice Modifies the ticker details. Only polymath account has the ability
@@ -135,10 +133,9 @@ interface ISecurityTokenRegistry {
         uint256 _registrationDate,
         uint256 _expiryDate,
         bool _status
-    )
-        external;
+    ) external;
 
-     /**
+    /**
      * @notice Removes the ticker details and associated ownership & security token mapping
      * @param _ticker Token ticker
      */
@@ -161,13 +158,13 @@ interface ISecurityTokenRegistry {
     * @notice Sets the ticker registration fee in POLY tokens
     * @param _tickerRegFee Registration fee in POLY tokens (base 18 decimals)
     */
-   function changeTickerRegistrationFee(uint256 _tickerRegFee) external;
+    function changeTickerRegistrationFee(uint256 _tickerRegFee) external;
 
-   /**
+    /**
     * @notice Sets the ticker registration fee in POLY tokens
     * @param _stLaunchFee Registration fee in POLY tokens (base 18 decimals)
     */
-   function changeSecurityLaunchFee(uint256 _stLaunchFee) external;
+    function changeSecurityLaunchFee(uint256 _stLaunchFee) external;
 
     /**
      * @notice Gets the security token launch fee

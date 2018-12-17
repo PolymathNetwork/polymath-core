@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "./GeneralPermissionManager.sol";
 import "../ModuleFactory.sol";
@@ -7,16 +7,17 @@ import "../ModuleFactory.sol";
  * @title Factory for deploying GeneralPermissionManager module
  */
 contract GeneralPermissionManagerFactory is ModuleFactory {
-
     /**
      * @notice Constructor
      * @param _setupCost Setup cost of the module
      * @param _usageCost Usage cost of the module
      * @param _subscriptionCost Subscription cost of the module
      */
-    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-    ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
-    {
+    constructor(
+        uint256 _setupCost,
+        uint256 _usageCost,
+        uint256 _subscriptionCost
+    ) public ModuleFactory(_setupCost, _usageCost, _subscriptionCost) {
         version = "1.0.0";
         name = "GeneralPermissionManager";
         title = "General Permission Manager";
@@ -29,7 +30,9 @@ contract GeneralPermissionManagerFactory is ModuleFactory {
      * @notice Used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
-    function deploy(bytes /* _data */) external returns(address) {
+    function deploy(
+        bytes /* _data */
+    ) external returns(address) {
         address polyToken = _takeFee();
         address permissionManager = new GeneralPermissionManager(msg.sender, polyToken);
         /*solium-disable-next-line security/no-block-members*/

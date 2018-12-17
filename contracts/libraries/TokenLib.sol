@@ -1,10 +1,9 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "../modules/PermissionManager/IPermissionManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 library TokenLib {
-
     using SafeMath for uint256;
 
     // Struct for module data
@@ -27,7 +26,7 @@ library TokenLib {
 
     struct InvestorDataStorage {
         // List of investors who have ever held a non-zero token balance
-        mapping (address => bool) investorListed;
+        mapping(address => bool) investorListed;
         // List of token holders
         address[] investors;
         // Total number of non-zero token holders
@@ -144,12 +143,7 @@ library TokenLib {
             return;
         }
         //New checkpoint, so record balance
-        _checkpoints.push(
-            TokenLib.Checkpoint({
-                checkpointId: _currentCheckpointId,
-                value: _newValue
-            })
-        );
+        _checkpoints.push(TokenLib.Checkpoint({checkpointId: _currentCheckpointId, value: _newValue}));
     }
 
     /**
@@ -168,7 +162,7 @@ library TokenLib {
         uint256 _value,
         uint256 _balanceTo,
         uint256 _balanceFrom
-        ) public  {
+    ) public {
         if ((_value == 0) || (_from == _to)) {
             return;
         }

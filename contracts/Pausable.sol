@@ -1,10 +1,9 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 /**
  * @title Utility contract to allow pausing and unpausing of certain functions
  */
 contract Pausable {
-
     event Pause(uint256 _timestammp);
     event Unpause(uint256 _timestamp);
 
@@ -26,7 +25,7 @@ contract Pausable {
         _;
     }
 
-   /**
+    /**
     * @notice Called by the owner to pause, triggers stopped state
     */
     function _pause() internal whenNotPaused {

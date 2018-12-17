@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "../../Pausable.sol";
 import "../Module.sol";
@@ -9,10 +9,10 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 /**
  * @title Interface to be implemented by all STO modules
  */
-contract ISTO is ISTOStorage, Module, Pausable  {
+contract ISTO is ISTOStorage, Module, Pausable {
     using SafeMath for uint256;
 
-    enum FundRaiseType { ETH, POLY, DAI }
+    enum FundRaiseType {ETH, POLY, DAI}
 
     // Event
     event SetFundRaiseTypes(FundRaiseType[] _fundRaiseTypes);
@@ -32,14 +32,14 @@ contract ISTO is ISTOStorage, Module, Pausable  {
     /**
      * @notice Returns funds raised by the STO
      */
-    function getRaised(FundRaiseType _fundRaiseType) public view returns (uint256) {
+    function getRaised(FundRaiseType memory _fundRaiseType) public view returns(uint256) {
         return fundsRaised[uint8(_fundRaiseType)];
     }
 
     /**
      * @notice Returns the total no. of tokens sold
      */
-    function getTokensSold() public view returns (uint256);
+    function getTokensSold() public view returns(uint256);
 
     /**
      * @notice Pause (overridden function)
@@ -57,7 +57,7 @@ contract ISTO is ISTOStorage, Module, Pausable  {
         super._unpause();
     }
 
-    function _setFundRaiseType(FundRaiseType[] _fundRaiseTypes) internal {
+    function _setFundRaiseType(FundRaiseType[] memory _fundRaiseTypes) internal {
         // FundRaiseType[] parameter type ensures only valid values for _fundRaiseTypes
         require(_fundRaiseTypes.length > 0, "Raise type is not specified");
         fundRaiseTypes[uint8(FundRaiseType.ETH)] = false;

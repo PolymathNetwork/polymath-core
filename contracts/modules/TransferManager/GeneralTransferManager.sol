@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "./ITransferManager.sol";
 import "./GeneralTransferManagerStorage.sol";
@@ -8,7 +8,6 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
  * @title Transfer Manager module for core transfer validation functionality
  */
 contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManager {
-
     using SafeMath for uint256;
 
     // Emit when Issuance address get changed
@@ -45,16 +44,14 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
      * @notice Constructor
      * @param _securityToken Address of the security token
      */
-    constructor (address _securityToken, address _polyToken)
-    public
-    Module(_securityToken, _polyToken)
-    {
+    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
+
     }
 
     /**
      * @notice This function returns the signature of configure function
      */
-    function getInitFunction() public pure returns (bytes4) {
+    function getInitFunction() public pure returns(bytes4) {
         return bytes4(0);
     }
 
@@ -141,7 +138,13 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
      * @param _from Address of the sender
      * @param _to Address of the receiver
     */
-    function verifyTransfer(address _from, address _to, uint256 /*_amount*/, bytes /* _data */, bool /* _isTransfer */) public returns(Result) {
+    function verifyTransfer(
+        address _from,
+        address _to,
+        uint256, /*_amount*/
+        bytes, /* _data */
+        bool /* _isTransfer */
+    ) public returns(Result) {
         if (!paused) {
             if (allowAllTransfers) {
                 //All transfers allowed, regardless of whitelist
@@ -171,8 +174,9 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
 
             //Anyone on the whitelist can transfer provided the blocknumber is large enough
             /*solium-disable-next-line security/no-block-members*/
-            return ((_onWhitelist(_from) && (adjustedFromTime <= uint64(now))) &&
-                (_onWhitelist(_to) && (adjustedToTime <= uint64(now)))) ? Result.VALID : Result.NA; /*solium-disable-line security/no-block-members*/
+            return ((_onWhitelist(_from) && (adjustedFromTime <= uint64(now))) && (_onWhitelist(_to) && (adjustedToTime <= uint64(
+                now
+            )))) ? Result.VALID : Result.NA; /*solium-disable-line security/no-block-members*/
         }
         return Result.NA;
     }
@@ -191,10 +195,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
         uint256 _toTime,
         uint256 _expiryTime,
         bool _canBuyFromSTO
-    )
-        public
-        withPerm(WHITELIST)
-    {
+    ) public withPerm(WHITELIST) {
         _modifyWhitelist(_investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
     }
 
@@ -206,15 +207,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
     * @param _expiryTime is the moment till investors KYC will be validated. After that investor need to do re-KYC
     * @param _canBuyFromSTO is used to know whether the investor is restricted investor or not.
     */
-    function _modifyWhitelist(
-        address _investor,
-        uint256 _fromTime,
-        uint256 _toTime,
-        uint256 _expiryTime,
-        bool _canBuyFromSTO
-    )
-        internal
-    {
+    function _modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime, uint256 _expiryTime, bool _canBuyFromSTO) internal {
         require(_investor != address(0), "Invalid investor");
         uint8 canBuyFromSTO = 0;
         if (_canBuyFromSTO) {
@@ -236,11 +229,11 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
     * @param _canBuyFromSTO An array of boolean values
     */
     function modifyWhitelistMulti(
-        address[] _investors,
-        uint256[] _fromTimes,
-        uint256[] _toTimes,
-        uint256[] _expiryTimes,
-        bool[] _canBuyFromSTO
+        address[] memory _investors,
+        uint256[] memory _fromTimes,
+        uint256[] memory _toTimes,
+        uint256[] memory _expiryTimes,
+        bool[] memory _canBuyFromSTO
     ) public withPerm(WHITELIST) {
         require(_investors.length == _fromTimes.length, "Mismatched input lengths");
         require(_fromTimes.length == _toTimes.length, "Mismatched input lengths");
@@ -344,8 +337,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
      * @dev Returns list of all investors data
      */
     function getAllInvestorsData() external view returns(address[], uint256[], uint256[], uint256[], bool[]) {
-        (uint256[] memory fromTimes, uint256[] memory toTimes, uint256[] memory expiryTimes, bool[] memory canBuyFromSTOs)
-          = _investorsData(investors);
+        (uint256[] fromTimes, uint256[] toTimes, uint256[] expiryTimes, bool[] canBuyFromSTOs) = _investorsData(investors);
         return (investors, fromTimes, toTimes, expiryTimes, canBuyFromSTOs);
 
     }
@@ -353,11 +345,11 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
     /**
      * @dev Returns list of specified investors data
      */
-    function getInvestorsData(address[] _investors) external view returns(uint256[], uint256[], uint256[], bool[]) {
+    function getInvestorsData(address[] calldata _investors) external view returns(uint256[], uint256[], uint256[], bool[]) {
         return _investorsData(_investors);
     }
 
-    function _investorsData(address[] _investors) internal view returns(uint256[], uint256[], uint256[], bool[]) {
+    function _investorsData(address[] memory _investors) internal view returns(uint256[], uint256[], uint256[], bool[]) {
         uint256[] memory fromTimes = new uint256[](_investors.length);
         uint256[] memory toTimes = new uint256[](_investors.length);
         uint256[] memory expiryTimes = new uint256[](_investors.length);

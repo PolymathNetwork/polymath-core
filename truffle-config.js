@@ -57,11 +57,17 @@ module.exports = {
       gasPrice: 0x01      // <-- Use this low gas price
     }
   },
-  solc: {
-    optimizer: {
-      enabled: true,
-      runs: 200,
-    },
+  compilers: {
+    solc: {
+      version: "native",  
+      //docker: true,
+      settings: {
+        optimizer: {
+          enabled: true, 
+          runs: 200    
+        }
+      }
+    }
   },
   mocha: {
     enableTimeouts: false

@@ -1,10 +1,9 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 /**
  * @title Interface to be implemented by all permission manager modules
  */
 interface IPermissionManager {
-
     /**
     * @notice Used to check the permission on delegate corresponds to module contract address
     * @param _delegate Ethereum address of the delegate
@@ -42,13 +41,7 @@ interface IPermissionManager {
     * @param _valid Bool flag use to switch on/off the permission
     * @return bool
     */
-    function changePermission(
-        address _delegate,
-        address _module,
-        bytes32 _perm,
-        bool _valid
-    )
-    external;
+    function changePermission(address _delegate, address _module, bytes32 _perm, bool _valid) external;
 
     /**
     * @notice Used to change one or more permissions for a single delegate at once
@@ -60,11 +53,10 @@ interface IPermissionManager {
     */
     function changePermissionMulti(
         address _delegate,
-        address[] _modules,
-        bytes32[] _perms,
-        bool[] _valids
-    )
-    external;
+        address[] calldata _modules,
+        bytes32[] calldata _perms,
+        bool[] calldata _valids
+    ) external;
 
     /**
     * @notice Used to return all delegates with a given permission and module
@@ -74,7 +66,7 @@ interface IPermissionManager {
     */
     function getAllDelegatesWithPerm(address _module, bytes32 _perm) external view returns(address[]);
 
-     /**
+    /**
     * @notice Used to return all permission of a single or multiple module
     * @dev possible that function get out of gas is there are lot of modules and perm related to them
     * @param _delegate Ethereum address of the delegate
@@ -82,7 +74,7 @@ interface IPermissionManager {
     * @return address[] the address array of Modules this delegate has permission
     * @return bytes32[] the permission array of the corresponding Modules
     */
-    function getAllModulesAndPermsFromTypes(address _delegate, uint8[] _types) external view returns(address[], bytes32[]);
+    function getAllModulesAndPermsFromTypes(address _delegate, uint8[] calldata _types) external view returns(address[], bytes32[]);
 
     /**
     * @notice Used to get the Permission flag related the `this` contract

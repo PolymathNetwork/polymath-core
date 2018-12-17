@@ -1,12 +1,11 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 /**
  * @title Storage layout for the ISTO contract
  */
 contract ISTOStorage {
-
-    mapping (uint8 => bool) public fundRaiseTypes;
-    mapping (uint8 => uint256) public fundsRaised;
+    mapping(uint8 => bool) public fundRaiseTypes;
+    mapping(uint8 => uint256) public fundsRaised;
 
     // Start time of the STO
     uint256 public startTime;
@@ -18,7 +17,7 @@ contract ISTOStorage {
     uint256 public investorCount;
     // Address where ETH & POLY funds are delivered
     address public wallet;
-     // Final amount of tokens sold
+    // Final amount of tokens sold
     uint256 public totalTokensSold;
 
 }

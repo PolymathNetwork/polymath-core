@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "./ITransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
@@ -29,52 +29,31 @@ contract ManualApprovalTransferManager is ITransferManager {
     }
 
     //Store mappings of address => address with ManualApprovals
-    mapping (address => mapping (address => ManualApproval)) public manualApprovals;
+    mapping(address => mapping(address => ManualApproval)) public manualApprovals;
 
     //Store mappings of address => address with ManualBlockings
-    mapping (address => mapping (address => ManualBlocking)) public manualBlockings;
+    mapping(address => mapping(address => ManualBlocking)) public manualBlockings;
 
-    event AddManualApproval(
-        address indexed _from,
-        address indexed _to,
-        uint256 _allowance,
-        uint256 _expiryTime,
-        address indexed _addedBy
-    );
+    event AddManualApproval(address indexed _from, address indexed _to, uint256 _allowance, uint256 _expiryTime, address indexed _addedBy);
 
-    event AddManualBlocking(
-        address indexed _from,
-        address indexed _to,
-        uint256 _expiryTime,
-        address indexed _addedBy
-    );
+    event AddManualBlocking(address indexed _from, address indexed _to, uint256 _expiryTime, address indexed _addedBy);
 
-    event RevokeManualApproval(
-        address indexed _from,
-        address indexed _to,
-        address indexed _addedBy
-    );
+    event RevokeManualApproval(address indexed _from, address indexed _to, address indexed _addedBy);
 
-    event RevokeManualBlocking(
-        address indexed _from,
-        address indexed _to,
-        address indexed _addedBy
-    );
+    event RevokeManualBlocking(address indexed _from, address indexed _to, address indexed _addedBy);
 
     /**
      * @notice Constructor
      * @param _securityToken Address of the security token
      */
-    constructor (address _securityToken, address _polyToken)
-    public
-    Module(_securityToken, _polyToken)
-    {
+    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
+
     }
 
     /**
      * @notice This function returns the signature of configure function
      */
-    function getInitFunction() public pure returns (bytes4) {
+    function getInitFunction() public pure returns(bytes4) {
         return bytes4(0);
     }
 
@@ -84,7 +63,13 @@ contract ManualApprovalTransferManager is ITransferManager {
      * @param _amount The amount of tokens to transfer
      * @param _isTransfer Whether or not this is an actual transfer or just a test to see if the tokens would be transferrable
      */
-    function verifyTransfer(address _from, address _to, uint256 _amount, bytes /* _data */, bool _isTransfer) public returns(Result) {
+    function verifyTransfer(
+        address _from,
+        address _to,
+        uint256 _amount,
+        bytes, /* _data */
+        bool _isTransfer
+    ) public returns(Result) {
         // function must only be called by the associated security token if _isTransfer == true
         require(_isTransfer == false || msg.sender == securityToken, "Sender is not the owner");
         // manual blocking takes precidence over manual approval

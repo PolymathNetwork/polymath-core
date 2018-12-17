@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "../../interfaces/IBoot.sol";
 import "../../proxy/USDTieredSTOProxy.sol";
@@ -9,7 +9,6 @@ import "../../libraries/Util.sol";
  * @title Factory for deploying CappedSTO module
  */
 contract USDTieredSTOFactory is ModuleFactory {
-
     address public logicContract;
 
     /**
@@ -18,9 +17,12 @@ contract USDTieredSTOFactory is ModuleFactory {
      * @param _usageCost Usage cost of the module
      * @param _subscriptionCost Subscription cost of the module
      */
-    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _logicContract) public
-    ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
-    {
+    constructor(
+        uint256 _setupCost,
+        uint256 _usageCost,
+        uint256 _subscriptionCost,
+        address _logicContract
+    ) public ModuleFactory(_setupCost, _usageCost, _subscriptionCost) {
         require(_logicContract != address(0), "0x address is not allowed");
         logicContract = _logicContract;
         version = "2.1.0";
@@ -32,7 +34,7 @@ contract USDTieredSTOFactory is ModuleFactory {
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
 
-     /**
+    /**
      * @notice Used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IModuleRegistry.sol";
@@ -41,7 +41,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
 
     // Emit when network becomes paused
     event Pause(uint256 _timestammp);
-     // Emit when network becomes unpaused
+    // Emit when network becomes unpaused
     event Unpause(uint256 _timestamp);
     // Emit when Module is used by the SecurityToken
     event ModuleUsed(address indexed _moduleFactory, address indexed _securityToken);
@@ -62,7 +62,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @dev Throws if called by any account other than the owner.
      */
     modifier onlyOwner() {
-        require(msg.sender == owner(),"sender must be owner");
+        require(msg.sender == owner(), "sender must be owner");
         _;
     }
 
@@ -70,8 +70,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @notice Modifier to make a function callable only when the contract is not paused.
      */
     modifier whenNotPausedOrOwner() {
-        if (msg.sender == owner())
-            _;
+        if (msg.sender == owner()) _;
         else {
             require(!isPaused(), "Already paused");
             _;
@@ -99,13 +98,12 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     /////////////////////////////
 
     // Constructor
-    constructor () public
-    {
+    constructor() public {
 
     }
 
     function initialize(address _polymathRegistry, address _owner) external payable {
-        require(!getBool(Encoder.getKey("initialised")),"already initialized");
+        require(!getBool(Encoder.getKey("initialised")), "already initialized");
         require(_owner != address(0) && _polymathRegistry != address(0), "0x address is invalid");
         set(Encoder.getKey("polymathRegistry"), _polymathRegistry);
         set(Encoder.getKey("owner"), _owner);
@@ -124,7 +122,10 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         // This if statement is required to be able to add modules from the token proxy contract during deployment
         if (ISecurityTokenRegistry(getAddress(Encoder.getKey("securityTokenRegistry"))).isSecurityToken(msg.sender)) {
             if (IFeatureRegistry(getAddress(Encoder.getKey("featureRegistry"))).getFeatureStatus("customModulesAllowed")) {
-                require(getBool(Encoder.getKey("verified", _moduleFactory)) || IOwnable(_moduleFactory).owner() == IOwnable(msg.sender).owner(),"ModuleFactory must be verified or SecurityToken owner must be ModuleFactory owner");
+                require(
+                    getBool(Encoder.getKey("verified", _moduleFactory)) || IOwnable(_moduleFactory).owner() == IOwnable(msg.sender).owner(),
+                    "ModuleFactory must be verified or SecurityToken owner must be ModuleFactory owner"
+                );
             } else {
                 require(getBool(Encoder.getKey("verified", _moduleFactory)), "ModuleFactory must be verified");
             }
@@ -149,7 +150,10 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      */
     function registerModule(address _moduleFactory) external whenNotPausedOrOwner {
         if (IFeatureRegistry(getAddress(Encoder.getKey("featureRegistry"))).getFeatureStatus("customModulesAllowed")) {
-            require(msg.sender == IOwnable(_moduleFactory).owner() || msg.sender == owner(),"msg.sender must be the Module Factory owner or registry curator");
+            require(
+                msg.sender == IOwnable(_moduleFactory).owner() || msg.sender == owner(),
+                "msg.sender must be the Module Factory owner or registry curator"
+            );
         } else {
             require(msg.sender == owner(), "Only owner allowed to register modules");
         }
@@ -173,7 +177,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
             uint256(getArrayAddress(Encoder.getKey("moduleList", uint256(moduleType))).length)
         );
         pushArray(Encoder.getKey("moduleList", uint256(moduleType)), _moduleFactory);
-        emit ModuleRegistered (_moduleFactory, IOwnable(_moduleFactory).owner());
+        emit ModuleRegistered(_moduleFactory, IOwnable(_moduleFactory).owner());
     }
 
     /**
@@ -254,7 +258,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @return list of tags
      * @return corresponding list of module factories
      */
-    function _tagsByModules(address[] _modules) internal view returns(bytes32[], address[]) {
+    function _tagsByModules(address[] memory _modules) internal view returns(bytes32[], address[]) {
         uint256 counter = 0;
         uint256 i;
         uint256 j;
@@ -300,37 +304,38 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @param _securityToken is the address of SecurityToken
      * @return address array that contains the list of available addresses of module factory contracts.
      */
-    function getModulesByTypeAndToken(uint8 _moduleType, address _securityToken) public view returns (address[]) {
+    function getModulesByTypeAndToken(uint8 _moduleType, address _securityToken) public view returns(address[]) {
         uint256 _len = getArrayAddress(Encoder.getKey("moduleList", uint256(_moduleType))).length;
         address[] memory _addressList = getArrayAddress(Encoder.getKey("moduleList", uint256(_moduleType)));
-        bool _isCustomModuleAllowed = IFeatureRegistry(getAddress(Encoder.getKey("featureRegistry"))).getFeatureStatus("customModulesAllowed");
+        bool _isCustomModuleAllowed = IFeatureRegistry(getAddress(Encoder.getKey("featureRegistry"))).getFeatureStatus(
+            "customModulesAllowed"
+        );
         uint256 counter = 0;
         for (uint256 i = 0; i < _len; i++) {
             if (_isCustomModuleAllowed) {
-                if (IOwnable(_addressList[i]).owner() == IOwnable(_securityToken).owner() || getBool(Encoder.getKey("verified", _addressList[i])))
-                    if(_isCompatibleModule(_addressList[i], _securityToken))
-                        counter++;
-            }
-            else if (getBool(Encoder.getKey("verified", _addressList[i]))) {
-                if(_isCompatibleModule(_addressList[i], _securityToken))
-                    counter++;
+                if (IOwnable(_addressList[i]).owner() == IOwnable(_securityToken).owner() || getBool(
+                    Encoder.getKey("verified", _addressList[i])
+                )) if (_isCompatibleModule(_addressList[i], _securityToken)) counter++;
+            } else if (getBool(Encoder.getKey("verified", _addressList[i]))) {
+                if (_isCompatibleModule(_addressList[i], _securityToken)) counter++;
             }
         }
         address[] memory _tempArray = new address[](counter);
         counter = 0;
         for (uint256 j = 0; j < _len; j++) {
             if (_isCustomModuleAllowed) {
-                if (IOwnable(_addressList[j]).owner() == IOwnable(_securityToken).owner() || getBool(Encoder.getKey("verified", _addressList[j]))) {
-                    if(_isCompatibleModule(_addressList[j], _securityToken)) {
+                if (IOwnable(_addressList[j]).owner() == IOwnable(_securityToken).owner() || getBool(
+                    Encoder.getKey("verified", _addressList[j])
+                )) {
+                    if (_isCompatibleModule(_addressList[j], _securityToken)) {
                         _tempArray[counter] = _addressList[j];
-                        counter ++;
+                        counter++;
                     }
                 }
-            }
-            else if (getBool(Encoder.getKey("verified", _addressList[j]))) {
-                if(_isCompatibleModule(_addressList[j], _securityToken)) {
+            } else if (getBool(Encoder.getKey("verified", _addressList[j]))) {
+                if (_isCompatibleModule(_addressList[j], _securityToken)) {
                     _tempArray[counter] = _addressList[j];
-                    counter ++;
+                    counter++;
                 }
             }
         }
@@ -345,7 +350,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         require(_tokenContract != address(0), "0x address is invalid");
         IERC20 token = IERC20(_tokenContract);
         uint256 balance = token.balanceOf(address(this));
-        require(token.transfer(owner(), balance),"token transfer failed");
+        require(token.transfer(owner(), balance), "token transfer failed");
     }
 
     /**

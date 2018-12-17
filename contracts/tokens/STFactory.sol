@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "./SecurityToken.sol";
 import "../interfaces/ISTFactory.sol";
@@ -7,10 +7,9 @@ import "../interfaces/ISTFactory.sol";
  * @title Proxy for deploying SecurityToken instances
  */
 contract STFactory is ISTFactory {
-
     address public transferManagerFactory;
 
-    constructor (address _transferManagerFactory) public {
+    constructor(address _transferManagerFactory) public {
         transferManagerFactory = _transferManagerFactory;
     }
 
@@ -26,12 +25,12 @@ contract STFactory is ISTFactory {
         address _issuer,
         bool _divisible,
         address _polymathRegistry
-        ) external returns (address) {
+    ) external returns(address) {
         address newSecurityTokenAddress = new SecurityToken(
             _name,
             _symbol,
             _decimals,
-            _divisible ? 1 : uint256(10)**_decimals,
+            _divisible ? 1 : uint256(10) ** _decimals,
             _tokenDetails,
             _polymathRegistry
         );

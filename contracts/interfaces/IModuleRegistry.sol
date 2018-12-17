@@ -1,10 +1,9 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 /**
  * @title Interface for the Polymath Module Registry contract
  */
 interface IModuleRegistry {
-
     /**
      * @notice Called by a security token to notify the registry it is using a module
      * @param _moduleFactory is the address of the relevant module factory
@@ -68,7 +67,7 @@ interface IModuleRegistry {
      * @param _securityToken is the address of SecurityToken
      * @return address array that contains the list of available addresses of module factory contracts.
      */
-    function getModulesByTypeAndToken(uint8 _moduleType, address _securityToken) external view returns (address[]);
+    function getModulesByTypeAndToken(uint8 _moduleType, address _securityToken) external view returns(address[]);
 
     /**
      * @notice Use to get the latest contract address of the regstries

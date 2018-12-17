@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "./ReclaimTokens.sol";
 import "./interfaces/IFeatureRegistry.sol";
@@ -7,8 +7,7 @@ import "./interfaces/IFeatureRegistry.sol";
  * @title Registry for managing polymath feature switches
  */
 contract FeatureRegistry is IFeatureRegistry, ReclaimTokens {
-
-    mapping (bytes32 => bool) public featureStatus;
+    mapping(bytes32 => bool) public featureStatus;
 
     event ChangeFeatureStatus(string _nameKey, bool _newStatus);
 

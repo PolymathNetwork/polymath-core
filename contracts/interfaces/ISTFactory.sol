@@ -1,10 +1,9 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 /**
  * @title Interface for security token proxy deployment
  */
 interface ISTFactory {
-
     /**
      * @notice Deploys the token and adds default modules like permission manager and transfer manager.
      * Future versions of the proxy can attach different modules or pass some other paramters.
@@ -24,7 +23,5 @@ interface ISTFactory {
         address _issuer,
         bool _divisible,
         address _polymathRegistry
-    )
-        external
-        returns (address);
+    ) external returns(address);
 }

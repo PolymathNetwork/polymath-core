@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "./ISTO.sol";
 import "../../interfaces/ISecurityToken.sol";
@@ -7,7 +7,6 @@ import "../../interfaces/ISecurityToken.sol";
  * @title STO module for sample implementation of a different crowdsale module
  */
 contract DummySTO is ISTO {
-
     bytes32 public constant ADMIN = "ADMIN";
 
     uint256 public investorCount;
@@ -17,15 +16,14 @@ contract DummySTO is ISTO {
 
     event GenerateTokens(address _investor, uint256 _amount);
 
-    mapping (address => uint256) public investors;
+    mapping(address => uint256) public investors;
 
     /**
      * @notice Constructor
      * @param _securityToken Address of the security token
      */
-    constructor (address _securityToken, address _polyToken) public
-    Module(_securityToken, _polyToken)
-    {
+    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
+
     }
 
     /**
@@ -45,7 +43,7 @@ contract DummySTO is ISTO {
     /**
      * @notice This function returns the signature of configure function
      */
-    function getInitFunction() public pure returns (bytes4) {
+    function getInitFunction() public pure returns(bytes4) {
         return bytes4(keccak256("configure(uint256,uint256,uint256,string)"));
     }
 
@@ -63,20 +61,20 @@ contract DummySTO is ISTO {
         }
         //TODO: Add SafeMath maybe
         investors[_investor] = investors[_investor] + _amount;
-        emit GenerateTokens (_investor, _amount);
+        emit GenerateTokens(_investor, _amount);
     }
 
     /**
      * @notice Returns the total no. of investors
      */
-    function getNumberInvestors() public view returns (uint256) {
+    function getNumberInvestors() public view returns(uint256) {
         return investorCount;
     }
 
     /**
      * @notice Returns the total no. of investors
      */
-    function getTokensSold() public view returns (uint256) {
+    function getTokensSold() public view returns(uint256) {
         return 0;
     }
 

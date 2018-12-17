@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "./ManualApprovalTransferManager.sol";
 import "../ModuleFactory.sol";
@@ -7,16 +7,17 @@ import "../ModuleFactory.sol";
  * @title Factory for deploying ManualApprovalTransferManager module
  */
 contract ManualApprovalTransferManagerFactory is ModuleFactory {
-
     /**
      * @notice Constructor
      * @param _setupCost Setup cost of the module
      * @param _usageCost Usage cost of the module
      * @param _subscriptionCost Subscription cost of the module
      */
-    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-    ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
-    {
+    constructor(
+        uint256 _setupCost,
+        uint256 _usageCost,
+        uint256 _subscriptionCost
+    ) public ModuleFactory(_setupCost, _usageCost, _subscriptionCost) {
         version = "2.0.1";
         name = "ManualApprovalTransferManager";
         title = "Manual Approval Transfer Manager";
@@ -25,11 +26,13 @@ contract ManualApprovalTransferManagerFactory is ModuleFactory {
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
 
-     /**
+    /**
      * @notice used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
-    function deploy(bytes /* _data */) external returns(address) {
+    function deploy(
+        bytes /* _data */
+    ) external returns(address) {
         address polyToken = _takeFee();
         address manualTransferManager = new ManualApprovalTransferManager(msg.sender, polyToken);
         /*solium-disable-next-line security/no-block-members*/
@@ -63,6 +66,5 @@ contract ManualApprovalTransferManagerFactory is ModuleFactory {
         availableTags[1] = "Transfer Restriction";
         return availableTags;
     }
-
 
 }

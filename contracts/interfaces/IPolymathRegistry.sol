@@ -1,8 +1,6 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
-    
 interface IPolymathRegistry {
-
     /**
      * @notice Returns the contract address
      * @param _nameKey is the key for the contract address mapping
@@ -11,4 +9,3 @@ interface IPolymathRegistry {
     function getAddress(string _nameKey) external view returns(address);
 
 }
-    

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "./ScheduledCheckpoint.sol";
 import "../../ModuleFactory.sol";
@@ -7,16 +7,17 @@ import "../../ModuleFactory.sol";
  * @title Factory for deploying EtherDividendCheckpoint module
  */
 contract ScheduledCheckpointFactory is ModuleFactory {
-
     /**
      * @notice Constructor
      * @param _setupCost Setup cost of the module
      * @param _usageCost Usage cost of the module
      * @param _subscriptionCost Subscription cost of the module
      */
-    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-    ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
-    {
+    constructor(
+        uint256 _setupCost,
+        uint256 _usageCost,
+        uint256 _subscriptionCost
+    ) public ModuleFactory(_setupCost, _usageCost, _subscriptionCost) {
         version = "1.0.0";
         name = "ScheduledCheckpoint";
         title = "Schedule Checkpoints";
@@ -29,7 +30,9 @@ contract ScheduledCheckpointFactory is ModuleFactory {
      * @notice used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
-    function deploy(bytes /* _data */) external returns(address) {
+    function deploy(
+        bytes /* _data */
+    ) external returns(address) {
         address polyToken = _takeFee();
         address scheduledCheckpoint = new ScheduledCheckpoint(msg.sender, polyToken);
         emit GenerateModuleFromFactory(scheduledCheckpoint, getName(), address(this), msg.sender, setupCost, now);
@@ -63,7 +66,7 @@ contract ScheduledCheckpointFactory is ModuleFactory {
     /**
      * @notice Get the title of the Module
      */
-    function getTitle() external  view returns(string) {
+    function getTitle() external view returns(string) {
         return title;
     }
 
@@ -77,7 +80,7 @@ contract ScheduledCheckpointFactory is ModuleFactory {
     /**
      * @notice Get the setup cost of the module
      */
-    function getSetupCost() external view returns (uint256) {
+    function getSetupCost() external view returns(uint256) {
         return setupCost;
     }
 

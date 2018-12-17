@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "../external/oraclizeAPI.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
@@ -11,7 +11,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     /*solium-disable-next-line max-len*/
     string public oracleURL = "[URL] json(https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?id=2496&convert=USD&CMC_PRO_API_KEY=${[decrypt] BCA0Bqxmn3jkSENepaHxQv09Z/vGdEO9apO+B9RplHyV3qOL/dw5Indlei3hoXrGk9G14My8MFpHJycB7UoVnl+4mlzEsjTlS2UBAYVrl0fAepfiSyM30/GMZAoJmDagY+0YyNZvpkgXn86Q/59Bi48PWEet}).data.\"2496\".quote.USD.price";
     string public oracleQueryType = "nested";
-    uint256 public sanityBounds = 20*10**16;
+    uint256 public sanityBounds = 20 * 10 ** 16;
     uint256 public gasLimit = 100000;
     uint256 public oraclizeTimeTolerance = 5 minutes;
     uint256 public staleTime = 6 hours;
@@ -20,10 +20,10 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     uint256 public latestUpdate;
     uint256 public latestScheduledUpdate;
 
-    mapping (bytes32 => uint256) public requestIds;
-    mapping (bytes32 => bool) public ignoreRequestIds;
+    mapping(bytes32 => uint256) public requestIds;
+    mapping(bytes32 => bool) public ignoreRequestIds;
 
-    mapping (address => bool) public admin;
+    mapping(address => bool) public admin;
 
     bool public freezeOracle;
 
@@ -32,7 +32,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     event AdminSet(address _admin, bool _valid, uint256 _time);
     event StalePriceUpdate(bytes32 _queryId, uint256 _time, string _result);
 
-    modifier isAdminOrOwner {
+    modifier isAdminOrOwner() {
         require(admin[msg.sender] || msg.sender == owner(), "Address is not admin or owner");
         _;
     }
@@ -40,9 +40,9 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     /**
     * @notice Constructor - accepts ETH to initialise a balance for subsequent Oraclize queries
     */
-    constructor() payable public {
+    constructor() public payable {
         // Use 50 gwei for now
-        oraclize_setCustomGasPrice(50*10**9);
+        oraclize_setCustomGasPrice(50 * 10 ** 9);
     }
 
     /**
@@ -63,7 +63,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
         /*solium-disable-next-line security/no-block-members*/
         require(requestIds[_requestId] <= now + oraclizeTimeTolerance, "Result is early");
         uint256 newPOLYUSD = parseInt(_result, 18);
-        uint256 bound = POLYUSD.mul(sanityBounds).div(10**18);
+        uint256 bound = POLYUSD.mul(sanityBounds).div(10 ** 18);
         if (latestUpdate != 0) {
             require(newPOLYUSD <= POLYUSD.add(bound), "Result is too large");
             require(newPOLYUSD >= POLYUSD.sub(bound), "Result is too small");
@@ -77,7 +77,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     * @notice Allows owner to schedule future Oraclize calls
     * @param _times UNIX timestamps to schedule Oraclize calls as of. Empty list means trigger an immediate query.
     */
-    function schedulePriceUpdatesFixed(uint256[] _times) public payable isAdminOrOwner {
+    function schedulePriceUpdatesFixed(uint256[] memory _times) public payable isAdminOrOwner {
         bytes32 requestId;
         uint256 maximumScheduledUpdated;
         if (_times.length == 0) {
@@ -215,7 +215,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     * @param _requestIds Oraclize queryIds (as logged out when Oraclize query is scheduled)
     * @param _ignore whether or not they should be ignored
     */
-    function setIgnoreRequestIds(bytes32[] _requestIds, bool[] _ignore) public onlyOwner {
+    function setIgnoreRequestIds(bytes32[] memory _requestIds, bool[] memory _ignore) public onlyOwner {
         require(_requestIds.length == _ignore.length, "Incorrect parameter lengths");
         for (uint256 i = 0; i < _requestIds.length; i++) {
             ignoreRequestIds[_requestIds[i]] = _ignore[i];

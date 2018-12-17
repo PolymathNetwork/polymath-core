@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "../../Burn/IBurn.sol";
 import "../../Module.sol";
@@ -11,7 +11,7 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 contract TrackedRedemption is IBurn, Module {
     using SafeMath for uint256;
 
-    mapping (address => uint256) redeemedTokens;
+    mapping(address => uint256) redeemedTokens;
 
     event Redeemed(address _investor, uint256 _value, uint256 _timestamp);
 
@@ -19,15 +19,14 @@ contract TrackedRedemption is IBurn, Module {
      * @notice Constructor
      * @param _securityToken Address of the security token
      */
-    constructor (address _securityToken, address _polyToken) public
-    Module(_securityToken, _polyToken)
-    {
+    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
+
     }
 
     /**
      * @notice This function returns the signature of configure function
      */
-    function getInitFunction() public pure returns (bytes4) {
+    function getInitFunction() public pure returns(bytes4) {
         return bytes4(0);
     }
 

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "./../../Checkpoint/ICheckpoint.sol";
 import "../../TransferManager/ITransferManager.sol";
@@ -24,7 +24,7 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
 
     bytes32[] public names;
 
-    mapping (bytes32 => Schedule) public schedules;
+    mapping(bytes32 => Schedule) public schedules;
 
     event AddSchedule(bytes32 _name, uint256 _startTime, uint256 _interval, uint256 _timestamp);
     event RemoveSchedule(bytes32 _name, uint256 _timestamp);
@@ -33,15 +33,14 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
      * @notice Constructor
      * @param _securityToken Address of the security token
      */
-    constructor (address _securityToken, address _polyToken) public
-    Module(_securityToken, _polyToken)
-    {
+    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
+
     }
 
     /**
      * @notice This function returns the signature of configure function
      */
-    function getInitFunction() public pure returns (bytes4) {
+    function getInitFunction() public pure returns(bytes4) {
         return bytes4(0);
     }
 
@@ -79,13 +78,18 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
         emit RemoveSchedule(_name, now);
     }
 
-
     /**
      * @notice Used to create checkpoints that correctly reflect balances
      * @param _isTransfer whether or not an actual transfer is occuring
      * @return always returns Result.NA
      */
-    function verifyTransfer(address /* _from */, address /* _to */, uint256 /* _amount */, bytes /* _data */, bool _isTransfer) public returns(Result) {
+    function verifyTransfer(
+        address, /* _from */
+        address, /* _to */
+        uint256, /* _amount */
+        bytes, /* _data */
+        bool _isTransfer
+    ) public returns(Result) {
         require(_isTransfer == false || msg.sender == securityToken, "Sender is not owner");
         if (paused || !_isTransfer) {
             return Result.NA;
@@ -98,16 +102,8 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
      * @notice gets schedule details
      * @param _name name of the schedule
      */
-    function getSchedule(bytes32 _name) view external returns(bytes32, uint256, uint256, uint256, uint256[], uint256[], uint256[]) {
-        return (
-            schedules[_name].name,
-            schedules[_name].startTime,
-            schedules[_name].nextTime,
-            schedules[_name].interval,
-            schedules[_name].checkpointIds,
-            schedules[_name].timestamps,
-            schedules[_name].periods
-        );
+    function getSchedule(bytes32 _name) external view returns(bytes32, uint256, uint256, uint256, uint256[], uint256[], uint256[]) {
+        return (schedules[_name].name, schedules[_name].startTime, schedules[_name].nextTime, schedules[_name].interval, schedules[_name].checkpointIds, schedules[_name].timestamps, schedules[_name].periods);
     }
 
     /**
@@ -133,7 +129,7 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
     /**
      * @notice manually triggers update outside of transfer request for all schedules (can be used to reduce user gas costs)
      */
-    function updateAll() onlyOwner external {
+    function updateAll() external onlyOwner {
         _updateAll();
     }
 
@@ -147,7 +143,7 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
     /**
      * @notice Return the permissions flag that are associated with CountTransferManager
      */
-    function getPermissions() view external returns(bytes32[]) {
+    function getPermissions() external view returns(bytes32[]) {
         bytes32[] memory allPermissions = new bytes32[](0);
         return allPermissions;
     }

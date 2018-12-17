@@ -1,5 +1,4 @@
-pragma solidity ^0.4.24;
-
+pragma solidity ^0.5.0;
 
 /**
  * @title Ownable
@@ -10,7 +9,7 @@ interface IOwnable {
     /**
     * @dev Returns owner
     */
-    function owner() external view returns (address);
+    function owner() external view returns(address);
 
     /**
     * @dev Allows the current owner to relinquish control of the contract.

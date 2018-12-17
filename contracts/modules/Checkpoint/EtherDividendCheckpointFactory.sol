@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "../../proxy/EtherDividendCheckpointProxy.sol";
 import "../ModuleFactory.sol";
@@ -7,7 +7,6 @@ import "../ModuleFactory.sol";
  * @title Factory for deploying EtherDividendCheckpoint module
  */
 contract EtherDividendCheckpointFactory is ModuleFactory {
-
     address public logicContract;
 
     /**
@@ -17,9 +16,12 @@ contract EtherDividendCheckpointFactory is ModuleFactory {
      * @param _subscriptionCost Subscription cost of the module
      * @param _logicContract Contract address that contains the logic related to `description`
      */
-    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _logicContract) public
-    ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
-    {
+    constructor(
+        uint256 _setupCost,
+        uint256 _usageCost,
+        uint256 _subscriptionCost,
+        address _logicContract
+    ) public ModuleFactory(_setupCost, _usageCost, _subscriptionCost) {
         require(_logicContract != address(0), "Invalid logic contract");
         version = "2.1.0";
         name = "EtherDividendCheckpoint";
@@ -34,7 +36,9 @@ contract EtherDividendCheckpointFactory is ModuleFactory {
      * @notice Used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
-    function deploy(bytes /* _data */) external returns(address) {
+    function deploy(
+        bytes /* _data */
+    ) external returns(address) {
         address polyToken = _takeFee();
         address ethDividendCheckpoint = new EtherDividendCheckpointProxy(msg.sender, polyToken, logicContract);
         /*solium-disable-next-line security/no-block-members*/

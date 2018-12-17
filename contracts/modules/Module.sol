@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "../RegistryUpdater.sol";
 import "../interfaces/IModule.sol";
@@ -12,40 +12,41 @@ import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
  * @notice Contract is abstract
  */
 contract Module is IModule, ModuleStorage {
-
     /**
      * @notice Constructor
      * @param _securityToken Address of the security token
      */
-    constructor (address _securityToken, address _polyToken) public
-    ModuleStorage(_securityToken, _polyToken)
-    {
+    constructor(address _securityToken, address _polyToken) public ModuleStorage(_securityToken, _polyToken) {
+
     }
 
     //Allows owner, factory or permissioned delegate
     modifier withPerm(bytes32 _perm) {
         bool isOwner = msg.sender == Ownable(securityToken).owner();
         bool isFactory = msg.sender == factory;
-        require(isOwner||isFactory||ISecurityToken(securityToken).checkPermission(msg.sender, address(this), _perm), "Permission check failed");
+        require(
+            isOwner || isFactory || ISecurityToken(securityToken).checkPermission(msg.sender, address(this), _perm),
+            "Permission check failed"
+        );
         _;
     }
 
-    modifier onlyOwner {
+    modifier onlyOwner() {
         require(msg.sender == Ownable(securityToken).owner(), "Sender is not owner");
         _;
     }
 
-    modifier onlyFactory {
+    modifier onlyFactory() {
         require(msg.sender == factory, "Sender is not factory");
         _;
     }
 
-    modifier onlyFactoryOwner {
+    modifier onlyFactoryOwner() {
         require(msg.sender == Ownable(factory).owner(), "Sender is not factory owner");
         _;
     }
 
-    modifier onlyFactoryOrOwner {
+    modifier onlyFactoryOrOwner() {
         require((msg.sender == Ownable(securityToken).owner()) || (msg.sender == factory), "Sender is not factory or owner");
         _;
     }

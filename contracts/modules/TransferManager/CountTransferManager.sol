@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "./ITransferManager.sol";
 
@@ -6,7 +6,6 @@ import "./ITransferManager.sol";
  * @title Transfer Manager for limiting maximum number of token holders
  */
 contract CountTransferManager is ITransferManager {
-
     // The maximum number of concurrent token holders
     uint256 public maxHolderCount;
 
@@ -18,10 +17,8 @@ contract CountTransferManager is ITransferManager {
      * @notice Constructor
      * @param _securityToken Address of the security token
      */
-    constructor (address _securityToken, address _polyToken)
-    public
-    Module(_securityToken, _polyToken)
-    {
+    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
+
     }
 
     /** @notice Used to verify the transfer transaction and prevent a transfer if it passes the allowed amount of token holders
@@ -33,12 +30,9 @@ contract CountTransferManager is ITransferManager {
         address _from,
         address _to,
         uint256 _amount,
-        bytes /* _data */,
+        bytes, /* _data */
         bool /* _isTransfer */
-    )
-        public
-        returns(Result)
-    {
+    ) public returns(Result) {
         if (!paused) {
             if (maxHolderCount < ISecurityToken(securityToken).getInvestorCount()) {
                 // Allow transfers to existing maxHolders
@@ -72,7 +66,7 @@ contract CountTransferManager is ITransferManager {
     /**
      * @notice This function returns the signature of configure function
      */
-    function getInitFunction() public pure returns (bytes4) {
+    function getInitFunction() public pure returns(bytes4) {
         return bytes4(keccak256("configure(uint256)"));
     }
 

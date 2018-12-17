@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "./MockBurnFactory.sol";
 import "../modules/ModuleFactory.sol";
@@ -9,16 +9,18 @@ import "../libraries/Util.sol";
  */
 
 contract MockWrongTypeFactory is MockBurnFactory {
-
     /**
     * @notice Constructor
     * @param _setupCost Setup cost of the module
     * @param _usageCost Usage cost of the module
     * @param _subscriptionCost Subscription cost of the module
     */
-    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-      MockBurnFactory(_setupCost, _usageCost, _subscriptionCost)
-    {
+    constructor(
+        uint256 _setupCost,
+        uint256 _usageCost,
+        uint256 _subscriptionCost
+    ) public MockBurnFactory(_setupCost, _usageCost, _subscriptionCost) {
+
     }
 
     /**

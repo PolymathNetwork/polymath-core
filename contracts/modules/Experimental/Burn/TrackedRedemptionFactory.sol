@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "./TrackedRedemption.sol";
 import "../../ModuleFactory.sol";
@@ -7,16 +7,17 @@ import "../../ModuleFactory.sol";
  * @title Factory for deploying GeneralTransferManager module
  */
 contract TrackedRedemptionFactory is ModuleFactory {
-
     /**
      * @notice Constructor
      * @param _setupCost Setup cost of module
      * @param _usageCost Usage cost of module
      * @param _subscriptionCost Monthly cost of module
      */
-    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-    ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
-    {
+    constructor(
+        uint256 _setupCost,
+        uint256 _usageCost,
+        uint256 _subscriptionCost
+    ) public ModuleFactory(_setupCost, _usageCost, _subscriptionCost) {
         version = "1.0.0";
         name = "TrackedRedemption";
         title = "Tracked Redemption";
@@ -29,7 +30,9 @@ contract TrackedRedemptionFactory is ModuleFactory {
      * @notice Used to launch the Module with the help of factory
      * @return Address Contract address of the Module
      */
-    function deploy(bytes /* _data */) external returns(address) {
+    function deploy(
+        bytes /* _data */
+    ) external returns(address) {
         address polyToken = _takeFee();
         address trackedRedemption = new TrackedRedemption(msg.sender, polyToken);
         /*solium-disable-next-line security/no-block-members*/

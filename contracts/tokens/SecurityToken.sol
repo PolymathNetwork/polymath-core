@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "openzeppelin-solidity/contracts/math/Math.sol";
 import "../interfaces/IPoly.sol";
@@ -65,16 +65,16 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     address public controller;
 
     // Records added modules - module list should be order agnostic!
-    mapping (uint8 => address[]) modules;
+    mapping(uint8 => address[]) modules;
 
     // Records information about the module
-    mapping (address => TokenLib.ModuleData) modulesToData;
+    mapping(address => TokenLib.ModuleData) modulesToData;
 
     // Records added module names - module list should be order agnostic!
-    mapping (bytes32 => address[]) names;
+    mapping(bytes32 => address[]) names;
 
     // Map each investor to a series of checkpoints
-    mapping (address => TokenLib.Checkpoint[]) checkpointBalances;
+    mapping(address => TokenLib.Checkpoint[]) checkpointBalances;
 
     // List of checkpoints that relate to total supply
     TokenLib.Checkpoint[] checkpointTotalSupply;
@@ -126,16 +126,10 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         bool _verifyTransfer,
         bytes _data
     );
-    event ForceBurn(
-        address indexed _controller,
-        address indexed _from,
-        uint256 _value,
-        bool _verifyTransfer,
-        bytes _data
-    );
+    event ForceBurn(address indexed _controller, address indexed _from, uint256 _value, bool _verifyTransfer, bytes _data);
     event DisableController(uint256 _timestamp);
 
-    function _isModule(address _module, uint8 _type) internal view returns (bool) {
+    function _isModule(address _module, uint8 _type) internal view returns(bool) {
         require(modulesToData[_module].module == _module, "Wrong address");
         require(!modulesToData[_module].isArchived, "Module archived");
         for (uint256 i = 0; i < modulesToData[_module].moduleTypes.length; i++) {
@@ -195,23 +189,19 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @param _tokenDetails Details of the token that are stored off-chain
      * @param _polymathRegistry Contract address of the polymath registry
      */
-    constructor (
+    constructor(
         string _name,
         string _symbol,
         uint8 _decimals,
         uint256 _granularity,
         string _tokenDetails,
         address _polymathRegistry
-    )
-    public
-    ERC20Detailed(_name, _symbol, _decimals)
-    RegistryUpdater(_polymathRegistry)
-    {
+    ) public ERC20Detailed(_name, _symbol, _decimals) RegistryUpdater(_polymathRegistry) {
         //When it is created, the owner is the STR
         updateFromRegistry();
         tokenDetails = _tokenDetails;
         granularity = _granularity;
-        securityTokenVersion = SemanticVersion(2,0,0);
+        securityTokenVersion = SemanticVersion(2, 0, 0);
     }
 
     // /**
@@ -229,7 +219,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         address _moduleFactory,
         bytes _data,
         uint256 _maxCost,
-        uint256 _budget, 
+        uint256 _budget,
         bytes32 _label
     ) public onlyOwner nonReentrant {
         //Check that the module factory exists in the ModuleRegistry - will throw otherwise
@@ -254,7 +244,14 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
             modules[moduleTypes[i]].push(module);
         }
         modulesToData[module] = TokenLib.ModuleData(
-            moduleName, module, _moduleFactory, false, moduleTypes, moduleIndexes, names[moduleName].length, _label
+            moduleName,
+            module,
+            _moduleFactory,
+            false,
+            moduleTypes,
+            moduleIndexes,
+            names[moduleName].length,
+            _label
         );
         names[moduleName].push(module);
         //Emit log event
@@ -265,12 +262,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     /**
     * @notice addModule function will call addModuleWithLabel() with an empty label for backward compatible
     */
-    function addModule(
-        address _moduleFactory,
-        bytes _data,
-        uint256 _maxCost,
-        uint256 _budget
-    ) external { 
+    function addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256 _budget) external {
         addModuleWithLabel(_moduleFactory, _data, _maxCost, _budget, "");
     }
 
@@ -346,13 +338,8 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @return bool module archived
      * @return uint8 module type
      */
-    function getModule(address _module) external view returns (bytes32, address, address, bool, uint8[], bytes32) {
-        return (modulesToData[_module].name,
-        modulesToData[_module].module,
-        modulesToData[_module].moduleFactory,
-        modulesToData[_module].isArchived,
-        modulesToData[_module].moduleTypes,
-        modulesToData[_module].label);
+    function getModule(address _module) external view returns(bytes32, address, address, bool, uint8[], bytes32) {
+        return (modulesToData[_module].name, modulesToData[_module].module, modulesToData[_module].moduleFactory, modulesToData[_module].isArchived, modulesToData[_module].moduleTypes, modulesToData[_module].label);
     }
 
     /**
@@ -360,7 +347,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @param _name name of the module
      * @return address[] list of modules with this name
      */
-    function getModulesByName(bytes32 _name) external view returns (address[]) {
+    function getModulesByName(bytes32 _name) external view returns(address[]) {
         return names[_name];
     }
 
@@ -369,11 +356,11 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @param _type type of the module
      * @return address[] list of modules with this type
      */
-    function getModulesByType(uint8 _type) external view returns (address[]) {
+    function getModulesByType(uint8 _type) external view returns(address[]) {
         return modules[_type];
     }
 
-   /**
+    /**
     * @notice Allows the owner to withdraw unspent POLY stored by them on the ST or any ERC20 token.
     * @dev Owner can transfer POLY to the ST which will be used to pay for modules that require a POLY fee.
     * @param _tokenContract Address of the ERC20Basic compliance token
@@ -536,7 +523,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @param _value value of transfer
      * @return bool success
      */
-    function transfer(address _to, uint256 _value) public returns (bool success) {
+    function transfer(address _to, uint256 _value) public returns(bool success) {
         return transferWithData(_to, _value, "");
     }
 
@@ -547,7 +534,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @param _data data to indicate validation
      * @return bool success
      */
-    function transferWithData(address _to, uint256 _value, bytes _data) public returns (bool success) {
+    function transferWithData(address _to, uint256 _value, bytes _data) public returns(bool success) {
         require(_updateTransfer(msg.sender, _to, _value, _data), "Transfer invalid");
         require(super.transfer(_to, _value));
         return true;
@@ -621,7 +608,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         uint256 _value,
         bytes _data,
         bool _isTransfer
-    ) internal checkGranularity(_value) returns (bool) {
+    ) internal checkGranularity(_value) returns(bool) {
         if (!transfersFrozen) {
             bool isInvalid = false;
             bool isValid = false;
@@ -657,7 +644,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @param _data data to indicate validation
      * @return bool
      */
-    function verifyTransfer(address _from, address _to, uint256 _value, bytes _data) public returns (bool) {
+    function verifyTransfer(address _from, address _to, uint256 _value, bytes _data) public returns(bool) {
         return _verifyTransfer(_from, _to, _value, _data, false);
     }
 
@@ -665,7 +652,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @notice Permanently freeze minting of this security token.
      * @dev It MUST NOT be possible to increase `totalSuppy` after this function is called.
      */
-    function freezeMinting() external isMintingAllowed() isEnabled("freezeMintingAllowed") onlyOwner {
+    function freezeMinting() external isMintingAllowed isEnabled("freezeMintingAllowed") onlyOwner {
         mintingFrozen = true;
         /*solium-disable-next-line security/no-block-members*/
         emit FreezeMinting(now);
@@ -678,7 +665,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @param _value Number of tokens be minted
      * @return success
      */
-    function mint(address _investor, uint256 _value) public returns (bool success) {
+    function mint(address _investor, uint256 _value) public returns(bool success) {
         return mintWithData(_investor, _value, "");
     }
 
@@ -690,11 +677,9 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @param _data data to indicate validation
      * @return success
      */
-    function mintWithData(
-        address _investor,
-        uint256 _value,
-        bytes _data
-        ) public onlyModuleOrOwner(MINT_KEY) isMintingAllowed() returns (bool success) {
+    function mintWithData(address _investor, uint256 _value, bytes _data) public onlyModuleOrOwner(MINT_KEY) isMintingAllowed returns(
+        bool success
+    ) {
         require(_updateTransfer(address(0), _investor, _value, _data), "Transfer invalid");
         _adjustTotalSupplyCheckpoints();
         _mint(_investor, _value);
@@ -709,7 +694,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @param _values A list of number of tokens get minted and transfer to corresponding address of the investor from _investor[] list
      * @return success
      */
-    function mintMulti(address[] _investors, uint256[] _values) external returns (bool success) {
+    function mintMulti(address[] calldata _investors, uint256[] calldata _values) external returns(bool success) {
         require(_investors.length == _values.length, "Incorrect inputs");
         for (uint256 i = 0; i < _investors.length; i++) {
             mint(_investors[i], _values[i]);
@@ -728,8 +713,12 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      */
     function checkPermission(address _delegate, address _module, bytes32 _perm) public view returns(bool) {
         for (uint256 i = 0; i < modules[PERMISSION_KEY].length; i++) {
-            if (!modulesToData[modules[PERMISSION_KEY][i]].isArchived)
-                return TokenLib.checkPermission(modules[PERMISSION_KEY], _delegate, _module, _perm);
+            if (!modulesToData[modules[PERMISSION_KEY][i]].isArchived) return TokenLib.checkPermission(
+                modules[PERMISSION_KEY],
+                _delegate,
+                _module,
+                _perm
+            );
         }
         return false;
     }
@@ -774,7 +763,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @return uint256
      */
     function createCheckpoint() external onlyModuleOrOwner(CHECKPOINT_KEY) returns(uint256) {
-        require(currentCheckpointId < 2**256 - 1);
+        require(currentCheckpointId < 2 ** 256 - 1);
         currentCheckpointId = currentCheckpointId + 1;
         /*solium-disable-next-line security/no-block-members*/
         checkpointTimes.push(now);

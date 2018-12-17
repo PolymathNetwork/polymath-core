@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "./../../ModuleFactory.sol";
 import "./LockupVolumeRestrictionTM.sol";
@@ -7,16 +7,17 @@ import "./LockupVolumeRestrictionTM.sol";
  * @title Factory for deploying ManualApprovalTransferManager module
  */
 contract LockupVolumeRestrictionTMFactory is ModuleFactory {
-
     /**
      * @notice Constructor
      * @param _setupCost Setup cost of the module
      * @param _usageCost Usage cost of the module
      * @param _subscriptionCost Subscription cost of the module
      */
-    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-      ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
-    {
+    constructor(
+        uint256 _setupCost,
+        uint256 _usageCost,
+        uint256 _subscriptionCost
+    ) public ModuleFactory(_setupCost, _usageCost, _subscriptionCost) {
         version = "1.0.0";
         name = "LockupVolumeRestrictionTM";
         title = "Lockup Volume Restriction Transfer Manager";
@@ -25,11 +26,13 @@ contract LockupVolumeRestrictionTMFactory is ModuleFactory {
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
 
-     /**
+    /**
      * @notice Used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
-    function deploy(bytes /* _data */) external returns(address) {
+    function deploy(
+        bytes /* _data */
+    ) external returns(address) {
         address polyToken = _takeFee();
         LockupVolumeRestrictionTM lockupVolumeRestrictionTransferManager = new LockupVolumeRestrictionTM(msg.sender, polyToken);
         /*solium-disable-next-line security/no-block-members*/
@@ -63,6 +66,5 @@ contract LockupVolumeRestrictionTMFactory is ModuleFactory {
         availableTags[1] = "Transfer Restriction";
         return availableTags;
     }
-
 
 }

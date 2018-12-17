@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "../modules/STO/DummySTOFactory.sol";
 
@@ -7,7 +7,6 @@ import "../modules/STO/DummySTOFactory.sol";
  */
 
 contract MockFactory is DummySTOFactory {
-
     bool public switchTypes = false;
 
     /**
@@ -16,9 +15,11 @@ contract MockFactory is DummySTOFactory {
      * @param _usageCost Usage cost of the module
      * @param _subscriptionCost Subscription cost of the module
      */
-    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-      DummySTOFactory(_setupCost, _usageCost, _subscriptionCost)
-    {
+    constructor(
+        uint256 _setupCost,
+        uint256 _usageCost,
+        uint256 _subscriptionCost
+    ) public DummySTOFactory(_setupCost, _usageCost, _subscriptionCost) {
 
     }
 
@@ -35,7 +36,7 @@ contract MockFactory is DummySTOFactory {
             res[1] = 1;
             return res;
         }
-        
+
     }
 
     function changeTypes() external onlyOwner {

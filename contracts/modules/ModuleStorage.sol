@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
@@ -7,7 +7,6 @@ import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
  * @notice Contract is abstract
  */
 contract ModuleStorage {
-
     address public factory;
 
     address public securityToken;
@@ -21,7 +20,7 @@ contract ModuleStorage {
      * @param _securityToken Address of the security token
      * @param _polyAddress Address of the polytoken
      */
-    constructor (address _securityToken, address _polyAddress) public {
+    constructor(address _securityToken, address _polyAddress) public {
         securityToken = _securityToken;
         factory = msg.sender;
         polyToken = IERC20(_polyAddress);

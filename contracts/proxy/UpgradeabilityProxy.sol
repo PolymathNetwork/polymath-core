@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "./Proxy.sol";
 import "openzeppelin-solidity/contracts/utils/Address.sol";
@@ -8,7 +8,6 @@ import "openzeppelin-solidity/contracts/utils/Address.sol";
  * @dev This contract represents a proxy where the implementation address to which it will delegate can be upgraded
  */
 contract UpgradeabilityProxy is Proxy {
-
     // Version name of the current implementation
     string internal __version;
 

@@ -60,7 +60,7 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
         uint256 _amount,
         bytes memory, /* _data */
         bool /* _isTransfer */
-    ) public returns(Result memory) {
+    ) public returns(Result) {
         bool validTransfer;
 
         if (exemptWallets[_from] || paused) return Result.NA;

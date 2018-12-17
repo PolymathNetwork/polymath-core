@@ -32,7 +32,7 @@ contract CountTransferManager is ITransferManager {
         uint256 _amount,
         bytes memory, /* _data */
         bool /* _isTransfer */
-    ) public returns(Result memory) {
+    ) public returns(Result) {
         if (!paused) {
             if (maxHolderCount < ISecurityToken(securityToken).getInvestorCount()) {
                 // Allow transfers to existing maxHolders

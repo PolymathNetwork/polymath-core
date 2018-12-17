@@ -52,7 +52,7 @@ contract PercentageTransferManager is ITransferManager {
         uint256 _amount,
         bytes memory, /* _data */
         bool /* _isTransfer */
-    ) public returns(Result memory) {
+    ) public returns(Result) {
         if (!paused) {
             if (_from == address(0) && allowPrimaryIssuance) {
                 return Result.NA;

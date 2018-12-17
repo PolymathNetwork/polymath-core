@@ -359,7 +359,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
         _buyWithTokens(_beneficiary, _investedDAI, FundRaiseType.DAI, _minTokens);
     }
 
-    function _buyWithTokens(address _beneficiary, uint256 _tokenAmount, FundRaiseType memory _fundRaiseType, uint256 _minTokens) internal {
+    function _buyWithTokens(address _beneficiary, uint256 _tokenAmount, FundRaiseType _fundRaiseType, uint256 _minTokens) internal {
         require(_fundRaiseType == FundRaiseType.POLY || _fundRaiseType == FundRaiseType.DAI, "Invalid raise type");
         uint256 initialMinted = getTokensMinted();
         uint256 rate = getRate(_fundRaiseType);
@@ -384,7 +384,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
         address _beneficiary,
         uint256 _investmentValue,
         uint256 _rate,
-        FundRaiseType memory _fundRaiseType
+        FundRaiseType _fundRaiseType
     ) internal nonReentrant whenNotPaused returns(uint256 spentUSD, uint256 spentValue) {
         if (!allowBeneficialInvestments) {
             require(_beneficiary == msg.sender, "Beneficiary != funder");
@@ -423,7 +423,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
       * @param _investmentValue Amount of POLY, ETH or DAI invested
       * @param _fundRaiseType Fund raise type (POLY, ETH, DAI)
       */
-    function buyTokensView(address _beneficiary, uint256 _investmentValue, FundRaiseType memory _fundRaiseType) public view returns(
+    function buyTokensView(address _beneficiary, uint256 _investmentValue, FundRaiseType _fundRaiseType) public view returns(
         uint256 spentUSD,
         uint256 spentValue,
         uint256 tokensMinted
@@ -477,7 +477,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
         address _beneficiary,
         uint256 _tier,
         uint256 _investedUSD,
-        FundRaiseType memory _fundRaiseType
+        FundRaiseType _fundRaiseType
     ) internal returns(uint256 spentUSD, bool gotoNextTier) {
         // First purchase any discounted tokens if POLY investment
         uint256 tierSpentUSD;
@@ -524,7 +524,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
         }
     }
 
-    function _calculateTierView(uint256 _tier, uint256 _investedUSD, FundRaiseType memory _fundRaiseType) internal view returns(
+    function _calculateTierView(uint256 _tier, uint256 _investedUSD, FundRaiseType _fundRaiseType) internal view returns(
         uint256 spentUSD,
         bool gotoNextTier,
         uint256 tokensMinted
@@ -629,7 +629,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
      * @dev returns current conversion rate of funds
      * @param _fundRaiseType Fund raise type to get rate of
      */
-    function getRate(FundRaiseType memory _fundRaiseType) public view returns(uint256) {
+    function getRate(FundRaiseType _fundRaiseType) public view returns(uint256) {
         if (_fundRaiseType == FundRaiseType.ETH) {
             return IOracle(_getOracle(bytes32("ETH"), bytes32("USD"))).getPrice();
         } else if (_fundRaiseType == FundRaiseType.POLY) {
@@ -647,7 +647,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
      * @param _amount Value to convert to USD
      * @return uint256 Value in USD
      */
-    function convertToUSD(FundRaiseType memory _fundRaiseType, uint256 _amount) public view returns(uint256) {
+    function convertToUSD(FundRaiseType _fundRaiseType, uint256 _amount) public view returns(uint256) {
         uint256 rate = getRate(_fundRaiseType);
         return DecimalMath.mul(_amount, rate);
     }
@@ -658,7 +658,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
      * @param _amount Value to convert from USD
      * @return uint256 Value in ETH or POLY
      */
-    function convertFromUSD(FundRaiseType memory _fundRaiseType, uint256 _amount) public view returns(uint256) {
+    function convertFromUSD(FundRaiseType _fundRaiseType, uint256 _amount) public view returns(uint256) {
         uint256 rate = getRate(_fundRaiseType);
         return DecimalMath.div(_amount, rate);
     }
@@ -689,7 +689,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
      * param _fundRaiseType The fund raising currency (e.g. ETH, POLY, DAI) to calculate sold tokens for
      * @return uint256 Total number of tokens sold for ETH
      */
-    function getTokensSoldFor(FundRaiseType memory _fundRaiseType) public view returns(uint256) {
+    function getTokensSoldFor(FundRaiseType _fundRaiseType) public view returns(uint256) {
         uint256 tokensSold;
         for (uint256 i = 0; i < tiers.length; i++) {
             tokensSold = tokensSold.add(tiers[i].minted[uint8(_fundRaiseType)]);

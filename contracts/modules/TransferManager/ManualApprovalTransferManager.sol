@@ -69,7 +69,7 @@ contract ManualApprovalTransferManager is ITransferManager {
         uint256 _amount,
         bytes memory, /* _data */
         bool _isTransfer
-    ) public returns(Result memory) {
+    ) public returns(Result) {
         // function must only be called by the associated security token if _isTransfer == true
         require(_isTransfer == false || msg.sender == securityToken, "Sender is not the owner");
         // manual blocking takes precidence over manual approval

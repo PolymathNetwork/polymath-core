@@ -32,7 +32,7 @@ contract ISTO is ISTOStorage, Module, Pausable {
     /**
      * @notice Returns funds raised by the STO
      */
-    function getRaised(FundRaiseType memory _fundRaiseType) public view returns(uint256) {
+    function getRaised(FundRaiseType _fundRaiseType) public view returns(uint256) {
         return fundsRaised[uint8(_fundRaiseType)];
     }
 

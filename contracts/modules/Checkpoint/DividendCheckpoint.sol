@@ -142,7 +142,8 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
         validDividendIndex(_dividendIndex)
     {
         Dividend storage dividend = dividends[_dividendIndex];
-        address[] memory investors = ISecurityToken(securityToken).getInvestors();
+        uint256 checkpointId = dividend.checkpointId;
+        address[] memory investors = ISecurityToken(securityToken).getInvestorsAt(checkpointId);
         uint256 numberInvestors = Math.min256(investors.length, _start.add(_iterations));
         for (uint256 i = _start; i < numberInvestors; i++) {
             address payee = investors[i];

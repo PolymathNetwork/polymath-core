@@ -20,3 +20,7 @@ bridge.log
 .node-xml*
 .solcover.js.bk
 allFiredEvents
+extract/
+extract.py
+extract.zip
+/test-results

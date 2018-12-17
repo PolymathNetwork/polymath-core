@@ -9,7 +9,6 @@ import { setUpPolymathNetwork,
          deployCountTMAndVerifyed, 
          deployLockupVolumeRTMAndVerified, 
          deployPercentageTMAndVerified, 
-         deploySingleTradeVolumeRMAndVerified,
          deployManualApprovalTMAndVerifyed 
 } from "./helpers/createInstances";
 import { encodeModuleCall } from "./helpers/encodeCall";
@@ -20,7 +19,6 @@ const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager')
 
 // modules for test
 const CountTransferManager = artifacts.require("./CountTransferManager");
-const SingleTradeVolumeRestrictionManager = artifacts.require('./SingleTradeVolumeRestrictionTM');
 const ManualApprovalTransferManager = artifacts.require('./ManualApprovalTransferManager');
 const VolumeRestrictionTransferManager = artifacts.require('./LockupVolumeRestrictionTM');
 const PercentageTransferManager = artifacts.require('./PercentageTransferManager');
@@ -76,12 +74,6 @@ contract('GeneralPermissionManager', accounts => {
     let I_CountTransferManagerFactory;
     let I_CountTransferManager;
     
-    let I_SingleTradeVolumeRestrictionManagerFactory;
-    let I_SingleTradeVolumeRestrictionManager;
-    
-    let P_SingleTradeVolumeRestrictionManagerFactory;
-    let P_SingleTradeVolumeRestrictionManager;
-
     let I_ManualApprovalTransferManagerFactory;
     let I_ManualApprovalTransferManager;
 
@@ -114,7 +106,6 @@ contract('GeneralPermissionManager', accounts => {
 	// define factories and modules for fuzz test
     var factoriesAndModules = [
         { factory: 'I_CountTransferManagerFactory', module: 'CountTransferManager'},
-        { factory: 'I_SingleTradeVolumeRestrictionManagerFactory', module: 'SingleTradeVolumeRestrictionManager'},
         { factory: 'I_ManualApprovalTransferManagerFactory', module: 'ManualApprovalTransferManager'},
         { factory: 'I_VolumeRestrictionTransferManagerFactory', module: 'VolumeRestrictionTransferManager'},
         { factory: 'I_PercentageTransferManagerFactory', module: 'PercentageTransferManager'},
@@ -166,8 +157,6 @@ contract('GeneralPermissionManager', accounts => {
 
 	    // Deploy Modules
         [I_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
-        [I_SingleTradeVolumeRestrictionManagerFactory] = await deploySingleTradeVolumeRMAndVerified(account_polymath, I_MRProxied, I_PolyToken.address, 0);
-        [P_SingleTradeVolumeRestrictionManagerFactory] = await deploySingleTradeVolumeRMAndVerified(account_polymath, I_MRProxied, I_PolyToken.address, web3.utils.toWei("500"));
         [I_ManualApprovalTransferManagerFactory] = await deployManualApprovalTMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
         [I_VolumeRestrictionTransferManagerFactory] = await deployLockupVolumeRTMAndVerified(account_polymath, I_MRProxied, I_PolyToken.address, 0);
         [I_PercentageTransferManagerFactory] = await deployPercentageTMAndVerified(account_polymath, I_MRProxied, I_PolyToken.address, 0);
@@ -282,8 +271,6 @@ contract('GeneralPermissionManager', accounts => {
                 if (random.module == 'CountTransferManager' ||  random.module == 'ManualApprovalTransferManager' || random.module == 'VolumeRestrictionTransferManager' ){
                     const holderCount = 2; // Maximum number of token holders
                     bytesSTO = encodeModuleCall(["uint256"], [holderCount]);
-                } else if(random.module == 'SingleTradeVolumeRestrictionManager'){
-                    bytesSTO = encodeModuleCall(STVRParameters, [false, (7 * Math.pow(10, 16)).toString(), false])
                 } else if (random.module == 'PercentageTransferManager'){
                     console.log("PTM 01");
                     const holderPercentage = 70 * 10**16;    

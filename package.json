@@ -72,7 +72,6 @@
     "readline-sync": "^1.4.9",
     "request": "^2.88.0",
     "request-promise": "^4.2.2",
-    "solc": "^0.4.24",
     "truffle-contract": "^3.0.4",
     "truffle-hdwallet-provider-privkey": "0.2.0",
     "web3": "1.0.0-beta.34"
@@ -94,7 +93,7 @@
     "solidity-coverage": "^0.5.11",
     "solidity-docgen": "^0.1.0",
     "solium": "^1.1.6",
-    "truffle": "4.1.14",
+    "truffle": "^5.0.0-next.25",
     "truffle-wallet-provider": "0.0.5"
   },
   "greenkeeper": {

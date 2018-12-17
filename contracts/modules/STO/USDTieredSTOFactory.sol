@@ -43,8 +43,10 @@ contract USDTieredSTOFactory is ModuleFactory {
         address usdTieredSTO = address(new USDTieredSTOProxy(msg.sender, polyToken, logicContract));
         //Checks that _data is valid (not calling anything it shouldn't)
         require(Util.getSig(_data) == IBoot(usdTieredSTO).getInitFunction(), "Invalid data");
+        bool success;
         /*solium-disable-next-line security/no-low-level-calls*/
-        require(address(usdTieredSTO).call(_data), "Unsuccessfull call");
+        (success, ) = address(usdTieredSTO).call(_data);
+        require(success, "Unsuccessfull call");
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(usdTieredSTO, getName(), address(this), msg.sender, setupCost, now);
         return address(usdTieredSTO);

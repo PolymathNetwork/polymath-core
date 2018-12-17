@@ -33,10 +33,12 @@ contract SingleTradeVolumeRestrictionTMFactory is ModuleFactory {
     */
     function deploy(bytes calldata _data) external returns(address) {
         address polyToken = _takeFee();
-        SingleTradeVolumeRestrictionTM singleTradeVolumeRestrictionManager = address(new SingleTradeVolumeRestrictionTM(msg.sender, polyToken));
+        SingleTradeVolumeRestrictionTM singleTradeVolumeRestrictionManager = new SingleTradeVolumeRestrictionTM(msg.sender, polyToken);
         require(Util.getSig(_data) == singleTradeVolumeRestrictionManager.getInitFunction(), "Provided data is not valid");
+        bool success;
         /*solium-disable-next-line security/no-low-level-calls*/
-        require(address(singleTradeVolumeRestrictionManager).call(_data), "Unsuccessful call");
+        (success, ) = address(singleTradeVolumeRestrictionManager).call(_data);
+        require(success, "Unsuccessful call");
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(address(singleTradeVolumeRestrictionManager), getName(), address(this), msg.sender, setupCost, now);
         return address(singleTradeVolumeRestrictionManager);

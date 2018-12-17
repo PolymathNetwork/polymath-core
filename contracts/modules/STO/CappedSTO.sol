@@ -60,7 +60,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
         uint256 _cap,
         uint256 _rate,
         FundRaiseType[] memory _fundRaiseTypes,
-        address _fundsReceiver
+        address payable _fundsReceiver
     ) public onlyFactory {
         require(endTime == 0, "Already configured");
         require(_rate > 0, "Rate of token should be greater than 0");
@@ -205,7 +205,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
         require(_beneficiary != address(0), "Beneficiary address should not be 0x");
         require(_investedAmount != 0, "Amount invested should not be equal to 0");
         uint256 tokens;
-        (tokens) = _getTokenAmount(_investedAmount);
+        (tokens, ) = _getTokenAmount(_investedAmount);
         require(totalTokensSold.add(tokens) <= cap, "Investment more than cap is not allowed");
         /*solium-disable-next-line security/no-block-members*/
         require(now >= startTime && now <= endTime, "Offering is closed/Not yet started");

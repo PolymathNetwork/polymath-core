@@ -37,8 +37,10 @@ contract CappedSTOFactory is ModuleFactory {
         CappedSTO cappedSTO = new CappedSTO(msg.sender, polyToken);
         //Checks that _data is valid (not calling anything it shouldn't)
         require(Util.getSig(_data) == cappedSTO.getInitFunction(), "Invalid data");
+        bool success;
         /*solium-disable-next-line security/no-low-level-calls*/
-        require(address(cappedSTO).call(_data), "Unsuccessfull call");
+        (success, ) = address(cappedSTO).call(_data);
+        require(success, "Unsuccessfull call");
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(address(cappedSTO), getName(), address(this), msg.sender, setupCost, now);
         return address(cappedSTO);

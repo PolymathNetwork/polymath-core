@@ -36,8 +36,10 @@ contract PercentageTransferManagerFactory is ModuleFactory {
         address polyToken = _takeFee();
         PercentageTransferManager percentageTransferManager = new PercentageTransferManager(msg.sender, polyToken);
         require(Util.getSig(_data) == percentageTransferManager.getInitFunction(), "Provided data is not valid");
+        bool success;
         /*solium-disable-next-line security/no-low-level-calls*/
-        require(address(percentageTransferManager).call(_data), "Unsuccessful call");
+        (success, ) = address(percentageTransferManager).call(_data);
+        require(success, "Unsuccessful call");
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(address(percentageTransferManager), getName(), address(this), msg.sender, setupCost, now);
         return address(percentageTransferManager);

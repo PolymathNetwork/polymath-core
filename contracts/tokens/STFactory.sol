@@ -26,7 +26,7 @@ contract STFactory is ISTFactory {
         bool _divisible,
         address _polymathRegistry
     ) external returns(address) {
-        address newSecurityTokenAddress = new SecurityToken(
+        SecurityToken newSecurityToken = new SecurityToken(
             _name,
             _symbol,
             _decimals,
@@ -34,8 +34,8 @@ contract STFactory is ISTFactory {
             _tokenDetails,
             _polymathRegistry
         );
-        SecurityToken(newSecurityTokenAddress).addModule(transferManagerFactory, "", 0, 0);
-        SecurityToken(newSecurityTokenAddress).transferOwnership(_issuer);
-        return newSecurityTokenAddress;
+        newSecurityToken.addModule(transferManagerFactory, "", 0, 0);
+        newSecurityToken.transferOwnership(_issuer);
+        return address(newSecurityToken);
     }
 }

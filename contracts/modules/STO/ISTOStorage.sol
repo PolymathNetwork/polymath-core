@@ -16,7 +16,7 @@ contract ISTOStorage {
     // Number of individual investors
     uint256 public investorCount;
     // Address where ETH & POLY funds are delivered
-    address public wallet;
+    address payable public wallet;
     // Final amount of tokens sold
     uint256 public totalTokensSold;
 

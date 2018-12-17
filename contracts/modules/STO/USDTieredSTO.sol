@@ -105,7 +105,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
         uint256 _nonAccreditedLimitUSD,
         uint256 _minimumInvestmentUSD,
         FundRaiseType[] memory _fundRaiseTypes,
-        address _wallet,
+        address payable _wallet,
         address _reserveWallet,
         address _usdToken
     ) public onlyFactory {
@@ -176,7 +176,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
      * @param _reserveWallet Address of wallet where unsold tokens are sent
      * @param _usdToken Address of usd token (DAI)
      */
-    function modifyAddresses(address _wallet, address _reserveWallet, address _usdToken) external onlyOwner {
+    function modifyAddresses(address payable _wallet, address _reserveWallet, address _usdToken) external onlyOwner {
         /*solium-disable-next-line security/no-block-members*/
         require(now < startTime, "STO already started");
         _modifyAddresses(_wallet, _reserveWallet, _usdToken);
@@ -218,7 +218,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
         emit SetTimes(_startTime, _endTime);
     }
 
-    function _modifyAddresses(address _wallet, address _reserveWallet, address _usdToken) internal {
+    function _modifyAddresses(address payable _wallet, address _reserveWallet, address _usdToken) internal {
         require(_wallet != address(0) && _reserveWallet != address(0), "Invalid wallet");
         if (fundRaiseTypes[uint8(FundRaiseType.DAI)]) {
             require(_usdToken != address(0), "Invalid usdToken");

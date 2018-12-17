@@ -37,7 +37,7 @@ contract USDTieredSTOStorage {
     bool public isFinalized;
 
     // Address where ETH, POLY & DAI funds are delivered
-    address public wallet;
+    address payable public wallet;
 
     // Address of issuer reserve wallet for unsold tokens
     address public reserveWallet;

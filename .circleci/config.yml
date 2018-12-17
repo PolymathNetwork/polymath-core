@@ -7,7 +7,8 @@ jobs:
       - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
-      - run: sudo add-apt-repository ppa:ethereum/ethereum
+      - run: sudo apt-get install -y software-properties-common
+      - run: echo -ne '\n' | sudo add-apt-repository ppa:ethereum/ethereum
       - run: sudo apt-get update
       - run: sudo apt-get install solc
       - run: yarn install
@@ -27,7 +28,8 @@ jobs:
       - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
-      - run: sudo add-apt-repository ppa:ethereum/ethereum
+      - run: sudo apt-get install -y software-properties-common
+      - run: echo -ne '\n' | sudo add-apt-repository ppa:ethereum/ethereum
       - run: sudo apt-get update
       - run: sudo apt-get install solc
       - run: yarn install
@@ -50,7 +52,8 @@ jobs:
       - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
-      - run: sudo add-apt-repository ppa:ethereum/ethereum
+      - run: sudo apt-get install -y software-properties-common
+      - run: echo -ne '\n' | sudo add-apt-repository ppa:ethereum/ethereum
       - run: sudo apt-get update
       - run: sudo apt-get install solc
       - run: yarn install
@@ -73,7 +76,8 @@ jobs:
       - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
-      - run: sudo add-apt-repository ppa:ethereum/ethereum
+      - run: sudo apt-get install -y software-properties-common
+      - run: echo -ne '\n' | sudo add-apt-repository ppa:ethereum/ethereum
       - run: sudo apt-get update
       - run: sudo apt-get install solc
       - run: yarn install

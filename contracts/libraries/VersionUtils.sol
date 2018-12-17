@@ -14,7 +14,8 @@ library VersionUtils {
     function isValidVersion(uint8[] memory _current, uint8[] memory _new) internal pure returns(bool) {
         bool[] memory _temp = new bool[](_current.length);
         uint8 counter = 0;
-        for (uint8 i = 0; i < _current.length; i++) {
+        uint8 i = 0;
+        for (i = 0; i < _current.length; i++) {
             if (_current[i] < _new[i]) _temp[i] = true;
             else _temp[i] = false;
         }

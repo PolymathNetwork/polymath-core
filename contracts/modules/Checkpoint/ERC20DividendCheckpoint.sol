@@ -210,7 +210,7 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
      * @param _dividend Storage with previously issued dividends
      * @param _dividendIndex Dividend to pay
      */
-    function _payDividend(address _payee, Dividend storage _dividend, uint256 _dividendIndex) internal {
+    function _payDividend(address payable _payee, Dividend storage _dividend, uint256 _dividendIndex) internal {
         (uint256 claim, uint256 withheld) = calculateDividend(_dividendIndex, _payee);
         _dividend.claimed[_payee] = true;
         _dividend.claimedAmount = claim.add(_dividend.claimedAmount);

@@ -112,7 +112,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      */
     function pushDividendPaymentToAddresses(
         uint256 _dividendIndex,
-        address[] memory _payees
+        address payable[] memory _payees
     ) public withPerm(DISTRIBUTE) validDividendIndex(_dividendIndex) {
         Dividend storage dividend = dividends[_dividendIndex];
         for (uint256 i = 0; i < _payees.length; i++) {
@@ -137,7 +137,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
         address[] memory investors = ISecurityToken(securityToken).getInvestors();
         uint256 numberInvestors = Math.min(investors.length, _start.add(_iterations));
         for (uint256 i = _start; i < numberInvestors; i++) {
-            address payee = investors[i];
+            address payable payee = address(uint160(investors[i]));
             if ((!dividend.claimed[payee]) && (!dividend.dividendExcluded[payee])) {
                 _payDividend(payee, dividend, _dividendIndex);
             }
@@ -161,7 +161,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @param _dividend Storage with previously issued dividends
      * @param _dividendIndex Dividend to pay
      */
-    function _payDividend(address _payee, Dividend storage _dividend, uint256 _dividendIndex) internal;
+    function _payDividend(address payable _payee, Dividend storage _dividend, uint256 _dividendIndex) internal;
 
     /**
      * @notice Issuer can reclaim remaining unclaimed dividend amounts, for expired dividends

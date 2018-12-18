@@ -63,7 +63,7 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
     }
 
     /**
-     * @notice Use to intialize the treasury wallet address
+     * @notice Used to initialize the treasury wallet address
      * @param _treasuryWallet Address of the treasury wallet
      */
     function configure(address _treasuryWallet) public onlyFactory {
@@ -72,7 +72,7 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
     }
 
     /**
-     * @notice Use to change the treasury wallet address
+     * @notice Used to change the treasury wallet address
      * @param _newTreasuryWallet Address of the treasury wallet
      */
     function changeTreasuryWallet(address _newTreasuryWallet) public onlyOwner {
@@ -82,7 +82,8 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
     }
 
     /**
-     * @notice Used to deposit tokens from treasury
+     * @notice Used to deposit tokens from treasury wallet to the vesting escrow wallet
+     * @param _numberOfTokens Number of tokens that should be deposited
      */
     function depositTokens(uint256 _numberOfTokens) external withPerm(ADMIN) {
         _depositTokens(_numberOfTokens);
@@ -99,8 +100,8 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
     }
 
     /**
-     * @notice Sends unassigned tokens to treasury
-     * @param _amount amount of tokens that should be send
+     * @notice Sends unassigned tokens to the treasury wallet
+     * @param _amount Amount of tokens that should be send to the treasury wallet
      */
     function sendToTreasury(uint256 _amount) external withPerm(ADMIN) {
         require(_amount > 0, "Amount cannot be zero");
@@ -112,8 +113,8 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
     }
 
     /**
-     * @notice Pushes available tokens to beneficiary
-     * @param _beneficiary beneficiary's address
+     * @notice Pushes available tokens to the beneficiary's address
+     * @param _beneficiary Address of the beneficiary who will receive tokens
      */
     function pushAvailableTokens(address _beneficiary) public withPerm(ADMIN) {
         _sendTokens(_beneficiary);
@@ -127,11 +128,11 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
     }
 
     /**
-     * @notice Add template
-     * @param _name name of template
-     * @param _numberOfTokens number of tokens
-     * @param _duration vesting duration
-     * @param _frequency vesting frequency
+     * @notice Adds template that can be used for creating schedule
+     * @param _name Name of the template will be created
+     * @param _numberOfTokens Number of tokens that should be assigned to schedule
+     * @param _duration Duration of the vesting schedule
+     * @param _frequency Frequency of the vesting schedule
      */
     function addTemplate(bytes32 _name, uint256 _numberOfTokens, uint256 _duration, uint256 _frequency) external withPerm(ADMIN) {
         _addTemplate(_name, _numberOfTokens, _duration, _frequency);
@@ -147,8 +148,8 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
     }
 
     /**
-     * @notice Removes template
-     * @param _name name of template
+     * @notice Removes template with a given name
+     * @param _name Name of the template that will be removed
      */
     function removeTemplate(bytes32 _name) external withPerm(ADMIN) {
         require(_isTemplateExists(_name), "Template not found");
@@ -165,29 +166,29 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
     }
 
     /**
-     * @notice Returns count of templates
-     * @return count of templates
+     * @notice Returns count of the templates those can be used for creating schedule
+     * @return Count of the templates
      */
     function getTemplateCount() external view returns(uint256) {
         return templateNames.length;
     }
 
     /**
-     * @notice get the list of template names
-     * @return bytes32 Array of template names
+     * @notice Gets the list of the template names those can be used for creating schedule
+     * @return bytes32 Array of all template names were created
      */
     function getAllTemplateNames() external view returns(bytes32[]) {
         return templateNames;
     }
 
     /**
-     * @notice Adds vesting schedules for each of beneficiary
-     * @param _beneficiary beneficiary's addresses
-     * @param _templateName name of the template that will be created
-     * @param _numberOfTokens number of tokens
-     * @param _duration vesting duration
-     * @param _frequency vesting frequency
-     * @param _startTime vesting start time
+     * @notice Adds vesting schedules for each of the beneficiary's address
+     * @param _beneficiary Address of the beneficiary for whom it is scheduled
+     * @param _templateName Name of the template that will be created
+     * @param _numberOfTokens Total number of tokens for created schedule
+     * @param _duration Duration of the created vesting schedule
+     * @param _frequency Frequency of the created vesting schedule
+     * @param _startTime Start time of the created vesting schedule
      */
     function addSchedule(
         address _beneficiary,
@@ -218,10 +219,10 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
     }
 
     /**
-     * @notice Adds vesting schedules from template for each of beneficiary
-     * @param _beneficiary beneficiary's addresses
-     * @param _templateName name of the template
-     * @param _startTime vesting start time
+     * @notice Adds vesting schedules from template for the beneficiary
+     * @param _beneficiary Address of the beneficiary for whom it is scheduled
+     * @param _templateName Name of the exists template
+     * @param _startTime Start time of the created vesting schedule
      */
     function addScheduleFromTemplate(address _beneficiary, bytes32 _templateName, uint256 _startTime) external withPerm(ADMIN) {
         _addScheduleFromTemplate(_beneficiary, _templateName, _startTime);
@@ -255,10 +256,10 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
     }
 
     /**
-     * @notice Modifies vesting schedules for each of beneficiary
-     * @param _beneficiary beneficiary's addresses
-     * @param _templateName name of the template
-     * @param _startTime vesting start time
+     * @notice Modifies vesting schedules for each of the beneficiary
+     * @param _beneficiary Address of the beneficiary for whom it is modified
+     * @param _templateName Name of the template was used for schedule creation
+     * @param _startTime Start time of the created vesting schedule
      */
     function modifySchedule(address _beneficiary, bytes32 _templateName, uint256 _startTime) public withPerm(ADMIN) {
         _modifySchedule(_beneficiary, _templateName, _startTime);
@@ -276,9 +277,9 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
     }
 
     /**
-     * @notice Revokes beneficiary's schedule
-     * @param _beneficiary beneficiary's address
-     * @param _templateName name of the template
+     * @notice Revokes vesting schedule with given template name for given beneficiary
+     * @param _beneficiary Address of the beneficiary for whom it is revoked
+     * @param _templateName Name of the template was used for schedule creation
      */
     function revokeSchedule(address _beneficiary, bytes32 _templateName) external withPerm(ADMIN) {
         _checkSchedule(_beneficiary, _templateName);
@@ -315,8 +316,8 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
     }
 
     /**
-     * @notice Revokes all beneficiary's schedules
-     * @param _beneficiary beneficiary's address
+     * @notice Revokes all vesting schedules for given beneficiary's address
+     * @param _beneficiary Address of the beneficiary for whom all schedules will be revoked
      */
     function revokeAllSchedules(address _beneficiary) public withPerm(ADMIN) {
         _revokeAllSchedules(_beneficiary);
@@ -339,9 +340,9 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
     }
 
     /**
-     * @notice Returns beneficiary's schedule
-     * @param _beneficiary beneficiary's address
-     * @param _templateName name of the template
+     * @notice Returns beneficiary's schedule created using template name
+     * @param _beneficiary Address of the beneficiary who will receive tokens
+     * @param _templateName Name of the template was used for schedule creation
      * @return beneficiary's schedule data (numberOfTokens, duration, frequency, startTime, claimedTokens, State)
      */
     function getSchedule(address _beneficiary, bytes32 _templateName) external view returns(uint256, uint256, uint256, uint256, uint256, State) {
@@ -372,9 +373,9 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
     }
 
     /**
-     * @notice Returns list of template names
-     * @param _beneficiary beneficiary's address
-     * @return list of template names
+     * @notice Returns list of the template names for given beneficiary's address
+     * @param _beneficiary Address of the beneficiary
+     * @return List of the template names that were used for schedule creation
      */
     function getTemplateNames(address _beneficiary) external view returns(bytes32[]) {
         require(_beneficiary != address(0), "Invalid address");
@@ -382,9 +383,9 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
     }
 
     /**
-     * @notice Returns count of beneficiary's schedules
-     * @param _beneficiary beneficiary's address
-     * @return count of beneficiary's schedules
+     * @notice Returns count of the schedules were created for given beneficiary
+     * @param _beneficiary Address of the beneficiary
+     * @return Count of beneficiary's schedules
      */
     function getScheduleCount(address _beneficiary) external view returns(uint256) {
         require(_beneficiary != address(0), "Invalid address");
@@ -415,9 +416,9 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
     }
 
     /**
-     * @notice Used to bulk send available tokens for each of beneficiaries
-     * @param _fromIndex start index of array of beneficiary's addresses
-     * @param _toIndex end index of array of beneficiary's addresses
+     * @notice Used to bulk send available tokens for each of the beneficiaries
+     * @param _fromIndex Start index of array of beneficiary's addresses
+     * @param _toIndex End index of array of beneficiary's addresses
      */
     function pushAvailableTokensMulti(uint256 _fromIndex, uint256 _toIndex) external withPerm(ADMIN) {
         require(_toIndex <= beneficiaries.length - 1, "Array out of bound");
@@ -428,13 +429,13 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
     }
 
     /**
-     * @notice Used to bulk add vesting schedules for each of beneficiaries
-     * @param _beneficiaries array of beneficiary's addresses
-     * @param _templateNames array of the template names
-     * @param _numberOfTokens array of number of tokens
-     * @param _durations array of vesting duration
-     * @param _frequencies array of vesting frequency
-     * @param _startTimes array of vesting start time
+     * @notice Used to bulk add vesting schedules for each of beneficiary
+     * @param _beneficiaries Array of the beneficiary's addresses
+     * @param _templateNames Array of the template names
+     * @param _numberOfTokens Array of number of tokens should be assigned to schedules
+     * @param _durations Array of the vesting duration
+     * @param _frequencies Array of the vesting frequency
+     * @param _startTimes Array of the vesting start time
      */
     function addScheduleMulti(
         address[] _beneficiaries,
@@ -461,10 +462,10 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
     }
 
     /**
-     * @notice Used to bulk add vesting schedules from template for each of beneficiaries
-     * @param _beneficiaries array of beneficiary's addresses
-     * @param _templateNames array of the template names
-     * @param _startTimes array of vesting start time
+     * @notice Used to bulk add vesting schedules from template for each of the beneficiary
+     * @param _beneficiaries Array of beneficiary's addresses
+     * @param _templateNames Array of the template names were used for schedule creation
+     * @param _startTimes Array of the vesting start time
      */
     function addScheduleFromTemplateMulti(address[] _beneficiaries, bytes32[] _templateNames, uint256[] _startTimes) external withPerm(ADMIN) {
         require(_beneficiaries.length == _templateNames.length && _beneficiaries.length == _startTimes.length, "Arrays sizes mismatch");
@@ -474,8 +475,8 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
     }
 
     /**
-     * @notice Used to bulk revoke vesting schedules for each of beneficiaries
-     * @param _beneficiaries array of beneficiary's addresses
+     * @notice Used to bulk revoke vesting schedules for each of the beneficiaries
+     * @param _beneficiaries Array of the beneficiary's addresses
      */
     function revokeSchedulesMulti(address[] _beneficiaries) external withPerm(ADMIN) {
         for (uint256 i = 0; i < _beneficiaries.length; i++) {
@@ -484,10 +485,10 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
     }
 
     /**
-     * @notice Used to bulk modify vesting schedules for each of beneficiaries
-     * @param _beneficiaries array of beneficiary's addresses
-     * @param _templateNames array of the template names
-     * @param _startTimes array of vesting start time
+     * @notice Used to bulk modify vesting schedules for each of the beneficiaries
+     * @param _beneficiaries Array of the beneficiary's addresses
+     * @param _templateNames Array of the template names
+     * @param _startTimes Array of the vesting start time
      */
     function modifyScheduleMulti(
         address[] _beneficiaries,

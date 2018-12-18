@@ -4,13 +4,13 @@ import "../modules/STO/USDTieredSTOStorage.sol";
 import "./OwnedProxy.sol";
 import "../Pausable.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
-import "../modules/STO/ISTOStorage.sol";
+import "../modules/STO/STOStorage.sol";
 import "../modules/ModuleStorage.sol";
 
 /**
  * @title USDTiered STO module Proxy
  */
-contract USDTieredSTOProxy is USDTieredSTOStorage, ISTOStorage, ModuleStorage, Pausable, ReentrancyGuard, OwnedProxy {
+contract USDTieredSTOProxy is USDTieredSTOStorage, STOStorage, ModuleStorage, Pausable, ReentrancyGuard, OwnedProxy {
 
     /**
     * @notice Constructor

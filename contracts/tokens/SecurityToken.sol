@@ -632,12 +632,12 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
                 module = modules[TRANSFER_KEY][i];
                 if (!modulesToData[module].isArchived) {
                     unarchived = true;
-                    ITransferManager.Result valid = ITransferManager(module).verifyTransfer(_from, _to, _value, _data, _isTransfer);
-                    if (valid == ITransferManager.Result.INVALID) {
+                    TransferManagerEnums.Result valid = ITransferManager(module).verifyTransfer(_from, _to, _value, _data, _isTransfer);
+                    if (valid == TransferManagerEnums.Result.INVALID) {
                         isInvalid = true;
-                    } else if (valid == ITransferManager.Result.VALID) {
+                    } else if (valid == TransferManagerEnums.Result.VALID) {
                         isValid = true;
-                    } else if (valid == ITransferManager.Result.FORCE_VALID) {
+                    } else if (valid == TransferManagerEnums.Result.FORCE_VALID) {
                         isForceValid = true;
                     }
                 }

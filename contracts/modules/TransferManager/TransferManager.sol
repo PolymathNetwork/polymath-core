@@ -7,7 +7,7 @@ import "../../interfaces/ITransferManager.sol";
 /**
  * @title Base abstract contract to be implemented by all Transfer Manager modules
  */
-contract TransferManager is ITransferManager, Module, Pausable {
+contract TransferManager is ITransferManager, TransferManagerEnums, Module, Pausable {
 
     function unpause() public onlyOwner {
         super._unpause();

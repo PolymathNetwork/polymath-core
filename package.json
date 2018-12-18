@@ -89,6 +89,7 @@
     "ethereum-bridge": "^0.6.1",
     "ethereumjs-abi": "^0.6.5",
     "ganache-cli": "^6.1.8",
+    "mocha-junit-reporter": "^1.18.0",
     "prettier": "^1.14.3",
     "sol-merger": "^0.1.2",
     "solidity-coverage": "^0.5.11",

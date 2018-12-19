@@ -1,13 +1,13 @@
 pragma solidity ^0.5.0;
 
-import "./../../TransferManager/ITransferManager.sol";
+import "./../../TransferManager/TransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
  * @title Transfer Manager for limiting volume of tokens in a single trade
  */
 
-contract SingleTradeVolumeRestrictionTM is ITransferManager {
+contract SingleTradeVolumeRestrictionTM is TransferManager {
     using SafeMath for uint256;
 
     bytes32 public constant ADMIN = "ADMIN";
@@ -60,7 +60,10 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
         uint256 _amount,
         bytes memory, /* _data */
         bool /* _isTransfer */
-    ) public returns(Result) {
+    )
+        external
+        returns(Result)
+    {
         bool validTransfer;
 
         if (exemptWallets[_from] || paused) return Result.NA;

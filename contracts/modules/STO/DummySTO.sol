@@ -1,12 +1,13 @@
 pragma solidity ^0.5.0;
 
-import "./ISTO.sol";
+import "./STO.sol";
 import "../../interfaces/ISecurityToken.sol";
 
 /**
  * @title STO module for sample implementation of a different crowdsale module
  */
-contract DummySTO is ISTO {
+contract DummySTO is STO {
+
     bytes32 public constant ADMIN = "ADMIN";
 
     uint256 public investorCount;
@@ -74,7 +75,7 @@ contract DummySTO is ISTO {
     /**
      * @notice Returns the total no. of investors
      */
-    function getTokensSold() public view returns(uint256) {
+    function getTokensSold() external view returns (uint256) {
         return 0;
     }
 

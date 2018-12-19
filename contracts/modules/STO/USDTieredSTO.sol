@@ -1,6 +1,6 @@
 pragma solidity ^0.5.0;
 
-import "./ISTO.sol";
+import "./STO.sol";
 import "../../interfaces/ISecurityToken.sol";
 import "../../interfaces/IOracle.sol";
 import "../../RegistryUpdater.sol";
@@ -12,7 +12,7 @@ import "./USDTieredSTOStorage.sol";
 /**
  * @title STO module for standard capped crowdsale
  */
-contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
+contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
     using SafeMath for uint256;
 
     string public constant POLY_ORACLE = "PolyUsdOracle";
@@ -665,9 +665,15 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
      * @notice Return the total no. of tokens sold
      * @return uint256 Total number of tokens sold
      */
-    function getTokensSold() public view returns(uint256) {
-        if (isFinalized) return totalTokensSold;
-        else return getTokensMinted();
+    function getTokensSold() external view returns (uint256) {
+        return _getTokensSold();
+    }
+
+    function _getTokensSold() internal view returns (uint256) {
+        if (isFinalized)
+            return totalTokensSold;
+        else
+            return getTokensMinted();
     }
 
     /**
@@ -772,7 +778,17 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
         _fundRaiseTypes[0] = fundRaiseTypes[uint8(FundRaiseType.ETH)];
         _fundRaiseTypes[1] = fundRaiseTypes[uint8(FundRaiseType.POLY)];
         _fundRaiseTypes[2] = fundRaiseTypes[uint8(FundRaiseType.DAI)];
-        return (startTime, endTime, currentTier, cap, rate, fundsRaisedUSD, investorCount, getTokensSold(), _fundRaiseTypes);
+        return (
+            startTime,
+            endTime,
+            currentTier,
+            cap,
+            rate,
+            fundsRaisedUSD,
+            investorCount,
+            _getTokensSold(),
+            _fundRaiseTypes
+        );
     }
 
     /**

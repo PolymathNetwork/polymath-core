@@ -1,6 +1,6 @@
 pragma solidity ^0.5.0;
 
-import "./ISTO.sol";
+import "./STO.sol";
 import "../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
@@ -8,7 +8,7 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 /**
  * @title STO module for standard capped crowdsale
  */
-contract CappedSTO is ISTO, ReentrancyGuard {
+contract CappedSTO is STO, ReentrancyGuard {
     using SafeMath for uint256;
 
     // Determine whether users can invest on behalf of a beneficiary
@@ -137,7 +137,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
     /**
      * @notice Return the total no. of tokens sold
      */
-    function getTokensSold() public view returns(uint256) {
+    function getTokensSold() external view returns (uint256) {
         return totalTokensSold;
     }
 

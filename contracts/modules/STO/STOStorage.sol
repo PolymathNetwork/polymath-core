@@ -1,11 +1,13 @@
 pragma solidity ^0.5.0;
 
 /**
- * @title Storage layout for the ISTO contract
+ * @title Storage layout for the STO contract
  */
-contract ISTOStorage {
-    mapping(uint8 => bool) public fundRaiseTypes;
-    mapping(uint8 => uint256) public fundsRaised;
+
+contract STOStorage {
+
+    mapping (uint8 => bool) public fundRaiseTypes;
+    mapping (uint8 => uint256) public fundsRaised;
 
     // Start time of the STO
     uint256 public startTime;

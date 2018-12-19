@@ -1,9 +1,10 @@
 pragma solidity ^0.5.0;
 
-import "./../../TransferManager/ITransferManager.sol";
+import "./../../TransferManager/TransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
-contract LockupVolumeRestrictionTM is ITransferManager {
+contract LockupVolumeRestrictionTM is TransferManager {
+
     using SafeMath for uint256;
 
     // permission definition
@@ -61,13 +62,7 @@ contract LockupVolumeRestrictionTM is ITransferManager {
      * @param _amount The amount of tokens to transfer
      * @param _isTransfer Whether or not this is an actual transfer or just a test to see if the tokens would be transferrable
      */
-    function verifyTransfer(
-        address _from,
-        address, /* _to*/
-        uint256 _amount,
-        bytes memory, /* _data */
-        bool _isTransfer
-    ) public returns(Result) {
+    function verifyTransfer(address  _from, address /* _to*/, uint256  _amount, bytes /* _data */, bool  _isTransfer) external returns(Result) {
         // only attempt to verify the transfer if the token is unpaused, this isn't a mint txn, and there exists a lockup for this user
         if (!paused && _from != address(0) && lockUps[_from].length != 0) {
             // check if this transfer is valid

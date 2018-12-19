@@ -1,11 +1,12 @@
 pragma solidity ^0.5.0;
 
-import "./ITransferManager.sol";
+import "./TransferManager.sol";
 
 /**
  * @title Transfer Manager for limiting maximum number of token holders
  */
-contract CountTransferManager is ITransferManager {
+contract CountTransferManager is TransferManager {
+
     // The maximum number of concurrent token holders
     uint256 public maxHolderCount;
 
@@ -32,7 +33,10 @@ contract CountTransferManager is ITransferManager {
         uint256 _amount,
         bytes memory, /* _data */
         bool /* _isTransfer */
-    ) public returns(Result) {
+    )
+        external
+        returns(Result)
+    {
         if (!paused) {
             if (maxHolderCount < ISecurityToken(securityToken).getInvestorCount()) {
                 // Allow transfers to existing maxHolders

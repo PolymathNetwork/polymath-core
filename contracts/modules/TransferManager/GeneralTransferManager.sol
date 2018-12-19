@@ -1,13 +1,14 @@
 pragma solidity ^0.5.0;
 
-import "./ITransferManager.sol";
+import "./TransferManager.sol";
 import "./GeneralTransferManagerStorage.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
  * @title Transfer Manager module for core transfer validation functionality
  */
-contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManager {
+contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManager {
+
     using SafeMath for uint256;
 
     // Emit when Issuance address get changed
@@ -138,13 +139,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
      * @param _from Address of the sender
      * @param _to Address of the receiver
     */
-    function verifyTransfer(
-        address _from,
-        address _to,
-        uint256, /*_amount*/
-        bytes memory, /* _data */
-        bool /* _isTransfer */
-    ) public returns(Result) {
+    function verifyTransfer(address _from, address _to, uint256 /*_amount*/, bytes /* _data */, bool /* _isTransfer */) external returns(Result) {
         if (!paused) {
             if (allowAllTransfers) {
                 //All transfers allowed, regardless of whitelist

@@ -1,14 +1,14 @@
 pragma solidity ^0.5.0;
 
 import "./../../Checkpoint/ICheckpoint.sol";
-import "../../TransferManager/ITransferManager.sol";
+import "../../TransferManager/TransferManager.sol";
 import "../../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
  * @title Burn module for burning tokens and keeping track of burnt amounts
  */
-contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
+contract ScheduledCheckpoint is ICheckpoint, TransferManager {
     using SafeMath for uint256;
 
     struct Schedule {
@@ -83,13 +83,7 @@ contract ScheduledCheckpoint is ICheckpoint, ITransferManager {
      * @param _isTransfer whether or not an actual transfer is occuring
      * @return always returns Result.NA
      */
-    function verifyTransfer(
-        address, /* _from */
-        address, /* _to */
-        uint256, /* _amount */
-        bytes memory, /* _data */
-        bool _isTransfer
-    ) public returns(Result) {
+    function verifyTransfer(address /* _from */, address /* _to */, uint256 /* _amount */, bytes /* _data */, bool _isTransfer) external returns(Result) {
         require(_isTransfer == false || msg.sender == securityToken, "Sender is not owner");
         if (paused || !_isTransfer) {
             return Result.NA;

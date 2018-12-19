@@ -7,13 +7,13 @@
 
 pragma solidity ^0.5.0;
 
-import "./ITransferManager.sol";
+import "./TransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
  * @title Transfer Manager module for limiting percentage of token supply a single address can hold
  */
-contract PercentageTransferManager is ITransferManager {
+contract PercentageTransferManager is TransferManager {
     using SafeMath for uint256;
 
     // Permission key for modifying the whitelist
@@ -46,13 +46,7 @@ contract PercentageTransferManager is ITransferManager {
      * @param _to Address of the receiver
      * @param _amount The amount of tokens to transfer
      */
-    function verifyTransfer(
-        address _from,
-        address _to,
-        uint256 _amount,
-        bytes memory, /* _data */
-        bool /* _isTransfer */
-    ) public returns(Result) {
+    function verifyTransfer(address _from, address _to, uint256 _amount, bytes /* _data */, bool /* _isTransfer */) external returns(Result) {
         if (!paused) {
             if (_from == address(0) && allowPrimaryIssuance) {
                 return Result.NA;

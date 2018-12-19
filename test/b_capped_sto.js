@@ -864,7 +864,7 @@ contract("CappedSTO", accounts => {
             });
 
             it("Should fail to change the title -- zero length", async () => {
-                await catchRevert(I_CappedSTOFactory.changeTitle("", { from: token_owner }));
+                await catchRevert(I_CappedSTOFactory.changeTitle("", { from: account_polymath }));
             });
 
             it("Should successfully change the title", async () => {
@@ -877,7 +877,7 @@ contract("CappedSTO", accounts => {
             });
 
             it("Should fail to change the description -- zero length", async () => {
-                await catchRevert(I_CappedSTOFactory.changeDescription("", { from: token_owner }));
+                await catchRevert(I_CappedSTOFactory.changeDescription("", { from: account_polymath }));
             });
 
             it("Should successfully change the description", async () => {
@@ -890,7 +890,7 @@ contract("CappedSTO", accounts => {
             });
 
             it("Should fail to change the name -- zero length", async () => {
-                await catchRevert(I_CappedSTOFactory.changeName(web3.utils.stringToHex(""), { from: token_owner }));
+                await catchRevert(I_CappedSTOFactory.changeName(web3.utils.stringToHex(""), { from: account_polymath }));
             });
 
             it("Should successfully change the name", async () => {

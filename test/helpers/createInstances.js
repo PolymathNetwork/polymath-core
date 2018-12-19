@@ -25,6 +25,7 @@ const STFactory = artifacts.require("./STFactory.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager.sol");
 const GeneralTransferManagerFactory = artifacts.require("./GeneralTransferManagerFactory.sol");
 const GeneralPermissionManagerFactory = artifacts.require("./GeneralPermissionManagerFactory.sol");
+const CountTransferManager = artifacts.require("./CountTransferManager.sol");
 const CountTransferManagerFactory = artifacts.require("./CountTransferManagerFactory.sol");
 const VolumeRestrictionTransferManagerFactory = artifacts.require("./LockupVolumeRestrictionTMFactory");
 const PreSaleSTOFactory = artifacts.require("./PreSaleSTOFactory.sol");
@@ -51,6 +52,7 @@ let I_VolumeRestrictionTransferManagerFactory;
 let I_PercentageTransferManagerFactory;
 let I_EtherDividendCheckpointLogic;
 let I_EtherDividendCheckpointFactory;
+let I_CountTransferManagerLogic;
 let I_CountTransferManagerFactory;
 let I_ERC20DividendCheckpointLogic;
 let I_ERC20DividendCheckpointFactory;
@@ -233,7 +235,8 @@ export async function deployGTMAndVerifyed(accountPolymath, MRProxyInstance, set
 }
 
 export async function deployCountTMAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
-    I_CountTransferManagerFactory = await CountTransferManagerFactory.new(setupCost, 0, 0, { from: accountPolymath });
+    I_CountTransferManagerLogic = await CountTransferManager.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
+    I_CountTransferManagerFactory = await CountTransferManagerFactory.new(setupCost, 0, 0, I_CountTransferManagerLogic.address, { from: accountPolymath });
 
     assert.notEqual(
         I_CountTransferManagerFactory.address.valueOf(),

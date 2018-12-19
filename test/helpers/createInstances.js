@@ -17,6 +17,7 @@ const ManualApprovalTransferManager = artifacts.require("./ManualApprovalTransfe
 const ManualApprovalTransferManagerFactory = artifacts.require("./ManualApprovalTransferManagerFactory.sol");
 const TrackedRedemptionFactory = artifacts.require("./TrackedRedemptionFactory.sol");
 const PercentageTransferManagerFactory = artifacts.require("./PercentageTransferManagerFactory.sol");
+const PercentageTransferManager = artifacts.require("./PercentageTransferManager.sol");
 const ScheduledCheckpointFactory = artifacts.require('./ScheduledCheckpointFactory.sol');
 const USDTieredSTOFactory = artifacts.require("./USDTieredSTOFactory.sol");
 const USDTieredSTO = artifacts.require("./USDTieredSTO");
@@ -50,6 +51,7 @@ let I_MockWrongTypeBurnFactory;
 let I_ManualApprovalTransferManagerLogic;
 let I_ManualApprovalTransferManagerFactory;
 let I_VolumeRestrictionTransferManagerFactory;
+let I_PercentageTransferManagerLogic;
 let I_PercentageTransferManagerFactory;
 let I_EtherDividendCheckpointLogic;
 let I_EtherDividendCheckpointFactory;
@@ -263,7 +265,8 @@ export async function deployManualApprovalTMAndVerifyed(accountPolymath, MRProxy
 }
 
 export async function deployPercentageTMAndVerified(accountPolymath, MRProxyInstance, setupCost) {
-    I_PercentageTransferManagerFactory = await PercentageTransferManagerFactory.new(setupCost, 0, 0, { from: accountPolymath });
+    I_PercentageTransferManagerLogic = await PercentageTransferManager.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
+    I_PercentageTransferManagerFactory = await PercentageTransferManagerFactory.new(setupCost, 0, 0, I_PercentageTransferManagerLogic.address, { from: accountPolymath });
     assert.notEqual(
         I_PercentageTransferManagerFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",

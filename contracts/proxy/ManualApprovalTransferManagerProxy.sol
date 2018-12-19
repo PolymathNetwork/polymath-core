@@ -6,7 +6,7 @@ import "../Pausable.sol";
 import "../modules/ModuleStorage.sol";
 
 /**
- * @title Transfer Manager module for core transfer validation functionality
+ @title ManualApprovalTransferManager module Proxy
  */
 contract ManualApprovalTransferManagerProxy is ManualApprovalTransferManagerStorage, ModuleStorage, Pausable, OwnedProxy {
 

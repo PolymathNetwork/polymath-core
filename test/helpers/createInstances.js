@@ -28,6 +28,7 @@ const GeneralPermissionManagerFactory = artifacts.require("./GeneralPermissionMa
 const CountTransferManagerFactory = artifacts.require("./CountTransferManagerFactory.sol");
 const VolumeRestrictionTransferManagerFactory = artifacts.require("./LockupVolumeRestrictionTMFactory");
 const PreSaleSTOFactory = artifacts.require("./PreSaleSTOFactory.sol");
+const PreSaleSTO = artifacts.require("./PreSaleSTO.sol");
 const PolyToken = artifacts.require("./PolyToken.sol");
 const PolyTokenFaucet = artifacts.require("./PolyTokenFaucet.sol");
 const DummySTOFactory = artifacts.require("./DummySTOFactory.sol");
@@ -57,6 +58,7 @@ let I_GeneralTransferManagerLogic;
 let I_GeneralTransferManagerFactory;
 let I_GeneralTransferManager;
 let I_ModuleRegistryProxy;
+let I_PreSaleSTOLogic;
 let I_PreSaleSTOFactory;
 let I_ModuleRegistry;
 let I_FeatureRegistry;
@@ -335,7 +337,8 @@ export async function deployCappedSTOAndVerifyed(accountPolymath, MRProxyInstanc
 }
 
 export async function deployPresaleSTOAndVerified(accountPolymath, MRProxyInstance, setupCost) {
-    I_PreSaleSTOFactory = await PreSaleSTOFactory.new(setupCost, 0, 0, { from: accountPolymath });
+    I_PreSaleSTOLogic = await PreSaleSTO.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
+    I_PreSaleSTOFactory = await PreSaleSTOFactory.new(setupCost, 0, 0, I_PreSaleSTOLogic.address, { from: accountPolymath });
 
     assert.notEqual(
         I_PreSaleSTOFactory.address.valueOf(),

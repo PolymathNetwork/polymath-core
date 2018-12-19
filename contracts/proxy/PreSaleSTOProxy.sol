@@ -5,12 +5,12 @@ import "../Pausable.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "../modules/STO/STOStorage.sol";
 import "../modules/ModuleStorage.sol";
-import "../modules/STO/CappedSTOStorage.sol";
+import "../modules/STO/PreSaleSTOStorage.sol";
 
 /**
- * @title CappedSTO module Proxy
+ * @title PreSaleSTO module Proxy
  */
-contract CappedSTOProxy is CappedSTOStorage, STOStorage, ModuleStorage, Pausable, ReentrancyGuard, OwnedProxy {
+contract PreSaleSTOProxy is PreSaleSTOStorage, STOStorage, ModuleStorage, Pausable, ReentrancyGuard, OwnedProxy {
 
     /**
     * @notice Constructor

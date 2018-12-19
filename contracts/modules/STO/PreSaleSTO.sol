@@ -3,18 +3,17 @@ pragma solidity ^0.4.24;
 import "./STO.sol";
 import "../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "./PreSaleSTOStorage.sol";
 
 /**
  * @title STO module for private presales
  */
-contract PreSaleSTO is STO {
+contract PreSaleSTO is PreSaleSTOStorage, STO {
     using SafeMath for uint256;
 
     bytes32 public constant PRE_SALE_ADMIN = "PRE_SALE_ADMIN";
 
     event TokensAllocated(address _investor, uint256 _amount);
-
-    mapping (address => uint256) public investors;
 
     /**
      * @notice Constructor

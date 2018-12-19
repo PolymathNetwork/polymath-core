@@ -107,7 +107,7 @@ contract("ModuleRegistryProxy", accounts => {
         it("Should attach the MR implementation and version", async () => {
             let bytesProxy = encodeProxyCall(MRProxyParameters, [I_PolymathRegistry.address, account_polymath]);
             await I_ModuleRegistryProxy.upgradeToAndCall("1.0.0", I_ModuleRegistry.address, bytesProxy, { from: account_polymath });
-            let c = OwnedUpgradeabilityProxy.at(I_ModuleRegistryProxy.address);
+            let c = await OwnedUpgradeabilityProxy.at(I_ModuleRegistryProxy.address);
             assert.equal(await readStorage(c.address, 12), I_ModuleRegistry.address);
             assert.equal(
                 web3.utils
@@ -208,7 +208,7 @@ contract("ModuleRegistryProxy", accounts => {
 
         it("Should upgrade the version and the implementation address successfully", async () => {
             await I_ModuleRegistryProxy.upgradeTo("1.1.0", I_MockModuleRegistry.address, { from: account_polymath });
-            let c = OwnedUpgradeabilityProxy.at(I_ModuleRegistryProxy.address);
+            let c = await OwnedUpgradeabilityProxy.at(I_ModuleRegistryProxy.address);
             assert.equal(
                 web3.utils
                     .toAscii(await readStorage(c.address, 11))
@@ -257,7 +257,7 @@ contract("ModuleRegistryProxy", accounts => {
         it("Should change the implementation contract and version by the new owner", async () => {
             I_ModuleRegistry = await ModuleRegistry.new({ from: account_polymath });
             await I_ModuleRegistryProxy.upgradeTo("1.2.0", I_ModuleRegistry.address, { from: account_polymath_new });
-            let c = OwnedUpgradeabilityProxy.at(I_ModuleRegistryProxy.address);
+            let c = await OwnedUpgradeabilityProxy.at(I_ModuleRegistryProxy.address);
             assert.equal(
                 web3.utils
                     .toAscii(await readStorage(c.address, 11))

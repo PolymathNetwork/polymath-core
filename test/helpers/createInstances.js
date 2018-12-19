@@ -204,7 +204,7 @@ async function deploySTR(account_polymath) {
         account_polymath
     ]);
     await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, { from: account_polymath });
-    I_STRProxied = SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
+    I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
 
     return new Array(I_SecurityTokenRegistry, I_SecurityTokenRegistryProxy, I_STRProxied);
 }
@@ -462,15 +462,4 @@ export async function deployMockWrongTypeRedemptionAndVerifyed(accountPolymath, 
 
     await registerAndVerifyByMR(I_MockWrongTypeBurnFactory.address, accountPolymath, MRProxyInstance);
     return Promise.all(new Array(I_MockWrongTypeBurnFactory));
-}
-
-/// Helper function
-function mergeReturn(returnData) {
-    let returnArray = new Array();
-    for (let i = 0; i < returnData.length; i++) {
-        for (let j = 0; j < returnData[i].length; j++) {
-            returnArray.push(returnData[i][j]);
-        }
-    }
-    return returnArray;
 }

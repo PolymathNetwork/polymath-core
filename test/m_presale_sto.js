@@ -138,7 +138,7 @@ contract("PreSaleSTO", accounts => {
             // Verify the successful generation of the security token
             assert.equal(tx.logs[2].args._ticker, symbol, "SecurityToken doesn't get deployed");
 
-            I_SecurityToken = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+            I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
             const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({ from: _blockNo }), 1);
 
@@ -149,7 +149,7 @@ contract("PreSaleSTO", accounts => {
 
         it("Should intialize the auto attached modules", async () => {
             let moduleData = (await I_SecurityToken.getModulesByType(transferManagerKey))[0];
-            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
+            I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
 
         it("Should fail to launch the STO due to endTime is 0", async () => {
@@ -173,7 +173,7 @@ contract("PreSaleSTO", accounts => {
                 "PreSaleSTO",
                 "PreSaleSTOFactory module was not added"
             );
-            I_PreSaleSTO = PreSaleSTO.at(tx.logs[2].args._module);
+            I_PreSaleSTO = await PreSaleSTO.at(tx.logs[2].args._module);
             await revertToSnapshot(snap_id);
         });
 
@@ -195,7 +195,7 @@ contract("PreSaleSTO", accounts => {
                 "PreSaleSTO",
                 "PreSaleSTOFactory module was not added"
             );
-            I_PreSaleSTO = PreSaleSTO.at(tx.logs[2].args._module);
+            I_PreSaleSTO = await PreSaleSTO.at(tx.logs[2].args._module);
         });
 
         it("Should successfully attach the STO factory with the security token", async () => {
@@ -210,7 +210,7 @@ contract("PreSaleSTO", accounts => {
                 "PreSaleSTO",
                 "PreSaleSTOFactory module was not added"
             );
-            I_PreSaleSTO = PreSaleSTO.at(tx.logs[2].args._module);
+            I_PreSaleSTO = await PreSaleSTO.at(tx.logs[2].args._module);
         });
     });
 

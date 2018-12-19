@@ -171,7 +171,7 @@ contract("SecurityToken", accounts => {
             // Verify the successful generation of the security token
             assert.equal(tx.logs[2].args._ticker, symbol, "SecurityToken doesn't get deployed");
 
-            I_SecurityToken = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+            I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
             const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({ from: _blockNo }), 1);
 
@@ -183,7 +183,7 @@ contract("SecurityToken", accounts => {
 
         it("Should intialize the auto attached modules", async () => {
             let moduleData = (await I_SecurityToken.getModulesByType(transferManagerKey))[0];
-            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
+            I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
 
             assert.notEqual(I_GeneralTransferManager.address.valueOf(), address_zero, "GeneralTransferManager contract was not deployed");
         });
@@ -313,7 +313,7 @@ contract("SecurityToken", accounts => {
             assert.equal(web3.utils.toUtf8(tx.logs[3].args._name), "CappedSTO", "CappedSTOFactory module was not added");
             console.log("module label is .. " + web3.utils.toAscii(tx.logs[3].args._label));
             assert(web3.utils.toAscii(tx.logs[3].args._label), "stofactory", "label doesnt match");
-            I_CappedSTO = CappedSTO.at(tx.logs[3].args._module);
+            I_CappedSTO = await CappedSTO.at(tx.logs[3].args._module);
             await revertToSnapshot(snapId);
         });
 
@@ -329,7 +329,7 @@ contract("SecurityToken", accounts => {
 
             assert.equal(tx.logs[3].args._types[0], stoKey, "CappedSTO doesn't get deployed");
             assert.equal(web3.utils.toUtf8(tx.logs[3].args._name), "CappedSTO", "CappedSTOFactory module was not added");
-            I_CappedSTO = CappedSTO.at(tx.logs[3].args._module);
+            I_CappedSTO = await CappedSTO.at(tx.logs[3].args._module);
         });
 
         it("Should successfully mint tokens while STO attached", async () => {
@@ -562,7 +562,7 @@ contract("SecurityToken", accounts => {
             // Add permission to the deletgate (A regesteration process)
             await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "", new BN(0), new BN(0), { from: token_owner });
             let moduleData = (await I_SecurityToken.getModulesByType(permissionManagerKey))[0];
-            I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData);
+            I_GeneralPermissionManager = await GeneralPermissionManager.at(moduleData);
             await catchRevert(I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: account_temp }));
         });
 
@@ -943,7 +943,7 @@ contract("SecurityToken", accounts => {
             [I_MockRedemptionManagerFactory] = await deployMockRedemptionAndVerifyed(account_polymath, I_MRProxied, 0);
             let tx = await I_SecurityToken.addModule(I_MockRedemptionManagerFactory.address, "", new BN(0), new BN(0), { from: token_owner });
             assert.equal(tx.logs[2].args._types[0], burnKey, "fail in adding the burn manager");
-            I_MockRedemptionManager = MockRedemptionManager.at(tx.logs[2].args._module);
+            I_MockRedemptionManager = await MockRedemptionManager.at(tx.logs[2].args._module);
             // adding the burn module into the GTM
             tx = await I_GeneralTransferManager.modifyWhitelist(
                 I_MockRedemptionManager.address,
@@ -983,7 +983,7 @@ contract("SecurityToken", accounts => {
         it("Should successfully fail in calling the burn functions", async () => {
             [I_MockRedemptionManagerFactory] = await deployMockWrongTypeRedemptionAndVerifyed(account_polymath, I_MRProxied, 0);
             let tx = await I_SecurityToken.addModule(I_MockRedemptionManagerFactory.address, "", new BN(0), new BN(0), { from: token_owner });
-            I_MockRedemptionManager = MockRedemptionManager.at(tx.logs[2].args._module);
+            I_MockRedemptionManager = await MockRedemptionManager.at(tx.logs[2].args._module);
 
             // adding the burn module into the GTM
             tx = await I_GeneralTransferManager.modifyWhitelist(

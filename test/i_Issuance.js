@@ -149,7 +149,7 @@ contract("Issuance", accounts => {
                 // Verify the successful generation of the security token
                 assert.equal(tx.logs[2].args._ticker, symbol, "SecurityToken doesn't get deployed");
 
-                I_SecurityToken = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+                I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
                 const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({ from: _blockNo }), 1);
 
@@ -160,7 +160,7 @@ contract("Issuance", accounts => {
 
             it("POLYMATH: Should intialize the auto attached modules", async () => {
                 let moduleData = (await I_SecurityToken.getModulesByType(transferManagerKey))[0];
-                I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
+                I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
             });
 
             it("POLYMATH: Should successfully attach the STO factory with the security token", async () => {
@@ -194,7 +194,7 @@ contract("Issuance", accounts => {
                     "CappedSTO",
                     "CappedSTOFactory module was not added"
                 );
-                I_CappedSTO = CappedSTO.at(tx.logs[3].args._module);
+                I_CappedSTO = await CappedSTO.at(tx.logs[3].args._module);
             });
         });
 
@@ -221,7 +221,7 @@ contract("Issuance", accounts => {
                 //First attach a permission manager to the token
                 await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "", new BN(0), new BN(0), { from: account_polymath });
                 let moduleData = (await I_SecurityToken.getModulesByType(permissionManagerKey))[0];
-                I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData);
+                I_GeneralPermissionManager = await GeneralPermissionManager.at(moduleData);
                 // Add permission to the deletgate (A regesteration process)
                 await I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: account_polymath });
                 // Providing the permission to the delegate

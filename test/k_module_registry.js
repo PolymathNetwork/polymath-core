@@ -295,7 +295,7 @@ contract("ModuleRegistry", accounts => {
                 await I_STRProxied.registerTicker(account_issuer, symbol, name, { from: account_issuer });
                 let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, true, { from: account_issuer });
                 assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase());
-                I_SecurityToken = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+                I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
             });
 
             it("Should fail in adding module. Because module is un-verified", async () => {
@@ -396,7 +396,7 @@ contract("ModuleRegistry", accounts => {
                 await I_STRProxied.registerTicker(account_issuer, newSymbol, name, { from: account_issuer });
                 let tx = await I_STRProxied.generateSecurityToken(name, newSymbol, tokenDetails, true, { from: account_issuer });
                 assert.equal(tx.logs[2].args._ticker, newSymbol.toUpperCase());
-                I_SecurityToken2 = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+                I_SecurityToken2 = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
                 let bytesData = encodeModuleCall(
                     ["uint256", "uint256", "uint256", "string"],

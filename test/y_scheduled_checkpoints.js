@@ -127,7 +127,7 @@ contract("ScheduledCheckpoint", accounts => {
             // Verify the successful generation of the security token
             assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
-            I_SecurityToken = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+            I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
             const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({ from: _blockNo }), 1);
 
@@ -138,7 +138,7 @@ contract("ScheduledCheckpoint", accounts => {
 
         it("Should intialize the auto attached modules", async () => {
             let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
-            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
+            I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
     });
 
@@ -153,7 +153,7 @@ contract("ScheduledCheckpoint", accounts => {
                 "ScheduledCheckpoint",
                 "ScheduledCheckpoint module was not added"
             );
-            I_ScheduledCheckpoint = ScheduledCheckpoint.at(tx.logs[2].args._module);
+            I_ScheduledCheckpoint = await ScheduledCheckpoint.at(tx.logs[2].args._module);
         });
 
         let startTime;

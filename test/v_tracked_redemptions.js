@@ -140,7 +140,7 @@ contract("TrackedRedemption", accounts => {
             // Verify the successful generation of the security token
             assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
-            I_SecurityToken = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+            I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
             const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({ from: _blockNo }), 1);
 
@@ -151,7 +151,7 @@ contract("TrackedRedemption", accounts => {
 
         it("Should intialize the auto attached modules", async () => {
             let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
-            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
+            I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
 
         it("Should successfully attach the paid TrackedRedemption with the security token", async () => {
@@ -166,7 +166,7 @@ contract("TrackedRedemption", accounts => {
                 "TrackedRedemption",
                 "TrackedRedemption module was not added"
             );
-            I_TrackedRedemption = TrackedRedemption.at(tx.logs[3].args._module);
+            I_TrackedRedemption = await TrackedRedemption.at(tx.logs[3].args._module);
             await revertToSnapshot(snapId);
         });
 
@@ -178,7 +178,7 @@ contract("TrackedRedemption", accounts => {
                 "TrackedRedemption",
                 "TrackedRedemption module was not added"
             );
-            I_TrackedRedemption = TrackedRedemption.at(tx.logs[2].args._module);
+            I_TrackedRedemption = await TrackedRedemption.at(tx.logs[2].args._module);
         });
     });
 

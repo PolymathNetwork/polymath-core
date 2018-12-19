@@ -156,7 +156,7 @@ contract("ManualApprovalTransferManager", accounts => {
             // Verify the successful generation of the security token
             assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
-            I_SecurityToken = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+            I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
             const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({ from: _blockNo }), 1);
 
@@ -167,7 +167,7 @@ contract("ManualApprovalTransferManager", accounts => {
 
         it("Should intialize the auto attached modules", async () => {
             let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
-            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
+            I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
     });
 
@@ -254,7 +254,7 @@ contract("ManualApprovalTransferManager", accounts => {
                 "ManualApprovalTransferManager",
                 "ManualApprovalTransferManagerFactory module was not added"
             );
-            P_ManualApprovalTransferManagerFactory = ManualApprovalTransferManager.at(tx.logs[3].args._module);
+            P_ManualApprovalTransferManagerFactory = await ManualApprovalTransferManager.at(tx.logs[3].args._module);
             await revertToSnapshot(snapId);
         });
 
@@ -266,7 +266,7 @@ contract("ManualApprovalTransferManager", accounts => {
                 "ManualApprovalTransferManager",
                 "ManualApprovalTransferManager module was not added"
             );
-            I_ManualApprovalTransferManager = ManualApprovalTransferManager.at(tx.logs[2].args._module);
+            I_ManualApprovalTransferManager = await ManualApprovalTransferManager.at(tx.logs[2].args._module);
         });
         //function verifyTransfer(address _from, address _to, uint256 _amount, bool _isTransfer) public returns(Result) {
         it("Cannot call verifyTransfer on the TM directly if _isTransfer == true", async () => {
@@ -522,7 +522,7 @@ contract("ManualApprovalTransferManager", accounts => {
             assert.equal(tx.logs[2].args._types[0].toNumber(), transferManagerKey, "CountTransferManager doesn't get deployed");
             let name = web3.utils.toUtf8(tx.logs[2].args._name);
             assert.equal(name, "CountTransferManager", "CountTransferManager module was not added");
-            I_CountTransferManager = CountTransferManager.at(tx.logs[2].args._module);
+            I_CountTransferManager = await CountTransferManager.at(tx.logs[2].args._module);
         });
 
         it("Should get the permission list", async () => {

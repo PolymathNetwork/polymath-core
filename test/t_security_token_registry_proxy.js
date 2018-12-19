@@ -110,7 +110,7 @@ contract("SecurityTokenRegistryProxy", accounts => {
             await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {
                 from: account_polymath
             });
-            let c = OwnedUpgradeabilityProxy.at(I_SecurityTokenRegistryProxy.address);
+            let c = await OwnedUpgradeabilityProxy.at(I_SecurityTokenRegistryProxy.address);
             assert.equal(await readStorage(c.address, 12), I_SecurityTokenRegistry.address);
             assert.equal(
                 web3.utils
@@ -152,7 +152,7 @@ contract("SecurityTokenRegistryProxy", accounts => {
             // Verify the successful generation of the security token
             assert.equal(tx.logs[2].args._ticker, symbol, "SecurityToken doesn't get deployed");
 
-            I_SecurityToken = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+            I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
             const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({ from: _blockNo }), 1);
 
@@ -194,7 +194,7 @@ contract("SecurityTokenRegistryProxy", accounts => {
 
         it("Should upgrade the version and the implementation address successfully", async () => {
             await I_SecurityTokenRegistryProxy.upgradeTo("1.1.0", I_SecurityTokenRegistryMock.address, { from: account_polymath });
-            let c = OwnedUpgradeabilityProxy.at(I_SecurityTokenRegistryProxy.address);
+            let c = await OwnedUpgradeabilityProxy.at(I_SecurityTokenRegistryProxy.address);
             assert.equal(
                 web3.utils
                     .toAscii(await readStorage(c.address, 11))
@@ -244,7 +244,7 @@ contract("SecurityTokenRegistryProxy", accounts => {
         it("Should change the implementation contract and version by the new owner", async () => {
             I_SecurityTokenRegistry = await SecurityTokenRegistry.new({ from: account_polymath });
             await I_SecurityTokenRegistryProxy.upgradeTo("1.2.0", I_SecurityTokenRegistry.address, { from: account_polymath_new });
-            let c = OwnedUpgradeabilityProxy.at(I_SecurityTokenRegistryProxy.address);
+            let c = await OwnedUpgradeabilityProxy.at(I_SecurityTokenRegistryProxy.address);
             assert.equal(
                 web3.utils
                     .toAscii(await readStorage(c.address, 11))

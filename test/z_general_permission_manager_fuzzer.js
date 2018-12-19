@@ -185,7 +185,7 @@ contract("GeneralPermissionManager Fuzz", accounts => {
             // Verify the successful generation of the security token
             assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
-            I_SecurityToken = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+            I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
             const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({ from: _blockNo }), 1);
 
@@ -196,7 +196,7 @@ contract("GeneralPermissionManager Fuzz", accounts => {
 
         it("Should intialize the auto attached modules", async () => {
             let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
-            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
+            I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
 
         it("Should successfully attach the General permission manager factory with the security token -- failed because Token is not paid", async () => {
@@ -225,7 +225,7 @@ contract("GeneralPermissionManager Fuzz", accounts => {
                 "GeneralPermissionManager",
                 "GeneralPermissionManagerFactory module was not added"
             );
-            P_GeneralPermissionManager = GeneralPermissionManager.at(tx.logs[3].args._module);
+            P_GeneralPermissionManager = await GeneralPermissionManager.at(tx.logs[3].args._module);
             await revertToSnapshot(snapId);
         });
 
@@ -237,7 +237,7 @@ contract("GeneralPermissionManager Fuzz", accounts => {
                 "GeneralPermissionManager",
                 "GeneralPermissionManagerFactory module was not added"
             );
-            I_GeneralPermissionManager = GeneralPermissionManager.at(tx.logs[2].args._module);
+            I_GeneralPermissionManager = await GeneralPermissionManager.at(tx.logs[2].args._module);
         });
     });
 
@@ -399,7 +399,7 @@ contract("GeneralPermissionManager Fuzz", accounts => {
                 "CountTransferManager",
                 "CountTransferManager module was not added"
             );
-            I_CountTransferManager = CountTransferManager.at(tx.logs[2].args._module);
+            I_CountTransferManager = await CountTransferManager.at(tx.logs[2].args._module);
         });
 
         it("should pass fuzz test for changeHolderCount()", async () => {
@@ -466,7 +466,7 @@ contract("GeneralPermissionManager Fuzz", accounts => {
         it("Should successfully attach the percentage transfer manager with the security token", async () => {
             console.log("1");
             const tx = await I_SecurityToken.addModule(I_PercentageTransferManagerFactory.address, bytesSTO, new BN(0), new BN(0), { from: token_owner });
-            I_PercentageTransferManager = PercentageTransferManager.at(tx.logs[2].args._module);
+            I_PercentageTransferManager = await PercentageTransferManager.at(tx.logs[2].args._module);
         });
 
         it("should pass fuzz test for modifyWhitelist with perm WHITELIST", async () => {
@@ -620,7 +620,7 @@ contract("GeneralPermissionManager Fuzz", accounts => {
                 "ManualApprovalTransferManager",
                 "ManualApprovalTransferManager module was not added"
             );
-            I_ManualApprovalTransferManager = ManualApprovalTransferManager.at(tx.logs[2].args._module);
+            I_ManualApprovalTransferManager = await ManualApprovalTransferManager.at(tx.logs[2].args._module);
         });
 
         it("should pass fuzz test for addManualApproval & revokeManualApproval with perm TRANSFER_APPROVAL", async () => {

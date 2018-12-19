@@ -141,7 +141,7 @@ contract("CountTransferManager", accounts => {
             // Verify the successful generation of the security token
             assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
-            I_SecurityToken = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+            I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
             const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({ from: _blockNo }), 1);
 
@@ -152,7 +152,7 @@ contract("CountTransferManager", accounts => {
 
         it("Should intialize the auto attached modules", async () => {
             let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
-            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
+            I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
 
         it("Should successfully attach the CountTransferManager factory with the security token", async () => {
@@ -180,7 +180,7 @@ contract("CountTransferManager", accounts => {
                 "CountTransferManager",
                 "CountTransferManagerFactory module was not added"
             );
-            P_CountTransferManager = CountTransferManager.at(tx.logs[3].args._module);
+            P_CountTransferManager = await CountTransferManager.at(tx.logs[3].args._module);
             await revertToSnapshot(snapId);
         });
 
@@ -192,7 +192,7 @@ contract("CountTransferManager", accounts => {
                 "CountTransferManager",
                 "CountTransferManager module was not added"
             );
-            I_CountTransferManager = CountTransferManager.at(tx.logs[2].args._module);
+            I_CountTransferManager = await CountTransferManager.at(tx.logs[2].args._module);
         });
     });
 
@@ -363,10 +363,10 @@ contract("CountTransferManager", accounts => {
                 let _blockNo = latestBlock();
                 let tx2 = await I_STRProxied.generateSecurityToken(name, symbol2, tokenDetails, false, { from: token_owner });
 
-                I_SecurityToken2 = SecurityToken.at(tx2.logs[2].args._securityTokenAddress);
+                I_SecurityToken2 = await SecurityToken.at(tx2.logs[2].args._securityTokenAddress);
 
                 let moduleData = (await I_SecurityToken2.getModulesByType(2))[0];
-                I_GeneralTransferManager2 = GeneralTransferManager.at(moduleData);
+                I_GeneralTransferManager2 = await GeneralTransferManager.at(moduleData);
             });
 
             it("add 3 holders to the token", async () => {
@@ -430,7 +430,7 @@ contract("CountTransferManager", accounts => {
 
             it("Should intialize the auto attached modules", async () => {
                 let moduleData = (await I_SecurityToken2.getModulesByType(2))[0];
-                I_GeneralTransferManager2 = GeneralTransferManager.at(moduleData);
+                I_GeneralTransferManager2 = await GeneralTransferManager.at(moduleData);
             });
 
             it("Should successfully attach the CountTransferManager factory with the security token", async () => {
@@ -450,7 +450,7 @@ contract("CountTransferManager", accounts => {
                     "CountTransferManager",
                     "CountTransferManager module was not added"
                 );
-                I_CountTransferManager2 = CountTransferManager.at(tx.logs[2].args._module);
+                I_CountTransferManager2 = await CountTransferManager.at(tx.logs[2].args._module);
                 await I_CountTransferManager2.changeHolderCount(2, { from: token_owner });
                 console.log("current max holder number is " + (await I_CountTransferManager2.maxHolderCount({ from: token_owner })));
             });

@@ -152,13 +152,13 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
         await I_PolyToken.approve(I_STRProxied.address, REGFEE, { from: ISSUER1 });
         let tx = await I_STRProxied.generateSecurityToken(name1, symbol1, tokenDetails1, false, { from: ISSUER1 });
         assert.equal(tx.logs[2].args._ticker, symbol1, "SecurityToken doesn't get deployed");
-        I_SecurityToken1 = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+        I_SecurityToken1 = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
         // (B) :  TOK2
         await I_PolyToken.approve(I_STRProxied.address, REGFEE, { from: ISSUER2 });
         tx = await I_STRProxied.generateSecurityToken(name2, symbol2, tokenDetails2, false, { from: ISSUER2 });
         assert.equal(tx.logs[2].args._ticker, symbol2, "SecurityToken doesn't get deployed");
-        I_SecurityToken2 = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+        I_SecurityToken2 = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
         // Printing all the contract addresses
         console.log(`
@@ -409,7 +409,7 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
             let tx = await I_SecurityToken1.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: ISSUER1 });
             assert.equal(tx.logs[2].args._types[0], STOKEY, "USDTieredSTO doesn't get deployed");
             assert.equal(web3.utils.hexToString(tx.logs[2].args._name), "USDTieredSTO", "USDTieredSTOFactory module was not added");
-            I_USDTieredSTO = USDTieredSTO.at(tx.logs[2].args._module);
+            I_USDTieredSTO = await USDTieredSTO.at(tx.logs[2].args._module);
         });
 
         /*
@@ -418,7 +418,7 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
             await I_PolyToken.approve(I_STRProxiedNew.address, REGFEE, { from: ISSUER3});
             tx = await I_STRProxiedNew.generateSecurityToken(name3, symbol3, tokenDetails3, false, { from: ISSUER3 });
             assert.equal(tx.logs[1].args._ticker, symbol3, "SecurityToken doesn't get deployed");
-            I_SecurityToken3 = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
+            I_SecurityToken3 = await SecurityToken.at(tx.logs[1].args._securityTokenAddress);
         });
         */
 
@@ -447,7 +447,7 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
                 "ManualApprovalTransferManager",
                 "ManualApprovalTransferManagerFactory module was not added"
             );
-            I_ManualApprovalTransferManagerFactory = ManualApprovalTransferManagerFactory.at(tx.logs[2].args._module);
+            I_ManualApprovalTransferManagerFactory = await ManualApprovalTransferManagerFactory.at(tx.logs[2].args._module);
         });
     });
 });

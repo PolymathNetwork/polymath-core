@@ -179,7 +179,7 @@ contract("CappedSTO", accounts => {
             // Verify the successful generation of the security token
             assert.equal(tx.logs[2].args._ticker, symbol, "SecurityToken doesn't get deployed");
 
-            I_SecurityToken_ETH = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+            I_SecurityToken_ETH = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
             const log = await promisifyLogWatch(I_SecurityToken_ETH.ModuleAdded({ from: _blockNo }), 1);
 
@@ -190,7 +190,7 @@ contract("CappedSTO", accounts => {
 
         it("Should intialize the auto attached modules", async () => {
             let moduleData = (await I_SecurityToken_ETH.getModulesByType(transferManagerKey))[0];
-            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
+            I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
 
         it("Should mint the tokens before attaching the STO", async () => {
@@ -650,7 +650,7 @@ contract("CappedSTO", accounts => {
                 // Verify the successful generation of the security token
                 assert.equal(tx.logs[2].args._ticker, P_symbol, "SecurityToken doesn't get deployed");
 
-                I_SecurityToken_POLY = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+                I_SecurityToken_POLY = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
                 const log = await promisifyLogWatch(I_SecurityToken_POLY.ModuleAdded({ from: _blockNo }), 1);
 
@@ -661,7 +661,7 @@ contract("CappedSTO", accounts => {
 
             it("POLY: Should intialize the auto attached modules", async () => {
                 let moduleData = (await I_SecurityToken_POLY.getModulesByType(transferManagerKey))[0];
-                I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
+                I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
             });
 
             it("POLY: Should successfully attach the STO module to the security token", async () => {

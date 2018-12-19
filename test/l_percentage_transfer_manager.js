@@ -165,7 +165,7 @@ contract("PercentageTransferManager", accounts => {
             // Verify the successful generation of the security token
             assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
-            I_SecurityToken = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+            I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
             const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({ from: _blockNo }), 1);
 
@@ -176,7 +176,7 @@ contract("PercentageTransferManager", accounts => {
 
         it("Should intialize the auto attached modules", async () => {
             let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
-            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
+            I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
 
         it("Should successfully attach the General permission manager factory with the security token", async () => {
@@ -187,7 +187,7 @@ contract("PercentageTransferManager", accounts => {
                 "GeneralPermissionManager",
                 "GeneralPermissionManagerFactory module was not added"
             );
-            I_GeneralPermissionManager = GeneralPermissionManager.at(tx.logs[2].args._module);
+            I_GeneralPermissionManager = await GeneralPermissionManager.at(tx.logs[2].args._module);
         });
     });
 
@@ -274,7 +274,7 @@ contract("PercentageTransferManager", accounts => {
                 "PercentageTransferManager",
                 "PercentageTransferManagerFactory module was not added"
             );
-            P_PercentageTransferManager = PercentageTransferManager.at(tx.logs[3].args._module);
+            P_PercentageTransferManager = await PercentageTransferManager.at(tx.logs[3].args._module);
             await revertToSnapshot(snapId);
         });
 
@@ -286,7 +286,7 @@ contract("PercentageTransferManager", accounts => {
                 "PercentageTransferManager",
                 "PercentageTransferManager module was not added"
             );
-            I_PercentageTransferManager = PercentageTransferManager.at(tx.logs[2].args._module);
+            I_PercentageTransferManager = await PercentageTransferManager.at(tx.logs[2].args._module);
         });
 
         it("Add a new token holder", async () => {

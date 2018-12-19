@@ -158,7 +158,7 @@ contract("CountTransferManager", accounts => {
         it("Should successfully attach the CountTransferManager factory with the security token", async () => {
             await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
             await catchRevert(
-                I_SecurityToken.addModule(P_CountTransferManagerFactory.address, bytesSTO, web3.utils.toWei("500", "ether"), 0, {
+                I_SecurityToken.addModule(P_CountTransferManagerFactory.address, bytesSTO, web3.utils.toWei("500", "ether"), new BN(0), {
                     from: token_owner
                 })
             );
@@ -171,7 +171,7 @@ contract("CountTransferManager", accounts => {
                 P_CountTransferManagerFactory.address,
                 bytesSTO,
                 web3.utils.toWei("500", "ether"),
-                0,
+                new BN(0),
                 { from: token_owner }
             );
             assert.equal(tx.logs[3].args._types[0].toNumber(), transferManagerKey, "CountTransferManagerFactory doesn't get deployed");
@@ -185,7 +185,7 @@ contract("CountTransferManager", accounts => {
         });
 
         it("Should successfully attach the CountTransferManager with the security token", async () => {
-            const tx = await I_SecurityToken.addModule(I_CountTransferManagerFactory.address, bytesSTO, 0, 0, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_CountTransferManagerFactory.address, bytesSTO, new BN(0), new BN(0), { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), transferManagerKey, "CountTransferManager doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
@@ -436,14 +436,14 @@ contract("CountTransferManager", accounts => {
             it("Should successfully attach the CountTransferManager factory with the security token", async () => {
                 await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
                 await catchRevert(
-                    I_SecurityToken2.addModule(P_CountTransferManagerFactory.address, bytesSTO, web3.utils.toWei("500", "ether"), 0, {
+                    I_SecurityToken2.addModule(P_CountTransferManagerFactory.address, bytesSTO, web3.utils.toWei("500", "ether"), new BN(0), {
                         from: token_owner
                     })
                 );
             });
 
             it("Should successfully attach the CountTransferManager with the security token and set max holder to 2", async () => {
-                const tx = await I_SecurityToken2.addModule(I_CountTransferManagerFactory.address, bytesSTO, 0, 0, { from: token_owner });
+                const tx = await I_SecurityToken2.addModule(I_CountTransferManagerFactory.address, bytesSTO, new BN(0), new BN(0), { from: token_owner });
                 assert.equal(tx.logs[2].args._types[0].toNumber(), transferManagerKey, "CountTransferManager doesn't get deployed");
                 assert.equal(
                     web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
@@ -553,7 +553,7 @@ contract("CountTransferManager", accounts => {
             it("Should successfully change the version bound", async () => {
                 await I_CountTransferManagerFactory.changeSTVersionBounds("lowerBound", [1, 2, 1], { from: account_polymath });
                 await I_CountTransferManagerFactory.changeSTVersionBounds("lowerBound", [1, 4, 9], { from: account_polymath });
-                await catchRevert(I_CountTransferManagerFactory.changeSTVersionBounds("lowerBound", [1, 0, 0], { from: account_polymath }));
+                await catchRevert(I_CountTransferManagerFactory.changeSTVersionBounds("lowerBound", [1, new BN(0), 0], { from: account_polymath }));
             });
         });
     });

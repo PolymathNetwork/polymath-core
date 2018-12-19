@@ -155,7 +155,7 @@ contract("PreSaleSTO", accounts => {
         it("Should fail to launch the STO due to endTime is 0", async () => {
             let bytesSTO = encodeModuleCall(STOParameters, [0]);
 
-            await catchRevert(I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, 0, 0, { from: token_owner }));
+            await catchRevert(I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: token_owner }));
         });
 
         it("Should successfully attach the Paid STO factory with the security token", async () => {
@@ -163,7 +163,7 @@ contract("PreSaleSTO", accounts => {
             endTime = latestTime() + duration.days(30); // Start time will be 5000 seconds more than the latest time
             let bytesSTO = encodeModuleCall(STOParameters, [endTime]);
             await I_PolyToken.getTokens(web3.utils.toWei("500"), I_SecurityToken.address);
-            const tx = await I_SecurityToken.addModule(P_PreSaleSTOFactory.address, bytesSTO, web3.utils.toWei("500"), 0, {
+            const tx = await I_SecurityToken.addModule(P_PreSaleSTOFactory.address, bytesSTO, web3.utils.toWei("500"), new BN(0), {
                 from: token_owner
             });
 
@@ -180,14 +180,14 @@ contract("PreSaleSTO", accounts => {
         it("Should successfully attach the STO factory with the security token -- fail because signature is different", async () => {
             endTime = latestTime() + duration.days(30); // Start time will be 5000 seconds more than the latest time
             let bytesSTO = encodeModuleCall(["string"], ["hey"]);
-            await catchRevert(I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, 0, 0, { from: token_owner }));
+            await catchRevert(I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: token_owner }));
         });
 
         it("Should successfully attach the STO factory with the security token", async () => {
             endTime = latestTime() + duration.days(30); // Start time will be 5000 seconds more than the latest time
             let bytesSTO = encodeModuleCall(STOParameters, [endTime]);
 
-            const tx = await I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, 0, 0, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: token_owner });
 
             assert.equal(tx.logs[2].args._types[0], stoKey, "PreSaleSTO doesn't get deployed");
             assert.equal(
@@ -202,7 +202,7 @@ contract("PreSaleSTO", accounts => {
             endTime = latestTime() + duration.days(30); // Start time will be 5000 seconds more than the latest time
             let bytesSTO = encodeModuleCall(STOParameters, [endTime]);
 
-            const tx = await I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, 0, 0, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: token_owner });
 
             assert.equal(tx.logs[2].args._types[0], stoKey, "PreSaleSTO doesn't get deployed");
             assert.equal(
@@ -245,7 +245,7 @@ contract("PreSaleSTO", accounts => {
 
             // Jump time
             await increaseTime(duration.days(1));
-            await I_PreSaleSTO.allocateTokens(account_investor1, web3.utils.toWei("1", "ether"), web3.utils.toWei("1", "ether"), 0, {
+            await I_PreSaleSTO.allocateTokens(account_investor1, web3.utils.toWei("1", "ether"), web3.utils.toWei("1", "ether"), new BN(0), {
                 from: account_issuer
             });
 
@@ -257,7 +257,7 @@ contract("PreSaleSTO", accounts => {
 
         it("Should allocate the tokens --failed because of amount is 0", async () => {
             await catchRevert(
-                I_PreSaleSTO.allocateTokens(account_investor1, 0, web3.utils.toWei("1", "ether"), 0, {
+                I_PreSaleSTO.allocateTokens(account_investor1, new BN(0), web3.utils.toWei("1", "ether"), new BN(0), {
                     from: account_issuer
                 })
             );
@@ -265,7 +265,7 @@ contract("PreSaleSTO", accounts => {
 
         it("Should allocate the tokens -- failed due to msg.sender is not pre sale admin", async () => {
             await catchRevert(
-                I_PreSaleSTO.allocateTokens(account_investor1, web3.utils.toWei("1", "ether"), web3.utils.toWei("1", "ether"), 0, {
+                I_PreSaleSTO.allocateTokens(account_investor1, web3.utils.toWei("1", "ether"), web3.utils.toWei("1", "ether"), new BN(0), {
                     from: account_fundsReceiver
                 })
             );
@@ -353,7 +353,7 @@ contract("PreSaleSTO", accounts => {
         });
 
         it("Should buy some more tokens to previous investor", async () => {
-            await I_PreSaleSTO.allocateTokens(account_investor1, web3.utils.toWei("1000", "ether"), web3.utils.toWei("1", "ether"), 0, {
+            await I_PreSaleSTO.allocateTokens(account_investor1, web3.utils.toWei("1000", "ether"), web3.utils.toWei("1", "ether"), new BN(0), {
                 from: account_issuer
             });
             // No change in the investor count
@@ -364,7 +364,7 @@ contract("PreSaleSTO", accounts => {
             await increaseTime(duration.days(100)); // increased beyond the end time of the STO
 
             await catchRevert(
-                I_PreSaleSTO.allocateTokens(account_investor1, 1000, web3.utils.toWei("1", "ether"), 0, { from: account_issuer })
+                I_PreSaleSTO.allocateTokens(account_investor1, 1000, web3.utils.toWei("1", "ether"), new BN(0), { from: account_issuer })
             );
         });
     });
@@ -402,7 +402,7 @@ contract("PreSaleSTO", accounts => {
             );
             assert.equal(
                 (await I_PolyToken.balanceOf(I_PreSaleSTO.address)).toNumber(),
-                0,
+                new BN(0),
                 "tokens are not trandfered out from STO contract"
             );
         });

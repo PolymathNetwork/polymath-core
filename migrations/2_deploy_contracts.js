@@ -101,7 +101,7 @@ module.exports = function(deployer, network, accounts) {
                     POLYOracle = mockedOracle.address;
                 });
             });
-        deployer.deploy(MockOracle, 0, "ETH", "USD", new BN(500).mul(new BN(10).pow(new BN(18))), { from: PolymathAccount }).then(() => {
+        deployer.deploy(MockOracle, new BN(0), "ETH", "USD", new BN(500).mul(new BN(10).pow(new BN(18))), { from: PolymathAccount }).then(() => {
             MockOracle.deployed().then(mockedOracle => {
                 ETHOracle = mockedOracle.address;
             });
@@ -213,41 +213,41 @@ module.exports = function(deployer, network, accounts) {
         .then(() => {
             // B) Deploy the GeneralTransferManagerFactory Contract (Factory used to generate the GeneralTransferManager contract and this
             // manager attach with the securityToken contract at the time of deployment)
-            return deployer.deploy(GeneralTransferManagerFactory, 0, 0, 0, GeneralTransferManagerLogic.address, { from: PolymathAccount });
+            return deployer.deploy(GeneralTransferManagerFactory, new BN(0), new BN(0), new BN(0), GeneralTransferManagerLogic.address, { from: PolymathAccount });
         })
         .then(() => {
             // C) Deploy the GeneralPermissionManagerFactory Contract (Factory used to generate the GeneralPermissionManager contract and
             // this manager attach with the securityToken contract at the time of deployment)
-            return deployer.deploy(GeneralPermissionManagerFactory, 0, 0, 0, { from: PolymathAccount });
+            return deployer.deploy(GeneralPermissionManagerFactory, new BN(0), new BN(0), new BN(0), { from: PolymathAccount });
         })
         .then(() => {
             // D) Deploy the CountTransferManagerFactory Contract (Factory used to generate the CountTransferManager contract use
             // to track the counts of the investors of the security token)
-            return deployer.deploy(CountTransferManagerFactory, 0, 0, 0, { from: PolymathAccount });
+            return deployer.deploy(CountTransferManagerFactory, new BN(0), new BN(0), new BN(0), { from: PolymathAccount });
         })
         .then(() => {
             // D) Deploy the PercentageTransferManagerFactory Contract (Factory used to generate the PercentageTransferManager contract use
             // to track the percentage of investment the investors could do for a particular security token)
-            return deployer.deploy(PercentageTransferManagerFactory, 0, 0, 0, { from: PolymathAccount });
+            return deployer.deploy(PercentageTransferManagerFactory, new BN(0), new BN(0), new BN(0), { from: PolymathAccount });
         })
         .then(() => {
             // D) Deploy the EtherDividendCheckpointFactory Contract (Factory used to generate the EtherDividendCheckpoint contract use
             // to provide the functionality of the dividend in terms of ETH)
-            return deployer.deploy(EtherDividendCheckpointFactory, 0, 0, 0, EtherDividendCheckpointLogic.address, {
+            return deployer.deploy(EtherDividendCheckpointFactory, new BN(0), new BN(0), new BN(0), EtherDividendCheckpointLogic.address, {
                 from: PolymathAccount
             });
         })
         .then(() => {
             // D) Deploy the ERC20DividendCheckpointFactory Contract (Factory used to generate the ERC20DividendCheckpoint contract use
             // to provide the functionality of the dividend in terms of ERC20 token)
-            return deployer.deploy(ERC20DividendCheckpointFactory, 0, 0, 0, ERC20DividendCheckpointLogic.address, {
+            return deployer.deploy(ERC20DividendCheckpointFactory, new BN(0), new BN(0), new BN(0), ERC20DividendCheckpointLogic.address, {
                 from: PolymathAccount
             });
         })
         .then(() => {
             // D) Deploy the ManualApprovalTransferManagerFactory Contract (Factory used to generate the ManualApprovalTransferManager contract use
             // to manual approve the transfer that will overcome the other transfer restrictions)
-            return deployer.deploy(ManualApprovalTransferManagerFactory, 0, 0, 0, { from: PolymathAccount });
+            return deployer.deploy(ManualApprovalTransferManagerFactory, new BN(0), new BN(0), new BN(0), { from: PolymathAccount });
         })
         .then(() => {
             // H) Deploy the STVersionProxy001 Contract which contains the logic of deployment of securityToken.
@@ -370,7 +370,7 @@ module.exports = function(deployer, network, accounts) {
         })
         .then(() => {
             // M) Deploy the CappedSTOFactory (Use to generate the CappedSTO contract which will used to collect the funds ).
-            return deployer.deploy(CappedSTOFactory, cappedSTOSetupCost, 0, 0, { from: PolymathAccount });
+            return deployer.deploy(CappedSTOFactory, cappedSTOSetupCost, new BN(0), new BN(0), { from: PolymathAccount });
         })
         .then(() => {
             // N) Register the CappedSTOFactory in the ModuleRegistry to make the factory available at the protocol level.
@@ -385,7 +385,7 @@ module.exports = function(deployer, network, accounts) {
         })
         .then(() => {
             // H) Deploy the USDTieredSTOFactory (Use to generate the USDTieredSTOFactory contract which will used to collect the funds ).
-            return deployer.deploy(USDTieredSTOFactory, usdTieredSTOSetupCost, 0, 0, USDTieredSTOLogic.address, { from: PolymathAccount });
+            return deployer.deploy(USDTieredSTOFactory, usdTieredSTOSetupCost, new BN(0), new BN(0), USDTieredSTOLogic.address, { from: PolymathAccount });
         })
         .then(() => {
             // I) Register the USDTieredSTOFactory in the ModuleRegistry to make the factory available at the protocol level.

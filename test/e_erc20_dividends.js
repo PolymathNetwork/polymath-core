@@ -162,7 +162,7 @@ contract("ERC20DividendCheckpoint", accounts => {
 
         it("Should successfully attach the ERC20DividendCheckpoint with the security token - fail insufficient payment", async () => {
             await catchRevert(
-                I_SecurityToken.addModule(P_ERC20DividendCheckpointFactory.address, "", web3.utils.toWei("500", "ether"), 0, {
+                I_SecurityToken.addModule(P_ERC20DividendCheckpointFactory.address, "", web3.utils.toWei("500", "ether"), new BN(0), {
                     from: token_owner
                 })
             );
@@ -172,7 +172,7 @@ contract("ERC20DividendCheckpoint", accounts => {
             let snapId = await takeSnapshot();
             await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
             await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), { from: token_owner });
-            const tx = await I_SecurityToken.addModule(P_ERC20DividendCheckpointFactory.address, "", web3.utils.toWei("500", "ether"), 0, {
+            const tx = await I_SecurityToken.addModule(P_ERC20DividendCheckpointFactory.address, "", web3.utils.toWei("500", "ether"), new BN(0), {
                 from: token_owner
             });
             assert.equal(tx.logs[3].args._types[0].toNumber(), checkpointKey, "ERC20DividendCheckpoint doesn't get deployed");
@@ -186,7 +186,7 @@ contract("ERC20DividendCheckpoint", accounts => {
         });
 
         it("Should successfully attach the ERC20DividendCheckpoint with the security token", async () => {
-            const tx = await I_SecurityToken.addModule(I_ERC20DividendCheckpointFactory.address, "", 0, 0, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_ERC20DividendCheckpointFactory.address, "", new BN(0), new BN(0), { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), checkpointKey, "ERC20DividendCheckpoint doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
@@ -306,7 +306,7 @@ contract("ERC20DividendCheckpoint", accounts => {
             let maturity = latestTime();
             let expiry = latestTime() + duration.days(10);
             await catchRevert(
-                I_ERC20DividendCheckpoint.createDividend(maturity, expiry, 0, web3.utils.toWei("1.5", "ether"), dividendName, {
+                I_ERC20DividendCheckpoint.createDividend(maturity, expiry, new BN(0), web3.utils.toWei("1.5", "ether"), dividendName, {
                     from: token_owner
                 })
             );
@@ -316,7 +316,7 @@ contract("ERC20DividendCheckpoint", accounts => {
             let maturity = latestTime();
             let expiry = latestTime() + duration.days(10);
             await catchRevert(
-                I_ERC20DividendCheckpoint.createDividend(maturity, expiry, I_PolyToken.address, 0, dividendName, { from: token_owner })
+                I_ERC20DividendCheckpoint.createDividend(maturity, expiry, I_PolyToken.address, new BN(0), dividendName, { from: token_owner })
             );
         });
 
@@ -343,23 +343,23 @@ contract("ERC20DividendCheckpoint", accounts => {
         });
 
         it("Issuer pushes dividends iterating over account holders - dividends proportional to checkpoint - fails maturity in the future", async () => {
-            await catchRevert(I_ERC20DividendCheckpoint.pushDividendPayment(0, 0, 10, { from: token_owner }));
+            await catchRevert(I_ERC20DividendCheckpoint.pushDividendPayment(0, new BN(0), 10, { from: token_owner }));
         });
 
         it("Issuer pushes dividends iterating over account holders - dividends proportional to checkpoint - fails not owner", async () => {
             // Increase time by 2 day
             await increaseTime(duration.days(2));
-            await catchRevert(I_ERC20DividendCheckpoint.pushDividendPayment(0, 0, 10, { from: account_temp }));
+            await catchRevert(I_ERC20DividendCheckpoint.pushDividendPayment(0, new BN(0), 10, { from: account_temp }));
         });
 
         it("Issuer pushes dividends iterating over account holders - dividends proportional to checkpoint - fails wrong index", async () => {
-            await catchRevert(I_ERC20DividendCheckpoint.pushDividendPayment(2, 0, 10, { from: token_owner }));
+            await catchRevert(I_ERC20DividendCheckpoint.pushDividendPayment(2, new BN(0), 10, { from: token_owner }));
         });
 
         it("Issuer pushes dividends iterating over account holders - dividends proportional to checkpoint", async () => {
             let investor1Balance = new BN(await I_PolyToken.balanceOf(account_investor1));
             let investor2Balance = new BN(await I_PolyToken.balanceOf(account_investor2));
-            await I_ERC20DividendCheckpoint.pushDividendPayment(0, 0, 10, { from: token_owner, gas: 5000000 });
+            await I_ERC20DividendCheckpoint.pushDividendPayment(0, new BN(0), 10, { from: token_owner, gas: 5000000 });
             let investor1BalanceAfter = new BN(await I_PolyToken.balanceOf(account_investor1));
             let investor2BalanceAfter = new BN(await I_PolyToken.balanceOf(account_investor2));
             assert.equal(investor1BalanceAfter.sub(investor1Balance).toNumber(), web3.utils.toWei("0.5", "ether"));
@@ -421,7 +421,7 @@ contract("ERC20DividendCheckpoint", accounts => {
 
         it("Issuer pushes dividends iterating over account holders - dividends proportional to checkpoint - fails past expiry", async () => {
             await increaseTime(duration.days(12));
-            await catchRevert(I_ERC20DividendCheckpoint.pushDividendPayment(1, 0, 10, { from: token_owner }));
+            await catchRevert(I_ERC20DividendCheckpoint.pushDividendPayment(1, new BN(0), 10, { from: token_owner }));
         });
 
         it("Issuer pushes dividends iterating over account holders - dividends proportional to checkpoin - fails already reclaimed", async () => {
@@ -541,7 +541,7 @@ contract("ERC20DividendCheckpoint", accounts => {
             let investor2BalanceAfter1 = new BN(await I_PolyToken.balanceOf(account_investor2));
             let investor3BalanceAfter1 = new BN(await I_PolyToken.balanceOf(account_investor3));
             let investorTempBalanceAfter1 = new BN(await I_PolyToken.balanceOf(account_temp));
-            await I_ERC20DividendCheckpoint.pushDividendPayment(2, 0, 10, { from: token_owner });
+            await I_ERC20DividendCheckpoint.pushDividendPayment(2, new BN(0), 10, { from: token_owner });
             let investor1BalanceAfter2 = new BN(await I_PolyToken.balanceOf(account_investor1));
             let investor2BalanceAfter2 = new BN(await I_PolyToken.balanceOf(account_investor2));
             let investor3BalanceAfter2 = new BN(await I_PolyToken.balanceOf(account_investor3));
@@ -882,7 +882,7 @@ contract("ERC20DividendCheckpoint", accounts => {
 
         it("should registr a delegate", async () => {
             [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
-            let tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x", 0, 0, { from: token_owner });
+            let tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x", new BN(0), new BN(0), { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), delegateManagerKey, "General Permission Manager doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
@@ -903,7 +903,7 @@ contract("ERC20DividendCheckpoint", accounts => {
         });
 
         it("should not allow manager without permission to set withholding fixed", async () => {
-            await catchRevert(I_ERC20DividendCheckpoint.setWithholdingFixed([0], 0, { from: account_manager }));
+            await catchRevert(I_ERC20DividendCheckpoint.setWithholdingFixed([0], new BN(0), { from: account_manager }));
         });
 
         it("should not allow manager without permission to create dividend", async () => {
@@ -1004,7 +1004,7 @@ contract("ERC20DividendCheckpoint", accounts => {
         });
 
         it("should allow manager withpermission to set withholding fixed", async () => {
-            let tx = await I_ERC20DividendCheckpoint.setWithholdingFixed([0], 0, { from: account_manager });
+            let tx = await I_ERC20DividendCheckpoint.setWithholdingFixed([0], new BN(0), { from: account_manager });
             assert.equal(tx.logs[0].args._withholding, 0);
         });
 

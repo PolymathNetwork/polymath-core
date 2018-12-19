@@ -295,7 +295,7 @@ contract("USDTieredSTO", accounts => {
             _ratePerTier.push([BN(10 * 10 ** 16), BN(15 * 10 ** 16)]); // [ 0.10 USD/Token, 0.15 USD/Token ]
             _ratePerTierDiscountPoly.push([BN(10 * 10 ** 16), BN(15 * 10 ** 16)]); // [ 0.10 USD/Token, 0.15 USD/Token ]
             _tokensPerTierTotal.push([BN(100000000).mul(new BN(10 ** 18)), BN(200000000).mul(new BN(10 ** 18))]); // [ 100m Token, 200m Token ]
-            _tokensPerTierDiscountPoly.push([BN(0), BN(0)]); // [ 0, 0 ]
+            _tokensPerTierDiscountPoly.push([BN(0), BN(0)]); // [ new BN(0), 0 ]
             _nonAccreditedLimitUSD.push(new BN(10000).mul(new BN(10 ** 18))); // 10k USD
             _minimumInvestmentUSD.push(new BN(5 * 10 ** 18)); // 5 USD
             _fundRaiseTypes.push([0, 1, 2]);
@@ -319,7 +319,7 @@ contract("USDTieredSTO", accounts => {
             ];
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
-            let tx = await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER, gasPrice: GAS_PRICE });
+            let tx = await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: ISSUER, gasPrice: GAS_PRICE });
             console.log("          Gas addModule: ".grey + tx.receipt.gasUsed.toString().grey);
             assert.equal(tx.logs[2].args._types[0], STOKEY, "USDTieredSTO doesn't get deployed");
             assert.equal(web3.utils.hexToString(tx.logs[2].args._name), "USDTieredSTO", "USDTieredSTOFactory module was not added");
@@ -371,7 +371,7 @@ contract("USDTieredSTO", accounts => {
                 _tokensPerTierTotal[stoId].length,
                 "Incorrect number of tiers"
             );
-            assert.equal((await I_USDTieredSTO_Array[stoId].getPermissions()).length, 0, "Incorrect number of permissions");
+            assert.equal((await I_USDTieredSTO_Array[stoId].getPermissions()).length, new BN(0), "Incorrect number of permissions");
         });
 
         it("Should attach the paid STO factory -- failed because of no tokens", async () => {
@@ -393,7 +393,7 @@ contract("USDTieredSTO", accounts => {
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
             await catchRevert(
-                I_SecurityToken.addModule(P_USDTieredSTOFactory.address, bytesSTO, web3.utils.toWei("500"), 0, {
+                I_SecurityToken.addModule(P_USDTieredSTOFactory.address, bytesSTO, web3.utils.toWei("500"), new BN(0), {
                     from: ISSUER,
                     gasPrice: GAS_PRICE
                 })
@@ -420,7 +420,7 @@ contract("USDTieredSTO", accounts => {
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
             await I_PolyToken.getTokens(web3.utils.toWei("500"), I_SecurityToken.address);
-            let tx = await I_SecurityToken.addModule(P_USDTieredSTOFactory.address, bytesSTO, web3.utils.toWei("500"), 0, {
+            let tx = await I_SecurityToken.addModule(P_USDTieredSTOFactory.address, bytesSTO, web3.utils.toWei("500"), new BN(0), {
                 from: ISSUER,
                 gasPrice: GAS_PRICE
             });
@@ -508,7 +508,7 @@ contract("USDTieredSTO", accounts => {
             ];
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
-            let tx = await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER, gasPrice: GAS_PRICE });
+            let tx = await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: ISSUER, gasPrice: GAS_PRICE });
             console.log("          Gas addModule: ".grey + tx.receipt.gasUsed.toString().grey);
             assert.equal(tx.logs[2].args._types[0], STOKEY, "USDTieredSTO doesn't get deployed");
             assert.equal(web3.utils.hexToString(tx.logs[2].args._name), "USDTieredSTO", "USDTieredSTOFactory module was not added");
@@ -560,7 +560,7 @@ contract("USDTieredSTO", accounts => {
                 _tokensPerTierTotal[stoId].length,
                 "Incorrect number of tiers"
             );
-            assert.equal((await I_USDTieredSTO_Array[stoId].getPermissions()).length, 0, "Incorrect number of permissions");
+            assert.equal((await I_USDTieredSTO_Array[stoId].getPermissions()).length, new BN(0), "Incorrect number of permissions");
         });
 
         it("Should successfully attach the third STO module to the security token", async () => {
@@ -595,7 +595,7 @@ contract("USDTieredSTO", accounts => {
             ];
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
-            let tx = await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER, gasPrice: GAS_PRICE });
+            let tx = await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: ISSUER, gasPrice: GAS_PRICE });
             console.log("          Gas addModule: ".grey + tx.receipt.gasUsed.toString().grey);
             assert.equal(tx.logs[2].args._types[0], STOKEY, "USDTieredSTO doesn't get deployed");
             assert.equal(web3.utils.hexToString(tx.logs[2].args._name), "USDTieredSTO", "USDTieredSTOFactory module was not added");
@@ -634,7 +634,7 @@ contract("USDTieredSTO", accounts => {
             ];
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
-            let tx = await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER, gasPrice: GAS_PRICE });
+            let tx = await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: ISSUER, gasPrice: GAS_PRICE });
             console.log("          Gas addModule: ".grey + tx.receipt.gasUsed.toString().grey);
             assert.equal(tx.logs[2].args._types[0], STOKEY, "USDTieredSTO doesn't get deployed");
             assert.equal(web3.utils.hexToString(tx.logs[2].args._name), "USDTieredSTO", "USDTieredSTOFactory module was not added");
@@ -673,7 +673,7 @@ contract("USDTieredSTO", accounts => {
             ];
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
-            let tx = await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER, gasPrice: GAS_PRICE });
+            let tx = await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: ISSUER, gasPrice: GAS_PRICE });
             console.log("          Gas addModule: ".grey + tx.receipt.gasUsed.toString().grey);
             assert.equal(tx.logs[2].args._types[0], STOKEY, "USDTieredSTO doesn't get deployed");
             assert.equal(web3.utils.hexToString(tx.logs[2].args._name), "USDTieredSTO", "USDTieredSTOFactory module was not added");
@@ -748,7 +748,7 @@ contract("USDTieredSTO", accounts => {
             for (var i = 0; i < config.length; i++) {
                 let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config[i]);
 
-                await catchRevert(I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER }));
+                await catchRevert(I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: ISSUER }));
             }
         });
 
@@ -772,7 +772,7 @@ contract("USDTieredSTO", accounts => {
             ];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
 
-            await catchRevert(I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER }));
+            await catchRevert(I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: ISSUER }));
         });
 
         it("Should fail because Zero address is not permitted for wallet", async () => {
@@ -795,7 +795,7 @@ contract("USDTieredSTO", accounts => {
             ];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
 
-            await catchRevert(I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER }));
+            await catchRevert(I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: ISSUER }));
         });
 
         it("Should fail because Zero address is not permitted for reserveWallet", async () => {
@@ -817,7 +817,7 @@ contract("USDTieredSTO", accounts => {
             ];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
 
-            await catchRevert(I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER }));
+            await catchRevert(I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: ISSUER }));
         });
 
         it("Should fail because end time before start time", async () => {
@@ -841,7 +841,7 @@ contract("USDTieredSTO", accounts => {
             ];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
 
-            await catchRevert(I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER }));
+            await catchRevert(I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: ISSUER }));
         });
 
         it("Should fail because start time is in the past", async () => {
@@ -865,7 +865,7 @@ contract("USDTieredSTO", accounts => {
             ];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
 
-            await catchRevert(I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER }));
+            await catchRevert(I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: ISSUER }));
         });
     });
 
@@ -1501,7 +1501,7 @@ contract("USDTieredSTO", accounts => {
             );
             assert.equal(
                 (await I_USDTieredSTO_Array[stoId].getTokensSoldFor(POLY)).toNumber(),
-                0,
+                new BN(0),
                 "getTokensSoldForPOLY not changed as expected"
             );
             assert.equal(
@@ -1516,7 +1516,7 @@ contract("USDTieredSTO", accounts => {
             );
             assert.equal(
                 (await I_USDTieredSTO_Array[stoId].investorInvested.call(NONACCREDITED1, POLY)).toNumber(),
-                0,
+                new BN(0),
                 "investorInvestedPOLY not changed as expected"
             );
         });
@@ -3170,7 +3170,7 @@ contract("USDTieredSTO", accounts => {
             );
             assert.equal(
                 (await I_USDTieredSTO_Array[stoId].getTokensSoldFor(POLY)).toNumber(),
-                0,
+                new BN(0),
                 "getTokensSoldForPOLY not changed as expected"
             );
             assert.equal(
@@ -3185,7 +3185,7 @@ contract("USDTieredSTO", accounts => {
             );
             assert.equal(
                 (await I_USDTieredSTO_Array[stoId].investorInvested.call(NONACCREDITED1, POLY)).toNumber(),
-                0,
+                new BN(0),
                 "investorInvestedPOLY not changed as expected"
             );
         });

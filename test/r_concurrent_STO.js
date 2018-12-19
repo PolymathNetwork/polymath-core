@@ -264,7 +264,7 @@ contract("Concurrent STO", accounts => {
                         break;
                     case 2:
                         // Pre Sale STO
-                        await I_STO_Array[STOIndex].allocateTokens(account_investor1, web3.utils.toWei("1000"), web3.utils.toWei("1"), 0, {
+                        await I_STO_Array[STOIndex].allocateTokens(account_investor1, web3.utils.toWei("1000"), web3.utils.toWei("1"), new BN(0), {
                             from: account_issuer
                         });
                         assert.equal(web3.utils.fromWei((await I_STO_Array[STOIndex].getRaised.call(0)).toString()), 1);

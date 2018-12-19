@@ -129,7 +129,7 @@ contract("ModuleRegistryProxy", accounts => {
                 { from: account_polymath }
             );
 
-            I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(0, 0, 0, I_GeneralTransferManagerLogic.address, {
+            I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(0, new BN(0), new BN(0), I_GeneralTransferManagerLogic.address, {
                 from: account_polymath
             });
 
@@ -163,7 +163,7 @@ contract("ModuleRegistryProxy", accounts => {
 
     describe("Feed some data in storage", async () => {
         it("Register and verify the new module", async () => {
-            I_GeneralPermissionManagerfactory = await GeneralPermissionManagerFactory.new(0, 0, 0, {
+            I_GeneralPermissionManagerfactory = await GeneralPermissionManagerFactory.new(0, new BN(0), new BN(0), {
                 from: account_polymath
             });
 
@@ -225,7 +225,7 @@ contract("ModuleRegistryProxy", accounts => {
     describe("Execute functionality of the implementation contract on the earlier storage", async () => {
         it("Should get the previous data", async () => {
             let _data = await I_MRProxied.getReputationByFactory.call(I_GeneralTransferManagerFactory.address);
-            assert.equal(_data.length, 0, "Should give the original length");
+            assert.equal(_data.length, new BN(0), "Should give the original length");
         });
 
         it("Should alter the old storage", async () => {

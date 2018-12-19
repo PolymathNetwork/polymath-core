@@ -145,7 +145,7 @@ contract("ScheduledCheckpoint", accounts => {
     describe("Buy tokens using on-chain whitelist", async () => {
         it("Should successfully attach the ScheduledCheckpoint with the security token", async () => {
             await I_SecurityToken.changeGranularity(1, { from: token_owner });
-            const tx = await I_SecurityToken.addModule(I_ScheduledCheckpointFactory.address, "", 0, 0, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_ScheduledCheckpointFactory.address, "", new BN(0), new BN(0), { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), 4, "ScheduledCheckpoint doesn't get deployed");
             assert.equal(tx.logs[2].args._types[1].toNumber(), 2, "ScheduledCheckpoint doesn't get deployed");
             assert.equal(

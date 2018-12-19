@@ -166,7 +166,7 @@ contract("Issuance", accounts => {
             it("POLYMATH: Should successfully attach the STO factory with the security token", async () => {
                 // STEP 4: Deploy the CappedSTOFactory
 
-                I_CappedSTOFactory = await CappedSTOFactory.new(cappedSTOSetupCost, 0, 0, { from: account_polymath });
+                I_CappedSTOFactory = await CappedSTOFactory.new(cappedSTOSetupCost, new BN(0), new BN(0), { from: account_polymath });
 
                 assert.notEqual(I_CappedSTOFactory.address.valueOf(), address_zero, "CappedSTOFactory contract was not deployed");
 
@@ -186,7 +186,7 @@ contract("Issuance", accounts => {
                 await I_PolyToken.getTokens(cappedSTOSetupCost, account_polymath);
                 await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCost, { from: account_polymath });
 
-                const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, { from: account_polymath });
+                const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), { from: account_polymath });
 
                 assert.equal(tx.logs[3].args._types[0], stoKey, "CappedSTO doesn't get deployed");
                 assert.equal(
@@ -219,7 +219,7 @@ contract("Issuance", accounts => {
 
             it("Should add the delegate with permission", async () => {
                 //First attach a permission manager to the token
-                await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "", 0, 0, { from: account_polymath });
+                await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "", new BN(0), new BN(0), { from: account_polymath });
                 let moduleData = (await I_SecurityToken.getModulesByType(permissionManagerKey))[0];
                 I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData);
                 // Add permission to the deletgate (A regesteration process)

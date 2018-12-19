@@ -205,7 +205,7 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
         // Step 1: Deploy USDTieredSTOFactory\
         it("Should successfully deploy USDTieredSTOFactory", async () => {
             I_USDTieredSTOProxyFactory = await USDTieredSTOProxyFactory.new();
-            I_USDTieredSTOFactory = await USDTieredSTOFactory.new(STOSetupCost, 0, 0, I_USDTieredSTOProxyFactory.address, {
+            I_USDTieredSTOFactory = await USDTieredSTOFactory.new(STOSetupCost, new BN(0), new BN(0), I_USDTieredSTOProxyFactory.address, {
                 from: POLYMATH
             });
             assert.notEqual(I_USDTieredSTOFactory.address.valueOf(), address_zero, "USDTieredSTOFactory contract was not deployed");
@@ -225,7 +225,7 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
     describe("CappedSTOFactory deploy", async () => {
         // Step 1: Deploy new CappedSTOFactory
         it("Should successfully deploy CappedSTOFactory", async () => {
-            I_UpgradedCappedSTOFactory = await CappedSTOFactory.new(STOSetupCost, 0, 0, { from: POLYMATH });
+            I_UpgradedCappedSTOFactory = await CappedSTOFactory.new(STOSetupCost, new BN(0), new BN(0), { from: POLYMATH });
             assert.notEqual(I_UpgradedCappedSTOFactory.address.valueOf(), address_zero, "CappedSTOFactory contract was not deployed");
             let setupCost = await I_UpgradedCappedSTOFactory.setupCost({ from: POLYMATH });
             assert.equal(setupCost, STOSetupCost);
@@ -251,7 +251,7 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
     describe("ManualApprovalTransferManagerFactory deploy", async () => {
         // Step 1: Deploy new ManualApprovalTransferManager
         it("Should successfully deploy ManualApprovalTransferManagerFactory", async () => {
-            I_ManualApprovalTransferManagerFactory = await ManualApprovalTransferManagerFactory.new(0, 0, 0, {
+            I_ManualApprovalTransferManagerFactory = await ManualApprovalTransferManagerFactory.new(0, new BN(0), new BN(0), {
                 from: POLYMATH
             });
             assert.notEqual(
@@ -406,7 +406,7 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
 
-            let tx = await I_SecurityToken1.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER1 });
+            let tx = await I_SecurityToken1.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: ISSUER1 });
             assert.equal(tx.logs[2].args._types[0], STOKEY, "USDTieredSTO doesn't get deployed");
             assert.equal(web3.utils.hexToString(tx.logs[2].args._name), "USDTieredSTO", "USDTieredSTOFactory module was not added");
             I_USDTieredSTO = USDTieredSTO.at(tx.logs[2].args._module);
@@ -433,14 +433,14 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
 
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, [fundRaiseType], fundsReceiver]);
 
-            let tx = await I_SecurityToken2.addModule(I_UpgradedCappedSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER2 });
+            let tx = await I_SecurityToken2.addModule(I_UpgradedCappedSTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: ISSUER2 });
             assert.equal(tx.logs[2].args._types[0], STOKEY, "CappedSTO doesn't get deployed");
             assert.equal(web3.utils.hexToString(tx.logs[2].args._name), "CappedSTO", "CappedSTOFactory module was not added");
         });
 
         // Attach ManualApprovalTransferManager module for TOK2
         it("Should successfully attach the ManualApprovalTransferManagerFactory with the second token", async () => {
-            const tx = await I_SecurityToken2.addModule(I_ManualApprovalTransferManagerFactory.address, "", 0, 0, { from: ISSUER2 });
+            const tx = await I_SecurityToken2.addModule(I_ManualApprovalTransferManagerFactory.address, "", new BN(0), new BN(0), { from: ISSUER2 });
             assert.equal(tx.logs[2].args._types[0].toNumber(), TMKEY, "ManualApprovalTransferManagerFactory doesn't get deployed");
             assert.equal(
                 web3.utils.toUtf8(tx.logs[2].args._name),

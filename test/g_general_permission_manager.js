@@ -157,7 +157,7 @@ contract("GeneralPermissionManager", accounts => {
             let errorThrown = false;
             await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
             await catchRevert(
-                I_SecurityToken.addModule(P_GeneralPermissionManagerFactory.address, "0x", web3.utils.toWei("500", "ether"), 0, {
+                I_SecurityToken.addModule(P_GeneralPermissionManagerFactory.address, "0x", web3.utils.toWei("500", "ether"), new BN(0), {
                     from: token_owner
                 })
             );
@@ -170,7 +170,7 @@ contract("GeneralPermissionManager", accounts => {
                 P_GeneralPermissionManagerFactory.address,
                 "0x",
                 web3.utils.toWei("500", "ether"),
-                0,
+                new BN(0),
                 { from: token_owner }
             );
             assert.equal(tx.logs[3].args._types[0].toNumber(), delegateManagerKey, "General Permission Manager doesn't get deployed");
@@ -184,7 +184,7 @@ contract("GeneralPermissionManager", accounts => {
         });
 
         it("Should successfully attach the General permission manager factory with the security token", async () => {
-            const tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x", 0, 0, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x", new BN(0), new BN(0), { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), delegateManagerKey, "General Permission Manager doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),

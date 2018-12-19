@@ -81,11 +81,9 @@ const MRProxyParameters = ["address", "address"];
 /// Function use to launch the polymath ecossystem.
 
 export async function setUpPolymathNetwork(account_polymath, token_owner) {
-    console.log('gg1');
     // ----------- POLYMATH NETWORK Configuration ------------
     // Step 1: Deploy the PolyToken and PolymathRegistry
     let a = await deployPolyRegistryAndPolyToken(account_polymath, token_owner);
-    console.log('gg2');
     // Step 2: Deploy the FeatureRegistry
     let b = await deployFeatureRegistry(account_polymath);
     // STEP 3: Deploy the ModuleRegistry
@@ -102,11 +100,8 @@ export async function setUpPolymathNetwork(account_polymath, token_owner) {
     await setInPolymathRegistry(account_polymath);
     // STEP 9: Register the Modules with the ModuleRegistry contract
     await registerGTM(account_polymath);
-    console.log('gg3');
     let tempArray = new Array(a, b, c, d, e, f);
-    console.log('gg4');
     return mergeReturn(tempArray);
-    console.log('gg4');
 }
 
 async function deployPolyRegistryAndPolyToken(account_polymath, token_owner) {
@@ -115,7 +110,7 @@ async function deployPolyRegistryAndPolyToken(account_polymath, token_owner) {
 
     // Step 1: Deploy the token Faucet and Mint tokens for token_owner
     I_PolyToken = await PolyTokenFaucet.new();
-    await I_PolyToken.getTokens(10000 * Math.pow(10, 18), token_owner);
+    await I_PolyToken.getTokens(new BN(10000).mul(new BN(10).pow(new BN(18))), token_owner);
 
     await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, { from: account_polymath });
 

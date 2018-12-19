@@ -161,7 +161,7 @@ contract("EtherDividendCheckpoint", accounts => {
         it("Should successfully attach the ERC20DividendCheckpoint with the security token", async () => {
             await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
             await catchRevert(
-                I_SecurityToken.addModule(P_EtherDividendCheckpointFactory.address, "", web3.utils.toWei("500", "ether"), 0, {
+                I_SecurityToken.addModule(P_EtherDividendCheckpointFactory.address, "", web3.utils.toWei("500", "ether"), new BN(0), {
                     from: token_owner
                 })
             );
@@ -170,7 +170,7 @@ contract("EtherDividendCheckpoint", accounts => {
         it("Should successfully attach the EtherDividendCheckpoint with the security token", async () => {
             let snapId = await takeSnapshot();
             await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), { from: token_owner });
-            const tx = await I_SecurityToken.addModule(P_EtherDividendCheckpointFactory.address, "", web3.utils.toWei("500", "ether"), 0, {
+            const tx = await I_SecurityToken.addModule(P_EtherDividendCheckpointFactory.address, "", web3.utils.toWei("500", "ether"), new BN(0), {
                 from: token_owner
             });
             assert.equal(tx.logs[3].args._types[0].toNumber(), checkpointKey, "EtherDividendCheckpoint doesn't get deployed");
@@ -184,7 +184,7 @@ contract("EtherDividendCheckpoint", accounts => {
         });
 
         it("Should successfully attach the EtherDividendCheckpoint with the security token", async () => {
-            const tx = await I_SecurityToken.addModule(I_EtherDividendCheckpointFactory.address, "", 0, 0, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_EtherDividendCheckpointFactory.address, "", new BN(0), new BN(0), { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), checkpointKey, "EtherDividendCheckpoint doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
@@ -314,23 +314,23 @@ contract("EtherDividendCheckpoint", accounts => {
         });
 
         it("Issuer pushes dividends iterating over account holders - dividends proportional to checkpoint", async () => {
-            await catchRevert(I_EtherDividendCheckpoint.pushDividendPayment(0, 0, 10, { from: token_owner }));
+            await catchRevert(I_EtherDividendCheckpoint.pushDividendPayment(0, new BN(0), 10, { from: token_owner }));
         });
 
         it("Issuer pushes dividends iterating over account holders - dividends proportional to checkpoint", async () => {
             // Increase time by 2 day
             await increaseTime(duration.days(2));
-            await catchRevert(I_EtherDividendCheckpoint.pushDividendPayment(0, 0, 10, { from: account_temp }));
+            await catchRevert(I_EtherDividendCheckpoint.pushDividendPayment(0, new BN(0), 10, { from: account_temp }));
         });
 
         it("Issuer pushes dividends iterating over account holders - dividends proportional to checkpoint", async () => {
-            await catchRevert(I_EtherDividendCheckpoint.pushDividendPayment(2, 0, 10, { from: token_owner }));
+            await catchRevert(I_EtherDividendCheckpoint.pushDividendPayment(2, new BN(0), 10, { from: token_owner }));
         });
 
         it("Issuer pushes dividends iterating over account holders - dividends proportional to checkpoint", async () => {
             let investor1Balance = new BN(await web3.eth.getBalance(account_investor1));
             let investor2Balance = new BN(await web3.eth.getBalance(account_investor2));
-            await I_EtherDividendCheckpoint.pushDividendPayment(0, 0, 10, { from: token_owner });
+            await I_EtherDividendCheckpoint.pushDividendPayment(0, new BN(0), 10, { from: token_owner });
             let investor1BalanceAfter = new BN(await web3.eth.getBalance(account_investor1));
             let investor2BalanceAfter = new BN(await web3.eth.getBalance(account_investor2));
             assert.equal(investor1BalanceAfter.sub(investor1Balance).toNumber(), web3.utils.toWei("0.5", "ether"));
@@ -395,7 +395,7 @@ contract("EtherDividendCheckpoint", accounts => {
 
         it("Issuer pushes dividends fails due to passed expiry", async () => {
             await increaseTime(duration.days(12));
-            await catchRevert(I_EtherDividendCheckpoint.pushDividendPayment(0, 0, 10, { from: token_owner }));
+            await catchRevert(I_EtherDividendCheckpoint.pushDividendPayment(0, new BN(0), 10, { from: token_owner }));
         });
 
         it("Issuer reclaims dividend", async () => {
@@ -483,7 +483,7 @@ contract("EtherDividendCheckpoint", accounts => {
             let investor1BalanceAfter1 = new BN(await web3.eth.getBalance(account_investor1));
             let investor2BalanceAfter1 = new BN(await web3.eth.getBalance(account_investor2));
             let investor3BalanceAfter1 = new BN(await web3.eth.getBalance(account_investor3));
-            await I_EtherDividendCheckpoint.pushDividendPayment(2, 0, 10, { from: token_owner });
+            await I_EtherDividendCheckpoint.pushDividendPayment(2, new BN(0), 10, { from: token_owner });
             let investor1BalanceAfter2 = new BN(await web3.eth.getBalance(account_investor1));
             let investor2BalanceAfter2 = new BN(await web3.eth.getBalance(account_investor2));
             let investor3BalanceAfter2 = new BN(await web3.eth.getBalance(account_investor3));
@@ -757,7 +757,7 @@ contract("EtherDividendCheckpoint", accounts => {
             let tempBalanceBefore = new BN(await web3.eth.getBalance(account_temp));
             let tokenBalanceBefore = new BN(await web3.eth.getBalance(I_PolyToken.address));
 
-            await I_EtherDividendCheckpoint.pushDividendPayment(4, 0, 10, { from: token_owner });
+            await I_EtherDividendCheckpoint.pushDividendPayment(4, new BN(0), 10, { from: token_owner });
 
             let investor1BalanceAfter = new BN(await web3.eth.getBalance(account_investor1));
             let investor2BalanceAfter = new BN(await web3.eth.getBalance(account_investor2));
@@ -797,7 +797,7 @@ contract("EtherDividendCheckpoint", accounts => {
 
         it("should registr a delegate", async () => {
             [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
-            let tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x", 0, 0, { from: token_owner });
+            let tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x", new BN(0), new BN(0), { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), delegateManagerKey, "General Permission Manager doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),

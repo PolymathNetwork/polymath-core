@@ -203,7 +203,7 @@ contract("GeneralPermissionManager Fuzz", accounts => {
             let errorThrown = false;
             await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
             await catchRevert(
-                I_SecurityToken.addModule(P_GeneralPermissionManagerFactory.address, "0x", web3.utils.toWei("500", "ether"), 0, {
+                I_SecurityToken.addModule(P_GeneralPermissionManagerFactory.address, "0x", web3.utils.toWei("500", "ether"), new BN(0), {
                     from: token_owner
                 })
             );
@@ -216,7 +216,7 @@ contract("GeneralPermissionManager Fuzz", accounts => {
                 P_GeneralPermissionManagerFactory.address,
                 "0x",
                 web3.utils.toWei("500", "ether"),
-                0,
+                new BN(0),
                 { from: token_owner }
             );
             assert.equal(tx.logs[3].args._types[0].toNumber(), delegateManagerKey, "General Permission Manager doesn't get deployed");
@@ -230,7 +230,7 @@ contract("GeneralPermissionManager Fuzz", accounts => {
         });
 
         it("Should successfully attach the General permission manager factory with the security token - free module", async () => {
-            const tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x", 0, 0, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x", new BN(0), new BN(0), { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), delegateManagerKey, "General Permission Manager doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
@@ -392,7 +392,7 @@ contract("GeneralPermissionManager Fuzz", accounts => {
 
     describe("fuzz test for count transfer manager", async () => {
         it("Should successfully attach the CountTransferManager with the security token", async () => {
-            const tx = await I_SecurityToken.addModule(I_CountTransferManagerFactory.address, bytesSTO, 0, 0, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_CountTransferManagerFactory.address, bytesSTO, new BN(0), new BN(0), { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), transferManagerKey, "CountTransferManager doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
@@ -465,7 +465,7 @@ contract("GeneralPermissionManager Fuzz", accounts => {
 
         it("Should successfully attach the percentage transfer manager with the security token", async () => {
             console.log("1");
-            const tx = await I_SecurityToken.addModule(I_PercentageTransferManagerFactory.address, bytesSTO, 0, 0, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_PercentageTransferManagerFactory.address, bytesSTO, new BN(0), new BN(0), { from: token_owner });
             I_PercentageTransferManager = PercentageTransferManager.at(tx.logs[2].args._module);
         });
 
@@ -613,7 +613,7 @@ contract("GeneralPermissionManager Fuzz", accounts => {
 
     describe("fuzz test for manual approval transfer manager", async () => {
         it("Should successfully attach the ManualApprovalTransferManager with the security token", async () => {
-            const tx = await I_SecurityToken.addModule(I_ManualApprovalTransferManagerFactory.address, "", 0, 0, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_ManualApprovalTransferManagerFactory.address, "", new BN(0), new BN(0), { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), transferManagerKey, "ManualApprovalTransferManager doesn't get deployed");
             assert.equal(
                 web3.utils.toUtf8(tx.logs[2].args._name),

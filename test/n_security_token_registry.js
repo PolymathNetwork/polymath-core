@@ -185,7 +185,7 @@ contract("SecurityTokenRegistry", accounts => {
             let bytesProxy = encodeProxyCall(STRProxyParameters, [
                 I_PolymathRegistry.address,
                 I_STFactory.address,
-                0,
+                new BN(0),
                 initRegFee,
                 account_polymath
             ]);
@@ -202,7 +202,7 @@ contract("SecurityTokenRegistry", accounts => {
                 I_PolymathRegistry.address,
                 I_STFactory.address,
                 initRegFee,
-                0,
+                new BN(0),
                 account_polymath
             ]);
             catchRevert(
@@ -230,7 +230,7 @@ contract("SecurityTokenRegistry", accounts => {
         });
 
         it("Should successfully update the implementation address -- fail because all params get 0", async () => {
-            let bytesProxy = encodeProxyCall(STRProxyParameters, [address_zero, address_zero, 0, 0, address_zero]);
+            let bytesProxy = encodeProxyCall(STRProxyParameters, [address_zero, address_zero, new BN(0), new BN(0), address_zero]);
             catchRevert(
                 I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {
                     from: account_polymath
@@ -424,7 +424,7 @@ contract("SecurityTokenRegistry", accounts => {
         });
 
         it("Should fail to generate new security token if fee not provided", async () => {
-            await I_PolyToken.approve(I_STRProxied.address, 0, { from: token_owner });
+            await I_PolyToken.approve(I_STRProxied.address, new BN(0), { from: token_owner });
 
             catchRevert(
                 I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner }),
@@ -517,7 +517,7 @@ contract("SecurityTokenRegistry", accounts => {
             I_STFactory002 = await STFactory.new(I_GeneralTransferManagerFactory.address, { from: account_polymath });
 
             assert.notEqual(I_STFactory002.address.valueOf(), address_zero, "STFactory002 contract was not deployed");
-            await I_STRProxied.setProtocolVersion(I_STFactory002.address, 2, 2, 0, { from: account_polymath });
+            await I_STRProxied.setProtocolVersion(I_STFactory002.address, 2, 2, new BN(0), { from: account_polymath });
             let _protocol = await I_STRProxied.getProtocolVersion.call();
             assert.equal(_protocol[0], 2);
             assert.equal(_protocol[1], 2);
@@ -615,7 +615,7 @@ contract("SecurityTokenRegistry", accounts => {
 
         it("Should fail if ST address is 0 address", async () => {
             catchRevert(
-                I_STRProxied.modifySecurityToken("LOGAN", "LOG", account_temp, 0, "I am custom ST", latestTime(), {
+                I_STRProxied.modifySecurityToken("LOGAN", "LOG", account_temp, new BN(0), "I am custom ST", latestTime(), {
                     from: account_polymath
                 }),
                 "tx revert -> Security token address is 0"
@@ -633,7 +633,7 @@ contract("SecurityTokenRegistry", accounts => {
 
         it("Should fail to generate the custom ST -- deployedAt param is 0", async () => {
             catchRevert(
-                I_STRProxied.modifySecurityToken(name2, symbol2, token_owner, dummy_token, "I am custom ST", 0, { from: account_polymath }),
+                I_STRProxied.modifySecurityToken(name2, symbol2, token_owner, dummy_token, "I am custom ST", new BN(0), { from: account_polymath }),
                 "tx revert -> because deployedAt param is 0"
             );
         });
@@ -722,7 +722,7 @@ contract("SecurityTokenRegistry", accounts => {
 
         it("Should add the custom ticker --failed because time should not be 0", async () => {
             catchRevert(
-                I_STRProxied.modifyTicker(token_owner, "ETH", "Ether", 0, latestTime() + duration.days(10), false, {
+                I_STRProxied.modifyTicker(token_owner, "ETH", "Ether", new BN(0), latestTime() + duration.days(10), false, {
                     from: account_polymath
                 }),
                 "tx revert -> failed because time should not be 0"
@@ -1079,7 +1079,7 @@ contract("SecurityTokenRegistry", accounts => {
             });
 
             it("Should successfully change the protocolVersion -- not a valid vesrion", async () => {
-                catchRevert(I_STRProxied.setProtocolVersion(accounts[8], 0, 0, 0, { from: account_polymath }));
+                catchRevert(I_STRProxied.setProtocolVersion(accounts[8], new BN(0), new BN(0), new BN(0), { from: account_polymath }));
             });
 
             it("Should successfully change the protocolVersion -- fail in second attempt because of invalid version", async () => {

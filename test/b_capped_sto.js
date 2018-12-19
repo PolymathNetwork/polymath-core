@@ -868,7 +868,7 @@ contract("CappedSTO", accounts => {
             });
 
             it("Should successfully change the title", async () => {
-                await I_CappedSTOFactory.changeTitle("STO Capped", { from: token_owner });
+                await I_CappedSTOFactory.changeTitle("STO Capped", { from: account_polymath });
                 assert.equal(await I_CappedSTOFactory.title.call(), "STO Capped", "Title doesn't get changed");
             });
 
@@ -881,7 +881,7 @@ contract("CappedSTO", accounts => {
             });
 
             it("Should successfully change the description", async () => {
-                await I_CappedSTOFactory.changeDescription("It is only a STO", { from: token_owner });
+                await I_CappedSTOFactory.changeDescription("It is only a STO", { from: account_polymath });
                 assert.equal(await I_CappedSTOFactory.description.call(), "It is only a STO", "Description doesn't get changed");
             });
 
@@ -894,12 +894,12 @@ contract("CappedSTO", accounts => {
             });
 
             it("Should successfully change the name", async () => {
-                await I_CappedSTOFactory.changeName(web3.utils.stringToHex("STOCapped"), { from: token_owner });
+                await I_CappedSTOFactory.changeName(web3.utils.stringToHex("STOCapped"), { from: account_polymath });
                 assert.equal(web3.utils.hexToString(await I_CappedSTOFactory.getName.call()), "STOCapped", "Name doesn't get changed");
             });
 
             it("Should successfully change the name", async () => {
-                await I_CappedSTOFactory.changeName(web3.utils.stringToHex("CappedSTO"), { from: token_owner });
+                await I_CappedSTOFactory.changeName(web3.utils.stringToHex("CappedSTO"), { from: account_polymath });
                 assert.equal(web3.utils.hexToString(await I_CappedSTOFactory.getName.call()), "CappedSTO", "Name doesn't get changed");
             });
         });

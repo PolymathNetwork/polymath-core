@@ -23,12 +23,11 @@ const MockOracle = artifacts.require('./MockOracle.sol')
 const TokenLib = artifacts.require('./TokenLib.sol');
 const SecurityToken = artifacts.require('./tokens/SecurityToken.sol')
 
-let web3.utils.toBN = require('web3.utils.toBN.js');
 let BN = web3.utils.BN;
 const nullAddress = '0x0000000000000000000000000000000000000000';
-const cappedSTOSetupCost = web3.utils.toBN(new web3.utils.toBN(20000).mul(new web3.utils.toBN(10).pow(18)));   // 20K POLY fee
-const usdTieredSTOSetupCost = web3.utils.toBN(new web3.utils.toBN(100000).mul(new web3.utils.toBN(10).pow(18)));   // 100K POLY fee
-const initRegFee = new web3.utils.toBN(250).mul(new web3.utils.toBN(10).pow(18));      // 250 POLY fee for registering ticker or security token in registry
+const cappedSTOSetupCost = new BN(20000).mul(new BN(10).pow(new BN(18)));   // 20K POLY fee
+const usdTieredSTOSetupCost = new BN(100000).mul(new BN(10).pow(new BN(18)));   // 100K POLY fee
+const initRegFee = new BN(250).mul(new BN(10).pow(new BN(18)));      // 250 POLY fee for registering ticker or security token in registry
 let PolyToken;
 let UsdToken;
 let ETHOracle;
@@ -51,12 +50,12 @@ module.exports = function (deployer, network, accounts) {
         UsdToken = mockedUSDToken.address;
       });
     });
-    deployer.deploy(MockOracle, PolyToken, web3.utils.fromAscii("POLY"), web3.utils.fromAscii("USD"), new web3.utils.toBN(0.5).mul(new web3.utils.toBN(10).pow(18)), {from: PolymathAccount}).then(() => {
+    deployer.deploy(MockOracle, PolyToken, web3.utils.fromAscii("POLY"), web3.utils.fromAscii("USD"), new BN(5).mul(new BN(10).pow(new BN(17))), {from: PolymathAccount}).then(() => {
       MockOracle.deployed().then((mockedOracle) => {
         POLYOracle = mockedOracle.address;
       });
     });
-    deployer.deploy(MockOracle, nullAddress, web3.utils.fromAscii("ETH"), web3.utils.fromAscii("USD"), new web3.utils.toBN(500).mul(new web3.utils.toBN(10).pow(18)), {from: PolymathAccount}).then(() => {
+    deployer.deploy(MockOracle, nullAddress, web3.utils.fromAscii("ETH"), web3.utils.fromAscii("USD"), new BN(500).mul(new BN(10).pow(new BN(18))), {from: PolymathAccount}).then(() => {
       MockOracle.deployed().then((mockedOracle) => {
         ETHOracle = mockedOracle.address;
       });
@@ -78,12 +77,12 @@ module.exports = function (deployer, network, accounts) {
     web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'))
     PolymathAccount = accounts[0]
     PolyToken = DevPolyToken.address // Development network polytoken address
-    deployer.deploy(MockOracle, PolyToken, "POLY", "USD", new web3.utils.toBN(0.5).mul(new web3.utils.toBN(10).pow(18)), {from: PolymathAccount}).then(() => {
+    deployer.deploy(MockOracle, PolyToken, "POLY", "USD", new BN(0.5).mul(new BN(10).pow(new BN(18))), {from: PolymathAccount}).then(() => {
       MockOracle.deployed().then((mockedOracle) => {
         POLYOracle = mockedOracle.address;
       });
     });
-    deployer.deploy(MockOracle, 0, "ETH", "USD", new web3.utils.toBN(500).mul(new web3.utils.toBN(10).pow(18)), {from: PolymathAccount}).then(() => {
+    deployer.deploy(MockOracle, 0, "ETH", "USD", new BN(500).mul(new BN(10).pow(new BN(18))), {from: PolymathAccount}).then(() => {
       MockOracle.deployed().then((mockedOracle) => {
         ETHOracle = mockedOracle.address;
       });

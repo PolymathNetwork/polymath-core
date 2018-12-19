@@ -229,8 +229,8 @@ contract("GeneralTransferManager", accounts => {
                 from: account_issuer,
                 gas: 6000000
             });
-            assert.equal((await I_SecurityToken.balanceOf.call(account_affiliates1)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 100);
-            assert.equal((await I_SecurityToken.balanceOf.call(account_affiliates2)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 100);
+            assert.equal((await I_SecurityToken.balanceOf.call(account_affiliates1)).dividedBy(new BN(10).pow(new BN(18))).toNumber(), 100);
+            assert.equal((await I_SecurityToken.balanceOf.call(account_affiliates2)).dividedBy(new BN(10).pow(new BN(18))).toNumber(), 100);
         });
 
 

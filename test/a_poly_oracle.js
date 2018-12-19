@@ -79,7 +79,7 @@ contract("PolyOracle", accounts => {
             assert.isNotNull(logNewPriceWatcher.args._price, "Price returned was null.");
             assert.equal(logNewPriceWatcher.args._oldPrice.toNumber(), 0);
             console.log(
-                "Success! Current price is: " + logNewPriceWatcher.args._price.dividedBy(new web3.utils.toBN(10).pow(18)).toNumber() + " USD/POLY"
+                "Success! Current price is: " + logNewPriceWatcher.args._price.dividedBy(new BN(10).pow(new BN(18))).toNumber() + " USD/POLY"
             );
         });
 
@@ -101,7 +101,7 @@ contract("PolyOracle", accounts => {
             const log = await logNewPriceWatcher;
             assert.equal(log.event, "PriceUpdated", "PriceUpdated not emitted.");
             assert.isNotNull(log.args._price, "Price returned was null.");
-            console.log("Success! Current price is: " + log.args._price.dividedBy(new web3.utils.toBN(10).pow(18)).toNumber() + " USD/POLY");
+            console.log("Success! Current price is: " + log.args._price.dividedBy(new BN(10).pow(new BN(18))).toNumber() + " USD/POLY");
         });
 
         it("Should schedule to call using iters - fails", async () => {
@@ -124,7 +124,7 @@ contract("PolyOracle", accounts => {
             const log = await logNewPriceWatcher;
             assert.equal(log.event, "PriceUpdated", "PriceUpdated not emitted.");
             assert.isNotNull(log.args._price, "Price returned was null.");
-            console.log("Success! Current price is: " + log.args._price.dividedBy(new web3.utils.toBN(10).pow(18)).toNumber() + " USD/POLY");
+            console.log("Success! Current price is: " + log.args._price.dividedBy(new BN(10).pow(new BN(18))).toNumber() + " USD/POLY");
             latestPrice = log.args._price;
         });
     });
@@ -154,23 +154,23 @@ contract("PolyOracle", accounts => {
         });
 
         it("Should change the sanity bounds manually - fails - bad owner", async () => {
-            await catchRevert(I_PolyOracle.setSanityBounds(new web3.utils.toBN(25).mul(new web3.utils.toBN(10).pow(16)), { from: accounts[6] }));
+            await catchRevert(I_PolyOracle.setSanityBounds(new BN(25).mul(new BN(10).pow(16)), { from: accounts[6] }));
         });
 
         it("Should change the sanity bounds manually", async () => {
             console.log(JSON.stringify(await I_PolyOracle.sanityBounds.call()));
-            await I_PolyOracle.setSanityBounds(new web3.utils.toBN(25).mul(new web3.utils.toBN(10).pow(16)), { from: owner });
+            await I_PolyOracle.setSanityBounds(new BN(25).mul(new BN(10).pow(16)), { from: owner });
             let sanityBounds = await I_PolyOracle.sanityBounds.call();
             console.log(JSON.stringify(await I_PolyOracle.sanityBounds.call()));
-            assert.equal(sanityBounds.toNumber(), new web3.utils.toBN(25).mul(new web3.utils.toBN(10).pow(16)).toNumber());
+            assert.equal(sanityBounds.toNumber(), new BN(25).mul(new BN(10).pow(16)).toNumber());
         });
 
         it("Should change the gas price manually - fails - bad owner", async () => {
-            await catchRevert(I_PolyOracle.setGasPrice(new web3.utils.toBN(60).mul(new web3.utils.toBN(10).pow(9)), { from: accounts[6] }));
+            await catchRevert(I_PolyOracle.setGasPrice(new BN(60).mul(new BN(10).pow(9)), { from: accounts[6] }));
         });
 
         it("Should change the gas price manually", async () => {
-            await I_PolyOracle.setGasPrice(new web3.utils.toBN(60).mul(new web3.utils.toBN(10).pow(9)), { from: owner });
+            await I_PolyOracle.setGasPrice(new BN(60).mul(new BN(10).pow(9)), { from: owner });
             let blockNo = latestBlock();
             let timeScheduling = [latestTime() + duration.seconds(10), latestTime() + duration.seconds(20)];
             let tx = await I_PolyOracle.schedulePriceUpdatesFixed(timeScheduling, { from: owner, value: web3.utils.toWei("2") });
@@ -188,7 +188,7 @@ contract("PolyOracle", accounts => {
             assert.equal(logNewPriceWatcher.event, "PriceUpdated", "PriceUpdated not emitted.");
             assert.isNotNull(logNewPriceWatcher.args._price, "Price returned was null.");
             console.log(
-                "Success! Current price is: " + logNewPriceWatcher.args._price.dividedBy(new web3.utils.toBN(10).pow(18)).toNumber() + " USD/POLY"
+                "Success! Current price is: " + logNewPriceWatcher.args._price.dividedBy(new BN(10).pow(new BN(18))).toNumber() + " USD/POLY"
             );
             // assert.isTrue(false);
         });
@@ -250,7 +250,7 @@ contract("PolyOracle", accounts => {
             assert.equal(logNewPriceWatcher.event, "PriceUpdated", "PriceUpdated not emitted.");
             assert.isNotNull(logNewPriceWatcher.args._price, "Price returned was null.");
             console.log(
-                "Success! Current price is: " + logNewPriceWatcher.args._price.dividedBy(new web3.utils.toBN(10).pow(18)).toNumber() + " USD/POLY"
+                "Success! Current price is: " + logNewPriceWatcher.args._price.dividedBy(new BN(10).pow(new BN(18))).toNumber() + " USD/POLY"
             );
             // assert.isTrue(false);
         });

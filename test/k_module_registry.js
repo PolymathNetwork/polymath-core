@@ -555,8 +555,8 @@ contract("ModuleRegistry", accounts => {
                     await I_MRProxied.reclaimERC20(I_PolyToken.address);
                     let bal2 = await I_PolyToken.balanceOf.call(account_polymath);
                     assert.isAtLeast(
-                        bal2.dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(),
-                        bal2.dividedBy(new web3.utils.toBN(10).pow(18)).toNumber()
+                        bal2.dividedBy(new BN(10).pow(new BN(18))).toNumber(),
+                        bal2.dividedBy(new BN(10).pow(new BN(18))).toNumber()
                     );
                 });
             });
@@ -605,8 +605,8 @@ contract("ModuleRegistry", accounts => {
                     await I_ReclaimERC20.reclaimERC20(I_PolyToken.address);
                     let bal2 = await I_PolyToken.balanceOf.call(account_polymath);
                     assert.isAtLeast(
-                        bal2.dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(),
-                        bal2.dividedBy(new web3.utils.toBN(10).pow(18)).toNumber()
+                        bal2.dividedBy(new BN(10).pow(new BN(18))).toNumber(),
+                        bal2.dividedBy(new BN(10).pow(new BN(18))).toNumber()
                     );
                 });
             })

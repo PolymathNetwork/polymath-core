@@ -226,10 +226,10 @@ contract("Checkpoints", accounts => {
             let cps = [];
             let ts = [];
             for (let j = 0; j < 10; j++) {
-                let balance1 = new web3.utils.toBN(await I_SecurityToken.balanceOf(account_investor1));
-                let balance2 = new web3.utils.toBN(await I_SecurityToken.balanceOf(account_investor2));
-                let balance3 = new web3.utils.toBN(await I_SecurityToken.balanceOf(account_investor3));
-                let totalSupply = new web3.utils.toBN(await I_SecurityToken.totalSupply());
+                let balance1 = new BN(await I_SecurityToken.balanceOf(account_investor1));
+                let balance2 = new BN(await I_SecurityToken.balanceOf(account_investor2));
+                let balance3 = new BN(await I_SecurityToken.balanceOf(account_investor3));
+                let totalSupply = new BN(await I_SecurityToken.totalSupply());
                 cps.push([balance1, balance2, balance3]);
                 ts.push(totalSupply);
                 console.log(
@@ -265,18 +265,18 @@ contract("Checkpoints", accounts => {
                         receiver = account_investor3;
                     }
                     let m = Math.random();
-                    let amount = new web3.utils.toBN(await I_SecurityToken.balanceOf(sender))
+                    let amount = new BN(await I_SecurityToken.balanceOf(sender))
                         .mul(Math.random().toFixed(10))
                         .toFixed(0);
                     if (m > 0.8) {
                         console.log("Sending full balance");
-                        amount = new web3.utils.toBN(await I_SecurityToken.balanceOf(sender));
+                        amount = new BN(await I_SecurityToken.balanceOf(sender));
                     }
                     console.log("Sender: " + sender + " Receiver: " + receiver + " Amount: " + JSON.stringify(amount));
                     await I_SecurityToken.transfer(receiver, amount, { from: sender });
                 }
                 if (Math.random() > 0.5) {
-                    let n = new web3.utils.toBN(Math.random().toFixed(10))
+                    let n = new BN(Math.random().toFixed(10))
                         .mul(10 ** 17)
                         .toFixed(0);
                     let p = Math.random() * 3;
@@ -293,7 +293,7 @@ contract("Checkpoints", accounts => {
                     await I_SecurityToken.mint(minter, n, { from: token_owner });
                 }
                 if (Math.random() > 0.5) {
-                    let n = new web3.utils.toBN(Math.random().toFixed(10)).mul(10 ** 17);
+                    let n = new BN(Math.random().toFixed(10)).mul(10 ** 17);
                     let p = Math.random() * 3;
                     let r = Math.random() * 3;
                     let burner;
@@ -304,7 +304,7 @@ contract("Checkpoints", accounts => {
                     } else {
                         burner = account_investor3;
                     }
-                    let burnerBalance = new web3.utils.toBN(await I_SecurityToken.balanceOf(burner));
+                    let burnerBalance = new BN(await I_SecurityToken.balanceOf(burner));
                     if (n.gt(burnerBalance.div(2))) {
                         n = burnerBalance.div(2);
                     }
@@ -314,10 +314,10 @@ contract("Checkpoints", accounts => {
                 }
                 console.log("Checking Interim...");
                 for (let k = 0; k < cps.length; k++) {
-                    let balance1 = new web3.utils.toBN(await I_SecurityToken.balanceOfAt(account_investor1, k + 1));
-                    let balance2 = new web3.utils.toBN(await I_SecurityToken.balanceOfAt(account_investor2, k + 1));
-                    let balance3 = new web3.utils.toBN(await I_SecurityToken.balanceOfAt(account_investor3, k + 1));
-                    let totalSupply = new web3.utils.toBN(await I_SecurityToken.totalSupplyAt(k + 1));
+                    let balance1 = new BN(await I_SecurityToken.balanceOfAt(account_investor1, k + 1));
+                    let balance2 = new BN(await I_SecurityToken.balanceOfAt(account_investor2, k + 1));
+                    let balance3 = new BN(await I_SecurityToken.balanceOfAt(account_investor3, k + 1));
+                    let totalSupply = new BN(await I_SecurityToken.totalSupplyAt(k + 1));
                     let balances = [balance1, balance2, balance3];
                     console.log("Checking TotalSupply: " + totalSupply + " is " + ts[k] + " at checkpoint: " + (k + 1));
                     assert.isTrue(totalSupply.eq(ts[k]));
@@ -330,10 +330,10 @@ contract("Checkpoints", accounts => {
             }
             console.log("Checking...");
             for (let k = 0; k < cps.length; k++) {
-                let balance1 = new web3.utils.toBN(await I_SecurityToken.balanceOfAt(account_investor1, k + 1));
-                let balance2 = new web3.utils.toBN(await I_SecurityToken.balanceOfAt(account_investor2, k + 1));
-                let balance3 = new web3.utils.toBN(await I_SecurityToken.balanceOfAt(account_investor3, k + 1));
-                let totalSupply = new web3.utils.toBN(await I_SecurityToken.totalSupplyAt(k + 1));
+                let balance1 = new BN(await I_SecurityToken.balanceOfAt(account_investor1, k + 1));
+                let balance2 = new BN(await I_SecurityToken.balanceOfAt(account_investor2, k + 1));
+                let balance3 = new BN(await I_SecurityToken.balanceOfAt(account_investor3, k + 1));
+                let totalSupply = new BN(await I_SecurityToken.totalSupplyAt(k + 1));
                 let balances = [balance1, balance2, balance3];
                 console.log("Checking TotalSupply: " + totalSupply + " is " + ts[k] + " at checkpoint: " + (k + 1));
                 assert.isTrue(totalSupply.eq(ts[k]));

@@ -257,7 +257,7 @@ contract("Concurrent STO", accounts => {
                         await I_STO_Array[STOIndex].generateTokens(account_investor1, web3.utils.toWei("1000"), { from: account_issuer });
                         assert.equal(await I_STO_Array[STOIndex].investorCount.call(), 1);
                         assert.equal(
-                            (await I_STO_Array[STOIndex].investors.call(account_investor1)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(),
+                            (await I_STO_Array[STOIndex].investors.call(account_investor1)).dividedBy(new BN(10).pow(new BN(18))).toNumber(),
                             1000
                         );
                         break;
@@ -270,7 +270,7 @@ contract("Concurrent STO", accounts => {
                         assert.equal(web3.utils.fromWei((await I_STO_Array[STOIndex].getRaised.call(1)).toString()), 0);
                         assert.equal(await I_STO_Array[STOIndex].investorCount.call(), 1);
                         assert.equal(
-                            (await I_STO_Array[STOIndex].investors.call(account_investor1)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(),
+                            (await I_STO_Array[STOIndex].investors.call(account_investor1)).dividedBy(new BN(10).pow(new BN(18))).toNumber(),
                             1000
                         );
                         break;

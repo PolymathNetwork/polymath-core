@@ -10,7 +10,7 @@ glob("test/**/*.js", function (er, files) {
             if (err) {
                 return console.log(err);
             }
-            content = content.replace(regex, '$1\n$3.numberFormat = "web3.utils.toBN";'); 
+            content = content.replace(regex, '$1\n$3.numberFormat = "BN";'); 
             fs.writeFile(filename, content, 'utf8', function (err) {
                 if (err) return console.log(err);
             });

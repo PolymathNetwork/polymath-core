@@ -3,9 +3,10 @@ import { duration, ensureException, latestBlock } from "./helpers/utils";
 import { takeSnapshot, increaseTime, revertToSnapshot } from "./helpers/time";
 import { encodeProxyCall, encodeModuleCall } from "./helpers/encodeCall";
 import { catchRevert } from "./helpers/exceptions";
-import { setUpPolymathNetwork } from "./helpers/createInstances";
+import {deployCappedSTOAndVerifyed, setUpPolymathNetwork} from "./helpers/createInstances";
 
 const CappedSTOFactory = artifacts.require("./CappedSTOFactory.sol");
+const CappedSTO = artifacts.require("./CappedSTO.sol");
 const DummySTOFactory = artifacts.require("./DummySTOFactory.sol");
 const SecurityToken = artifacts.require("./SecurityToken.sol");
 const ModuleRegistryProxy = artifacts.require("./ModuleRegistryProxy.sol");
@@ -56,7 +57,7 @@ contract("ModuleRegistry", accounts => {
     let I_SecurityToken;
     let I_ReclaimERC20;
     let I_STRProxied;
-    let I_CappedSTO;
+    let I_CappedSTOLogic;
     let I_PolyToken;
     let I_MockFactory;
     let I_TestSTOFactory;
@@ -266,7 +267,8 @@ contract("ModuleRegistry", accounts => {
             });
 
             it("Should fail to register the new module because msg.sender is not the owner of the module", async() => {
-                I_CappedSTOFactory3 = await CappedSTOFactory.new(0, 0, 0, { from: account_temp });
+                I_CappedSTOLogic = await CappedSTO.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: account_polymath });
+                I_CappedSTOFactory3 = await CappedSTOFactory.new(0, 0, 0, I_CappedSTOLogic.address, { from: account_temp });
                 catchRevert(
                     I_MRProxied.registerModule(I_CappedSTOFactory3.address, { from: token_owner })
                 );
@@ -292,7 +294,7 @@ contract("ModuleRegistry", accounts => {
             });
 
             it("Should successfully verify the module -- false", async () => {
-                I_CappedSTOFactory1 = await CappedSTOFactory.new(0, 0, 0, { from: account_polymath });
+                I_CappedSTOFactory1 = await CappedSTOFactory.new(0, 0, 0, I_CappedSTOLogic.address, { from: account_polymath });
                 await I_MRProxied.registerModule(I_CappedSTOFactory1.address, { from: account_polymath });
                 let tx = await I_MRProxied.verifyModule(I_CappedSTOFactory1.address, false, { from: account_polymath });
                 assert.equal(tx.logs[0].args._moduleFactory, I_CappedSTOFactory1.address, "Failed in verifying the module");
@@ -323,7 +325,7 @@ contract("ModuleRegistry", accounts => {
             });
 
             it("Should fail to register module because custom modules not allowed", async () => {
-                I_CappedSTOFactory2 = await CappedSTOFactory.new(0, 0, 0, { from: token_owner });
+                I_CappedSTOFactory2 = await CappedSTOFactory.new(0, 0, 0, I_CappedSTOLogic.address, { from: token_owner });
 
                 assert.notEqual(
                     I_CappedSTOFactory2.address.valueOf(),

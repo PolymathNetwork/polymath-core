@@ -357,6 +357,7 @@ module.exports = function (deployer, network, accounts) {
     EtherDividendCheckpointFactory:       ${EtherDividendCheckpointFactory.address}
     ERC20DividendCheckpointFactory:       ${ERC20DividendCheckpointFactory.address}
     VestingEscrowWalletFactory:           ${VestingEscrowWalletFactory.address}
+    VestingEscrowWalletLogic:             ${VestingEscrowWalletLogic.address}
     ---------------------------------------------------------------------------------
     `);
     console.log('\n');

@@ -13,7 +13,7 @@ function getPolymathRegistryAddress(networkId) {
       result = "";
       break;
     case 15: // GANACHE
-      result = JSON.parse(require('fs').readFileSync('./build/contracts/PolymathRegistry.json').toString()).networks[networkId].address;
+      result = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/PolymathRegistry.json`).toString()).networks[networkId].address;
       break;
     case 42: // KOVAN
       result = "0x5b215a7d39ee305ad28da29bf2f0425c6c2a00b3";
@@ -52,35 +52,35 @@ module.exports = {
     let networkId = await web3.eth.net.getId();
     return getPolymathRegistryAddress(networkId);
   },
-  securityTokenRegistry: async function() {
+  securityTokenRegistry: async function () {
     let polymathRegistry = await getPolymathRegistry();
     return await polymathRegistry.methods.getAddress("SecurityTokenRegistry").call();
   },
-  moduleRegistry: async function() {
+  moduleRegistry: async function () {
     let polymathRegistry = await getPolymathRegistry();
     return await polymathRegistry.methods.getAddress("ModuleRegistry").call();
   },
-  featureRegistry: async function() {
+  featureRegistry: async function () {
     let polymathRegistry = await getPolymathRegistry();
     return await polymathRegistry.methods.getAddress("FeatureRegistry").call();
   },
-  polyToken: async function() {
+  polyToken: async function () {
     let polymathRegistry = await getPolymathRegistry();
     return await polymathRegistry.methods.getAddress("PolyToken").call();
   },
-  usdToken: async function() {
+  usdToken: async function () {
     let networkId = await web3.eth.net.getId();
     if (networkId == 1)
       return "0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359";
     else if (networkId == 42)
       return "0xc4375b7de8af5a38a93548eb8453a498222c4ff2";
     else
-      return JSON.parse(require('fs').readFileSync('./build/contracts/PolyTokenFaucet.json').toString()).networks[networkId].address;
+      return JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/PolyTokenFaucet.json`).toString()).networks[networkId].address;
   },
-  getModuleFactoryAddressByName: async function(stAddress, moduleType, moduleName) {
+  getModuleFactoryAddressByName: async function (stAddress, moduleType, moduleName) {
     let moduleRegistry = await getModuleRegistry();
     let availableModules = await moduleRegistry.methods.getModulesByTypeAndToken(moduleType, stAddress).call();
-    
+
     let result = null;
     let counter = 0;
     let moduleFactoryABI = abis.moduleFactory();

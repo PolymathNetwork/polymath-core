@@ -10,8 +10,8 @@ const { table } = require('table')
 
 ///////////////////
 // Constants
-const WHITELIST_DATA_CSV = './CLI/data/Transfer/GTM/whitelist_data.csv';
-const PERCENTAGE_WHITELIST_DATA_CSV = './CLI/data/Transfer/PercentageTM/whitelist_data.csv';
+const WHITELIST_DATA_CSV = `${__dirname}/../data/Transfer/GTM/whitelist_data.csv`;
+const PERCENTAGE_WHITELIST_DATA_CSV = `${__dirname}/../data/Transfer/PercentageTM/whitelist_data.csv`;
 
 // App flow
 let tokenSymbol;
@@ -532,17 +532,27 @@ function showWhitelistTable(investorsArray, fromTimeArray, toTimeArray, expiryTi
   console.log(table(dataTable));
 }
 
-async function modifyWhitelistInBatch() {
-  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${WHITELIST_DATA_CSV}): `, {
-    defaultInput: WHITELIST_DATA_CSV
-  });
-  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
-    limit: function (input) {
-      return parseInt(input) > 0;
-    },
-    limitMessage: 'Must be greater than 0',
-    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
-  });
+async function modifyWhitelistInBatch(_csvFilePath, _batchSize) {
+  let csvFilePath;
+  if (typeof _csvFilePath === 'undefined') {
+    csvFilePath = readlineSync.question(`Enter the path for csv data file (${WHITELIST_DATA_CSV}): `, {
+      defaultInput: WHITELIST_DATA_CSV
+    });
+  } else {
+    csvFilePath = _csvFilePath;
+  }
+  let batchSize;
+  if (typeof _batchSize === 'undefined') {
+    batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+      limit: function (input) {
+        return parseInt(input) > 0;
+      },
+      limitMessage: 'Must be greater than 0',
+      defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+    });
+  } else {
+    batchSize = _batchSize;
+  }
   let parsedData = csvParse(csvFilePath);
   let validData = parsedData.filter(row =>
     web3.utils.isAddress(row[0]) &&
@@ -1092,7 +1102,7 @@ async function getAllModulesByType(type) {
     let nameTemp = web3.utils.hexToUtf8(details[0]);
     let pausedTemp = null;
     if (type == gbl.constants.MODULES_TYPES.STO || type == gbl.constants.MODULES_TYPES.TRANSFER) {
-      let abiTemp = JSON.parse(require('fs').readFileSync(`./build/contracts/${nameTemp}.json`).toString()).abi;
+      let abiTemp = JSON.parse(require('fs').readFileSync(`${__dirname}/../../build/contracts/${nameTemp}.json`).toString()).abi;
       let contractTemp = new web3.eth.Contract(abiTemp, details[1]);
       pausedTemp = await contractTemp.methods.paused().call();
     }
@@ -1194,6 +1204,14 @@ module.exports = {
   },
   addTransferManagerModule: async function (_tokenSymbol) {
     await initialize(_tokenSymbol);
-    return addTransferManagerModule()
+    return addTransferManagerModule();
+  },
+  modifyWhitelistInBatch: async function (_tokenSymbol, _csvFilePath, _batchSize) {
+    await initialize(_tokenSymbol);
+    let gmtModules = await securityToken.methods.getModulesByName(web3.utils.toHex('GeneralTransferManager')).call();
+    let generalTransferManagerAddress = gmtModules[0];
+    currentTransferManager = new web3.eth.Contract(abis.generalTransferManager(), generalTransferManagerAddress);
+    currentTransferManager.setProvider(web3.currentProvider);
+    return modifyWhitelistInBatch(_csvFilePath, _batchSize);
   }
 }

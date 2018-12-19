@@ -113,7 +113,7 @@ contract("CappedSTO", accounts => {
         token_owner = account_issuer;
 
         let instances = await setUpPolymathNetwork(account_polymath, token_owner);
-
+        console.log('Set up done');
         [
             I_PolymathRegistry,
             I_PolyToken,

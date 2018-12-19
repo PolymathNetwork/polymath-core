@@ -22,7 +22,7 @@ const PercentageTransferManager = artifacts.require('./PercentageTransferManager
 const ManualApprovalTransferManager = artifacts.require('./ManualApprovalTransferManager');
 
 const Web3 = require('web3');
-const BigNumber = require('bignumber.js');
+const web3.utils.toBN = require('web3.utils.toBN.js');
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")) // Hardcoded development port
 
 contract('GeneralPermissionManager Fuzz', accounts => {

@@ -17,7 +17,7 @@ const TestSTOFactory = artifacts.require("./TestSTOFactory.sol");
 const ReclaimTokens = artifacts.require("./ReclaimTokens.sol");
 
 const Web3 = require("web3");
-const BigNumber = require("bignumber.js");
+
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
 contract("ModuleRegistry", accounts => {
@@ -555,8 +555,8 @@ contract("ModuleRegistry", accounts => {
                     await I_MRProxied.reclaimERC20(I_PolyToken.address);
                     let bal2 = await I_PolyToken.balanceOf.call(account_polymath);
                     assert.isAtLeast(
-                        bal2.dividedBy(new BigNumber(10).pow(18)).toNumber(),
-                        bal2.dividedBy(new BigNumber(10).pow(18)).toNumber()
+                        bal2.dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(),
+                        bal2.dividedBy(new web3.utils.toBN(10).pow(18)).toNumber()
                     );
                 });
             });
@@ -605,8 +605,8 @@ contract("ModuleRegistry", accounts => {
                     await I_ReclaimERC20.reclaimERC20(I_PolyToken.address);
                     let bal2 = await I_PolyToken.balanceOf.call(account_polymath);
                     assert.isAtLeast(
-                        bal2.dividedBy(new BigNumber(10).pow(18)).toNumber(),
-                        bal2.dividedBy(new BigNumber(10).pow(18)).toNumber()
+                        bal2.dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(),
+                        bal2.dividedBy(new web3.utils.toBN(10).pow(18)).toNumber()
                     );
                 });
             })

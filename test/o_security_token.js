@@ -19,7 +19,7 @@ const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager")
 const MockRedemptionManager = artifacts.require("./MockRedemptionManager.sol");
 
 const Web3 = require("web3");
-const BigNumber = require("bignumber.js");
+
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
 contract("SecurityToken", accounts => {
@@ -204,7 +204,7 @@ contract("SecurityToken", accounts => {
         it("Should mint the tokens before attaching the STO", async () => {
             await I_SecurityToken.mint(account_affiliate1, 100 * Math.pow(10, 18), { from: token_owner, gas: 500000 });
             let balance = await I_SecurityToken.balanceOf(account_affiliate1);
-            assert.equal(balance.dividedBy(new BigNumber(10).pow(18)).toNumber(), 100);
+            assert.equal(balance.dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 100);
         });
 
         it("Should mint the multi tokens before attaching the STO -- fail only be called by the owner", async () => {
@@ -241,9 +241,9 @@ contract("SecurityToken", accounts => {
                 gas: 500000
             });
             let balance1 = await I_SecurityToken.balanceOf(account_affiliate1);
-            assert.equal(balance1.dividedBy(new BigNumber(10).pow(18)).toNumber(), 200);
+            assert.equal(balance1.dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 200);
             let balance2 = await I_SecurityToken.balanceOf(account_affiliate2);
-            assert.equal(balance2.dividedBy(new BigNumber(10).pow(18)).toNumber(), 110);
+            assert.equal(balance2.dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 110);
         });
 
         it("Should finish the minting -- fail because feature is not activated", async () => {
@@ -334,7 +334,7 @@ contract("SecurityToken", accounts => {
         it("Should successfully mint tokens while STO attached", async () => {
             await I_SecurityToken.mint(account_affiliate1, 100 * Math.pow(10, 18), { from: token_owner, gas: 500000 });
             let balance = await I_SecurityToken.balanceOf(account_affiliate1);
-            assert.equal(balance.dividedBy(new BigNumber(10).pow(18)).toNumber(), 300);
+            assert.equal(balance.dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 300);
         });
 
         it("Should fail to mint tokens while STO attached after freezeMinting called", async () => {
@@ -410,7 +410,7 @@ contract("SecurityToken", accounts => {
             assert.equal(tx.logs[0].args._module, I_GeneralTransferManager.address);
             await I_SecurityToken.mint(account_investor1, web3.utils.toWei("500"), {from: token_owner});
             await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("200"), {from: account_investor1 });
-            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 200);
+            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 200);
             await revertToSnapshot(key);
         });
 
@@ -469,7 +469,7 @@ contract("SecurityToken", accounts => {
             let key = await takeSnapshot();
             await I_SecurityToken.mint(1, 100 * Math.pow(10, 18), { from: token_owner, gas: 500000 });
             let balance = await I_SecurityToken.balanceOf(1);
-            assert.equal(balance.dividedBy(new BigNumber(10).pow(18)).toNumber(), 100);
+            assert.equal(balance.dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 100);
             await revertToSnapshot(key);
         });
 
@@ -510,7 +510,7 @@ contract("SecurityToken", accounts => {
             let tx = await I_SecurityToken.changeModuleBudget(I_CappedSTO.address, increaseAmount, true, { from: token_owner });
             assert.equal(tx.logs[1].args._moduleTypes[0], stoKey);
             assert.equal(tx.logs[1].args._module, I_CappedSTO.address);
-            assert.equal(tx.logs[1].args._budget.toNumber(), budget.plus(increaseAmount).toNumber());
+            assert.equal(tx.logs[1].args._budget.toNumber(), budget.add(increaseAmount).toNumber());
         });
 
         it("Should change the budget of the module (decrease it)", async() => {
@@ -519,7 +519,7 @@ contract("SecurityToken", accounts => {
             let tx = await I_SecurityToken.changeModuleBudget(I_CappedSTO.address, decreaseAmount, false, { from: token_owner });
             assert.equal(tx.logs[1].args._moduleTypes[0], stoKey);
             assert.equal(tx.logs[1].args._module, I_CappedSTO.address);
-            assert.equal(tx.logs[1].args._budget.toNumber(), budget.minus(decreaseAmount).toNumber());
+            assert.equal(tx.logs[1].args._budget.toNumber(), budget.sub(decreaseAmount).toNumber());
         });
 
         it("Should fail to get the total supply -- because checkpoint id is greater than present", async() => {
@@ -554,11 +554,11 @@ contract("SecurityToken", accounts => {
                 value: web3.utils.toWei("1", "ether")
             });
             console.log("AFTER");
-            assert.equal((await I_CappedSTO.getRaised.call(0)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 1);
+            assert.equal((await I_CappedSTO.getRaised.call(0)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 1);
 
             assert.equal(await I_CappedSTO.investorCount.call(), 1);
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 1000);
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 1000);
         });
 
         it("Should Fail in transferring the token from one whitelist investor 1 to non whitelist investor 2", async () => {
@@ -608,7 +608,7 @@ contract("SecurityToken", accounts => {
             await I_SecurityToken.transfer(accounts[7], 10 * Math.pow(10, 18), { from: account_investor1, gas: 2500000 });
 
             assert.equal(
-                (await I_SecurityToken.balanceOf(accounts[7])).dividedBy(new BigNumber(10).pow(18)).toNumber(),
+                (await I_SecurityToken.balanceOf(accounts[7])).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(),
                 10,
                 "Transfer doesn't take place properly"
             );
@@ -616,7 +616,7 @@ contract("SecurityToken", accounts => {
             await I_SecurityToken.transfer(account_temp, 5 * Math.pow(10, 18), { from: accounts[7], gas: 2500000 });
 
             assert.equal(
-                (await I_SecurityToken.balanceOf(account_temp)).dividedBy(new BigNumber(10).pow(18)).toNumber(),
+                (await I_SecurityToken.balanceOf(account_temp)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(),
                 5,
                 "Transfer doesn't take place properly"
             );
@@ -644,7 +644,7 @@ contract("SecurityToken", accounts => {
 
             await I_SecurityToken.transfer(account_investor2, 10 * Math.pow(10, 18), { from: account_investor1, gas: 2500000 });
             assert.equal(
-                (await I_SecurityToken.balanceOf(account_investor2)).dividedBy(new BigNumber(10).pow(18)).toNumber(),
+                (await I_SecurityToken.balanceOf(account_investor2)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(),
                 10,
                 "Transfer doesn't take place properly"
             );
@@ -677,7 +677,7 @@ contract("SecurityToken", accounts => {
         it("Should successfully mint tokens while STO attached", async () => {
             await I_SecurityToken.mint(account_affiliate1, 100 * Math.pow(10, 18), { from: token_owner, gas: 500000 });
             let balance = await I_SecurityToken.balanceOf(account_affiliate1);
-            assert.equal(balance.dividedBy(new BigNumber(10).pow(18)).toNumber(), 400);
+            assert.equal(balance.dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 400);
         });
 
         it("Should mint the tokens for multiple afiliated investors while STO attached", async () => {
@@ -686,9 +686,9 @@ contract("SecurityToken", accounts => {
                 gas: 500000
             });
             let balance1 = await I_SecurityToken.balanceOf(account_affiliate1);
-            assert.equal(balance1.dividedBy(new BigNumber(10).pow(18)).toNumber(), 500);
+            assert.equal(balance1.dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 500);
             let balance2 = await I_SecurityToken.balanceOf(account_affiliate2);
-            assert.equal(balance2.dividedBy(new BigNumber(10).pow(18)).toNumber(), 220);
+            assert.equal(balance2.dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 220);
         });
 
         it("Should provide more permissions to the delegate", async () => {
@@ -720,11 +720,11 @@ contract("SecurityToken", accounts => {
                 value: web3.utils.toWei("1", "ether")
             });
 
-            assert.equal((await I_CappedSTO.getRaised.call(0)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 2);
+            assert.equal((await I_CappedSTO.getRaised.call(0)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 2);
 
             assert.equal(await I_CappedSTO.investorCount.call(), 2);
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 1000);
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 1000);
         });
 
         it("STO should fail to mint tokens after minting is frozen", async () => {
@@ -982,7 +982,7 @@ contract("SecurityToken", accounts => {
             // Redeem tokens
             let tx = await I_MockRedemptionManager.redeemTokenByOwner(web3.utils.toWei("250"), {from: account_investor1});
             assert.equal(tx.logs[0].args._investor, account_investor1, "Burn tokens of wrong owner");
-            assert.equal((tx.logs[0].args._value).dividedBy(new BigNumber(10).pow(18)).toNumber(), 250);
+            assert.equal((tx.logs[0].args._value).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 250);
         });
 
         it("Should fail to burn the tokens because module get archived", async() => {
@@ -1037,8 +1037,8 @@ contract("SecurityToken", accounts => {
             await I_SecurityToken.withdrawERC20(I_PolyToken.address, web3.utils.toWei("20000", "ether"), { from: token_owner });
             let balanceAfter = await I_PolyToken.balanceOf(token_owner);
             assert.equal(
-                BigNumber(balanceAfter)
-                    .sub(new BigNumber(balanceBefore))
+                web3.utils.toBN(balanceAfter)
+                    .sub(new web3.utils.toBN(balanceBefore))
                     .toNumber(),
                 web3.utils.toWei("20000", "ether")
             );

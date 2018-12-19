@@ -14,7 +14,7 @@ const STFactory = artifacts.require("./STFactory.sol");
 
 
 const Web3 = require("web3");
-const BigNumber = require("bignumber.js");
+
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
 contract("SecurityTokenRegistry", accounts => {
@@ -1061,8 +1061,8 @@ contract("SecurityTokenRegistry", accounts => {
                 await I_STRProxied.reclaimERC20(I_PolyToken.address, { from: account_polymath });
                 let bal2 = await I_PolyToken.balanceOf.call(account_polymath);
                 assert.isAtLeast(
-                    bal2.dividedBy(new BigNumber(10).pow(18)).toNumber(),
-                    bal2.dividedBy(new BigNumber(10).pow(18)).toNumber()
+                    bal2.dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(),
+                    bal2.dividedBy(new web3.utils.toBN(10).pow(18)).toNumber()
                 );
             });
         });

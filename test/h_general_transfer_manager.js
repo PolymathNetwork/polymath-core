@@ -14,7 +14,7 @@ const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager");
 
 const Web3 = require("web3");
-const BigNumber = require("bignumber.js");
+
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
 contract("GeneralTransferManager", accounts => {
@@ -229,8 +229,8 @@ contract("GeneralTransferManager", accounts => {
                 from: account_issuer,
                 gas: 6000000
             });
-            assert.equal((await I_SecurityToken.balanceOf.call(account_affiliates1)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 100);
-            assert.equal((await I_SecurityToken.balanceOf.call(account_affiliates2)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 100);
+            assert.equal((await I_SecurityToken.balanceOf.call(account_affiliates1)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 100);
+            assert.equal((await I_SecurityToken.balanceOf.call(account_affiliates2)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 100);
         });
 
 

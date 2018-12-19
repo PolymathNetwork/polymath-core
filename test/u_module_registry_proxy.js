@@ -14,7 +14,7 @@ const GeneralTransferManagerFactory = artifacts.require("./GeneralTransferManage
 const GeneralPermissionManagerFactory = artifacts.require("./GeneralPermissionManagerFactory.sol");
 
 const Web3 = require("web3");
-const BigNumber = require("bignumber.js");
+
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
 contract("ModuleRegistryProxy", accounts => {

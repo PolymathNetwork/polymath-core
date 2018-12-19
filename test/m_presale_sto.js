@@ -11,7 +11,7 @@ const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 
 const Web3 = require("web3");
-const BigNumber = require("bignumber.js");
+
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
 contract("PreSaleSTO", accounts => {
@@ -249,7 +249,7 @@ contract("PreSaleSTO", accounts => {
                 from: account_issuer
             });
 
-            assert.equal((await I_PreSaleSTO.getRaised.call(0)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 1);
+            assert.equal((await I_PreSaleSTO.getRaised.call(0)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 1);
             console.log(await I_PreSaleSTO.getNumberInvestors.call());
             assert.equal((await I_PreSaleSTO.getNumberInvestors.call()).toNumber(), 1);
             // assert.isTrue(false);
@@ -300,7 +300,7 @@ contract("PreSaleSTO", accounts => {
                 { from: account_issuer }
             );
 
-            assert.equal((await I_PreSaleSTO.getRaised.call(1)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 2000);
+            assert.equal((await I_PreSaleSTO.getRaised.call(1)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 2000);
             assert.equal((await I_PreSaleSTO.getNumberInvestors.call()).toNumber(), 3);
         });
 

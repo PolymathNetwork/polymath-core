@@ -1,6 +1,6 @@
 const Web3 = require("web3");
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
-const BigNumber = require("bignumber.js");
+
 
 import latestTime from "./helpers/latestTime";
 import { duration } from "./helpers/utils";
@@ -348,12 +348,12 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
         it("Should successfully launch USDTieredSTO for first security token", async () => {
             let _startTime = latestTime() + duration.days(1);
             let _endTime = _startTime + duration.days(180);
-            let _ratePerTier = [BigNumber(0.1).mul(10 ** 18), BigNumber(0.15).mul(10 ** 18), BigNumber(0.2).mul(10 ** 18)];
-            let _ratePerTierDiscountPoly = [BigNumber(0), BigNumber(0), BigNumber(0)];
-            let _tokensPerTierTotal = [BigNumber(100).mul(10 ** 18), BigNumber(200).mul(10 ** 18), BigNumber(300).mul(10 ** 18)];
-            let _tokensPerTierDiscountPoly = [BigNumber(0), BigNumber(0), BigNumber(0)];
-            let _nonAccreditedLimitUSD = new BigNumber(100).mul(10 ** 18);
-            let _minimumInvestmentUSD = new BigNumber(5).mul(10 ** 18);
+            let _ratePerTier = [web3.utils.toBN(0.1).mul(10 ** 18), web3.utils.toBN(0.15).mul(10 ** 18), web3.utils.toBN(0.2).mul(10 ** 18)];
+            let _ratePerTierDiscountPoly = [web3.utils.toBN(0), web3.utils.toBN(0), web3.utils.toBN(0)];
+            let _tokensPerTierTotal = [web3.utils.toBN(100).mul(10 ** 18), web3.utils.toBN(200).mul(10 ** 18), web3.utils.toBN(300).mul(10 ** 18)];
+            let _tokensPerTierDiscountPoly = [web3.utils.toBN(0), web3.utils.toBN(0), web3.utils.toBN(0)];
+            let _nonAccreditedLimitUSD = new web3.utils.toBN(100).mul(10 ** 18);
+            let _minimumInvestmentUSD = new web3.utils.toBN(5).mul(10 ** 18);
             let _fundRaiseTypes = [0, 1];
             let _wallet = ISSUER1;
             let _reserveWallet = ISSUER1;

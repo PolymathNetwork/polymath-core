@@ -12,7 +12,7 @@ const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager");
 
 const Web3 = require("web3");
-const BigNumber = require("bignumber.js");
+
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 let ETH = 0;
 let POLY = 1;
@@ -366,17 +366,17 @@ contract("CappedSTO", accounts => {
                 value: web3.utils.toWei("1", "ether")
             });
 
-            assert.equal((await I_CappedSTO_Array_ETH[0].getRaised.call(ETH)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 1);
+            assert.equal((await I_CappedSTO_Array_ETH[0].getRaised.call(ETH)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 1);
             assert.equal(await I_CappedSTO_Array_ETH[0].investorCount.call(), 1);
-            assert.equal((await I_SecurityToken_ETH.balanceOf(account_investor1)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 1000);
-            assert.equal((await I_CappedSTO_Array_ETH[0].getTokensSold.call()).dividedBy(new BigNumber(10).pow(18)).toNumber(), 1000);
+            assert.equal((await I_SecurityToken_ETH.balanceOf(account_investor1)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 1000);
+            assert.equal((await I_CappedSTO_Array_ETH[0].getTokensSold.call()).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 1000);
         });
 
         it("Verification of the event Token Purchase", async () => {
             const log = await promisifyLogWatch(I_CappedSTO_Array_ETH[0].TokenPurchase({ from: blockNo }), 1);
 
             assert.equal(log.args.purchaser, account_investor1, "Wrong address of the investor");
-            assert.equal(log.args.amount.dividedBy(new BigNumber(10).pow(18)).toNumber(), 1000, "Wrong No. token get dilivered");
+            assert.equal(log.args.amount.dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 1000, "Wrong No. token get dilivered");
         });
 
         it("Should fail to buy the tokens -- Because fundRaiseType is ETH not POLY", async ()=> {
@@ -430,14 +430,14 @@ contract("CappedSTO", accounts => {
                 }
             );
             assert.equal(tx.logs[0].args._investor, account_investor2, "Failed in adding the investor in whitelist");
-            const initBalance = BigNumber(await web3.eth.getBalance(account_investor2));
+            const initBalance = web3.utils.toBN(await web3.eth.getBalance(account_investor2));
             tx = await I_CappedSTO_Array_ETH[0].buyTokens(account_investor2, {from: account_investor2, value: web3.utils.toWei("1.5", "ether"), gasPrice: 1});
-            const finalBalance = BigNumber(await web3.eth.getBalance(account_investor2));
-            assert.equal(finalBalance.add(BigNumber(tx.receipt.gasUsed)).add(web3.utils.toWei("1", "ether")).toNumber(), initBalance.toNumber());
+            const finalBalance = web3.utils.toBN(await web3.eth.getBalance(account_investor2));
+            assert.equal(finalBalance.add(web3.utils.toBN(tx.receipt.gasUsed)).add(web3.utils.toWei("1", "ether")).toNumber(), initBalance.toNumber());
             await I_SecurityToken_ETH.changeGranularity(1, {from: token_owner});
-            assert.equal((await I_CappedSTO_Array_ETH[0].getRaised.call(ETH)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 2);
+            assert.equal((await I_CappedSTO_Array_ETH[0].getRaised.call(ETH)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 2);
 
-            assert.equal((await I_SecurityToken_ETH.balanceOf(account_investor2)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 1000);
+            assert.equal((await I_SecurityToken_ETH.balanceOf(account_investor2)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 1000);
         });
 
         it("Should restrict to buy tokens after hiting the cap in second tx first tx pass", async () => {
@@ -451,19 +451,19 @@ contract("CappedSTO", accounts => {
                 value: web3.utils.toWei("8", "ether")
             });
 
-            assert.equal((await I_CappedSTO_Array_ETH[0].getRaised.call(ETH)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 10);
+            assert.equal((await I_CappedSTO_Array_ETH[0].getRaised.call(ETH)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 10);
 
             assert.equal(await I_CappedSTO_Array_ETH[0].investorCount.call(), 2);
 
-            assert.equal((await I_SecurityToken_ETH.balanceOf(account_investor2)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 9000);
+            assert.equal((await I_SecurityToken_ETH.balanceOf(account_investor2)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 9000);
             await catchRevert(I_CappedSTO_Array_ETH[0].buyTokens(account_investor2, { value: web3.utils.toWei("81") }));
         });
 
         it("Should fundRaised value equal to the raised value in the funds receiver wallet", async () => {
             const newBalance = await web3.eth.getBalance(account_fundsReceiver);
             //console.log("WWWW",newBalance,await I_CappedSTO.fundsRaised.call(),balanceOfReceiver);
-            let op = new BigNumber(newBalance)
-                .minus(balanceOfReceiver)
+            let op = new web3.utils.toBN(newBalance)
+                .sub(balanceOfReceiver)
                 .toNumber();
             assert.equal(
                 (await I_CappedSTO_Array_ETH[0].getRaised.call(ETH)).toNumber(),
@@ -591,11 +591,11 @@ contract("CappedSTO", accounts => {
         it("Should invest in second STO", async () => {
             await I_CappedSTO_Array_ETH[1].buyTokens(account_investor3, { from: account_issuer, value: web3.utils.toWei("1", "ether") });
 
-            assert.equal((await I_CappedSTO_Array_ETH[1].getRaised.call(ETH)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 1);
+            assert.equal((await I_CappedSTO_Array_ETH[1].getRaised.call(ETH)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 1);
 
             assert.equal(await I_CappedSTO_Array_ETH[1].investorCount.call(), 1);
 
-            assert.equal((await I_SecurityToken_ETH.balanceOf(account_investor3)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 1000);
+            assert.equal((await I_SecurityToken_ETH.balanceOf(account_investor3)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 1000);
         });
     });
 
@@ -626,7 +626,7 @@ contract("CappedSTO", accounts => {
                     value: web3.utils.toWei("1", "ether")
                 });
                 assert.equal(
-                    (await I_CappedSTO_Array_ETH[STOIndex].getRaised.call(ETH)).dividedBy(new BigNumber(10).pow(18)).toNumber(),
+                    (await I_CappedSTO_Array_ETH[STOIndex].getRaised.call(ETH)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(),
                     1
                 );
                 assert.equal(await I_CappedSTO_Array_ETH[STOIndex].investorCount.call(), 1);
@@ -702,8 +702,8 @@ contract("CappedSTO", accounts => {
                     "STO Configuration doesn't set as expected"
                 );
                 assert.equal(
-                    (await I_CappedSTO_Array_POLY[0].cap.call()).dividedBy(new BigNumber(10).pow(18)).toNumber(),
-                    BigNumber(P_cap).dividedBy(new BigNumber(10).pow(18)),
+                    (await I_CappedSTO_Array_POLY[0].cap.call()).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(),
+                    web3.utils.toBN(P_cap).dividedBy(new web3.utils.toBN(10).pow(18)),
                     "STO Configuration doesn't set as expected"
                 );
                 assert.equal(await I_CappedSTO_Array_POLY[0].rate.call(), P_rate, "STO Configuration doesn't set as expected");
@@ -720,7 +720,7 @@ contract("CappedSTO", accounts => {
                 await I_PolyToken.getTokens(10000 * Math.pow(10, 18), account_investor1);
                 blockNo = latestBlock();
                 assert.equal(
-                    (await I_PolyToken.balanceOf(account_investor1)).dividedBy(new BigNumber(10).pow(18)).toNumber(),
+                    (await I_PolyToken.balanceOf(account_investor1)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(),
                     10500,
                     "Tokens are not transfered properly"
                 );
@@ -742,12 +742,12 @@ contract("CappedSTO", accounts => {
                     from: account_investor1
                 });
 
-                assert.equal((await I_CappedSTO_Array_POLY[0].getRaised.call(POLY)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 1000);
+                assert.equal((await I_CappedSTO_Array_POLY[0].getRaised.call(POLY)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 1000);
 
                 assert.equal(await I_CappedSTO_Array_POLY[0].investorCount.call(), 1);
 
                 assert.equal(
-                    (await I_SecurityToken_POLY.balanceOf(account_investor1)).dividedBy(new BigNumber(10).pow(18)).toNumber(),
+                    (await I_SecurityToken_POLY.balanceOf(account_investor1)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(),
                     5000
                 );
             });
@@ -756,7 +756,7 @@ contract("CappedSTO", accounts => {
                 const log = await promisifyLogWatch(I_CappedSTO_Array_POLY[0].TokenPurchase({ from: blockNo }), 1);
 
                 assert.equal(log.args.purchaser, account_investor1, "Wrong address of the investor");
-                assert.equal(log.args.amount.dividedBy(new BigNumber(10).pow(18)).toNumber(), 5000, "Wrong No. token get dilivered");
+                assert.equal(log.args.amount.dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 5000, "Wrong No. token get dilivered");
             });
 
             it("Should failed to buy tokens -- because fundraisetype is POLY not ETH", async() => {
@@ -798,17 +798,17 @@ contract("CappedSTO", accounts => {
                         gas: 500000
                     }
                 );
-                console.log((await I_SecurityToken_POLY.balanceOf(account_investor2)).dividedBy(new BigNumber(10).pow(18)).toNumber());
+                console.log((await I_SecurityToken_POLY.balanceOf(account_investor2)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber());
                 assert.equal(tx.logs[0].args._investor, account_investor2, "Failed in adding the investor in whitelist");
                 await I_PolyToken.getTokens(10000 * Math.pow(10, 18), account_investor2);
                 await I_PolyToken.approve(I_CappedSTO_Array_POLY[0].address, 9000 * Math.pow(10, 18), { from: account_investor2 });
-                const initRaised = (await I_CappedSTO_Array_POLY[0].getRaised.call(POLY)).dividedBy(new BigNumber(10).pow(18)).toNumber();
+                const initRaised = (await I_CappedSTO_Array_POLY[0].getRaised.call(POLY)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber();
                 tx = await I_CappedSTO_Array_POLY[0].buyTokensWithPoly(3000 * Math.pow(10, 18), { from: account_investor2 });
                 await I_SecurityToken_POLY.changeGranularity(1, {from: token_owner});
-                assert.equal((await I_CappedSTO_Array_POLY[0].getRaised.call(POLY)).dividedBy(new BigNumber(10).pow(18)).toNumber(), initRaised + 2000); //2000 this call, 1000 earlier
-                assert.equal((await I_PolyToken.balanceOf(account_investor2)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 8000);
+                assert.equal((await I_CappedSTO_Array_POLY[0].getRaised.call(POLY)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), initRaised + 2000); //2000 this call, 1000 earlier
+                assert.equal((await I_PolyToken.balanceOf(account_investor2)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 8000);
                 assert.equal(
-                    (await I_SecurityToken_POLY.balanceOf(account_investor2)).dividedBy(new BigNumber(10).pow(18)).toNumber(),
+                    (await I_SecurityToken_POLY.balanceOf(account_investor2)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(),
                     10000
                 );
             });
@@ -818,12 +818,12 @@ contract("CappedSTO", accounts => {
                 // buyTokensWithPoly transaction
                 await I_CappedSTO_Array_POLY[0].buyTokensWithPoly(7000 * Math.pow(10, 18), { from: account_investor2 });
 
-                assert.equal((await I_CappedSTO_Array_POLY[0].getRaised.call(POLY)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 10000);
+                assert.equal((await I_CappedSTO_Array_POLY[0].getRaised.call(POLY)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(), 10000);
 
                 assert.equal(await I_CappedSTO_Array_POLY[0].investorCount.call(), 2);
 
                 assert.equal(
-                    (await I_SecurityToken_POLY.balanceOf(account_investor2)).dividedBy(new BigNumber(10).pow(18)).toNumber(),
+                    (await I_SecurityToken_POLY.balanceOf(account_investor2)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(),
                     45000
                 );
                 await I_PolyToken.approve(I_CappedSTO_Array_POLY[0].address, 1000 * Math.pow(10, 18), { from: account_investor1 });
@@ -981,8 +981,8 @@ contract("CappedSTO", accounts => {
                 "STO Configuration doesn't set as expected"
             );
             assert.equal(
-                (await I_CappedSTO_Array_POLY[1].cap.call()).dividedBy(new BigNumber(10).pow(18)).toNumber(),
-                BigNumber(P_cap).dividedBy(new BigNumber(10).pow(18)),
+                (await I_CappedSTO_Array_POLY[1].cap.call()).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(),
+                web3.utils.toBN(P_cap).dividedBy(new web3.utils.toBN(10).pow(18)),
                 "STO Configuration doesn't set as expected"
             );
             assert.equal(await I_CappedSTO_Array_POLY[1].rate.call(), P_rate, "STO Configuration doesn't set as expected");
@@ -1016,14 +1016,14 @@ contract("CappedSTO", accounts => {
             });
 
             assert.equal(
-                (await I_CappedSTO_Array_POLY[1].getRaised.call(POLY)).dividedBy(new BigNumber(10).pow(18)).toNumber(),
+                (await I_CappedSTO_Array_POLY[1].getRaised.call(POLY)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(),
                 polyToInvest
             );
 
             assert.equal(await I_CappedSTO_Array_POLY[1].investorCount.call(), 1);
 
             assert.equal(
-                (await I_SecurityToken_POLY.balanceOf(account_investor3)).dividedBy(new BigNumber(10).pow(18)).toNumber(),
+                (await I_SecurityToken_POLY.balanceOf(account_investor3)).dividedBy(new web3.utils.toBN(10).pow(18)).toNumber(),
                 stToReceive
             );
         });

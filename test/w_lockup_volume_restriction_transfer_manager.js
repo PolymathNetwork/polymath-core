@@ -11,7 +11,7 @@ const VolumeRestrictionTransferManager = artifacts.require('./LockupVolumeRestri
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
 
 const Web3 = require('web3');
-const BigNumber = require('bignumber.js');
+const web3.utils.toBN = require('web3.utils.toBN.js');
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")) // Hardcoded development port
 
 contract('LockupVolumeRestrictionTransferManager', accounts => {
@@ -359,7 +359,7 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
         it("Should prevent the transfer of tokens in a lockup", async() => {
 
             let balance = await I_SecurityToken.balanceOf(account_investor2)
-            console.log("balance", balance.dividedBy(new BigNumber(1).times(new BigNumber(10).pow(18))).toNumber());
+            console.log("balance", balance.dividedBy(new web3.utils.toBN(1).mul(new web3.utils.toBN(10).pow(18))).toNumber());
             // create a lockup for their entire balance
             // over 12 seconds total, with 3 periods of 4 seconds each.
             await I_VolumeRestrictionTransferManager.addLockUp(account_investor2, 12, 4, 0, balance, { from: token_owner });

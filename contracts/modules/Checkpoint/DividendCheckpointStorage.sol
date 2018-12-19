@@ -21,10 +21,11 @@ contract DividendCheckpointStorage {
         uint256 claimedAmount; // Amount of dividend claimed so far
         uint256 totalSupply; // Total supply at the associated checkpoint (avoids recalculating this)
         bool reclaimed;  // True if expiry has passed and issuer has reclaimed remaining dividend
-        uint256 dividendWithheld;
-        uint256 dividendWithheldReclaimed;
+        uint256 totalWithheld;
+        uint256 totalWithheldWithdrawn;
         mapping (address => bool) claimed; // List of addresses which have claimed dividend
         mapping (address => bool) dividendExcluded; // List of addresses which cannot claim dividends
+        mapping (address => uint256) withheld; // Amount of tax withheld from claim
         bytes32 name; // Name/title - used for identification
     }
 
@@ -36,8 +37,5 @@ contract DividendCheckpointStorage {
 
     // Mapping from address to withholding tax as a percentage * 10**16
     mapping (address => uint256) public withholdingTax;
-
-    // Total amount of ETH withheld per investor
-    mapping (address => uint256) public investorWithheld;
 
 }

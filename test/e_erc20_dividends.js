@@ -330,6 +330,12 @@ contract("ERC20DividendCheckpoint", accounts => {
             );
             assert.equal(tx.logs[0].args._checkpointId.toNumber(), 1, "Dividend should be created at checkpoint 1");
             assert.equal(tx.logs[0].args._name.toString(), dividendName, "Dividend name incorrect in event");
+            let data = await I_ERC20DividendCheckpoint.getDividendsData();
+            assert.equal(data[1][0].toNumber(), maturity, "maturity match");
+            assert.equal(data[2][0].toNumber(), expiry, "expiry match");
+            assert.equal(data[3][0].toNumber(), web3.utils.toWei("1.5", "ether"), "amount match");
+            assert.equal(data[4][0].toNumber(), 0, "claimed match");
+            assert.equal(data[5][0], dividendName, "dividendName match");
         });
 
         it("Investor 1 transfers his token balance to investor 2", async () => {
@@ -529,11 +535,16 @@ contract("ERC20DividendCheckpoint", accounts => {
             assert.equal(investor1BalanceAfter1.sub(investor1Balance).toNumber(), 0);
             assert.equal(investor2BalanceAfter1.sub(investor2Balance).toNumber(), 0);
             assert.equal(investor3BalanceAfter1.sub(investor3Balance).toNumber(), web3.utils.toWei("7", "ether"));
-            let info = await I_ERC20DividendCheckpoint.getDividendInfo.call(2);
-            assert.equal(info[0][1], account_temp, "account_temp is excluded");
+            let info = await I_ERC20DividendCheckpoint.getDividendProgress.call(2);
+            console.log(info);
+            assert.equal(info[0][1], account_temp, "account_temp");
+            assert.equal(info[1][1], false, "account_temp is not claimed");
             assert.equal(info[2][1], true, "account_temp is excluded");
-            assert.equal(info[0][2], account_investor3, "account_investor3 is claimed");
-            assert.equal(info[1][2], true, "account_temp is claimed");
+            assert.equal(info[3][1], 0, "account_temp is not withheld");
+            assert.equal(info[0][2], account_investor3, "account_investor3");
+            assert.equal(info[1][2], true, "account_investor3 is claimed");
+            assert.equal(info[2][2], false, "account_investor3 is claimed");
+            assert.equal(info[3][2], 0, "account_investor3 is not withheld");
         });
 
         it("should investor 3 claims dividend - fails already claimed", async () => {
@@ -832,6 +843,15 @@ contract("ERC20DividendCheckpoint", accounts => {
         });
 
         it("Issuer reclaims withholding tax", async () => {
+            let info = await I_ERC20DividendCheckpoint.getDividendProgress.call(3);
+            assert.equal(info[0][0], account_investor1, "account match");
+            assert.equal(info[0][1], account_investor2, "account match");
+            assert.equal(info[0][2], account_temp, "account match");
+            assert.equal(info[0][3], account_investor3, "account match");
+            assert.equal(info[3][0].toNumber(), 0, "withheld match");
+            assert.equal(info[3][1].toNumber(), web3.utils.toWei("0.2", "ether"), "withheld match");
+            assert.equal(info[3][2].toNumber(), web3.utils.toWei("0.2", "ether"), "withheld match");
+            assert.equal(info[3][3].toNumber(), 0, "withheld match");
             let issuerBalance = new BigNumber(await I_PolyToken.balanceOf(token_owner));
             await I_ERC20DividendCheckpoint.withdrawWithholding(3, { from: token_owner, gasPrice: 0 });
             let issuerBalanceAfter = new BigNumber(await I_PolyToken.balanceOf(token_owner));
@@ -1089,7 +1109,7 @@ contract("ERC20DividendCheckpoint", accounts => {
             );
             assert.equal(tx.logs[0].args._checkpointId.toNumber(), 9);
             console.log("Gas used w/ max exclusions - non-default: " + tx.receipt.gasUsed);
-            let info = await I_ERC20DividendCheckpoint.getDividendInfo.call(tx.logs[0].args._dividendIndex);
+            let info = await I_ERC20DividendCheckpoint.getDividendProgress.call(tx.logs[0].args._dividendIndex);
             assert.equal(info[0][2], account_temp, "account_temp is excluded");
             assert.equal(info[2][2], true, "account_temp is excluded");
         });

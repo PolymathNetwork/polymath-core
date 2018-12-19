@@ -228,24 +228,61 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
     function withdrawWithholding(uint256 _dividendIndex) external;
 
     /**
+     * @notice Get static dividend data
+     * @return uint256[] timestamp of dividends creation
+     * @return uint256[] timestamp of dividends maturity
+     * @return uint256[] timestamp of dividends expiry
+     * @return uint256[] amount of dividends
+     * @return uint256[] claimed amount of dividends
+     * @return bytes32[] name of dividends
+     */
+    function getDividendsData() external view returns (
+        uint256[] memory createds,
+        uint256[] memory maturitys,
+        uint256[] memory expirys,
+        uint256[] memory amounts,
+        uint256[] memory claimedAmounts,
+        bytes32[] memory names)
+    {
+        createds = new uint256[](dividends.length);
+        maturitys = new uint256[](dividends.length);
+        expirys = new uint256[](dividends.length);
+        amounts = new uint256[](dividends.length);
+        claimedAmounts = new uint256[](dividends.length);
+        names = new bytes32[](dividends.length);
+        for (uint256 i = 0; i < dividends.length; i++) {
+            createds[i] = dividends[i].created;
+            maturitys[i] = dividends[i].maturity;
+            expirys[i] = dividends[i].expiry;
+            amounts[i] = dividends[i].amount;
+            claimedAmounts[i] = dividends[i].claimedAmount;
+            names[i] = dividends[i].name;
+        }
+        return (createds, maturitys, expirys, amounts, claimedAmounts, names);
+    }
+
+    /**
      * @notice Retrieves list of investors, their claim status and whether they are excluded
      * @param _dividendIndex Dividend to withdraw from
      * @return address[] list of investors
      * @return bool[] whether investor has claimed
      * @return bool[] whether investor is excluded
+     * @return uint256[] amount of withheld tax
      */
-    function getDividendInfo(uint256 _dividendIndex) external view returns (address[], bool[], bool[]) {
+    function getDividendProgress(uint256 _dividendIndex) external view returns (address[], bool[], bool[], uint256[]) {
         require(_dividendIndex < dividends.length, "Invalid dividend");
         //Get list of Investors
         uint256 checkpointId = dividends[_dividendIndex].checkpointId;
         address[] memory investors = ISecurityToken(securityToken).getInvestorsAt(checkpointId);
         bool[] memory resultClaimed = new bool[](investors.length);
         bool[] memory resultExcluded = new bool[](investors.length);
+        uint256[] memory resultWithheld = new uint256[](investors.length);
         for (uint256 i; i < investors.length; i++) {
             resultClaimed[i] = dividends[_dividendIndex].claimed[investors[i]];
             resultExcluded[i] = dividends[_dividendIndex].dividendExcluded[investors[i]];
+            resultWithheld[i] = dividends[_dividendIndex].withheld[investors[i]];
         }
-        return (investors, resultClaimed, resultExcluded);
+        return (investors, resultClaimed, resultExcluded, resultWithheld);
     }
 
     /**

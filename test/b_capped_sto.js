@@ -18,9 +18,7 @@ let ETH = 0;
 let POLY = 1;
 let DAI = 2;
 
-contract("CappedSTO", accounts => {
-    // Accounts Variable declaration
-    let account_polymath;
+let account_polymath;
     let account_investor1;
     let account_issuer;
     let token_owner;
@@ -101,6 +99,10 @@ contract("CappedSTO", accounts => {
     const cappedSTOSetupCost = web3.utils.toWei("20000", "ether");
     const maxCost = cappedSTOSetupCost;
     const STOParameters = ["uint256", "uint256", "uint256", "uint256", "uint8[]", "address"];
+
+contract("CappedSTO", accounts => {
+    // Accounts Variable declaration
+    
 
     before(async () => {
         // Accounts setup

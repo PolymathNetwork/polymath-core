@@ -100,8 +100,19 @@ export async function setUpPolymathNetwork(account_polymath, token_owner) {
     await setInPolymathRegistry(account_polymath);
     // STEP 9: Register the Modules with the ModuleRegistry contract
     await registerGTM(account_polymath);
-    let tempArray = new Array(a, b, c, d, e, f);
-    return mergeReturn(tempArray);
+    let tempArray = new Array(I_PolymathRegistry,
+        I_PolyToken,
+        I_FeatureRegistry,
+        I_ModuleRegistry,
+        I_ModuleRegistryProxy,
+        I_MRProxied,
+        I_GeneralTransferManagerFactory,
+        I_STFactory,
+        I_SecurityTokenRegistry,
+        I_SecurityTokenRegistryProxy,
+        I_STRProxied);
+    
+    return Promise.all(tempArray);
 }
 
 async function deployPolyRegistryAndPolyToken(account_polymath, token_owner) {
@@ -231,7 +242,7 @@ export async function deployGTMAndVerifyed(accountPolymath, MRProxyInstance, set
 
     // (B) :  Register the GeneralDelegateManagerFactory
     await registerAndVerifyByMR(I_GeneralTransferManagerFactory.address, accountPolymath, MRProxyInstance);
-    return new Array(I_GeneralTransferManagerFactory);
+    return Promise.all(new Array(I_GeneralTransferManagerFactory));
 }
 
 export async function deployCountTMAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
@@ -244,7 +255,7 @@ export async function deployCountTMAndVerifyed(accountPolymath, MRProxyInstance,
     );
 
     await registerAndVerifyByMR(I_CountTransferManagerFactory.address, accountPolymath, MRProxyInstance);
-    return new Array(I_CountTransferManagerFactory);
+    return Promise.all(new Array(I_CountTransferManagerFactory));
 }
 
 export async function deployManualApprovalTMAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
@@ -256,7 +267,7 @@ export async function deployManualApprovalTMAndVerifyed(accountPolymath, MRProxy
     );
 
     await registerAndVerifyByMR(I_ManualApprovalTransferManagerFactory.address, accountPolymath, MRProxyInstance);
-    return new Array(I_ManualApprovalTransferManagerFactory);
+    return Promise.all(new Array(I_ManualApprovalTransferManagerFactory));
 }
 
 export async function deployPercentageTMAndVerified(accountPolymath, MRProxyInstance, setupCost) {
@@ -268,7 +279,7 @@ export async function deployPercentageTMAndVerified(accountPolymath, MRProxyInst
     );
 
     await registerAndVerifyByMR(I_PercentageTransferManagerFactory.address, accountPolymath, MRProxyInstance);
-    return new Array(I_PercentageTransferManagerFactory);
+    return Promise.all(new Array(I_PercentageTransferManagerFactory));
 }
 
 export async function deployLockupVolumeRTMAndVerified(accountPolymath, MRProxyInstance, setupCost) {
@@ -282,7 +293,7 @@ export async function deployLockupVolumeRTMAndVerified(accountPolymath, MRProxyI
     );
 
     await registerAndVerifyByMR(I_VolumeRestrictionTransferManagerFactory.address, accountPolymath, MRProxyInstance);
-    return new Array(I_VolumeRestrictionTransferManagerFactory);
+    return Promise.all(new Array(I_VolumeRestrictionTransferManagerFactory));
 }
 
 export async function deployScheduleCheckpointAndVerified(accountPolymath, MRProxyInstance, setupCost) {
@@ -294,7 +305,7 @@ export async function deployScheduleCheckpointAndVerified(accountPolymath, MRPro
     );
 
     await registerAndVerifyByMR(I_ScheduledCheckpointFactory.address, accountPolymath, MRProxyInstance);
-    return new Array(I_ScheduledCheckpointFactory);
+    return Promise.all(new Array(I_ScheduledCheckpointFactory));
 }
 
 /// Deploy the Permission Manager
@@ -310,7 +321,7 @@ export async function deployGPMAndVerifyed(accountPolymath, MRProxyInstance, set
 
     // (B) :  Register the GeneralDelegateManagerFactory
     await registerAndVerifyByMR(I_GeneralPermissionManagerFactory.address, accountPolymath, MRProxyInstance);
-    return new Array(I_GeneralPermissionManagerFactory);
+    return Promise.all(new Array(I_GeneralPermissionManagerFactory));
 }
 
 /// Deploy the STO Modules
@@ -324,7 +335,7 @@ export async function deployDummySTOAndVerifyed(accountPolymath, MRProxyInstance
         "DummySTOFactory contract was not deployed"
     );
     await registerAndVerifyByMR(I_DummySTOFactory.address, accountPolymath, MRProxyInstance);
-    return new Array(I_DummySTOFactory);
+    return Promise.all(new Array(I_DummySTOFactory));
 }
 
 export async function deployCappedSTOAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
@@ -336,7 +347,7 @@ export async function deployCappedSTOAndVerifyed(accountPolymath, MRProxyInstanc
     );
 
     await registerAndVerifyByMR(I_CappedSTOFactory.address, accountPolymath, MRProxyInstance);
-    return new Array(I_CappedSTOFactory);
+    return Promise.all(new Array(I_CappedSTOFactory));
 }
 
 export async function deployPresaleSTOAndVerified(accountPolymath, MRProxyInstance, setupCost) {
@@ -349,7 +360,7 @@ export async function deployPresaleSTOAndVerified(accountPolymath, MRProxyInstan
     );
 
     await registerAndVerifyByMR(I_PreSaleSTOFactory.address, accountPolymath, MRProxyInstance);
-    return new Array(I_PreSaleSTOFactory);
+    return Promise.all(new Array(I_PreSaleSTOFactory));
 }
 
 export async function deployUSDTieredSTOAndVerified(accountPolymath, MRProxyInstance, setupCost) {
@@ -368,7 +379,7 @@ export async function deployUSDTieredSTOAndVerified(accountPolymath, MRProxyInst
     );
 
     await registerAndVerifyByMR(I_USDTieredSTOFactory.address, accountPolymath, MRProxyInstance);
-    return new Array(I_USDTieredSTOFactory);
+    return Promise.all(new Array(I_USDTieredSTOFactory));
 }
 
 /// Deploy the Dividend Modules
@@ -389,7 +400,7 @@ export async function deployERC20DividendAndVerifyed(accountPolymath, MRProxyIns
         "ERC20DividendCheckpointFactory contract was not deployed"
     );
     await registerAndVerifyByMR(I_ERC20DividendCheckpointFactory.address, accountPolymath, MRProxyInstance);
-    return new Array(I_ERC20DividendCheckpointFactory);
+    return Promise.all(new Array(I_ERC20DividendCheckpointFactory));
 }
 
 export async function deployEtherDividendAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
@@ -409,7 +420,7 @@ export async function deployEtherDividendAndVerifyed(accountPolymath, MRProxyIns
     );
 
     await registerAndVerifyByMR(I_EtherDividendCheckpointFactory.address, accountPolymath, MRProxyInstance);
-    return new Array(I_EtherDividendCheckpointFactory);
+    return Promise.all(new Array(I_EtherDividendCheckpointFactory));
 }
 
 /// Deploy the Burn Module
@@ -424,7 +435,7 @@ export async function deployRedemptionAndVerifyed(accountPolymath, MRProxyInstan
     );
 
     await registerAndVerifyByMR(I_TrackedRedemptionFactory.address, accountPolymath, MRProxyInstance);
-    return new Array(I_TrackedRedemptionFactory);
+    return Promise.all(new Array(I_TrackedRedemptionFactory));
 }
 
 export async function deployMockRedemptionAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
@@ -437,7 +448,7 @@ export async function deployMockRedemptionAndVerifyed(accountPolymath, MRProxyIn
     );
 
     await registerAndVerifyByMR(I_MockBurnFactory.address, accountPolymath, MRProxyInstance);
-    return new Array(I_MockBurnFactory);
+    return Promise.all(new Array(I_MockBurnFactory));
 }
 
 export async function deployMockWrongTypeRedemptionAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
@@ -450,7 +461,7 @@ export async function deployMockWrongTypeRedemptionAndVerifyed(accountPolymath, 
     );
 
     await registerAndVerifyByMR(I_MockWrongTypeBurnFactory.address, accountPolymath, MRProxyInstance);
-    return new Array(I_MockWrongTypeBurnFactory);
+    return Promise.all(new Array(I_MockWrongTypeBurnFactory));
 }
 
 /// Helper function

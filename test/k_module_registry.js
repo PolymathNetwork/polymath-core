@@ -261,7 +261,7 @@ contract("ModuleRegistry", accounts => {
             });
 
             it("Should fail in registering the module-- type = 0", async () => {
-                I_MockFactory = await MockFactory.new(0, 0, 0, { from: account_polymath });
+                I_MockFactory = await MockFactory.new(0, 0, 0, 0, { from: account_polymath });
 
                 catchRevert(I_MRProxied.registerModule(I_MockFactory.address, { from: account_polymath }));
             });
@@ -388,7 +388,7 @@ contract("ModuleRegistry", accounts => {
             });
 
             it("Should failed in adding the TestSTOFactory module because not compatible with the current protocol version --lower", async () => {
-                I_TestSTOFactory = await TestSTOFactory.new(0, 0, 0, { from: account_polymath });
+                I_TestSTOFactory = await TestSTOFactory.new(0, 0, 0, 0, { from: account_polymath });
                 await I_MRProxied.registerModule(I_TestSTOFactory.address, { from: account_polymath });
                 await I_MRProxied.verifyModule(I_TestSTOFactory.address, true, { from: account_polymath });
                 // Taking the snapshot the revert the changes from here

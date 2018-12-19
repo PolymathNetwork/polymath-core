@@ -22,7 +22,6 @@ contract DummySTOFactory is ModuleFactory {
     constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _logicContract) public
     ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
     {
-        require(_logicContract != address(0), "Invalid address");
         version = "1.0.0";
         name = "DummySTO";
         title = "Dummy STO";

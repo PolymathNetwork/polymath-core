@@ -49,12 +49,12 @@ module.exports = function (deployer, network, accounts) {
         UsdToken = mockedUSDToken.address;
       });
     });
-    deployer.deploy(MockOracle, PolyToken, "POLY", "USD", new BigNumber(0.5).times(new BigNumber(10).pow(18)), {from: PolymathAccount}).then(() => {
+    deployer.deploy(MockOracle, PolyToken, web3.utils.fromAscii("POLY"), web3.utils.fromAscii("USD"), new BigNumber(0.5).times(new BigNumber(10).pow(18)), {from: PolymathAccount}).then(() => {
       MockOracle.deployed().then((mockedOracle) => {
         POLYOracle = mockedOracle.address;
       });
     });
-    deployer.deploy(MockOracle, 0, "ETH", "USD", new BigNumber(500).times(new BigNumber(10).pow(18)), {from: PolymathAccount}).then(() => {
+    deployer.deploy(MockOracle, 0, web3.utils.fromAscii("ETH"), web3.utils.fromAscii("USD"), new BigNumber(500).times(new BigNumber(10).pow(18)), {from: PolymathAccount}).then(() => {
       MockOracle.deployed().then((mockedOracle) => {
         ETHOracle = mockedOracle.address;
       });

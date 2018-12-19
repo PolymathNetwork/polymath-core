@@ -287,27 +287,27 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     * @param _module address of module to unarchive
     */
     function removeModule(address _module) external onlyOwner {
-        require(modulesToData[_module].isArchived, "Not archived");
-        require(modulesToData[_module].module != address(0), "Module missing");
-        /*solium-disable-next-line security/no-block-members*/
-        emit ModuleRemoved(modulesToData[_module].moduleTypes, _module, now);
-        // Remove from module type list
-        uint8[] memory moduleTypes = modulesToData[_module].moduleTypes;
-        for (uint256 i = 0; i < moduleTypes.length; i++) {
-            _removeModuleWithIndex(moduleTypes[i], modulesToData[_module].moduleIndexes[i]);
-            /* modulesToData[_module].moduleType[moduleTypes[i]] = false; */
-        }
-        // Remove from module names list
-        uint256 index = modulesToData[_module].nameIndex;
-        bytes32 name = modulesToData[_module].name;
-        uint256 length = names[name].length;
-        names[name][index] = names[name][length - 1];
-        names[name].length = length - 1;
-        if ((length - 1) != index) {
-            modulesToData[names[name][index]].nameIndex = index;
-        }
-        // Remove from modulesToData
-        delete modulesToData[_module];
+        // require(modulesToData[_module].isArchived, "Not archived");
+        // require(modulesToData[_module].module != address(0), "Module missing");
+        // /*solium-disable-next-line security/no-block-members*/
+        // emit ModuleRemoved(modulesToData[_module].moduleTypes, _module, now);
+        // // Remove from module type list
+        // uint8[] memory moduleTypes = modulesToData[_module].moduleTypes;
+        // for (uint256 i = 0; i < moduleTypes.length; i++) {
+        //     _removeModuleWithIndex(moduleTypes[i], modulesToData[_module].moduleIndexes[i]);
+        //     /* modulesToData[_module].moduleType[moduleTypes[i]] = false; */
+        // }
+        // // Remove from module names list
+        // uint256 index = modulesToData[_module].nameIndex;
+        // bytes32 name = modulesToData[_module].name;
+        // uint256 length = names[name].length;
+        // names[name][index] = names[name][length - 1];
+        // names[name].length = length - 1;
+        // if ((length - 1) != index) {
+        //     modulesToData[names[name][index]].nameIndex = index;
+        // }
+        // // Remove from modulesToData
+        // delete modulesToData[_module];
     }
 
     /**

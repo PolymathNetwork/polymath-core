@@ -94,7 +94,7 @@
     "solidity-coverage": "^0.5.11",
     "solidity-docgen": "^0.1.0",
     "solium": "^1.1.6",
-    "truffle": "^5.0.0-next.25",
+    "truffle": "^5.0.0",
     "truffle-wallet-provider": "0.0.5"
   },
   "greenkeeper": {

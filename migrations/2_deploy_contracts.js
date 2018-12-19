@@ -24,6 +24,7 @@ const TokenLib = artifacts.require('./TokenLib.sol');
 const SecurityToken = artifacts.require('./tokens/SecurityToken.sol')
 
 let BigNumber = require('bignumber.js');
+const nullAddress = '0x0000000000000000000000000000000000000000';
 const cappedSTOSetupCost = new BigNumber(20000).times(new BigNumber(10).pow(18));   // 20K POLY fee
 const usdTieredSTOSetupCost = new BigNumber(100000).times(new BigNumber(10).pow(18));   // 100K POLY fee
 const initRegFee = new BigNumber(250).times(new BigNumber(10).pow(18));      // 250 POLY fee for registering ticker or security token in registry
@@ -54,7 +55,7 @@ module.exports = function (deployer, network, accounts) {
         POLYOracle = mockedOracle.address;
       });
     });
-    deployer.deploy(MockOracle, 0, web3.utils.fromAscii("ETH"), web3.utils.fromAscii("USD"), new BigNumber(500).times(new BigNumber(10).pow(18)), {from: PolymathAccount}).then(() => {
+    deployer.deploy(MockOracle, nullAddress, web3.utils.fromAscii("ETH"), web3.utils.fromAscii("USD"), new BigNumber(500).times(new BigNumber(10).pow(18)), {from: PolymathAccount}).then(() => {
       MockOracle.deployed().then((mockedOracle) => {
         ETHOracle = mockedOracle.address;
       });
@@ -149,19 +150,19 @@ module.exports = function (deployer, network, accounts) {
   }).then(() => {
     // B) Deploy the GeneralTransferManagerLogic Contract (Factory used to generate the GeneralTransferManager contract and this
     // manager attach with the securityToken contract at the time of deployment)
-    return deployer.deploy(GeneralTransferManagerLogic, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", {from: PolymathAccount});
+    return deployer.deploy(GeneralTransferManagerLogic, nullAddress, nullAddress, {from: PolymathAccount});
   }).then(() => {
     // B) Deploy the GeneralTransferManagerLogic Contract (Factory used to generate the GeneralTransferManager contract and this
     // manager attach with the securityToken contract at the time of deployment)
-    return deployer.deploy(ERC20DividendCheckpointLogic, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", {from: PolymathAccount});
+    return deployer.deploy(ERC20DividendCheckpointLogic, nullAddress, nullAddress, {from: PolymathAccount});
   }).then(() => {
     // B) Deploy the GeneralTransferManagerLogic Contract (Factory used to generate the GeneralTransferManager contract and this
     // manager attach with the securityToken contract at the time of deployment)
-    return deployer.deploy(EtherDividendCheckpointLogic, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", {from: PolymathAccount});
+    return deployer.deploy(EtherDividendCheckpointLogic, nullAddress, nullAddress, {from: PolymathAccount});
   }).then(() => {
     // B) Deploy the USDTieredSTOLogic Contract (Factory used to generate the USDTieredSTO contract and this
     // manager attach with the securityToken contract at the time of deployment)
-    return deployer.deploy(USDTieredSTOLogic, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", {from: PolymathAccount});
+    return deployer.deploy(USDTieredSTOLogic, nullAddress, nullAddress, {from: PolymathAccount});
   }).then(() => {
     // B) Deploy the GeneralTransferManagerFactory Contract (Factory used to generate the GeneralTransferManager contract and this
     // manager attach with the securityToken contract at the time of deployment)

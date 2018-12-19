@@ -2,22 +2,12 @@ pragma solidity ^0.4.24;
 
 import "./IPermissionManager.sol";
 import "../Module.sol";
+import "./GeneralPermissionManagerStorage.sol";
 
 /**
  * @title Permission Manager module for core permissioning functionality
  */
-contract GeneralPermissionManager is IPermissionManager, Module {
-
-    // Mapping used to hold the permissions on the modules provided to delegate, module add => delegate add => permission bytes32 => bool
-    mapping (address => mapping (address => mapping (bytes32 => bool))) public perms;
-    // Mapping hold the delagate details
-    mapping (address => bytes32) public delegateDetails;
-    // Array to track all delegates
-    address[] public allDelegates;
-
-
-    // Permission flag
-    bytes32 public constant CHANGE_PERMISSION = "CHANGE_PERMISSION";
+contract GeneralPermissionManager is GeneralPermissionManagerStorage, IPermissionManager, Module {
 
     /// Event emitted after any permission get changed for the delegate
     event ChangePermission(address indexed _delegate, address _module, bytes32 _perm, bool _valid, uint256 _timestamp);

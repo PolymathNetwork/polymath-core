@@ -1,6 +1,7 @@
 const PolymathRegistry = artifacts.require('./PolymathRegistry.sol')
 const GeneralTransferManagerFactory = artifacts.require('./GeneralTransferManagerFactory.sol')
 const GeneralTransferManagerLogic = artifacts.require('./GeneralTransferManager.sol')
+const GeneralPermissionManagerLogic = artifacts.require('./GeneralPermissionManager.sol')
 const GeneralPermissionManagerFactory = artifacts.require('./GeneralPermissionManagerFactory.sol')
 const PercentageTransferManagerLogic = artifacts.require('./PercentageTransferManager.sol')
 const PercentageTransferManagerFactory = artifacts.require('./PercentageTransferManagerFactory.sol')
@@ -155,6 +156,10 @@ module.exports = function (deployer, network, accounts) {
     // manager attach with the securityToken contract at the time of deployment)
     return deployer.deploy(GeneralTransferManagerLogic, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", {from: PolymathAccount});
   }).then(() => {
+    // B) Deploy the GeneralPermissionManagerLogic Contract (Factory used to generate the GeneralPermissionManager contract and this
+    // manager attach with the securityToken contract at the time of deployment)
+    return deployer.deploy(GeneralPermissionManagerLogic, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", {from: PolymathAccount});
+  }).then(() => {
     // B) Deploy the CountTransferManagerLogic Contract (Factory used to generate the CountTransferManager contract and this
     // manager attach with the securityToken contract at the time of deployment)
     return deployer.deploy(CountTransferManagerLogic, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", {from: PolymathAccount});
@@ -189,7 +194,7 @@ module.exports = function (deployer, network, accounts) {
   }).then(() => {
     // C) Deploy the GeneralPermissionManagerFactory Contract (Factory used to generate the GeneralPermissionManager contract and
     // this manager attach with the securityToken contract at the time of deployment)
-    return deployer.deploy(GeneralPermissionManagerFactory, 0, 0, 0, {from: PolymathAccount});
+    return deployer.deploy(GeneralPermissionManagerFactory, 0, 0, 0, GeneralPermissionManagerLogic.address, {from: PolymathAccount});
   }).then(() => {
     // D) Deploy the CountTransferManagerFactory Contract (Factory used to generate the CountTransferManager contract use
     // to track the counts of the investors of the security token)
@@ -341,6 +346,7 @@ module.exports = function (deployer, network, accounts) {
     STFactory:                            ${STFactory.address}
     GeneralTransferManagerLogic:          ${GeneralTransferManagerLogic.address}
     GeneralTransferManagerFactory:        ${GeneralTransferManagerFactory.address}
+    GeneralPermissionManagerLogic:        ${GeneralPermissionManagerLogic.address}
     GeneralPermissionManagerFactory:      ${GeneralPermissionManagerFactory.address}
 
     CappedSTOLogic:                       ${CappedSTOLogic.address}

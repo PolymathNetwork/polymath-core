@@ -1,6 +1,5 @@
 pragma solidity ^0.4.24;
 
-import "./ManualApprovalTransferManager.sol";
 import "../ModuleFactory.sol";
 import "../../proxy/ManualApprovalTransferManagerProxy.sol";
 

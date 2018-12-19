@@ -12,6 +12,7 @@ const SecurityToken = artifacts.require("./SecurityToken.sol");
 const ModuleRegistryProxy = artifacts.require("./ModuleRegistryProxy.sol");
 const ModuleRegistry = artifacts.require("./ModuleRegistry.sol");
 const GeneralPermissionManagerFactory = artifacts.require("./GeneralPermissionManagerFactory.sol");
+const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager.sol");
 const GeneralTransferManagerFactory = artifacts.require("./GeneralTransferManagerFactory.sol");
 const MockFactory = artifacts.require("./MockFactory.sol");
 const TestSTOFactory = artifacts.require("./TestSTOFactory.sol");
@@ -41,6 +42,7 @@ contract("ModuleRegistry", accounts => {
     let message = "Transaction Should fail!";
     // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;
+    let I_GeneralPermissionManagerLogic;
     let I_GeneralTransferManagerFactory;
     let I_SecurityTokenRegistryProxy;
     let I_GeneralPermissionManager;
@@ -378,7 +380,8 @@ contract("ModuleRegistry", accounts => {
             })
 
             it("Should successfully add verified module", async () => {
-                I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(0, 0, 0, {
+                I_GeneralPermissionManagerLogic = await GeneralPermissionManager.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: account_polymath });
+                I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(0, 0, 0, I_GeneralPermissionManagerLogic.address, {
                     from: account_polymath
                 });
                 await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });

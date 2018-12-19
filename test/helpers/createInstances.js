@@ -25,6 +25,7 @@ const FeatureRegistry = artifacts.require("./FeatureRegistry.sol");
 const STFactory = artifacts.require("./STFactory.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager.sol");
 const GeneralTransferManagerFactory = artifacts.require("./GeneralTransferManagerFactory.sol");
+const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager.sol");
 const GeneralPermissionManagerFactory = artifacts.require("./GeneralPermissionManagerFactory.sol");
 const CountTransferManager = artifacts.require("./CountTransferManager.sol");
 const CountTransferManagerFactory = artifacts.require("./CountTransferManagerFactory.sol");
@@ -59,6 +60,7 @@ let I_CountTransferManagerLogic;
 let I_CountTransferManagerFactory;
 let I_ERC20DividendCheckpointLogic;
 let I_ERC20DividendCheckpointFactory;
+let I_GeneralPermissionManagerLogic;
 let I_GeneralPermissionManagerFactory;
 let I_GeneralTransferManagerLogic;
 let I_GeneralTransferManagerFactory;
@@ -304,7 +306,8 @@ export async function deployScheduleCheckpointAndVerified(accountPolymath, MRPro
 /// Deploy the Permission Manager
 
 export async function deployGPMAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
-    I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(setupCost, 0, 0, { from: accountPolymath });
+    I_GeneralPermissionManagerLogic = await GeneralPermissionManager.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
+    I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(setupCost, 0, 0, I_GeneralPermissionManagerLogic.address, { from: accountPolymath });
 
     assert.notEqual(
         I_GeneralPermissionManagerFactory.address.valueOf(),

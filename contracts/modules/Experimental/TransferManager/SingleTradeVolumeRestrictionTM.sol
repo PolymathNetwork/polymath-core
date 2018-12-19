@@ -56,14 +56,11 @@ contract SingleTradeVolumeRestrictionTM is TransferManager {
      */
     function verifyTransfer(
         address _from,
-        address, /* _to */
+        address /* _to */,
         uint256 _amount,
-        bytes memory, /* _data */
+        bytes calldata /* _data */,
         bool /* _isTransfer */
-    )
-        external
-        returns(Result)
-    {
+    ) external returns(Result) {
         bool validTransfer;
 
         if (exemptWallets[_from] || paused) return Result.NA;

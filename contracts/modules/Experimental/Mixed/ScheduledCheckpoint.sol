@@ -83,7 +83,13 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
      * @param _isTransfer whether or not an actual transfer is occuring
      * @return always returns Result.NA
      */
-    function verifyTransfer(address /* _from */, address /* _to */, uint256 /* _amount */, bytes /* _data */, bool _isTransfer) external returns(Result) {
+    function verifyTransfer(
+        address, /* _from */
+        address, /* _to */
+        uint256, /* _amount */
+        bytes calldata, /* _data */
+        bool _isTransfer
+    ) external returns(Result) {
         require(_isTransfer == false || msg.sender == securityToken, "Sender is not owner");
         if (paused || !_isTransfer) {
             return Result.NA;

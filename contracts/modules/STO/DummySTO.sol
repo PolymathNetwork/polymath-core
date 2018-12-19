@@ -7,7 +7,6 @@ import "../../interfaces/ISecurityToken.sol";
  * @title STO module for sample implementation of a different crowdsale module
  */
 contract DummySTO is STO {
-
     bytes32 public constant ADMIN = "ADMIN";
 
     uint256 public investorCount;
@@ -75,7 +74,7 @@ contract DummySTO is STO {
     /**
      * @notice Returns the total no. of investors
      */
-    function getTokensSold() external view returns (uint256) {
+    function getTokensSold() external view returns(uint256) {
         return 0;
     }
 

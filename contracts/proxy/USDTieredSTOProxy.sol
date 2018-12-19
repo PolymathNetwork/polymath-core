@@ -11,7 +11,6 @@ import "../modules/ModuleStorage.sol";
  * @title USDTiered STO module Proxy
  */
 contract USDTieredSTOProxy is USDTieredSTOStorage, STOStorage, ModuleStorage, Pausable, ReentrancyGuard, OwnedProxy {
-    
     /**
     * @notice Constructor
     * @param _securityToken Address of the security token

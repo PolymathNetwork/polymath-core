@@ -46,7 +46,13 @@ contract PercentageTransferManager is TransferManager {
      * @param _to Address of the receiver
      * @param _amount The amount of tokens to transfer
      */
-    function verifyTransfer(address _from, address _to, uint256 _amount, bytes /* _data */, bool /* _isTransfer */) external returns(Result) {
+    function verifyTransfer(
+        address _from,
+        address _to,
+        uint256 _amount,
+        bytes calldata, /* _data */
+        bool /* _isTransfer */
+    ) external returns(Result) {
         if (!paused) {
             if (_from == address(0) && allowPrimaryIssuance) {
                 return Result.NA;

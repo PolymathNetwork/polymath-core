@@ -8,7 +8,6 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
  * @title Transfer Manager module for core transfer validation functionality
  */
 contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManager {
-
     using SafeMath for uint256;
 
     // Emit when Issuance address get changed
@@ -139,7 +138,13 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
      * @param _from Address of the sender
      * @param _to Address of the receiver
     */
-    function verifyTransfer(address _from, address _to, uint256 /*_amount*/, bytes /* _data */, bool /* _isTransfer */) external returns(Result) {
+    function verifyTransfer(
+        address _from,
+        address _to,
+        uint256, /*_amount*/
+        bytes calldata, /* _data */
+        bool /* _isTransfer */
+    ) external returns(Result) {
         if (!paused) {
             if (allowAllTransfers) {
                 //All transfers allowed, regardless of whitelist
@@ -332,7 +337,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
      * @dev Returns list of all investors data
      */
     function getAllInvestorsData() external view returns(
-        address[] memory ,
+        address[] memory,
         uint256[] memory fromTimes,
         uint256[] memory toTimes,
         uint256[] memory expiryTimes,

@@ -10,7 +10,7 @@ import "../../interfaces/ISTO.sol";
 /**
  * @title Base abstract contract to be extended by all STO modules
  */
-contract STO is ISTO, STOStorage, Module, Pausable  {
+contract STO is ISTO, STOStorage, Module, Pausable {
     using SafeMath for uint256;
 
     enum FundRaiseType {ETH, POLY, DAI}

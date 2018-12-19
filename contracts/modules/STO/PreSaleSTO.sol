@@ -50,7 +50,7 @@ contract PreSaleSTO is STO {
     /**
      * @notice Returns the total no. of tokens sold
      */
-    function getTokensSold() external view returns (uint256) {
+    function getTokensSold() external view returns(uint256) {
         return totalTokensSold;
     }
 

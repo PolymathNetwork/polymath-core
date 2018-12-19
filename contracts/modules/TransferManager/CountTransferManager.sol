@@ -6,7 +6,6 @@ import "./TransferManager.sol";
  * @title Transfer Manager for limiting maximum number of token holders
  */
 contract CountTransferManager is TransferManager {
-
     // The maximum number of concurrent token holders
     uint256 public maxHolderCount;
 
@@ -31,12 +30,9 @@ contract CountTransferManager is TransferManager {
         address _from,
         address _to,
         uint256 _amount,
-        bytes memory, /* _data */
+        bytes calldata /* _data */,
         bool /* _isTransfer */
-    )
-        external
-        returns(Result)
-    {
+    ) external returns(Result) {
         if (!paused) {
             if (maxHolderCount < ISecurityToken(securityToken).getInvestorCount()) {
                 // Allow transfers to existing maxHolders

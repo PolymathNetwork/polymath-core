@@ -229,9 +229,9 @@ export async function deployGTMAndVerifyed(accountPolymath, MRProxyInstance, set
     I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(setupCost, 0, 0, I_GeneralTransferManagerLogic.address, { from: accountPolymath });
 
     assert.notEqual(
-        I_GeneralPermissionManagerFactory.address.valueOf(),
+        I_GeneralTransferManagerFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",
-        "GeneralPermissionManagerFactory contract was not deployed"
+        "GeneralTransferManagerFactory contract was not deployed"
     );
 
     // (B) :  Register the GeneralDelegateManagerFactory

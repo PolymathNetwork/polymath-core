@@ -5,6 +5,8 @@ pragma solidity ^0.4.24;
  */
 contract PreSaleSTOStorage {
 
+    bytes32 public constant PRE_SALE_ADMIN = "PRE_SALE_ADMIN";
+
     mapping (address => uint256) public investors;
 
 }

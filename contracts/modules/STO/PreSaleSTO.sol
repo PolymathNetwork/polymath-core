@@ -11,8 +11,6 @@ import "./PreSaleSTOStorage.sol";
 contract PreSaleSTO is PreSaleSTOStorage, STO {
     using SafeMath for uint256;
 
-    bytes32 public constant PRE_SALE_ADMIN = "PRE_SALE_ADMIN";
-
     event TokensAllocated(address _investor, uint256 _amount);
 
     /**

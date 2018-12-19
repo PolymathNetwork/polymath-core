@@ -9,8 +9,6 @@ import "./DummySTOStorage.sol";
  */
 contract DummySTO is DummySTOStorage, STO {
 
-    bytes32 public constant ADMIN = "ADMIN";
-
     event GenerateTokens(address _investor, uint256 _amount);
 
     /**

@@ -8,8 +8,6 @@ import "./CountTransferManagerStorage.sol";
  */
 contract CountTransferManager is CountTransferManagerStorage, TransferManager {
 
-    bytes32 public constant ADMIN = "ADMIN";
-
     event ModifyHolderCount(uint256 _oldHolderCount, uint256 _newHolderCount);
 
     /**

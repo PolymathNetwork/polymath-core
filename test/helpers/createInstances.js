@@ -5,6 +5,7 @@ const ModuleRegistry = artifacts.require("./ModuleRegistry.sol");
 const ModuleRegistryProxy = artifacts.require("./ModuleRegistryProxy.sol");
 const SecurityToken = artifacts.require("./SecurityToken.sol");
 const CappedSTOFactory = artifacts.require("./CappedSTOFactory.sol");
+const CappedSTO = artifacts.require("./CappedSTO.sol");
 const SecurityTokenRegistryProxy = artifacts.require("./SecurityTokenRegistryProxy.sol");
 const SecurityTokenRegistry = artifacts.require("./SecurityTokenRegistry.sol");
 const SecurityTokenRegistryMock = artifacts.require("./SecurityTokenRegistryMock.sol");
@@ -60,6 +61,7 @@ let I_PreSaleSTOFactory;
 let I_ModuleRegistry;
 let I_FeatureRegistry;
 let I_SecurityTokenRegistry;
+let I_CappedSTOLogic;
 let I_CappedSTOFactory;
 let I_SecurityToken;
 let I_DummySTOFactory;
@@ -319,7 +321,8 @@ export async function deployDummySTOAndVerifyed(accountPolymath, MRProxyInstance
 }
 
 export async function deployCappedSTOAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
-    I_CappedSTOFactory = await CappedSTOFactory.new(setupCost, 0, 0, { from: accountPolymath });
+    I_CappedSTOLogic = await CappedSTO.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
+    I_CappedSTOFactory = await CappedSTOFactory.new(setupCost, 0, 0, I_CappedSTOLogic.address, { from: accountPolymath });
     assert.notEqual(
         I_CappedSTOFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",

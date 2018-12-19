@@ -13,6 +13,7 @@ const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const ModuleRegistryProxy = artifacts.require('./ModuleRegistryProxy.sol');
 const ManualApprovalTransferManagerFactory = artifacts.require('./ManualApprovalTransferManagerFactory.sol')
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol')
+const CappedSTOLogic = artifacts.require("./CappedSTO.sol");
 const USDTieredSTOFactory = artifacts.require('./USDTieredSTOFactory.sol')
 const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol')
 const SecurityTokenRegistryProxy = artifacts.require('./SecurityTokenRegistryProxy.sol')
@@ -163,6 +164,10 @@ module.exports = function (deployer, network, accounts) {
     // manager attach with the securityToken contract at the time of deployment)
     return deployer.deploy(USDTieredSTOLogic, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", {from: PolymathAccount});
   }).then(() => {
+      // B) Deploy the CappedSTOLogic Contract (Factory used to generate the CappedSTO contract and this
+      // manager attach with the securityToken contract at the time of deployment)
+      return deployer.deploy(CappedSTOLogic, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", {from: PolymathAccount});
+  }).then(() => {
     // B) Deploy the GeneralTransferManagerFactory Contract (Factory used to generate the GeneralTransferManager contract and this
     // manager attach with the securityToken contract at the time of deployment)
     return deployer.deploy(GeneralTransferManagerFactory, 0, 0, 0, GeneralTransferManagerLogic.address, {from: PolymathAccount});
@@ -278,7 +283,7 @@ module.exports = function (deployer, network, accounts) {
     return moduleRegistry.verifyModule(ManualApprovalTransferManagerFactory.address, true, {from: PolymathAccount});
   }).then(() => {
     // M) Deploy the CappedSTOFactory (Use to generate the CappedSTO contract which will used to collect the funds ).
-    return deployer.deploy(CappedSTOFactory, cappedSTOSetupCost, 0, 0, {from: PolymathAccount})
+    return deployer.deploy(CappedSTOFactory, cappedSTOSetupCost, 0, 0, CappedSTOLogic.address, {from: PolymathAccount})
   }).then(() => {
     // N) Register the CappedSTOFactory in the ModuleRegistry to make the factory available at the protocol level.
     // So any securityToken can use that factory to generate the CappedSTOFactory contract.
@@ -324,6 +329,7 @@ module.exports = function (deployer, network, accounts) {
     GeneralPermissionManagerFactory:      ${GeneralPermissionManagerFactory.address}
 
     CappedSTOFactory:                     ${CappedSTOFactory.address}
+    CappedSTOLogic:                       ${CappedSTOLogic.address}
     USDTieredSTOFactory:                  ${USDTieredSTOFactory.address}
     USDTieredSTOLogic:                    ${USDTieredSTOLogic.address}
 

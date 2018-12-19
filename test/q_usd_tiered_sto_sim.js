@@ -14,7 +14,7 @@ const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager")
 const PolyTokenFaucet = artifacts.require("./PolyTokenFaucet.sol");
 
 const Web3 = require("web3");
-let BN = web3.utils.BN;
+let BN = Web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
 const TOLERANCE = 2; // Allow balances to be off by 2 WEI for rounding purposes

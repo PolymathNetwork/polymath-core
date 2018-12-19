@@ -17,7 +17,7 @@ const TestSTOFactory = artifacts.require("./TestSTOFactory.sol");
 const ReclaimTokens = artifacts.require("./ReclaimTokens.sol");
 
 const Web3 = require("web3");
-let BN = web3.utils.BN;
+let BN = Web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
 contract("ModuleRegistry", accounts => {

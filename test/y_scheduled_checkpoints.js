@@ -9,7 +9,7 @@ const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 const ScheduledCheckpoint = artifacts.require("./ScheduledCheckpoint.sol");
 
 const Web3 = require("web3");
-let BN = web3.utils.BN;
+let BN = Web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
 contract("ScheduledCheckpoint", accounts => {

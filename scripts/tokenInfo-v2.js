@@ -1,19 +1,32 @@
 const Web3 = require("web3");
 const web3 = new Web3(new Web3.providers.HttpProvider("https://mainnet.infura.io/"));
-var request = require('request-promise')
+var request = require("request-promise");
 
-const securityTokenABI = JSON.parse(require('fs').readFileSync('../build/contracts/SecurityToken.json').toString()).abi;
-const generalTransferManagerABI = JSON.parse(require('fs').readFileSync('../build/contracts/GeneralTransferManager.json').toString()).abi;
+const securityTokenABI = JSON.parse(
+    require("fs")
+        .readFileSync("../build/contracts/SecurityToken.json")
+        .toString()
+).abi;
+const generalTransferManagerABI = JSON.parse(
+    require("fs")
+        .readFileSync("../build/contracts/GeneralTransferManager.json")
+        .toString()
+).abi;
 
 async function getTokens() {
     const securityTokenRegistryAddress = "0x240f9f86b1465bf1b8eb29bc88cbf65573dfdd97";
     const securityTokenRegistryABI = await getABIfromEtherscan(securityTokenRegistryAddress);
     const securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
 
-    let logs = await getLogsFromEtherscan(securityTokenRegistry.options.address, 0, 'latest', 'NewSecurityToken(string,string,address,address,uint256,address,bool,uint256)');
+    let logs = await getLogsFromEtherscan(
+        securityTokenRegistry.options.address,
+        0,
+        "latest",
+        "NewSecurityToken(string,string,address,address,uint256,address,bool,uint256)"
+    );
     console.log(logs.length);
     for (let i = 0; i < logs.length; i++) {
-        let tokenAddress = '0x' + logs[i].topics[1].slice(26, 66)
+        let tokenAddress = "0x" + logs[i].topics[1].slice(26, 66);
         await getInfo(tokenAddress);
     }
 }
@@ -23,25 +36,30 @@ async function getInfo(tokenAddress) {
     console.log("Token - " + tokenAddress);
     console.log("----------------------");
     //console.log("Owner: " + await token.methods.owner().call());
-    console.log("Name: " + await token.methods.name().call());
-    console.log("Details: " + await token.methods.tokenDetails().call());
-    console.log("Symbol: " + await token.methods.symbol().call());
-    console.log("Granularity: " + await token.methods.granularity().call());
-    console.log("Total Supply: " + await token.methods.totalSupply().call());
-    console.log("Transfers Frozen: " + await token.methods.transfersFrozen().call());
-    console.log("Minting Frozen: " + await token.methods.mintingFrozen().call());
+    console.log("Name: " + (await token.methods.name().call()));
+    console.log("Details: " + (await token.methods.tokenDetails().call()));
+    console.log("Symbol: " + (await token.methods.symbol().call()));
+    console.log("Granularity: " + (await token.methods.granularity().call()));
+    console.log("Total Supply: " + (await token.methods.totalSupply().call()));
+    console.log("Transfers Frozen: " + (await token.methods.transfersFrozen().call()));
+    console.log("Minting Frozen: " + (await token.methods.mintingFrozen().call()));
     let controllerDisabled = await token.methods.controllerDisabled().call();
     if (controllerDisabled) {
         console.log("Controller disabled: YES");
     } else {
-        console.log("Controller: " + await token.methods.controller().call());
+        console.log("Controller: " + (await token.methods.controller().call()));
     }
-    console.log("Investors: " + await token.methods.getInvestorCount().call());
-    console.log("Latest Checkpoint: " + await token.methods.currentCheckpointId().call());
+    console.log("Investors: " + (await token.methods.getInvestorCount().call()));
+    console.log("Latest Checkpoint: " + (await token.methods.currentCheckpointId().call()));
     let gtmEventsCount = 0;
-    let gtmModules = await token.methods.getModulesByName(web3.utils.toHex('GeneralTransferManager')).call();
+    let gtmModules = await token.methods.getModulesByName(web3.utils.toHex("GeneralTransferManager")).call();
     for (const m of gtmModules) {
-        let gtmEvents = await getLogsFromEtherscan(m, 9299699, 'latest', 'ModifyWhitelist(address,uint256,address,uint256,uint256,uint256,bool)');
+        let gtmEvents = await getLogsFromEtherscan(
+            m,
+            9299699,
+            "latest",
+            "ModifyWhitelist(address,uint256,address,uint256,uint256,uint256,bool)"
+        );
         gtmEventsCount += gtmEvents.length;
     }
     console.log("Count of GeneralTransferManager Events: " + gtmEventsCount);
@@ -69,19 +87,19 @@ async function getModules(type, token) {
 }
 
 async function getLogsFromEtherscan(_address, _fromBlock, _toBlock, _eventSignature) {
-    let urlDomain = 'api';
+    let urlDomain = "api";
     const options = {
         url: `https://${urlDomain}.etherscan.io/api`,
         qs: {
-            module: 'logs',
-            action: 'getLogs',
+            module: "logs",
+            action: "getLogs",
             fromBlock: _fromBlock,
             toBlock: _toBlock,
             address: _address,
             topic0: web3.utils.sha3(_eventSignature),
-            apikey: 'THM9IUVC2DJJ6J5MTICDE6H1HGQK14X559'
+            apikey: "THM9IUVC2DJJ6J5MTICDE6H1HGQK14X559"
         },
-        method: 'GET',
+        method: "GET",
         json: true
     };
     let data = await request(options);
@@ -89,16 +107,16 @@ async function getLogsFromEtherscan(_address, _fromBlock, _toBlock, _eventSignat
 }
 
 async function getABIfromEtherscan(_address) {
-    let urlDomain = 'api';
+    let urlDomain = "api";
     const options = {
         url: `https://${urlDomain}.etherscan.io/api`,
         qs: {
-            module: 'contract',
-            action: 'getabi',
+            module: "contract",
+            action: "getabi",
             address: _address,
-            apikey: 'THM9IUVC2DJJ6J5MTICDE6H1HGQK14X559'
+            apikey: "THM9IUVC2DJJ6J5MTICDE6H1HGQK14X559"
         },
-        method: 'GET',
+        method: "GET",
         json: true
     };
     let data = await request(options);

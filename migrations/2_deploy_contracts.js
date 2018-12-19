@@ -13,6 +13,7 @@ const ERC20DividendCheckpointFactory = artifacts.require('./ERC20DividendCheckpo
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const ModuleRegistryProxy = artifacts.require('./ModuleRegistryProxy.sol');
 const ManualApprovalTransferManagerFactory = artifacts.require('./ManualApprovalTransferManagerFactory.sol')
+const ManualApprovalTransferManagerLogic = artifacts.require('./ManualApprovalTransferManager.sol')
 const CappedSTOFactory = artifacts.require('./CappedSTOFactory.sol')
 const CappedSTOLogic = artifacts.require("./CappedSTO.sol");
 const USDTieredSTOFactory = artifacts.require('./USDTieredSTOFactory.sol')
@@ -157,6 +158,10 @@ module.exports = function (deployer, network, accounts) {
       // manager attach with the securityToken contract at the time of deployment)
       return deployer.deploy(CountTransferManagerLogic, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", {from: PolymathAccount});
   }).then(() => {
+      // B) Deploy the ManualApprovalTransferManagerLogic Contract (Factory used to generate the ManualApprovalTransferManager contract and this
+      // manager attach with the securityToken contract at the time of deployment)
+      return deployer.deploy(ManualApprovalTransferManagerLogic, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", {from: PolymathAccount});
+  }).then(() => {
     // B) Deploy the ERC20DividendCheckpointLogic Contract (Factory used to generate the ERC20DividendCheckpoint contract and this
     // manager attach with the securityToken contract at the time of deployment)
     return deployer.deploy(ERC20DividendCheckpointLogic, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", {from: PolymathAccount});
@@ -199,7 +204,7 @@ module.exports = function (deployer, network, accounts) {
   }).then(() => {
       // D) Deploy the ManualApprovalTransferManagerFactory Contract (Factory used to generate the ManualApprovalTransferManager contract use
       // to manual approve the transfer that will overcome the other transfer restrictions)
-      return deployer.deploy(ManualApprovalTransferManagerFactory, 0, 0, 0, {from: PolymathAccount});
+      return deployer.deploy(ManualApprovalTransferManagerFactory, 0, 0, 0, ManualApprovalTransferManagerLogic.address, {from: PolymathAccount});
   }).then(() => {
     // H) Deploy the STVersionProxy001 Contract which contains the logic of deployment of securityToken.
     return deployer.deploy(STFactory, GeneralTransferManagerFactory.address, {from: PolymathAccount});
@@ -342,6 +347,7 @@ module.exports = function (deployer, network, accounts) {
     CountTransferManagerLogic:            ${CountTransferManagerLogic.address}
     PercentageTransferManagerFactory:     ${PercentageTransferManagerFactory.address}
     ManualApprovalTransferManagerFactory: ${ManualApprovalTransferManagerFactory.address}
+    ManualApprovalTransferManagerLogic:   ${ManualApprovalTransferManagerLogic.address}
     EtherDividendCheckpointLogic:         ${EtherDividendCheckpointLogic.address}
     ERC20DividendCheckpointLogic:         ${ERC20DividendCheckpointLogic.address}
     EtherDividendCheckpointFactory:       ${EtherDividendCheckpointFactory.address}

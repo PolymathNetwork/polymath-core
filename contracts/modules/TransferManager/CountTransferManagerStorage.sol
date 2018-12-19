@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 /**
- * @title Count Transfer Manager module for core transfer validation functionality
+ * @title Contract used to store layout for the CountTransferManager storage
  */
 contract CountTransferManagerStorage {
 

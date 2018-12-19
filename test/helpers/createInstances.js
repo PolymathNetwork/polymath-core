@@ -13,13 +13,13 @@ const ERC20DividendCheckpoint = artifacts.require("./ERC20DividendCheckpoint.sol
 const EtherDividendCheckpoint = artifacts.require("./EtherDividendCheckpoint.sol");
 const ERC20DividendCheckpointFactory = artifacts.require("./ERC20DividendCheckpointFactory.sol");
 const EtherDividendCheckpointFactory = artifacts.require("./EtherDividendCheckpointFactory.sol");
+const ManualApprovalTransferManager = artifacts.require("./ManualApprovalTransferManager.sol");
 const ManualApprovalTransferManagerFactory = artifacts.require("./ManualApprovalTransferManagerFactory.sol");
 const TrackedRedemptionFactory = artifacts.require("./TrackedRedemptionFactory.sol");
 const PercentageTransferManagerFactory = artifacts.require("./PercentageTransferManagerFactory.sol");
 const ScheduledCheckpointFactory = artifacts.require('./ScheduledCheckpointFactory.sol');
 const USDTieredSTOFactory = artifacts.require("./USDTieredSTOFactory.sol");
 const USDTieredSTO = artifacts.require("./USDTieredSTO");
-const ManualApprovalTransferManager = artifacts.require("./ManualApprovalTransferManager");
 const FeatureRegistry = artifacts.require("./FeatureRegistry.sol");
 const STFactory = artifacts.require("./STFactory.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager.sol");
@@ -47,6 +47,7 @@ let I_TrackedRedemptionFactory;
 let I_ScheduledCheckpointFactory;
 let I_MockBurnFactory;
 let I_MockWrongTypeBurnFactory;
+let I_ManualApprovalTransferManagerLogic;
 let I_ManualApprovalTransferManagerFactory;
 let I_VolumeRestrictionTransferManagerFactory;
 let I_PercentageTransferManagerFactory;
@@ -249,7 +250,8 @@ export async function deployCountTMAndVerifyed(accountPolymath, MRProxyInstance,
 }
 
 export async function deployManualApprovalTMAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
-    I_ManualApprovalTransferManagerFactory = await ManualApprovalTransferManagerFactory.new(setupCost, 0, 0, { from: accountPolymath });
+    I_ManualApprovalTransferManagerLogic = await ManualApprovalTransferManager.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
+    I_ManualApprovalTransferManagerFactory = await ManualApprovalTransferManagerFactory.new(setupCost, 0, 0, ManualApprovalTransferManager.address, { from: accountPolymath });
     assert.notEqual(
         I_ManualApprovalTransferManagerFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",

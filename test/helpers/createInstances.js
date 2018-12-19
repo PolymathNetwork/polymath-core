@@ -32,6 +32,7 @@ const PreSaleSTO = artifacts.require("./PreSaleSTO.sol");
 const PolyToken = artifacts.require("./PolyToken.sol");
 const PolyTokenFaucet = artifacts.require("./PolyTokenFaucet.sol");
 const DummySTOFactory = artifacts.require("./DummySTOFactory.sol");
+const DummySTO = artifacts.require("./DummySTO.sol");
 const MockBurnFactory = artifacts.require("./MockBurnFactory.sol");
 const MockWrongTypeFactory = artifacts.require("./MockWrongTypeFactory.sol");
 
@@ -66,6 +67,7 @@ let I_SecurityTokenRegistry;
 let I_CappedSTOLogic;
 let I_CappedSTOFactory;
 let I_SecurityToken;
+let I_DummySTOLogic;
 let I_DummySTOFactory;
 let I_PolyToken;
 let I_STFactory;
@@ -311,7 +313,8 @@ export async function deployGPMAndVerifyed(accountPolymath, MRProxyInstance, set
 /// Deploy the STO Modules
 
 export async function deployDummySTOAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
-    I_DummySTOFactory = await DummySTOFactory.new(setupCost, 0, 0, { from: accountPolymath });
+    I_DummySTOLogic = await DummySTO.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
+    I_DummySTOFactory = await DummySTOFactory.new(setupCost, 0, 0, I_DummySTOLogic.address,{ from: accountPolymath });
 
     assert.notEqual(
         I_DummySTOFactory.address.valueOf(),

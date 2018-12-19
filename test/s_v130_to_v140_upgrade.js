@@ -1,6 +1,6 @@
 const Web3 = require("web3");
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
-
+let BN = web3.utils.BN;
 
 import latestTime from "./helpers/latestTime";
 import { duration } from "./helpers/utils";
@@ -96,7 +96,7 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
         ISSUER2 = accounts[2];
         ISSUER3 = accounts[3];
         MULTISIG = accounts[4];
-        
+
         I_DaiToken = await PolyTokenFaucet.new({ from: POLYMATH });
 
         // ----------- POLYMATH NETWORK Configuration ------------
@@ -186,28 +186,15 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
         it("Should successfully deploy POLY Oracle and register on PolymathRegistry", async () => {
             I_POLYOracle = await PolyOracle.new({ from: POLYMATH, value: web3.utils.toWei("1") });
             console.log(I_POLYOracle.address);
-            assert.notEqual(
-                I_POLYOracle.address.valueOf(),
-                address_zero,
-                "POLYOracle contract was not deployed"
-            );
+            assert.notEqual(I_POLYOracle.address.valueOf(), address_zero, "POLYOracle contract was not deployed");
             tx = await I_PolymathRegistry.changeAddress("PolyUsdOracle", I_POLYOracle.address, { from: POLYMATH });
             assert.equal(tx.logs[0].args._nameKey, "PolyUsdOracle");
             assert.equal(tx.logs[0].args._newAddress, I_POLYOracle.address);
         });
         // 1b - Deploy ETH Oracle
         it("Should successfully deploy ETH Oracle and register on PolymathRegistry", async () => {
-            I_USDOracle = await ETHOracle.new(
-                "0x216d678c14be600cb88338e763bb57755ca2b1cf",
-                address_zero,
-                "ETH",
-                { from: POLYMATH }
-            );
-            assert.notEqual(
-                I_USDOracle.address.valueOf(),
-                address_zero,
-                "USDOracle contract was not deployed"
-            );
+            I_USDOracle = await ETHOracle.new("0x216d678c14be600cb88338e763bb57755ca2b1cf", address_zero, "ETH", { from: POLYMATH });
+            assert.notEqual(I_USDOracle.address.valueOf(), address_zero, "USDOracle contract was not deployed");
             tx = await I_PolymathRegistry.changeAddress("EthUsdOracle", I_USDOracle.address, { from: POLYMATH });
             assert.equal(tx.logs[0].args._nameKey, "EthUsdOracle");
             assert.equal(tx.logs[0].args._newAddress, I_USDOracle.address);
@@ -218,18 +205,10 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
         // Step 1: Deploy USDTieredSTOFactory\
         it("Should successfully deploy USDTieredSTOFactory", async () => {
             I_USDTieredSTOProxyFactory = await USDTieredSTOProxyFactory.new();
-            I_USDTieredSTOFactory = await USDTieredSTOFactory.new(
-                STOSetupCost,
-                0,
-                0,
-                I_USDTieredSTOProxyFactory.address,
-                { from: POLYMATH }
-            );
-            assert.notEqual(
-                I_USDTieredSTOFactory.address.valueOf(),
-                address_zero,
-                "USDTieredSTOFactory contract was not deployed"
-            );
+            I_USDTieredSTOFactory = await USDTieredSTOFactory.new(STOSetupCost, 0, 0, I_USDTieredSTOProxyFactory.address, {
+                from: POLYMATH
+            });
+            assert.notEqual(I_USDTieredSTOFactory.address.valueOf(), address_zero, "USDTieredSTOFactory contract was not deployed");
             let setupCost = await I_USDTieredSTOFactory.setupCost({ from: POLYMATH });
             assert.equal(setupCost, STOSetupCost);
         });
@@ -247,11 +226,7 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
         // Step 1: Deploy new CappedSTOFactory
         it("Should successfully deploy CappedSTOFactory", async () => {
             I_UpgradedCappedSTOFactory = await CappedSTOFactory.new(STOSetupCost, 0, 0, { from: POLYMATH });
-            assert.notEqual(
-                I_UpgradedCappedSTOFactory.address.valueOf(),
-                address_zero,
-                "CappedSTOFactory contract was not deployed"
-            );
+            assert.notEqual(I_UpgradedCappedSTOFactory.address.valueOf(), address_zero, "CappedSTOFactory contract was not deployed");
             let setupCost = await I_UpgradedCappedSTOFactory.setupCost({ from: POLYMATH });
             assert.equal(setupCost, STOSetupCost);
         });

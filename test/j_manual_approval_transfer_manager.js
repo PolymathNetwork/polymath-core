@@ -3,7 +3,12 @@ import { duration, ensureException, promisifyLogWatch, latestBlock } from "./hel
 import takeSnapshot, { increaseTime, revertToSnapshot } from "./helpers/time";
 import { encodeProxyCall } from "./helpers/encodeCall";
 import { catchRevert } from "./helpers/exceptions";
-import { setUpPolymathNetwork, deployManualApprovalTMAndVerifyed, deployGPMAndVerifyed, deployCountTMAndVerifyed } from "./helpers/createInstances";
+import {
+    setUpPolymathNetwork,
+    deployManualApprovalTMAndVerifyed,
+    deployGPMAndVerifyed,
+    deployCountTMAndVerifyed
+} from "./helpers/createInstances";
 
 const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
@@ -12,7 +17,7 @@ const CountTransferManager = artifacts.require("./CountTransferManager");
 const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager");
 
 const Web3 = require("web3");
-
+let BN = web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
 contract("ManualApprovalTransferManager", accounts => {
@@ -108,7 +113,11 @@ contract("ManualApprovalTransferManager", accounts => {
         // STEP 3: Deploy the ManualApprovalTransferManagerFactory
         [I_ManualApprovalTransferManagerFactory] = await deployManualApprovalTMAndVerifyed(account_polymath, I_MRProxied, 0);
         // STEP 4: Deploy the Paid ManualApprovalTransferManagerFactory
-        [P_ManualApprovalTransferManagerFactory] = await deployManualApprovalTMAndVerifyed(account_polymath, I_MRProxied, web3.utils.toWei("500", "ether"));
+        [P_ManualApprovalTransferManagerFactory] = await deployManualApprovalTMAndVerifyed(
+            account_polymath,
+            I_MRProxied,
+            web3.utils.toWei("500", "ether")
+        );
         // STEP 5: Deploy the CountTransferManagerFactory
         [I_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, 0);
 
@@ -303,14 +312,14 @@ contract("ManualApprovalTransferManager", accounts => {
                 "Failed in adding the investor in whitelist"
             );
             // Pause at the transferManager level
-            await I_ManualApprovalTransferManager.pause({from: token_owner});
+            await I_ManualApprovalTransferManager.pause({ from: token_owner });
             // Add the Investor in to the whitelist
             // Mint some tokens
             await I_SecurityToken.mint(account_investor3, web3.utils.toWei("1", "ether"), { from: token_owner });
 
             assert.equal((await I_SecurityToken.balanceOf(account_investor3)).toNumber(), web3.utils.toWei("1", "ether"));
             // Unpause at the transferManager level
-            await I_ManualApprovalTransferManager.unpause({from: token_owner});
+            await I_ManualApprovalTransferManager.unpause({ from: token_owner });
         });
 
         it("Should still be able to transfer between existing token holders", async () => {
@@ -404,7 +413,7 @@ contract("ManualApprovalTransferManager", accounts => {
         });
 
         it("Approval fails with wrong from to address", async () => {
-          await catchRevert(I_SecurityToken.transfer(account_investor5, web3.utils.toWei("1", "ether"), { from: account_investor1 }));
+            await catchRevert(I_SecurityToken.transfer(account_investor5, web3.utils.toWei("1", "ether"), { from: account_investor1 }));
         });
 
         it("Use 100% of issuance approval", async () => {
@@ -464,7 +473,9 @@ contract("ManualApprovalTransferManager", accounts => {
 
         it("Should fail to add a manual block because blocking already exist", async () => {
             await catchRevert(
-                I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, latestTime() + duration.days(5), { from: token_owner })
+                I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, latestTime() + duration.days(5), {
+                    from: token_owner
+                })
             );
         });
 

@@ -11,7 +11,7 @@ const TrackedRedemption = artifacts.require("./TrackedRedemption");
 const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager");
 
 const Web3 = require("web3");
-
+let BN = web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
 contract("TrackedRedemption", accounts => {
@@ -85,23 +85,22 @@ contract("TrackedRedemption", accounts => {
 
         // ----------- POLYMATH NETWORK Configuration ------------
 
-       // Step 1: Deploy the genral PM ecosystem
-       let instances = await setUpPolymathNetwork(account_polymath, token_owner);
+        // Step 1: Deploy the genral PM ecosystem
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
 
-       [
-           I_PolymathRegistry,
-           I_PolyToken,
-           I_FeatureRegistry,
-           I_ModuleRegistry,
-           I_ModuleRegistryProxy,
-           I_MRProxied,
-           I_GeneralTransferManagerFactory,
-           I_STFactory,
-           I_SecurityTokenRegistry,
-           I_SecurityTokenRegistryProxy,
-           I_STRProxied
-       ] = instances;
-
+        [
+            I_PolymathRegistry,
+            I_PolyToken,
+            I_FeatureRegistry,
+            I_ModuleRegistry,
+            I_ModuleRegistryProxy,
+            I_MRProxied,
+            I_GeneralTransferManagerFactory,
+            I_STFactory,
+            I_SecurityTokenRegistry,
+            I_SecurityTokenRegistryProxy,
+            I_STRProxied
+        ] = instances;
 
         // STEP 4: Deploy the TrackedRedemption
         [I_TrackedRedemptionFactory] = await deployRedemptionAndVerifyed(account_polymath, I_MRProxied, 0);
@@ -158,7 +157,9 @@ contract("TrackedRedemption", accounts => {
         it("Should successfully attach the paid TrackedRedemption with the security token", async () => {
             let snapId = await takeSnapshot();
             await I_PolyToken.getTokens(web3.utils.toWei("500"), I_SecurityToken.address);
-            const tx = await I_SecurityToken.addModule(P_TrackedRedemptionFactory.address, "", web3.utils.toWei("500"), 0, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(P_TrackedRedemptionFactory.address, "", web3.utils.toWei("500"), 0, {
+                from: token_owner
+            });
             assert.equal(tx.logs[3].args._types[0].toNumber(), burnKey, "TrackedRedemption doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[3].args._name).replace(/\u0000/g, ""),

@@ -7,14 +7,13 @@ import { encodeProxyCall, encodeModuleCall } from "./helpers/encodeCall";
 import { catchRevert } from "./helpers/exceptions";
 import { setUpPolymathNetwork, deployGPMAndVerifyed, deployDummySTOAndVerifyed, deployGTMAndVerifyed } from "./helpers/createInstances";
 
-
 const DummySTO = artifacts.require("./DummySTO.sol");
 const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager");
 
 const Web3 = require("web3");
-
+let BN = web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
 contract("GeneralTransferManager", accounts => {
@@ -169,16 +168,18 @@ contract("GeneralTransferManager", accounts => {
             I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
         });
 
-        it("Should attach the paid GTM -- failed because of no tokens", async() => {
+        it("Should attach the paid GTM -- failed because of no tokens", async () => {
             await catchRevert(
-                I_SecurityToken.addModule(P_GeneralTransferManagerFactory.address, "", web3.utils.toWei("500"), 0, {from: account_issuer})
+                I_SecurityToken.addModule(P_GeneralTransferManagerFactory.address, "", web3.utils.toWei("500"), 0, { from: account_issuer })
             );
         });
 
-        it("Should attach the paid GTM", async() => {
+        it("Should attach the paid GTM", async () => {
             let snap_id = await takeSnapshot();
             await I_PolyToken.getTokens(web3.utils.toWei("500"), I_SecurityToken.address);
-            await I_SecurityToken.addModule(P_GeneralTransferManagerFactory.address, "", web3.utils.toWei("500"), 0, {from: account_issuer});
+            await I_SecurityToken.addModule(P_GeneralTransferManagerFactory.address, "", web3.utils.toWei("500"), 0, {
+                from: account_issuer
+            });
             await revertToSnapshot(snap_id);
         });
 
@@ -204,24 +205,20 @@ contract("GeneralTransferManager", accounts => {
         it("Should whitelist lots of addresses and check gas", async () => {
             let mockInvestors = [];
             for (let i = 0; i < 50; i++) {
-                mockInvestors.push("0x1000000000000000000000000000000000000000".substring(0,42-i.toString().length) + i.toString());
+                mockInvestors.push("0x1000000000000000000000000000000000000000".substring(0, 42 - i.toString().length) + i.toString());
             }
 
             let times = range1(50);
             let bools = rangeB(50);
-            let tx = await I_GeneralTransferManager.modifyWhitelistMulti(
-                mockInvestors,
-                times,
-                times,
-                times,
-                bools,
-                {
-                    from: account_issuer,
-                    gas: 7900000
-                }
-            );
+            let tx = await I_GeneralTransferManager.modifyWhitelistMulti(mockInvestors, times, times, times, bools, {
+                from: account_issuer,
+                gas: 7900000
+            });
             console.log("Multi Whitelist x 50: " + tx.receipt.gasUsed);
-            assert.deepEqual(await I_GeneralTransferManager.getInvestors.call(), [account_affiliates1, account_affiliates2].concat(mockInvestors));
+            assert.deepEqual(
+                await I_GeneralTransferManager.getInvestors.call(),
+                [account_affiliates1, account_affiliates2].concat(mockInvestors)
+            );
         });
 
         it("Should mint the tokens to the affiliates", async () => {
@@ -232,7 +229,6 @@ contract("GeneralTransferManager", accounts => {
             assert.equal((await I_SecurityToken.balanceOf.call(account_affiliates1)).dividedBy(new BN(10).pow(new BN(18))).toNumber(), 100);
             assert.equal((await I_SecurityToken.balanceOf.call(account_affiliates2)).dividedBy(new BN(10).pow(new BN(18))).toNumber(), 100);
         });
-
 
         it("Should successfully attach the STO factory with the security token -- failed because of no tokens", async () => {
             let bytesSTO = encodeModuleCall(STOParameters, [
@@ -255,7 +251,9 @@ contract("GeneralTransferManager", accounts => {
                 someString
             ]);
             await I_PolyToken.getTokens(web3.utils.toWei("500"), I_SecurityToken.address);
-            const tx = await I_SecurityToken.addModule(P_DummySTOFactory.address, bytesSTO, web3.utils.toWei("500"), 0, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(P_DummySTOFactory.address, bytesSTO, web3.utils.toWei("500"), 0, {
+                from: token_owner
+            });
             assert.equal(tx.logs[3].args._types[0].toNumber(), stoKey, "DummySTO doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[3].args._name).replace(/\u0000/g, ""),
@@ -267,13 +265,8 @@ contract("GeneralTransferManager", accounts => {
         });
 
         it("Should successfully attach the STO factory with the security token - invalid data", async () => {
-            let bytesSTO = encodeModuleCall(['uint256', 'string'], [
-                latestTime() + duration.seconds(1000),
-                someString
-            ]);
-            await catchRevert(
-                I_SecurityToken.addModule(P_DummySTOFactory.address, bytesSTO, 0, 0, { from: token_owner })
-            );
+            let bytesSTO = encodeModuleCall(["uint256", "string"], [latestTime() + duration.seconds(1000), someString]);
+            await catchRevert(I_SecurityToken.addModule(P_DummySTOFactory.address, bytesSTO, 0, 0, { from: token_owner }));
         });
 
         it("Should successfully attach the STO factory with the security token", async () => {
@@ -344,20 +337,18 @@ contract("GeneralTransferManager", accounts => {
             await catchRevert(I_DummySTO.generateTokens(account_affiliates1, web3.utils.toWei("1", "ether"), { from: token_owner }));
         });
 
-        it("Should fail in buying the tokens from the STO -- because amount is 0", async() => {
-            await catchRevert(
-                I_DummySTO.generateTokens(account_investor1, 0, { from: token_owner })
-            );
+        it("Should fail in buying the tokens from the STO -- because amount is 0", async () => {
+            await catchRevert(I_DummySTO.generateTokens(account_investor1, 0, { from: token_owner }));
         });
 
-        it("Should fail in buying the tokens from the STO -- because STO is paused", async() => {
-            await I_DummySTO.pause({from: account_issuer });
+        it("Should fail in buying the tokens from the STO -- because STO is paused", async () => {
+            await I_DummySTO.pause({ from: account_issuer });
             await catchRevert(I_DummySTO.generateTokens(account_investor1, web3.utils.toWei("1", "ether"), { from: token_owner }));
             // Reverting the changes releated to pause
-            await I_DummySTO.unpause({from: account_issuer });
+            await I_DummySTO.unpause({ from: account_issuer });
         });
 
-        it("Should buy more tokens from the STO to investor1", async() => {
+        it("Should buy more tokens from the STO to investor1", async () => {
             await I_DummySTO.generateTokens(account_investor1, web3.utils.toWei("1", "ether"), { from: token_owner });
             assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), web3.utils.toWei("2", "ether"));
         });
@@ -375,17 +366,10 @@ contract("GeneralTransferManager", accounts => {
         it("Should Buy the tokens", async () => {
             // Add the Investor in to the whitelist
             // snap_id = await takeSnapshot();
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
-                account_investor1,
-                0,
-                0,
-                latestTime() + duration.days(20),
-                true,
-                {
-                    from: account_issuer,
-                    gas: 6000000
-                }
-            );
+            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, 0, 0, latestTime() + duration.days(20), true, {
+                from: account_issuer,
+                gas: 6000000
+            });
 
             assert.equal(
                 tx.logs[0].args._investor.toLowerCase(),
@@ -415,42 +399,32 @@ contract("GeneralTransferManager", accounts => {
             await increaseTime(5000);
 
             // Can transfer tokens
-            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), {from: account_investor1});
+            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), { from: account_investor1 });
             assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), web3.utils.toWei("1", "ether"));
             assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), web3.utils.toWei("1", "ether"));
         });
 
         it("Add a from default and check transfers are disabled then enabled in the future", async () => {
-            let tx = await I_GeneralTransferManager.changeDefaults(latestTime() + duration.days(5), 0, {from: token_owner});
-            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), {from: account_investor2});
-            await catchRevert(I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), {from: account_investor1}));
+            let tx = await I_GeneralTransferManager.changeDefaults(latestTime() + duration.days(5), 0, { from: token_owner });
+            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), { from: account_investor2 });
+            await catchRevert(I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), { from: account_investor1 }));
             await increaseTime(duration.days(5));
-            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), {from: account_investor1});
+            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), { from: account_investor1 });
         });
 
         it("Add a to default and check transfers are disabled then enabled in the future", async () => {
-            let tx = await I_GeneralTransferManager.changeDefaults(0, latestTime() + duration.days(5), {from: token_owner});
-            await catchRevert(I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), {from: account_investor2}));
-            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), {from: account_investor1});
+            let tx = await I_GeneralTransferManager.changeDefaults(0, latestTime() + duration.days(5), { from: token_owner });
+            await catchRevert(I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), { from: account_investor2 }));
+            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), { from: account_investor1 });
             await increaseTime(duration.days(5));
-            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("2", "ether"), {from: account_investor2});
+            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("2", "ether"), { from: account_investor2 });
             // revert changes
-            await I_GeneralTransferManager.modifyWhitelist(
-                account_investor2,
-                0,
-                0,
-                0,
-                false,
-                {
-                    from: account_issuer,
-                    gas: 6000000
-                }
-            );
-            await I_GeneralTransferManager.changeDefaults(0, 0, {from: token_owner});
+            await I_GeneralTransferManager.modifyWhitelist(account_investor2, 0, 0, 0, false, {
+                from: account_issuer,
+                gas: 6000000
+            });
+            await I_GeneralTransferManager.changeDefaults(0, 0, { from: token_owner });
         });
-
-
-
     });
 
     describe("Buy tokens using off-chain whitelist", async () => {
@@ -646,7 +620,7 @@ contract("GeneralTransferManager", accounts => {
             assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toNumber(), web3.utils.toWei("1", "ether"));
         });
 
-        it("Should fail if the txn is generated with same nonce", async() => {
+        it("Should fail if the txn is generated with same nonce", async () => {
             // Add the Investor in to the whitelist
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
             let validFrom = latestTime();
@@ -669,25 +643,26 @@ contract("GeneralTransferManager", accounts => {
             const s = `0x${sig.s.toString("hex")}`;
             const v = sig.v;
 
-            await catchRevert(I_GeneralTransferManager.modifyWhitelistSigned(
-                account_investor2,
-                latestTime(),
-                latestTime() + duration.days(80),
-                expiryTime + duration.days(200),
-                true,
-                validFrom,
-                validTo,
-                nonce,
-                v,
-                r,
-                s,
-                {
-                    from: account_investor2,
-                    gas: 6000000
-                }
-            )
+            await catchRevert(
+                I_GeneralTransferManager.modifyWhitelistSigned(
+                    account_investor2,
+                    latestTime(),
+                    latestTime() + duration.days(80),
+                    expiryTime + duration.days(200),
+                    true,
+                    validFrom,
+                    validTo,
+                    nonce,
+                    v,
+                    r,
+                    s,
+                    {
+                        from: account_investor2,
+                        gas: 6000000
+                    }
+                )
             );
-        })
+        });
 
         it("Should fail in changing the signing address", async () => {
             await catchRevert(I_GeneralTransferManager.changeSigningAddress(account_polymath, { from: account_investor4 }));
@@ -699,8 +674,8 @@ contract("GeneralTransferManager", accounts => {
             assert.equal(web3.utils.toAscii(perm[1]).replace(/\u0000/g, ""), "FLAGS");
         });
 
-        it("Should provide the permission and change the signing address", async() => {
-            let log = await I_GeneralPermissionManager.addDelegate(account_delegate, "My details", {from: token_owner});
+        it("Should provide the permission and change the signing address", async () => {
+            let log = await I_GeneralPermissionManager.addDelegate(account_delegate, "My details", { from: token_owner });
             assert.equal(log.logs[0].args._delegate, account_delegate);
 
             await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, "FLAGS", true, {
@@ -918,7 +893,7 @@ contract("GeneralTransferManager", accounts => {
             assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ""), "Dummy");
         });
 
-        it("Should get the version of factory", async() => {
+        it("Should get the version of factory", async () => {
             let version = await I_DummySTOFactory.version.call();
             assert.equal(version, "1.0.0");
         });
@@ -942,11 +917,15 @@ contract("GeneralTransferManager", accounts => {
             assert.equal(web3.utils.toAscii(tx[0]).replace(/\u0000/g, ""), "ADMIN");
         });
 
-        it("Should get the amount of tokens sold", async() => {
+        it("Should get the amount of tokens sold", async () => {
             assert.equal(await I_DummySTO.getTokensSold.call(), 0);
-        })
+        });
     });
 });
 
-function range1(i) {return i?range1(i-1).concat(i):[]}
-function rangeB(i) {return i?rangeB(i-1).concat(0):[]}
+function range1(i) {
+    return i ? range1(i - 1).concat(i) : [];
+}
+function rangeB(i) {
+    return i ? rangeB(i - 1).concat(0) : [];
+}

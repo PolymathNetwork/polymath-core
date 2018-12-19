@@ -14,7 +14,7 @@ const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager")
 const PolyTokenFaucet = artifacts.require("./PolyTokenFaucet.sol");
 
 const Web3 = require("web3");
-
+let BN = web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
 const TOLERANCE = 2; // Allow balances to be off by 2 WEI for rounding purposes
@@ -196,10 +196,10 @@ contract("USDTieredSTO Sim", accounts => {
             I_STRProxied
         ] = instances;
 
-       I_DaiToken = await PolyTokenFaucet.new({from: POLYMATH});
+        I_DaiToken = await PolyTokenFaucet.new({ from: POLYMATH });
 
-       // STEP 5: Deploy the USDTieredSTOFactory
-       [I_USDTieredSTOFactory] = await deployUSDTieredSTOAndVerified(POLYMATH, I_MRProxied, STOSetupCost);
+        // STEP 5: Deploy the USDTieredSTOFactory
+        [I_USDTieredSTOFactory] = await deployUSDTieredSTOAndVerified(POLYMATH, I_MRProxied, STOSetupCost);
 
         // Step 12: Deploy & Register Mock Oracles
         I_USDOracle = await MockOracle.new(0, "ETH", "USD", USDETH, { from: POLYMATH }); // 500 dollars per POLY
@@ -455,14 +455,10 @@ contract("USDTieredSTO Sim", accounts => {
                 let Tokens_discount = [];
                 for (var i = 0; i < _ratePerTier[stoId].length; i++) {
                     Tokens_total.push(
-                        (await I_USDTieredSTO_Array[stoId].tiers.call(i))[2].sub(
-                            (await I_USDTieredSTO_Array[stoId].tiers.call(i))[4]
-                        )
+                        (await I_USDTieredSTO_Array[stoId].tiers.call(i))[2].sub((await I_USDTieredSTO_Array[stoId].tiers.call(i))[4])
                     );
                     Tokens_discount.push(
-                        (await I_USDTieredSTO_Array[stoId].tiers.call(i))[3].sub(
-                            (await I_USDTieredSTO_Array[stoId].tiers.call(i))[5]
-                        )
+                        (await I_USDTieredSTO_Array[stoId].tiers.call(i))[3].sub((await I_USDTieredSTO_Array[stoId].tiers.call(i))[5])
                     );
                 }
 

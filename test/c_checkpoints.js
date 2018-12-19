@@ -7,7 +7,7 @@ const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 
 const Web3 = require("web3");
-
+let BN = web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
 contract("Checkpoints", accounts => {
@@ -265,9 +265,7 @@ contract("Checkpoints", accounts => {
                         receiver = account_investor3;
                     }
                     let m = Math.random();
-                    let amount = new BN(await I_SecurityToken.balanceOf(sender))
-                        .mul(Math.random().toFixed(10))
-                        .toFixed(0);
+                    let amount = new BN(await I_SecurityToken.balanceOf(sender)).mul(Math.random().toFixed(10)).toFixed(0);
                     if (m > 0.8) {
                         console.log("Sending full balance");
                         amount = new BN(await I_SecurityToken.balanceOf(sender));
@@ -276,9 +274,7 @@ contract("Checkpoints", accounts => {
                     await I_SecurityToken.transfer(receiver, amount, { from: sender });
                 }
                 if (Math.random() > 0.5) {
-                    let n = new BN(Math.random().toFixed(10))
-                        .mul(10 ** 17)
-                        .toFixed(0);
+                    let n = new BN(Math.random().toFixed(10)).mul(10 ** 17).toFixed(0);
                     let p = Math.random() * 3;
                     let r = Math.random() * 3;
                     let minter;

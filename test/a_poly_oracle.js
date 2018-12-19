@@ -5,7 +5,7 @@ import { increaseTime } from "./helpers/time";
 import { catchRevert } from "./helpers/exceptions";
 
 const Web3 = require("web3");
-
+let BN = web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
 contract("PolyOracle", accounts => {
@@ -79,7 +79,9 @@ contract("PolyOracle", accounts => {
             assert.isNotNull(logNewPriceWatcher.args._price, "Price returned was null.");
             assert.equal(logNewPriceWatcher.args._oldPrice.toNumber(), 0);
             console.log(
-                "Success! Current price is: " + logNewPriceWatcher.args._price.dividedBy(new BN(10).pow(new BN(18))).toNumber() + " USD/POLY"
+                "Success! Current price is: " +
+                    logNewPriceWatcher.args._price.dividedBy(new BN(10).pow(new BN(18))).toNumber() +
+                    " USD/POLY"
             );
         });
 
@@ -188,7 +190,9 @@ contract("PolyOracle", accounts => {
             assert.equal(logNewPriceWatcher.event, "PriceUpdated", "PriceUpdated not emitted.");
             assert.isNotNull(logNewPriceWatcher.args._price, "Price returned was null.");
             console.log(
-                "Success! Current price is: " + logNewPriceWatcher.args._price.dividedBy(new BN(10).pow(new BN(18))).toNumber() + " USD/POLY"
+                "Success! Current price is: " +
+                    logNewPriceWatcher.args._price.dividedBy(new BN(10).pow(new BN(18))).toNumber() +
+                    " USD/POLY"
             );
             // assert.isTrue(false);
         });
@@ -250,7 +254,9 @@ contract("PolyOracle", accounts => {
             assert.equal(logNewPriceWatcher.event, "PriceUpdated", "PriceUpdated not emitted.");
             assert.isNotNull(logNewPriceWatcher.args._price, "Price returned was null.");
             console.log(
-                "Success! Current price is: " + logNewPriceWatcher.args._price.dividedBy(new BN(10).pow(new BN(18))).toNumber() + " USD/POLY"
+                "Success! Current price is: " +
+                    logNewPriceWatcher.args._price.dividedBy(new BN(10).pow(new BN(18))).toNumber() +
+                    " USD/POLY"
             );
             // assert.isTrue(false);
         });

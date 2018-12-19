@@ -10,7 +10,7 @@ const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager")
 const SecurityToken = artifacts.require("./SecurityToken.sol");
 
 const Web3 = require("web3");
-
+let BN = web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
 contract("PercentageTransferManager", accounts => {
@@ -69,22 +69,27 @@ contract("PercentageTransferManager", accounts => {
     const initRegFee = web3.utils.toWei("250");
 
     // PercentageTransferManager details
-    const holderPercentage = 70 * 10**16;           // Maximum number of token holders
+    const holderPercentage = 70 * 10 ** 16; // Maximum number of token holders
 
-    let bytesSTO = web3.eth.abi.encodeFunctionCall({
-        name: 'configure',
-        type: 'function',
-        inputs: [{
-            type: 'uint256',
-            name: '_maxHolderPercentage'
-        },{
-            type: 'bool',
-            name: '_allowPrimaryIssuance'
-        }
-        ]
-    }, [holderPercentage, false]);
+    let bytesSTO = web3.eth.abi.encodeFunctionCall(
+        {
+            name: "configure",
+            type: "function",
+            inputs: [
+                {
+                    type: "uint256",
+                    name: "_maxHolderPercentage"
+                },
+                {
+                    type: "bool",
+                    name: "_allowPrimaryIssuance"
+                }
+            ]
+        },
+        [holderPercentage, false]
+    );
 
-    before(async() => {
+    before(async () => {
         // Accounts setup
         account_polymath = accounts[0];
         account_issuer = accounts[1];
@@ -119,7 +124,11 @@ contract("PercentageTransferManager", accounts => {
         [I_PercentageTransferManagerFactory] = await deployPercentageTMAndVerified(account_polymath, I_MRProxied, 0);
 
         // STEP 4(b): Deploy the PercentageTransferManager
-        [P_PercentageTransferManagerFactory] = await deployPercentageTMAndVerified(account_polymath, I_MRProxied, web3.utils.toWei("500", "ether"));
+        [P_PercentageTransferManagerFactory] = await deployPercentageTMAndVerified(
+            account_polymath,
+            I_MRProxied,
+            web3.utils.toWei("500", "ether")
+        );
 
         // Printing all the contract addresses
         console.log(`
@@ -180,7 +189,6 @@ contract("PercentageTransferManager", accounts => {
             );
             I_GeneralPermissionManager = GeneralPermissionManager.at(tx.logs[2].args._module);
         });
-
     });
 
     describe("Buy tokens using on-chain whitelist", async () => {
@@ -327,45 +335,39 @@ contract("PercentageTransferManager", accounts => {
             await catchRevert(I_SecurityToken.transfer(account_investor3, web3.utils.toWei("2", "ether"), { from: account_investor1 }));
         });
 
-        it("Should not be able to mint token amount over limit", async() => {
-            await catchRevert(I_SecurityToken.mint(account_investor3, web3.utils.toWei('100', 'ether'), { from: token_owner }))
+        it("Should not be able to mint token amount over limit", async () => {
+            await catchRevert(I_SecurityToken.mint(account_investor3, web3.utils.toWei("100", "ether"), { from: token_owner }));
         });
 
-        it("Allow unlimited primary issuance and remint", async() => {
+        it("Allow unlimited primary issuance and remint", async () => {
             let snapId = await takeSnapshot();
             await I_PercentageTransferManager.setAllowPrimaryIssuance(true, { from: token_owner });
-            await I_SecurityToken.mint(account_investor3, web3.utils.toWei('100', 'ether'), { from: token_owner });
+            await I_SecurityToken.mint(account_investor3, web3.utils.toWei("100", "ether"), { from: token_owner });
             // trying to call it again with the same value. should fail
-            await catchRevert(
-                I_PercentageTransferManager.setAllowPrimaryIssuance(true, { from: token_owner })
-            )
+            await catchRevert(I_PercentageTransferManager.setAllowPrimaryIssuance(true, { from: token_owner }));
             await revertToSnapshot(snapId);
         });
 
-        it("Should not be able to transfer between existing token holders over limit", async() => {
-           await catchRevert(
-                I_SecurityToken.transfer(account_investor3, web3.utils.toWei('2', 'ether'), { from: account_investor1 })
-           )
+        it("Should not be able to transfer between existing token holders over limit", async () => {
+            await catchRevert(I_SecurityToken.transfer(account_investor3, web3.utils.toWei("2", "ether"), { from: account_investor1 }));
         });
 
         it("Should not be able to modify holder percentage to 100 - Unauthorized msg.sender", async () => {
-            await catchRevert(
-                I_PercentageTransferManager.changeHolderPercentage(100 * 10 ** 16, { from: account_delegate })
-            )
+            await catchRevert(I_PercentageTransferManager.changeHolderPercentage(100 * 10 ** 16, { from: account_delegate }));
         });
 
-        it("Should successfully add the delegate", async() => {
-            let tx = await I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: token_owner});
+        it("Should successfully add the delegate", async () => {
+            let tx = await I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: token_owner });
             assert.equal(tx.logs[0].args._delegate, account_delegate);
         });
 
-        it("Should provide the permission", async() => {
+        it("Should provide the permission", async () => {
             let tx = await I_GeneralPermissionManager.changePermission(
                 account_delegate,
                 I_PercentageTransferManager.address,
                 "ADMIN",
                 true,
-                {from: token_owner}
+                { from: token_owner }
             );
             assert.equal(tx.logs[0].args._delegate, account_delegate);
         });
@@ -383,17 +385,19 @@ contract("PercentageTransferManager", accounts => {
             await I_SecurityToken.transfer(account_investor3, web3.utils.toWei("2", "ether"), { from: account_investor1 });
         });
 
-        it("Should whitelist in batch --failed because of mismatch in array lengths", async() => {
+        it("Should whitelist in batch --failed because of mismatch in array lengths", async () => {
             await catchRevert(
                 I_PercentageTransferManager.modifyWhitelistMulti([account_investor3, account_investor4], [false], { from: token_owner })
             );
-        })
+        });
 
-        it("Should whitelist in batch", async() => {
+        it("Should whitelist in batch", async () => {
             let snapId = await takeSnapshot();
-            await I_PercentageTransferManager.modifyWhitelistMulti([account_investor3, account_investor4], [false, true], { from: token_owner });
+            await I_PercentageTransferManager.modifyWhitelistMulti([account_investor3, account_investor4], [false, true], {
+                from: token_owner
+            });
             await revertToSnapshot(snapId);
-        })
+        });
 
         it("Should be able to whitelist address and then transfer regardless of holders", async () => {
             await I_PercentageTransferManager.changeHolderPercentage(30 * 10 ** 16, { from: token_owner });

@@ -3,7 +3,7 @@ import { duration, ensureException, promisifyLogWatch, latestBlock } from "./hel
 import { takeSnapshot, increaseTime, revertToSnapshot } from "./helpers/time";
 import { encodeProxyCall, encodeModuleCall } from "./helpers/encodeCall";
 import { catchRevert } from "./helpers/exceptions";
-import { setUpPolymathNetwork, deployPresaleSTOAndVerified } from "./helpers/createInstances"
+import { setUpPolymathNetwork, deployPresaleSTOAndVerified } from "./helpers/createInstances";
 
 const PreSaleSTOFactory = artifacts.require("./PreSaleSTOFactory.sol");
 const PreSaleSTO = artifacts.require("./PreSaleSTO.sol");
@@ -11,7 +11,7 @@ const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 
 const Web3 = require("web3");
-
+let BN = web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
 contract("PreSaleSTO", accounts => {
@@ -163,7 +163,9 @@ contract("PreSaleSTO", accounts => {
             endTime = latestTime() + duration.days(30); // Start time will be 5000 seconds more than the latest time
             let bytesSTO = encodeModuleCall(STOParameters, [endTime]);
             await I_PolyToken.getTokens(web3.utils.toWei("500"), I_SecurityToken.address);
-            const tx = await I_SecurityToken.addModule(P_PreSaleSTOFactory.address, bytesSTO, web3.utils.toWei("500"), 0, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(P_PreSaleSTOFactory.address, bytesSTO, web3.utils.toWei("500"), 0, {
+                from: token_owner
+            });
 
             assert.equal(tx.logs[2].args._types[0], stoKey, "PreSaleSTO doesn't get deployed");
             assert.equal(
@@ -178,9 +180,7 @@ contract("PreSaleSTO", accounts => {
         it("Should successfully attach the STO factory with the security token -- fail because signature is different", async () => {
             endTime = latestTime() + duration.days(30); // Start time will be 5000 seconds more than the latest time
             let bytesSTO = encodeModuleCall(["string"], ["hey"]);
-            await catchRevert(
-                I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, 0, 0, { from: token_owner })
-            );
+            await catchRevert(I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, 0, 0, { from: token_owner }));
         });
 
         it("Should successfully attach the STO factory with the security token", async () => {
@@ -255,13 +255,13 @@ contract("PreSaleSTO", accounts => {
             // assert.isTrue(false);
         });
 
-        it("Should allocate the tokens --failed because of amount is 0", async() => {
+        it("Should allocate the tokens --failed because of amount is 0", async () => {
             await catchRevert(
                 I_PreSaleSTO.allocateTokens(account_investor1, 0, web3.utils.toWei("1", "ether"), 0, {
                     from: account_issuer
                 })
             );
-        })
+        });
 
         it("Should allocate the tokens -- failed due to msg.sender is not pre sale admin", async () => {
             await catchRevert(
@@ -304,7 +304,7 @@ contract("PreSaleSTO", accounts => {
             assert.equal((await I_PreSaleSTO.getNumberInvestors.call()).toNumber(), 3);
         });
 
-        it("Should successfully mint multiple tokens -- failed because array mismatch", async() => {
+        it("Should successfully mint multiple tokens -- failed because array mismatch", async () => {
             await catchRevert(
                 I_PreSaleSTO.allocateTokensMulti(
                     [account_investor2],
@@ -314,9 +314,9 @@ contract("PreSaleSTO", accounts => {
                     { from: account_issuer }
                 )
             );
-        })
+        });
 
-        it("Should successfully mint multiple tokens -- failed because array mismatch", async() => {
+        it("Should successfully mint multiple tokens -- failed because array mismatch", async () => {
             await catchRevert(
                 I_PreSaleSTO.allocateTokensMulti(
                     [account_investor2, account_investor3],
@@ -328,19 +328,19 @@ contract("PreSaleSTO", accounts => {
             );
         });
 
-        it("Should successfully mint multiple tokens -- failed because array mismatch", async() => {
+        it("Should successfully mint multiple tokens -- failed because array mismatch", async () => {
             await catchRevert(
                 I_PreSaleSTO.allocateTokensMulti(
                     [account_investor2, account_investor3],
                     [web3.utils.toWei("1", "ether"), web3.utils.toWei("1", "ether")],
-                    [0,0],
+                    [0, 0],
                     [web3.utils.toWei("1000", "ether")],
                     { from: account_issuer }
                 )
             );
         });
 
-        it("Should successfully mint multiple tokens -- failed because array mismatch", async() => {
+        it("Should successfully mint multiple tokens -- failed because array mismatch", async () => {
             await catchRevert(
                 I_PreSaleSTO.allocateTokensMulti(
                     [account_investor2, account_investor3],
@@ -352,11 +352,13 @@ contract("PreSaleSTO", accounts => {
             );
         });
 
-        it("Should buy some more tokens to previous investor", async() => {
-            await I_PreSaleSTO.allocateTokens(account_investor1, web3.utils.toWei("1000", "ether"), web3.utils.toWei("1", "ether"), 0, { from: account_issuer });
+        it("Should buy some more tokens to previous investor", async () => {
+            await I_PreSaleSTO.allocateTokens(account_investor1, web3.utils.toWei("1000", "ether"), web3.utils.toWei("1", "ether"), 0, {
+                from: account_issuer
+            });
             // No change in the investor count
             assert.equal((await I_PreSaleSTO.getNumberInvestors.call()).toNumber(), 3);
-        })
+        });
 
         it("Should failed at the time of buying the tokens -- Because STO has ended", async () => {
             await increaseTime(duration.days(100)); // increased beyond the end time of the STO
@@ -405,10 +407,10 @@ contract("PreSaleSTO", accounts => {
             );
         });
 
-        it("Should get the the tokens sold", async() => {
+        it("Should get the the tokens sold", async () => {
             let _tokensSold = await I_PreSaleSTO.getTokensSold.call();
             console.log(_tokensSold);
-        })
+        });
     });
 
     describe("Test cases for the PresaleSTOFactory", async () => {

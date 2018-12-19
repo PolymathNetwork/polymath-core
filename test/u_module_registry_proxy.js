@@ -14,7 +14,7 @@ const GeneralTransferManagerFactory = artifacts.require("./GeneralTransferManage
 const GeneralPermissionManagerFactory = artifacts.require("./GeneralPermissionManagerFactory.sol");
 
 const Web3 = require("web3");
-
+let BN = web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
 contract("ModuleRegistryProxy", accounts => {
@@ -62,25 +62,25 @@ contract("ModuleRegistryProxy", accounts => {
         token_owner = accounts[2];
         account_polymath_new = accounts[3];
 
-       // Step 1: Deploy the genral PM ecosystem
-       let instances = await setUpPolymathNetwork(account_polymath, token_owner);
+        // Step 1: Deploy the genral PM ecosystem
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
 
-       [
-           I_PolymathRegistry,
-           I_PolyToken,
-           I_FeatureRegistry,
-           I_ModuleRegistry,
-           I_ModuleRegistryProxy,
-           I_MRProxied,
-           I_GeneralTransferManagerFactory,
-           I_STFactory,
-           I_SecurityTokenRegistry,
-           I_SecurityTokenRegistryProxy,
-           I_STRProxied
-       ] = instances;
+        [
+            I_PolymathRegistry,
+            I_PolyToken,
+            I_FeatureRegistry,
+            I_ModuleRegistry,
+            I_ModuleRegistryProxy,
+            I_MRProxied,
+            I_GeneralTransferManagerFactory,
+            I_STFactory,
+            I_SecurityTokenRegistry,
+            I_SecurityTokenRegistryProxy,
+            I_STRProxied
+        ] = instances;
 
-        I_ModuleRegistryProxy = await ModuleRegistryProxy.new({from: account_polymath});
-        I_ModuleRegistry = await ModuleRegistry.new({from: account_polymath });
+        I_ModuleRegistryProxy = await ModuleRegistryProxy.new({ from: account_polymath });
+        I_ModuleRegistry = await ModuleRegistry.new({ from: account_polymath });
 
         await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistryProxy.address, { from: account_polymath });
 
@@ -123,7 +123,11 @@ contract("ModuleRegistryProxy", accounts => {
             await I_MRProxied.updateFromRegistry({ from: account_polymath });
             // STEP 4: Deploy the GeneralTransferManagerFactory
 
-            let I_GeneralTransferManagerLogic = await GeneralTransferManagerLogic.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: account_polymath });
+            let I_GeneralTransferManagerLogic = await GeneralTransferManagerLogic.new(
+                "0x0000000000000000000000000000000000000000",
+                "0x0000000000000000000000000000000000000000",
+                { from: account_polymath }
+            );
 
             I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(0, 0, 0, I_GeneralTransferManagerLogic.address, {
                 from: account_polymath
@@ -144,11 +148,7 @@ contract("ModuleRegistryProxy", accounts => {
             // Step 3: Deploy the STFactory contract
             I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, { from: account_polymath });
 
-            assert.notEqual(
-                I_STFactory.address.valueOf(),
-                address_zero,
-                "STFactory contract was not deployed"
-            );
+            assert.notEqual(I_STFactory.address.valueOf(), address_zero, "STFactory contract was not deployed");
         });
 
         it("Verify the initialize data", async () => {

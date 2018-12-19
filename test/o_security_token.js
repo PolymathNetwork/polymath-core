@@ -9,7 +9,7 @@ import {
     deployCappedSTOAndVerifyed,
     deployMockRedemptionAndVerifyed,
     deployMockWrongTypeRedemptionAndVerifyed
- } from "./helpers/createInstances";
+} from "./helpers/createInstances";
 
 const CappedSTOFactory = artifacts.require("./CappedSTOFactory.sol");
 const CappedSTO = artifacts.require("./CappedSTO.sol");
@@ -19,7 +19,7 @@ const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager")
 const MockRedemptionManager = artifacts.require("./MockRedemptionManager.sol");
 
 const Web3 = require("web3");
-
+let BN = web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
 contract("SecurityToken", accounts => {
@@ -305,18 +305,19 @@ contract("SecurityToken", accounts => {
             await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
             await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCost, { from: token_owner });
             console.log("0");
-            const tx = await I_SecurityToken.addModuleWithLabel(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, 'stofactory', { from: token_owner });
+            const tx = await I_SecurityToken.addModuleWithLabel(I_CappedSTOFactory.address, bytesSTO, maxCost, 0, "stofactory", {
+                from: token_owner
+            });
             console.log("1");
             assert.equal(tx.logs[3].args._types[0], stoKey, "CappedSTO doesn't get deployed");
             assert.equal(web3.utils.toUtf8(tx.logs[3].args._name), "CappedSTO", "CappedSTOFactory module was not added");
-            console.log("module label is .. "+ web3.utils.toAscii(tx.logs[3].args._label));
+            console.log("module label is .. " + web3.utils.toAscii(tx.logs[3].args._label));
             assert(web3.utils.toAscii(tx.logs[3].args._label), "stofactory", "label doesnt match");
             I_CappedSTO = CappedSTO.at(tx.logs[3].args._module);
             await revertToSnapshot(snapId);
         });
 
         it("Should successfully attach the STO factory with the security token", async () => {
-            
             startTime = latestTime() + duration.seconds(5000);
             endTime = startTime + duration.days(30);
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
@@ -408,13 +409,13 @@ contract("SecurityToken", accounts => {
             let tx = await I_SecurityToken.removeModule(I_GeneralTransferManager.address, { from: token_owner });
             assert.equal(tx.logs[0].args._types[0], transferManagerKey);
             assert.equal(tx.logs[0].args._module, I_GeneralTransferManager.address);
-            await I_SecurityToken.mint(account_investor1, web3.utils.toWei("500"), {from: token_owner});
-            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("200"), {from: account_investor1 });
+            await I_SecurityToken.mint(account_investor1, web3.utils.toWei("500"), { from: token_owner });
+            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("200"), { from: account_investor1 });
             assert.equal((await I_SecurityToken.balanceOf(account_investor2)).dividedBy(new BN(10).pow(new BN(18))).toNumber(), 200);
             await revertToSnapshot(key);
         });
 
-        it("Should successfully remove the module from the middle of the names mapping", async() => {
+        it("Should successfully remove the module from the middle of the names mapping", async () => {
             let snap_Id = await takeSnapshot();
             let D_GPM, D_GPM_1, D_GPM_2;
             let FactoryInstances;
@@ -426,25 +427,23 @@ contract("SecurityToken", accounts => {
             FactoryInstances = [D_GPM, D_GPM_1, D_GPM_2];
             // Adding module in the ST
             for (let i = 0; i < FactoryInstances.length; i++) {
-                let tx = await I_SecurityToken.addModule(FactoryInstances[i].address, "", 0, 0, {from: token_owner });
-                assert.equal(tx.logs[2].args._types[0], permissionManagerKey, "fail in adding the GPM")
+                let tx = await I_SecurityToken.addModule(FactoryInstances[i].address, "", 0, 0, { from: token_owner });
+                assert.equal(tx.logs[2].args._types[0], permissionManagerKey, "fail in adding the GPM");
                 GPMAddress.push(tx.logs[2].args._module);
             }
             // Archive the one of the module
-            await I_SecurityToken.archiveModule(GPMAddress[0], {from: token_owner});
+            await I_SecurityToken.archiveModule(GPMAddress[0], { from: token_owner });
             // Remove the module
-            let tx = await I_SecurityToken.removeModule(GPMAddress[0], {from: token_owner});
+            let tx = await I_SecurityToken.removeModule(GPMAddress[0], { from: token_owner });
             assert.equal(tx.logs[0].args._types[0], permissionManagerKey);
             assert.equal(tx.logs[0].args._module, GPMAddress[0]);
             await revertToSnapshot(snap_Id);
         });
 
-        it("Should successfully archive the module first and fail during achiving the module again", async() => {
+        it("Should successfully archive the module first and fail during achiving the module again", async () => {
             let key = await takeSnapshot();
             await I_SecurityToken.archiveModule(I_GeneralTransferManager.address, { from: token_owner });
-            await catchRevert(
-                I_SecurityToken.archiveModule(I_GeneralTransferManager.address, { from: token_owner })
-            );
+            await catchRevert(I_SecurityToken.archiveModule(I_GeneralTransferManager.address, { from: token_owner }));
             await revertToSnapshot(key);
         });
 
@@ -485,16 +484,12 @@ contract("SecurityToken", accounts => {
         });
 
         it("Should successfully unarchive the general transfer manager module from the securityToken -- fail because module is already unarchived", async () => {
-            await catchRevert(
-                I_SecurityToken.unarchiveModule(I_GeneralTransferManager.address, { from: token_owner })
-            );
+            await catchRevert(I_SecurityToken.unarchiveModule(I_GeneralTransferManager.address, { from: token_owner }));
         });
 
-        it("Should successfully archive the module -- fail because module is not existed", async() => {
-            await catchRevert(
-                I_SecurityToken.archiveModule(I_GeneralPermissionManagerFactory.address, { from: token_owner })
-            );
-        })
+        it("Should successfully archive the module -- fail because module is not existed", async () => {
+            await catchRevert(I_SecurityToken.archiveModule(I_GeneralPermissionManagerFactory.address, { from: token_owner }));
+        });
 
         it("Should fail to mint tokens while GTM unarchived", async () => {
             await catchRevert(I_SecurityToken.mint(1, 100 * Math.pow(10, 18), { from: token_owner, gas: 500000 }));
@@ -513,7 +508,7 @@ contract("SecurityToken", accounts => {
             assert.equal(tx.logs[1].args._budget.toNumber(), budget.add(increaseAmount).toNumber());
         });
 
-        it("Should change the budget of the module (decrease it)", async() => {
+        it("Should change the budget of the module (decrease it)", async () => {
             let budget = await I_PolyToken.allowance.call(I_SecurityToken.address, I_CappedSTO.address);
             let decreaseAmount = 100 * Math.pow(10, 18);
             let tx = await I_SecurityToken.changeModuleBudget(I_CappedSTO.address, decreaseAmount, false, { from: token_owner });
@@ -522,11 +517,9 @@ contract("SecurityToken", accounts => {
             assert.equal(tx.logs[1].args._budget.toNumber(), budget.sub(decreaseAmount).toNumber());
         });
 
-        it("Should fail to get the total supply -- because checkpoint id is greater than present", async() => {
-            await catchRevert(
-                I_SecurityToken.totalSupplyAt.call(50)
-            );
-        })
+        it("Should fail to get the total supply -- because checkpoint id is greater than present", async () => {
+            await catchRevert(I_SecurityToken.totalSupplyAt.call(50));
+        });
     });
 
     describe("General Transfer manager Related test cases", async () => {
@@ -892,8 +885,8 @@ contract("SecurityToken", accounts => {
         it("Should prune investor length test #2", async () => {
             let balance = await I_SecurityToken.balanceOf(account_affiliate2);
             let balance2 = await I_SecurityToken.balanceOf(account_investor1);
-            await I_SecurityToken.transfer(account_affiliate1, balance, { from: account_affiliate2});
-            await I_SecurityToken.transfer(account_affiliate1, balance2, { from: account_investor1});
+            await I_SecurityToken.transfer(account_affiliate1, balance, { from: account_affiliate2 });
+            await I_SecurityToken.transfer(account_affiliate1, balance2, { from: account_investor1 });
             await I_SecurityToken.createCheckpoint({ from: token_owner });
             let investors = await I_SecurityToken.getInvestors.call();
             console.log("All investors:" + investors);
@@ -909,8 +902,8 @@ contract("SecurityToken", accounts => {
                 assert.equal(investors[i], expectedAccounts[i]);
             }
             assert.equal(investors.length, 1);
-            await I_SecurityToken.transfer(account_affiliate2, balance, { from: account_affiliate1});
-            await I_SecurityToken.transfer(account_investor1, balance2, { from: account_affiliate1});
+            await I_SecurityToken.transfer(account_affiliate2, balance, { from: account_affiliate1 });
+            await I_SecurityToken.transfer(account_investor1, balance2, { from: account_affiliate1 });
         });
 
         it("Should get filtered investors", async () => {
@@ -932,9 +925,7 @@ contract("SecurityToken", accounts => {
             assert.equal(filteredInvestors[2], investors[2]);
             assert.equal(filteredInvestors[3], investors[3]);
             assert.equal(filteredInvestors.length, 4);
-            await catchRevert(
-                I_SecurityToken.iterateInvestors(0, 5)
-            );
+            await catchRevert(I_SecurityToken.iterateInvestors(0, 5));
         });
 
         it("Should check the balance of investor at checkpoint", async () => {
@@ -947,11 +938,10 @@ contract("SecurityToken", accounts => {
         });
     });
 
-    describe("Test cases for the Mock TrackedRedeemption", async() => {
-
-        it("Should add the tracked redeemption module successfully", async() => {
+    describe("Test cases for the Mock TrackedRedeemption", async () => {
+        it("Should add the tracked redeemption module successfully", async () => {
             [I_MockRedemptionManagerFactory] = await deployMockRedemptionAndVerifyed(account_polymath, I_MRProxied, 0);
-            let tx = await I_SecurityToken.addModule(I_MockRedemptionManagerFactory.address, "", 0, 0, {from: token_owner });
+            let tx = await I_SecurityToken.addModule(I_MockRedemptionManagerFactory.address, "", 0, 0, { from: token_owner });
             assert.equal(tx.logs[2].args._types[0], burnKey, "fail in adding the burn manager");
             I_MockRedemptionManager = MockRedemptionManager.at(tx.logs[2].args._module);
             // adding the burn module into the GTM
@@ -962,74 +952,77 @@ contract("SecurityToken", accounts => {
                 latestTime() + duration.days(50),
                 true,
                 {
-                from: account_delegate,
-                gas: 6000000
+                    from: account_delegate,
+                    gas: 6000000
                 }
             );
             assert.equal(tx.logs[0].args._investor, I_MockRedemptionManager.address, "Failed in adding the investor in whitelist");
         });
 
-        it("Should successfully burn tokens", async() => {
-            await I_GeneralTransferManager.changeAllowAllWhitelistTransfers(false, {from: token_owner});
+        it("Should successfully burn tokens", async () => {
+            await I_GeneralTransferManager.changeAllowAllWhitelistTransfers(false, { from: token_owner });
             // Minting some tokens
-            await I_SecurityToken.mint(account_investor1, web3.utils.toWei("1000"), {from: token_owner});
+            await I_SecurityToken.mint(account_investor1, web3.utils.toWei("1000"), { from: token_owner });
             // Provide approval to trnafer the tokens to Module
-            await I_SecurityToken.approve(I_MockRedemptionManager.address, web3.utils.toWei("500"), {from: account_investor1});
+            await I_SecurityToken.approve(I_MockRedemptionManager.address, web3.utils.toWei("500"), { from: account_investor1 });
             // Allow all whitelist transfer
-            await I_GeneralTransferManager.changeAllowAllWhitelistTransfers(true, {from: token_owner});
+            await I_GeneralTransferManager.changeAllowAllWhitelistTransfers(true, { from: token_owner });
             // Transfer the tokens to module (Burn)
-            await I_MockRedemptionManager.transferToRedeem(web3.utils.toWei("500"), { from: account_investor1});
+            await I_MockRedemptionManager.transferToRedeem(web3.utils.toWei("500"), { from: account_investor1 });
             // Redeem tokens
-            let tx = await I_MockRedemptionManager.redeemTokenByOwner(web3.utils.toWei("250"), {from: account_investor1});
+            let tx = await I_MockRedemptionManager.redeemTokenByOwner(web3.utils.toWei("250"), { from: account_investor1 });
             assert.equal(tx.logs[0].args._investor, account_investor1, "Burn tokens of wrong owner");
-            assert.equal((tx.logs[0].args._value).dividedBy(new BN(10).pow(new BN(18))).toNumber(), 250);
+            assert.equal(tx.logs[0].args._value.dividedBy(new BN(10).pow(new BN(18))).toNumber(), 250);
         });
 
-        it("Should fail to burn the tokens because module get archived", async() => {
-            await I_SecurityToken.archiveModule(I_MockRedemptionManager.address, {from: token_owner});
-            await catchRevert(
-                I_MockRedemptionManager.redeemTokenByOwner(web3.utils.toWei("250"), {from: account_investor1})
-            );
-        })
+        it("Should fail to burn the tokens because module get archived", async () => {
+            await I_SecurityToken.archiveModule(I_MockRedemptionManager.address, { from: token_owner });
+            await catchRevert(I_MockRedemptionManager.redeemTokenByOwner(web3.utils.toWei("250"), { from: account_investor1 }));
+        });
 
-        it("Should successfully fail in calling the burn functions", async() => {
+        it("Should successfully fail in calling the burn functions", async () => {
             [I_MockRedemptionManagerFactory] = await deployMockWrongTypeRedemptionAndVerifyed(account_polymath, I_MRProxied, 0);
-            let tx = await I_SecurityToken.addModule(I_MockRedemptionManagerFactory.address, "", 0, 0, {from: token_owner });
+            let tx = await I_SecurityToken.addModule(I_MockRedemptionManagerFactory.address, "", 0, 0, { from: token_owner });
             I_MockRedemptionManager = MockRedemptionManager.at(tx.logs[2].args._module);
 
-             // adding the burn module into the GTM
-             tx = await I_GeneralTransferManager.modifyWhitelist(
+            // adding the burn module into the GTM
+            tx = await I_GeneralTransferManager.modifyWhitelist(
                 I_MockRedemptionManager.address,
                 latestTime(),
                 latestTime() + duration.seconds(2),
                 latestTime() + duration.days(50),
                 true,
                 {
-                from: account_delegate,
-                gas: 6000000
+                    from: account_delegate,
+                    gas: 6000000
                 }
             );
             assert.equal(tx.logs[0].args._investor, I_MockRedemptionManager.address, "Failed in adding the investor in whitelist");
             // Provide approval to trnafer the tokens to Module
-            await I_SecurityToken.approve(I_MockRedemptionManager.address, web3.utils.toWei("500"), {from: account_investor1});
+            await I_SecurityToken.approve(I_MockRedemptionManager.address, web3.utils.toWei("500"), { from: account_investor1 });
             // Transfer the tokens to module (Burn)
-            await I_MockRedemptionManager.transferToRedeem(web3.utils.toWei("500"), { from: account_investor1});
+            await I_MockRedemptionManager.transferToRedeem(web3.utils.toWei("500"), { from: account_investor1 });
 
             await catchRevert(
                 // Redeem tokens
-                I_MockRedemptionManager.redeemTokenByOwner(web3.utils.toWei("250"), {from: account_investor1})
+                I_MockRedemptionManager.redeemTokenByOwner(web3.utils.toWei("250"), { from: account_investor1 })
+            );
+        });
+    });
+
+    describe("Withdraw Poly", async () => {
+        it("Should successfully withdraw the poly -- failed because of zero address of token", async () => {
+            await catchRevert(
+                I_SecurityToken.withdrawERC20("0x00000000000000000000000000000000000000000", web3.utils.toWei("20000", "ether"), {
+                    from: account_temp
+                })
             );
         });
 
-    })
-
-    describe("Withdraw Poly", async () => {
-        it("Should successfully withdraw the poly -- failed because of zero address of token", async() => {
-            await catchRevert(I_SecurityToken.withdrawERC20("0x00000000000000000000000000000000000000000", web3.utils.toWei("20000", "ether"), { from: account_temp }));
-        })
-
         it("Should successfully withdraw the poly", async () => {
-            await catchRevert(I_SecurityToken.withdrawERC20(I_PolyToken.address, web3.utils.toWei("20000", "ether"), { from: account_temp }));
+            await catchRevert(
+                I_SecurityToken.withdrawERC20(I_PolyToken.address, web3.utils.toWei("20000", "ether"), { from: account_temp })
+            );
         });
 
         it("Should successfully withdraw the poly", async () => {
@@ -1161,5 +1154,4 @@ contract("SecurityToken", accounts => {
             );
         });
     });
-
 });

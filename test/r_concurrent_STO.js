@@ -7,8 +7,7 @@ import {
     deployDummySTOAndVerifyed,
     deployCappedSTOAndVerifyed,
     deployPresaleSTOAndVerified
-    } from "./helpers/createInstances";
-
+} from "./helpers/createInstances";
 
 // Import contract ABIs
 const CappedSTO = artifacts.require("./CappedSTO.sol");
@@ -18,7 +17,7 @@ const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 
 const Web3 = require("web3");
-
+let BN = web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
 contract("Concurrent STO", accounts => {
@@ -78,22 +77,22 @@ contract("Concurrent STO", accounts => {
         account_investor2 = accounts[4];
         account_investor3 = accounts[5];
 
-       // Step:1 Create the polymath ecosystem contract instances
-       let instances = await setUpPolymathNetwork(account_polymath, account_issuer);
+        // Step:1 Create the polymath ecosystem contract instances
+        let instances = await setUpPolymathNetwork(account_polymath, account_issuer);
 
-       [
-           I_PolymathRegistry,
-           I_PolyToken,
-           I_FeatureRegistry,
-           I_ModuleRegistry,
-           I_ModuleRegistryProxy,
-           I_MRProxied,
-           I_GeneralTransferManagerFactory,
-           I_STFactory,
-           I_SecurityTokenRegistry,
-           I_SecurityTokenRegistryProxy,
-           I_STRProxied
-       ] = instances;
+        [
+            I_PolymathRegistry,
+            I_PolyToken,
+            I_FeatureRegistry,
+            I_ModuleRegistry,
+            I_ModuleRegistryProxy,
+            I_MRProxied,
+            I_GeneralTransferManagerFactory,
+            I_STFactory,
+            I_SecurityTokenRegistry,
+            I_SecurityTokenRegistryProxy,
+            I_STRProxied
+        ] = instances;
 
         // STEP 2: Deploy the STO Factories
 
@@ -257,7 +256,9 @@ contract("Concurrent STO", accounts => {
                         await I_STO_Array[STOIndex].generateTokens(account_investor1, web3.utils.toWei("1000"), { from: account_issuer });
                         assert.equal(await I_STO_Array[STOIndex].investorCount.call(), 1);
                         assert.equal(
-                            (await I_STO_Array[STOIndex].investors.call(account_investor1)).dividedBy(new BN(10).pow(new BN(18))).toNumber(),
+                            (await I_STO_Array[STOIndex].investors.call(account_investor1))
+                                .dividedBy(new BN(10).pow(new BN(18)))
+                                .toNumber(),
                             1000
                         );
                         break;
@@ -270,7 +271,9 @@ contract("Concurrent STO", accounts => {
                         assert.equal(web3.utils.fromWei((await I_STO_Array[STOIndex].getRaised.call(1)).toString()), 0);
                         assert.equal(await I_STO_Array[STOIndex].investorCount.call(), 1);
                         assert.equal(
-                            (await I_STO_Array[STOIndex].investors.call(account_investor1)).dividedBy(new BN(10).pow(new BN(18))).toNumber(),
+                            (await I_STO_Array[STOIndex].investors.call(account_investor1))
+                                .dividedBy(new BN(10).pow(new BN(18)))
+                                .toNumber(),
                             1000
                         );
                         break;

@@ -11,7 +11,7 @@ const STFactory = artifacts.require("./STFactory.sol");
 const SecurityToken = artifacts.require("./SecurityToken.sol");
 
 const Web3 = require("web3");
-
+let BN = web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
 contract("SecurityTokenRegistryProxy", accounts => {
@@ -79,7 +79,7 @@ contract("SecurityTokenRegistryProxy", accounts => {
 
         await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistryProxy.address, { from: account_polymath });
         await I_MRProxied.updateFromRegistry({ from: account_polymath });
-       
+
         // Printing all the contract addresses
         console.log(`
          --------------------- Polymath Network Smart Contracts: ---------------------
@@ -257,12 +257,15 @@ contract("SecurityTokenRegistryProxy", accounts => {
             I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
         });
 
-        it("Should get the version", async() => {
+        it("Should get the version", async () => {
             assert.equal(await I_SecurityTokenRegistryProxy.version.call({ from: account_polymath_new }), "1.2.0");
         });
 
-        it("Should get the implementation address", async() => {
-            assert.equal(await I_SecurityTokenRegistryProxy.implementation.call({ from: account_polymath_new }), I_SecurityTokenRegistry.address);
-        })
+        it("Should get the implementation address", async () => {
+            assert.equal(
+                await I_SecurityTokenRegistryProxy.implementation.call({ from: account_polymath_new }),
+                I_SecurityTokenRegistry.address
+            );
+        });
     });
 });

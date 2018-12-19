@@ -11,7 +11,7 @@ const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager");
 
 const Web3 = require("web3");
-
+let BN = web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
 contract("Issuance", accounts => {
@@ -132,9 +132,7 @@ contract("Issuance", accounts => {
     });
 
     describe("Launch SecurityToken & STO on the behalf of the issuer", async () => {
-
         describe("Create securityToken for the issuer by the polymath", async () => {
-
             it("POLYMATH: Should register the ticker before the generation of the security token", async () => {
                 await I_PolyToken.getTokens(10000 * Math.pow(10, 18), account_polymath);
                 await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: account_polymath });
@@ -170,11 +168,7 @@ contract("Issuance", accounts => {
 
                 I_CappedSTOFactory = await CappedSTOFactory.new(cappedSTOSetupCost, 0, 0, { from: account_polymath });
 
-                assert.notEqual(
-                    I_CappedSTOFactory.address.valueOf(),
-                    address_zero,
-                    "CappedSTOFactory contract was not deployed"
-                );
+                assert.notEqual(I_CappedSTOFactory.address.valueOf(), address_zero, "CappedSTOFactory contract was not deployed");
 
                 // (C) : Register the STOFactory
                 await I_MRProxied.registerModule(I_CappedSTOFactory.address, { from: account_polymath });
@@ -223,17 +217,21 @@ contract("Issuance", accounts => {
                 assert.equal(tx.logs[0].args._investor, account_investor1, "Failed in adding the investor in whitelist");
             });
 
-            it("Should add the delegate with permission", async() => {
-                 //First attach a permission manager to the token
-                 await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "", 0, 0, {from: account_polymath});
-                 let moduleData = (await I_SecurityToken.getModulesByType(permissionManagerKey))[0];
-                 I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData);
-                 // Add permission to the deletgate (A regesteration process)
-                 await I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: account_polymath});
-                 // Providing the permission to the delegate
-                 await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, TM_Perm, true, { from: account_polymath });
+            it("Should add the delegate with permission", async () => {
+                //First attach a permission manager to the token
+                await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "", 0, 0, { from: account_polymath });
+                let moduleData = (await I_SecurityToken.getModulesByType(permissionManagerKey))[0];
+                I_GeneralPermissionManager = GeneralPermissionManager.at(moduleData);
+                // Add permission to the deletgate (A regesteration process)
+                await I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: account_polymath });
+                // Providing the permission to the delegate
+                await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, TM_Perm, true, {
+                    from: account_polymath
+                });
 
-                 assert.isTrue(await I_GeneralPermissionManager.checkPermission(account_delegate, I_GeneralTransferManager.address, TM_Perm));
+                assert.isTrue(
+                    await I_GeneralPermissionManager.checkPermission(account_delegate, I_GeneralTransferManager.address, TM_Perm)
+                );
             });
 
             it("POLYMATH: Should change the ownership of the SecurityToken", async () => {

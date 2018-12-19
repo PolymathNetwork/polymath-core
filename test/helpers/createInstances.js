@@ -15,7 +15,7 @@ const EtherDividendCheckpointFactory = artifacts.require("./EtherDividendCheckpo
 const ManualApprovalTransferManagerFactory = artifacts.require("./ManualApprovalTransferManagerFactory.sol");
 const TrackedRedemptionFactory = artifacts.require("./TrackedRedemptionFactory.sol");
 const PercentageTransferManagerFactory = artifacts.require("./PercentageTransferManagerFactory.sol");
-const ScheduledCheckpointFactory = artifacts.require('./ScheduledCheckpointFactory.sol');
+const ScheduledCheckpointFactory = artifacts.require("./ScheduledCheckpointFactory.sol");
 const USDTieredSTOFactory = artifacts.require("./USDTieredSTOFactory.sol");
 const USDTieredSTO = artifacts.require("./USDTieredSTO");
 const ManualApprovalTransferManager = artifacts.require("./ManualApprovalTransferManager");
@@ -103,7 +103,6 @@ export async function setUpPolymathNetwork(account_polymath, token_owner) {
     return mergeReturn(tempArray);
 }
 
-
 async function deployPolyRegistryAndPolyToken(account_polymath, token_owner) {
     // Step 0: Deploy the PolymathRegistry
     I_PolymathRegistry = await PolymathRegistry.new({ from: account_polymath });
@@ -137,7 +136,11 @@ async function deployModuleRegistry(account_polymath) {
 }
 
 async function deployGTMLogic(account_polymath) {
-    I_GeneralTransferManagerLogic = await GeneralTransferManager.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: account_polymath });
+    I_GeneralTransferManagerLogic = await GeneralTransferManager.new(
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        { from: account_polymath }
+    );
 
     assert.notEqual(
         I_GeneralTransferManagerLogic.address.valueOf(),
@@ -149,7 +152,9 @@ async function deployGTMLogic(account_polymath) {
 }
 
 async function deployGTM(account_polymath) {
-    I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(0, 0, 0, I_GeneralTransferManagerLogic.address, { from: account_polymath });
+    I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(0, 0, 0, I_GeneralTransferManagerLogic.address, {
+        from: account_polymath
+    });
 
     assert.notEqual(
         I_GeneralTransferManagerFactory.address.valueOf(),
@@ -213,7 +218,9 @@ async function registerAndVerifyByMR(factoryAdrress, owner, mr) {
 /// Deploy the TransferManagers
 
 export async function deployGTMAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
-    I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(setupCost, 0, 0, I_GeneralTransferManagerLogic.address, { from: accountPolymath });
+    I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(setupCost, 0, 0, I_GeneralTransferManagerLogic.address, {
+        from: accountPolymath
+    });
 
     assert.notEqual(
         I_GeneralPermissionManagerFactory.address.valueOf(),
@@ -264,7 +271,9 @@ export async function deployPercentageTMAndVerified(accountPolymath, MRProxyInst
 }
 
 export async function deployLockupVolumeRTMAndVerified(accountPolymath, MRProxyInstance, setupCost) {
-    I_VolumeRestrictionTransferManagerFactory = await VolumeRestrictionTransferManagerFactory.new(setupCost, 0, 0, { from: accountPolymath });
+    I_VolumeRestrictionTransferManagerFactory = await VolumeRestrictionTransferManagerFactory.new(setupCost, 0, 0, {
+        from: accountPolymath
+    });
     assert.notEqual(
         I_VolumeRestrictionTransferManagerFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",
@@ -303,7 +312,6 @@ export async function deployGPMAndVerifyed(accountPolymath, MRProxyInstance, set
     return new Array(I_GeneralPermissionManagerFactory);
 }
 
-
 /// Deploy the STO Modules
 
 export async function deployDummySTOAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
@@ -328,7 +336,6 @@ export async function deployCappedSTOAndVerifyed(accountPolymath, MRProxyInstanc
 
     await registerAndVerifyByMR(I_CappedSTOFactory.address, accountPolymath, MRProxyInstance);
     return new Array(I_CappedSTOFactory);
-
 }
 
 export async function deployPresaleSTOAndVerified(accountPolymath, MRProxyInstance, setupCost) {
@@ -345,7 +352,11 @@ export async function deployPresaleSTOAndVerified(accountPolymath, MRProxyInstan
 }
 
 export async function deployUSDTieredSTOAndVerified(accountPolymath, MRProxyInstance, setupCost) {
-    I_USDTieredSTOLogic = await USDTieredSTO.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
+    I_USDTieredSTOLogic = await USDTieredSTO.new(
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        { from: accountPolymath }
+    );
 
     I_USDTieredSTOFactory = await USDTieredSTOFactory.new(setupCost, 0, 0, I_USDTieredSTOLogic.address, { from: accountPolymath });
 
@@ -359,12 +370,17 @@ export async function deployUSDTieredSTOAndVerified(accountPolymath, MRProxyInst
     return new Array(I_USDTieredSTOFactory);
 }
 
-
 /// Deploy the Dividend Modules
 
 export async function deployERC20DividendAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
-    I_ERC20DividendCheckpointLogic = await ERC20DividendCheckpoint.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
-    I_ERC20DividendCheckpointFactory = await ERC20DividendCheckpointFactory.new(setupCost, 0, 0, I_ERC20DividendCheckpointLogic.address, { from: accountPolymath });
+    I_ERC20DividendCheckpointLogic = await ERC20DividendCheckpoint.new(
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        { from: accountPolymath }
+    );
+    I_ERC20DividendCheckpointFactory = await ERC20DividendCheckpointFactory.new(setupCost, 0, 0, I_ERC20DividendCheckpointLogic.address, {
+        from: accountPolymath
+    });
 
     assert.notEqual(
         I_ERC20DividendCheckpointFactory.address.valueOf(),
@@ -376,8 +392,14 @@ export async function deployERC20DividendAndVerifyed(accountPolymath, MRProxyIns
 }
 
 export async function deployEtherDividendAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
-    I_EtherDividendCheckpointLogic = await EtherDividendCheckpoint.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
-    I_EtherDividendCheckpointFactory = await EtherDividendCheckpointFactory.new(setupCost, 0, 0, I_EtherDividendCheckpointLogic.address, { from: accountPolymath });
+    I_EtherDividendCheckpointLogic = await EtherDividendCheckpoint.new(
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        { from: accountPolymath }
+    );
+    I_EtherDividendCheckpointFactory = await EtherDividendCheckpointFactory.new(setupCost, 0, 0, I_EtherDividendCheckpointLogic.address, {
+        from: accountPolymath
+    });
 
     assert.notEqual(
         I_EtherDividendCheckpointFactory.address.valueOf(),
@@ -388,7 +410,6 @@ export async function deployEtherDividendAndVerifyed(accountPolymath, MRProxyIns
     await registerAndVerifyByMR(I_EtherDividendCheckpointFactory.address, accountPolymath, MRProxyInstance);
     return new Array(I_EtherDividendCheckpointFactory);
 }
-
 
 /// Deploy the Burn Module
 
@@ -404,7 +425,6 @@ export async function deployRedemptionAndVerifyed(accountPolymath, MRProxyInstan
     await registerAndVerifyByMR(I_TrackedRedemptionFactory.address, accountPolymath, MRProxyInstance);
     return new Array(I_TrackedRedemptionFactory);
 }
-
 
 export async function deployMockRedemptionAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
     I_MockBurnFactory = await MockBurnFactory.new(setupCost, 0, 0, { from: accountPolymath });
@@ -431,8 +451,6 @@ export async function deployMockWrongTypeRedemptionAndVerifyed(accountPolymath, 
     await registerAndVerifyByMR(I_MockWrongTypeBurnFactory.address, accountPolymath, MRProxyInstance);
     return new Array(I_MockWrongTypeBurnFactory);
 }
-
-
 
 /// Helper function
 function mergeReturn(returnData) {

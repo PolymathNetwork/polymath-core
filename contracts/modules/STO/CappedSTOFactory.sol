@@ -1,6 +1,5 @@
 pragma solidity ^0.4.24;
 
-import "./CappedSTO.sol";
 import "../ModuleFactory.sol";
 import "../../libraries/Util.sol";
 import "../../proxy/CappedSTOProxy.sol";

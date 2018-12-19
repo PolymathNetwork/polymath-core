@@ -1,6 +1,5 @@
 pragma solidity ^0.4.24;
 
-import "./PreSaleSTO.sol";
 import "../ModuleFactory.sol";
 import "../../libraries/Util.sol";
 import "../../proxy/PreSaleSTOProxy.sol";

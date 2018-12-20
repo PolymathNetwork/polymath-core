@@ -25,8 +25,8 @@ contract("LockupVolumeRestrictionTransferManager", accounts => {
     let account_investor4;
 
     // investor Details
-    let fromTime = latestTime();
-    let toTime = latestTime();
+    let fromTime = await latestTime();
+    let toTime = await latestTime();
     let expiryTime = toTime + duration.days(15);
 
     let message = "Transaction Should Fail!";
@@ -131,7 +131,7 @@ contract("LockupVolumeRestrictionTransferManager", accounts => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let _blockNo = latestBlock();
+            
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
@@ -158,9 +158,9 @@ contract("LockupVolumeRestrictionTransferManager", accounts => {
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor1,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(10),
+                await latestTime(),
+                await latestTime(),
+                await latestTime() + duration.days(10),
                 true,
                 {
                     from: account_issuer
@@ -187,9 +187,9 @@ contract("LockupVolumeRestrictionTransferManager", accounts => {
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor2,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(10),
+                await latestTime(),
+                await latestTime(),
+                await latestTime() + duration.days(10),
                 true,
                 {
                     from: account_issuer
@@ -255,9 +255,9 @@ contract("LockupVolumeRestrictionTransferManager", accounts => {
         it("Add a new token holder", async () => {
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor3,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(10),
+                await latestTime(),
+                await latestTime(),
+                await latestTime() + duration.days(10),
                 true,
                 {
                     from: account_issuer
@@ -583,7 +583,7 @@ contract("LockupVolumeRestrictionTransferManager", accounts => {
             lockUpsLength = await I_VolumeRestrictionTransferManager.getLockUpsLength(account_investor2);
             assert.equal(lockUpsLength, 0);
 
-            let now = latestTime();
+            let now = await latestTime();
 
             // balance here should be 10000000000000000000
             let balance = await I_SecurityToken.balanceOf(account_investor2);
@@ -601,7 +601,7 @@ contract("LockupVolumeRestrictionTransferManager", accounts => {
 
         it("Should be possible to edit a lockup with a specific start time in the future", async () => {
             // edit the lockup
-            let now = latestTime();
+            let now = await latestTime();
 
             // should be 10000000000000000000
             let balance = await I_SecurityToken.balanceOf(account_investor2);

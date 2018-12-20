@@ -30,8 +30,8 @@ contract("SecurityTokenRegistry", accounts => {
 
     let balanceOfReceiver;
     // investor Details
-    let fromTime = latestTime();
-    let toTime = latestTime() + duration.days(100);
+    let fromTime = await latestTime();
+    let toTime = await latestTime() + duration.days(100);
 
     let ID_snap;
     const message = "Transaction Should Fail!!";
@@ -466,7 +466,7 @@ contract("SecurityTokenRegistry", accounts => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-            let _blockNo = latestBlock();
+            
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
@@ -533,7 +533,7 @@ contract("SecurityTokenRegistry", accounts => {
 
         it("Should generate the new security token with version 2", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let _blockNo = latestBlock();
+            
             let tx = await I_STRProxied.generateSecurityToken(name2, symbol2, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
@@ -587,7 +587,7 @@ contract("SecurityTokenRegistry", accounts => {
     describe("Generate custom tokens", async () => {
         it("Should fail if msg.sender is not polymath", async () => {
             catchRevert(
-                I_STRProxied.modifySecurityToken("LOGAN", "LOG", account_temp, dummy_token, "I am custom ST", latestTime(), {
+                I_STRProxied.modifySecurityToken("LOGAN", "LOG", account_temp, dummy_token, "I am custom ST", await latestTime(), {
                     from: account_delegate
                 }),
                 "tx revert -> msg.sender is not polymath account"
@@ -596,7 +596,7 @@ contract("SecurityTokenRegistry", accounts => {
 
         it("Should fail to genrate the custom security token -- ticker length is greater than 10 chars", async () => {
             catchRevert(
-                I_STRProxied.modifySecurityToken("LOGAN", "LOGLOGLOGLOG", account_temp, dummy_token, "I am custom ST", latestTime(), {
+                I_STRProxied.modifySecurityToken("LOGAN", "LOGLOGLOGLOG", account_temp, dummy_token, "I am custom ST", await latestTime(), {
                     from: account_polymath
                 }),
                 "tx revert -> msg.sender is not polymath account"
@@ -605,7 +605,7 @@ contract("SecurityTokenRegistry", accounts => {
 
         it("Should fail to generate the custom security token -- name should not be 0 length ", async () => {
             catchRevert(
-                I_STRProxied.modifySecurityToken("", "LOG", account_temp, dummy_token, "I am custom ST", latestTime(), {
+                I_STRProxied.modifySecurityToken("", "LOG", account_temp, dummy_token, "I am custom ST", await latestTime(), {
                     from: account_polymath
                 }),
                 "tx revert -> name should not be 0 length"
@@ -614,7 +614,7 @@ contract("SecurityTokenRegistry", accounts => {
 
         it("Should fail if ST address is 0 address", async () => {
             catchRevert(
-                I_STRProxied.modifySecurityToken("LOGAN", "LOG", account_temp, new BN(0), "I am custom ST", latestTime(), {
+                I_STRProxied.modifySecurityToken("LOGAN", "LOG", account_temp, new BN(0), "I am custom ST", await latestTime(), {
                     from: account_polymath
                 }),
                 "tx revert -> Security token address is 0"
@@ -623,7 +623,7 @@ contract("SecurityTokenRegistry", accounts => {
 
         it("Should fail if symbol length is 0", async () => {
             catchRevert(
-                I_STRProxied.modifySecurityToken("", "", account_temp, dummy_token, "I am custom ST", latestTime(), {
+                I_STRProxied.modifySecurityToken("", "", account_temp, dummy_token, "I am custom ST", await latestTime(), {
                     from: account_polymath
                 }),
                 "tx revert -> zero length of the symbol is not allowed"
@@ -647,7 +647,7 @@ contract("SecurityTokenRegistry", accounts => {
             tickersListArray = await I_STRProxied.getTickersByOwner.call(account_temp);
             console.log(tickersListArray);
             // Generating the ST
-            let tx = await I_STRProxied.modifySecurityToken("LOGAN", "LOG", account_temp, dummy_token, "I am custom ST", latestTime(), {
+            let tx = await I_STRProxied.modifySecurityToken("LOGAN", "LOG", account_temp, dummy_token, "I am custom ST", await latestTime(), {
                 from: account_polymath
             });
             tickersListArray = await I_STRProxied.getTickersByOwner.call(account_temp);
@@ -666,10 +666,10 @@ contract("SecurityTokenRegistry", accounts => {
         it("Should successfully generate the custom token", async () => {
             // Fulfilling the TickerStatus.NN condition
             //
-            // await catchRevert(I_STRProxied.modifySecurityToken("LOGAN2", "LOG2", account_temp, dummy_token, "I am custom ST", latestTime(), {from: account_polymath}));
-            // await I_STRProxied.modifyTicker(account_temp, "LOG2", "LOGAN2", latestTime(), latestTime() + duration.days(10), false, {from: account_polymath});
+            // await catchRevert(I_STRProxied.modifySecurityToken("LOGAN2", "LOG2", account_temp, dummy_token, "I am custom ST", await latestTime(), {from: account_polymath}));
+            // await I_STRProxied.modifyTicker(account_temp, "LOG2", "LOGAN2", await latestTime(), await latestTime() + duration.days(10), false, {from: account_polymath});
             // await increaseTime(duration.days(1));
-            let tx = await I_STRProxied.modifySecurityToken("LOGAN2", "LOG2", account_temp, dummy_token, "I am custom ST", latestTime(), {
+            let tx = await I_STRProxied.modifySecurityToken("LOGAN2", "LOG2", account_temp, dummy_token, "I am custom ST", await latestTime(), {
                 from: account_polymath
             });
             assert.equal(tx.logs[1].args._ticker, "LOG2", "Symbol should match with the registered symbol");
@@ -691,8 +691,8 @@ contract("SecurityTokenRegistry", accounts => {
                 account_temp,
                 "LOG2",
                 "LOGAN2",
-                latestTime(),
-                latestTime() + duration.days(60),
+                await latestTime(),
+                await latestTime() + duration.days(60),
                 false,
                 { from: account_polymath }
             );
@@ -703,7 +703,7 @@ contract("SecurityTokenRegistry", accounts => {
     describe("Test case for modifyTicker", async () => {
         it("Should add the custom ticker --failed because of bad owner", async () => {
             catchRevert(
-                I_STRProxied.modifyTicker(token_owner, "ETH", "Ether", latestTime(), latestTime() + duration.days(10), false, {
+                I_STRProxied.modifyTicker(token_owner, "ETH", "Ether", await latestTime(), await latestTime() + duration.days(10), false, {
                     from: account_temp
                 }),
                 "tx revert -> failed beacause of bad owner0"
@@ -712,7 +712,7 @@ contract("SecurityTokenRegistry", accounts => {
 
         it("Should add the custom ticker --fail ticker length should not be 0", async () => {
             catchRevert(
-                I_STRProxied.modifyTicker(token_owner, "", "Ether", latestTime(), latestTime() + duration.days(10), false, {
+                I_STRProxied.modifyTicker(token_owner, "", "Ether", await latestTime(), await latestTime() + duration.days(10), false, {
                     from: account_polymath
                 }),
                 "tx revert -> failed beacause ticker length should not be 0"
@@ -721,7 +721,7 @@ contract("SecurityTokenRegistry", accounts => {
 
         it("Should add the custom ticker --failed because time should not be 0", async () => {
             catchRevert(
-                I_STRProxied.modifyTicker(token_owner, "ETH", "Ether", new BN(0), latestTime() + duration.days(10), false, {
+                I_STRProxied.modifyTicker(token_owner, "ETH", "Ether", new BN(0), await latestTime() + duration.days(10), false, {
                     from: account_polymath
                 }),
                 "tx revert -> failed because time should not be 0"
@@ -730,7 +730,7 @@ contract("SecurityTokenRegistry", accounts => {
 
         it("Should add the custom ticker --failed because registeration date is greater than the expiryDate", async () => {
             catchRevert(
-                I_STRProxied.modifyTicker(token_owner, "ETH", "Ether", latestTime(), latestTime() - duration.minutes(10), false, {
+                I_STRProxied.modifyTicker(token_owner, "ETH", "Ether", await latestTime(), await latestTime() - duration.minutes(10), false, {
                     from: account_polymath
                 }),
                 "tx revert -> failed because registeration date is greater than the expiryDate"
@@ -743,8 +743,8 @@ contract("SecurityTokenRegistry", accounts => {
                     "0x000000000000000000000000000000000000000000",
                     "ETH",
                     "Ether",
-                    latestTime(),
-                    latestTime() + duration.minutes(10),
+                    await latestTime(),
+                    await latestTime() + duration.minutes(10),
                     false,
                     { from: account_polymath }
                 ),
@@ -757,8 +757,8 @@ contract("SecurityTokenRegistry", accounts => {
                 account_temp,
                 "ETH",
                 "Ether",
-                latestTime(),
-                latestTime() + duration.minutes(10),
+                await latestTime(),
+                await latestTime() + duration.minutes(10),
                 false,
                 { from: account_polymath }
             );
@@ -771,8 +771,8 @@ contract("SecurityTokenRegistry", accounts => {
                 token_owner,
                 "ETH",
                 "Ether",
-                latestTime(),
-                latestTime() + duration.minutes(10),
+                await latestTime(),
+                await latestTime() + duration.minutes(10),
                 false,
                 { from: account_polymath }
             );
@@ -995,8 +995,8 @@ contract("SecurityTokenRegistry", accounts => {
                 account_temp,
                 "TOK1",
                 "TOKEN 1",
-                latestTime(),
-                latestTime() + duration.minutes(10),
+                await latestTime(),
+                await latestTime() + duration.minutes(10),
                 false,
                 { from: account_polymath }
             );
@@ -1011,8 +1011,8 @@ contract("SecurityTokenRegistry", accounts => {
                 account_temp,
                 "TOK3",
                 "TOKEN 3",
-                latestTime(),
-                latestTime() + duration.minutes(10),
+                await latestTime(),
+                await latestTime() + duration.minutes(10),
                 false,
                 { from: account_polymath }
             );

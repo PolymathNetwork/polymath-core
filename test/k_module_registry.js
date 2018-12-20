@@ -33,8 +33,8 @@ contract("ModuleRegistry", accounts => {
 
     let balanceOfReceiver;
     // investor Details
-    let fromTime = latestTime();
-    let toTime = latestTime() + duration.days(15);
+    let fromTime = await latestTime();
+    let toTime = await latestTime() + duration.days(15);
 
     let ID_snap;
     let message = "Transaction Should fail!";
@@ -299,7 +299,7 @@ contract("ModuleRegistry", accounts => {
             });
 
             it("Should fail in adding module. Because module is un-verified", async () => {
-                startTime = latestTime() + duration.seconds(5000);
+                startTime = await latestTime() + duration.seconds(5000);
                 endTime = startTime + duration.days(30);
                 let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
 
@@ -329,7 +329,7 @@ contract("ModuleRegistry", accounts => {
             });
 
             it("Should successfully add module because custom modules switched on", async () => {
-                startTime = latestTime() + duration.seconds(5000);
+                startTime = await latestTime() + duration.seconds(5000);
                 endTime = startTime + duration.days(30);
                 let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
                 let tx = await I_MRProxied.registerModule(I_CappedSTOFactory2.address, { from: token_owner });
@@ -347,7 +347,7 @@ contract("ModuleRegistry", accounts => {
 
             it("Should successfully add module when custom modules switched on -- fail because factory owner is different", async () => {
                 await I_MRProxied.registerModule(I_CappedSTOFactory3.address, { from: account_temp });
-                startTime = latestTime() + duration.seconds(5000);
+                startTime = await latestTime() + duration.seconds(5000);
                 endTime = startTime + duration.days(30);
                 let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
                 catchRevert(I_SecurityToken.addModule(I_CappedSTOFactory3.address, bytesSTO, new BN(0), new BN(0), { from: token_owner }));
@@ -375,7 +375,7 @@ contract("ModuleRegistry", accounts => {
                 assert.equal(_lstVersion[1], 1);
                 let bytesData = encodeModuleCall(
                     ["uint256", "uint256", "uint256", "string"],
-                    [latestTime(), latestTime() + duration.days(1), cap, "Test STO"]
+                    [await latestTime(), await latestTime() + duration.days(1), cap, "Test STO"]
                 );
 
                 await catchRevert(I_SecurityToken.addModule(I_TestSTOFactory.address, bytesData, new BN(0), new BN(0), { from: token_owner }));
@@ -400,7 +400,7 @@ contract("ModuleRegistry", accounts => {
 
                 let bytesData = encodeModuleCall(
                     ["uint256", "uint256", "uint256", "string"],
-                    [latestTime(), latestTime() + duration.days(1), cap, "Test STO"]
+                    [await latestTime(), await latestTime() + duration.days(1), cap, "Test STO"]
                 );
 
                 await catchRevert(I_SecurityToken2.addModule(I_TestSTOFactory.address, bytesData, new BN(0), new BN(0), { from: token_owner }));

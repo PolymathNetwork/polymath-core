@@ -239,7 +239,7 @@ contract("USDTieredSTO Sim", accounts => {
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.getTokens(REGFEE, ISSUER);
             await I_PolyToken.approve(I_STRProxied.address, REGFEE, { from: ISSUER });
-            let _blockNo = latestBlock();
+            
             let tx = await I_STRProxied.generateSecurityToken(NAME, SYMBOL, TOKENDETAILS, true, { from: ISSUER });
             assert.equal(tx.logs[2].args._ticker, SYMBOL, "SecurityToken doesn't get deployed");
 
@@ -260,7 +260,7 @@ contract("USDTieredSTO Sim", accounts => {
         it("Should successfully attach the first STO module to the security token", async () => {
             let stoId = 0;
 
-            _startTime.push(latestTime() + duration.days(2));
+            _startTime.push(await latestTime() + duration.days(2));
             _endTime.push(_startTime[stoId] + duration.days(100));
             _ratePerTier.push([BN(0.05 * 10 ** 18), BN(0.13 * 10 ** 18), BN(0.17 * 10 ** 18)]); // [ 0.05 USD/Token, 0.10 USD/Token, 0.15 USD/Token ]
             _ratePerTierDiscountPoly.push([BN(0.05 * 10 ** 18), BN(0.08 * 10 ** 18), BN(0.13 * 10 ** 18)]); // [ 0.05 USD/Token, 0.08 USD/Token, 0.13 USD/Token ]
@@ -350,8 +350,8 @@ contract("USDTieredSTO Sim", accounts => {
             await increaseTime(duration.days(3));
 
             // Whitelist
-            let fromTime = latestTime() + duration.days(15);
-            let toTime = latestTime() + duration.days(15);
+            let fromTime = await latestTime() + duration.days(15);
+            let toTime = await latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(100);
             let canBuyFromSTO = true;
 

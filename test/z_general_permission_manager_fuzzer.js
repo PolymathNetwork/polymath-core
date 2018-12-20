@@ -39,8 +39,8 @@ contract("GeneralPermissionManager Fuzz", accounts => {
     let account_delegate;
     let account_delegate2;
     // investor Details
-    let fromTime = latestTime();
-    let toTime = latestTime();
+    let fromTime = await latestTime();
+    let toTime = await latestTime();
     let expiryTime = toTime + duration.days(15);
 
     let message = "Transaction Should Fail!";
@@ -179,7 +179,7 @@ contract("GeneralPermissionManager Fuzz", accounts => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let _blockNo = latestBlock();
+            
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
@@ -271,8 +271,8 @@ contract("GeneralPermissionManager Fuzz", accounts => {
 
                 // assign a random perm
                 let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
-                let fromTime = latestTime();
-                let toTime = latestTime() + duration.days(20);
+                let fromTime = await latestTime();
+                let toTime = await latestTime() + duration.days(20);
                 let expiryTime = toTime + duration.days(10);
 
                 await I_GeneralPermissionManager.changePermission(accounts[j], I_GeneralTransferManager.address, randomPerms, true, {
@@ -668,7 +668,7 @@ contract("GeneralPermissionManager Fuzz", accounts => {
                         account_investor1,
                         account_investor4,
                         web3.utils.toWei("2", "ether"),
-                        latestTime() + duration.days(1),
+                        await latestTime() + duration.days(1),
                         { from: accounts[j] }
                     );
 
@@ -689,7 +689,7 @@ contract("GeneralPermissionManager Fuzz", accounts => {
                             account_investor1,
                             account_investor4,
                             web3.utils.toWei("2", "ether"),
-                            latestTime() + duration.days(1),
+                            await latestTime() + duration.days(1),
                             { from: accounts[j] }
                         )
                     );
@@ -698,7 +698,7 @@ contract("GeneralPermissionManager Fuzz", accounts => {
                         account_investor1,
                         account_investor4,
                         web3.utils.toWei("2", "ether"),
-                        latestTime() + duration.days(1),
+                        await latestTime() + duration.days(1),
                         { from: token_owner }
                     );
 
@@ -717,7 +717,7 @@ contract("GeneralPermissionManager Fuzz", accounts => {
 
         it("should pass fuzz test for addManualBlocking and revokeManualBlocking with perm TRANSFER_APPROVAL", async () => {
             console.log("1");
-            await I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, latestTime() + duration.days(1), {
+            await I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, await latestTime() + duration.days(1), {
                 from: token_owner
             });
             console.log("2");
@@ -766,7 +766,7 @@ contract("GeneralPermissionManager Fuzz", accounts => {
                     await I_ManualApprovalTransferManager.addManualBlocking(
                         account_investor1,
                         account_investor2,
-                        latestTime() + duration.days(1),
+                        await latestTime() + duration.days(1),
                         {
                             from: accounts[j]
                         }
@@ -782,7 +782,7 @@ contract("GeneralPermissionManager Fuzz", accounts => {
                         I_ManualApprovalTransferManager.addManualBlocking(
                             account_investor1,
                             account_investor2,
-                            latestTime() + duration.days(1),
+                            await latestTime() + duration.days(1),
                             {
                                 from: accounts[j]
                             }
@@ -792,7 +792,7 @@ contract("GeneralPermissionManager Fuzz", accounts => {
                     await I_ManualApprovalTransferManager.addManualBlocking(
                         account_investor1,
                         account_investor2,
-                        latestTime() + duration.days(1),
+                        await latestTime() + duration.days(1),
                         {
                             from: token_owner
                         }

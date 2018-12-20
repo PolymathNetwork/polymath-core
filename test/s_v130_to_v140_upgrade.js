@@ -321,7 +321,7 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
     describe("Polymath network status post migration", async () => {
         // Launch STO for TOK1
         it("Should successfully launch USDTieredSTO for first security token", async () => {
-            let _startTime = latestTime() + duration.days(1);
+            let _startTime = await latestTime() + duration.days(1);
             let _endTime = _startTime + duration.days(180);
             let _ratePerTier = [BN(0.1).mul(10 ** 18), BN(0.15).mul(10 ** 18), BN(0.2).mul(10 ** 18)];
             let _ratePerTierDiscountPoly = [BN(0), BN(0), BN(0)];
@@ -424,7 +424,7 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
 
         // Launch NewCappedSTO for TOK2
         it("Should successfully launch CappedSTO for third security token", async () => {
-            let startTime = latestTime() + duration.days(1);
+            let startTime = await latestTime() + duration.days(1);
             let endTime = startTime + duration.days(30);
             let cap = web3.utils.toWei("500000");
             let rate = 1000;

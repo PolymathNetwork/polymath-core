@@ -26,8 +26,8 @@ contract("TrackedRedemption", accounts => {
     let account_temp;
 
     // investor Details
-    let fromTime = latestTime();
-    let toTime = latestTime();
+    let fromTime = await latestTime();
+    let toTime = await latestTime();
     let expiryTime = toTime + duration.days(15);
 
     let message = "Transaction Should Fail!";
@@ -134,7 +134,7 @@ contract("TrackedRedemption", accounts => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let _blockNo = latestBlock();
+            
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
@@ -188,9 +188,9 @@ contract("TrackedRedemption", accounts => {
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor1,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(30),
+                await latestTime(),
+                await latestTime(),
+                await latestTime() + duration.days(30),
                 true,
                 {
                     from: account_issuer,
@@ -218,9 +218,9 @@ contract("TrackedRedemption", accounts => {
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor2,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(30),
+                await latestTime(),
+                await latestTime(),
+                await latestTime() + duration.days(30),
                 true,
                 {
                     from: account_issuer,

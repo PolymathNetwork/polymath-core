@@ -28,8 +28,8 @@ contract("GeneralPermissionManager", accounts => {
     let account_delegate2;
     let account_delegate3;
     // investor Details
-    let fromTime = latestTime();
-    let toTime = latestTime();
+    let fromTime = await latestTime();
+    let toTime = await latestTime();
     let expiryTime = toTime + duration.days(15);
 
     let message = "Transaction Should Fail!";
@@ -133,7 +133,7 @@ contract("GeneralPermissionManager", accounts => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let _blockNo = latestBlock();
+            
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token

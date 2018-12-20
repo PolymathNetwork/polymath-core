@@ -25,8 +25,8 @@ contract("CountTransferManager", accounts => {
     let account_investor4;
 
     // investor Details
-    let fromTime = latestTime();
-    let toTime = latestTime();
+    let fromTime = await latestTime();
+    let toTime = await latestTime();
     let expiryTime = toTime + duration.days(15);
 
     let message = "Transaction Should Fail!";
@@ -136,7 +136,7 @@ contract("CountTransferManager", accounts => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let _blockNo = latestBlock();
+            
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
             // Verify the successful generation of the security token
             assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
@@ -202,9 +202,9 @@ contract("CountTransferManager", accounts => {
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor1,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(10),
+                await latestTime(),
+                await latestTime(),
+                await latestTime() + duration.days(10),
                 true,
                 {
                     from: account_issuer,
@@ -232,9 +232,9 @@ contract("CountTransferManager", accounts => {
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor2,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(10),
+                await latestTime(),
+                await latestTime(),
+                await latestTime() + duration.days(10),
                 true,
                 {
                     from: account_issuer,
@@ -259,9 +259,9 @@ contract("CountTransferManager", accounts => {
             let snapId = await takeSnapshot();
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor3,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(10),
+                await latestTime(),
+                await latestTime(),
+                await latestTime() + duration.days(10),
                 true,
                 {
                     from: account_issuer,
@@ -284,9 +284,9 @@ contract("CountTransferManager", accounts => {
             // Add the Investor in to the whitelist
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor3,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(10),
+                await latestTime(),
+                await latestTime(),
+                await latestTime() + duration.days(10),
                 true,
                 {
                     from: account_issuer,
@@ -360,7 +360,7 @@ contract("CountTransferManager", accounts => {
                 let tx = await I_STRProxied.registerTicker(token_owner, symbol2, contact, { from: token_owner });
 
                 await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-                let _blockNo = latestBlock();
+                
                 let tx2 = await I_STRProxied.generateSecurityToken(name, symbol2, tokenDetails, false, { from: token_owner });
 
                 I_SecurityToken2 = await SecurityToken.at(tx2.logs[2].args._securityTokenAddress);
@@ -372,9 +372,9 @@ contract("CountTransferManager", accounts => {
             it("add 3 holders to the token", async () => {
                 await I_GeneralTransferManager2.modifyWhitelist(
                     account_investor1,
-                    latestTime(),
-                    latestTime(),
-                    latestTime() + duration.days(10),
+                    await latestTime(),
+                    await latestTime(),
+                    await latestTime() + duration.days(10),
                     true,
                     {
                         from: account_issuer,
@@ -384,9 +384,9 @@ contract("CountTransferManager", accounts => {
 
                 await I_GeneralTransferManager2.modifyWhitelist(
                     account_investor2,
-                    latestTime(),
-                    latestTime(),
-                    latestTime() + duration.days(10),
+                    await latestTime(),
+                    await latestTime(),
+                    await latestTime() + duration.days(10),
                     true,
                     {
                         from: account_issuer,
@@ -396,9 +396,9 @@ contract("CountTransferManager", accounts => {
 
                 await I_GeneralTransferManager2.modifyWhitelist(
                     account_investor3,
-                    latestTime(),
-                    latestTime(),
-                    latestTime() + duration.days(10),
+                    await latestTime(),
+                    await latestTime(),
+                    await latestTime() + duration.days(10),
                     true,
                     {
                         from: account_issuer,
@@ -408,9 +408,9 @@ contract("CountTransferManager", accounts => {
 
                 await I_GeneralTransferManager2.modifyWhitelist(
                     account_investor4,
-                    latestTime(),
-                    latestTime(),
-                    latestTime() + duration.days(10),
+                    await latestTime(),
+                    await latestTime(),
+                    await latestTime() + duration.days(10),
                     true,
                     {
                         from: account_issuer,

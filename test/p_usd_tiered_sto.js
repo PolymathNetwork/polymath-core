@@ -267,7 +267,7 @@ contract("USDTieredSTO", accounts => {
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.getTokens(REGFEE, ISSUER);
             await I_PolyToken.approve(I_STRProxied.address, REGFEE, { from: ISSUER });
-            let _blockNo = latestBlock();
+            
             let tx = await I_STRProxied.generateSecurityToken(NAME, SYMBOL, TOKENDETAILS, true, { from: ISSUER });
             assert.equal(tx.logs[2].args._ticker, SYMBOL, "SecurityToken doesn't get deployed");
 
@@ -290,7 +290,7 @@ contract("USDTieredSTO", accounts => {
         it("Should successfully attach the first STO module to the security token", async () => {
             let stoId = 0; // No discount
 
-            _startTime.push(latestTime() + duration.days(2));
+            _startTime.push(await latestTime() + duration.days(2));
             _endTime.push(_startTime[stoId] + duration.days(100));
             _ratePerTier.push([BN(10 * 10 ** 16), BN(15 * 10 ** 16)]); // [ 0.10 USD/Token, 0.15 USD/Token ]
             _ratePerTierDiscountPoly.push([BN(10 * 10 ** 16), BN(15 * 10 ** 16)]); // [ 0.10 USD/Token, 0.15 USD/Token ]
@@ -441,14 +441,14 @@ contract("USDTieredSTO", accounts => {
 
         it("Should successfully call the modifyTimes before starting the STO -- fail because of bad owner", async () => {
             await catchRevert(
-                I_USDTieredSTO_Array[0].modifyTimes(latestTime() + duration.days(15), latestTime() + duration.days(55), { from: POLYMATH })
+                I_USDTieredSTO_Array[0].modifyTimes(await latestTime() + duration.days(15), await latestTime() + duration.days(55), { from: POLYMATH })
             );
         });
 
         it("Should successfully call the modifyTimes before starting the STO", async () => {
             let snapId = await takeSnapshot();
-            let _startTime = latestTime() + duration.days(15);
-            let _endTime = latestTime() + duration.days(55);
+            let _startTime = await latestTime() + duration.days(15);
+            let _endTime = await latestTime() + duration.days(55);
             await I_USDTieredSTO_Array[0].modifyTimes(_startTime, _endTime, { from: ISSUER });
             assert.equal(await I_USDTieredSTO_Array[0].startTime.call(), _startTime, "Incorrect _startTime in config");
             assert.equal(await I_USDTieredSTO_Array[0].endTime.call(), _endTime, "Incorrect _endTime in config");
@@ -458,7 +458,7 @@ contract("USDTieredSTO", accounts => {
         it("Should successfully attach the second STO module to the security token", async () => {
             let stoId = 1; // No discount
 
-            _startTime.push(latestTime() + duration.days(2));
+            _startTime.push(await latestTime() + duration.days(2));
             _endTime.push(_startTime[stoId] + duration.days(100));
             _ratePerTier.push([
                 BN(10 * 10 ** 16),
@@ -566,7 +566,7 @@ contract("USDTieredSTO", accounts => {
         it("Should successfully attach the third STO module to the security token", async () => {
             let stoId = 2; // Poly discount
 
-            _startTime.push(latestTime() + duration.days(2));
+            _startTime.push(await latestTime() + duration.days(2));
             _endTime.push(_startTime[stoId] + duration.days(100));
             _ratePerTier.push([BN(1 * 10 ** 18), BN(1.5 * 10 ** 18)]); // [ 1 USD/Token, 1.5 USD/Token ]
             _ratePerTierDiscountPoly.push([BN(0.5 * 10 ** 18), BN(1 * 10 ** 18)]); // [ 0.5 USD/Token, 1.5 USD/Token ]
@@ -605,7 +605,7 @@ contract("USDTieredSTO", accounts => {
         it("Should successfully attach the fourth STO module to the security token", async () => {
             let stoId = 3;
 
-            _startTime.push(latestTime() + duration.days(0.1));
+            _startTime.push(await latestTime() + duration.days(0.1));
             _endTime.push(_startTime[stoId] + duration.days(0.1));
             _ratePerTier.push([BN(10 * 10 ** 16), BN(15 * 10 ** 16)]);
             _ratePerTierDiscountPoly.push([BN(10 * 10 ** 16), BN(12 * 10 ** 16)]);
@@ -644,7 +644,7 @@ contract("USDTieredSTO", accounts => {
         it("Should successfully attach the fifth STO module to the security token", async () => {
             let stoId = 4; // Non-divisible tokens
 
-            _startTime.push(latestTime() + duration.days(2));
+            _startTime.push(await latestTime() + duration.days(2));
             _endTime.push(_startTime[stoId] + duration.days(100));
             _ratePerTier.push([BN(1 * 10 ** 18), BN(1.5 * 10 ** 18)]); // [ 1 USD/Token, 1.5 USD/Token ]
             _ratePerTierDiscountPoly.push([BN(0.5 * 10 ** 18), BN(1 * 10 ** 18)]); // [ 0.5 USD/Token, 1.5 USD/Token ]
@@ -823,8 +823,8 @@ contract("USDTieredSTO", accounts => {
         it("Should fail because end time before start time", async () => {
             let stoId = 0;
 
-            let startTime = latestTime() + duration.days(35);
-            let endTime = latestTime() + duration.days(1);
+            let startTime = await latestTime() + duration.days(35);
+            let endTime = await latestTime() + duration.days(1);
             let config = [
                 startTime,
                 endTime,
@@ -847,7 +847,7 @@ contract("USDTieredSTO", accounts => {
         it("Should fail because start time is in the past", async () => {
             let stoId = 0;
 
-            let startTime = latestTime() - duration.days(35);
+            let startTime = await latestTime() - duration.days(35);
             let endTime = startTime + duration.days(50);
             let config = [
                 startTime,
@@ -928,8 +928,8 @@ contract("USDTieredSTO", accounts => {
                 "STO Configuration doesn't set as expected"
             );
 
-            let tempTime1 = latestTime() + duration.days(0.1);
-            let tempTime2 = latestTime() + duration.days(0.2);
+            let tempTime1 = await latestTime() + duration.days(0.1);
+            let tempTime2 = await latestTime() + duration.days(0.2);
 
             await I_USDTieredSTO_Array[stoId].modifyTimes(tempTime1, tempTime2, { from: ISSUER });
             assert.equal(await I_USDTieredSTO_Array[stoId].startTime.call(), tempTime1, "STO Configuration doesn't set as expected");
@@ -974,8 +974,8 @@ contract("USDTieredSTO", accounts => {
                 )
             );
 
-            let tempTime1 = latestTime();
-            let tempTime2 = latestTime() + duration.days(3);
+            let tempTime1 = await latestTime();
+            let tempTime2 = await latestTime() + duration.days(3);
 
             await catchRevert(I_USDTieredSTO_Array[stoId].modifyTimes(tempTime1, tempTime2, { from: ISSUER }));
 
@@ -1000,8 +1000,8 @@ contract("USDTieredSTO", accounts => {
             assert.equal(await I_USDTieredSTO_Array[stoId].isOpen(), false, "STO is not showing correct status");
 
             // Whitelist
-            let fromTime = latestTime();
-            let toTime = latestTime() + duration.days(15);
+            let fromTime = await latestTime();
+            let toTime = await latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(100);
             let whitelisted = true;
 
@@ -1046,8 +1046,8 @@ contract("USDTieredSTO", accounts => {
             let snapId = await takeSnapshot();
 
             // // Whitelist
-            // let fromTime = latestTime();
-            // let toTime = latestTime() + duration.days(15);
+            // let fromTime = await latestTime();
+            // let toTime = await latestTime() + duration.days(15);
             // let expiryTime = toTime + duration.days(100);
             // let whitelisted = true;
             //
@@ -1100,8 +1100,8 @@ contract("USDTieredSTO", accounts => {
             let snapId = await takeSnapshot();
 
             // Whitelist
-            let fromTime = latestTime();
-            let toTime = latestTime() + duration.days(15);
+            let fromTime = await latestTime();
+            let toTime = await latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(100);
             let whitelisted = true;
 
@@ -1155,8 +1155,8 @@ contract("USDTieredSTO", accounts => {
             let snapId = await takeSnapshot();
 
             // Whitelist
-            let fromTime = latestTime();
-            let toTime = latestTime() + duration.days(15);
+            let fromTime = await latestTime();
+            let toTime = await latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(100);
             let whitelisted = true;
 
@@ -1225,8 +1225,8 @@ contract("USDTieredSTO", accounts => {
             let snapId = await takeSnapshot();
 
             // Whitelist
-            let fromTime = latestTime();
-            let toTime = latestTime() + duration.days(15);
+            let fromTime = await latestTime();
+            let toTime = await latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(100);
             let whitelisted = true;
 
@@ -1280,8 +1280,8 @@ contract("USDTieredSTO", accounts => {
             let snapId = await takeSnapshot();
 
             // Whitelist
-            let fromTime = latestTime();
-            let toTime = latestTime();
+            let fromTime = await latestTime();
+            let toTime = await latestTime();
             let expiryTime = toTime + duration.days(100);
             let whitelisted = true;
 
@@ -1348,8 +1348,8 @@ contract("USDTieredSTO", accounts => {
         it("should whitelist ACCREDITED1 and NONACCREDITED1", async () => {
             let stoId = 0;
 
-            let fromTime = latestTime();
-            let toTime = latestTime() + duration.days(15);
+            let fromTime = await latestTime();
+            let toTime = await latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(100);
             let whitelisted = true;
 

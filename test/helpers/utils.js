@@ -49,6 +49,7 @@ export const duration = {
     }
 };
 
-export function latestBlock() {
-    return web3.eth.getBlock("latest").number;
+export async function latestBlock() {
+    let block = await web3.eth.getBlock("latest");
+    return block.number;
 }

@@ -166,7 +166,7 @@ contract("SecurityToken", accounts => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let _blockNo = latestBlock();
+            
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
             // Verify the successful generation of the security token
             assert.equal(tx.logs[2].args._ticker, symbol, "SecurityToken doesn't get deployed");
@@ -189,7 +189,7 @@ contract("SecurityToken", accounts => {
         });
 
         it("Should mint the tokens before attaching the STO -- fail only be called by the owner", async () => {
-            let fromTime = latestTime();
+            let fromTime = await latestTime();
             let toTime = fromTime + duration.days(100);
             let expiryTime = toTime + duration.days(100);
 
@@ -208,7 +208,7 @@ contract("SecurityToken", accounts => {
         });
 
         it("Should mint the multi tokens before attaching the STO -- fail only be called by the owner", async () => {
-            let fromTime = latestTime();
+            let fromTime = await latestTime();
             let toTime = fromTime + duration.days(100);
             let expiryTime = toTime + duration.days(100);
 
@@ -277,7 +277,7 @@ contract("SecurityToken", accounts => {
         });
 
         it("Should fail to attach the STO factory because not enough poly in contract", async () => {
-            startTime = latestTime() + duration.seconds(5000);
+            startTime = await latestTime() + duration.seconds(5000);
             endTime = startTime + duration.days(30);
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
 
@@ -285,7 +285,7 @@ contract("SecurityToken", accounts => {
         });
 
         it("Should fail to attach the STO factory because max cost too small", async () => {
-            startTime = latestTime() + duration.seconds(5000);
+            startTime = await latestTime() + duration.seconds(5000);
             endTime = startTime + duration.days(30);
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
             await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
@@ -298,7 +298,7 @@ contract("SecurityToken", accounts => {
 
         it("Should successfully add module with label", async () => {
             let snapId = await takeSnapshot();
-            startTime = latestTime() + duration.seconds(5000);
+            startTime = await latestTime() + duration.seconds(5000);
             endTime = startTime + duration.days(30);
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
 
@@ -318,7 +318,7 @@ contract("SecurityToken", accounts => {
         });
 
         it("Should successfully attach the STO factory with the security token", async () => {
-            startTime = latestTime() + duration.seconds(5000);
+            startTime = await latestTime() + duration.seconds(5000);
             endTime = startTime + duration.days(30);
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
 
@@ -527,7 +527,7 @@ contract("SecurityToken", accounts => {
             balanceOfReceiver = await web3.eth.getBalance(account_fundsReceiver);
             // Add the Investor in to the whitelist
 
-            fromTime = latestTime();
+            fromTime = await latestTime();
             toTime = fromTime + duration.days(100);
             expiryTime = toTime + duration.days(100);
 
@@ -947,9 +947,9 @@ contract("SecurityToken", accounts => {
             // adding the burn module into the GTM
             tx = await I_GeneralTransferManager.modifyWhitelist(
                 I_MockRedemptionManager.address,
-                latestTime(),
-                latestTime() + duration.seconds(2),
-                latestTime() + duration.days(50),
+                await latestTime(),
+                await latestTime() + duration.seconds(2),
+                await latestTime() + duration.days(50),
                 true,
                 {
                     from: account_delegate,
@@ -988,9 +988,9 @@ contract("SecurityToken", accounts => {
             // adding the burn module into the GTM
             tx = await I_GeneralTransferManager.modifyWhitelist(
                 I_MockRedemptionManager.address,
-                latestTime(),
-                latestTime() + duration.seconds(2),
-                latestTime() + duration.days(50),
+                await latestTime(),
+                await latestTime() + duration.seconds(2),
+                await latestTime() + duration.days(50),
                 true,
                 {
                     from: account_delegate,

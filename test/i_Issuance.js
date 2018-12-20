@@ -29,8 +29,8 @@ contract("Issuance", accounts => {
     const TM_Perm = "WHITELIST";
     const delegateDetails = "I am delegate";
     // investor Details
-    let fromTime = latestTime();
-    let toTime = latestTime() + duration.days(15);
+    let fromTime = await latestTime();
+    let toTime = await latestTime() + duration.days(15);
     let expiryTime = toTime + duration.days(100);
 
     // Contract Instance Declaration
@@ -143,7 +143,7 @@ contract("Issuance", accounts => {
 
             it("POLYMATH: Should generate the new security token with the same symbol as registered above", async () => {
                 await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: account_polymath });
-                let _blockNo = latestBlock();
+                
                 let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: account_polymath });
 
                 // Verify the successful generation of the security token
@@ -175,8 +175,8 @@ contract("Issuance", accounts => {
                 await I_MRProxied.verifyModule(I_CappedSTOFactory.address, true, { from: account_polymath });
 
                 let bytesSTO = encodeModuleCall(STOParameters, [
-                    latestTime() + duration.seconds(5000),
-                    latestTime() + duration.days(30),
+                    await latestTime() + duration.seconds(5000),
+                    await latestTime() + duration.days(30),
                     cap,
                     rate,
                     fundRaiseType,
@@ -200,8 +200,8 @@ contract("Issuance", accounts => {
 
         describe("Transfer Manager operations by the polymath_account", async () => {
             it("Should modify the whitelist", async () => {
-                fromTime = latestTime();
-                toTime = latestTime() + duration.days(15);
+                fromTime = await latestTime();
+                toTime = await latestTime() + duration.days(15);
                 expiryTime = toTime + duration.days(100);
 
                 let tx = await I_GeneralTransferManager.modifyWhitelist(
@@ -244,7 +244,7 @@ contract("Issuance", accounts => {
         describe("Operations on the STO", async () => {
             it("Should Buy the tokens", async () => {
                 balanceOfReceiver = await web3.eth.getBalance(account_fundsReceiver);
-                blockNo = latestBlock();
+                blockNo = await latestBlock();
                 // Jump time
                 await increaseTime(5000);
                 // Fallback transaction

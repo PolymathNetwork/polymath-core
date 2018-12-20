@@ -136,7 +136,7 @@ contract("Concurrent STO", accounts => {
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.getTokens(initRegFee, account_issuer);
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: account_issuer });
-            let _blockNo = latestBlock();
+            
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: account_issuer });
             assert.equal(tx.logs[2].args._ticker, symbol, "SecurityToken doesn't get deployed");
 
@@ -155,8 +155,8 @@ contract("Concurrent STO", accounts => {
         });
 
         it("Should whitelist account_investor1", async () => {
-            let fromTime = latestTime();
-            let toTime = latestTime() + duration.days(15);
+            let fromTime = await latestTime();
+            let toTime = await latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(100);
             let canBuyFromSTO = true;
 
@@ -172,8 +172,8 @@ contract("Concurrent STO", accounts => {
     describe("Add STO and verify transfer", async () => {
         it("Should attach STO modules up to the max number, then fail", async () => {
             const MAX_MODULES = 10;
-            const startTime = latestTime() + duration.days(1);
-            const endTime = latestTime() + duration.days(90);
+            const startTime = await latestTime() + duration.days(1);
+            const endTime = await latestTime() + duration.days(90);
             const cap = web3.utils.toWei("10000");
             const rate = web3.utils.toWei("1000");
             const fundRaiseType = [0];

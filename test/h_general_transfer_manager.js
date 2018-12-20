@@ -31,8 +31,8 @@ contract("GeneralTransferManager", accounts => {
     let account_affiliates2;
 
     // investor Details
-    let fromTime = latestTime();
-    let toTime = latestTime();
+    let fromTime = await latestTime();
+    let toTime = await latestTime();
     let expiryTime = toTime + duration.days(15);
 
     let message = "Transaction Should Fail!";
@@ -74,7 +74,7 @@ contract("GeneralTransferManager", accounts => {
     const initRegFee = web3.utils.toWei("250");
 
     // Dummy STO details
-    const startTime = latestTime() + duration.seconds(5000); // Start time will be 5000 seconds more than the latest time
+    const startTime = await latestTime() + duration.seconds(5000); // Start time will be 5000 seconds more than the latest time
     const endTime = startTime + duration.days(80); // Add 80 days more
     const cap = web3.utils.toWei("10", "ether");
     const someString = "A string which is not used";
@@ -148,7 +148,7 @@ contract("GeneralTransferManager", accounts => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let _blockNo = latestBlock();
+            
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
@@ -186,9 +186,9 @@ contract("GeneralTransferManager", accounts => {
         it("Should whitelist the affiliates before the STO attached", async () => {
             let tx = await I_GeneralTransferManager.modifyWhitelistMulti(
                 [account_affiliates1, account_affiliates2],
-                [latestTime() + duration.days(30), latestTime() + duration.days(30)],
-                [latestTime() + duration.days(90), latestTime() + duration.days(90)],
-                [latestTime() + duration.years(1), latestTime() + duration.years(1)],
+                [await latestTime() + duration.days(30), await latestTime() + duration.days(30)],
+                [await latestTime() + duration.days(90), await latestTime() + duration.days(90)],
+                [await latestTime() + duration.years(1), await latestTime() + duration.years(1)],
                 [false, false],
                 {
                     from: account_issuer,
@@ -232,8 +232,8 @@ contract("GeneralTransferManager", accounts => {
 
         it("Should successfully attach the STO factory with the security token -- failed because of no tokens", async () => {
             let bytesSTO = encodeModuleCall(STOParameters, [
-                latestTime() + duration.seconds(1000),
-                latestTime() + duration.days(40),
+                await latestTime() + duration.seconds(1000),
+                await latestTime() + duration.days(40),
                 cap,
                 someString
             ]);
@@ -245,8 +245,8 @@ contract("GeneralTransferManager", accounts => {
         it("Should successfully attach the STO factory with the security token", async () => {
             let snap_id = await takeSnapshot();
             let bytesSTO = encodeModuleCall(STOParameters, [
-                latestTime() + duration.seconds(1000),
-                latestTime() + duration.days(40),
+                await latestTime() + duration.seconds(1000),
+                await latestTime() + duration.days(40),
                 cap,
                 someString
             ]);
@@ -265,14 +265,14 @@ contract("GeneralTransferManager", accounts => {
         });
 
         it("Should successfully attach the STO factory with the security token - invalid data", async () => {
-            let bytesSTO = encodeModuleCall(["uint256", "string"], [latestTime() + duration.seconds(1000), someString]);
+            let bytesSTO = encodeModuleCall(["uint256", "string"], [await latestTime() + duration.seconds(1000), someString]);
             await catchRevert(I_SecurityToken.addModule(P_DummySTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: token_owner }));
         });
 
         it("Should successfully attach the STO factory with the security token", async () => {
             let bytesSTO = encodeModuleCall(STOParameters, [
-                latestTime() + duration.seconds(1000),
-                latestTime() + duration.days(40),
+                await latestTime() + duration.seconds(1000),
+                await latestTime() + duration.days(40),
                 cap,
                 someString
             ]);
@@ -308,9 +308,9 @@ contract("GeneralTransferManager", accounts => {
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor1,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(10),
+                await latestTime(),
+                await latestTime(),
+                await latestTime() + duration.days(10),
                 true,
                 {
                     from: account_issuer,
@@ -366,7 +366,7 @@ contract("GeneralTransferManager", accounts => {
         it("Should Buy the tokens", async () => {
             // Add the Investor in to the whitelist
             // snap_id = await takeSnapshot();
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, new BN(0), new BN(0), latestTime() + duration.days(20), true, {
+            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, new BN(0), new BN(0), await latestTime() + duration.days(20), true, {
                 from: account_issuer,
                 gas: 6000000
             });
@@ -379,9 +379,9 @@ contract("GeneralTransferManager", accounts => {
 
             tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor2,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(20),
+                await latestTime(),
+                await latestTime(),
+                await latestTime() + duration.days(20),
                 true,
                 {
                     from: account_issuer,
@@ -405,7 +405,7 @@ contract("GeneralTransferManager", accounts => {
         });
 
         it("Add a from default and check transfers are disabled then enabled in the future", async () => {
-            let tx = await I_GeneralTransferManager.changeDefaults(latestTime() + duration.days(5), new BN(0), { from: token_owner });
+            let tx = await I_GeneralTransferManager.changeDefaults(await latestTime() + duration.days(5), new BN(0), { from: token_owner });
             await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), { from: account_investor2 });
             await catchRevert(I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), { from: account_investor1 }));
             await increaseTime(duration.days(5));
@@ -413,7 +413,7 @@ contract("GeneralTransferManager", accounts => {
         });
 
         it("Add a to default and check transfers are disabled then enabled in the future", async () => {
-            let tx = await I_GeneralTransferManager.changeDefaults(0, latestTime() + duration.days(5), { from: token_owner });
+            let tx = await I_GeneralTransferManager.changeDefaults(0, await latestTime() + duration.days(5), { from: token_owner });
             await catchRevert(I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), { from: account_investor2 }));
             await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), { from: account_investor1 });
             await increaseTime(duration.days(5));
@@ -435,8 +435,8 @@ contract("GeneralTransferManager", accounts => {
         it("Should buy the tokens -- Failed due to incorrect signature input", async () => {
             // Add the Investor in to the whitelist
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
-            let validFrom = latestTime();
-            let validTo = latestTime() + duration.days(5);
+            let validFrom = await latestTime();
+            let validTo = await latestTime() + duration.days(5);
             let nonce = 5;
             const sig = signData(
                 account_investor2,
@@ -479,8 +479,8 @@ contract("GeneralTransferManager", accounts => {
         it("Should buy the tokens -- Failed due to incorrect signature timing", async () => {
             // Add the Investor in to the whitelist
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
-            let validFrom = latestTime() - 100;
-            let validTo = latestTime() - 1;
+            let validFrom = await latestTime() - 100;
+            let validTo = await latestTime() - 1;
             let nonce = 5;
             const sig = signData(
                 I_GeneralTransferManager.address,
@@ -523,8 +523,8 @@ contract("GeneralTransferManager", accounts => {
         it("Should buy the tokens -- Failed due to incorrect signature signer", async () => {
             // Add the Investor in to the whitelist
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
-            let validFrom = latestTime();
-            let validTo = latestTime() + 60 * 60;
+            let validFrom = await latestTime();
+            let validTo = await latestTime() + 60 * 60;
             let nonce = 5;
             const sig = signData(
                 account_investor2,
@@ -567,14 +567,14 @@ contract("GeneralTransferManager", accounts => {
         it("Should Buy the tokens", async () => {
             // Add the Investor in to the whitelist
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
-            let validFrom = latestTime();
-            let validTo = latestTime() + duration.days(5);
+            let validFrom = await latestTime();
+            let validTo = await latestTime() + duration.days(5);
             let nonce = 5;
             const sig = signData(
                 I_GeneralTransferManager.address,
                 account_investor2,
-                latestTime(),
-                latestTime() + duration.days(80),
+                await latestTime(),
+                await latestTime() + duration.days(80),
                 expiryTime + duration.days(200),
                 true,
                 validFrom,
@@ -589,8 +589,8 @@ contract("GeneralTransferManager", accounts => {
 
             let tx = await I_GeneralTransferManager.modifyWhitelistSigned(
                 account_investor2,
-                latestTime(),
-                latestTime() + duration.days(80),
+                await latestTime(),
+                await latestTime() + duration.days(80),
                 expiryTime + duration.days(200),
                 true,
                 validFrom,
@@ -623,14 +623,14 @@ contract("GeneralTransferManager", accounts => {
         it("Should fail if the txn is generated with same nonce", async () => {
             // Add the Investor in to the whitelist
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
-            let validFrom = latestTime();
-            let validTo = latestTime() + duration.days(5);
+            let validFrom = await latestTime();
+            let validTo = await latestTime() + duration.days(5);
             let nonce = 5;
             const sig = signData(
                 I_GeneralTransferManager.address,
                 account_investor2,
-                latestTime(),
-                latestTime() + duration.days(80),
+                await latestTime(),
+                await latestTime() + duration.days(80),
                 expiryTime + duration.days(200),
                 true,
                 validFrom,
@@ -646,8 +646,8 @@ contract("GeneralTransferManager", accounts => {
             await catchRevert(
                 I_GeneralTransferManager.modifyWhitelistSigned(
                     account_investor2,
-                    latestTime(),
-                    latestTime() + duration.days(80),
+                    await latestTime(),
+                    await latestTime() + duration.days(80),
                     expiryTime + duration.days(200),
                     true,
                     validFrom,
@@ -746,8 +746,8 @@ contract("GeneralTransferManager", accounts => {
 
     describe("WhiteList that addresses", async () => {
         it("Should fail in adding the investors in whitelist", async () => {
-            let fromTime = latestTime();
-            let toTime = latestTime() + duration.days(20);
+            let fromTime = await latestTime();
+            let toTime = await latestTime() + duration.days(20);
             let expiryTime = toTime + duration.days(10);
 
             await catchRevert(
@@ -766,8 +766,8 @@ contract("GeneralTransferManager", accounts => {
         });
 
         it("Should fail in adding the investors in whitelist -- array length mismatch", async () => {
-            let fromTime = latestTime();
-            let toTime = latestTime() + duration.days(20);
+            let fromTime = await latestTime();
+            let toTime = await latestTime() + duration.days(20);
             let expiryTime = toTime + duration.days(10);
 
             await catchRevert(
@@ -786,8 +786,8 @@ contract("GeneralTransferManager", accounts => {
         });
 
         it("Should fail in adding the investors in whitelist -- array length mismatch", async () => {
-            let fromTime = latestTime();
-            let toTime = latestTime() + duration.days(20);
+            let fromTime = await latestTime();
+            let toTime = await latestTime() + duration.days(20);
             let expiryTime = toTime + duration.days(10);
 
             await catchRevert(
@@ -806,8 +806,8 @@ contract("GeneralTransferManager", accounts => {
         });
 
         it("Should fail in adding the investors in whitelist -- array length mismatch", async () => {
-            let fromTime = latestTime();
-            let toTime = latestTime() + duration.days(20);
+            let fromTime = await latestTime();
+            let toTime = await latestTime() + duration.days(20);
             let expiryTime = toTime + duration.days(10);
 
             await catchRevert(
@@ -826,8 +826,8 @@ contract("GeneralTransferManager", accounts => {
         });
 
         it("Should successfully add the investors in whitelist", async () => {
-            let fromTime = latestTime();
-            let toTime = latestTime() + duration.days(20);
+            let fromTime = await latestTime();
+            let toTime = await latestTime() + duration.days(20);
             let expiryTime = toTime + duration.days(10);
 
             let tx = await I_GeneralTransferManager.modifyWhitelistMulti(

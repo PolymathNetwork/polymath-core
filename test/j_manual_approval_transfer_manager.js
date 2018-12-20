@@ -32,8 +32,8 @@ contract("ManualApprovalTransferManager", accounts => {
     let account_investor5;
 
     // investor Details
-    let fromTime = latestTime();
-    let toTime = latestTime();
+    let fromTime = await latestTime();
+    let toTime = await latestTime();
     let expiryTime = toTime + duration.days(15);
 
     let message = "Transaction Should Fail!";
@@ -150,7 +150,7 @@ contract("ManualApprovalTransferManager", accounts => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let _blockNo = latestBlock();
+            
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
@@ -177,9 +177,9 @@ contract("ManualApprovalTransferManager", accounts => {
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor1,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(10),
+                await latestTime(),
+                await latestTime(),
+                await latestTime() + duration.days(10),
                 true,
                 {
                     from: account_issuer,
@@ -207,9 +207,9 @@ contract("ManualApprovalTransferManager", accounts => {
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor2,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(10),
+                await latestTime(),
+                await latestTime(),
+                await latestTime() + duration.days(10),
                 true,
                 {
                     from: account_issuer,
@@ -296,9 +296,9 @@ contract("ManualApprovalTransferManager", accounts => {
         it("Add a new token holder", async () => {
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor3,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(10),
+                await latestTime(),
+                await latestTime(),
+                await latestTime() + duration.days(10),
                 true,
                 {
                     from: account_issuer,
@@ -336,7 +336,7 @@ contract("ManualApprovalTransferManager", accounts => {
                     account_investor1,
                     "",
                     web3.utils.toWei("2", "ether"),
-                    latestTime() + duration.days(1),
+                    await latestTime() + duration.days(1),
                     { from: token_owner }
                 )
             );
@@ -359,7 +359,7 @@ contract("ManualApprovalTransferManager", accounts => {
                 account_investor1,
                 account_investor4,
                 web3.utils.toWei("2", "ether"),
-                latestTime() + duration.days(1),
+                await latestTime() + duration.days(1),
                 { from: token_owner }
             );
         });
@@ -369,7 +369,7 @@ contract("ManualApprovalTransferManager", accounts => {
                 "",
                 account_investor5,
                 web3.utils.toWei("2", "ether"),
-                latestTime() + duration.days(1),
+                await latestTime() + duration.days(1),
                 { from: token_owner }
             );
         });
@@ -380,7 +380,7 @@ contract("ManualApprovalTransferManager", accounts => {
                     account_investor1,
                     account_investor4,
                     web3.utils.toWei("2", "ether"),
-                    latestTime() + duration.days(5),
+                    await latestTime() + duration.days(5),
                     { from: token_owner }
                 )
             );
@@ -401,7 +401,7 @@ contract("ManualApprovalTransferManager", accounts => {
                 account_investor1,
                 account_investor4,
                 web3.utils.toWei("2", "ether"),
-                latestTime() + duration.days(1),
+                await latestTime() + duration.days(1),
                 { from: token_owner }
             );
         });
@@ -453,7 +453,7 @@ contract("ManualApprovalTransferManager", accounts => {
 
         it("Should fail to add a manual block because invalid _to address", async () => {
             await catchRevert(
-                I_ManualApprovalTransferManager.addManualBlocking(account_investor1, "", latestTime() + duration.days(1), {
+                I_ManualApprovalTransferManager.addManualBlocking(account_investor1, "", await latestTime() + duration.days(1), {
                     from: token_owner
                 })
             );
@@ -466,14 +466,14 @@ contract("ManualApprovalTransferManager", accounts => {
         });
 
         it("Add a manual block for a 2nd investor", async () => {
-            await I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, latestTime() + duration.days(1), {
+            await I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, await latestTime() + duration.days(1), {
                 from: token_owner
             });
         });
 
         it("Should fail to add a manual block because blocking already exist", async () => {
             await catchRevert(
-                I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, latestTime() + duration.days(5), {
+                I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, await latestTime() + duration.days(5), {
                     from: token_owner
                 })
             );
@@ -494,7 +494,7 @@ contract("ManualApprovalTransferManager", accounts => {
         });
 
         it("Check manual block ignored after expiry", async () => {
-            await I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, latestTime() + duration.days(1), {
+            await I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, await latestTime() + duration.days(1), {
                 from: token_owner
             });
 

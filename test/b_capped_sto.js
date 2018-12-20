@@ -1,5 +1,5 @@
 import latestTime from "./helpers/latestTime";
-import { duration, ensureException, promisifyLogWatch, latestBlock } from "./helpers/utils";
+import { duration, ensureException, latestBlock } from "./helpers/utils";
 import { takeSnapshot, increaseTime, revertToSnapshot } from "./helpers/time";
 import { encodeModuleCall } from "./helpers/encodeCall";
 import { setUpPolymathNetwork, deployGPMAndVerifyed } from "./helpers/createInstances";
@@ -13,12 +13,15 @@ const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager")
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
+let toBN = Web3.utils.toBN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 let ETH = 0;
 let POLY = 1;
 let DAI = 2;
 
-let account_polymath;
+contract("CappedSTO", accounts => {
+    // Accounts Variable declaration
+    let account_polymath;
     let account_investor1;
     let account_issuer;
     let token_owner;
@@ -100,10 +103,6 @@ let account_polymath;
     const maxCost = cappedSTOSetupCost;
     const STOParameters = ["uint256", "uint256", "uint256", "uint256", "uint8[]", "address"];
 
-contract("CappedSTO", accounts => {
-    // Accounts Variable declaration
-    
-
     before(async () => {
         // Accounts setup
         account_polymath = accounts[0];
@@ -173,7 +172,7 @@ contract("CappedSTO", accounts => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let _blockNo = latestBlock();
+            
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
@@ -197,7 +196,7 @@ contract("CappedSTO", accounts => {
         });
 
         it("Should fail to launch the STO due to security token doesn't have the sufficient POLY", async () => {
-            let startTime = latestTime() + duration.days(1);
+            let startTime = await latestTime() + duration.days(1);
             let endTime = startTime + duration.days(30);
             await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
 
@@ -207,7 +206,7 @@ contract("CappedSTO", accounts => {
         });
 
         it("Should fail to launch the STO due to rate is 0", async () => {
-            let startTime = latestTime() + duration.days(1);
+            let startTime = await latestTime() + duration.days(1);
             let endTime = startTime + duration.days(30);
             await I_PolyToken.transfer(I_SecurityToken_ETH.address, cappedSTOSetupCost, { from: token_owner });
 
@@ -217,7 +216,7 @@ contract("CappedSTO", accounts => {
         });
 
         it("Should fail to launch the STO due funds reciever account 0x", async () => {
-            let startTime = latestTime() + duration.days(1);
+            let startTime = await latestTime() + duration.days(1);
             let endTime = startTime + duration.days(30);
 
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, [E_fundRaiseType], address_zero]);
@@ -226,7 +225,7 @@ contract("CappedSTO", accounts => {
         });
 
         it("Should fail to launch the STO due to raise type of 0 length", async () => {
-            let startTime = latestTime() + duration.days(1);
+            let startTime = await latestTime() + duration.days(1);
             let endTime = startTime + duration.days(30);
 
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, [], account_fundsReceiver]);
@@ -248,7 +247,7 @@ contract("CappedSTO", accounts => {
         });
 
         it("Should fail to launch the STO due to cap is of 0 securityToken", async () => {
-            let startTime = latestTime() + duration.days(1);
+            let startTime = await latestTime() + duration.days(1);
             let endTime = startTime + duration.days(30);
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, new BN(0), rate, [E_fundRaiseType], account_fundsReceiver]);
 
@@ -256,15 +255,15 @@ contract("CappedSTO", accounts => {
         });
 
         it("Should fail to launch the STO due to different value incompare to getInitFunction", async () => {
-            let startTime = latestTime() + duration.days(1);
+            let startTime = await latestTime() + duration.days(1);
             let endTime = startTime + duration.days(30);
             let bytesSTO = encodeModuleCall(["uint256", "uint256", "uint256"], [startTime, endTime, 0]);
             await catchRevert(I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), { from: token_owner }));
         });
 
         it("Should successfully attach the STO module to the security token", async () => {
-            startTime_ETH1 = new BN(latestTime() + duration.days(1));
-            endTime_ETH1 = startTime_ETH1.add(new BN(duration.days(30)));
+            startTime_ETH1 = await latestTime() + duration.days(1);
+            endTime_ETH1 = startTime_ETH1 + duration.days(30);
             let bytesSTO = encodeModuleCall(STOParameters, [
                 startTime_ETH1,
                 endTime_ETH1,
@@ -335,9 +334,9 @@ contract("CappedSTO", accounts => {
         });
 
         it("Should Buy the tokens", async () => {
-            blockNo = latestBlock();
-            fromTime = latestTime();
-            toTime = latestTime() + duration.days(15);
+            blockNo = await latestBlock();
+            fromTime = await latestTime();
+            toTime = await latestTime() + duration.days(15);
             expiryTime = toTime + duration.days(100);
             P_fromTime = fromTime + duration.days(1);
             P_toTime = P_fromTime + duration.days(50);
@@ -385,7 +384,7 @@ contract("CappedSTO", accounts => {
         });
 
         it("Should pause the STO", async () => {
-            pauseTime = latestTime();
+            pauseTime = await latestTime();
             let tx = await I_CappedSTO_Array_ETH[0].pause({ from: account_issuer });
             assert.isTrue(await I_CappedSTO_Array_ETH[0].paused.call());
         });
@@ -521,7 +520,7 @@ contract("CappedSTO", accounts => {
 
     describe("Attach second ETH STO module", async () => {
         it("Should successfully attach the second STO module to the security token", async () => {
-            startTime_ETH2 = latestTime() + duration.days(1);
+            startTime_ETH2 = await latestTime() + duration.days(1);
             endTime_ETH2 = startTime_ETH2 + duration.days(30);
 
             await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
@@ -599,7 +598,7 @@ contract("CappedSTO", accounts => {
     describe("Test cases for reaching limit number of STO modules", async () => {
         it("Should successfully attach 10 STO modules", async () => {
             const MAX_MODULES = 10;
-            let startTime = latestTime() + duration.days(1);
+            let startTime = await latestTime() + duration.days(1);
             let endTime = startTime + duration.days(30);
 
             await I_PolyToken.getTokens(cappedSTOSetupCost * 19, token_owner);
@@ -642,7 +641,7 @@ contract("CappedSTO", accounts => {
 
             it("POLY: Should generate the new security token with the same symbol as registered above", async () => {
                 await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-                let _blockNo = latestBlock();
+                
                 let tx = await I_STRProxied.generateSecurityToken(P_name, P_symbol, P_tokenDetails, false, { from: token_owner });
 
                 // Verify the successful generation of the security token
@@ -663,7 +662,7 @@ contract("CappedSTO", accounts => {
             });
 
             it("POLY: Should successfully attach the STO module to the security token", async () => {
-                startTime_POLY1 = latestTime() + duration.days(2);
+                startTime_POLY1 = await latestTime() + duration.days(2);
                 endTime_POLY1 = startTime_POLY1 + duration.days(30);
 
                 await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
@@ -715,7 +714,7 @@ contract("CappedSTO", accounts => {
         describe("Buy tokens", async () => {
             it("Should Buy the tokens", async () => {
                 await I_PolyToken.getTokens(10000 * Math.pow(10, 18), account_investor1);
-                blockNo = latestBlock();
+                blockNo = await latestBlock();
                 assert.equal(
                     (await I_PolyToken.balanceOf(account_investor1)).dividedBy(new BN(10).pow(new BN(18))).toNumber(),
                     10500,
@@ -947,7 +946,7 @@ contract("CappedSTO", accounts => {
 
     describe("Attach second POLY STO module", async () => {
         it("Should successfully attach a second STO to the security token", async () => {
-            startTime_POLY2 = latestTime() + duration.days(1);
+            startTime_POLY2 = await latestTime() + duration.days(1);
             endTime_POLY2 = startTime_POLY2 + duration.days(30);
 
             await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
@@ -1026,6 +1025,6 @@ contract("CappedSTO", accounts => {
                 (await I_SecurityToken_POLY.balanceOf(account_investor3)).dividedBy(new BN(10).pow(new BN(18))).toNumber(),
                 stToReceive
             );
-        });
+       });
     });
 });

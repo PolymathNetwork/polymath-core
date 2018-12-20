@@ -23,8 +23,8 @@ contract("ScheduledCheckpoint", accounts => {
     let account_investor4;
 
     // investor Details
-    let fromTime = latestTime();
-    let toTime = latestTime();
+    let fromTime = await latestTime();
+    let toTime = await latestTime();
     let expiryTime = toTime + duration.days(15);
 
     let message = "Transaction Should Fail!";
@@ -121,7 +121,7 @@ contract("ScheduledCheckpoint", accounts => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let _blockNo = latestBlock();
+            
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
@@ -159,11 +159,11 @@ contract("ScheduledCheckpoint", accounts => {
         let startTime;
         let interval;
         it("Should create a daily checkpoint", async () => {
-            startTime = latestTime() + 100;
+            startTime = await latestTime() + 100;
             interval = 24 * 60 * 60;
             console.log("Creating scheduled CP: " + startTime, interval);
             await I_ScheduledCheckpoint.addSchedule("CP1", startTime, interval, { from: token_owner });
-            console.log("2: " + latestTime());
+            console.log("2: " + await latestTime());
         });
 
         it("Remove (temp) daily checkpoint", async () => {
@@ -174,13 +174,13 @@ contract("ScheduledCheckpoint", accounts => {
 
         it("Should Buy the tokens for account_investor1", async () => {
             // Add the Investor in to the whitelist
-            console.log("3: " + latestTime());
+            console.log("3: " + await latestTime());
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor1,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(10),
+                await latestTime(),
+                await latestTime(),
+                await latestTime() + duration.days(10),
                 true,
                 {
                     from: account_issuer,
@@ -195,15 +195,15 @@ contract("ScheduledCheckpoint", accounts => {
             );
 
             // Jump time
-            console.log("4: " + latestTime());
+            console.log("4: " + await latestTime());
 
             await increaseTime(5000);
             // We should be after the first scheduled checkpoint, and before the second
-            console.log("5: " + latestTime());
+            console.log("5: " + await latestTime());
 
-            assert.isTrue(latestTime() > startTime);
-            assert.isTrue(latestTime() <= startTime + interval);
-            console.log("6: " + latestTime());
+            assert.isTrue(await latestTime() > startTime);
+            assert.isTrue(await latestTime() <= startTime + interval);
+            console.log("6: " + await latestTime());
 
             // Mint some tokens
             await I_SecurityToken.mint(account_investor1, web3.utils.toWei("1", "ether"), { from: token_owner });
@@ -223,9 +223,9 @@ contract("ScheduledCheckpoint", accounts => {
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor2,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(10),
+                await latestTime(),
+                await latestTime(),
+                await latestTime() + duration.days(10),
                 true,
                 {
                     from: account_issuer,
@@ -240,8 +240,8 @@ contract("ScheduledCheckpoint", accounts => {
             );
 
             // We should be after the first scheduled checkpoint, and before the second
-            assert.isTrue(latestTime() > startTime);
-            assert.isTrue(latestTime() <= startTime + interval);
+            assert.isTrue(await latestTime() > startTime);
+            assert.isTrue(await latestTime() <= startTime + interval);
 
             // Mint some tokens
             await I_SecurityToken.mint(account_investor2, web3.utils.toWei("1", "ether"), { from: token_owner });
@@ -259,9 +259,9 @@ contract("ScheduledCheckpoint", accounts => {
         it("Add a new token holder - account_investor3", async () => {
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor3,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(10),
+                await latestTime(),
+                await latestTime(),
+                await latestTime() + duration.days(10),
                 true,
                 {
                     from: account_issuer,
@@ -278,8 +278,8 @@ contract("ScheduledCheckpoint", accounts => {
             // Jump time
             await increaseTime(interval);
             // We should be after the first scheduled checkpoint, and before the second
-            assert.isTrue(latestTime() > startTime + interval);
-            assert.isTrue(latestTime() <= startTime + 2 * interval);
+            assert.isTrue(await latestTime() > startTime + interval);
+            assert.isTrue(await latestTime() <= startTime + 2 * interval);
 
             // Add the Investor in to the whitelist
             // Mint some tokens
@@ -306,8 +306,8 @@ contract("ScheduledCheckpoint", accounts => {
             // Jump time
             await increaseTime(2 * interval);
             // We should be after the first scheduled checkpoint, and before the second
-            assert.isTrue(latestTime() > startTime + 3 * interval);
-            assert.isTrue(latestTime() <= startTime + 4 * interval);
+            assert.isTrue(await latestTime() > startTime + 3 * interval);
+            assert.isTrue(await latestTime() <= startTime + 4 * interval);
             await I_SecurityToken.transfer(account_investor3, web3.utils.toWei("0.5", "ether"), { from: account_investor1 });
             let cp1 = await I_ScheduledCheckpoint.getSchedule("CP1");
             checkSchedule(

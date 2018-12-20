@@ -132,7 +132,7 @@ contract("PreSaleSTO", accounts => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let _blockNo = latestBlock();
+            
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
@@ -160,7 +160,7 @@ contract("PreSaleSTO", accounts => {
 
         it("Should successfully attach the Paid STO factory with the security token", async () => {
             let snap_id = await takeSnapshot();
-            endTime = latestTime() + duration.days(30); // Start time will be 5000 seconds more than the latest time
+            endTime = await latestTime() + duration.days(30); // Start time will be 5000 seconds more than the latest time
             let bytesSTO = encodeModuleCall(STOParameters, [endTime]);
             await I_PolyToken.getTokens(web3.utils.toWei("500"), I_SecurityToken.address);
             const tx = await I_SecurityToken.addModule(P_PreSaleSTOFactory.address, bytesSTO, web3.utils.toWei("500"), new BN(0), {
@@ -178,13 +178,13 @@ contract("PreSaleSTO", accounts => {
         });
 
         it("Should successfully attach the STO factory with the security token -- fail because signature is different", async () => {
-            endTime = latestTime() + duration.days(30); // Start time will be 5000 seconds more than the latest time
+            endTime = await latestTime() + duration.days(30); // Start time will be 5000 seconds more than the latest time
             let bytesSTO = encodeModuleCall(["string"], ["hey"]);
             await catchRevert(I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: token_owner }));
         });
 
         it("Should successfully attach the STO factory with the security token", async () => {
-            endTime = latestTime() + duration.days(30); // Start time will be 5000 seconds more than the latest time
+            endTime = await latestTime() + duration.days(30); // Start time will be 5000 seconds more than the latest time
             let bytesSTO = encodeModuleCall(STOParameters, [endTime]);
 
             const tx = await I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: token_owner });
@@ -199,7 +199,7 @@ contract("PreSaleSTO", accounts => {
         });
 
         it("Should successfully attach the STO factory with the security token", async () => {
-            endTime = latestTime() + duration.days(30); // Start time will be 5000 seconds more than the latest time
+            endTime = await latestTime() + duration.days(30); // Start time will be 5000 seconds more than the latest time
             let bytesSTO = encodeModuleCall(STOParameters, [endTime]);
 
             const tx = await I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: token_owner });
@@ -231,7 +231,7 @@ contract("PreSaleSTO", accounts => {
         });
 
         it("Should Buy the tokens", async () => {
-            fromTime = latestTime();
+            fromTime = await latestTime();
             toTime = fromTime + duration.days(100);
             expiryTime = toTime + duration.days(100);
 
@@ -272,7 +272,7 @@ contract("PreSaleSTO", accounts => {
         });
 
         it("Should allocate tokens to multiple investors", async () => {
-            fromTime = latestTime();
+            fromTime = await latestTime();
             toTime = fromTime + duration.days(100);
             expiryTime = toTime + duration.days(100);
 

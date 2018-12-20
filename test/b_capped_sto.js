@@ -19,7 +19,7 @@ let ETH = 0;
 let POLY = 1;
 let DAI = 2;
 
-contract("CappedSTO", accounts => {
+contract("CappedSTO", async (accounts) => {
     // Accounts Variable declaration
     let account_polymath;
     let account_investor1;
@@ -290,10 +290,10 @@ contract("CappedSTO", accounts => {
 
     describe("verify the data of STO", async () => {
         it("Should verify the configuration of the STO", async () => {
-            assert.equal(await I_CappedSTO_Array_ETH[0].startTime.call(), startTime_ETH1, "STO Configuration doesn't set as expected");
-            assert.equal(await I_CappedSTO_Array_ETH[0].endTime.call(), endTime_ETH1, "STO Configuration doesn't set as expected");
-            assert.equal((await I_CappedSTO_Array_ETH[0].cap.call()).toNumber(), cap, "STO Configuration doesn't set as expected");
-            assert.equal((await I_CappedSTO_Array_ETH[0].rate.call()).toNumber(), rate, "STO Configuration doesn't set as expected");
+            assert.equal(await I_CappedSTO_Array_ETH[0].startTime(), startTime_ETH1, "1STO Configuration doesn't set as expected");
+            assert.equal(await I_CappedSTO_Array_ETH[0].endTime(), endTime_ETH1, "2STO Configuration doesn't set as expected");
+            assert.equal(await I_CappedSTO_Array_ETH[0].cap(), cap, "3STO Configuration doesn't set as expected");
+            assert.equal(await I_CappedSTO_Array_ETH[0].rate(), rate, "4STO Configuration doesn't set as expected");
             assert.equal(
                 await I_CappedSTO_Array_ETH[0].fundRaiseTypes.call(E_fundRaiseType),
                 true,
@@ -352,11 +352,10 @@ contract("CappedSTO", accounts => {
             assert.equal(tx.logs[0].args._investor, account_investor1, "Failed in adding the investor in whitelist");
             // Jump time
             await increaseTime(duration.days(1));
-            // Fallback transaction
+            
             console.log('yo');
             await I_CappedSTO_Array_ETH[0].buyTokens(account_investor1, {
                 from: account_investor1,
-                gas: 2100000,
                 value: new BN(web3.utils.toWei("1", "ether"))
             });
             console.log('yo');

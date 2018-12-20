@@ -11,10 +11,10 @@ const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager");
 
 const Web3 = require("web3");
-const BN = require("BN.js");
+const BN = Web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
-contract("GeneralPermissionManager", accounts => {
+contract("GeneralPermissionManager", async (accounts) => {
     // Accounts Variable declaration
     let account_polymath;
     let account_issuer;

@@ -18,7 +18,7 @@ const SecurityToken = artifacts.require("./SecurityToken.sol");
 const PolyTokenFaucet = artifacts.require("./PolyTokenFaucet.sol");
 const ManualApprovalTransferManagerFactory = artifacts.require("./ManualApprovalTransferManagerFactory.sol");
 
-contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
+contract("Upgrade from v1.3.0 to v1.4.0", async (accounts) => {
     // Accounts Variable declaration
     let POLYMATH;
     let ISSUER1;

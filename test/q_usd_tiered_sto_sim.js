@@ -19,7 +19,7 @@ const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
 
 const TOLERANCE = 2; // Allow balances to be off by 2 WEI for rounding purposes
 
-contract("USDTieredSTO Sim", accounts => {
+contract("USDTieredSTO Sim", async (accounts) => {
     // Accounts Variable declaration
     let POLYMATH;
     let ISSUER;

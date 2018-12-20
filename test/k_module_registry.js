@@ -20,7 +20,7 @@ const Web3 = require("web3");
 let BN = Web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
-contract("ModuleRegistry", accounts => {
+contract("ModuleRegistry", async (accounts) => {
     // Accounts Variable declaration
     let account_polymath;
     let account_investor1;

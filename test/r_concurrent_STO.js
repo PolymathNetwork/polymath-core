@@ -20,7 +20,7 @@ const Web3 = require("web3");
 let BN = Web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
-contract("Concurrent STO", accounts => {
+contract("Concurrent STO", async (accounts) => {
     // Accounts variable declaration
     let account_polymath;
     let account_issuer;

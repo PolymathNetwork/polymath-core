@@ -14,7 +14,7 @@ const Web3 = require("web3");
 let BN = Web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
-contract("CountTransferManager", accounts => {
+contract("CountTransferManager", async (accounts) => {
     // Accounts Variable declaration
     let account_polymath;
     let account_issuer;

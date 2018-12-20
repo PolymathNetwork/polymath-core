@@ -252,9 +252,9 @@ contract CappedSTO is STO, ReentrancyGuard {
     */
     function _updatePurchasingState(
         address, /*_beneficiary*/
-        uint256 /*_investedAmount*/
+        uint256 _investedAmount
     ) internal pure {
-        // optional override
+        _investedAmount = 0; //yolo
     }
 
     /**

@@ -1038,8 +1038,8 @@ contract("SecurityTokenRegistry", accounts => {
                 await I_STRProxied.reclaimERC20(I_PolyToken.address, { from: account_polymath });
                 let bal2 = await I_PolyToken.balanceOf.call(account_polymath);
                 assert.isAtLeast(
-                    bal2.dividedBy(new BN(10).pow(new BN(18))).toNumber(),
-                    bal2.dividedBy(new BN(10).pow(new BN(18))).toNumber()
+                    bal2.div(new BN(10).pow(new BN(18))).toNumber(),
+                    bal2.div(new BN(10).pow(new BN(18))).toNumber()
                 );
             });
         });

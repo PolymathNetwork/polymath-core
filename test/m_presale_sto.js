@@ -249,7 +249,7 @@ contract("PreSaleSTO", accounts => {
                 from: account_issuer
             });
 
-            assert.equal((await I_PreSaleSTO.getRaised.call(0)).dividedBy(new BN(10).pow(new BN(18))).toNumber(), 1);
+            assert.equal((await I_PreSaleSTO.getRaised.call(0)).div(new BN(10).pow(new BN(18))).toNumber(), 1);
             console.log(await I_PreSaleSTO.getNumberInvestors.call());
             assert.equal((await I_PreSaleSTO.getNumberInvestors.call()).toNumber(), 1);
             // assert.isTrue(false);
@@ -300,7 +300,7 @@ contract("PreSaleSTO", accounts => {
                 { from: account_issuer }
             );
 
-            assert.equal((await I_PreSaleSTO.getRaised.call(1)).dividedBy(new BN(10).pow(new BN(18))).toNumber(), 2000);
+            assert.equal((await I_PreSaleSTO.getRaised.call(1)).div(new BN(10).pow(new BN(18))).toNumber(), 2000);
             assert.equal((await I_PreSaleSTO.getNumberInvestors.call()).toNumber(), 3);
         });
 

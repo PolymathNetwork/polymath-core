@@ -255,17 +255,17 @@ contract("Issuance", accounts => {
                     value: new BN(web3.utils.toWei("1", "ether"))
                 });
 
-                assert.equal((await I_CappedSTO.getRaised.call(0)).dividedBy(new BN(10).pow(new BN(18))).toNumber(), 1);
+                assert.equal((await I_CappedSTO.getRaised.call(0)).div(new BN(10).pow(new BN(18))).toNumber(), 1);
 
                 assert.equal(await I_CappedSTO.investorCount.call(), 1);
 
-                assert.equal((await I_SecurityToken.balanceOf(account_investor1)).dividedBy(new BN(10).pow(new BN(18))).toNumber(), 1000);
+                assert.equal((await I_SecurityToken.balanceOf(account_investor1)).div(new BN(10).pow(new BN(18))).toNumber(), 1000);
             });
 
             it("Verification of the event Token Purchase", async () => {
                 const log = (await I_CappedSTO.getPastEvents('TokenPurchase', {filter: {from: blockNo}}))[0];
                 assert.equal(log.args.purchaser, account_investor1, "Wrong address of the investor");
-                assert.equal(log.args.amount.dividedBy(new BN(10).pow(new BN(18))).toNumber(), 1000, "Wrong No. token get dilivered");
+                assert.equal(log.args.amount.div(new BN(10).pow(new BN(18))).toNumber(), 1000, "Wrong No. token get dilivered");
             });
 
             it("should add the investor into the whitelist by the delegate", async () => {
@@ -284,11 +284,11 @@ contract("Issuance", accounts => {
                     value: new BN(web3.utils.toWei("1", "ether"))
                 });
 
-                assert.equal((await I_CappedSTO.getRaised.call(0)).dividedBy(new BN(10).pow(new BN(18))).toNumber(), 2);
+                assert.equal((await I_CappedSTO.getRaised.call(0)).div(new BN(10).pow(new BN(18))).toNumber(), 2);
 
                 assert.equal(await I_CappedSTO.investorCount.call(), 2);
 
-                assert.equal((await I_SecurityToken.balanceOf(account_investor2)).dividedBy(new BN(10).pow(new BN(18))).toNumber(), 1000);
+                assert.equal((await I_SecurityToken.balanceOf(account_investor2)).div(new BN(10).pow(new BN(18))).toNumber(), 1000);
             });
         });
     });

@@ -80,7 +80,7 @@ contract("PolyOracle", accounts => {
             assert.equal(logNewPriceWatcher.args._oldPrice.toNumber(), 0);
             console.log(
                 "Success! Current price is: " +
-                    logNewPriceWatcher.args._price.dividedBy(new BN(10).pow(new BN(18))).toNumber() +
+                    logNewPriceWatcher.args._price.div(new BN(10).pow(new BN(18))).toNumber() +
                     " USD/POLY"
             );
         });
@@ -103,7 +103,7 @@ contract("PolyOracle", accounts => {
             const log = await logNewPriceWatcher;
             assert.equal(log.event, "PriceUpdated", "PriceUpdated not emitted.");
             assert.isNotNull(log.args._price, "Price returned was null.");
-            console.log("Success! Current price is: " + log.args._price.dividedBy(new BN(10).pow(new BN(18))).toNumber() + " USD/POLY");
+            console.log("Success! Current price is: " + log.args._price.div(new BN(10).pow(new BN(18))).toNumber() + " USD/POLY");
         });
 
         it("Should schedule to call using iters - fails", async () => {
@@ -126,7 +126,7 @@ contract("PolyOracle", accounts => {
             const log = await logNewPriceWatcher;
             assert.equal(log.event, "PriceUpdated", "PriceUpdated not emitted.");
             assert.isNotNull(log.args._price, "Price returned was null.");
-            console.log("Success! Current price is: " + log.args._price.dividedBy(new BN(10).pow(new BN(18))).toNumber() + " USD/POLY");
+            console.log("Success! Current price is: " + log.args._price.div(new BN(10).pow(new BN(18))).toNumber() + " USD/POLY");
             latestPrice = log.args._price;
         });
     });
@@ -190,7 +190,7 @@ contract("PolyOracle", accounts => {
             assert.isNotNull(logNewPriceWatcher.args._price, "Price returned was null.");
             console.log(
                 "Success! Current price is: " +
-                    logNewPriceWatcher.args._price.dividedBy(new BN(10).pow(new BN(18))).toNumber() +
+                    logNewPriceWatcher.args._price.div(new BN(10).pow(new BN(18))).toNumber() +
                     " USD/POLY"
             );
             // assert.isTrue(false);
@@ -254,7 +254,7 @@ contract("PolyOracle", accounts => {
             assert.isNotNull(logNewPriceWatcher.args._price, "Price returned was null.");
             console.log(
                 "Success! Current price is: " +
-                    logNewPriceWatcher.args._price.dividedBy(new BN(10).pow(new BN(18))).toNumber() +
+                    logNewPriceWatcher.args._price.div(new BN(10).pow(new BN(18))).toNumber() +
                     " USD/POLY"
             );
             // assert.isTrue(false);

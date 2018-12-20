@@ -257,7 +257,7 @@ contract("Concurrent STO", accounts => {
                         assert.equal(await I_STO_Array[STOIndex].investorCount.call(), 1);
                         assert.equal(
                             (await I_STO_Array[STOIndex].investors.call(account_investor1))
-                                .dividedBy(new BN(10).pow(new BN(18)))
+                                .div(new BN(10).pow(new BN(18)))
                                 .toNumber(),
                             1000
                         );
@@ -272,7 +272,7 @@ contract("Concurrent STO", accounts => {
                         assert.equal(await I_STO_Array[STOIndex].investorCount.call(), 1);
                         assert.equal(
                             (await I_STO_Array[STOIndex].investors.call(account_investor1))
-                                .dividedBy(new BN(10).pow(new BN(18)))
+                                .div(new BN(10).pow(new BN(18)))
                                 .toNumber(),
                             1000
                         );

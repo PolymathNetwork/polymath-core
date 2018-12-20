@@ -367,7 +367,7 @@ contract("LockupVolumeRestrictionTransferManager", accounts => {
 
         it("Should prevent the transfer of tokens in a lockup", async () => {
             let balance = await I_SecurityToken.balanceOf(account_investor2);
-            console.log("balance", balance.dividedBy(new BN(1).mul(new BN(10).pow(new BN(18)))).toNumber());
+            console.log("balance", balance.div(new BN(1).mul(new BN(10).pow(new BN(18)))).toNumber());
             // create a lockup for their entire balance
             // over 12 seconds total, with 3 periods of 4 seconds each.
             await I_VolumeRestrictionTransferManager.addLockUp(account_investor2, 12, 4, new BN(0), balance, { from: token_owner });

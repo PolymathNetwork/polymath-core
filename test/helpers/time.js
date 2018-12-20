@@ -6,7 +6,7 @@ function increaseTime(duration) {
     const id = Date.now();
 
     return new Promise((resolve, reject) => {
-        web3.currentProvider.sendAsync(
+        web3.currentProvider.send(
             {
                 jsonrpc: "2.0",
                 method: "evm_increaseTime",
@@ -16,7 +16,7 @@ function increaseTime(duration) {
             err1 => {
                 if (err1) return reject(err1);
 
-                web3.currentProvider.sendAsync(
+                web3.currentProvider.send(
                     {
                         jsonrpc: "2.0",
                         method: "evm_mine",
@@ -33,7 +33,7 @@ function increaseTime(duration) {
 
 export default function takeSnapshot() {
     return new Promise((resolve, reject) => {
-        web3.currentProvider.sendAsync(
+        web3.currentProvider.send(
             {
                 jsonrpc: "2.0",
                 method: "evm_snapshot",
@@ -53,7 +53,7 @@ export default function takeSnapshot() {
 
 function revertToSnapshot(snapShotId) {
     return new Promise((resolve, reject) => {
-        web3.currentProvider.sendAsync(
+        web3.currentProvider.send(
             {
                 jsonrpc: "2.0",
                 method: "evm_revert",

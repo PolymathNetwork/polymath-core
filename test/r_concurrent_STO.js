@@ -205,7 +205,7 @@ contract("Concurrent STO", accounts => {
                             "CappedSTO",
                             `Wrong STO module added at index ${STOIndex}`
                         );
-                        I_STO_Array.push(CappedSTO.at(tx1.logs[3].args._module));
+                        I_STO_Array.push(await CappedSTO.at(tx1.logs[3].args._module));
                         break;
                     case 1:
                         // Dummy STO
@@ -218,7 +218,7 @@ contract("Concurrent STO", accounts => {
                             "DummySTO",
                             `Wrong STO module added at index ${STOIndex}`
                         );
-                        I_STO_Array.push(DummySTO.at(tx2.logs[3].args._module));
+                        I_STO_Array.push(await DummySTO.at(tx2.logs[3].args._module));
                         break;
                     case 2:
                         // Pre Sale STO
@@ -231,7 +231,7 @@ contract("Concurrent STO", accounts => {
                             "PreSaleSTO",
                             `Wrong STO module added at index ${STOIndex}`
                         );
-                        I_STO_Array.push(PreSaleSTO.at(tx3.logs[3].args._module));
+                        I_STO_Array.push(await PreSaleSTO.at(tx3.logs[3].args._module));
                         break;
                 }
             }

@@ -276,10 +276,11 @@ contract("CappedSTO", accounts => {
 
             assert.equal(tx.logs[3].args._types[0], stoKey, "CappedSTO doesn't get deployed");
             assert.equal(web3.utils.hexToString(tx.logs[3].args._name), "CappedSTO", "CappedSTOFactory module was not added");
-            I_CappedSTO_Array_ETH.push(CappedSTO.at(tx.logs[3].args._module));
+            I_CappedSTO_Array_ETH.push(await CappedSTO.at(tx.logs[3].args._module));
         });
 
         it("Should call the configure function -- fail because of the bad owner", async () => {
+            console.log(I_CappedSTO_Array_ETH[0])
             await catchRevert(
                 I_CappedSTO_Array_ETH[0].configure(startTime_ETH1, endTime_ETH1, cap, rate, [E_fundRaiseType], account_fundsReceiver, {
                     from: account_polymath
@@ -537,7 +538,7 @@ contract("CappedSTO", accounts => {
 
             assert.equal(tx.logs[3].args._types[0], stoKey, "CappedSTO doesn't get deployed");
             assert.equal(web3.utils.hexToString(tx.logs[3].args._name), "CappedSTO", "CappedSTOFactory module was not added");
-            I_CappedSTO_Array_ETH.push(CappedSTO.at(tx.logs[3].args._module));
+            I_CappedSTO_Array_ETH.push(await CappedSTO.at(tx.logs[3].args._module));
         });
 
         it("Should verify the configuration of the STO", async () => {
@@ -609,7 +610,7 @@ contract("CappedSTO", accounts => {
                 const tx = await I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), { from: token_owner });
                 assert.equal(tx.logs[3].args._types[0], stoKey, `Wrong module type added at index ${STOIndex}`);
                 assert.equal(web3.utils.hexToString(tx.logs[3].args._name), "CappedSTO", `Wrong STO module added at index ${STOIndex}`);
-                I_CappedSTO_Array_ETH.push(CappedSTO.at(tx.logs[3].args._module));
+                I_CappedSTO_Array_ETH.push(await CappedSTO.at(tx.logs[3].args._module));
             }
         });
 
@@ -681,7 +682,7 @@ contract("CappedSTO", accounts => {
 
                 assert.equal(tx.logs[3].args._types[0], stoKey, "CappedSTO doesn't get deployed");
                 assert.equal(web3.utils.hexToString(tx.logs[3].args._name), "CappedSTO", "CappedSTOFactory module was not added");
-                I_CappedSTO_Array_POLY.push(CappedSTO.at(tx.logs[3].args._module));
+                I_CappedSTO_Array_POLY.push(await CappedSTO.at(tx.logs[3].args._module));
             });
         });
 
@@ -965,7 +966,7 @@ contract("CappedSTO", accounts => {
 
             assert.equal(tx.logs[3].args._types[0], stoKey, "CappedSTO doesn't get deployed");
             assert.equal(web3.utils.hexToString(tx.logs[3].args._name), "CappedSTO", "CappedSTOFactory module was not added");
-            I_CappedSTO_Array_POLY.push(CappedSTO.at(tx.logs[3].args._module));
+            I_CappedSTO_Array_POLY.push(await CappedSTO.at(tx.logs[3].args._module));
         });
 
         it("Should verify the configuration of the STO", async () => {

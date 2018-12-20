@@ -145,7 +145,6 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         bytes calldata, /* _data */
         bool /* _isTransfer */
     ) external returns(Result) {
-        return Result.VALID;
         if (!paused) {
             if (allowAllTransfers) {
                 //All transfers allowed, regardless of whitelist

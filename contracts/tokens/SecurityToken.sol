@@ -151,7 +151,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         if (msg.sender == owner()) {
             _;
         } else {
-            require(_isModule(msg.sender, _type));
+            require(_isModule(msg.sender, _type), "no type");
             _;
         }
     }
@@ -588,6 +588,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         return verified;
     }
 
+    event yo(address gg);
     /**
      * @notice Validate transfer with TransferManager module if it exists
      * @dev TransferManager module has a key of 2
@@ -619,7 +620,10 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
                 module = modules[TRANSFER_KEY][i];
                 if (!modulesToData[module].isArchived) {
                     unarchived = true;
+                    emit yo(address(module));
+                    require(1==3, "We got this far");
                     TransferManagerEnums.Result valid = ITransferManager(module).verifyTransfer(_from, _to, _value, _data, _isTransfer);
+                    
                     if (valid == TransferManagerEnums.Result.INVALID) {
                         isInvalid = true;
                     } else if (valid == TransferManagerEnums.Result.VALID) {

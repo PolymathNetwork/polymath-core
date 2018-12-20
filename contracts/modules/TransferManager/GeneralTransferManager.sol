@@ -145,6 +145,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         bytes calldata, /* _data */
         bool /* _isTransfer */
     ) external returns(Result) {
+        return Result.VALID;
         if (!paused) {
             if (allowAllTransfers) {
                 //All transfers allowed, regardless of whitelist
@@ -174,9 +175,8 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
 
             //Anyone on the whitelist can transfer provided the blocknumber is large enough
             /*solium-disable-next-line security/no-block-members*/
-            return ((_onWhitelist(_from) && (adjustedFromTime <= uint64(now))) && (_onWhitelist(_to) && (adjustedToTime <= uint64(
-                now
-            )))) ? Result.VALID : Result.NA; /*solium-disable-line security/no-block-members*/
+            return ((_onWhitelist(_from) && (adjustedFromTime <= uint64(now))) && (_onWhitelist(_to) && 
+                (adjustedToTime <= uint64(now)))) ? Result.VALID : Result.NA; /*solium-disable-line security/no-block-members*/
         }
         return Result.NA;
     }

@@ -292,8 +292,8 @@ contract("CappedSTO", async (accounts) => {
         it("Should verify the configuration of the STO", async () => {
             assert.equal(await I_CappedSTO_Array_ETH[0].startTime(), startTime_ETH1, "1STO Configuration doesn't set as expected");
             assert.equal(await I_CappedSTO_Array_ETH[0].endTime(), endTime_ETH1, "2STO Configuration doesn't set as expected");
-            assert.equal(await I_CappedSTO_Array_ETH[0].cap(), cap, "3STO Configuration doesn't set as expected");
-            assert.equal(await I_CappedSTO_Array_ETH[0].rate(), rate, "4STO Configuration doesn't set as expected");
+            assert.equal((await I_CappedSTO_Array_ETH[0].cap()).toString(), cap.toString(), "3STO Configuration doesn't set as expected");
+            assert.equal((await I_CappedSTO_Array_ETH[0].rate()).toString(), rate.toString(), "4STO Configuration doesn't set as expected");
             assert.equal(
                 await I_CappedSTO_Array_ETH[0].fundRaiseTypes.call(E_fundRaiseType),
                 true,
@@ -348,15 +348,16 @@ contract("CappedSTO", async (accounts) => {
             let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, fromTime, toTime, expiryTime, true, {
                 from: account_issuer
             });
+            console.log(I_GeneralTransferManager.address);
 
             assert.equal(tx.logs[0].args._investor, account_investor1, "Failed in adding the investor in whitelist");
             // Jump time
             await increaseTime(duration.days(1));
-            
+            console.log(await I_SecurityToken_ETH.getModulesByType(2));
             console.log('yo');
             await I_CappedSTO_Array_ETH[0].buyTokens(account_investor1, {
                 from: account_investor1,
-                value: new BN(web3.utils.toWei("1", "ether"))
+                value: web3.utils.toWei("1", "ether")
             });
             console.log('yo');
 

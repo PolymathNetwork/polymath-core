@@ -31,7 +31,7 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
     let tx;
 
     // Initial fee for ticker registry and security token registry
-    const REGFEE = web3.utils.toWei("250");
+    const REGFEE = new BN(web3.utils.toWei("250"));
     const STOSetupCost = 0;
     const address_zero = "0x0000000000000000000000000000000000000000";
 
@@ -184,7 +184,7 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
         // Step 1: Deploy Oracles
         // 1a - Deploy POLY Oracle
         it("Should successfully deploy POLY Oracle and register on PolymathRegistry", async () => {
-            I_POLYOracle = await PolyOracle.new({ from: POLYMATH, value: web3.utils.toWei("1") });
+            I_POLYOracle = await PolyOracle.new({ from: POLYMATH, value: new BN(web3.utils.toWei("1")) });
             console.log(I_POLYOracle.address);
             assert.notEqual(I_POLYOracle.address.valueOf(), address_zero, "POLYOracle contract was not deployed");
             tx = await I_PolymathRegistry.changeAddress("PolyUsdOracle", I_POLYOracle.address, { from: POLYMATH });
@@ -426,7 +426,7 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
         it("Should successfully launch CappedSTO for third security token", async () => {
             let startTime = await latestTime() + duration.days(1);
             let endTime = startTime + duration.days(30);
-            let cap = web3.utils.toWei("500000");
+            let cap = new BN(web3.utils.toWei("500000"));
             let rate = 1000;
             let fundRaiseType = 0;
             let fundsReceiver = ISSUER3;

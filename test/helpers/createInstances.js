@@ -73,7 +73,7 @@ let I_STRProxied;
 let I_MRProxied;
 
 // Initial fee for ticker registry and security token registry
-const initRegFee = web3.utils.toWei("250");
+const initRegFee = new BN(web3.utils.toWei("250"));
 
 const STRProxyParameters = ["address", "address", "uint256", "uint256", "address"];
 const MRProxyParameters = ["address", "address"];

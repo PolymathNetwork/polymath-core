@@ -68,7 +68,7 @@ contract("PreSaleSTO", accounts => {
     const budget = 0;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = web3.utils.toWei("250");
+    const initRegFee = new BN(web3.utils.toWei("250"));
     let endTime;
     const address_zero = "0x0000000000000000000000000000000000000000";
     const STOParameters = ["uint256"];
@@ -162,8 +162,8 @@ contract("PreSaleSTO", accounts => {
             let snap_id = await takeSnapshot();
             endTime = await latestTime() + duration.days(30); // Start time will be 5000 seconds more than the latest time
             let bytesSTO = encodeModuleCall(STOParameters, [endTime]);
-            await I_PolyToken.getTokens(web3.utils.toWei("500"), I_SecurityToken.address);
-            const tx = await I_SecurityToken.addModule(P_PreSaleSTOFactory.address, bytesSTO, web3.utils.toWei("500"), new BN(0), {
+            await I_PolyToken.getTokens(new BN(web3.utils.toWei("500")), I_SecurityToken.address);
+            const tx = await I_SecurityToken.addModule(P_PreSaleSTOFactory.address, bytesSTO, new BN(web3.utils.toWei("500")), new BN(0), {
                 from: token_owner
             });
 
@@ -227,7 +227,7 @@ contract("PreSaleSTO", accounts => {
 
     describe("Buy tokens", async () => {
         it("Should allocate the tokens -- failed due to investor not on whitelist", async () => {
-            await catchRevert(I_PreSaleSTO.allocateTokens(account_investor1, 1000, web3.utils.toWei("1", "ether"), 0));
+            await catchRevert(I_PreSaleSTO.allocateTokens(account_investor1, 1000, new BN(web3.utils.toWei("1", "ether")), 0));
         });
 
         it("Should Buy the tokens", async () => {
@@ -245,7 +245,7 @@ contract("PreSaleSTO", accounts => {
 
             // Jump time
             await increaseTime(duration.days(1));
-            await I_PreSaleSTO.allocateTokens(account_investor1, web3.utils.toWei("1", "ether"), web3.utils.toWei("1", "ether"), new BN(0), {
+            await I_PreSaleSTO.allocateTokens(account_investor1, new BN(web3.utils.toWei("1", "ether")), new BN(web3.utils.toWei("1", "ether")), new BN(0), {
                 from: account_issuer
             });
 
@@ -257,7 +257,7 @@ contract("PreSaleSTO", accounts => {
 
         it("Should allocate the tokens --failed because of amount is 0", async () => {
             await catchRevert(
-                I_PreSaleSTO.allocateTokens(account_investor1, new BN(0), web3.utils.toWei("1", "ether"), new BN(0), {
+                I_PreSaleSTO.allocateTokens(account_investor1, new BN(0), new BN(web3.utils.toWei("1", "ether")), new BN(0), {
                     from: account_issuer
                 })
             );
@@ -265,7 +265,7 @@ contract("PreSaleSTO", accounts => {
 
         it("Should allocate the tokens -- failed due to msg.sender is not pre sale admin", async () => {
             await catchRevert(
-                I_PreSaleSTO.allocateTokens(account_investor1, web3.utils.toWei("1", "ether"), web3.utils.toWei("1", "ether"), new BN(0), {
+                I_PreSaleSTO.allocateTokens(account_investor1, new BN(web3.utils.toWei("1", "ether")), new BN(web3.utils.toWei("1", "ether")), new BN(0), {
                     from: account_fundsReceiver
                 })
             );
@@ -294,9 +294,9 @@ contract("PreSaleSTO", accounts => {
 
             await I_PreSaleSTO.allocateTokensMulti(
                 [account_investor2, account_investor3],
-                [web3.utils.toWei("1", "ether"), web3.utils.toWei("1", "ether")],
+                [new BN(web3.utils.toWei("1", "ether")), new BN(web3.utils.toWei("1", "ether"))],
                 [0, 0],
-                [web3.utils.toWei("1000", "ether"), web3.utils.toWei("1000", "ether")],
+                [new BN(web3.utils.toWei("1000", "ether")), new BN(web3.utils.toWei("1000", "ether"))],
                 { from: account_issuer }
             );
 
@@ -308,9 +308,9 @@ contract("PreSaleSTO", accounts => {
             await catchRevert(
                 I_PreSaleSTO.allocateTokensMulti(
                     [account_investor2],
-                    [web3.utils.toWei("1", "ether"), web3.utils.toWei("1", "ether")],
+                    [new BN(web3.utils.toWei("1", "ether")), new BN(web3.utils.toWei("1", "ether"))],
                     [0, 0],
-                    [web3.utils.toWei("1000", "ether"), web3.utils.toWei("1000", "ether")],
+                    [new BN(web3.utils.toWei("1000", "ether")), new BN(web3.utils.toWei("1000", "ether"))],
                     { from: account_issuer }
                 )
             );
@@ -320,9 +320,9 @@ contract("PreSaleSTO", accounts => {
             await catchRevert(
                 I_PreSaleSTO.allocateTokensMulti(
                     [account_investor2, account_investor3],
-                    [web3.utils.toWei("1", "ether"), web3.utils.toWei("1", "ether")],
+                    [new BN(web3.utils.toWei("1", "ether")), new BN(web3.utils.toWei("1", "ether"))],
                     [0],
-                    [web3.utils.toWei("1000", "ether"), web3.utils.toWei("1000", "ether")],
+                    [new BN(web3.utils.toWei("1000", "ether")), new BN(web3.utils.toWei("1000", "ether"))],
                     { from: account_issuer }
                 )
             );
@@ -332,9 +332,9 @@ contract("PreSaleSTO", accounts => {
             await catchRevert(
                 I_PreSaleSTO.allocateTokensMulti(
                     [account_investor2, account_investor3],
-                    [web3.utils.toWei("1", "ether"), web3.utils.toWei("1", "ether")],
+                    [new BN(web3.utils.toWei("1", "ether")), new BN(web3.utils.toWei("1", "ether"))],
                     [0, 0],
-                    [web3.utils.toWei("1000", "ether")],
+                    [new BN(web3.utils.toWei("1000", "ether"))],
                     { from: account_issuer }
                 )
             );
@@ -344,16 +344,16 @@ contract("PreSaleSTO", accounts => {
             await catchRevert(
                 I_PreSaleSTO.allocateTokensMulti(
                     [account_investor2, account_investor3],
-                    [web3.utils.toWei("1", "ether"), web3.utils.toWei("1", "ether")],
+                    [new BN(web3.utils.toWei("1", "ether")), new BN(web3.utils.toWei("1", "ether"))],
                     [0],
-                    [web3.utils.toWei("1000", "ether"), web3.utils.toWei("1000", "ether")],
+                    [new BN(web3.utils.toWei("1000", "ether")), new BN(web3.utils.toWei("1000", "ether"))],
                     { from: account_issuer }
                 )
             );
         });
 
         it("Should buy some more tokens to previous investor", async () => {
-            await I_PreSaleSTO.allocateTokens(account_investor1, web3.utils.toWei("1000", "ether"), web3.utils.toWei("1", "ether"), new BN(0), {
+            await I_PreSaleSTO.allocateTokens(account_investor1, new BN(web3.utils.toWei("1000", "ether")), new BN(web3.utils.toWei("1", "ether")), new BN(0), {
                 from: account_issuer
             });
             // No change in the investor count
@@ -364,14 +364,14 @@ contract("PreSaleSTO", accounts => {
             await increaseTime(duration.days(100)); // increased beyond the end time of the STO
 
             await catchRevert(
-                I_PreSaleSTO.allocateTokens(account_investor1, 1000, web3.utils.toWei("1", "ether"), new BN(0), { from: account_issuer })
+                I_PreSaleSTO.allocateTokens(account_investor1, 1000, new BN(web3.utils.toWei("1", "ether")), new BN(0), { from: account_issuer })
             );
         });
     });
 
     describe("Reclaim poly sent to STO by mistake", async () => {
         it("Should fail to reclaim POLY because token contract address is 0 address", async () => {
-            let value = web3.utils.toWei("100", "ether");
+            let value = new BN(web3.utils.toWei("100", "ether"));
             await I_PolyToken.getTokens(value, account_investor1);
             await I_PolyToken.transfer(I_PreSaleSTO.address, value, { from: account_investor1 });
 
@@ -379,7 +379,7 @@ contract("PreSaleSTO", accounts => {
         });
 
         it("Should successfully reclaim POLY", async () => {
-            let value = web3.utils.toWei("100", "ether");
+            let value = new BN(web3.utils.toWei("100", "ether"));
             await I_PolyToken.getTokens(value, account_investor1);
             let initInvestorBalance = await I_PolyToken.balanceOf(account_investor1);
             let initOwnerBalance = await I_PolyToken.balanceOf(token_owner);

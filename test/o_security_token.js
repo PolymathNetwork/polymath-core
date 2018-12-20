@@ -82,7 +82,7 @@ contract("SecurityToken", accounts => {
     const budget = 0;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = web3.utils.toWei("250");
+    const initRegFee = new BN(web3.utils.toWei("250"));
 
     // delagate details
     const delegateDetails = "I am delegate ..";
@@ -92,10 +92,10 @@ contract("SecurityToken", accounts => {
     // Capped STO details
     let startTime;
     let endTime;
-    const cap = web3.utils.toWei("10000");
-    const rate = web3.utils.toWei("1000");
+    const cap = new BN(web3.utils.toWei("10000"));
+    const rate = new BN(web3.utils.toWei("1000"));
     const fundRaiseType = [0];
-    const cappedSTOSetupCost = web3.utils.toWei("20000", "ether");
+    const cappedSTOSetupCost = new BN(web3.utils.toWei("20000", "ether"));
     const maxCost = cappedSTOSetupCost;
     const STOParameters = ["uint256", "uint256", "uint256", "uint256", "uint8[]", "address"];
 
@@ -292,7 +292,7 @@ contract("SecurityToken", accounts => {
             await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCost, { from: token_owner });
 
             await catchRevert(
-                I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, web3.utils.toWei("1000", "ether"), new BN(0), { from: token_owner })
+                I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, new BN(web3.utils.toWei("1000", "ether")), new BN(0), { from: token_owner })
             );
         });
 
@@ -409,8 +409,8 @@ contract("SecurityToken", accounts => {
             let tx = await I_SecurityToken.removeModule(I_GeneralTransferManager.address, { from: token_owner });
             assert.equal(tx.logs[0].args._types[0], transferManagerKey);
             assert.equal(tx.logs[0].args._module, I_GeneralTransferManager.address);
-            await I_SecurityToken.mint(account_investor1, web3.utils.toWei("500"), { from: token_owner });
-            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("200"), { from: account_investor1 });
+            await I_SecurityToken.mint(account_investor1, new BN(web3.utils.toWei("500")), { from: token_owner });
+            await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("200")), { from: account_investor1 });
             assert.equal((await I_SecurityToken.balanceOf(account_investor2)).dividedBy(new BN(10).pow(new BN(18))).toNumber(), 200);
             await revertToSnapshot(key);
         });
@@ -544,7 +544,7 @@ contract("SecurityToken", accounts => {
                 from: account_investor1,
                 to: I_CappedSTO.address,
                 gas: 2100000,
-                value: web3.utils.toWei("1", "ether")
+                value: new BN(web3.utils.toWei("1", "ether"))
             });
             console.log("AFTER");
             assert.equal((await I_CappedSTO.getRaised.call(0)).dividedBy(new BN(10).pow(new BN(18))).toNumber(), 1);
@@ -710,7 +710,7 @@ contract("SecurityToken", accounts => {
                 from: account_temp,
                 to: I_CappedSTO.address,
                 gas: 2100000,
-                value: web3.utils.toWei("1", "ether")
+                value: new BN(web3.utils.toWei("1", "ether"))
             });
 
             assert.equal((await I_CappedSTO.getRaised.call(0)).dividedBy(new BN(10).pow(new BN(18))).toNumber(), 2);
@@ -729,7 +729,7 @@ contract("SecurityToken", accounts => {
                     from: account_temp,
                     to: I_CappedSTO.address,
                     gas: 2100000,
-                    value: web3.utils.toWei("1", "ether")
+                    value: new BN(web3.utils.toWei("1", "ether"))
                 })
             );
             await revertToSnapshot(id);
@@ -750,7 +750,7 @@ contract("SecurityToken", accounts => {
                     from: account_temp,
                     to: I_CappedSTO.address,
                     gas: 2100000,
-                    value: web3.utils.toWei("1", "ether")
+                    value: new BN(web3.utils.toWei("1", "ether"))
                 })
             );
         });
@@ -777,7 +777,7 @@ contract("SecurityToken", accounts => {
                     from: account_temp,
                     to: I_CappedSTO.address,
                     gas: 2100000,
-                    value: web3.utils.toWei("1", "ether")
+                    value: new BN(web3.utils.toWei("1", "ether"))
                 })
             );
         });
@@ -786,7 +786,7 @@ contract("SecurityToken", accounts => {
             await I_GeneralTransferManager.changeAllowAllWhitelistTransfers(true, { from: token_owner });
             console.log(await I_SecurityToken.balanceOf(account_investor1));
 
-            await catchRevert(I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), { from: account_temp }));
+            await catchRevert(I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: account_temp }));
         });
 
         it("Should unfreeze all the transfers", async () => {
@@ -799,7 +799,7 @@ contract("SecurityToken", accounts => {
         });
 
         it("Should able to transfers the tokens from one user to another", async () => {
-            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), { from: account_temp });
+            await I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: account_temp });
         });
 
         it("Should check that the list of investors is correct", async () => {
@@ -847,7 +847,7 @@ contract("SecurityToken", accounts => {
             let currentInvestorCount = await I_SecurityToken.getInvestorCount.call();
             let currentBalance = await I_SecurityToken.balanceOf(account_temp);
             await catchRevert(
-                I_SecurityToken.forceBurn(account_temp, currentBalance + web3.utils.toWei("500", "ether"), "", "", {
+                I_SecurityToken.forceBurn(account_temp, currentBalance + new BN(web3.utils.toWei("500", "ether")), "", "", {
                     from: account_controller
                 })
             );
@@ -962,22 +962,22 @@ contract("SecurityToken", accounts => {
         it("Should successfully burn tokens", async () => {
             await I_GeneralTransferManager.changeAllowAllWhitelistTransfers(false, { from: token_owner });
             // Minting some tokens
-            await I_SecurityToken.mint(account_investor1, web3.utils.toWei("1000"), { from: token_owner });
+            await I_SecurityToken.mint(account_investor1, new BN(web3.utils.toWei("1000")), { from: token_owner });
             // Provide approval to trnafer the tokens to Module
-            await I_SecurityToken.approve(I_MockRedemptionManager.address, web3.utils.toWei("500"), { from: account_investor1 });
+            await I_SecurityToken.approve(I_MockRedemptionManager.address, new BN(web3.utils.toWei("500")), { from: account_investor1 });
             // Allow all whitelist transfer
             await I_GeneralTransferManager.changeAllowAllWhitelistTransfers(true, { from: token_owner });
             // Transfer the tokens to module (Burn)
-            await I_MockRedemptionManager.transferToRedeem(web3.utils.toWei("500"), { from: account_investor1 });
+            await I_MockRedemptionManager.transferToRedeem(new BN(web3.utils.toWei("500")), { from: account_investor1 });
             // Redeem tokens
-            let tx = await I_MockRedemptionManager.redeemTokenByOwner(web3.utils.toWei("250"), { from: account_investor1 });
+            let tx = await I_MockRedemptionManager.redeemTokenByOwner(new BN(web3.utils.toWei("250")), { from: account_investor1 });
             assert.equal(tx.logs[0].args._investor, account_investor1, "Burn tokens of wrong owner");
             assert.equal(tx.logs[0].args._value.dividedBy(new BN(10).pow(new BN(18))).toNumber(), 250);
         });
 
         it("Should fail to burn the tokens because module get archived", async () => {
             await I_SecurityToken.archiveModule(I_MockRedemptionManager.address, { from: token_owner });
-            await catchRevert(I_MockRedemptionManager.redeemTokenByOwner(web3.utils.toWei("250"), { from: account_investor1 }));
+            await catchRevert(I_MockRedemptionManager.redeemTokenByOwner(new BN(web3.utils.toWei("250")), { from: account_investor1 }));
         });
 
         it("Should successfully fail in calling the burn functions", async () => {
@@ -999,13 +999,13 @@ contract("SecurityToken", accounts => {
             );
             assert.equal(tx.logs[0].args._investor, I_MockRedemptionManager.address, "Failed in adding the investor in whitelist");
             // Provide approval to trnafer the tokens to Module
-            await I_SecurityToken.approve(I_MockRedemptionManager.address, web3.utils.toWei("500"), { from: account_investor1 });
+            await I_SecurityToken.approve(I_MockRedemptionManager.address, new BN(web3.utils.toWei("500")), { from: account_investor1 });
             // Transfer the tokens to module (Burn)
-            await I_MockRedemptionManager.transferToRedeem(web3.utils.toWei("500"), { from: account_investor1 });
+            await I_MockRedemptionManager.transferToRedeem(new BN(web3.utils.toWei("500")), { from: account_investor1 });
 
             await catchRevert(
                 // Redeem tokens
-                I_MockRedemptionManager.redeemTokenByOwner(web3.utils.toWei("250"), { from: account_investor1 })
+                I_MockRedemptionManager.redeemTokenByOwner(new BN(web3.utils.toWei("250")), { from: account_investor1 })
             );
         });
     });
@@ -1013,7 +1013,7 @@ contract("SecurityToken", accounts => {
     describe("Withdraw Poly", async () => {
         it("Should successfully withdraw the poly -- failed because of zero address of token", async () => {
             await catchRevert(
-                I_SecurityToken.withdrawERC20("0x00000000000000000000000000000000000000000", web3.utils.toWei("20000", "ether"), {
+                I_SecurityToken.withdrawERC20("0x00000000000000000000000000000000000000000", new BN(web3.utils.toWei("20000", "ether")), {
                     from: account_temp
                 })
             );
@@ -1021,31 +1021,31 @@ contract("SecurityToken", accounts => {
 
         it("Should successfully withdraw the poly", async () => {
             await catchRevert(
-                I_SecurityToken.withdrawERC20(I_PolyToken.address, web3.utils.toWei("20000", "ether"), { from: account_temp })
+                I_SecurityToken.withdrawERC20(I_PolyToken.address, new BN(web3.utils.toWei("20000", "ether")), { from: account_temp })
             );
         });
 
         it("Should successfully withdraw the poly", async () => {
             let balanceBefore = await I_PolyToken.balanceOf(token_owner);
-            await I_SecurityToken.withdrawERC20(I_PolyToken.address, web3.utils.toWei("20000", "ether"), { from: token_owner });
+            await I_SecurityToken.withdrawERC20(I_PolyToken.address, new BN(web3.utils.toWei("20000", "ether")), { from: token_owner });
             let balanceAfter = await I_PolyToken.balanceOf(token_owner);
             assert.equal(
                 BN(balanceAfter)
                     .sub(new BN(balanceBefore))
                     .toNumber(),
-                web3.utils.toWei("20000", "ether")
+                new BN(web3.utils.toWei("20000", "ether"))
             );
         });
 
         it("Should successfully withdraw the poly", async () => {
-            await catchRevert(I_SecurityToken.withdrawERC20(I_PolyToken.address, web3.utils.toWei("10", "ether"), { from: token_owner }));
+            await catchRevert(I_SecurityToken.withdrawERC20(I_PolyToken.address, new BN(web3.utils.toWei("10", "ether")), { from: token_owner }));
         });
     });
 
     describe("Force Transfer", async () => {
         it("Should fail to forceTransfer because not approved controller", async () => {
             await catchRevert(
-                I_SecurityToken.forceTransfer(account_investor1, account_investor2, web3.utils.toWei("10", "ether"), "", "reason", {
+                I_SecurityToken.forceTransfer(account_investor1, account_investor2, new BN(web3.utils.toWei("10", "ether")), "", "reason", {
                     from: account_investor1
                 })
             );
@@ -1053,7 +1053,7 @@ contract("SecurityToken", accounts => {
 
         it("Should fail to forceTransfer because insufficient balance", async () => {
             await catchRevert(
-                I_SecurityToken.forceTransfer(account_investor2, account_investor1, web3.utils.toWei("10", "ether"), "", "reason", {
+                I_SecurityToken.forceTransfer(account_investor2, account_investor1, new BN(web3.utils.toWei("10", "ether")), "", "reason", {
                     from: account_controller
                 })
             );
@@ -1061,7 +1061,7 @@ contract("SecurityToken", accounts => {
 
         it("Should fail to forceTransfer because recipient is zero address", async () => {
             await catchRevert(
-                I_SecurityToken.forceTransfer(account_investor1, address_zero, web3.utils.toWei("10", "ether"), "", "reason", {
+                I_SecurityToken.forceTransfer(account_investor1, address_zero, new BN(web3.utils.toWei("10", "ether")), "", "reason", {
                     from: account_controller
                 })
             );
@@ -1078,7 +1078,7 @@ contract("SecurityToken", accounts => {
             let tx = await I_SecurityToken.forceTransfer(
                 account_investor1,
                 account_investor2,
-                web3.utils.toWei("10", "ether"),
+                new BN(web3.utils.toWei("10", "ether")),
                 "",
                 "reason",
                 { from: account_controller }
@@ -1090,12 +1090,12 @@ contract("SecurityToken", accounts => {
 
             assert.equal(start_investorCount.add(1).toNumber(), end_investorCount.toNumber(), "Investor count not changed");
             assert.equal(
-                start_balInv1.sub(web3.utils.toWei("10", "ether")).toNumber(),
+                start_balInv1.sub(new BN(web3.utils.toWei("10", "ether"))).toNumber(),
                 end_balInv1.toNumber(),
                 "Investor balance not changed"
             );
             assert.equal(
-                start_balInv2.add(web3.utils.toWei("10", "ether")).toNumber(),
+                start_balInv2.add(new BN(web3.utils.toWei("10", "ether"))).toNumber(),
                 end_balInv2.toNumber(),
                 "Investor balance not changed"
             );
@@ -1106,14 +1106,14 @@ contract("SecurityToken", accounts => {
             assert.equal(account_controller, eventForceTransfer.args._controller, "Event not emitted as expected");
             assert.equal(account_investor1, eventForceTransfer.args._from, "Event not emitted as expected");
             assert.equal(account_investor2, eventForceTransfer.args._to, "Event not emitted as expected");
-            assert.equal(web3.utils.toWei("10", "ether"), eventForceTransfer.args._value, "Event not emitted as expected");
+            assert.equal(new BN(web3.utils.toWei("10", "ether")), eventForceTransfer.args._value, "Event not emitted as expected");
             console.log(eventForceTransfer.args._verifyTransfer);
             assert.equal(false, eventForceTransfer.args._verifyTransfer, "Event not emitted as expected");
             assert.equal("reason", web3.utils.hexToUtf8(eventForceTransfer.args._data), "Event not emitted as expected");
 
             assert.equal(account_investor1, eventTransfer.args.from, "Event not emitted as expected");
             assert.equal(account_investor2, eventTransfer.args.to, "Event not emitted as expected");
-            assert.equal(web3.utils.toWei("10", "ether"), eventTransfer.args.value, "Event not emitted as expected");
+            assert.equal(new BN(web3.utils.toWei("10", "ether")), eventTransfer.args.value, "Event not emitted as expected");
         });
 
         it("Should fail to freeze controller functionality because not owner", async () => {
@@ -1148,7 +1148,7 @@ contract("SecurityToken", accounts => {
 
         it("Should fail to forceTransfer because controller functionality frozen", async () => {
             await catchRevert(
-                I_SecurityToken.forceTransfer(account_investor1, account_investor2, web3.utils.toWei("10", "ether"), "", "reason", {
+                I_SecurityToken.forceTransfer(account_investor1, account_investor2, new BN(web3.utils.toWei("10", "ether")), "", "reason", {
                     from: account_controller
                 })
             );

@@ -35,7 +35,7 @@ contract("SecurityTokenRegistryProxy", accounts => {
     let account_polymath_new;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = web3.utils.toWei("250");
+    const initRegFee = new BN(web3.utils.toWei("250"));
     const version = "1.0.0";
     const message = "Transaction Should Fail!";
 
@@ -130,14 +130,14 @@ contract("SecurityTokenRegistryProxy", accounts => {
             );
             assert.equal(
                 (await I_STRProxied.getUintValues.call(web3.utils.soliditySha3("tickerRegFee"))).toNumber(),
-                web3.utils.toWei("250")
+                new BN(web3.utils.toWei("250"))
             );
         });
     });
 
     describe("Feed some data in storage", async () => {
         it("Register the ticker", async () => {
-            await I_PolyToken.getTokens(web3.utils.toWei("1000"), token_owner);
+            await I_PolyToken.getTokens(new BN(web3.utils.toWei("1000")), token_owner);
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
             let tx = await I_STRProxied.registerTicker(token_owner, symbol, name, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner, "Owner should be the same as registered with the ticker");

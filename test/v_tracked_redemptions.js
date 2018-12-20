@@ -68,7 +68,7 @@ contract("TrackedRedemption", accounts => {
     const burnKey = 5;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = web3.utils.toWei("250");
+    const initRegFee = new BN(web3.utils.toWei("250"));
 
     before(async () => {
         // Accounts setup
@@ -104,7 +104,7 @@ contract("TrackedRedemption", accounts => {
 
         // STEP 4: Deploy the TrackedRedemption
         [I_TrackedRedemptionFactory] = await deployRedemptionAndVerifyed(account_polymath, I_MRProxied, 0);
-        [P_TrackedRedemptionFactory] = await deployRedemptionAndVerifyed(account_polymath, I_MRProxied, web3.utils.toWei("500"));
+        [P_TrackedRedemptionFactory] = await deployRedemptionAndVerifyed(account_polymath, I_MRProxied, new BN(web3.utils.toWei("500")));
 
         // Printing all the contract addresses
         console.log(`
@@ -156,8 +156,8 @@ contract("TrackedRedemption", accounts => {
 
         it("Should successfully attach the paid TrackedRedemption with the security token", async () => {
             let snapId = await takeSnapshot();
-            await I_PolyToken.getTokens(web3.utils.toWei("500"), I_SecurityToken.address);
-            const tx = await I_SecurityToken.addModule(P_TrackedRedemptionFactory.address, "", web3.utils.toWei("500"), new BN(0), {
+            await I_PolyToken.getTokens(new BN(web3.utils.toWei("500")), I_SecurityToken.address);
+            const tx = await I_SecurityToken.addModule(P_TrackedRedemptionFactory.address, "", new BN(web3.utils.toWei("500")), new BN(0), {
                 from: token_owner
             });
             assert.equal(tx.logs[3].args._types[0].toNumber(), burnKey, "TrackedRedemption doesn't get deployed");
@@ -208,9 +208,9 @@ contract("TrackedRedemption", accounts => {
             await increaseTime(5000);
 
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor1, web3.utils.toWei("1", "ether"), { from: token_owner });
+            await I_SecurityToken.mint(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), web3.utils.toWei("1", "ether"));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), new BN(web3.utils.toWei("1", "ether")));
         });
 
         it("Buy some tokens for account_investor2 (2 ETH)", async () => {
@@ -235,23 +235,23 @@ contract("TrackedRedemption", accounts => {
             );
 
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor2, web3.utils.toWei("2", "ether"), { from: token_owner });
+            await I_SecurityToken.mint(account_investor2, new BN(web3.utils.toWei("2", "ether")), { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toNumber(), web3.utils.toWei("2", "ether"));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toNumber(), new BN(web3.utils.toWei("2", "ether")));
         });
 
         it("Redeem some tokens - fail insufficient allowance", async () => {
             await I_GeneralTransferManager.changeAllowAllBurnTransfers(true, { from: token_owner });
 
-            await catchRevert(I_TrackedRedemption.redeemTokens(web3.utils.toWei("1", "ether"), { from: account_investor1 }));
+            await catchRevert(I_TrackedRedemption.redeemTokens(new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 }));
         });
 
         it("Redeem some tokens", async () => {
-            await I_SecurityToken.approve(I_TrackedRedemption.address, web3.utils.toWei("1", "ether"), { from: account_investor1 });
-            let tx = await I_TrackedRedemption.redeemTokens(web3.utils.toWei("1", "ether"), { from: account_investor1 });
+            await I_SecurityToken.approve(I_TrackedRedemption.address, new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 });
+            let tx = await I_TrackedRedemption.redeemTokens(new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 });
             console.log(JSON.stringify(tx.logs));
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor1.toLowerCase(), "Mismatch address");
-            assert.equal(tx.logs[0].args._value, web3.utils.toWei("1", "ether"), "Wrong value");
+            assert.equal(tx.logs[0].args._value, new BN(web3.utils.toWei("1", "ether")), "Wrong value");
         });
 
         it("Get the init data", async () => {

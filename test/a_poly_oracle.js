@@ -56,7 +56,7 @@ contract("PolyOracle", accounts => {
                 await latestTime() + duration.minutes(2),
                 await latestTime() + duration.minutes(3)
             ];
-            await catchRevert(I_PolyOracle.schedulePriceUpdatesFixed(timeScheduling, { from: accounts[1], value: web3.utils.toWei("2") }));
+            await catchRevert(I_PolyOracle.schedulePriceUpdatesFixed(timeScheduling, { from: accounts[1], value: new BN(web3.utils.toWei("2")) }));
         });
 
         it("Should schedule the timing of the call - fails - no value", async () => {
@@ -70,7 +70,7 @@ contract("PolyOracle", accounts => {
 
         it("Should schedule the timing of the call - single call", async () => {
             let blockNo = await latestBlock();
-            let tx = await I_PolyOracle.schedulePriceUpdatesFixed([], { from: owner, value: web3.utils.toWei("1") });
+            let tx = await I_PolyOracle.schedulePriceUpdatesFixed([], { from: owner, value: new BN(web3.utils.toWei("1")) });
             assert.isAtMost(tx.logs[0].args._time.toNumber(), await latestTime());
             // await increaseTime(50);
             const logNewPriceWatcher = (await I_PolyOracle.getPastEvents('PriceUpdated', {filter: {from: blockNo}}))[0];
@@ -88,7 +88,7 @@ contract("PolyOracle", accounts => {
         it("Should schedule the timing of the call - multiple calls", async () => {
             let blockNo = await latestBlock();
             let timeScheduling = [await latestTime() + duration.seconds(10), await latestTime() + duration.seconds(20)];
-            let tx = await I_PolyOracle.schedulePriceUpdatesFixed(timeScheduling, { from: owner, value: web3.utils.toWei("1.5") });
+            let tx = await I_PolyOracle.schedulePriceUpdatesFixed(timeScheduling, { from: owner, value: new BN(web3.utils.toWei("1.5")) });
 
             let event_data = tx.logs;
 
@@ -175,7 +175,7 @@ contract("PolyOracle", accounts => {
             await I_PolyOracle.setGasPrice(new BN(60).mul(new BN(10).pow(9)), { from: owner });
             let blockNo = await latestBlock();
             let timeScheduling = [await latestTime() + duration.seconds(10), await latestTime() + duration.seconds(20)];
-            let tx = await I_PolyOracle.schedulePriceUpdatesFixed(timeScheduling, { from: owner, value: web3.utils.toWei("2") });
+            let tx = await I_PolyOracle.schedulePriceUpdatesFixed(timeScheduling, { from: owner, value: new BN(web3.utils.toWei("2")) });
 
             let event_data = tx.logs;
 
@@ -247,7 +247,7 @@ contract("PolyOracle", accounts => {
 
         it("Should schedule the timing of the call - after changes", async () => {
             let blockNo = await latestBlock();
-            let tx = await I_PolyOracle.schedulePriceUpdatesFixed([], { from: owner, value: web3.utils.toWei("1") });
+            let tx = await I_PolyOracle.schedulePriceUpdatesFixed([], { from: owner, value: new BN(web3.utils.toWei("1")) });
             assert.isAtMost(tx.logs[0].args._time.toNumber(), await latestTime());
             const logNewPriceWatcher = (await I_PolyOracle.getPastEvents('PriceUpdated', {filter: {from: blockNo}}))[0];
             assert.equal(logNewPriceWatcher.event, "PriceUpdated", "PriceUpdated not emitted.");

@@ -64,7 +64,7 @@ contract("LockupVolumeRestrictionTransferManager", accounts => {
     const stoKey = 3;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = web3.utils.toWei("250");
+    const initRegFee = new BN(web3.utils.toWei("250"));
 
     before(async () => {
         // Accounts setup
@@ -99,7 +99,7 @@ contract("LockupVolumeRestrictionTransferManager", accounts => {
         [P_VolumeRestrictionTransferManagerFactory] = await deployLockupVolumeRTMAndVerified(
             account_polymath,
             I_MRProxied,
-            web3.utils.toWei("500")
+            new BN(web3.utils.toWei("500"))
         );
 
         // Printing all the contract addresses
@@ -177,9 +177,9 @@ contract("LockupVolumeRestrictionTransferManager", accounts => {
             await increaseTime(5000);
 
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor1, web3.utils.toWei("2", "ether"), { from: token_owner });
+            await I_SecurityToken.mint(account_investor1, new BN(web3.utils.toWei("2", "ether")), { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), web3.utils.toWei("2", "ether"));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), new BN(web3.utils.toWei("2", "ether")));
         });
 
         it("Should Buy some more tokens", async () => {
@@ -203,15 +203,15 @@ contract("LockupVolumeRestrictionTransferManager", accounts => {
             );
 
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor2, web3.utils.toWei("10", "ether"), { from: token_owner });
+            await I_SecurityToken.mint(account_investor2, new BN(web3.utils.toWei("10", "ether")), { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toNumber(), web3.utils.toWei("10", "ether"));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toNumber(), new BN(web3.utils.toWei("10", "ether")));
         });
 
         it("Should unsuccessfully attach the VolumeRestrictionTransferManager factory with the security token -- failed because Token is not paid", async () => {
-            await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
+            await I_PolyToken.getTokens(new BN(web3.utils.toWei("500", "ether")), token_owner);
             await catchRevert(
-                I_SecurityToken.addModule(P_VolumeRestrictionTransferManagerFactory.address, new BN(0), web3.utils.toWei("500", "ether"), new BN(0), {
+                I_SecurityToken.addModule(P_VolumeRestrictionTransferManagerFactory.address, new BN(0), new BN(web3.utils.toWei("500", "ether")), new BN(0), {
                     from: token_owner
                 })
             );
@@ -219,11 +219,11 @@ contract("LockupVolumeRestrictionTransferManager", accounts => {
 
         it("Should successfully attach the VolumeRestrictionTransferManager factory with the security token", async () => {
             let snapId = await takeSnapshot();
-            await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), { from: token_owner });
+            await I_PolyToken.transfer(I_SecurityToken.address, new BN(web3.utils.toWei("500", "ether")), { from: token_owner });
             const tx = await I_SecurityToken.addModule(
                 P_VolumeRestrictionTransferManagerFactory.address,
                 new BN(0),
-                web3.utils.toWei("500", "ether"),
+                new BN(web3.utils.toWei("500", "ether")),
                 new BN(0),
                 { from: token_owner }
             );
@@ -272,9 +272,9 @@ contract("LockupVolumeRestrictionTransferManager", accounts => {
 
             // Add the Investor in to the whitelist
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor3, web3.utils.toWei("10", "ether"), { from: token_owner });
+            await I_SecurityToken.mint(account_investor3, new BN(web3.utils.toWei("10", "ether")), { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor3)).toNumber(), web3.utils.toWei("10", "ether"));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor3)).toNumber(), new BN(web3.utils.toWei("10", "ether")));
         });
 
         it("Should pause the tranfers at transferManager level", async () => {
@@ -284,9 +284,9 @@ contract("LockupVolumeRestrictionTransferManager", accounts => {
         it("Should still be able to transfer between existing token holders up to limit", async () => {
             // Add the Investor in to the whitelist
             // Mint some tokens
-            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), { from: account_investor2 });
+            await I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: account_investor2 });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), web3.utils.toWei("3", "ether"));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), new BN(web3.utils.toWei("3", "ether")));
         });
 
         it("Should unpause the tranfers at transferManager level", async () => {
@@ -303,7 +303,7 @@ contract("LockupVolumeRestrictionTransferManager", accounts => {
             // create a lockup
             // this will generate an exception because the releaseFrequencySeconds is zero
             await catchRevert(
-                I_VolumeRestrictionTransferManager.addLockUp(account_investor2, 16, new BN(0), new BN(0), web3.utils.toWei("1", "ether"), {
+                I_VolumeRestrictionTransferManager.addLockUp(account_investor2, 16, new BN(0), new BN(0), new BN(web3.utils.toWei("1", "ether")), {
                     from: token_owner
                 })
             );
@@ -313,7 +313,7 @@ contract("LockupVolumeRestrictionTransferManager", accounts => {
             // create a lockup
             // this will generate an exception because the lockUpPeriodSeconds is zero
             await catchRevert(
-                I_VolumeRestrictionTransferManager.addLockUp(account_investor2, new BN(0), 4, new BN(0), web3.utils.toWei("1", "ether"), {
+                I_VolumeRestrictionTransferManager.addLockUp(account_investor2, new BN(0), 4, new BN(0), new BN(web3.utils.toWei("1", "ether")), {
                     from: token_owner
                 })
             );
@@ -323,7 +323,7 @@ contract("LockupVolumeRestrictionTransferManager", accounts => {
             // create a lockup
             // this will generate an exception because we're locking up 5e17 tokens but the granularity is 5e18 tokens
             await catchRevert(
-                I_VolumeRestrictionTransferManager.addLockUp(account_investor2, 16, 4, new BN(0), web3.utils.toWei("0.5", "ether"), {
+                I_VolumeRestrictionTransferManager.addLockUp(account_investor2, 16, 4, new BN(0), new BN(web3.utils.toWei("0.5", "ether")), {
                     from: token_owner
                 })
             );
@@ -346,10 +346,10 @@ contract("LockupVolumeRestrictionTransferManager", accounts => {
             await catchRevert(
                 I_VolumeRestrictionTransferManager.addLockUp(
                     account_investor2,
-                    web3.utils.toWei("16", "ether"),
+                    new BN(web3.utils.toWei("16", "ether")),
                     4,
                     new BN(0),
-                    web3.utils.toWei("1", "ether"),
+                    new BN(web3.utils.toWei("1", "ether")),
                     { from: token_owner }
                 )
             );
@@ -376,32 +376,32 @@ contract("LockupVolumeRestrictionTransferManager", accounts => {
             let result = await I_VolumeRestrictionTransferManager.verifyTransfer.call(
                 account_investor2,
                 account_investor1,
-                web3.utils.toWei("1", "ether"),
+                new BN(web3.utils.toWei("1", "ether")),
                 new BN(0),
                 false
             );
             // enum Result {INVALID, NA, VALID, FORCE_VALID} and we want VALID so it should be 2
             assert.equal(result.toString(), "0");
 
-            await catchRevert(I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), { from: account_investor2 }));
+            await catchRevert(I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: account_investor2 }));
         });
 
         it("Should allow the transfer of tokens in a lockup if a period has passed", async () => {
             // wait 4 seconds
             await increaseTime(duration.seconds(4));
 
-            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("3", "ether"), { from: account_investor2 });
+            await I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("3", "ether")), { from: account_investor2 });
         });
 
         it("Should prevent the transfer of tokens if the amount is larger than the amount allowed by lockups", async () => {
-            await catchRevert(I_SecurityToken.transfer(account_investor1, web3.utils.toWei("4", "ether"), { from: account_investor2 }));
+            await catchRevert(I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("4", "ether")), { from: account_investor2 }));
         });
 
         it("Should allow the transfer of more tokens in a lockup if another period has passed", async () => {
             // wait 4 more seconds
             await increaseTime(4000);
 
-            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("3", "ether"), { from: account_investor2 });
+            await I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("3", "ether")), { from: account_investor2 });
         });
 
         it("Should allow the transfer of all tokens in a lockup if the entire lockup has passed", async () => {
@@ -425,7 +425,7 @@ contract("LockupVolumeRestrictionTransferManager", accounts => {
             // console.log('blockNumber',blockNumber)
             let now = (await web3.eth.getBlock("latest")).timestamp;
 
-            await catchRevert(I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), { from: account_investor1 }));
+            await catchRevert(I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 }));
 
             // check and get the lockup
             let lockUpCount = await I_VolumeRestrictionTransferManager.getLockUpsLength(account_investor1);
@@ -443,13 +443,13 @@ contract("LockupVolumeRestrictionTransferManager", accounts => {
             await I_VolumeRestrictionTransferManager.modifyLockUp(account_investor1, new BN(0), 8, 4, new BN(0), balance, { from: token_owner });
 
             // attempt a transfer
-            await catchRevert(I_SecurityToken.transfer(account_investor2, web3.utils.toWei("6", "ether"), { from: account_investor1 }));
+            await catchRevert(I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("6", "ether")), { from: account_investor1 }));
 
             // wait 4 seconds
             await new Promise(resolve => setTimeout(resolve, 4000));
 
             // transfer should succeed
-            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("6", "ether"), { from: account_investor1 });
+            await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("6", "ether")), { from: account_investor1 });
         });
 
         it("Should succesfully modify the lockup - fail because array index out of bound", async () => {
@@ -519,9 +519,9 @@ contract("LockupVolumeRestrictionTransferManager", accounts => {
                 { from: token_owner }
             );
 
-            await catchRevert(I_SecurityToken.transfer(account_investor1, web3.utils.toWei("2", "ether"), { from: account_investor2 }));
+            await catchRevert(I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("2", "ether")), { from: account_investor2 }));
 
-            await catchRevert(I_SecurityToken.transfer(account_investor1, web3.utils.toWei("5", "ether"), { from: account_investor3 }));
+            await catchRevert(I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("5", "ether")), { from: account_investor3 }));
 
             let balancesAfter = {};
             balancesAfter[account_investor2] = await I_SecurityToken.balanceOf(account_investor2);
@@ -544,18 +544,18 @@ contract("LockupVolumeRestrictionTransferManager", accounts => {
             await increaseTime(4000);
 
             // try transfers again
-            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("2", "ether"), { from: account_investor2 });
-            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("5", "ether"), { from: account_investor3 });
+            await I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("2", "ether")), { from: account_investor2 });
+            await I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("5", "ether")), { from: account_investor3 });
 
             balancesAfter[account_investor2] = await I_SecurityToken.balanceOf(account_investor2);
             assert.equal(
-                balancesBefore[account_investor2].sub(web3.utils.toWei("2", "ether")).toString(),
+                balancesBefore[account_investor2].sub(new BN(web3.utils.toWei("2", "ether"))).toString(),
                 balancesAfter[account_investor2].toString()
             );
 
             balancesAfter[account_investor3] = await I_SecurityToken.balanceOf(account_investor3);
             assert.equal(
-                balancesBefore[account_investor3].sub(web3.utils.toWei("5", "ether")).toString(),
+                balancesBefore[account_investor3].sub(new BN(web3.utils.toWei("5", "ether"))).toString(),
                 balancesAfter[account_investor3].toString()
             );
         });
@@ -568,7 +568,7 @@ contract("LockupVolumeRestrictionTransferManager", accounts => {
                     [16, 8],
                     [2], // this array should have 2 elements but it has 1, which should cause a revert
                     [0, 0],
-                    [web3.utils.toWei("1", "ether"), web3.utils.toWei("1", "ether")],
+                    [new BN(web3.utils.toWei("1", "ether")), new BN(web3.utils.toWei("1", "ether"))],
                     { from: token_owner }
                 )
             );
@@ -596,7 +596,7 @@ contract("LockupVolumeRestrictionTransferManager", accounts => {
             await increaseTime(duration.seconds(4));
 
             // try another transfer.  it should also fail because the lockup has just begun
-            await catchRevert(I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), { from: account_investor2 }));
+            await catchRevert(I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: account_investor2 }));
         });
 
         it("Should be possible to edit a lockup with a specific start time in the future", async () => {
@@ -636,22 +636,22 @@ contract("LockupVolumeRestrictionTransferManager", accounts => {
             assert.equal(lockUp[3].toString(), balance.toString());
 
             // try a transfer.  it should fail because again, the lockup hasn't started yet.
-            await catchRevert(I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), { from: account_investor2 }));
+            await catchRevert(I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: account_investor2 }));
 
             // wait 4 seconds for the lockup to begin
             await increaseTime(duration.seconds(4));
 
             // try another transfer.  it should fail because the lockup has just begun
-            await catchRevert(I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), { from: account_investor2 }));
+            await catchRevert(I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: account_investor2 }));
 
             // wait 4 seconds for the lockup's first period to elapse
             await increaseTime(duration.seconds(4));
 
             // try another transfer.  it should pass
-            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("5", "ether"), { from: account_investor2 });
+            await I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("5", "ether")), { from: account_investor2 });
 
             // try another transfer without waiting for another period to pass.  it should fail
-            await catchRevert(I_SecurityToken.transfer(account_investor1, web3.utils.toWei("5", "ether"), { from: account_investor2 }));
+            await catchRevert(I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("5", "ether")), { from: account_investor2 }));
 
             // wait 4 seconds for the lockup's first period to elapse
             await increaseTime(duration.seconds(4));
@@ -661,7 +661,7 @@ contract("LockupVolumeRestrictionTransferManager", accounts => {
             let result = await I_VolumeRestrictionTransferManager.verifyTransfer.call(
                 account_investor2,
                 account_investor1,
-                web3.utils.toWei("5", "ether"),
+                new BN(web3.utils.toWei("5", "ether")),
                 new BN(0),
                 false
             );
@@ -672,13 +672,13 @@ contract("LockupVolumeRestrictionTransferManager", accounts => {
             assert.equal(lockUpBeforeVerify[4].toString(), lockUpAfterVerify[4].toString());
 
             // try another transfer.  it should pass
-            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("5", "ether"), { from: account_investor2 });
+            await I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("5", "ether")), { from: account_investor2 });
 
             // wait 4 seconds for the lockup's first period to elapse.  but, we are all out of periods.
             await increaseTime(duration.seconds(4));
 
             // try one final transfer.  this should fail because the user has already withdrawn their entire balance
-            await catchRevert(I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), { from: account_investor2 }));
+            await catchRevert(I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: account_investor2 }));
         });
 
         it("Should be possible to stack lockups", async () => {
@@ -689,59 +689,59 @@ contract("LockupVolumeRestrictionTransferManager", accounts => {
             let lockUpCount = await I_VolumeRestrictionTransferManager.getLockUpsLength(account_investor1);
             assert.equal(lockUpCount.toString(), 0);
 
-            await I_VolumeRestrictionTransferManager.addLockUp(account_investor1, 12, 4, new BN(0), web3.utils.toWei("6", "ether"), {
+            await I_VolumeRestrictionTransferManager.addLockUp(account_investor1, 12, 4, new BN(0), new BN(web3.utils.toWei("6", "ether")), {
                 from: token_owner
             });
 
             // try to transfer 11 tokens that aren't locked up yet be locked up.  should succeed
-            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("11", "ether"), { from: account_investor1 });
+            await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("11", "ether")), { from: account_investor1 });
 
             // try a transfer.  it should fail because it's locked up from the first lockups
-            await catchRevert(I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), { from: account_investor1 }));
+            await catchRevert(I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 }));
             // wait 4 seconds for the lockup's first period to elapse.
             await increaseTime(duration.seconds(4));
 
             // should succeed
-            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("2", "ether"), { from: account_investor1 });
+            await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("2", "ether")), { from: account_investor1 });
 
             // send 8 back to investor1 so that we can lock them up
-            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("8", "ether"), { from: account_investor2 });
+            await I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("8", "ether")), { from: account_investor2 });
 
             // let's add another lockup to stack them
-            await I_VolumeRestrictionTransferManager.addLockUp(account_investor1, 16, 4, new BN(0), web3.utils.toWei("8", "ether"), {
+            await I_VolumeRestrictionTransferManager.addLockUp(account_investor1, 16, 4, new BN(0), new BN(web3.utils.toWei("8", "ether")), {
                 from: token_owner
             });
 
             // try a transfer.  it should fail because it's locked up from both lockups
-            await catchRevert(I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), { from: account_investor1 }));
+            await catchRevert(I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 }));
 
             // wait 4 seconds for the 1st lockup's second period to elapse, and the 2nd lockup's first period to elapse
             await increaseTime(duration.seconds(4));
 
             // should now be able to transfer 4, because of 2 allowed from the 1st lockup and 2 from the 2nd
-            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("4", "ether"), { from: account_investor1 });
+            await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("4", "ether")), { from: account_investor1 });
 
             // try aother transfer.  it should fail because it's locked up from both lockups again
-            await catchRevert(I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), { from: account_investor1 }));
+            await catchRevert(I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 }));
 
             // wait 4 seconds for the 1st lockup's final period to elapse, and the 2nd lockup's second period to elapse
             await increaseTime(duration.seconds(4));
             // should now be able to transfer 4, because of 2 allowed from the 1st lockup and 2 from the 2nd
-            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("4", "ether"), { from: account_investor1 });
+            await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("4", "ether")), { from: account_investor1 });
 
             // wait 8 seconds for 2nd lockup's third and fourth periods to elapse
             await increaseTime(duration.seconds(8));
             // should now be able to transfer 4, because there are 2 allowed per period in the 2nd lockup, and 2 periods have elapsed
-            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("4", "ether"), { from: account_investor1 });
+            await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("4", "ether")), { from: account_investor1 });
 
             // send the 3 back from acct2 that we sent over in the beginning of this test
-            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("3", "ether"), { from: account_investor2 });
+            await I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("3", "ether")), { from: account_investor2 });
 
             // try another transfer.  it should pass because both lockups have been entirely used
-            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), { from: account_investor1 });
+            await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 });
 
             balance = await I_SecurityToken.balanceOf(account_investor1);
-            assert.equal(balance.toString(), web3.utils.toWei("2", "ether"));
+            assert.equal(balance.toString(), new BN(web3.utils.toWei("2", "ether")));
         });
 
         it("Should get configuration function signature", async () => {

@@ -79,15 +79,15 @@ contract("CappedSTO", accounts => {
     const budget = 0;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = web3.utils.toWei("250");
+    const initRegFee = new BN(new BN(web3.utils.toWei("250")));
 
     // Capped STO details
     let startTime_ETH1;
     let endTime_ETH1;
     let startTime_ETH2;
     let endTime_ETH2;
-    const cap = web3.utils.toWei("10000");
-    const rate = web3.utils.toWei("1000");
+    const cap = new BN(new BN(web3.utils.toWei("10000")));
+    const rate = new BN(new BN(web3.utils.toWei("1000")));
     const E_fundRaiseType = 0;
     const address_zero = "0x0000000000000000000000000000000000000000";
 
@@ -96,10 +96,10 @@ contract("CappedSTO", accounts => {
     let startTime_POLY2;
     let endTime_POLY2;
     let blockNo;
-    const P_cap = web3.utils.toWei("50000");
+    const P_cap = new BN(new BN(web3.utils.toWei("50000")));
     const P_fundRaiseType = 1;
-    const P_rate = web3.utils.toWei("5");
-    const cappedSTOSetupCost = web3.utils.toWei("20000", "ether");
+    const P_rate = new BN(new BN(web3.utils.toWei("5")));
+    const cappedSTOSetupCost = new BN(new BN(web3.utils.toWei("20000", "ether")));
     const maxCost = cappedSTOSetupCost;
     const STOParameters = ["uint256", "uint256", "uint256", "uint256", "uint8[]", "address"];
 
@@ -192,7 +192,7 @@ contract("CappedSTO", accounts => {
         });
 
         it("Should mint the tokens before attaching the STO", async () => {
-            await catchRevert(I_SecurityToken_ETH.mint(address_zero, web3.utils.toWei("1"), { from: token_owner }));
+            await catchRevert(I_SecurityToken_ETH.mint(address_zero, new BN(new BN(web3.utils.toWei("1"))), { from: token_owner }));
         });
 
         it("Should fail to launch the STO due to security token doesn't have the sufficient POLY", async () => {
@@ -280,7 +280,6 @@ contract("CappedSTO", accounts => {
         });
 
         it("Should call the configure function -- fail because of the bad owner", async () => {
-            console.log(I_CappedSTO_Array_ETH[0])
             await catchRevert(
                 I_CappedSTO_Array_ETH[0].configure(startTime_ETH1, endTime_ETH1, cap, rate, [E_fundRaiseType], account_fundsReceiver, {
                     from: account_polymath
@@ -309,7 +308,7 @@ contract("CappedSTO", accounts => {
                 web3.eth.sendTransaction({
                     from: account_investor1,
                     to: I_CappedSTO_Array_ETH[0].address,
-                    value: web3.utils.toWei("1", "ether")
+                    value: new BN(new BN(web3.utils.toWei("1", "ether")))
                 })
             );
         });
@@ -319,7 +318,7 @@ contract("CappedSTO", accounts => {
                 web3.eth.sendTransaction({
                     from: account_investor1,
                     to: I_CappedSTO_Array_ETH[0].address,
-                    value: web3.utils.toWei("0", "ether")
+                    value: new BN(new BN(web3.utils.toWei("0", "ether")))
                 })
             );
         });
@@ -329,7 +328,7 @@ contract("CappedSTO", accounts => {
                 web3.eth.sendTransaction({
                     from: account_investor1,
                     to: I_CappedSTO_Array_ETH[0].address,
-                    value: web3.utils.toWei("1", "ether")
+                    value: new BN(new BN(web3.utils.toWei("1", "ether")))
                 })
             );
         });
@@ -359,7 +358,7 @@ contract("CappedSTO", accounts => {
                 from: account_investor1,
                 to: I_CappedSTO_Array_ETH[0].address,
                 gas: 2100000,
-                value: web3.utils.toWei("1", "ether")
+                value: new BN(new BN(web3.utils.toWei("1", "ether")))
             });
 
             assert.equal((await I_CappedSTO_Array_ETH[0].getRaised.call(ETH)).dividedBy(new BN(10).pow(new BN(18))).toNumber(), 1);
@@ -375,9 +374,9 @@ contract("CappedSTO", accounts => {
         });
 
         it("Should fail to buy the tokens -- Because fundRaiseType is ETH not POLY", async () => {
-            await I_PolyToken.getTokens(web3.utils.toWei("500"), account_investor1);
-            await I_PolyToken.approve(I_CappedSTO_Array_ETH[0].address, web3.utils.toWei("500"), { from: account_investor1 });
-            await catchRevert(I_CappedSTO_Array_ETH[0].buyTokensWithPoly(web3.utils.toWei("500"), { from: account_investor1 }));
+            await I_PolyToken.getTokens(new BN(new BN(web3.utils.toWei("500"))), account_investor1);
+            await I_PolyToken.approve(I_CappedSTO_Array_ETH[0].address, new BN(new BN(web3.utils.toWei("500"))), { from: account_investor1 });
+            await catchRevert(I_CappedSTO_Array_ETH[0].buyTokensWithPoly(new BN(new BN(web3.utils.toWei("500"))), { from: account_investor1 }));
         });
 
         it("Should pause the STO -- Failed due to wrong msg.sender", async () => {
@@ -396,7 +395,7 @@ contract("CappedSTO", accounts => {
                     from: account_investor1,
                     to: I_CappedSTO_Array_ETH[0].address,
                     gas: 2100000,
-                    value: web3.utils.toWei("1", "ether")
+                    value: new BN(new BN(web3.utils.toWei("1", "ether")))
                 })
             );
         });
@@ -426,14 +425,14 @@ contract("CappedSTO", accounts => {
             const initBalance = BN(await web3.eth.getBalance(account_investor2));
             tx = await I_CappedSTO_Array_ETH[0].buyTokens(account_investor2, {
                 from: account_investor2,
-                value: web3.utils.toWei("1.5", "ether"),
+                value: new BN(new BN(web3.utils.toWei("1.5", "ether"))),
                 gasPrice: 1
             });
             const finalBalance = BN(await web3.eth.getBalance(account_investor2));
             assert.equal(
                 finalBalance
                     .add(BN(tx.receipt.gasUsed))
-                    .add(web3.utils.toWei("1", "ether"))
+                    .add(new BN(new BN(web3.utils.toWei("1", "ether"))))
                     .toNumber(),
                 initBalance.toNumber()
             );
@@ -449,7 +448,7 @@ contract("CappedSTO", accounts => {
                 from: account_investor2,
                 to: I_CappedSTO_Array_ETH[0].address,
                 gas: 2100000,
-                value: web3.utils.toWei("8", "ether")
+                value: new BN(new BN(web3.utils.toWei("8", "ether")))
             });
 
             assert.equal((await I_CappedSTO_Array_ETH[0].getRaised.call(ETH)).dividedBy(new BN(10).pow(new BN(18))).toNumber(), 10);
@@ -457,7 +456,7 @@ contract("CappedSTO", accounts => {
             assert.equal(await I_CappedSTO_Array_ETH[0].investorCount.call(), 2);
 
             assert.equal((await I_SecurityToken_ETH.balanceOf(account_investor2)).dividedBy(new BN(10).pow(new BN(18))).toNumber(), 9000);
-            await catchRevert(I_CappedSTO_Array_ETH[0].buyTokens(account_investor2, { value: web3.utils.toWei("81") }));
+            await catchRevert(I_CappedSTO_Array_ETH[0].buyTokens(account_investor2, { value: new BN(new BN(web3.utils.toWei("81"))) }));
         });
 
         it("Should fundRaised value equal to the raised value in the funds receiver wallet", async () => {
@@ -472,17 +471,17 @@ contract("CappedSTO", accounts => {
         });
 
         it("Should get the raised amount of ether", async () => {
-            assert.equal(await I_CappedSTO_Array_ETH[0].getRaised.call(ETH), web3.utils.toWei("10", "ether"));
+            assert.equal(await I_CappedSTO_Array_ETH[0].getRaised.call(ETH), new BN(new BN(web3.utils.toWei("10", "ether"))));
         });
 
         it("Should get the raised amount of poly", async () => {
-            assert.equal((await I_CappedSTO_Array_ETH[0].getRaised.call(POLY)).toNumber(), web3.utils.toWei("0", "ether"));
+            assert.equal((await I_CappedSTO_Array_ETH[0].getRaised.call(POLY)).toNumber(), new BN(new BN(web3.utils.toWei("0", "ether"))));
         });
     });
 
     describe("Reclaim poly sent to STO by mistake", async () => {
         it("Should fail to reclaim POLY because token contract address is 0 address", async () => {
-            let value = web3.utils.toWei("100", "ether");
+            let value = new BN(new BN(web3.utils.toWei("100", "ether")));
             await I_PolyToken.getTokens(value, account_investor1);
             await I_PolyToken.transfer(I_CappedSTO_Array_ETH[0].address, value, { from: account_investor1 });
 
@@ -493,7 +492,7 @@ contract("CappedSTO", accounts => {
             let initInvestorBalance = await I_PolyToken.balanceOf(account_investor1);
             let initOwnerBalance = await I_PolyToken.balanceOf(token_owner);
             let initContractBalance = await I_PolyToken.balanceOf(I_CappedSTO_Array_ETH[0].address);
-            let value = web3.utils.toWei("100", "ether");
+            let value = new BN(new BN(web3.utils.toWei("100", "ether")));
 
             await I_PolyToken.getTokens(value, account_investor1);
             await I_PolyToken.transfer(I_CappedSTO_Array_ETH[0].address, value, { from: account_investor1 });
@@ -571,7 +570,7 @@ contract("CappedSTO", accounts => {
             // Buying on behalf of another user should fail
 
             await catchRevert(
-                I_CappedSTO_Array_ETH[1].buyTokens(account_investor3, { from: account_issuer, value: web3.utils.toWei("1", "ether") })
+                I_CappedSTO_Array_ETH[1].buyTokens(account_investor3, { from: account_issuer, value: new BN(new BN(web3.utils.toWei("1", "ether"))) })
             );
         });
 
@@ -586,7 +585,7 @@ contract("CappedSTO", accounts => {
         });
 
         it("Should invest in second STO", async () => {
-            await I_CappedSTO_Array_ETH[1].buyTokens(account_investor3, { from: account_issuer, value: web3.utils.toWei("1", "ether") });
+            await I_CappedSTO_Array_ETH[1].buyTokens(account_investor3, { from: account_issuer, value: new BN(new BN(web3.utils.toWei("1", "ether"))) });
 
             assert.equal((await I_CappedSTO_Array_ETH[1].getRaised.call(ETH)).dividedBy(new BN(10).pow(new BN(18))).toNumber(), 1);
 
@@ -620,7 +619,7 @@ contract("CappedSTO", accounts => {
             for (var STOIndex = 2; STOIndex < MAX_MODULES; STOIndex++) {
                 await I_CappedSTO_Array_ETH[STOIndex].buyTokens(account_investor3, {
                     from: account_investor3,
-                    value: web3.utils.toWei("1", "ether")
+                    value: new BN(new BN(web3.utils.toWei("1", "ether")))
                 });
                 assert.equal(
                     (await I_CappedSTO_Array_ETH[STOIndex].getRaised.call(ETH)).dividedBy(new BN(10).pow(new BN(18))).toNumber(),
@@ -763,7 +762,7 @@ contract("CappedSTO", accounts => {
                         from: account_investor1,
                         to: I_CappedSTO_Array_POLY[0].address,
                         gas: 2100000,
-                        value: web3.utils.toWei("2", "ether")
+                        value: new BN(new BN(web3.utils.toWei("2", "ether")))
                     })
                 );
             });
@@ -922,11 +921,11 @@ contract("CappedSTO", accounts => {
             });
 
             it("Should get the raised amount of ether", async () => {
-                assert.equal(await I_CappedSTO_Array_POLY[0].getRaised.call(ETH), web3.utils.toWei("0", "ether"));
+                assert.equal(await I_CappedSTO_Array_POLY[0].getRaised.call(ETH), new BN(new BN(web3.utils.toWei("0", "ether"))));
             });
 
             it("Should get the raised amount of poly", async () => {
-                assert.equal((await I_CappedSTO_Array_POLY[0].getRaised.call(POLY)).toNumber(), web3.utils.toWei("10000", "ether"));
+                assert.equal((await I_CappedSTO_Array_POLY[0].getRaised.call(POLY)).toNumber(), new BN(new BN(web3.utils.toWei("10000", "ether"))));
             });
 
             it("Should get the investors", async () => {

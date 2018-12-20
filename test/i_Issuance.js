@@ -66,15 +66,15 @@ contract("Issuance", accounts => {
     const address_zero = "0x0000000000000000000000000000000000000000";
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = web3.utils.toWei("250");
+    const initRegFee = new BN(web3.utils.toWei("250"));
 
     // Capped STO details
     //let startTime;           // Start time will be 5000 seconds more than the latest time
     //let endTime;                    // Add 30 days more
-    const cap = web3.utils.toWei("10000");
-    const rate = web3.utils.toWei("1000");
+    const cap = new BN(web3.utils.toWei("10000"));
+    const rate = new BN(web3.utils.toWei("1000"));
     const fundRaiseType = [0];
-    const cappedSTOSetupCost = web3.utils.toWei("20000", "ether");
+    const cappedSTOSetupCost = new BN(web3.utils.toWei("20000", "ether"));
     const maxCost = cappedSTOSetupCost;
     const STOParameters = ["uint256", "uint256", "uint256", "uint256", "uint8[]", "address"];
     const STRProxyParameters = ["address", "address", "uint256", "uint256", "address", "address"];
@@ -252,7 +252,7 @@ contract("Issuance", accounts => {
                     from: account_investor1,
                     to: I_CappedSTO.address,
                     gas: 6100000,
-                    value: web3.utils.toWei("1", "ether")
+                    value: new BN(web3.utils.toWei("1", "ether"))
                 });
 
                 assert.equal((await I_CappedSTO.getRaised.call(0)).dividedBy(new BN(10).pow(new BN(18))).toNumber(), 1);
@@ -281,7 +281,7 @@ contract("Issuance", accounts => {
                     from: account_investor2,
                     to: I_CappedSTO.address,
                     gas: 2100000,
-                    value: web3.utils.toWei("1", "ether")
+                    value: new BN(web3.utils.toWei("1", "ether"))
                 });
 
                 assert.equal((await I_CappedSTO.getRaised.call(0)).dividedBy(new BN(10).pow(new BN(18))).toNumber(), 2);

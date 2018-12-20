@@ -78,14 +78,14 @@ contract("SecurityTokenRegistry", accounts => {
     const budget = 0;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = web3.utils.toWei("250");
-    const newRegFee = web3.utils.toWei("300");
+    const initRegFee = new BN(web3.utils.toWei("250"));
+    const newRegFee = new BN(web3.utils.toWei("300"));
 
     const STRProxyParameters = ["address", "address", "uint256", "uint256", "address"];
     const STOParameters = ["uint256", "uint256", "uint256", "string"];
 
     // Capped STO details
-    const cap = web3.utils.toWei("10000");
+    const cap = new BN(web3.utils.toWei("10000"));
     const someString = "Hello string";
 
     before(async () => {
@@ -490,7 +490,7 @@ contract("SecurityTokenRegistry", accounts => {
 
         it("Should fail to generate the SecurityToken because ticker gets expired", async () => {
             let snap_Id = await takeSnapshot();
-            await I_PolyToken.approve(I_STRProxied.address, web3.utils.toWei("500"), { from: token_owner });
+            await I_PolyToken.approve(I_STRProxied.address, new BN(web3.utils.toWei("500")), { from: token_owner });
             let tx = await I_STRProxied.registerTicker(token_owner, "CCC", name, { from: token_owner });
             await increaseTime(duration.days(65));
             catchRevert(
@@ -503,7 +503,7 @@ contract("SecurityTokenRegistry", accounts => {
         it("Should generate the SecurityToken when launch fee is 0", async () => {
             let snap_Id = await takeSnapshot();
             await I_STRProxied.changeSecurityLaunchFee(0, { from: account_polymath });
-            await I_PolyToken.approve(I_STRProxied.address, web3.utils.toWei("500"), { from: token_owner });
+            await I_PolyToken.approve(I_STRProxied.address, new BN(web3.utils.toWei("500")), { from: token_owner });
             let tx = await I_STRProxied.registerTicker(token_owner, "CCC", name, { from: token_owner });
             await I_STRProxied.generateSecurityToken(name, "CCC", tokenDetails, false, { from: token_owner }),
                 await revertToSnapshot(snap_Id);
@@ -639,7 +639,7 @@ contract("SecurityTokenRegistry", accounts => {
 
         it("Should successfully generate custom token", async () => {
             // Register the new ticker -- Fulfiling the TickerStatus.ON condition
-            await I_PolyToken.getTokens(web3.utils.toWei("1000"), account_temp);
+            await I_PolyToken.getTokens(new BN(web3.utils.toWei("1000")), account_temp);
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: account_temp });
             let tickersListArray = await I_STRProxied.getTickersByOwner.call(account_temp);
             console.log(tickersListArray);
@@ -815,7 +815,7 @@ contract("SecurityTokenRegistry", accounts => {
     describe("Test case for the changeSecurityLaunchFee()", async () => {
         it("Should able to change the STLaunchFee-- failed because of bad owner", async () => {
             catchRevert(
-                I_STRProxied.changeSecurityLaunchFee(web3.utils.toWei("500"), { from: account_temp }),
+                I_STRProxied.changeSecurityLaunchFee(new BN(web3.utils.toWei("500")), { from: account_temp }),
                 "tx revert -> failed because of bad owner"
             );
         });
@@ -828,10 +828,10 @@ contract("SecurityTokenRegistry", accounts => {
         });
 
         it("Should able to change the STLaunchFee", async () => {
-            let tx = await I_STRProxied.changeSecurityLaunchFee(web3.utils.toWei("500"), { from: account_polymath });
-            assert.equal(tx.logs[0].args._newFee, web3.utils.toWei("500"));
+            let tx = await I_STRProxied.changeSecurityLaunchFee(new BN(web3.utils.toWei("500")), { from: account_polymath });
+            assert.equal(tx.logs[0].args._newFee, new BN(web3.utils.toWei("500")));
             let stLaunchFee = await I_STRProxied.getUintValues(web3.utils.soliditySha3("stLaunchFee"));
-            assert.equal(stLaunchFee, web3.utils.toWei("500"));
+            assert.equal(stLaunchFee, new BN(web3.utils.toWei("500")));
         });
     });
 
@@ -861,7 +861,7 @@ contract("SecurityTokenRegistry", accounts => {
     describe("Test cases for the changeTickerRegistrationFee()", async () => {
         it("Should able to change the TickerRegFee-- failed because of bad owner", async () => {
             catchRevert(
-                I_STRProxied.changeTickerRegistrationFee(web3.utils.toWei("500"), { from: account_temp }),
+                I_STRProxied.changeTickerRegistrationFee(new BN(web3.utils.toWei("500")), { from: account_temp }),
                 "tx revert -> failed because of bad owner"
             );
         });
@@ -874,10 +874,10 @@ contract("SecurityTokenRegistry", accounts => {
         });
 
         it("Should able to change the TickerRegFee", async () => {
-            let tx = await I_STRProxied.changeTickerRegistrationFee(web3.utils.toWei("400"), { from: account_polymath });
-            assert.equal(tx.logs[0].args._newFee, web3.utils.toWei("400"));
+            let tx = await I_STRProxied.changeTickerRegistrationFee(new BN(web3.utils.toWei("400")), { from: account_polymath });
+            assert.equal(tx.logs[0].args._newFee, new BN(web3.utils.toWei("400")));
             let tickerRegFee = await I_STRProxied.getUintValues(web3.utils.soliditySha3("tickerRegFee"));
-            assert.equal(tickerRegFee, web3.utils.toWei("400"));
+            assert.equal(tickerRegFee, new BN(web3.utils.toWei("400")));
         });
 
         it("Should fail to register the ticker with the old fee", async () => {
@@ -889,8 +889,8 @@ contract("SecurityTokenRegistry", accounts => {
         });
 
         it("Should register the ticker with the new fee", async () => {
-            await I_PolyToken.getTokens(web3.utils.toWei("1000"), token_owner);
-            await I_PolyToken.approve(I_STRProxied.address, web3.utils.toWei("500"), { from: token_owner });
+            await I_PolyToken.getTokens(new BN(web3.utils.toWei("1000")), token_owner);
+            await I_PolyToken.approve(I_STRProxied.address, new BN(web3.utils.toWei("500")), { from: token_owner });
             let tx = await I_STRProxied.registerTicker(token_owner, "POLY", "Polymath", { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner, `Token owner should be ${token_owner}`);
             assert.equal(tx.logs[0].args._ticker, "POLY", `Symbol should be POLY`);
@@ -905,7 +905,7 @@ contract("SecurityTokenRegistry", accounts => {
         });
 
         it("Should launch the the securityToken", async () => {
-            await I_PolyToken.approve(I_STRProxied.address, web3.utils.toWei("500"), { from: token_owner });
+            await I_PolyToken.approve(I_STRProxied.address, new BN(web3.utils.toWei("500")), { from: token_owner });
             let tx = await I_STRProxied.generateSecurityToken("Polymath", "POLY", tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
@@ -958,8 +958,8 @@ contract("SecurityTokenRegistry", accounts => {
 
     describe(" Test cases of the registerTicker", async () => {
         it("Should register the ticker 1", async () => {
-            await I_PolyToken.getTokens(web3.utils.toWei("1000"), account_temp);
-            await I_PolyToken.approve(I_STRProxied.address, web3.utils.toWei("1000"), { from: account_temp });
+            await I_PolyToken.getTokens(new BN(web3.utils.toWei("1000")), account_temp);
+            await I_PolyToken.approve(I_STRProxied.address, new BN(web3.utils.toWei("1000")), { from: account_temp });
             let tx = await I_STRProxied.registerTicker(account_temp, "TOK1", "", { from: account_temp });
             assert.equal(tx.logs[0].args._owner, account_temp, `Owner should be the ${account_temp}`);
             assert.equal(tx.logs[0].args._ticker, "TOK1", `Symbol should be TOK1`);
@@ -967,8 +967,8 @@ contract("SecurityTokenRegistry", accounts => {
         });
 
         it("Should register the ticker 2", async () => {
-            await I_PolyToken.getTokens(web3.utils.toWei("1000"), account_temp);
-            await I_PolyToken.approve(I_STRProxied.address, web3.utils.toWei("1000"), { from: account_temp });
+            await I_PolyToken.getTokens(new BN(web3.utils.toWei("1000")), account_temp);
+            await I_PolyToken.approve(I_STRProxied.address, new BN(web3.utils.toWei("1000")), { from: account_temp });
             let tx = await I_STRProxied.registerTicker(account_temp, "TOK2", "", { from: account_temp });
             assert.equal(tx.logs[0].args._owner, account_temp, `Owner should be the ${account_temp}`);
             assert.equal(tx.logs[0].args._ticker, "TOK2", `Symbol should be TOK2`);
@@ -976,8 +976,8 @@ contract("SecurityTokenRegistry", accounts => {
         });
 
         it("Should register the ticker 3", async () => {
-            await I_PolyToken.getTokens(web3.utils.toWei("1000"), account_temp);
-            await I_PolyToken.approve(I_STRProxied.address, web3.utils.toWei("1000"), { from: account_temp });
+            await I_PolyToken.getTokens(new BN(web3.utils.toWei("1000")), account_temp);
+            await I_PolyToken.approve(I_STRProxied.address, new BN(web3.utils.toWei("1000")), { from: account_temp });
             let tx = await I_STRProxied.registerTicker(account_temp, "TOK3", "", { from: account_temp });
             assert.equal(tx.logs[0].args._owner, account_temp, `Owner should be the ${account_temp}`);
             assert.equal(tx.logs[0].args._ticker, "TOK3", `Symbol should be TOK3`);
@@ -1025,7 +1025,7 @@ contract("SecurityTokenRegistry", accounts => {
     describe("Test cases for IRegistry functionality", async () => {
         describe("Test cases for reclaiming funds", async () => {
             it("Should successfully reclaim POLY tokens -- fail because token address will be 0x", async () => {
-                I_PolyToken.transfer(I_STRProxied.address, web3.utils.toWei("1"), { from: token_owner });
+                I_PolyToken.transfer(I_STRProxied.address, new BN(web3.utils.toWei("1")), { from: token_owner });
                 catchRevert(I_STRProxied.reclaimERC20("0x000000000000000000000000000000000000000", { from: account_polymath }));
             });
 

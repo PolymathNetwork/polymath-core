@@ -73,7 +73,7 @@ contract("USDTieredSTO", accounts => {
     const address_zero = "0x0000000000000000000000000000000000000000";
 
     // Initial fee for ticker registry and security token registry
-    const REGFEE = web3.utils.toWei("250");
+    const REGFEE = new BN(web3.utils.toWei("250"));
     const STOSetupCost = 0;
 
     // MockOracle USD prices
@@ -229,7 +229,7 @@ contract("USDTieredSTO", accounts => {
 
         // STEP 5: Deploy the USDTieredSTOFactory
         [I_USDTieredSTOFactory] = await deployUSDTieredSTOAndVerified(POLYMATH, I_MRProxied, STOSetupCost);
-        [P_USDTieredSTOFactory] = await deployUSDTieredSTOAndVerified(POLYMATH, I_MRProxied, web3.utils.toWei("500"));
+        [P_USDTieredSTOFactory] = await deployUSDTieredSTOAndVerified(POLYMATH, I_MRProxied, new BN(web3.utils.toWei("500")));
         // Step 12: Deploy & Register Mock Oracles
         I_USDOracle = await MockOracle.new(0, "ETH", "USD", USDETH, { from: POLYMATH }); // 500 dollars per POLY
         I_POLYOracle = await MockOracle.new(I_PolyToken.address, "POLY", "USD", USDPOLY, { from: POLYMATH }); // 25 cents per POLY
@@ -393,7 +393,7 @@ contract("USDTieredSTO", accounts => {
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
             await catchRevert(
-                I_SecurityToken.addModule(P_USDTieredSTOFactory.address, bytesSTO, web3.utils.toWei("500"), new BN(0), {
+                I_SecurityToken.addModule(P_USDTieredSTOFactory.address, bytesSTO, new BN(web3.utils.toWei("500")), new BN(0), {
                     from: ISSUER,
                     gasPrice: GAS_PRICE
                 })
@@ -419,8 +419,8 @@ contract("USDTieredSTO", accounts => {
             ];
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
-            await I_PolyToken.getTokens(web3.utils.toWei("500"), I_SecurityToken.address);
-            let tx = await I_SecurityToken.addModule(P_USDTieredSTOFactory.address, bytesSTO, web3.utils.toWei("500"), new BN(0), {
+            await I_PolyToken.getTokens(new BN(web3.utils.toWei("500")), I_SecurityToken.address);
+            let tx = await I_SecurityToken.addModule(P_USDTieredSTOFactory.address, bytesSTO, new BN(web3.utils.toWei("500")), new BN(0), {
                 from: ISSUER,
                 gasPrice: GAS_PRICE
             });
@@ -1015,13 +1015,13 @@ contract("USDTieredSTO", accounts => {
             await I_USDTieredSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
 
             // Prep for investments
-            let investment_ETH = web3.utils.toWei("1", "ether"); // Invest 1 ETH
-            let investment_POLY = web3.utils.toWei("10000", "ether"); // Invest 10000 POLY
+            let investment_ETH = new BN(web3.utils.toWei("1", "ether")); // Invest 1 ETH
+            let investment_POLY = new BN(web3.utils.toWei("10000", "ether")); // Invest 10000 POLY
             await I_PolyToken.getTokens(investment_POLY, NONACCREDITED1);
             await I_PolyToken.approve(I_USDTieredSTO_Array[stoId].address, investment_POLY, { from: NONACCREDITED1 });
             await I_PolyToken.getTokens(investment_POLY, ACCREDITED1);
             await I_PolyToken.approve(I_USDTieredSTO_Array[stoId].address, investment_POLY, { from: ACCREDITED1 });
-            let investment_DAI = web3.utils.toWei("500", "ether"); // Invest 10000 POLY
+            let investment_DAI = new BN(web3.utils.toWei("500", "ether")); // Invest 10000 POLY
             await I_DaiToken.getTokens(investment_DAI, NONACCREDITED1);
             await I_DaiToken.approve(I_USDTieredSTO_Array[stoId].address, investment_DAI, { from: NONACCREDITED1 });
             await I_DaiToken.getTokens(investment_DAI, ACCREDITED1);
@@ -1061,13 +1061,13 @@ contract("USDTieredSTO", accounts => {
             await I_USDTieredSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
 
             // Prep for investments
-            let investment_ETH = web3.utils.toWei("1", "ether"); // Invest 1 ETH
-            let investment_POLY = web3.utils.toWei("10000", "ether"); // Invest 10000 POLY
+            let investment_ETH = new BN(web3.utils.toWei("1", "ether")); // Invest 1 ETH
+            let investment_POLY = new BN(web3.utils.toWei("10000", "ether")); // Invest 10000 POLY
             await I_PolyToken.getTokens(investment_POLY, NONACCREDITED1);
             await I_PolyToken.approve(I_USDTieredSTO_Array[stoId].address, investment_POLY, { from: NONACCREDITED1 });
             await I_PolyToken.getTokens(investment_POLY, ACCREDITED1);
             await I_PolyToken.approve(I_USDTieredSTO_Array[stoId].address, investment_POLY, { from: ACCREDITED1 });
-            let investment_DAI = web3.utils.toWei("500", "ether"); // Invest 10000 POLY
+            let investment_DAI = new BN(web3.utils.toWei("500", "ether")); // Invest 10000 POLY
             await I_DaiToken.getTokens(investment_DAI, NONACCREDITED1);
             await I_DaiToken.approve(I_USDTieredSTO_Array[stoId].address, investment_DAI, { from: NONACCREDITED1 });
             await I_DaiToken.getTokens(investment_DAI, ACCREDITED1);
@@ -1174,14 +1174,14 @@ contract("USDTieredSTO", accounts => {
             assert.equal(await I_USDTieredSTO_Array[stoId].paused.call(), true, "STO did not pause successfully");
 
             // Prep for investments
-            let investment_ETH = web3.utils.toWei("1", "ether"); // Invest 1 ETH
-            let investment_POLY = web3.utils.toWei("10000", "ether"); // Invest 10000 POLY
+            let investment_ETH = new BN(web3.utils.toWei("1", "ether")); // Invest 1 ETH
+            let investment_POLY = new BN(web3.utils.toWei("10000", "ether")); // Invest 10000 POLY
             await I_PolyToken.getTokens(investment_POLY, NONACCREDITED1);
             await I_PolyToken.approve(I_USDTieredSTO_Array[stoId].address, investment_POLY, { from: NONACCREDITED1 });
             await I_PolyToken.getTokens(investment_POLY, ACCREDITED1);
             await I_PolyToken.approve(I_USDTieredSTO_Array[stoId].address, investment_POLY, { from: ACCREDITED1 });
 
-            let investment_DAI = web3.utils.toWei("500", "ether"); // Invest 10000 POLY
+            let investment_DAI = new BN(web3.utils.toWei("500", "ether")); // Invest 10000 POLY
             await I_DaiToken.getTokens(investment_DAI, NONACCREDITED1);
             await I_DaiToken.approve(I_USDTieredSTO_Array[stoId].address, investment_DAI, { from: NONACCREDITED1 });
             await I_DaiToken.getTokens(investment_DAI, ACCREDITED1);
@@ -1242,13 +1242,13 @@ contract("USDTieredSTO", accounts => {
             await I_USDTieredSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
 
             // Prep for investments
-            let investment_ETH = web3.utils.toWei("1", "ether"); // Invest 1 ETH
-            let investment_POLY = web3.utils.toWei("10000", "ether"); // Invest 10000 POLY
+            let investment_ETH = new BN(web3.utils.toWei("1", "ether")); // Invest 1 ETH
+            let investment_POLY = new BN(web3.utils.toWei("10000", "ether")); // Invest 10000 POLY
             await I_PolyToken.getTokens(investment_POLY, NONACCREDITED1);
             await I_PolyToken.approve(I_USDTieredSTO_Array[stoId].address, investment_POLY, { from: NONACCREDITED1 });
             await I_PolyToken.getTokens(investment_POLY, ACCREDITED1);
             await I_PolyToken.approve(I_USDTieredSTO_Array[stoId].address, investment_POLY, { from: ACCREDITED1 });
-            let investment_DAI = web3.utils.toWei("500", "ether"); // Invest 10000 POLY
+            let investment_DAI = new BN(web3.utils.toWei("500", "ether")); // Invest 10000 POLY
             await I_DaiToken.getTokens(investment_DAI, NONACCREDITED1);
             await I_DaiToken.approve(I_USDTieredSTO_Array[stoId].address, investment_DAI, { from: NONACCREDITED1 });
             await I_DaiToken.getTokens(investment_DAI, ACCREDITED1);
@@ -1304,13 +1304,13 @@ contract("USDTieredSTO", accounts => {
             await catchRevert(I_USDTieredSTO_Array[stoId].finalize({ from: ISSUER }));
 
             // Prep for investments
-            let investment_ETH = web3.utils.toWei("1", "ether"); // Invest 1 ETH
-            let investment_POLY = web3.utils.toWei("10000", "ether"); // Invest 10000 POLY
+            let investment_ETH = new BN(web3.utils.toWei("1", "ether")); // Invest 1 ETH
+            let investment_POLY = new BN(web3.utils.toWei("10000", "ether")); // Invest 10000 POLY
             await I_PolyToken.getTokens(investment_POLY, NONACCREDITED1);
             await I_PolyToken.approve(I_USDTieredSTO_Array[stoId].address, investment_POLY, { from: NONACCREDITED1 });
             await I_PolyToken.getTokens(investment_POLY, ACCREDITED1);
             await I_PolyToken.approve(I_USDTieredSTO_Array[stoId].address, investment_POLY, { from: ACCREDITED1 });
-            let investment_DAI = web3.utils.toWei("500", "ether"); // Invest 10000 POLY
+            let investment_DAI = new BN(web3.utils.toWei("500", "ether")); // Invest 10000 POLY
             await I_DaiToken.getTokens(investment_DAI, NONACCREDITED1);
             await I_DaiToken.approve(I_USDTieredSTO_Array[stoId].address, investment_DAI, { from: NONACCREDITED1 });
             await I_DaiToken.getTokens(investment_DAI, ACCREDITED1);
@@ -2335,7 +2335,7 @@ contract("USDTieredSTO", accounts => {
             let low_USDETH = new BN(250).mul(10 ** 18); // 250 USD per ETH
             let low_USDPOLY = new BN(20).mul(10 ** 16); // 0.2 USD per POLY
 
-            let investment_USD = new BN(web3.utils.toWei("50")); // USD
+            let investment_USD = new BN(new BN(web3.utils.toWei("50"))); // USD
             let investment_ETH_high = investment_USD.div(high_USDETH).mul(10 ** 18); // USD / USD/ETH = ETH
             let investment_POLY_high = investment_USD.div(high_USDPOLY).mul(10 ** 18); // USD / USD/POLY = POLY
             let investment_ETH_low = investment_USD.div(low_USDETH).mul(10 ** 18); // USD / USD/ETH = ETH
@@ -2984,7 +2984,7 @@ contract("USDTieredSTO", accounts => {
             let low_USDETH = new BN(250).mul(10 ** 18); // 250 USD per ETH
             let low_USDPOLY = new BN(20).mul(10 ** 16); // 0.2 USD per POLY
 
-            let investment_USD = new BN(web3.utils.toWei("50")); // USD
+            let investment_USD = new BN(new BN(web3.utils.toWei("50"))); // USD
             let investment_ETH_high = investment_USD.div(high_USDETH).mul(10 ** 18); // USD / USD/ETH = ETH
             let investment_POLY_high = investment_USD.div(high_USDPOLY).mul(10 ** 18); // USD / USD/POLY = POLY
             let investment_ETH_low = investment_USD.div(low_USDETH).mul(10 ** 18); // USD / USD/ETH = ETH
@@ -4515,7 +4515,7 @@ contract("USDTieredSTO", accounts => {
 
             it("should get the right conversion for ETH to USD", async () => {
                 // 20 ETH to 10000 USD
-                let ethInWei = new BN(web3.utils.toWei("20", "ether"));
+                let ethInWei = new BN(new BN(web3.utils.toWei("20", "ether")));
                 let usdInWei = await I_USDTieredSTO_Array[0].convertToUSD(ETH, ethInWei);
                 assert.equal(
                     usdInWei.div(10 ** 18).toNumber(),
@@ -4528,7 +4528,7 @@ contract("USDTieredSTO", accounts => {
 
             it("should get the right conversion for POLY to USD", async () => {
                 // 40000 POLY to 10000 USD
-                let polyInWei = new BN(web3.utils.toWei("40000", "ether"));
+                let polyInWei = new BN(new BN(web3.utils.toWei("40000", "ether")));
                 let usdInWei = await I_USDTieredSTO_Array[0].convertToUSD(POLY, polyInWei);
                 assert.equal(
                     usdInWei.div(10 ** 18).toNumber(),
@@ -4543,7 +4543,7 @@ contract("USDTieredSTO", accounts => {
         describe("convertFromUSD", async () => {
             it("should get the right conversion for USD to ETH", async () => {
                 // 10000 USD to 20 ETH
-                let usdInWei = new BN(web3.utils.toWei("10000", "ether"));
+                let usdInWei = new BN(new BN(web3.utils.toWei("10000", "ether")));
                 let ethInWei = await I_USDTieredSTO_Array[0].convertFromUSD(ETH, usdInWei);
                 assert.equal(
                     ethInWei.div(10 ** 18).toNumber(),
@@ -4556,7 +4556,7 @@ contract("USDTieredSTO", accounts => {
 
             it("should get the right conversion for USD to POLY", async () => {
                 // 10000 USD to 40000 POLY
-                let usdInWei = new BN(web3.utils.toWei("10000", "ether"));
+                let usdInWei = new BN(new BN(web3.utils.toWei("10000", "ether")));
                 let polyInWei = await I_USDTieredSTO_Array[0].convertFromUSD(POLY, usdInWei);
                 assert.equal(
                     polyInWei.div(10 ** 18).toNumber(),

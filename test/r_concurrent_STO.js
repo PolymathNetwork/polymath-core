@@ -55,7 +55,7 @@ contract("Concurrent STO", accounts => {
     let message = "Transaction Should Fail!";
 
     // Initial fees
-    const initRegFee = web3.utils.toWei("250");
+    const initRegFee = new BN(web3.utils.toWei("250"));
     const STOSetupCost = 200 * Math.pow(10, 18);
 
     // Module keys
@@ -174,8 +174,8 @@ contract("Concurrent STO", accounts => {
             const MAX_MODULES = 10;
             const startTime = await latestTime() + duration.days(1);
             const endTime = await latestTime() + duration.days(90);
-            const cap = web3.utils.toWei("10000");
-            const rate = web3.utils.toWei("1000");
+            const cap = new BN(web3.utils.toWei("10000"));
+            const rate = new BN(web3.utils.toWei("1000"));
             const fundRaiseType = [0];
             const budget = 0;
             const maxCost = STOSetupCost;
@@ -246,14 +246,14 @@ contract("Concurrent STO", accounts => {
                         // Capped STO ETH
                         await I_STO_Array[STOIndex].buyTokens(account_investor1, {
                             from: account_investor1,
-                            value: web3.utils.toWei("1", "ether")
+                            value: new BN(web3.utils.toWei("1", "ether"))
                         });
                         assert.equal(web3.utils.fromWei((await I_STO_Array[STOIndex].getRaised.call(0)).toString()), 1);
                         assert.equal(await I_STO_Array[STOIndex].investorCount.call(), 1);
                         break;
                     case 1:
                         // Dummy STO
-                        await I_STO_Array[STOIndex].generateTokens(account_investor1, web3.utils.toWei("1000"), { from: account_issuer });
+                        await I_STO_Array[STOIndex].generateTokens(account_investor1, new BN(web3.utils.toWei("1000")), { from: account_issuer });
                         assert.equal(await I_STO_Array[STOIndex].investorCount.call(), 1);
                         assert.equal(
                             (await I_STO_Array[STOIndex].investors.call(account_investor1))
@@ -264,7 +264,7 @@ contract("Concurrent STO", accounts => {
                         break;
                     case 2:
                         // Pre Sale STO
-                        await I_STO_Array[STOIndex].allocateTokens(account_investor1, web3.utils.toWei("1000"), web3.utils.toWei("1"), new BN(0), {
+                        await I_STO_Array[STOIndex].allocateTokens(account_investor1, new BN(web3.utils.toWei("1000")), new BN(web3.utils.toWei("1")), new BN(0), {
                             from: account_issuer
                         });
                         assert.equal(web3.utils.fromWei((await I_STO_Array[STOIndex].getRaised.call(0)).toString()), 1);

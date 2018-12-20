@@ -60,7 +60,7 @@ contract("ScheduledCheckpoint", accounts => {
     const stoKey = 3;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = web3.utils.toWei("250");
+    const initRegFee = new BN(web3.utils.toWei("250"));
 
     before(async () => {
         // Accounts setup
@@ -206,9 +206,9 @@ contract("ScheduledCheckpoint", accounts => {
             console.log("6: " + await latestTime());
 
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor1, web3.utils.toWei("1", "ether"), { from: token_owner });
+            await I_SecurityToken.mint(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), web3.utils.toWei("1", "ether"));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), new BN(web3.utils.toWei("1", "ether")));
         });
 
         it("Should have checkpoint created with correct balances", async () => {
@@ -244,9 +244,9 @@ contract("ScheduledCheckpoint", accounts => {
             assert.isTrue(await latestTime() <= startTime + interval);
 
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor2, web3.utils.toWei("1", "ether"), { from: token_owner });
+            await I_SecurityToken.mint(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toNumber(), web3.utils.toWei("1", "ether"));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toNumber(), new BN(web3.utils.toWei("1", "ether")));
         });
 
         it("No additional checkpoints created", async () => {
@@ -283,9 +283,9 @@ contract("ScheduledCheckpoint", accounts => {
 
             // Add the Investor in to the whitelist
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor3, web3.utils.toWei("1", "ether"), { from: token_owner });
+            await I_SecurityToken.mint(account_investor3, new BN(web3.utils.toWei("1", "ether")), { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor3)).toNumber(), web3.utils.toWei("1", "ether"));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor3)).toNumber(), new BN(web3.utils.toWei("1", "ether")));
         });
 
         it("Should have new checkpoint created with correct balances", async () => {
@@ -296,10 +296,10 @@ contract("ScheduledCheckpoint", accounts => {
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor3, 2)).toNumber(), 0);
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor2, 0)).toNumber(), 0);
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor2, 1)).toNumber(), 0);
-            assert.equal((await I_SecurityToken.balanceOfAt(account_investor2, 2)).toNumber(), web3.utils.toWei("1", "ether"));
+            assert.equal((await I_SecurityToken.balanceOfAt(account_investor2, 2)).toNumber(), new BN(web3.utils.toWei("1", "ether")));
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor1, 0)).toNumber(), 0);
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor1, 1)).toNumber(), 0);
-            assert.equal((await I_SecurityToken.balanceOfAt(account_investor1, 2)).toNumber(), web3.utils.toWei("1", "ether"));
+            assert.equal((await I_SecurityToken.balanceOfAt(account_investor1, 2)).toNumber(), new BN(web3.utils.toWei("1", "ether")));
         });
 
         it("Should have correct balances for investor 3 after new checkpoint", async () => {
@@ -308,7 +308,7 @@ contract("ScheduledCheckpoint", accounts => {
             // We should be after the first scheduled checkpoint, and before the second
             assert.isTrue(await latestTime() > startTime + 3 * interval);
             assert.isTrue(await latestTime() <= startTime + 4 * interval);
-            await I_SecurityToken.transfer(account_investor3, web3.utils.toWei("0.5", "ether"), { from: account_investor1 });
+            await I_SecurityToken.transfer(account_investor3, new BN(web3.utils.toWei("0.5", "ether")), { from: account_investor1 });
             let cp1 = await I_ScheduledCheckpoint.getSchedule("CP1");
             checkSchedule(
                 cp1,
@@ -323,17 +323,17 @@ contract("ScheduledCheckpoint", accounts => {
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor3, 0)).toNumber(), 0);
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor3, 1)).toNumber(), 0);
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor3, 2)).toNumber(), 0);
-            assert.equal((await I_SecurityToken.balanceOfAt(account_investor3, 3)).toNumber(), web3.utils.toWei("1", "ether"));
+            assert.equal((await I_SecurityToken.balanceOfAt(account_investor3, 3)).toNumber(), new BN(web3.utils.toWei("1", "ether")));
 
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor2, 0)).toNumber(), 0);
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor2, 1)).toNumber(), 0);
-            assert.equal((await I_SecurityToken.balanceOfAt(account_investor2, 2)).toNumber(), web3.utils.toWei("1", "ether"));
-            assert.equal((await I_SecurityToken.balanceOfAt(account_investor2, 3)).toNumber(), web3.utils.toWei("1", "ether"));
+            assert.equal((await I_SecurityToken.balanceOfAt(account_investor2, 2)).toNumber(), new BN(web3.utils.toWei("1", "ether")));
+            assert.equal((await I_SecurityToken.balanceOfAt(account_investor2, 3)).toNumber(), new BN(web3.utils.toWei("1", "ether")));
 
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor1, 0)).toNumber(), 0);
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor1, 1)).toNumber(), 0);
-            assert.equal((await I_SecurityToken.balanceOfAt(account_investor1, 2)).toNumber(), web3.utils.toWei("1", "ether"));
-            assert.equal((await I_SecurityToken.balanceOfAt(account_investor1, 3)).toNumber(), web3.utils.toWei("1", "ether"));
+            assert.equal((await I_SecurityToken.balanceOfAt(account_investor1, 2)).toNumber(), new BN(web3.utils.toWei("1", "ether")));
+            assert.equal((await I_SecurityToken.balanceOfAt(account_investor1, 3)).toNumber(), new BN(web3.utils.toWei("1", "ether")));
         });
 
         it("Manually update checkpoints", async () => {
@@ -354,20 +354,20 @@ contract("ScheduledCheckpoint", accounts => {
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor3, 0)).toNumber(), 0);
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor3, 1)).toNumber(), 0);
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor3, 2)).toNumber(), 0);
-            assert.equal((await I_SecurityToken.balanceOfAt(account_investor3, 3)).toNumber(), web3.utils.toWei("1", "ether"));
-            assert.equal((await I_SecurityToken.balanceOfAt(account_investor3, 4)).toNumber(), web3.utils.toWei("1.5", "ether"));
+            assert.equal((await I_SecurityToken.balanceOfAt(account_investor3, 3)).toNumber(), new BN(web3.utils.toWei("1", "ether")));
+            assert.equal((await I_SecurityToken.balanceOfAt(account_investor3, 4)).toNumber(), new BN(web3.utils.toWei("1.5", "ether")));
 
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor2, 0)).toNumber(), 0);
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor2, 1)).toNumber(), 0);
-            assert.equal((await I_SecurityToken.balanceOfAt(account_investor2, 2)).toNumber(), web3.utils.toWei("1", "ether"));
-            assert.equal((await I_SecurityToken.balanceOfAt(account_investor2, 3)).toNumber(), web3.utils.toWei("1", "ether"));
-            assert.equal((await I_SecurityToken.balanceOfAt(account_investor2, 4)).toNumber(), web3.utils.toWei("1", "ether"));
+            assert.equal((await I_SecurityToken.balanceOfAt(account_investor2, 2)).toNumber(), new BN(web3.utils.toWei("1", "ether")));
+            assert.equal((await I_SecurityToken.balanceOfAt(account_investor2, 3)).toNumber(), new BN(web3.utils.toWei("1", "ether")));
+            assert.equal((await I_SecurityToken.balanceOfAt(account_investor2, 4)).toNumber(), new BN(web3.utils.toWei("1", "ether")));
 
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor1, 0)).toNumber(), 0);
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor1, 1)).toNumber(), 0);
-            assert.equal((await I_SecurityToken.balanceOfAt(account_investor1, 2)).toNumber(), web3.utils.toWei("1", "ether"));
-            assert.equal((await I_SecurityToken.balanceOfAt(account_investor1, 3)).toNumber(), web3.utils.toWei("1", "ether"));
-            assert.equal((await I_SecurityToken.balanceOfAt(account_investor1, 4)).toNumber(), web3.utils.toWei("0.5", "ether"));
+            assert.equal((await I_SecurityToken.balanceOfAt(account_investor1, 2)).toNumber(), new BN(web3.utils.toWei("1", "ether")));
+            assert.equal((await I_SecurityToken.balanceOfAt(account_investor1, 3)).toNumber(), new BN(web3.utils.toWei("1", "ether")));
+            assert.equal((await I_SecurityToken.balanceOfAt(account_investor1, 4)).toNumber(), new BN(web3.utils.toWei("0.5", "ether")));
         });
 
         it("Should get the permission", async () => {

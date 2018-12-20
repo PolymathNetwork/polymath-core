@@ -93,7 +93,7 @@ contract("GeneralPermissionManager Fuzz", accounts => {
     const stoKey = 3;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = web3.utils.toWei("250");
+    const initRegFee = new BN(web3.utils.toWei("250"));
 
     // CountTransferManager details
     const holderCount = 2; // Maximum number of token holders
@@ -141,7 +141,7 @@ contract("GeneralPermissionManager Fuzz", accounts => {
         // STEP 5: Deploy the GeneralDelegateManagerFactory
         [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
         // STEP 6: Deploy the GeneralDelegateManagerFactory
-        [P_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, web3.utils.toWei("500"));
+        [P_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, new BN(web3.utils.toWei("500")));
 
         // Deploy Modules
         [I_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, 0);
@@ -201,9 +201,9 @@ contract("GeneralPermissionManager Fuzz", accounts => {
 
         it("Should successfully attach the General permission manager factory with the security token -- failed because Token is not paid", async () => {
             let errorThrown = false;
-            await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
+            await I_PolyToken.getTokens(new BN(web3.utils.toWei("500", "ether")), token_owner);
             await catchRevert(
-                I_SecurityToken.addModule(P_GeneralPermissionManagerFactory.address, "0x", web3.utils.toWei("500", "ether"), new BN(0), {
+                I_SecurityToken.addModule(P_GeneralPermissionManagerFactory.address, "0x", new BN(web3.utils.toWei("500", "ether")), new BN(0), {
                     from: token_owner
                 })
             );
@@ -211,11 +211,11 @@ contract("GeneralPermissionManager Fuzz", accounts => {
 
         it("Should successfully attach the General permission manager factory with the security token - paid module", async () => {
             let snapId = await takeSnapshot();
-            await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), { from: token_owner });
+            await I_PolyToken.transfer(I_SecurityToken.address, new BN(web3.utils.toWei("500", "ether")), { from: token_owner });
             const tx = await I_SecurityToken.addModule(
                 P_GeneralPermissionManagerFactory.address,
                 "0x",
-                web3.utils.toWei("500", "ether"),
+                new BN(web3.utils.toWei("500", "ether")),
                 new BN(0),
                 { from: token_owner }
             );
@@ -667,7 +667,7 @@ contract("GeneralPermissionManager Fuzz", accounts => {
                     await I_ManualApprovalTransferManager.addManualApproval(
                         account_investor1,
                         account_investor4,
-                        web3.utils.toWei("2", "ether"),
+                        new BN(web3.utils.toWei("2", "ether")),
                         await latestTime() + duration.days(1),
                         { from: accounts[j] }
                     );
@@ -688,7 +688,7 @@ contract("GeneralPermissionManager Fuzz", accounts => {
                         I_ManualApprovalTransferManager.addManualApproval(
                             account_investor1,
                             account_investor4,
-                            web3.utils.toWei("2", "ether"),
+                            new BN(web3.utils.toWei("2", "ether")),
                             await latestTime() + duration.days(1),
                             { from: accounts[j] }
                         )
@@ -697,7 +697,7 @@ contract("GeneralPermissionManager Fuzz", accounts => {
                     await I_ManualApprovalTransferManager.addManualApproval(
                         account_investor1,
                         account_investor4,
-                        web3.utils.toWei("2", "ether"),
+                        new BN(web3.utils.toWei("2", "ether")),
                         await latestTime() + duration.days(1),
                         { from: token_owner }
                     );

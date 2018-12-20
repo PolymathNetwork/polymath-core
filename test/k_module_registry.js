@@ -78,7 +78,7 @@ contract("ModuleRegistry", accounts => {
     const address_zero = "0x0000000000000000000000000000000000000000";
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = web3.utils.toWei("250");
+    const initRegFee = new BN(web3.utils.toWei("250"));
 
     // delagate details
     const delegateDetails = "I am delegate ..";
@@ -87,7 +87,7 @@ contract("ModuleRegistry", accounts => {
     // Capped STO details
     let startTime;
     let endTime;
-    const cap = web3.utils.toWei("10000");
+    const cap = new BN(web3.utils.toWei("10000"));
     const rate = 1000;
     const fundRaiseType = [0];
     const STOParameters = ["uint256", "uint256", "uint256", "uint256", "uint8[]", "address"];
@@ -290,8 +290,8 @@ contract("ModuleRegistry", accounts => {
 
         describe("Test cases for the useModule function of the module registry", async () => {
             it("Deploy the securityToken", async () => {
-                await I_PolyToken.getTokens(web3.utils.toWei("500"), account_issuer);
-                await I_PolyToken.approve(I_STRProxied.address, web3.utils.toWei("500"), { from: account_issuer });
+                await I_PolyToken.getTokens(new BN(web3.utils.toWei("500")), account_issuer);
+                await I_PolyToken.approve(I_STRProxied.address, new BN(web3.utils.toWei("500")), { from: account_issuer });
                 await I_STRProxied.registerTicker(account_issuer, symbol, name, { from: account_issuer });
                 let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, true, { from: account_issuer });
                 assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase());
@@ -391,8 +391,8 @@ contract("ModuleRegistry", accounts => {
 
                 // Generate the new securityToken
                 let newSymbol = "toro";
-                await I_PolyToken.getTokens(web3.utils.toWei("500"), account_issuer);
-                await I_PolyToken.approve(I_STRProxied.address, web3.utils.toWei("500"), { from: account_issuer });
+                await I_PolyToken.getTokens(new BN(web3.utils.toWei("500")), account_issuer);
+                await I_PolyToken.approve(I_STRProxied.address, new BN(web3.utils.toWei("500")), { from: account_issuer });
                 await I_STRProxied.registerTicker(account_issuer, newSymbol, name, { from: account_issuer });
                 let tx = await I_STRProxied.generateSecurityToken(name, newSymbol, tokenDetails, true, { from: account_issuer });
                 assert.equal(tx.logs[2].args._ticker, newSymbol.toUpperCase());
@@ -514,7 +514,7 @@ contract("ModuleRegistry", accounts => {
         describe("Test cases for IRegistry functionality", async () => {
             describe("Test cases for reclaiming funds", async () => {
                 it("Should successfully reclaim POLY tokens -- fail because token address will be 0x", async () => {
-                    await I_PolyToken.transfer(I_MRProxied.address, web3.utils.toWei("1"), { from: token_owner });
+                    await I_PolyToken.transfer(I_MRProxied.address, new BN(web3.utils.toWei("1")), { from: token_owner });
                     catchRevert(I_MRProxied.reclaimERC20("0x000000000000000000000000000000000000000", { from: account_polymath }));
                 });
 
@@ -523,7 +523,7 @@ contract("ModuleRegistry", accounts => {
                 });
 
                 it("Should successfully reclaim POLY tokens", async () => {
-                    await I_PolyToken.getTokens(web3.utils.toWei("1"), I_MRProxied.address);
+                    await I_PolyToken.getTokens(new BN(web3.utils.toWei("1")), I_MRProxied.address);
                     let bal1 = await I_PolyToken.balanceOf.call(account_polymath);
                     await I_MRProxied.reclaimERC20(I_PolyToken.address);
                     let bal2 = await I_PolyToken.balanceOf.call(account_polymath);
@@ -559,7 +559,7 @@ contract("ModuleRegistry", accounts => {
             describe("Test cases for the ReclaimTokens contract", async () => {
                 it("Should successfully reclaim POLY tokens -- fail because token address will be 0x", async () => {
                     I_ReclaimERC20 = await ReclaimTokens.at(I_FeatureRegistry.address);
-                    await I_PolyToken.transfer(I_ReclaimERC20.address, web3.utils.toWei("1"), { from: token_owner });
+                    await I_PolyToken.transfer(I_ReclaimERC20.address, new BN(web3.utils.toWei("1")), { from: token_owner });
                     catchRevert(I_ReclaimERC20.reclaimERC20("0x000000000000000000000000000000000000000", { from: account_polymath }));
                 });
 
@@ -568,7 +568,7 @@ contract("ModuleRegistry", accounts => {
                 });
 
                 it("Should successfully reclaim POLY tokens", async () => {
-                    await I_PolyToken.getTokens(web3.utils.toWei("1"), I_ReclaimERC20.address);
+                    await I_PolyToken.getTokens(new BN(web3.utils.toWei("1")), I_ReclaimERC20.address);
                     let bal1 = await I_PolyToken.balanceOf.call(account_polymath);
                     await I_ReclaimERC20.reclaimERC20(I_PolyToken.address);
                     let bal2 = await I_PolyToken.balanceOf.call(account_polymath);

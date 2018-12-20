@@ -2,33 +2,27 @@
 // aren’t included within the original RPC specification.
 // See https://github.com/ethereumjs/testrpc#implemented-methods
 
-function increaseTime(duration) {
-    const id = Date.now();
+async function increaseTime(duration) {
+    let currentTime = (await web3.eth.getBlock('latest')).timestamp
+    await jumpToTime(currentTime + duration);
+}
 
-    return new Promise((resolve, reject) => {
-        web3.currentProvider.send(
-            {
-                jsonrpc: "2.0",
-                method: "evm_increaseTime",
-                params: [duration],
-                id: id
-            },
-            err1 => {
-                if (err1) return reject(err1);
+async function jumpToTime(timestamp) {
+  const id = Date.now();
 
-                web3.currentProvider.send(
-                    {
-                        jsonrpc: "2.0",
-                        method: "evm_mine",
-                        id: id + 1
-                    },
-                    (err2, res) => {
-                        return err2 ? reject(err2) : resolve(res);
-                    }
-                );
-            }
-        );
-    });
+  return new Promise((resolve, reject) => {
+    web3.currentProvider.send(
+      {
+        jsonrpc: "2.0",
+        method: "evm_mine",
+        params: [timestamp],
+        id: id
+      },
+      (err, res) => {
+        return err ? reject(err) : resolve(res);
+      }
+    );
+  });
 }
 
 export default function takeSnapshot() {
@@ -51,7 +45,7 @@ export default function takeSnapshot() {
     });
 }
 
-function revertToSnapshot(snapShotId) {
+async function revertToSnapshot(snapShotId) {
     return new Promise((resolve, reject) => {
         web3.currentProvider.send(
             {

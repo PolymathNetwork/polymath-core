@@ -206,27 +206,27 @@ contract EternalStorage {
     /// {uint256 date, string name, address owner} etc.
     /// string _name = getString(keccak256(abi.encodePacked("registeredSymbols_name", "TOKEN"));
 
-    function getUintValues(bytes32 _variable) public view returns(uint256) {
+    function getUintValue(bytes32 _variable) public view returns(uint256) {
         return uintStorage[_variable];
     }
 
-    function getBoolValues(bytes32 _variable) public view returns(bool) {
+    function getBoolValue(bytes32 _variable) public view returns(bool) {
         return boolStorage[_variable];
     }
 
-    function getStringValues(bytes32 _variable) public view returns(string) {
+    function getStringValue(bytes32 _variable) public view returns(string) {
         return stringStorage[_variable];
     }
 
-    function getAddressValues(bytes32 _variable) public view returns(address) {
+    function getAddressValue(bytes32 _variable) public view returns(address) {
         return addressStorage[_variable];
     }
 
-    function getBytes32Values(bytes32 _variable) public view returns(bytes32) {
+    function getBytes32Value(bytes32 _variable) public view returns(bytes32) {
         return bytes32Storage[_variable];
     }
 
-    function getBytesValues(bytes32 _variable) public view returns(bytes) {
+    function getBytesValue(bytes32 _variable) public view returns(bytes) {
         return bytesStorage[_variable];
     }
 

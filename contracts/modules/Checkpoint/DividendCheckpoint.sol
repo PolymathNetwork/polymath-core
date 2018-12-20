@@ -251,14 +251,33 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
         claimedAmounts = new uint256[](dividends.length);
         names = new bytes32[](dividends.length);
         for (uint256 i = 0; i < dividends.length; i++) {
-            createds[i] = dividends[i].created;
-            maturitys[i] = dividends[i].maturity;
-            expirys[i] = dividends[i].expiry;
-            amounts[i] = dividends[i].amount;
-            claimedAmounts[i] = dividends[i].claimedAmount;
-            names[i] = dividends[i].name;
+            (createds[i], maturitys[i], expirys[i], amounts[i], claimedAmounts[i], names[i]) = getDividendData(i);
         }
-        return (createds, maturitys, expirys, amounts, claimedAmounts, names);
+    }
+
+    /**
+     * @notice Get static dividend data
+     * @return uint256 timestamp of dividend creation
+     * @return uint256 timestamp of dividend maturity
+     * @return uint256 timestamp of dividend expiry
+     * @return uint256 amount of dividend
+     * @return uint256 claimed amount of dividend
+     * @return bytes32 name of dividend
+     */
+    function getDividendData(uint256 _dividendIndex) public view returns (
+        uint256 created,
+        uint256 maturity,
+        uint256 expiry,
+        uint256 amount,
+        uint256 claimedAmount,
+        bytes32 name)
+    {
+        created = dividends[_dividendIndex].created;
+        maturity = dividends[_dividendIndex].maturity;
+        expiry = dividends[_dividendIndex].expiry;
+        amount = dividends[_dividendIndex].amount;
+        claimedAmount = dividends[_dividendIndex].claimedAmount;
+        name = dividends[_dividendIndex].name;
     }
 
     /**
@@ -268,21 +287,30 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @return bool[] whether investor has claimed
      * @return bool[] whether investor is excluded
      * @return uint256[] amount of withheld tax
+     * @return uint256[] investor balance
+     * @return uint256[] amount to be claimed including withheld tax
      */
-    function getDividendProgress(uint256 _dividendIndex) external view returns (address[], bool[], bool[], uint256[]) {
+    function getDividendProgress(uint256 _dividendIndex) external view returns (address[] memory investors, bool[] memory resultClaimed, bool[] memory resultExcluded, uint256[] memory resultWithheld, uint256[] memory resultBalance, uint256[] memory resultAmount) {
         require(_dividendIndex < dividends.length, "Invalid dividend");
         //Get list of Investors
-        uint256 checkpointId = dividends[_dividendIndex].checkpointId;
-        address[] memory investors = ISecurityToken(securityToken).getInvestorsAt(checkpointId);
-        bool[] memory resultClaimed = new bool[](investors.length);
-        bool[] memory resultExcluded = new bool[](investors.length);
-        uint256[] memory resultWithheld = new uint256[](investors.length);
+        Dividend storage dividend = dividends[_dividendIndex];
+        uint256 checkpointId = dividend.checkpointId;
+        investors = ISecurityToken(securityToken).getInvestorsAt(checkpointId);
+        resultClaimed = new bool[](investors.length);
+        resultExcluded = new bool[](investors.length);
+        resultWithheld = new uint256[](investors.length);
+        resultBalance = new uint256[](investors.length);
+        resultAmount = new uint256[](investors.length);
         for (uint256 i; i < investors.length; i++) {
-            resultClaimed[i] = dividends[_dividendIndex].claimed[investors[i]];
-            resultExcluded[i] = dividends[_dividendIndex].dividendExcluded[investors[i]];
-            resultWithheld[i] = dividends[_dividendIndex].withheld[investors[i]];
+            resultClaimed[i] = dividend.claimed[investors[i]];
+            resultExcluded[i] = dividend.dividendExcluded[investors[i]];
+            resultBalance[i] = ISecurityToken(securityToken).balanceOfAt(investors[i], dividend.checkpointId);
+            if (!resultExcluded[i]) {
+                resultWithheld[i] = dividend.withheld[investors[i]];
+                resultAmount[i] = resultBalance[i].mul(dividend.amount).div(dividend.totalSupply);
+            }
         }
-        return (investors, resultClaimed, resultExcluded, resultWithheld);
+        /* return (investors, resultClaimed, resultExcluded, resultWithheld, resultBalance, resultAmount); */
     }
 
     /**

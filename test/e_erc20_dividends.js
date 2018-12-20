@@ -844,6 +844,7 @@ contract("ERC20DividendCheckpoint", accounts => {
 
         it("Issuer reclaims withholding tax", async () => {
             let info = await I_ERC20DividendCheckpoint.getDividendProgress.call(3);
+            console.log(info);
             assert.equal(info[0][0], account_investor1, "account match");
             assert.equal(info[0][1], account_investor2, "account match");
             assert.equal(info[0][2], account_temp, "account match");

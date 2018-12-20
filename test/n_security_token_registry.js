@@ -474,7 +474,7 @@ contract("SecurityTokenRegistry", accounts => {
 
             I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
-            const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({ from: _blockNo }), 1);
+            const log = (await I_SecurityToken_ETH.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTrasnferManager module get added successfully or not
             assert.equal(log.args._types[0].toNumber(), transferManagerKey, `Should be equal to the ${transferManagerKey}`);
@@ -543,8 +543,7 @@ contract("SecurityTokenRegistry", accounts => {
             let tokens = await I_STRProxied.getTokensByOwner.call(token_owner);
             assert.equal(tokens[0], I_SecurityToken.address);
             assert.equal(tokens[1], I_SecurityToken002.address);
-
-            const log = await promisifyLogWatch(I_SecurityToken002.ModuleAdded({ from: _blockNo }), 1);
+            const log = (await I_SecurityToken002.getPastEvents('ModuleAdded', {filter: {from: blockNo}}))[0];
             // Verify that GeneralTransferManager module get added successfully or not
             assert.equal(log.args._types[0].toNumber(), transferManagerKey);
             assert.equal(web3.utils.toAscii(log.args._name).replace(/\u0000/g, ""), "GeneralTransferManager");

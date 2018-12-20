@@ -181,8 +181,7 @@ contract("CappedSTO", accounts => {
 
             I_SecurityToken_ETH = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
-            const log = await promisifyLogWatch(I_SecurityToken_ETH.ModuleAdded({ from: _blockNo }), 1);
-
+            const log = (await I_SecurityToken_ETH.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
             // Verify that GeneralTransferManager module get added successfully or not
             assert.equal(log.args._types[0].toNumber(), transferManagerKey);
             assert.equal(web3.utils.hexToString(log.args._name), "GeneralTransferManager");
@@ -264,8 +263,8 @@ contract("CappedSTO", accounts => {
         });
 
         it("Should successfully attach the STO module to the security token", async () => {
-            startTime_ETH1 = latestTime() + duration.days(1);
-            endTime_ETH1 = startTime_ETH1 + duration.days(30);
+            startTime_ETH1 = new BN(latestTime() + duration.days(1));
+            endTime_ETH1 = startTime_ETH1.add(new BN(duration.days(30)));
             let bytesSTO = encodeModuleCall(STOParameters, [
                 startTime_ETH1,
                 endTime_ETH1,
@@ -370,8 +369,7 @@ contract("CappedSTO", accounts => {
         });
 
         it("Verification of the event Token Purchase", async () => {
-            const log = await promisifyLogWatch(I_CappedSTO_Array_ETH[0].TokenPurchase({ from: blockNo }), 1);
-
+            const log = (await I_CappedSTO_Array_ETH[0].getPastEvents('TokenPurchase', {filter: {from: blockNo}}))[0];
             assert.equal(log.args.purchaser, account_investor1, "Wrong address of the investor");
             assert.equal(log.args.amount.dividedBy(new BN(10).pow(new BN(18))).toNumber(), 1000, "Wrong No. token get dilivered");
         });
@@ -651,8 +649,8 @@ contract("CappedSTO", accounts => {
                 assert.equal(tx.logs[2].args._ticker, P_symbol, "SecurityToken doesn't get deployed");
 
                 I_SecurityToken_POLY = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
-
-                const log = await promisifyLogWatch(I_SecurityToken_POLY.ModuleAdded({ from: _blockNo }), 1);
+                
+                const log = (await I_SecurityToken_POLY.getPastEvents('ModuleAdded', {filter: {from: blockNo}}))[0];
 
                 // Verify that GeneralTransferManager module get added successfully or not
                 assert.equal(log.args._types[0].toNumber(), transferManagerKey);
@@ -752,7 +750,7 @@ contract("CappedSTO", accounts => {
             });
 
             it("Verification of the event Token Purchase", async () => {
-                const log = await promisifyLogWatch(I_CappedSTO_Array_POLY[0].TokenPurchase({ from: blockNo }), 1);
+                const log = (await I_CappedSTO_Array_POLY[0].getPastEvents('TokenPurchase', {filter: {from: blockNo}}))[0];
 
                 assert.equal(log.args.purchaser, account_investor1, "Wrong address of the investor");
                 assert.equal(log.args.amount.dividedBy(new BN(10).pow(new BN(18))).toNumber(), 5000, "Wrong No. token get dilivered");

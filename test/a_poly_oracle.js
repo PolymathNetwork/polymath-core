@@ -73,7 +73,7 @@ contract("PolyOracle", accounts => {
             let tx = await I_PolyOracle.schedulePriceUpdatesFixed([], { from: owner, value: web3.utils.toWei("1") });
             assert.isAtMost(tx.logs[0].args._time.toNumber(), latestTime());
             // await increaseTime(50);
-            const logNewPriceWatcher = await promisifyLogWatch(I_PolyOracle.PriceUpdated({ fromBlock: blockNo }), 1);
+            const logNewPriceWatcher = (await I_PolyOracle.getPastEvents('PriceUpdated', {filter: {from: blockNo}}))[0];
             // const log = await logNewPriceWatcher;
             assert.equal(logNewPriceWatcher.event, "PriceUpdated", "PriceUpdated not emitted.");
             assert.isNotNull(logNewPriceWatcher.args._price, "Price returned was null.");
@@ -99,7 +99,7 @@ contract("PolyOracle", accounts => {
             }
 
             // Wait for the callback to be invoked by oraclize and the event to be emitted
-            const logNewPriceWatcher = promisifyLogWatch(I_PolyOracle.PriceUpdated({ fromBlock: blockNo }), 2);
+            const logNewPriceWatcher = (await I_PolyOracle.getPastEvents('PriceUpdated', {filter: {from: blockNo}}))[1];
             const log = await logNewPriceWatcher;
             assert.equal(log.event, "PriceUpdated", "PriceUpdated not emitted.");
             assert.isNotNull(log.args._price, "Price returned was null.");
@@ -122,7 +122,7 @@ contract("PolyOracle", accounts => {
                 assert.isAtMost(time.toNumber(), latestTime() + (i + 1) * 30);
             }
             // Wait for the callback to be invoked by oraclize and the event to be emitted
-            const logNewPriceWatcher = promisifyLogWatch(I_PolyOracle.PriceUpdated({ fromBlock: blockNo }), 2);
+            const logNewPriceWatcher = (await I_PolyOracle.getPastEvents('PriceUpdated', {filter: {from: blockNo}}))[1];
             const log = await logNewPriceWatcher;
             assert.equal(log.event, "PriceUpdated", "PriceUpdated not emitted.");
             assert.isNotNull(log.args._price, "Price returned was null.");
@@ -184,8 +184,7 @@ contract("PolyOracle", accounts => {
                 console.log(`       checking the time for the ${i} index and the scheduling time is ${time}`);
                 assert.isAtMost(time.toNumber(), timeScheduling[i]);
             }
-
-            const logNewPriceWatcher = await promisifyLogWatch(I_PolyOracle.PriceUpdated({ fromBlock: blockNo }), 2);
+            const logNewPriceWatcher = (await I_PolyOracle.getPastEvents('PriceUpdated', {filter: {from: blockNo}}))[1];
 
             assert.equal(logNewPriceWatcher.event, "PriceUpdated", "PriceUpdated not emitted.");
             assert.isNotNull(logNewPriceWatcher.args._price, "Price returned was null.");
@@ -250,7 +249,7 @@ contract("PolyOracle", accounts => {
             let blockNo = latestBlock();
             let tx = await I_PolyOracle.schedulePriceUpdatesFixed([], { from: owner, value: web3.utils.toWei("1") });
             assert.isAtMost(tx.logs[0].args._time.toNumber(), latestTime());
-            const logNewPriceWatcher = await promisifyLogWatch(I_PolyOracle.PriceUpdated({ fromBlock: blockNo }), 1);
+            const logNewPriceWatcher = (await I_PolyOracle.getPastEvents('PriceUpdated', {filter: {from: blockNo}}))[0];
             assert.equal(logNewPriceWatcher.event, "PriceUpdated", "PriceUpdated not emitted.");
             assert.isNotNull(logNewPriceWatcher.args._price, "Price returned was null.");
             console.log(

@@ -684,32 +684,32 @@ contract("CappedSTO", async (accounts) => {
         describe("verify the data of STO", async () => {
             it("Should verify the configuration of the STO", async () => {
                 assert.equal(
-                    await I_CappedSTO_Array_POLY[0].startTime.call(),
+                    (await I_CappedSTO_Array_POLY[0].startTime.call()).toNumber(),
                     startTime_POLY1,
-                    "STO Configuration doesn't set as expected"
+                    "1STO Configuration doesn't set as expected"
                 );
                 assert.equal(
-                    await I_CappedSTO_Array_POLY[0].endTime.call(),
+                    (await I_CappedSTO_Array_POLY[0].endTime.call()).toNumber(),
                     endTime_POLY1,
-                    "STO Configuration doesn't set as expected"
+                    "2STO Configuration doesn't set as expected"
                 );
                 assert.equal(
-                    await I_CappedSTO_Array_POLY[0].cap.call()).div(new BN(10).pow(new BN(18)),
+                    (await I_CappedSTO_Array_POLY[0].cap.call()).div(new BN(10).pow(new BN(18))).toString(),
                     new BN(P_cap).div(new BN(10).pow(new BN(18))),
-                    "STO Configuration doesn't set as expected"
+                    "3STO Configuration doesn't set as expected"
                 );
-                assert.equal(await I_CappedSTO_Array_POLY[0].rate.call(), P_rate, "STO Configuration doesn't set as expected");
+                assert.equal((await I_CappedSTO_Array_POLY[0].rate.call()).toString(), new BN(P_rate).toString(), "STO Configuration doesn't set as expected");
                 assert.equal(
                     await I_CappedSTO_Array_POLY[0].fundRaiseTypes.call(P_fundRaiseType),
                     true,
-                    "STO Configuration doesn't set as expected"
+                    "4STO Configuration doesn't set as expected"
                 );
             });
         });
 
         describe("Buy tokens", async () => {
             it("Should Buy the tokens", async () => {
-                await I_PolyToken.getTokens(10000 * Math.pow(10, 18), account_investor1);
+                await I_PolyToken.getTokens(new BN(10).pow(new BN(22)), account_investor1);
                 blockNo = await latestBlock();
                 assert.equal(
                     (await I_PolyToken.balanceOf(account_investor1)).div(new BN(10).pow(new BN(18))).toNumber(),
@@ -723,10 +723,10 @@ contract("CappedSTO", async (accounts) => {
                 assert.equal(tx.logs[0].args._investor, account_investor1, "Failed in adding the investor in whitelist");
                 // Jump time
                 await increaseTime(duration.days(17));
-                await I_PolyToken.approve(I_CappedSTO_Array_POLY[0].address, new BN(1000 * Math.pow(10, 18)), { from: account_investor1 });
+                await I_PolyToken.approve(I_CappedSTO_Array_POLY[0].address, new BN(10).pow(new BN(21)), { from: account_investor1 });
 
                 // buyTokensWithPoly transaction
-                await I_CappedSTO_Array_POLY[0].buyTokensWithPoly(1000 * Math.pow(10, 18), {
+                await I_CappedSTO_Array_POLY[0].buyTokensWithPoly(new BN(10).pow(new BN(21)), {
                     from: account_investor1
                 });
                 assert.equal((await I_CappedSTO_Array_POLY[0].getRaised.call(POLY)).div(new BN(10).pow(new BN(18))).toNumber(), 1000);
@@ -760,11 +760,11 @@ contract("CappedSTO", async (accounts) => {
 
             it("Should fail in buying tokens because buying is paused", async () => {
                 await I_CappedSTO_Array_POLY[0].pause({ from: account_issuer });
-                await I_PolyToken.approve(I_CappedSTO_Array_POLY[0].address, 1000 * Math.pow(10, 18), { from: account_investor1 });
+                await I_PolyToken.approve(I_CappedSTO_Array_POLY[0].address, new BN(10).pow(new BN(21)), { from: account_investor1 });
 
                 // buyTokensWithPoly transaction
                 await catchRevert(
-                    I_CappedSTO_Array_POLY[0].buyTokensWithPoly(1000 * Math.pow(10, 18), {
+                    I_CappedSTO_Array_POLY[0].buyTokensWithPoly(new BN(10).pow(new BN(21)), {
                         from: account_investor1,
                         gas: 6000000
                     })
@@ -773,7 +773,7 @@ contract("CappedSTO", async (accounts) => {
             });
 
             it("Should buy the granular unit tokens and charge only required POLY", async () => {
-                await I_SecurityToken_POLY.changeGranularity(10 ** 22, { from: token_owner });
+                await I_SecurityToken_POLY.changeGranularity(new BN(10).pow(new BN(22)), { from: token_owner });
                 let tx = await I_GeneralTransferManager.modifyWhitelist(
                     account_investor2,
                     P_fromTime,
@@ -787,10 +787,10 @@ contract("CappedSTO", async (accounts) => {
                 );
                 console.log((await I_SecurityToken_POLY.balanceOf(account_investor2)).div(new BN(10).pow(new BN(18))).toNumber());
                 assert.equal(tx.logs[0].args._investor, account_investor2, "Failed in adding the investor in whitelist");
-                await I_PolyToken.getTokens(10000 * Math.pow(10, 18), account_investor2);
-                await I_PolyToken.approve(I_CappedSTO_Array_POLY[0].address, 9000 * Math.pow(10, 18), { from: account_investor2 });
+                await I_PolyToken.getTokens(new BN(10).pow(new BN(22)), account_investor2);
+                await I_PolyToken.approve(I_CappedSTO_Array_POLY[0].address, new BN(9000).mul(new BN(10).pow(new BN(18))), { from: account_investor2 });
                 const initRaised = (await I_CappedSTO_Array_POLY[0].getRaised.call(POLY)).div(new BN(10).pow(new BN(18))).toNumber();
-                tx = await I_CappedSTO_Array_POLY[0].buyTokensWithPoly(3000 * Math.pow(10, 18), { from: account_investor2 });
+                tx = await I_CappedSTO_Array_POLY[0].buyTokensWithPoly(new BN(3000).mul(new BN(10).pow(new BN(18))), { from: account_investor2 });
                 await I_SecurityToken_POLY.changeGranularity(1, { from: token_owner });
                 assert.equal(
                     (await I_CappedSTO_Array_POLY[0].getRaised.call(POLY)).div(new BN(10).pow(new BN(18))).toNumber(),
@@ -805,7 +805,7 @@ contract("CappedSTO", async (accounts) => {
 
             it("Should restrict to buy tokens after hiting the cap in second tx first tx pass", async () => {
                 // buyTokensWithPoly transaction
-                await I_CappedSTO_Array_POLY[0].buyTokensWithPoly(7000 * Math.pow(10, 18), { from: account_investor2 });
+                await I_CappedSTO_Array_POLY[0].buyTokensWithPoly(new BN(7000).mul(new BN(10).pow(new BN(18))), { from: account_investor2 });
 
                 assert.equal(
                     (await I_CappedSTO_Array_POLY[0].getRaised.call(POLY)).div(new BN(10).pow(new BN(18))).toNumber(),
@@ -818,23 +818,23 @@ contract("CappedSTO", async (accounts) => {
                     (await I_SecurityToken_POLY.balanceOf(account_investor2)).div(new BN(10).pow(new BN(18))).toNumber(),
                     45000
                 );
-                await I_PolyToken.approve(I_CappedSTO_Array_POLY[0].address, 1000 * Math.pow(10, 18), { from: account_investor1 });
-                await catchRevert(I_CappedSTO_Array_POLY[0].buyTokensWithPoly(1000 * Math.pow(10, 18), { from: account_investor1 }));
+                await I_PolyToken.approve(I_CappedSTO_Array_POLY[0].address, new BN(1000).mul(new BN(10).pow(new BN(18))), { from: account_investor1 });
+                await catchRevert(I_CappedSTO_Array_POLY[0].buyTokensWithPoly(new BN(1000).mul(new BN(10).pow(new BN(18))), { from: account_investor1 }));
             });
 
             it("Should failed at the time of buying the tokens -- Because STO get expired", async () => {
                 await increaseTime(duration.days(31)); // increased beyond the end time of the STO
-                await I_PolyToken.approve(I_CappedSTO_Array_POLY[0].address, 1000 * Math.pow(10, 18), { from: account_investor1 });
+                await I_PolyToken.approve(I_CappedSTO_Array_POLY[0].address, new BN(1000).mul(new BN(10).pow(new BN(18))), { from: account_investor1 });
                 await catchRevert(
-                    I_CappedSTO_Array_POLY[0].buyTokensWithPoly(1000 * Math.pow(10, 18), { from: account_investor1, gas: 6000000 })
+                    I_CappedSTO_Array_POLY[0].buyTokensWithPoly(new BN(1000).mul(new BN(10).pow(new BN(18))), { from: account_investor1, gas: 6000000 })
                 );
             });
 
             it("Should fundRaised value equal to the raised value in the funds receiver wallet", async () => {
                 const balanceRaised = await I_PolyToken.balanceOf.call(account_fundsReceiver);
                 assert.equal(
-                    (await I_CappedSTO_Array_POLY[0].getRaised.call(POLY)).toNumber(),
-                    balanceRaised,
+                    (await I_CappedSTO_Array_POLY[0].getRaised.call(POLY)).toString(),
+                    balanceRaised.toString(),
                     "Somewhere raised money get stolen or sent to wrong wallet"
                 );
             });
@@ -842,7 +842,7 @@ contract("CappedSTO", async (accounts) => {
 
         describe("Test cases for the CappedSTOFactory", async () => {
             it("should get the exact details of the factory", async () => {
-                assert.equal((await I_CappedSTOFactory.getSetupCost.call()).toNumber(), cappedSTOSetupCost);
+                assert.equal((await I_CappedSTOFactory.getSetupCost.call()).toString(), cappedSTOSetupCost.toString());
                 assert.equal((await I_CappedSTOFactory.getTypes.call())[0], 3);
                 assert.equal(web3.utils.hexToString(await I_CappedSTOFactory.getName.call()), "CappedSTO", "Wrong Module added");
                 assert.equal(
@@ -912,11 +912,11 @@ contract("CappedSTO", async (accounts) => {
             });
 
             it("Should get the raised amount of ether", async () => {
-                assert.equal(await I_CappedSTO_Array_POLY[0].getRaised.call(ETH), new BN(new BN(web3.utils.toWei("0", "ether"))));
+                assert.equal((await I_CappedSTO_Array_POLY[0].getRaised.call(ETH)).toString(), new BN(web3.utils.toWei("0", "ether")).toString());
             });
 
             it("Should get the raised amount of poly", async () => {
-                assert.equal((await I_CappedSTO_Array_POLY[0].getRaised.call(POLY)).toNumber(), new BN(new BN(web3.utils.toWei("10000", "ether"))));
+                assert.equal((await I_CappedSTO_Array_POLY[0].getRaised.call(POLY)).toString(), new BN(web3.utils.toWei("10000", "ether")).toString());
             });
 
             it("Should get the investors", async () => {
@@ -963,31 +963,31 @@ contract("CappedSTO", async (accounts) => {
             assert.equal(
                 (await I_CappedSTO_Array_POLY[1].startTime.call()).toString(),
                 startTime_POLY2.toString(),
-                "STO Configuration doesn't set as expected"
+                "1STO Configuration doesn't set as expected"
             );
             assert.equal(
                 (await I_CappedSTO_Array_POLY[1].endTime.call()).toString(),
                 endTime_POLY2.toString(),
-                "STO Configuration doesn't set as expected"
+                "2STO Configuration doesn't set as expected"
             );
             assert.equal(
                 (await I_CappedSTO_Array_POLY[1].cap.call()).div(new BN(10).pow(new BN(18))).toString(),
                 new BN(P_cap).div(new BN(10).pow(new BN(18))).toString(),
-                "STO Configuration doesn't set as expected"
+                "3STO Configuration doesn't set as expected"
             );
-            assert.equal(await I_CappedSTO_Array_POLY[1].rate.call(), P_rate, "STO Configuration doesn't set as expected");
+            assert.equal((await I_CappedSTO_Array_POLY[1].rate.call()).toString(), new BN(P_rate).toString(), "STO Configuration doesn't set as expected");
             assert.equal(
                 await I_CappedSTO_Array_POLY[1].fundRaiseTypes.call(P_fundRaiseType),
                 true,
-                "STO Configuration doesn't set as expected"
+                "4STO Configuration doesn't set as expected"
             );
         });
 
         it("Should successfully invest in second STO", async () => {
             const polyToInvest = new BN(1000);
-            const stToReceive = new BN((polyToInvest * P_rate) / Math.pow(10, 18));
+            const stToReceive = new BN(polyToInvest.mul(new BN(P_rate).div(new BN(10).pow(new BN(18)))));
 
-            await I_PolyToken.getTokens(polyToInvest * Math.pow(10, 18), account_investor3);
+            await I_PolyToken.getTokens(polyToInvest.mul(new BN(10).pow(new BN(18))), account_investor3);
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor3, P_fromTime, P_toTime, P_expiryTime, true, {
                 from: account_issuer,
@@ -997,10 +997,10 @@ contract("CappedSTO", async (accounts) => {
             // Jump time to beyond STO start
             await increaseTime(duration.days(2));
 
-            await I_PolyToken.approve(I_CappedSTO_Array_POLY[1].address, polyToInvest * Math.pow(10, 18), { from: account_investor3 });
+            await I_PolyToken.approve(I_CappedSTO_Array_POLY[1].address, polyToInvest.mul(new BN(10).pow(new BN(18))), { from: account_investor3 });
 
             // buyTokensWithPoly transaction
-            await I_CappedSTO_Array_POLY[1].buyTokensWithPoly(polyToInvest * Math.pow(10, 18), {
+            await I_CappedSTO_Array_POLY[1].buyTokensWithPoly(polyToInvest.mul(new BN(10).pow(new BN(18))), {
                 from: account_investor3,
                 gas: 6000000
             });

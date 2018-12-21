@@ -279,7 +279,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
         });
 
         it("Set withholding tax of 20% on investor 2", async () => {
-            await I_EtherDividendCheckpoint.setWithholdingFixed([account_investor2], BN(20 * 10 ** 16), { from: token_owner });
+            await I_EtherDividendCheckpoint.setWithholdingFixed([account_investor2], new BN(web3.utils.toWei("0.2", "ether")), { from: token_owner });
         });
 
         it("Should fail in creating the dividend", async () => {
@@ -307,7 +307,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
         it("Investor 1 transfers his token balance to investor 2", async () => {
             await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 });
             assert.equal(await I_SecurityToken.balanceOf(account_investor1), 0);
-            assert.equal(await I_SecurityToken.balanceOf(account_investor2), new BN(web3.utils.toWei("3", "ether")));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toString(), new BN(web3.utils.toWei("3", "ether")).toString());
         });
 
         it("Issuer pushes dividends iterating over account holders - dividends proportional to checkpoint", async () => {
@@ -415,7 +415,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
                 account_investor3,
                 currentTime,
                 currentTime,
-                currentTime.add(new BN(duration.days(10))),
+                currentTime.add(new BN(duration.days(10000))),
                 true,
                 {
                     from: account_issuer,

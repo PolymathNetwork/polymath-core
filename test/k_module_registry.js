@@ -356,7 +356,7 @@ contract("ModuleRegistry", async (accounts) => {
                 });
                 await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
                 await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
-                let tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "", new BN(0), new BN(0), { from: token_owner });
+                let tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x0", new BN(0), new BN(0), { from: token_owner });
                 assert.equal(tx.logs[2].args._types[0], permissionManagerKey, "module doesn't get deployed");
             });
 

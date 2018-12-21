@@ -156,7 +156,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
         it("Should successfully attach the ERC20DividendCheckpoint with the security token", async () => {
             await I_PolyToken.getTokens(new BN(web3.utils.toWei("500", "ether")), token_owner);
             await catchRevert(
-                I_SecurityToken.addModule(P_EtherDividendCheckpointFactory.address, "", new BN(web3.utils.toWei("500", "ether")), new BN(0), {
+                I_SecurityToken.addModule(P_EtherDividendCheckpointFactory.address, "0x0", new BN(web3.utils.toWei("500", "ether")), new BN(0), {
                     from: token_owner
                 })
             );
@@ -165,7 +165,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
         it("Should successfully attach the EtherDividendCheckpoint with the security token", async () => {
             let snapId = await takeSnapshot();
             await I_PolyToken.transfer(I_SecurityToken.address, new BN(web3.utils.toWei("500", "ether")), { from: token_owner });
-            const tx = await I_SecurityToken.addModule(P_EtherDividendCheckpointFactory.address, "", new BN(web3.utils.toWei("500", "ether")), new BN(0), {
+            const tx = await I_SecurityToken.addModule(P_EtherDividendCheckpointFactory.address, "0x0", new BN(web3.utils.toWei("500", "ether")), new BN(0), {
                 from: token_owner
             });
             assert.equal(tx.logs[3].args._types[0].toNumber(), checkpointKey, "EtherDividendCheckpoint doesn't get deployed");
@@ -179,7 +179,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
         });
 
         it("Should successfully attach the EtherDividendCheckpoint with the security token", async () => {
-            const tx = await I_SecurityToken.addModule(I_EtherDividendCheckpointFactory.address, "", new BN(0), new BN(0), { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_EtherDividendCheckpointFactory.address, "0x0", new BN(0), new BN(0), { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), checkpointKey, "EtherDividendCheckpoint doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
@@ -284,7 +284,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
             let maturity = await latestTime() + duration.days(1);
             let expiry = await latestTime() + duration.days(10);
             await catchRevert(
-                I_EtherDividendCheckpoint.createDividend(maturity, expiry, "", {
+                I_EtherDividendCheckpoint.createDividend(maturity, expiry, "0x0", {
                     from: token_owner,
                     value: new BN(web3.utils.toWei("1.5", "ether"))
                 })

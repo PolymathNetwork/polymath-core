@@ -203,7 +203,7 @@ contract("GeneralPermissionManager", async (accounts) => {
         });
 
         it("Should fail in adding the delegate -- no delegate details provided", async () => {
-            await catchRevert(I_GeneralPermissionManager.addDelegate(account_delegate, "", { from: token_owner }));
+            await catchRevert(I_GeneralPermissionManager.addDelegate(account_delegate, "0x0", { from: token_owner }));
         });
 
         it("Should fail in adding the delegate -- no delegate address provided", async () => {

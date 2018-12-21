@@ -176,14 +176,14 @@ contract("GeneralTransferManager", async (accounts) => {
 
         it("Should attach the paid GTM -- failed because of no tokens", async () => {
             await catchRevert(
-                I_SecurityToken.addModule(P_GeneralTransferManagerFactory.address, "", new BN(web3.utils.toWei("500")), new BN(0), { from: account_issuer })
+                I_SecurityToken.addModule(P_GeneralTransferManagerFactory.address, "0x0", new BN(web3.utils.toWei("500")), new BN(0), { from: account_issuer })
             );
         });
 
         it("Should attach the paid GTM", async () => {
             let snap_id = await takeSnapshot();
             await I_PolyToken.getTokens(new BN(web3.utils.toWei("500")), I_SecurityToken.address);
-            await I_SecurityToken.addModule(P_GeneralTransferManagerFactory.address, "", new BN(web3.utils.toWei("500")), new BN(0), {
+            await I_SecurityToken.addModule(P_GeneralTransferManagerFactory.address, "0x0", new BN(web3.utils.toWei("500")), new BN(0), {
                 from: account_issuer
             });
             await revertToSnapshot(snap_id);

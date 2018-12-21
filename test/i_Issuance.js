@@ -222,7 +222,7 @@ contract("Issuance", async (accounts) => {
 
             it("Should add the delegate with permission", async () => {
                 //First attach a permission manager to the token
-                await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "", new BN(0), new BN(0), { from: account_polymath });
+                await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x0", new BN(0), new BN(0), { from: account_polymath });
                 let moduleData = (await I_SecurityToken.getModulesByType(permissionManagerKey))[0];
                 I_GeneralPermissionManager = await GeneralPermissionManager.at(moduleData);
                 // Add permission to the deletgate (A regesteration process)

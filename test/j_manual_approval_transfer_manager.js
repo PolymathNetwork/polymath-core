@@ -254,7 +254,7 @@ contract("ManualApprovalTransferManager", async (accounts) => {
         });
 
         it("Should successfully attach the ManualApprovalTransferManager with the security token", async () => {
-            const tx = await I_SecurityToken.addModule(I_ManualApprovalTransferManagerFactory.address, "", new BN(0), new BN(0), { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_ManualApprovalTransferManagerFactory.address, "0x0", new BN(0), new BN(0), { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), transferManagerKey, "ManualApprovalTransferManager doesn't get deployed");
             assert.equal(
                 web3.utils.toUtf8(tx.logs[2].args._name),
@@ -382,7 +382,7 @@ contract("ManualApprovalTransferManager", async (accounts) => {
         });
 
         it("Should fail to revoke manual approval because invalid _to address", async () => {
-            await catchRevert(I_ManualApprovalTransferManager.revokeManualApproval(account_investor1, "", { from: token_owner }));
+            await catchRevert(I_ManualApprovalTransferManager.revokeManualApproval(account_investor1, "0x0", { from: token_owner }));
         });
 
         it("Should revoke manual approval", async () => {
@@ -448,7 +448,7 @@ contract("ManualApprovalTransferManager", async (accounts) => {
 
         it("Should fail to add a manual block because invalid _to address", async () => {
             await catchRevert(
-                I_ManualApprovalTransferManager.addManualBlocking(account_investor1, "", await latestTime() + duration.days(1), {
+                I_ManualApprovalTransferManager.addManualBlocking(account_investor1, "0x0", await latestTime() + duration.days(1), {
                     from: token_owner
                 })
             );

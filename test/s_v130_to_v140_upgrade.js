@@ -440,7 +440,7 @@ contract("Upgrade from v1.3.0 to v1.4.0", async (accounts) => {
 
         // Attach ManualApprovalTransferManager module for TOK2
         it("Should successfully attach the ManualApprovalTransferManagerFactory with the second token", async () => {
-            const tx = await I_SecurityToken2.addModule(I_ManualApprovalTransferManagerFactory.address, "", new BN(0), new BN(0), { from: ISSUER2 });
+            const tx = await I_SecurityToken2.addModule(I_ManualApprovalTransferManagerFactory.address, "0x0", new BN(0), new BN(0), { from: ISSUER2 });
             assert.equal(tx.logs[2].args._types[0].toNumber(), TMKEY, "ManualApprovalTransferManagerFactory doesn't get deployed");
             assert.equal(
                 web3.utils.toUtf8(tx.logs[2].args._name),

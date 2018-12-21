@@ -427,7 +427,7 @@ contract("SecurityToken", async (accounts) => {
             FactoryInstances = [D_GPM, D_GPM_1, D_GPM_2];
             // Adding module in the ST
             for (let i = 0; i < FactoryInstances.length; i++) {
-                let tx = await I_SecurityToken.addModule(FactoryInstances[i].address, "", new BN(0), new BN(0), { from: token_owner });
+                let tx = await I_SecurityToken.addModule(FactoryInstances[i].address, "0x0", new BN(0), new BN(0), { from: token_owner });
                 assert.equal(tx.logs[2].args._types[0], permissionManagerKey, "fail in adding the GPM");
                 GPMAddress.push(tx.logs[2].args._module);
             }
@@ -560,7 +560,7 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should fail to provide the permission to the delegate to change the transfer bools -- Bad owner", async () => {
             // Add permission to the deletgate (A regesteration process)
-            await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "", new BN(0), new BN(0), { from: token_owner });
+            await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x0", new BN(0), new BN(0), { from: token_owner });
             let moduleData = (await I_SecurityToken.getModulesByType(permissionManagerKey))[0];
             I_GeneralPermissionManager = await GeneralPermissionManager.at(moduleData);
             await catchRevert(I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: account_temp }));
@@ -847,7 +847,7 @@ contract("SecurityToken", async (accounts) => {
             let currentInvestorCount = await I_SecurityToken.getInvestorCount.call();
             let currentBalance = await I_SecurityToken.balanceOf(account_temp);
             await catchRevert(
-                I_SecurityToken.forceBurn(account_temp, currentBalance + new BN(web3.utils.toWei("500", "ether")), "", "", {
+                I_SecurityToken.forceBurn(account_temp, currentBalance + new BN(web3.utils.toWei("500", "ether")), "0x0", "", {
                     from: account_controller
                 })
             );
@@ -856,14 +856,14 @@ contract("SecurityToken", async (accounts) => {
             await I_GeneralTransferManager.changeAllowAllBurnTransfers(true, { from: token_owner });
             let currentInvestorCount = await I_SecurityToken.getInvestorCount.call();
             let currentBalance = await I_SecurityToken.balanceOf(account_temp);
-            await catchRevert(I_SecurityToken.forceBurn(account_temp, currentBalance, "", "", { from: token_owner }));
+            await catchRevert(I_SecurityToken.forceBurn(account_temp, currentBalance, "0x0", "", { from: token_owner }));
         });
 
         it("Should burn the tokens", async () => {
             let currentInvestorCount = await I_SecurityToken.getInvestorCount.call();
             let currentBalance = await I_SecurityToken.balanceOf(account_temp);
             // console.log(currentInvestorCount.toString(), currentBalance.toString());
-            let tx = await I_SecurityToken.forceBurn(account_temp, currentBalance, "", "", { from: account_controller });
+            let tx = await I_SecurityToken.forceBurn(account_temp, currentBalance, "0x0", "", { from: account_controller });
             // console.log(tx.logs[1].args._value.toNumber(), currentBalance.toNumber());
             assert.equal(tx.logs[1].args._value.toNumber(), currentBalance.toNumber());
             let newInvestorCount = await I_SecurityToken.getInvestorCount.call();
@@ -941,7 +941,7 @@ contract("SecurityToken", async (accounts) => {
     describe("Test cases for the Mock TrackedRedeemption", async () => {
         it("Should add the tracked redeemption module successfully", async () => {
             [I_MockRedemptionManagerFactory] = await deployMockRedemptionAndVerifyed(account_polymath, I_MRProxied, 0);
-            let tx = await I_SecurityToken.addModule(I_MockRedemptionManagerFactory.address, "", new BN(0), new BN(0), { from: token_owner });
+            let tx = await I_SecurityToken.addModule(I_MockRedemptionManagerFactory.address, "0x0", new BN(0), new BN(0), { from: token_owner });
             assert.equal(tx.logs[2].args._types[0], burnKey, "fail in adding the burn manager");
             I_MockRedemptionManager = await MockRedemptionManager.at(tx.logs[2].args._module);
             // adding the burn module into the GTM
@@ -982,7 +982,7 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should successfully fail in calling the burn functions", async () => {
             [I_MockRedemptionManagerFactory] = await deployMockWrongTypeRedemptionAndVerifyed(account_polymath, I_MRProxied, 0);
-            let tx = await I_SecurityToken.addModule(I_MockRedemptionManagerFactory.address, "", new BN(0), new BN(0), { from: token_owner });
+            let tx = await I_SecurityToken.addModule(I_MockRedemptionManagerFactory.address, "0x0", new BN(0), new BN(0), { from: token_owner });
             I_MockRedemptionManager = await MockRedemptionManager.at(tx.logs[2].args._module);
 
             // adding the burn module into the GTM
@@ -1045,7 +1045,7 @@ contract("SecurityToken", async (accounts) => {
     describe("Force Transfer", async () => {
         it("Should fail to forceTransfer because not approved controller", async () => {
             await catchRevert(
-                I_SecurityToken.forceTransfer(account_investor1, account_investor2, new BN(web3.utils.toWei("10", "ether")), "", "reason", {
+                I_SecurityToken.forceTransfer(account_investor1, account_investor2, new BN(web3.utils.toWei("10", "ether")), "0x0", "reason", {
                     from: account_investor1
                 })
             );
@@ -1053,7 +1053,7 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should fail to forceTransfer because insufficient balance", async () => {
             await catchRevert(
-                I_SecurityToken.forceTransfer(account_investor2, account_investor1, new BN(web3.utils.toWei("10", "ether")), "", "reason", {
+                I_SecurityToken.forceTransfer(account_investor2, account_investor1, new BN(web3.utils.toWei("10", "ether")), "0x0", "reason", {
                     from: account_controller
                 })
             );
@@ -1061,7 +1061,7 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should fail to forceTransfer because recipient is zero address", async () => {
             await catchRevert(
-                I_SecurityToken.forceTransfer(account_investor1, address_zero, new BN(web3.utils.toWei("10", "ether")), "", "reason", {
+                I_SecurityToken.forceTransfer(account_investor1, address_zero, new BN(web3.utils.toWei("10", "ether")), "0x0", "reason", {
                     from: account_controller
                 })
             );
@@ -1148,7 +1148,7 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should fail to forceTransfer because controller functionality frozen", async () => {
             await catchRevert(
-                I_SecurityToken.forceTransfer(account_investor1, account_investor2, new BN(web3.utils.toWei("10", "ether")), "", "reason", {
+                I_SecurityToken.forceTransfer(account_investor1, account_investor2, new BN(web3.utils.toWei("10", "ether")), "0x0", "reason", {
                     from: account_controller
                 })
             );

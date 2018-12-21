@@ -71,8 +71,11 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
 
     const one_address = "0x0000000000000000000000000000000000000001";
 
+    let currentTime;
+
     before(async () => {
         // Accounts setup
+        currentTime = new BN(await latestTime());
         account_polymath = accounts[0];
         account_issuer = accounts[1];
 
@@ -157,7 +160,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
 
         it("Should successfully attach the ERC20DividendCheckpoint with the security token - fail insufficient payment", async () => {
             await catchRevert(
-                I_SecurityToken.addModule(P_ERC20DividendCheckpointFactory.address, "", new BN(web3.utils.toWei("500", "ether")), new BN(0), {
+                I_SecurityToken.addModule(P_ERC20DividendCheckpointFactory.address, "0x0", new BN(web3.utils.toWei("500", "ether")), new BN(0), {
                     from: token_owner
                 })
             );
@@ -167,7 +170,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             let snapId = await takeSnapshot();
             await I_PolyToken.getTokens(new BN(web3.utils.toWei("500", "ether")), token_owner);
             await I_PolyToken.transfer(I_SecurityToken.address, new BN(web3.utils.toWei("500", "ether")), { from: token_owner });
-            const tx = await I_SecurityToken.addModule(P_ERC20DividendCheckpointFactory.address, "", new BN(web3.utils.toWei("500", "ether")), new BN(0), {
+            const tx = await I_SecurityToken.addModule(P_ERC20DividendCheckpointFactory.address, "0x0", new BN(web3.utils.toWei("500", "ether")), new BN(0), {
                 from: token_owner
             });
             assert.equal(tx.logs[3].args._types[0].toNumber(), checkpointKey, "ERC20DividendCheckpoint doesn't get deployed");
@@ -181,7 +184,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
         });
 
         it("Should successfully attach the ERC20DividendCheckpoint with the security token", async () => {
-            const tx = await I_SecurityToken.addModule(I_ERC20DividendCheckpointFactory.address, "", new BN(0), new BN(0), { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_ERC20DividendCheckpointFactory.address, "0x0", new BN(0), new BN(0), { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), checkpointKey, "ERC20DividendCheckpoint doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
@@ -198,9 +201,9 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor1,
-                await latestTime(),
-                await latestTime(),
-                await latestTime() + duration.days(30),
+                currentTime,
+                currentTime,
+                currentTime.add(new BN(duration.days(30))),
                 true,
                 {
                     from: account_issuer,
@@ -228,9 +231,9 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor2,
-                await latestTime(),
-                await latestTime(),
-                await latestTime() + duration.days(30),
+                currentTime,
+                currentTime,
+                currentTime.add(new BN(duration.days(30))),
                 true,
                 {
                     from: account_issuer,
@@ -368,9 +371,9 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_temp,
-                await latestTime(),
-                await latestTime(),
-                await latestTime() + duration.days(20),
+                currentTime,
+                currentTime,
+                currentTime.add(new BN(duration.days(20))),
                 true,
                 {
                     from: account_issuer,
@@ -392,7 +395,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             await I_PolyToken.getTokens(new BN(web3.utils.toWei("1.5", "ether")), token_owner);
             await I_PolyToken.approve(I_ERC20DividendCheckpoint.address, new BN(web3.utils.toWei("1.5", "ether")), { from: token_owner });
             await catchRevert(
-                I_ERC20DividendCheckpoint.createDividend(maturity, expiry, I_PolyToken.address, new BN(web3.utils.toWei("1.5", "ether")), "", {
+                I_ERC20DividendCheckpoint.createDividend(maturity, expiry, I_PolyToken.address, new BN(web3.utils.toWei("1.5", "ether")), "0x0", {
                     from: token_owner
                 })
             );
@@ -430,9 +433,9 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor3,
-                await latestTime(),
-                await latestTime(),
-                await latestTime() + duration.days(10),
+                currentTime,
+                currentTime,
+                currentTime.add(new BN(duration.days(10))),
                 true,
                 {
                     from: account_issuer,

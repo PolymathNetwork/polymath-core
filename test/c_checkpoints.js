@@ -145,19 +145,18 @@ contract("Checkpoints", async function(accounts) {
     describe("Buy tokens using on-chain whitelist", async () => {
         it("Should Buy the tokens", async () => {
             // Add the Investor in to the whitelist
-
+            let ltime = new BN(await latestTime());
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor1,
-                await latestTime(),
-                await latestTime(),
-                await latestTime() + duration.days(10),
+                ltime,
+                ltime,
+                ltime.add(new BN(duration.days(10))),
                 false,
                 {
                     from: account_issuer,
                     gas: 6000000
                 }
             );
-
             assert.equal(
                 tx.logs[0].args._investor.toLowerCase(),
                 account_investor1.toLowerCase(),
@@ -167,17 +166,17 @@ contract("Checkpoints", async function(accounts) {
             // Mint some tokens
             await I_SecurityToken.mint(account_investor1, new BN(web3.utils.toWei("10", "ether")), { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), new BN(web3.utils.toWei("10", "ether")));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), new BN(web3.utils.toWei("10", "ether")).toString());
         });
 
         it("Should Buy some more tokens", async () => {
             // Add the Investor in to the whitelist
-
+            let ltime = new BN(await latestTime());
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor2,
-                await latestTime(),
-                await latestTime(),
-                await latestTime() + duration.days(10),
+                ltime,
+                ltime,
+                ltime.add(new BN(duration.days(10))),
                 false,
                 {
                     from: account_issuer,
@@ -194,15 +193,16 @@ contract("Checkpoints", async function(accounts) {
             // Mint some tokens
             await I_SecurityToken.mint(account_investor2, new BN(web3.utils.toWei("10", "ether")), { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toNumber(), new BN(web3.utils.toWei("10", "ether")));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toString(), new BN(web3.utils.toWei("10", "ether")).toString());
         });
 
         it("Add a new token holder", async () => {
+            let ltime = new BN(await latestTime());
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor3,
-                await latestTime(),
-                await latestTime(),
-                await latestTime() + duration.days(10),
+                ltime,
+                ltime,
+                ltime.add(new BN(duration.days(10))),
                 false,
                 {
                     from: account_issuer,
@@ -220,7 +220,7 @@ contract("Checkpoints", async function(accounts) {
             // Mint some tokens
             await I_SecurityToken.mint(account_investor3, new BN(web3.utils.toWei("10", "ether")), { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor3)).toNumber(), new BN(web3.utils.toWei("10", "ether")));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor3)).toString(), new BN(web3.utils.toWei("10", "ether")).toString());
         });
 
         it("Fuzz test balance checkpoints", async () => {
@@ -266,17 +266,19 @@ contract("Checkpoints", async function(accounts) {
                     } else {
                         receiver = account_investor3;
                     }
-                    let m = Math.random();
-                    let amount = new BN(await I_SecurityToken.balanceOf(sender)).mul(Math.random().toFixed(10)).toFixed(0);
-                    if (m > 0.8) {
+                    let m = Math.floor(Math.random() * 10) + 1;
+                    let amount;
+                    if (m > 8) {
                         console.log("Sending full balance");
                         amount = new BN(await I_SecurityToken.balanceOf(sender));
+                    } else {
+                        amount = new BN(await I_SecurityToken.balanceOf(sender)).mul(new BN(m)).div(new BN(10));
                     }
                     console.log("Sender: " + sender + " Receiver: " + receiver + " Amount: " + JSON.stringify(amount));
                     await I_SecurityToken.transfer(receiver, amount, { from: sender });
                 }
                 if (Math.random() > 0.5) {
-                    let n = new BN(Math.random().toFixed(10)).mul(10 ** 17).toFixed(0);
+                    let n = new BN(Math.random().toFixed(10)).mul(new BN(10).pow(new BN(17)));
                     let p = Math.random() * 3;
                     let r = Math.random() * 3;
                     let minter;
@@ -291,7 +293,7 @@ contract("Checkpoints", async function(accounts) {
                     await I_SecurityToken.mint(minter, n, { from: token_owner });
                 }
                 if (Math.random() > 0.5) {
-                    let n = new BN(Math.random().toFixed(10)).mul(10 ** 17);
+                    let n = new BN(Math.random().toFixed(10)).mul(new BN(10).pow(new BN(17)));
                     let p = Math.random() * 3;
                     let r = Math.random() * 3;
                     let burner;
@@ -303,12 +305,11 @@ contract("Checkpoints", async function(accounts) {
                         burner = account_investor3;
                     }
                     let burnerBalance = new BN(await I_SecurityToken.balanceOf(burner));
-                    if (n.gt(burnerBalance.div(2))) {
-                        n = burnerBalance.div(2);
+                    if (n.gt(burnerBalance.div(new BN(2)))) {
+                        n = burnerBalance.div(new BN(2));
                     }
-                    n = n.toFixed(0);
                     console.log("Burning: " + n.toString() + " from: " + burner);
-                    await I_SecurityToken.forceBurn(burner, n, "", "", { from: token_owner });
+                    await I_SecurityToken.forceBurn(burner, n, "0x0", "0x0", { from: token_owner });
                 }
                 console.log("Checking Interim...");
                 for (let k = 0; k < cps.length; k++) {

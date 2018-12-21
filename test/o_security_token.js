@@ -36,7 +36,8 @@ contract("SecurityToken", async (accounts) => {
     let account_delegate;
     let account_temp;
     let account_controller;
-    let address_zero = "0x0000000000000000000000000000000000000000";
+    const address_zero = "0x0000000000000000000000000000000000000000";
+    const one_address = "0x0000000000000000000000000000000000000001";
 
     let balanceOfReceiver;
     // investor Details

@@ -47,6 +47,9 @@ contract("SecurityTokenRegistryProxy", async (accounts) => {
 
     const transferManagerKey = 2;
     const STRProxyParameters = ["address", "address", "uint256", "uint256", "address"];
+    
+    const address_zero = "0x0000000000000000000000000000000000000000";
+    const one_address = "0x0000000000000000000000000000000000000001";
 
     async function readStorage(contractAddress, slot) {
         return await web3.eth.getStorageAt(contractAddress, slot);

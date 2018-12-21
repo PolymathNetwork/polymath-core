@@ -74,6 +74,8 @@ contract("ManualApprovalTransferManager", async (accounts) => {
     const STOParameters = ["uint256", "uint256", "uint256", "uint256", "uint8[]", "address"];
 
     let currentTime;
+    const address_zero = "0x0000000000000000000000000000000000000000";
+    const one_address = "0x0000000000000000000000000000000000000001";
 
     before(async () => {
         currentTime = new BN(await latestTime());

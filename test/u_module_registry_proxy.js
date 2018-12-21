@@ -43,6 +43,7 @@ contract("ModuleRegistryProxy", async (accounts) => {
     const version = "1.0.0";
     const message = "Transaction Should Fail!";
     const address_zero = "0x0000000000000000000000000000000000000000";
+    const one_address = "0x0000000000000000000000000000000000000001";
     // SecurityToken Details for funds raise Type ETH
     const name = "Team";
     const symbol = "SAP";

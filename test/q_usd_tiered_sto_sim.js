@@ -89,6 +89,9 @@ contract("USDTieredSTO Sim", async (accounts) => {
     let _wallet = [];
     let _reserveWallet = [];
     let _usdToken = [];
+    
+    const address_zero = "0x0000000000000000000000000000000000000000";
+    const one_address = "0x0000000000000000000000000000000000000001";
 
     /* function configure(
         uint256 _startTime,

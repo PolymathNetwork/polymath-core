@@ -69,6 +69,8 @@ contract("Concurrent STO", async (accounts) => {
     const PresaleSTOParameters = ["uint256"];
 
     let currentTime;
+    const address_zero = "0x0000000000000000000000000000000000000000";
+    const one_address = "0x0000000000000000000000000000000000000001";
 
     before(async () => {
         currentTime = new BN(await latestTime());

@@ -71,6 +71,7 @@ contract("USDTieredSTO", async (accounts) => {
     const STOKEY = 3;
     let snapId;
     const address_zero = "0x0000000000000000000000000000000000000000";
+    const one_address = "0x0000000000000000000000000000000000000001";
 
     // Initial fee for ticker registry and security token registry
     const REGFEE = new BN(web3.utils.toWei("250"));

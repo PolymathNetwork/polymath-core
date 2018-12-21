@@ -34,6 +34,7 @@ contract("Upgrade from v1.3.0 to v1.4.0", async (accounts) => {
     const REGFEE = new BN(web3.utils.toWei("250"));
     const STOSetupCost = 0;
     const address_zero = "0x0000000000000000000000000000000000000000";
+    const one_address = "0x0000000000000000000000000000000000000001";
 
     // Module key
     const STOKEY = 3;

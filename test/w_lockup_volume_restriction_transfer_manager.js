@@ -62,6 +62,8 @@ contract("LockupVolumeRestrictionTransferManager", async (accounts) => {
     const initRegFee = new BN(web3.utils.toWei("250"));
 
     let currentTime;
+    const address_zero = "0x0000000000000000000000000000000000000000";
+    const one_address = "0x0000000000000000000000000000000000000001";
 
     before(async () => {
         currentTime = new BN(await latestTime());

@@ -80,7 +80,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
     const tokenDetails = "This is equity type of issuance";
     const decimals = 18;
     const contact = "team@polymath.network";
-    const delegateDetails = "Hello I am legit delegate";
+    const managerDetails = web3.utils.fromAscii("Hello");
     const STVRParameters = ["bool", "uint256", "bool"];
 
     // Module key
@@ -103,6 +103,8 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
     let totalPerms = perms.length;
 
     let currentTime;
+    const address_zero = "0x0000000000000000000000000000000000000000";
+    const one_address = "0x0000000000000000000000000000000000000001";
 
     before(async () => {
         currentTime = new BN(await latestTime());

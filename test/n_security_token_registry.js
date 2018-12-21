@@ -67,6 +67,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
     const symbol2 = "DET2";
     const tokenDetails2 = "This is equity type of issuance";
     const address_zero = "0x0000000000000000000000000000000000000000";
+    const one_address = "0x0000000000000000000000000000000000000001";
 
     // Module key
     const permissionManagerKey = 1;

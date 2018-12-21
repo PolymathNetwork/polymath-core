@@ -64,6 +64,7 @@ contract("Issuance", async (accounts) => {
     const stoKey = 3;
     const budget = 0;
     const address_zero = "0x0000000000000000000000000000000000000000";
+    const one_address = "0x0000000000000000000000000000000000000001";
 
     // Initial fee for ticker registry and security token registry
     const initRegFee = new BN(web3.utils.toWei("250"));

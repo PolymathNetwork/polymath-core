@@ -71,6 +71,7 @@ contract("PreSaleSTO", async (accounts) => {
     const initRegFee = new BN(web3.utils.toWei("250"));
     let endTime;
     const address_zero = "0x0000000000000000000000000000000000000000";
+    const one_address = "0x0000000000000000000000000000000000000001";
     const STOParameters = ["uint256"];
 
     let currentTime;

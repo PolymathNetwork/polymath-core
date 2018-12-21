@@ -53,7 +53,7 @@ contract("PercentageTransferManager", async (accounts) => {
     const tokenDetails = "This is equity type of issuance";
     const decimals = 18;
     const contact = "team@polymath.network";
-    const delegateDetails = "Hello I am legit delegate";
+    const managerDetails = web3.utils.fromAscii("Hello");
 
     // Module key
     const delegateManagerKey = 1;
@@ -85,6 +85,8 @@ contract("PercentageTransferManager", async (accounts) => {
     );
 
     let currentTime;
+    const address_zero = "0x0000000000000000000000000000000000000000";
+    const one_address = "0x0000000000000000000000000000000000000001";
 
     before(async () => {
         currentTime = new BN(await latestTime());

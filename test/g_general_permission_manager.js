@@ -56,7 +56,7 @@ contract("GeneralPermissionManager", async (accounts) => {
     const tokenDetails = "This is equity type of issuance";
     const decimals = 18;
     const contact = "team@polymath.network";
-    const delegateDetails = "Hello I am legit delegate";
+    const managerDetails = web3.utils.fromAscii("Hello");
 
     // Module key
     const delegateManagerKey = 1;

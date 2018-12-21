@@ -27,6 +27,7 @@ contract("GeneralPermissionManager", async (accounts) => {
     let account_delegate;
     let account_delegate2;
     let account_delegate3;
+    const delegateDetails = web3.utils.fromAscii("I am delegate");
 
     let message = "Transaction Should Fail!";
 
@@ -245,7 +246,7 @@ contract("GeneralPermissionManager", async (accounts) => {
             let tx = await I_GeneralPermissionManager.changePermission(
                 account_delegate,
                 I_GeneralTransferManager.address,
-                "WHITELIST",
+                web3.utils.fromAscii("WHITELIST"),
                 true,
                 { from: token_owner }
             );
@@ -287,7 +288,7 @@ contract("GeneralPermissionManager", async (accounts) => {
         it("Should check the delegate details", async () => {
             assert.equal(
                 web3.utils.toAscii(await I_GeneralPermissionManager.delegateDetails.call(account_delegate)).replace(/\u0000/g, ""),
-                delegateDetails,
+                web3.utils.toAscii(delegateDetails),
                 "Wrong delegate address get checked"
             );
         });
@@ -306,7 +307,7 @@ contract("GeneralPermissionManager", async (accounts) => {
         });
 
         it("Should check is delegate for 0x address - failed 0x address is not allowed", async () => {
-            await catchRevert(I_GeneralPermissionManager.checkDelegate.call("0x0000000000000000000000000000000000000000000000000"));
+            await catchRevert(I_GeneralPermissionManager.checkDelegate.call(address_zero));
         });
 
         it("Should return false when check is delegate - because user is not a delegate", async () => {
@@ -320,7 +321,7 @@ contract("GeneralPermissionManager", async (accounts) => {
         it("Should successfully provide the permissions in batch -- failed because of array length is 0", async () => {
             await I_GeneralPermissionManager.addDelegate(account_delegate3, delegateDetails, { from: token_owner });
             await catchRevert(
-                I_GeneralPermissionManager.changePermissionMulti(account_delegate3, [], ["WHITELIST", "CHANGE_PERMISSION"], [true, true], {
+                I_GeneralPermissionManager.changePermissionMulti(account_delegate3, [], [web3.utils.fromAscii("WHITELIST"), web3.utils.fromAscii("CHANGE_PERMISSION")], [true, true], {
                     from: token_owner
                 })
             );
@@ -343,7 +344,7 @@ contract("GeneralPermissionManager", async (accounts) => {
                 I_GeneralPermissionManager.changePermissionMulti(
                     account_delegate3,
                     [I_GeneralTransferManager.address],
-                    ["WHITELIST", "CHANGE_PERMISSION"],
+                    [web3.utils.fromAscii("WHITELIST"), web3.utils.fromAscii("CHANGE_PERMISSION")],
                     [true, true],
                     { from: token_owner }
                 )
@@ -355,7 +356,7 @@ contract("GeneralPermissionManager", async (accounts) => {
                 I_GeneralPermissionManager.changePermissionMulti(
                     account_delegate3,
                     [I_GeneralTransferManager.address, I_GeneralPermissionManager.address],
-                    ["WHITELIST", "CHANGE_PERMISSION"],
+                    [web3.utils.fromAscii("WHITELIST"), web3.utils.fromAscii("CHANGE_PERMISSION")],
                     [true],
                     { from: token_owner }
                 )
@@ -366,7 +367,7 @@ contract("GeneralPermissionManager", async (accounts) => {
             let tx = await I_GeneralPermissionManager.changePermissionMulti(
                 account_delegate3,
                 [I_GeneralTransferManager.address, I_GeneralPermissionManager.address],
-                ["WHITELIST", "CHANGE_PERMISSION"],
+                [web3.utils.fromAscii("WHITELIST"), web3.utils.fromAscii("CHANGE_PERMISSION")],
                 [true, true],
                 { from: token_owner }
             );
@@ -379,7 +380,7 @@ contract("GeneralPermissionManager", async (accounts) => {
                 await I_GeneralPermissionManager.checkPermission.call(
                     account_delegate3,
                     I_GeneralPermissionManager.address,
-                    "CHANGE_PERMISSION"
+                    web3.utils.fromAscii("CHANGE_PERMISSION")
                 )
             );
         });
@@ -388,14 +389,14 @@ contract("GeneralPermissionManager", async (accounts) => {
             await I_GeneralPermissionManager.changePermission(account_delegate2, I_GeneralTransferManager.address, web3.utils.fromAscii("WHITELIST"), true, {
                 from: token_owner
             });
-            let tx = await I_GeneralPermissionManager.getAllDelegatesWithPerm.call(I_GeneralTransferManager.address, "WHITELIST");
+            let tx = await I_GeneralPermissionManager.getAllDelegatesWithPerm.call(I_GeneralTransferManager.address, web3.utils.fromAscii("WHITELIST"));
             assert.equal(tx.length, 3);
             assert.equal(tx[0], account_delegate);
             assert.equal(tx[1], account_delegate2);
         });
 
         it("Should get all delegates for the permission manager", async () => {
-            let tx = await I_GeneralPermissionManager.getAllDelegatesWithPerm.call(I_GeneralPermissionManager.address, "CHANGE_PERMISSION");
+            let tx = await I_GeneralPermissionManager.getAllDelegatesWithPerm.call(I_GeneralPermissionManager.address, web3.utils.fromAscii("CHANGE_PERMISSION"));
             assert.equal(tx.length, 1);
             assert.equal(tx[0], account_delegate3);
         });

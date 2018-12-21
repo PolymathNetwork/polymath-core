@@ -179,7 +179,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
                 "ERC20DividendCheckpoint",
                 "ERC20DividendCheckpoint module was not added"
             );
-            P_ERC20DividendCheckpoint = ERC20DividendCheckpoint.at(tx.logs[3].args._module);
+            P_ERC20DividendCheckpoint = await ERC20DividendCheckpoint.at(tx.logs[3].args._module);
             await revertToSnapshot(snapId);
         });
 
@@ -191,7 +191,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
                 "ERC20DividendCheckpoint",
                 "ERC20DividendCheckpoint module was not added"
             );
-            I_ERC20DividendCheckpoint = ERC20DividendCheckpoint.at(tx.logs[2].args._module);
+            I_ERC20DividendCheckpoint = await ERC20DividendCheckpoint.at(tx.logs[2].args._module);
         });
     });
 
@@ -223,7 +223,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             // Mint some tokens
             await I_SecurityToken.mint(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), new BN(web3.utils.toWei("1", "ether")));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
         });
 
         it("Buy some tokens for account_investor2 (2 ETH)", async () => {
@@ -250,7 +250,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             // Mint some tokens
             await I_SecurityToken.mint(account_investor2, new BN(web3.utils.toWei("2", "ether")), { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toNumber(), new BN(web3.utils.toWei("2", "ether")));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toString(), new BN(web3.utils.toWei("2", "ether")).toString());
         });
 
         it("Should fail in creating the dividend - incorrect allowance", async () => {
@@ -337,7 +337,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
         it("Investor 1 transfers his token balance to investor 2", async () => {
             await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 });
             assert.equal(await I_SecurityToken.balanceOf(account_investor1), 0);
-            assert.equal(await I_SecurityToken.balanceOf(account_investor2), new BN(web3.utils.toWei("3", "ether")));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toString(), new BN(web3.utils.toWei("3", "ether")).toString());
         });
 
         it("Issuer pushes dividends iterating over account holders - dividends proportional to checkpoint - fails maturity in the future", async () => {

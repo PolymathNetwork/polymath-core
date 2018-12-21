@@ -290,7 +290,14 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @return uint256[] investor balance
      * @return uint256[] amount to be claimed including withheld tax
      */
-    function getDividendProgress(uint256 _dividendIndex) external view returns (address[] memory investors, bool[] memory resultClaimed, bool[] memory resultExcluded, uint256[] memory resultWithheld, uint256[] memory resultBalance, uint256[] memory resultAmount) {
+    function getDividendProgress(uint256 _dividendIndex) external view returns (
+        address[] memory investors,
+        bool[] memory resultClaimed,
+        bool[] memory resultExcluded,
+        uint256[] memory resultWithheld,
+        uint256[] memory resultBalance,
+        uint256[] memory resultAmount)
+    {
         require(_dividendIndex < dividends.length, "Invalid dividend");
         //Get list of Investors
         Dividend storage dividend = dividends[_dividendIndex];

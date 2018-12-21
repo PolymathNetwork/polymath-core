@@ -211,7 +211,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             );
 
             // Mint some tokens and transferred to whitelisted addresses
-            await I_SecurityToken.mint(account_investor1, web3.utils.toWei("40", "ether"), {from: token_owner});
+            await I_SecurityToken.mint(account_investor1, web3.utils.toWei("100", "ether"), {from: token_owner});
             await I_SecurityToken.mint(account_investor2, web3.utils.toWei("30", "ether"), {from: token_owner});
             await I_SecurityToken.mint(account_investor3, web3.utils.toWei("30", "ether"), {from: token_owner});
 
@@ -224,20 +224,20 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Should work with multiple transaction within 1 day with Individual and daily Restrictions", async() => {
             // let snapId = await takeSnapshot();
             
-            var testRepeat = 2; 
+            var testRepeat = 5; 
 
             for (var i = 0; i < testRepeat; i++) {
 
                 console.log("fuzzer number " + i);
 
-                var individualRestrictTotalAmount =  7;
-                var dailyRestrictionAmount = 6;
-                var rollingPeriod = 2;
+                var individualRestrictTotalAmount =  Math.floor(Math.random() * 10); 
+                var dailyRestrictionAmount = Math.floor(Math.random() * 10); 
+                var rollingPeriod = 2; 
                 var sumOfLastPeriod = 0; 
 
+                console.log("a");
                 
                 // 1 - add individual restriction with a random number
-               
                 let tx = await I_VolumeRestrictionTM.addIndividualRestriction(
                     account_investor1,
                     web3.utils.toWei(individualRestrictTotalAmount.toString()),
@@ -250,7 +250,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     }
                 );     
 
-               
+               console.log("b");
                 tx = await I_VolumeRestrictionTM.addIndividualDailyRestriction(
                     account_investor1,
                     web3.utils.toWei(dailyRestrictionAmount.toString()),
@@ -262,8 +262,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     }
                 );
                     
-
-                var txNumber = 3; // define fuzz test amount for tx within 24 hrs
+                console.log("c");
+                var txNumber = 10; //define fuzz test amount for tx within 24 hrs
 
                 for (var j=0; j<txNumber; j++) {
 
@@ -301,8 +301,12 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     }
                     console.log("2");
                 }
+
+                // await revertToSnapshot(snapId);
+                await I_VolumeRestrictionTM.removeIndividualRestriction(account_investor1, {from: token_owner});
+                await I_VolumeRestrictionTM.removeIndividualDailyRestriction(account_investor1, {from: token_owner});
             }
-            // await revertToSnapshot(snapId);
+
         });
     });
     

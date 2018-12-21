@@ -88,11 +88,11 @@ else
   fi
 fi
 
-if [ "$COVERAGE" = true ]; then
+if [ "$COVERAGE" = true ] || [ [ "TRAVIS_PULL_REQUEST" = true ] && ![ "NOT_FORK" = true ] ]; then
   curl -o node_modules/solidity-coverage/lib/app.js https://raw.githubusercontent.com/maxsam4/solidity-coverage/relative-path/lib/app.js
   node_modules/.bin/solidity-coverage
   if [ "$CIRCLECI" = true ]; then
-    cat coverage/lcov.info | node_modules/.bin/coveralls
+    cat coverage/lcov.info | node_modules/.bin/coveralls || echo 'Failed to report coverage to Coveralls'
   fi
 else
   if [ "$CIRCLECI" = true ]; then # using mocha junit reporter for parallelism in CircleCI 

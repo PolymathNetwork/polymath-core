@@ -64,12 +64,13 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
     const checkpointKey = 4;
 
     //Manager details
-    const managerDetails = "Hello, I am a legit manager";
+    const managerDetails = web3.utils.fromAscii("Hello");
 
     // Initial fee for ticker registry and security token registry
     const initRegFee = new BN(web3.utils.toWei("250"));
 
     const one_address = "0x0000000000000000000000000000000000000001";
+    const address_zero = "0x0000000000000000000000000000000000000000";
 
     let currentTime;
 
@@ -303,7 +304,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             let maturity = await latestTime();
             let expiry = await latestTime() + duration.days(10);
             await catchRevert(
-                I_ERC20DividendCheckpoint.createDividend(maturity, expiry, new BN(0), new BN(web3.utils.toWei("1.5", "ether")), dividendName, {
+                I_ERC20DividendCheckpoint.createDividend(maturity, expiry, address_zero, new BN(web3.utils.toWei("1.5", "ether")), dividendName, {
                     from: token_owner
                 })
             );
@@ -434,7 +435,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
                 account_investor3,
                 currentTime,
                 currentTime,
-                currentTime.add(new BN(duration.days(10))),
+                currentTime.add(new BN(duration.days(100000))),
                 true,
                 {
                     from: account_issuer,
@@ -456,10 +457,10 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
 
         it("Should allow to exclude same number of address as EXCLUDED_ADDRESS_LIMIT", async () => {
             let limit = await I_ERC20DividendCheckpoint.EXCLUDED_ADDRESS_LIMIT();
-            limit = limit.toNumber();
+            limit = limit.toNumber() + 42;
             let addresses = [];
             addresses.push(account_temp);
-            while (--limit) addresses.push(limit);
+            while (--limit > 42) addresses.push(web3.utils.toChecksumAddress('0x00000000000000000000000000000000000000' + limit));
             await I_ERC20DividendCheckpoint.setDefaultExcluded(addresses, { from: token_owner });
             let excluded = await I_ERC20DividendCheckpoint.getDefaultExcluded();
             assert.equal(excluded[0], account_temp);
@@ -475,7 +476,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
         it("Should not allow to exclude 0x0 address", async () => {
             let addresses = [];
             addresses.push(account_investor3);
-            addresses.push(0);
+            addresses.push(address_zero);
             await catchRevert(I_ERC20DividendCheckpoint.setDefaultExcluded(addresses, { from: token_owner }));
         });
 
@@ -487,10 +488,10 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
 
         it("Should not allow to exclude more address than EXCLUDED_ADDRESS_LIMIT", async () => {
             let limit = await I_ERC20DividendCheckpoint.EXCLUDED_ADDRESS_LIMIT();
-            limit = limit.toNumber();
+            limit = limit.toNumber() + 42;
             let addresses = [];
             addresses.push(account_temp);
-            while (limit--) addresses.push(limit);
+            while (limit-- > 42) addresses.push(web3.utils.toChecksumAddress('0x00000000000000000000000000000000000000' + limit));
             await catchRevert(I_ERC20DividendCheckpoint.setDefaultExcluded(addresses, { from: token_owner }));
         });
 
@@ -533,7 +534,6 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
         });
 
         it("should issuer pushes remain", async () => {
-            console.log((await I_ERC20DividendCheckpoint.dividends(2))[5].toNumber());
             let investor1BalanceAfter1 = new BN(await I_PolyToken.balanceOf(account_investor1));
             let investor2BalanceAfter1 = new BN(await I_PolyToken.balanceOf(account_investor2));
             let investor3BalanceAfter1 = new BN(await I_PolyToken.balanceOf(account_investor3));
@@ -557,10 +557,10 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
 
         it("Investor 2 transfers 1 ETH of his token balance to investor 1", async () => {
             await I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: account_investor2 });
-            assert.equal(await I_SecurityToken.balanceOf(account_investor1), new BN(web3.utils.toWei("1", "ether")));
-            assert.equal(await I_SecurityToken.balanceOf(account_investor2), new BN(web3.utils.toWei("2", "ether")));
-            assert.equal(await I_SecurityToken.balanceOf(account_investor3), new BN(web3.utils.toWei("7", "ether")));
-            assert.equal(await I_SecurityToken.balanceOf(account_temp), new BN(web3.utils.toWei("1", "ether")));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
+            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toString(), new BN(web3.utils.toWei("2", "ether")).toString());
+            assert.equal((await I_SecurityToken.balanceOf(account_investor3)).toString(), new BN(web3.utils.toWei("7", "ether")).toString());
+            assert.equal((await I_SecurityToken.balanceOf(account_temp)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
         });
 
         it("Create another new dividend with explicit checkpoint - fails bad allowance", async () => {
@@ -637,22 +637,22 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
         });
 
         it("Set withholding tax of 20% on account_temp and 10% on investor2", async () => {
-            await I_ERC20DividendCheckpoint.setWithholding([account_temp, account_investor2], [BN(20 * 10 ** 16), BN(10 * 10 ** 16)], {
+            await I_ERC20DividendCheckpoint.setWithholding([account_temp, account_investor2], [new BN(20).mul(new BN(10).pow(new BN(16))), new BN(10).mul(new BN(10).pow(new BN(16)))], {
                 from: token_owner
             });
         });
 
         it("Should not allow mismatching input lengths", async () => {
             await catchRevert(
-                I_ERC20DividendCheckpoint.setWithholding([account_temp], [BN(20 * 10 ** 16), BN(10 * 10 ** 16)], {
+                I_ERC20DividendCheckpoint.setWithholding([account_temp], [new BN(20).mul(new BN(10).pow(new BN(16))), new BN(10).mul(new BN(10).pow(new BN(16)))], {
                     from: token_owner
                 })
             );
         });
 
         it("Should not allow withholding greater than limit", async () => {
-            await catchRevert(I_ERC20DividendCheckpoint.setWithholding([account_temp], [BN(20 * 10 ** 26)], { from: token_owner }));
-            await catchRevert(I_ERC20DividendCheckpoint.setWithholdingFixed([account_temp], BN(20 * 10 ** 26), { from: token_owner }), "");
+            await catchRevert(I_ERC20DividendCheckpoint.setWithholding([account_temp], [new BN(20).mul(new BN(10).pow(new BN(26)))], { from: token_owner }));
+            await catchRevert(I_ERC20DividendCheckpoint.setWithholdingFixed([account_temp], new BN(20).mul(new BN(10).pow(new BN(26))), { from: token_owner }), "");
         });
 
         it("Should not create dividend with more exclusions than limit", async () => {
@@ -661,11 +661,11 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             await I_PolyToken.getTokens(new BN(web3.utils.toWei("11", "ether")), token_owner);
             await I_PolyToken.approve(I_ERC20DividendCheckpoint.address, new BN(web3.utils.toWei("11", "ether")), { from: token_owner });
             let limit = await I_ERC20DividendCheckpoint.EXCLUDED_ADDRESS_LIMIT();
-            limit = limit.toNumber();
+            limit = limit.toNumber() + 42;
             let addresses = [];
             addresses.push(account_temp);
             addresses.push(token_owner);
-            while (--limit) addresses.push(limit);
+            while (--limit > 42) addresses.push(web3.utils.toChecksumAddress('0x00000000000000000000000000000000000000' + limit));
             await catchRevert(
                 I_ERC20DividendCheckpoint.createDividendWithCheckpointAndExclusions(
                     maturity,
@@ -729,7 +729,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
                     I_PolyToken.address,
                     new BN(web3.utils.toWei("10", "ether")),
                     4,
-                    [0],
+                    [address_zero],
                     dividendName,
                     { from: token_owner }
                 )
@@ -892,15 +892,15 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
         });
 
         it("should not allow manager without permission to set default excluded", async () => {
-            await catchRevert(I_ERC20DividendCheckpoint.setDefaultExcluded([0], { from: account_manager }));
+            await catchRevert(I_ERC20DividendCheckpoint.setDefaultExcluded([address_zero], { from: account_manager }));
         });
 
         it("should not allow manager without permission to set withholding", async () => {
-            await catchRevert(I_ERC20DividendCheckpoint.setWithholding([0], [0], { from: account_manager }));
+            await catchRevert(I_ERC20DividendCheckpoint.setWithholding([address_zero], [new BN(0)], { from: account_manager }));
         });
 
         it("should not allow manager without permission to set withholding fixed", async () => {
-            await catchRevert(I_ERC20DividendCheckpoint.setWithholdingFixed([0], new BN(0), { from: account_manager }));
+            await catchRevert(I_ERC20DividendCheckpoint.setWithholdingFixed([address_zero], new BN(0), { from: account_manager }));
         });
 
         it("should not allow manager without permission to create dividend", async () => {
@@ -942,7 +942,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
         it("should not allow manager without permission to create dividend with exclusion", async () => {
             let maturity = await latestTime() + duration.days(1);
             let expiry = await latestTime() + duration.days(10);
-            let exclusions = [1];
+            let exclusions = [one_address];
             await catchRevert(
                 I_ERC20DividendCheckpoint.createDividendWithExclusions(
                     maturity,
@@ -963,7 +963,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
         it("should not allow manager without permission to create dividend with checkpoint and exclusion", async () => {
             let maturity = await latestTime() + duration.days(1);
             let expiry = await latestTime() + duration.days(10);
-            let exclusions = [1];
+            let exclusions = [one_address];
             let checkpointID = await I_SecurityToken.createCheckpoint.call({ from: token_owner });
             await I_SecurityToken.createCheckpoint({ from: token_owner });
             await catchRevert(
@@ -981,27 +981,27 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
         });
 
         it("should give permission to manager", async () => {
-            await I_GeneralPermissionManager.changePermission(account_manager, I_ERC20DividendCheckpoint.address, "CHECKPOINT", true, {
+            await I_GeneralPermissionManager.changePermission(account_manager, I_ERC20DividendCheckpoint.address, web3.utils.fromAscii("CHECKPOINT"), true, {
                 from: token_owner
             });
-            let tx = await I_GeneralPermissionManager.changePermission(account_manager, I_ERC20DividendCheckpoint.address, "MANAGE", true, {
+            let tx = await I_GeneralPermissionManager.changePermission(account_manager, I_ERC20DividendCheckpoint.address, web3.utils.fromAscii("MANAGE"), true, {
                 from: token_owner
             });
             assert.equal(tx.logs[0].args._delegate, account_manager);
         });
 
         it("should allow manager with permission to set default excluded", async () => {
-            let tx = await I_ERC20DividendCheckpoint.setDefaultExcluded([1], { from: account_manager });
+            let tx = await I_ERC20DividendCheckpoint.setDefaultExcluded([one_address], { from: account_manager });
             assert.equal(tx.logs[0].args._excluded[0], one_address);
         });
 
         it("should allow manager with permission to set withholding", async () => {
-            let tx = await I_ERC20DividendCheckpoint.setWithholding([0], [0], { from: account_manager });
+            let tx = await I_ERC20DividendCheckpoint.setWithholding([one_address], [new BN(0)], { from: account_manager });
             assert.equal(tx.logs[0].args._withholding[0], 0);
         });
 
         it("should allow manager withpermission to set withholding fixed", async () => {
-            let tx = await I_ERC20DividendCheckpoint.setWithholdingFixed([0], new BN(0), { from: account_manager });
+            let tx = await I_ERC20DividendCheckpoint.setWithholdingFixed([one_address], new BN(0), { from: account_manager });
             assert.equal(tx.logs[0].args._withholding, 0);
         });
 
@@ -1040,7 +1040,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
         it("should allow manager with permission to create dividend with exclusion", async () => {
             let maturity = await latestTime() + duration.days(1);
             let expiry = await latestTime() + duration.days(10);
-            let exclusions = [1];
+            let exclusions = [one_address];
             let tx = await I_ERC20DividendCheckpoint.createDividendWithExclusions(
                 maturity,
                 expiry,
@@ -1056,7 +1056,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
         it("should allow manager with permission to create dividend with checkpoint and exclusion", async () => {
             let maturity = await latestTime() + duration.days(1);
             let expiry = await latestTime() + duration.days(10);
-            let exclusions = [1];
+            let exclusions = [one_address];
             let checkpointID = await I_SecurityToken.createCheckpoint.call({ from: token_owner });
             await I_SecurityToken.createCheckpoint({ from: token_owner });
             let tx = await I_ERC20DividendCheckpoint.createDividendWithCheckpointAndExclusions(

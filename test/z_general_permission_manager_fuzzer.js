@@ -38,10 +38,6 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
     let account_investor4;
     let account_delegate;
     let account_delegate2;
-    // investor Details
-    let fromTime = await latestTime();
-    let toTime = await latestTime();
-    let expiryTime = toTime + duration.days(15);
 
     let message = "Transaction Should Fail!";
 

@@ -29,9 +29,6 @@ contract("SecurityTokenRegistry", async (accounts) => {
     let dummy_token;
 
     let balanceOfReceiver;
-    // investor Details
-    let fromTime = await latestTime();
-    let toTime = await latestTime() + duration.days(100);
 
     let ID_snap;
     const message = "Transaction Should Fail!!";

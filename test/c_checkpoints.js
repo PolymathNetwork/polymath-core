@@ -10,7 +10,7 @@ const Web3 = require("web3");
 let BN = Web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
-contract("Checkpoints", async (accounts) => {
+contract("Checkpoints", async function(accounts) {
     // Accounts Variable declaration
     let account_polymath;
     let account_issuer;
@@ -19,11 +19,6 @@ contract("Checkpoints", async (accounts) => {
     let account_investor2;
     let account_investor3;
     let account_investor4;
-
-    // investor Details
-    let fromTime = await latestTime();
-    let toTime = await latestTime();
-    let expiryTime = toTime + duration.days(15);
 
     let message = "Transaction Should Fail!";
 
@@ -61,6 +56,9 @@ contract("Checkpoints", async (accounts) => {
     const initRegFee = new BN(web3.utils.toWei("250"));
 
     before(async () => {
+        fromTime = await latestTime();
+        toTime = await latestTime();
+        expiryTime = toTime + duration.days(15);
         // Accounts setup
         account_polymath = accounts[0];
         account_issuer = accounts[1];

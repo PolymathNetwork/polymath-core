@@ -27,10 +27,6 @@ contract("GeneralPermissionManager", async (accounts) => {
     let account_delegate;
     let account_delegate2;
     let account_delegate3;
-    // investor Details
-    let fromTime = await latestTime();
-    let toTime = await latestTime();
-    let expiryTime = toTime + duration.days(15);
 
     let message = "Transaction Should Fail!";
 

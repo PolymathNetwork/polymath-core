@@ -25,11 +25,6 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
     let account_manager;
     let account_temp;
 
-    // investor Details
-    let fromTime = await latestTime();
-    let toTime = await latestTime();
-    let expiryTime = toTime + duration.days(15);
-
     let message = "Transaction Should Fail!";
     let dividendName = "0x546573744469766964656e640000000000000000000000000000000000000000";
 

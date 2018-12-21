@@ -29,9 +29,9 @@ contract("Issuance", async (accounts) => {
     const TM_Perm = "WHITELIST";
     const delegateDetails = "I am delegate";
     // investor Details
-    let fromTime = await latestTime();
-    let toTime = await latestTime() + duration.days(15);
-    let expiryTime = toTime + duration.days(100);
+    let fromTime;
+    let toTime;
+    let expiryTime;
 
     // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;
@@ -81,6 +81,9 @@ contract("Issuance", async (accounts) => {
     const MRProxyParameters = ["address", "address"];
 
     before(async () => {
+        fromTime = await latestTime();
+        toTime = await latestTime();
+        expiryTime = toTime + duration.days(15);
         // Accounts setup
         account_polymath = accounts[0];
         account_issuer = accounts[1];

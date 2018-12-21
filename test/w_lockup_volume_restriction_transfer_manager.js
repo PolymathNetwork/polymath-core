@@ -24,11 +24,6 @@ contract("LockupVolumeRestrictionTransferManager", async (accounts) => {
     let account_investor3;
     let account_investor4;
 
-    // investor Details
-    let fromTime = await latestTime();
-    let toTime = await latestTime();
-    let expiryTime = toTime + duration.days(15);
-
     let message = "Transaction Should Fail!";
 
     // Contract Instance Declaration

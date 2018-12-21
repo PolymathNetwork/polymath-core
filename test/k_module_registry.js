@@ -32,9 +32,6 @@ contract("ModuleRegistry", async (accounts) => {
     let account_temp;
 
     let balanceOfReceiver;
-    // investor Details
-    let fromTime = await latestTime();
-    let toTime = await latestTime() + duration.days(15);
 
     let ID_snap;
     let message = "Transaction Should fail!";

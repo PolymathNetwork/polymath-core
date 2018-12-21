@@ -31,9 +31,9 @@ contract("GeneralTransferManager", async (accounts) => {
     let account_affiliates2;
 
     // investor Details
-    let fromTime = await latestTime();
-    let toTime = await latestTime();
-    let expiryTime = toTime + duration.days(15);
+    let fromTime;
+    let toTime;
+    let expiryTime;
 
     let message = "Transaction Should Fail!";
 
@@ -74,14 +74,20 @@ contract("GeneralTransferManager", async (accounts) => {
     const initRegFee = new BN(web3.utils.toWei("250"));
 
     // Dummy STO details
-    const startTime = await latestTime() + duration.seconds(5000); // Start time will be 5000 seconds more than the latest time
-    const endTime = startTime + duration.days(80); // Add 80 days more
+    let startTime;
+    let endTime;
     const cap = new BN(web3.utils.toWei("10", "ether"));
     const someString = "A string which is not used";
     const STOParameters = ["uint256", "uint256", "uint256", "string"];
 
     before(async () => {
         // Accounts setup
+        fromTime = await latestTime();
+        toTime = await latestTime();
+        expiryTime = toTime + duration.days(15);
+        startTime = await latestTime() + duration.seconds(5000); // Start time will be 5000 seconds more than the latest time
+        endTime = startTime + duration.days(80); // Add 80 days more
+
         account_polymath = accounts[0];
         account_issuer = accounts[1];
 

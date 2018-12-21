@@ -28,6 +28,8 @@ contract("EtherDividendCheckpoint", async (accounts) => {
 
     let message = "Transaction Should Fail!";
     let dividendName = "0x546573744469766964656e640000000000000000000000000000000000000000";
+    const address_zero = "0x0000000000000000000000000000000000000000";
+    const one_address = "0x0000000000000000000000000000000000000001";
 
     // Contract Instance Declaration
     let I_SecurityTokenRegistryProxy;
@@ -56,7 +58,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
     const tokenDetails = "This is equity type of issuance";
     const decimals = 18;
     const contact = "team@polymath.network";
-    const managerDetails = "Hello, I am a legit manager";
+    const managerDetails = web3.utils.fromAscii("Hello");
     let snapId;
     // Module key
     const delegateManagerKey = 1;
@@ -200,7 +202,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
                 account_investor1,
                 currentTime,
                 currentTime,
-                currentTime.add(new BN(duration.days(30))),
+                currentTime.add(new BN(duration.days(300000))),
                 true,
                 {
                     from: account_issuer,
@@ -230,7 +232,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
                 account_investor2,
                 currentTime,
                 currentTime,
-                currentTime.add(new BN(duration.days(30))),
+                currentTime.add(new BN(duration.days(3000000))),
                 true,
                 {
                     from: account_issuer,
@@ -364,7 +366,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
                 account_temp,
                 currentTime,
                 currentTime,
-                currentTime.add(new BN(duration.days(20))),
+                currentTime.add(new BN(duration.days(200000))),
                 true,
                 {
                     from: account_issuer,
@@ -500,9 +502,9 @@ contract("EtherDividendCheckpoint", async (accounts) => {
 
         it("Investor 2 transfers 1 ETH of his token balance to investor 1", async () => {
             await I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: account_investor2 });
-            assert.equal(await I_SecurityToken.balanceOf(account_investor1), new BN(web3.utils.toWei("1", "ether")));
-            assert.equal(await I_SecurityToken.balanceOf(account_investor2), new BN(web3.utils.toWei("2", "ether")));
-            assert.equal(await I_SecurityToken.balanceOf(account_investor3), new BN(web3.utils.toWei("7", "ether")));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
+            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toString(), new BN(web3.utils.toWei("2", "ether")).toString());
+            assert.equal((await I_SecurityToken.balanceOf(account_investor3)).toString(), new BN(web3.utils.toWei("7", "ether")).toString());
         });
 
         it("Create another new dividend with no value - fails", async () => {
@@ -552,11 +554,11 @@ contract("EtherDividendCheckpoint", async (accounts) => {
             let expiry = await latestTime() + duration.days(10);
             await I_SecurityToken.createCheckpoint({ from: token_owner });
             let limit = await I_EtherDividendCheckpoint.EXCLUDED_ADDRESS_LIMIT();
-            limit = limit.toNumber();
+            limit = limit.toNumber() + 42;
             let addresses = [];
             addresses.push(account_temp);
             addresses.push(token_owner);
-            while (--limit) addresses.push(limit);
+            while (--limit > 42) addresses.push(web3.utils.toChecksumAddress('0x00000000000000000000000000000000000000' + limit));
             await catchRevert(
                 I_EtherDividendCheckpoint.createDividendWithCheckpointAndExclusions(maturity, expiry, 4, addresses, dividendName, {
                     from: token_owner,
@@ -602,7 +604,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
             let expiry = await latestTime() + duration.days(10);
             //checkpoint created in above test
             await catchRevert(
-                I_EtherDividendCheckpoint.createDividendWithCheckpointAndExclusions(maturity, expiry, 4, [0], dividendName, {
+                I_EtherDividendCheckpoint.createDividendWithCheckpointAndExclusions(maturity, expiry, 4, [address_zero], dividendName, {
                     from: token_owner,
                     value: new BN(web3.utils.toWei("10", "ether"))
                 })
@@ -719,7 +721,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
                 I_PolyToken.address,
                 currentTime,
                 currentTime,
-                currentTime.add(new BN(duration.days(10))),
+                currentTime.add(new BN(duration.days(1000000))),
                 true,
                 {
                     from: account_issuer,
@@ -730,11 +732,11 @@ contract("EtherDividendCheckpoint", async (accounts) => {
             await increaseTime(5000);
             // Mint some tokens
             await I_SecurityToken.mint(I_PolyToken.address, new BN(web3.utils.toWei("1", "ether")), { from: token_owner });
-            assert.equal(await I_SecurityToken.balanceOf(account_investor1), new BN(web3.utils.toWei("1", "ether")));
-            assert.equal(await I_SecurityToken.balanceOf(account_investor2), new BN(web3.utils.toWei("2", "ether")));
-            assert.equal(await I_SecurityToken.balanceOf(account_investor3), new BN(web3.utils.toWei("7", "ether")));
-            assert.equal(await I_SecurityToken.balanceOf(account_temp), new BN(web3.utils.toWei("1", "ether")));
-            assert.equal(await I_SecurityToken.balanceOf(I_PolyToken.address), new BN(web3.utils.toWei("1", "ether")));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
+            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toString(), new BN(web3.utils.toWei("2", "ether")).toString());
+            assert.equal((await I_SecurityToken.balanceOf(account_investor3)).toString(), new BN(web3.utils.toWei("7", "ether")).toString());
+            assert.equal((await I_SecurityToken.balanceOf(account_temp)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
+            assert.equal((await I_SecurityToken.balanceOf(I_PolyToken.address)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
         });
 
         it("Create another new dividend", async () => {
@@ -836,7 +838,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
         it("should not allow manager without permission to create dividend with exclusion", async () => {
             let maturity = await latestTime() + duration.days(1);
             let expiry = await latestTime() + duration.days(10);
-            let exclusions = [1];
+            let exclusions = [one_address];
             await catchRevert(
                 I_EtherDividendCheckpoint.createDividendWithExclusions(maturity, expiry, exclusions, dividendName, {
                     from: account_manager,
@@ -848,7 +850,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
         it("should not allow manager without permission to create dividend with checkpoint and exclusion", async () => {
             let maturity = await latestTime() + duration.days(1);
             let expiry = await latestTime() + duration.days(10);
-            let exclusions = [1];
+            let exclusions = [one_address];
             let checkpointID = await I_SecurityToken.createCheckpoint.call({ from: token_owner });
             await I_SecurityToken.createCheckpoint({ from: token_owner });
             await catchRevert(
@@ -868,10 +870,10 @@ contract("EtherDividendCheckpoint", async (accounts) => {
         });
 
         it("should give permission to manager", async () => {
-            await I_GeneralPermissionManager.changePermission(account_manager, I_EtherDividendCheckpoint.address, "CHECKPOINT", true, {
+            await I_GeneralPermissionManager.changePermission(account_manager, I_EtherDividendCheckpoint.address, web3.utils.fromAscii("CHECKPOINT"), true, {
                 from: token_owner
             });
-            let tx = await I_GeneralPermissionManager.changePermission(account_manager, I_EtherDividendCheckpoint.address, "MANAGE", true, {
+            let tx = await I_GeneralPermissionManager.changePermission(account_manager, I_EtherDividendCheckpoint.address, web3.utils.fromAscii("MANAGE"), true, {
                 from: token_owner
             });
             assert.equal(tx.logs[0].args._delegate, account_manager);
@@ -903,7 +905,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
         it("should allow manager with permission to create dividend with exclusion", async () => {
             let maturity = await latestTime() + duration.days(1);
             let expiry = await latestTime() + duration.days(10);
-            let exclusions = [1];
+            let exclusions = [one_address];
             let tx = await I_EtherDividendCheckpoint.createDividendWithExclusions(maturity, expiry, exclusions, dividendName, {
                 from: account_manager,
                 value: new BN(web3.utils.toWei("12", "ether"))
@@ -914,7 +916,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
         it("should allow manager with permission to create dividend with checkpoint and exclusion", async () => {
             let maturity = await latestTime() + duration.days(1);
             let expiry = await latestTime() + duration.days(10);
-            let exclusions = [1];
+            let exclusions = [one_address];
             let checkpointID = await I_SecurityToken.createCheckpoint.call({ from: token_owner });
             await I_SecurityToken.createCheckpoint({ from: token_owner });
             let tx = await I_EtherDividendCheckpoint.createDividendWithCheckpointAndExclusions(

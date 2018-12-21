@@ -218,7 +218,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
             // Mint some tokens
             await I_SecurityToken.mint(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), new BN(web3.utils.toWei("1", "ether")));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
         });
 
         it("Buy some tokens for account_investor2 (2 ETH)", async () => {
@@ -245,7 +245,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
             // Mint some tokens
             await I_SecurityToken.mint(account_investor2, new BN(web3.utils.toWei("2", "ether")), { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toNumber(), new BN(web3.utils.toWei("2", "ether")));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toString(), new BN(web3.utils.toWei("2", "ether")).toString());
         });
 
         it("Should fail in creating the dividend", async () => {
@@ -328,10 +328,10 @@ contract("EtherDividendCheckpoint", async (accounts) => {
             await I_EtherDividendCheckpoint.pushDividendPayment(0, new BN(0), 10, { from: token_owner });
             let investor1BalanceAfter = new BN(await web3.eth.getBalance(account_investor1));
             let investor2BalanceAfter = new BN(await web3.eth.getBalance(account_investor2));
-            assert.equal(investor1BalanceAfter.sub(investor1Balance).toNumber(), new BN(web3.utils.toWei("0.5", "ether")));
-            assert.equal(investor2BalanceAfter.sub(investor2Balance).toNumber(), new BN(web3.utils.toWei("0.8", "ether")));
+            assert.equal(investor1BalanceAfter.sub(investor1Balance).toString(), new BN(web3.utils.toWei("0.5", "ether")).toString());
+            assert.equal(investor2BalanceAfter.sub(investor2Balance).toString(), new BN(web3.utils.toWei("0.8", "ether")).toString());
             //Check fully claimed
-            assert.equal((await I_EtherDividendCheckpoint.dividends(0))[5].toNumber(), new BN(web3.utils.toWei("1.5", "ether")));
+            assert.equal((await I_EtherDividendCheckpoint.dividends(0))[5].toString(), new BN(web3.utils.toWei("1.5", "ether")).toString());
         });
 
         it("Should not allow reclaiming withholding tax with incorrect index", async () => {
@@ -345,14 +345,14 @@ contract("EtherDividendCheckpoint", async (accounts) => {
             let issuerBalance = new BN(await web3.eth.getBalance(token_owner));
             await I_EtherDividendCheckpoint.withdrawWithholding(0, { from: token_owner, gasPrice: 0 });
             let issuerBalanceAfter = new BN(await web3.eth.getBalance(token_owner));
-            assert.equal(issuerBalanceAfter.sub(issuerBalance).toNumber(), new BN(web3.utils.toWei("0.2", "ether")));
+            assert.equal(issuerBalanceAfter.sub(issuerBalance).toString(), new BN(web3.utils.toWei("0.2", "ether")).toString());
         });
 
         it("No more withholding tax to withdraw", async () => {
             let issuerBalance = new BN(await web3.eth.getBalance(token_owner));
             await I_EtherDividendCheckpoint.withdrawWithholding(0, { from: token_owner, gasPrice: 0 });
             let issuerBalanceAfter = new BN(await web3.eth.getBalance(token_owner));
-            assert.equal(issuerBalanceAfter.sub(issuerBalance).toNumber(), new BN(web3.utils.toWei("0", "ether")));
+            assert.equal(issuerBalanceAfter.sub(issuerBalance).toString(), new BN(web3.utils.toWei("0", "ether")).toString());
         });
 
         it("Buy some tokens for account_temp (1 ETH)", async () => {
@@ -375,7 +375,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
             // Mint some tokens
             await I_SecurityToken.mint(account_temp, new BN(web3.utils.toWei("1", "ether")), { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_temp)).toNumber(), new BN(web3.utils.toWei("1", "ether")));
+            assert.equal((await I_SecurityToken.balanceOf(account_temp)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
         });
 
         it("Create new dividend", async () => {
@@ -395,7 +395,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
 
         it("Issuer reclaims dividend", async () => {
             let tx = await I_EtherDividendCheckpoint.reclaimDividend(1, { from: token_owner, gas: 500000 });
-            assert.equal(tx.logs[0].args._claimedAmount.toNumber(), new BN(web3.utils.toWei("1.5", "ether")));
+            assert.equal(tx.logs[0].args._claimedAmount.toString(), new BN(web3.utils.toWei("1.5", "ether")).toString());
             await catchRevert(I_EtherDividendCheckpoint.reclaimDividend(1, { from: token_owner, gas: 500000 }));
         });
 
@@ -403,7 +403,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
             let issuerBalance = new BN(await web3.eth.getBalance(token_owner));
             await I_EtherDividendCheckpoint.withdrawWithholding(0, { from: token_owner, gasPrice: 0 });
             let issuerBalanceAfter = new BN(await web3.eth.getBalance(token_owner));
-            assert.equal(issuerBalanceAfter.sub(issuerBalance).toNumber(), new BN(web3.utils.toWei("0", "ether")));
+            assert.equal(issuerBalanceAfter.sub(issuerBalance).toString(), new BN(web3.utils.toWei("0", "ether")).toString());
         });
 
         it("Buy some tokens for account_investor3 (7 ETH)", async () => {
@@ -430,7 +430,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
             // Mint some tokens
             await I_SecurityToken.mint(account_investor3, new BN(web3.utils.toWei("7", "ether")), { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor3)).toNumber(), new BN(web3.utils.toWei("7", "ether")));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor3)).toString(), new BN(web3.utils.toWei("7", "ether")).toString());
         });
 
         it("Create another new dividend", async () => {
@@ -460,14 +460,14 @@ contract("EtherDividendCheckpoint", async (accounts) => {
             let investor3BalanceAfter1 = new BN(await web3.eth.getBalance(account_investor3));
             assert.equal(investor1BalanceAfter1.sub(investor1Balance).toNumber(), 0);
             assert.equal(investor2BalanceAfter1.sub(investor2Balance).toNumber(), 0);
-            assert.equal(investor3BalanceAfter1.sub(investor3Balance).toNumber(), new BN(web3.utils.toWei("7", "ether")));
+            assert.equal(investor3BalanceAfter1.sub(investor3Balance).toString(), new BN(web3.utils.toWei("7", "ether")).toString());
         });
 
         it("Still no more withholding tax to withdraw", async () => {
             let issuerBalance = new BN(await web3.eth.getBalance(token_owner));
             await I_EtherDividendCheckpoint.withdrawWithholding(0, { from: token_owner, gasPrice: 0 });
             let issuerBalanceAfter = new BN(await web3.eth.getBalance(token_owner));
-            assert.equal(issuerBalanceAfter.sub(issuerBalance).toNumber(), new BN(web3.utils.toWei("0", "ether")));
+            assert.equal(issuerBalanceAfter.sub(issuerBalance).toString(), new BN(web3.utils.toWei("0", "ether")).toString());
         });
 
         it("should investor 3 claims dividend", async () => {
@@ -483,17 +483,17 @@ contract("EtherDividendCheckpoint", async (accounts) => {
             let investor2BalanceAfter2 = new BN(await web3.eth.getBalance(account_investor2));
             let investor3BalanceAfter2 = new BN(await web3.eth.getBalance(account_investor3));
             assert.equal(investor1BalanceAfter2.sub(investor1BalanceAfter1).toNumber(), 0);
-            assert.equal(investor2BalanceAfter2.sub(investor2BalanceAfter1).toNumber(), new BN(web3.utils.toWei("2.4", "ether")));
+            assert.equal(investor2BalanceAfter2.sub(investor2BalanceAfter1).toString(), new BN(web3.utils.toWei("2.4", "ether")).toString());
             assert.equal(investor3BalanceAfter2.sub(investor3BalanceAfter1).toNumber(), 0);
             //Check fully claimed
-            assert.equal((await I_EtherDividendCheckpoint.dividends(2))[5].toNumber(), new BN(web3.utils.toWei("11", "ether")));
+            assert.equal((await I_EtherDividendCheckpoint.dividends(2))[5].toString(), new BN(web3.utils.toWei("11", "ether")).toString());
         });
 
         it("Issuer withdraws new withholding tax", async () => {
             let issuerBalance = new BN(await web3.eth.getBalance(token_owner));
             await I_EtherDividendCheckpoint.withdrawWithholding(2, { from: token_owner, gasPrice: 0 });
             let issuerBalanceAfter = new BN(await web3.eth.getBalance(token_owner));
-            assert.equal(issuerBalanceAfter.sub(issuerBalance).toNumber(), new BN(web3.utils.toWei("0.6", "ether")));
+            assert.equal(issuerBalanceAfter.sub(issuerBalance).toString(), new BN(web3.utils.toWei("0.6", "ether")).toString());
         });
 
         it("Investor 2 transfers 1 ETH of his token balance to investor 1", async () => {
@@ -637,14 +637,14 @@ contract("EtherDividendCheckpoint", async (accounts) => {
             let dividendAmount3 = await I_EtherDividendCheckpoint.calculateDividend.call(3, account_investor3);
             let dividendAmount_temp = await I_EtherDividendCheckpoint.calculateDividend.call(3, account_temp);
             //1 has 1/11th, 2 has 2/11th, 3 has 7/11th, temp has 1/11th, but 1 is excluded
-            assert.equal(dividendAmount1[0].toNumber(), new BN(web3.utils.toWei("0", "ether")));
-            assert.equal(dividendAmount1[1].toNumber(), new BN(web3.utils.toWei("0", "ether")));
-            assert.equal(dividendAmount2[0].toNumber(), new BN(web3.utils.toWei("2", "ether")));
-            assert.equal(dividendAmount2[1].toNumber(), new BN(web3.utils.toWei("0.4", "ether")));
-            assert.equal(dividendAmount3[0].toNumber(), new BN(web3.utils.toWei("7", "ether")));
-            assert.equal(dividendAmount3[1].toNumber(), new BN(web3.utils.toWei("0", "ether")));
-            assert.equal(dividendAmount_temp[0].toNumber(), new BN(web3.utils.toWei("1", "ether")));
-            assert.equal(dividendAmount_temp[1].toNumber(), new BN(web3.utils.toWei("0", "ether")));
+            assert.equal(dividendAmount1[0].toString(), new BN(web3.utils.toWei("0", "ether")).toString());
+            assert.equal(dividendAmount1[1].toString(), new BN(web3.utils.toWei("0", "ether")).toString());
+            assert.equal(dividendAmount2[0].toString(), new BN(web3.utils.toWei("2", "ether")).toString());
+            assert.equal(dividendAmount2[1].toString(), new BN(web3.utils.toWei("0.4", "ether")).toString());
+            assert.equal(dividendAmount3[0].toString(), new BN(web3.utils.toWei("7", "ether")).toString());
+            assert.equal(dividendAmount3[1].toString(), new BN(web3.utils.toWei("0", "ether")).toString());
+            assert.equal(dividendAmount_temp[0].toString(), new BN(web3.utils.toWei("1", "ether")).toString());
+            assert.equal(dividendAmount_temp[1].toString(), new BN(web3.utils.toWei("0", "ether")).toString());
         });
 
         it("Investor 2 claims dividend", async () => {
@@ -658,7 +658,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
             let investor3BalanceAfter1 = new BN(await web3.eth.getBalance(account_investor3));
             let tempBalanceAfter1 = new BN(await web3.eth.getBalance(account_temp));
             assert.equal(investor1BalanceAfter1.sub(investor1Balance).toNumber(), 0);
-            assert.equal(investor2BalanceAfter1.sub(investor2Balance).toNumber(), new BN(web3.utils.toWei("1.6", "ether")));
+            assert.equal(investor2BalanceAfter1.sub(investor2Balance).toString(), new BN(web3.utils.toWei("1.6", "ether")).toString());
             assert.equal(investor3BalanceAfter1.sub(investor3Balance).toNumber(), 0);
             assert.equal(tempBalanceAfter1.sub(tempBalance).toNumber(), 0);
         });
@@ -676,9 +676,9 @@ contract("EtherDividendCheckpoint", async (accounts) => {
             assert.equal(investor1BalanceAfter2.sub(investor1BalanceAfter1).toNumber(), 0);
             assert.equal(investor2BalanceAfter2.sub(investor2BalanceAfter1).toNumber(), 0);
             assert.equal(investor3BalanceAfter2.sub(investor3BalanceAfter1).toNumber(), 0);
-            assert.equal(tempBalanceAfter2.sub(tempBalanceAfter1).toNumber(), new BN(web3.utils.toWei("1", "ether")));
+            assert.equal(tempBalanceAfter2.sub(tempBalanceAfter1).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
             //Check fully claimed
-            assert.equal((await I_EtherDividendCheckpoint.dividends(3))[5].toNumber(), new BN(web3.utils.toWei("3", "ether")));
+            assert.equal((await I_EtherDividendCheckpoint.dividends(3))[5].toString(), new BN(web3.utils.toWei("3", "ether")).toString());
         });
 
         it("should calculate dividend after the push dividend payment", async () => {
@@ -701,7 +701,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
             let tokenOwnerBalance = new BN(await web3.eth.getBalance(token_owner));
             await I_EtherDividendCheckpoint.reclaimDividend(3, { from: token_owner, gasPrice: 0 });
             let tokenOwnerAfter = new BN(await web3.eth.getBalance(token_owner));
-            assert.equal(tokenOwnerAfter.sub(tokenOwnerBalance).toNumber(), new BN(web3.utils.toWei("7", "ether")));
+            assert.equal(tokenOwnerAfter.sub(tokenOwnerBalance).toString(), new BN(web3.utils.toWei("7", "ether")).toString());
         });
 
         it("Issuer is able to reclaim dividend after expiry", async () => {
@@ -760,14 +760,14 @@ contract("EtherDividendCheckpoint", async (accounts) => {
             let tempBalanceAfter = new BN(await web3.eth.getBalance(account_temp));
             let tokenBalanceAfter = new BN(await web3.eth.getBalance(I_PolyToken.address));
 
-            assert.equal(investor1BalanceAfter.sub(investor1BalanceBefore).toNumber(), new BN(web3.utils.toWei("1", "ether")));
-            assert.equal(investor2BalanceAfter.sub(investor2BalanceBefore).toNumber(), new BN(web3.utils.toWei("1.6", "ether")));
-            assert.equal(investor3BalanceAfter.sub(investor3BalanceBefore).toNumber(), new BN(web3.utils.toWei("7", "ether")));
-            assert.equal(tempBalanceAfter.sub(tempBalanceBefore).toNumber(), new BN(web3.utils.toWei("1", "ether")));
-            assert.equal(tokenBalanceAfter.sub(tokenBalanceBefore).toNumber(), new BN(web3.utils.toWei("0", "ether")));
+            assert.equal(investor1BalanceAfter.sub(investor1BalanceBefore).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
+            assert.equal(investor2BalanceAfter.sub(investor2BalanceBefore).toString(), new BN(web3.utils.toWei("1.6", "ether")).toString());
+            assert.equal(investor3BalanceAfter.sub(investor3BalanceBefore).toString(), new BN(web3.utils.toWei("7", "ether")).toString());
+            assert.equal(tempBalanceAfter.sub(tempBalanceBefore).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
+            assert.equal(tokenBalanceAfter.sub(tokenBalanceBefore).toString(), new BN(web3.utils.toWei("0", "ether")).toString());
 
             //Check partially claimed
-            assert.equal((await I_EtherDividendCheckpoint.dividends(4))[5].toNumber(), new BN(web3.utils.toWei("11", "ether")));
+            assert.equal((await I_EtherDividendCheckpoint.dividends(4))[5].toString(), new BN(web3.utils.toWei("11", "ether")).toString());
         });
 
         it("Should give the right dividend index", async () => {

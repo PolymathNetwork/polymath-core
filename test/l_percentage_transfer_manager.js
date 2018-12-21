@@ -214,7 +214,7 @@ contract("PercentageTransferManager", async (accounts) => {
             // Mint some tokens
             await I_SecurityToken.mint(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), new BN(web3.utils.toWei("1", "ether")));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
         });
 
         it("Should Buy some more tokens", async () => {
@@ -241,7 +241,7 @@ contract("PercentageTransferManager", async (accounts) => {
             // Mint some tokens
             await I_SecurityToken.mint(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toNumber(), new BN(web3.utils.toWei("1", "ether")));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
         });
 
         it("Should successfully attach the PercentageTransferManager factory with the security token - failed payment", async () => {
@@ -307,7 +307,7 @@ contract("PercentageTransferManager", async (accounts) => {
             // Mint some tokens
             await I_SecurityToken.mint(account_investor3, new BN(web3.utils.toWei("1", "ether")), { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor3)).toNumber(), new BN(web3.utils.toWei("1", "ether")));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor3)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
         });
 
         it("Should pause the tranfers at transferManager level", async () => {
@@ -319,7 +319,7 @@ contract("PercentageTransferManager", async (accounts) => {
             // Mint some tokens
             await I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: account_investor2 });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), new BN(web3.utils.toWei("2", "ether")));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), new BN(web3.utils.toWei("2", "ether")).toString());
         });
 
         it("Should unpause the tranfers at transferManager level", async () => {

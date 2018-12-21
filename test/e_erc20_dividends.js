@@ -360,10 +360,10 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             await I_ERC20DividendCheckpoint.pushDividendPayment(0, new BN(0), 10, { from: token_owner, gas: 5000000 });
             let investor1BalanceAfter = new BN(await I_PolyToken.balanceOf(account_investor1));
             let investor2BalanceAfter = new BN(await I_PolyToken.balanceOf(account_investor2));
-            assert.equal(investor1BalanceAfter.sub(investor1Balance).toNumber(), new BN(web3.utils.toWei("0.5", "ether")));
-            assert.equal(investor2BalanceAfter.sub(investor2Balance).toNumber(), new BN(web3.utils.toWei("1", "ether")));
+            assert.equal(investor1BalanceAfter.sub(investor1Balance).toString(), new BN(web3.utils.toWei("0.5", "ether")).toString());
+            assert.equal(investor2BalanceAfter.sub(investor2Balance).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
             //Check fully claimed
-            assert.equal((await I_ERC20DividendCheckpoint.dividends(0))[5].toNumber(), new BN(web3.utils.toWei("1.5", "ether")));
+            assert.equal((await I_ERC20DividendCheckpoint.dividends(0))[5].toString(), new BN(web3.utils.toWei("1.5", "ether")).toString());
         });
 
         it("Buy some tokens for account_temp (1 ETH)", async () => {
@@ -386,7 +386,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             // Mint some tokens
             await I_SecurityToken.mint(account_temp, new BN(web3.utils.toWei("1", "ether")), { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_temp)).toNumber(), new BN(web3.utils.toWei("1", "ether")));
+            assert.equal((await I_SecurityToken.balanceOf(account_temp)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
         });
 
         it("Should not allow to create dividend without name", async () => {
@@ -424,7 +424,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
 
         it("Issuer pushes dividends iterating over account holders - dividends proportional to checkpoin - fails already reclaimed", async () => {
             let tx = await I_ERC20DividendCheckpoint.reclaimDividend(1, { from: token_owner, gas: 500000 });
-            assert.equal(tx.logs[0].args._claimedAmount.toNumber(), new BN(web3.utils.toWei("1.5", "ether")));
+            assert.equal(tx.logs[0].args._claimedAmount.toString(), new BN(web3.utils.toWei("1.5", "ether")).toString());
             await catchRevert(I_ERC20DividendCheckpoint.reclaimDividend(1, { from: token_owner, gas: 500000 }));
         });
 
@@ -452,7 +452,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             // Mint some tokens
             await I_SecurityToken.mint(account_investor3, new BN(web3.utils.toWei("7", "ether")), { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor3)).toNumber(), new BN(web3.utils.toWei("7", "ether")));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor3)).toString(), new BN(web3.utils.toWei("7", "ether")).toString());
         });
 
         it("Should allow to exclude same number of address as EXCLUDED_ADDRESS_LIMIT", async () => {
@@ -526,7 +526,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             let investor3BalanceAfter1 = new BN(await I_PolyToken.balanceOf(account_investor3));
             assert.equal(investor1BalanceAfter1.sub(investor1Balance).toNumber(), 0);
             assert.equal(investor2BalanceAfter1.sub(investor2Balance).toNumber(), 0);
-            assert.equal(investor3BalanceAfter1.sub(investor3Balance).toNumber(), new BN(web3.utils.toWei("7", "ether")));
+            assert.equal(investor3BalanceAfter1.sub(investor3Balance).toString(), new BN(web3.utils.toWei("7", "ether")).toString());
         });
 
         it("should investor 3 claims dividend - fails already claimed", async () => {
@@ -545,11 +545,11 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             let investor3BalanceAfter2 = new BN(await I_PolyToken.balanceOf(account_investor3));
             let investorTempBalanceAfter2 = new BN(await I_PolyToken.balanceOf(account_temp));
             assert.equal(investor1BalanceAfter2.sub(investor1BalanceAfter1).toNumber(), 0);
-            assert.equal(investor2BalanceAfter2.sub(investor2BalanceAfter1).toNumber(), new BN(web3.utils.toWei("3", "ether")));
+            assert.equal(investor2BalanceAfter2.sub(investor2BalanceAfter1).toString(), new BN(web3.utils.toWei("3", "ether")).toString());
             assert.equal(investor3BalanceAfter2.sub(investor3BalanceAfter1).toNumber(), 0);
             assert.equal(investorTempBalanceAfter2.sub(investorTempBalanceAfter1).toNumber(), 0);
             //Check fully claimed
-            assert.equal((await I_ERC20DividendCheckpoint.dividends(2))[5].toNumber(), new BN(web3.utils.toWei("10", "ether")));
+            assert.equal((await I_ERC20DividendCheckpoint.dividends(2))[5].toString(), new BN(web3.utils.toWei("10", "ether")).toString());
         });
 
         it("Delete global exclusion list", async () => {
@@ -768,14 +768,14 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             let dividendAmount2 = await I_ERC20DividendCheckpoint.calculateDividend.call(3, account_investor2);
             let dividendAmount3 = await I_ERC20DividendCheckpoint.calculateDividend.call(3, account_investor3);
             let dividendAmount_temp = await I_ERC20DividendCheckpoint.calculateDividend.call(3, account_temp);
-            assert.equal(dividendAmount1[0].toNumber(), new BN(web3.utils.toWei("0", "ether")));
-            assert.equal(dividendAmount2[0].toNumber(), new BN(web3.utils.toWei("2", "ether")));
-            assert.equal(dividendAmount3[0].toNumber(), new BN(web3.utils.toWei("7", "ether")));
-            assert.equal(dividendAmount_temp[0].toNumber(), new BN(web3.utils.toWei("1", "ether")));
-            assert.equal(dividendAmount1[1].toNumber(), new BN(web3.utils.toWei("0", "ether")));
-            assert.equal(dividendAmount2[1].toNumber(), new BN(web3.utils.toWei("0.2", "ether")));
-            assert.equal(dividendAmount3[1].toNumber(), new BN(web3.utils.toWei("0", "ether")));
-            assert.equal(dividendAmount_temp[1].toNumber(), new BN(web3.utils.toWei("0.2", "ether")));
+            assert.equal(dividendAmount1[0].toString(), new BN(web3.utils.toWei("0", "ether")).toString());
+            assert.equal(dividendAmount2[0].toString(), new BN(web3.utils.toWei("2", "ether")).toString());
+            assert.equal(dividendAmount3[0].toString(), new BN(web3.utils.toWei("7", "ether")).toString());
+            assert.equal(dividendAmount_temp[0].toString(), new BN(web3.utils.toWei("1", "ether")).toString());
+            assert.equal(dividendAmount1[1].toString(), new BN(web3.utils.toWei("0", "ether")).toString());
+            assert.equal(dividendAmount2[1].toString(), new BN(web3.utils.toWei("0.2", "ether")).toString());
+            assert.equal(dividendAmount3[1].toString(), new BN(web3.utils.toWei("0", "ether")).toString());
+            assert.equal(dividendAmount_temp[1].toString(), new BN(web3.utils.toWei("0.2", "ether")).toString());
         });
 
         it("Investor 2 claims dividend", async () => {
@@ -789,7 +789,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             let investor3BalanceAfter1 = new BN(await I_PolyToken.balanceOf(account_investor3));
             let tempBalanceAfter1 = new BN(await web3.eth.getBalance(account_temp));
             assert.equal(investor1BalanceAfter1.sub(investor1Balance).toNumber(), 0);
-            assert.equal(investor2BalanceAfter1.sub(investor2Balance).toNumber(), new BN(web3.utils.toWei("1.8", "ether")));
+            assert.equal(investor2BalanceAfter1.sub(investor2Balance).toString(), new BN(web3.utils.toWei("1.8", "ether")).toString());
             assert.equal(investor3BalanceAfter1.sub(investor3Balance).toNumber(), 0);
             assert.equal(tempBalanceAfter1.sub(tempBalance).toNumber(), 0);
         });
@@ -807,9 +807,9 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             assert.equal(investor1BalanceAfter2.sub(investor1BalanceAfter1).toNumber(), 0);
             assert.equal(investor2BalanceAfter2.sub(investor2BalanceAfter1).toNumber(), 0);
             assert.equal(investor3BalanceAfter2.sub(investor3BalanceAfter1).toNumber(), 0);
-            assert.equal(tempBalanceAfter2.sub(tempBalanceAfter1).toNumber(), new BN(web3.utils.toWei("0.8", "ether")));
+            assert.equal(tempBalanceAfter2.sub(tempBalanceAfter1).toString(), new BN(web3.utils.toWei("0.8", "ether")).toString());
             //Check fully claimed
-            assert.equal((await I_ERC20DividendCheckpoint.dividends(3))[5].toNumber(), new BN(web3.utils.toWei("3", "ether")));
+            assert.equal((await I_ERC20DividendCheckpoint.dividends(3))[5].toString(), new BN(web3.utils.toWei("3", "ether")).toString());
         });
 
         it("should calculate dividend after the push dividend payment", async () => {
@@ -827,7 +827,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             let issuerBalance = new BN(await I_PolyToken.balanceOf(token_owner));
             await I_ERC20DividendCheckpoint.withdrawWithholding(3, { from: token_owner, gasPrice: 0 });
             let issuerBalanceAfter = new BN(await I_PolyToken.balanceOf(token_owner));
-            assert.equal(issuerBalanceAfter.sub(issuerBalance).toNumber(), new BN(web3.utils.toWei("0.4", "ether")));
+            assert.equal(issuerBalanceAfter.sub(issuerBalance).toString(), new BN(web3.utils.toWei("0.4", "ether")).toString());
         });
 
         it("Issuer unable to reclaim dividend (expiry not passed)", async () => {
@@ -847,7 +847,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             let tokenOwnerBalance = new BN(await I_PolyToken.balanceOf(token_owner));
             await I_ERC20DividendCheckpoint.reclaimDividend(3, { from: token_owner, gasPrice: 0 });
             let tokenOwnerAfter = new BN(await I_PolyToken.balanceOf(token_owner));
-            assert.equal(tokenOwnerAfter.sub(tokenOwnerBalance).toNumber(), new BN(web3.utils.toWei("7", "ether")));
+            assert.equal(tokenOwnerAfter.sub(tokenOwnerBalance).toString(), new BN(web3.utils.toWei("7", "ether")).toString());
         });
 
         it("Issuer is unable to reclaim already reclaimed dividend", async () => {

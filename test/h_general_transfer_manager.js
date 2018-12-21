@@ -336,7 +336,7 @@ contract("GeneralTransferManager", async (accounts) => {
             // Mint some tokens
             await I_DummySTO.generateTokens(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), new BN(web3.utils.toWei("1", "ether")));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
         });
 
         it("Should fail in buying the token from the STO", async () => {
@@ -356,7 +356,7 @@ contract("GeneralTransferManager", async (accounts) => {
 
         it("Should buy more tokens from the STO to investor1", async () => {
             await I_DummySTO.generateTokens(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner });
-            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), new BN(web3.utils.toWei("2", "ether")));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), new BN(web3.utils.toWei("2", "ether")).toString());
         });
 
         it("Should fail in investing the money in STO -- expiry limit reached", async () => {
@@ -406,8 +406,8 @@ contract("GeneralTransferManager", async (accounts) => {
 
             // Can transfer tokens
             await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 });
-            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), new BN(web3.utils.toWei("1", "ether")));
-            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), new BN(web3.utils.toWei("1", "ether")));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
         });
 
         it("Add a from default and check transfers are disabled then enabled in the future", async () => {
@@ -623,7 +623,7 @@ contract("GeneralTransferManager", async (accounts) => {
 
             await I_DummySTO.generateTokens(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toNumber(), new BN(web3.utils.toWei("1", "ether")));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
         });
 
         it("Should fail if the txn is generated with same nonce", async () => {
@@ -911,7 +911,7 @@ contract("GeneralTransferManager", async (accounts) => {
         });
 
         it("Should get the raised amount of poly", async () => {
-            assert.equal((await I_DummySTO.getRaised.call(1)).toNumber(), new BN(web3.utils.toWei("0", "ether")));
+            assert.equal((await I_DummySTO.getRaised.call(1)).toString(), new BN(web3.utils.toWei("0", "ether")).toString());
         });
 
         it("Should get the investors", async () => {

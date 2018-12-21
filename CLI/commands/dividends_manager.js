@@ -338,12 +338,12 @@ async function createDividends() {
       token = new web3.eth.Contract(abis.erc20(), dividendToken);
       try {
         dividendSymbol = await token.methods.symbol().call();
-      } catch {
+      } catch (err) {
         console.log(chalk.red(`${dividendToken} is not a valid ERC20 token address!!`));
       }
     } while (dividendSymbol === 'ETH');
   }
-  let dividendAmount = readlineSync.question(`How much ${dividendSymbol} would you like to distribute to token holders ? `);
+  let dividendAmount = readlineSync.question(`How much ${dividendSymbol} would you like to distribute to token holders? `);
 
   let dividendAmountBN = new web3.utils.BN(dividendAmount);
   let issuerBalance = new web3.utils.BN(web3.utils.fromWei(await getBalance(Issuer.address, dividendToken)));
@@ -356,7 +356,7 @@ async function createDividends() {
     let defaultTime = now + gbl.constants.DURATION.minutes(10);
     let expiryTime = readlineSync.questionInt('Enter the dividend expiry time (Unix Epoch time)\n(10 minutes from now = ' + defaultTime + ' ): ', { defaultInput: defaultTime });
 
-    let useDefaultExcluded = !readlineSync.keyInYNStrict(`Do you want to use data from 'dividends_exclusions_data.csv' for this dividend ? If not, default exclusions will apply.`);
+    let useDefaultExcluded = !readlineSync.keyInYNStrict(`Do you want to use data from 'dividends_exclusions_data.csv' for this dividend? If not, default exclusions will apply.`);
 
     let createDividendAction;
     if (dividendsType == 'ERC20') {
@@ -425,7 +425,7 @@ function showReport(_name, _tokenSymbol, _amount, _witthheld, _claimed, _investo
       'Investor',
       'Amount sent',
       'Taxes withheld (%)',
-      `Taxes withheld(${_tokenSymbol})`,
+      `Taxes withheld (${_tokenSymbol})`,
       'Amount received',
       'Withdrawn'
     ]];
@@ -434,7 +434,7 @@ function showReport(_name, _tokenSymbol, _amount, _witthheld, _claimed, _investo
     let excluded = _excludedArray[i];
     let amount = !excluded ? web3.utils.fromWei(_amountArray[i]) : 0;
     let withheld = !excluded ? web3.utils.fromWei(_withheldArray[i]) : 'NA';
-    let withheldPercentage = !excluded ? web3.utils.toBN(_withheldArray[i]).div(web3.utils.toBN(_amountArray[i])).muln(100) : 'NA';
+    let withheldPercentage = !excluded ? (withheld !== '0' ? parseFloat(withheld) / parseFloat(amount) * 100 : 0) : 'NA';
     let received = !excluded ? web3.utils.fromWei(web3.utils.toBN(_amountArray[i]).sub(web3.utils.toBN(_withheldArray[i]))) : 0;
     let withdrawn = _claimedArray[i] ? 'YES' : 'NO';
     dataTable.push([
@@ -473,7 +473,7 @@ async function pushDividends(dividendIndex, checkpointId) {
   } else {
     let investorsAtCheckpoint = await securityToken.methods.getInvestorsAt(checkpointId).call();
     console.log(`There are ${investorsAtCheckpoint.length} investors at checkpoint ${checkpointId} `);
-    let batchSize = readlineSync.questionInt(`How many investors per transaction do you want to push to ? `);
+    let batchSize = readlineSync.questionInt(`How many investors per transaction do you want to push to? `);
     for (let i = 0; i < investorsAtCheckpoint.length; i += batchSize) {
       let action = currentDividendsModule.methods.pushDividendPayment(dividendIndex, i, batchSize);
       let receipt = await common.sendTransaction(action);
@@ -539,7 +539,7 @@ async function addDividendsModule() {
   }));
 
   let index = readlineSync.keyInSelect(options, 'Which dividends module do you want to add? ', { cancel: 'Return' });
-  if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]} module ? `)) {
+  if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]} module? `)) {
     let bytes = web3.utils.fromAscii('', 16);
 
     let selectedDividendFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, gbl.constants.MODULES_TYPES.DIVIDENDS, options[index]);

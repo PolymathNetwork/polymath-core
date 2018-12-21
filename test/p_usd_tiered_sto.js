@@ -192,8 +192,10 @@ contract("USDTieredSTO", async (accounts) => {
         return 0;
     }
 
+    let currentTime;
+
     before(async () => {
-        // Accounts setup
+        currentTime = new BN(await latestTime());
         POLYMATH = accounts[0];
         ISSUER = accounts[1];
         WALLET = accounts[2];

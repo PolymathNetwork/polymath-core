@@ -163,8 +163,10 @@ contract("USDTieredSTO Sim", async (accounts) => {
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
+    let currentTime;
+
     before(async () => {
-        // Accounts setup
+        currentTime = new BN(await latestTime());
         POLYMATH = accounts[0];
         ISSUER = accounts[1];
         WALLET = accounts[2];

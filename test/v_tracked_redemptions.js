@@ -65,8 +65,10 @@ contract("TrackedRedemption", async (accounts) => {
     // Initial fee for ticker registry and security token registry
     const initRegFee = new BN(web3.utils.toWei("250"));
 
+    let currentTime;
+
     before(async () => {
-        // Accounts setup
+        currentTime = new BN(await latestTime());
         account_polymath = accounts[0];
         account_issuer = accounts[1];
 
@@ -183,9 +185,9 @@ contract("TrackedRedemption", async (accounts) => {
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor1,
-                await latestTime(),
-                await latestTime(),
-                await latestTime() + duration.days(30),
+                currentTime,
+                currentTime,
+                currentTime.add(new BN(duration.days(30))),
                 true,
                 {
                     from: account_issuer,
@@ -213,9 +215,9 @@ contract("TrackedRedemption", async (accounts) => {
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor2,
-                await latestTime(),
-                await latestTime(),
-                await latestTime() + duration.days(30),
+                currentTime,
+                currentTime,
+                currentTime.add(new BN(duration.days(30))),
                 true,
                 {
                     from: account_issuer,

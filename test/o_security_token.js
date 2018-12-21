@@ -99,8 +99,10 @@ contract("SecurityToken", async (accounts) => {
     const maxCost = cappedSTOSetupCost;
     const STOParameters = ["uint256", "uint256", "uint256", "uint256", "uint8[]", "address"];
 
+    let currentTime;
+
     before(async () => {
-        // Accounts setup
+        currentTime = new BN(await latestTime());
         account_polymath = accounts[0];
         account_issuer = accounts[1];
         account_affiliate1 = accounts[2];

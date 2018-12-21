@@ -57,8 +57,10 @@ contract("ScheduledCheckpoint", async (accounts) => {
     // Initial fee for ticker registry and security token registry
     const initRegFee = new BN(web3.utils.toWei("250"));
 
+    let currentTime;
+
     before(async () => {
-        // Accounts setup
+        currentTime = new BN(await latestTime());
         account_polymath = accounts[0];
         account_issuer = accounts[1];
 
@@ -173,9 +175,9 @@ contract("ScheduledCheckpoint", async (accounts) => {
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor1,
-                await latestTime(),
-                await latestTime(),
-                await latestTime() + duration.days(10),
+                currentTime,
+                currentTime,
+                currentTime.add(new BN(duration.days(10))),
                 true,
                 {
                     from: account_issuer,
@@ -218,9 +220,9 @@ contract("ScheduledCheckpoint", async (accounts) => {
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor2,
-                await latestTime(),
-                await latestTime(),
-                await latestTime() + duration.days(10),
+                currentTime,
+                currentTime,
+                currentTime.add(new BN(duration.days(10))),
                 true,
                 {
                     from: account_issuer,
@@ -254,9 +256,9 @@ contract("ScheduledCheckpoint", async (accounts) => {
         it("Add a new token holder - account_investor3", async () => {
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor3,
-                await latestTime(),
-                await latestTime(),
-                await latestTime() + duration.days(10),
+                currentTime,
+                currentTime,
+                currentTime.add(new BN(duration.days(10))),
                 true,
                 {
                     from: account_issuer,

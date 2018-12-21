@@ -74,7 +74,6 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
     let currentTime;
 
     before(async () => {
-        // Accounts setup
         currentTime = new BN(await latestTime());
         account_polymath = accounts[0];
         account_issuer = accounts[1];

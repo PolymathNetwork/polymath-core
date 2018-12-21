@@ -68,8 +68,10 @@ contract("Concurrent STO", async (accounts) => {
     const DummySTOParameters = ["uint256", "uint256", "uint256", "string"];
     const PresaleSTOParameters = ["uint256"];
 
+    let currentTime;
+
     before(async () => {
-        // Accounts setup
+        currentTime = new BN(await latestTime());
         account_polymath = accounts[0];
         account_issuer = accounts[1];
         account_fundsReceiver = accounts[2];

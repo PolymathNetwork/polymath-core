@@ -80,8 +80,10 @@ contract("GeneralTransferManager", async (accounts) => {
     const someString = "A string which is not used";
     const STOParameters = ["uint256", "uint256", "uint256", "string"];
 
+    let currentTime;
+
     before(async () => {
-        // Accounts setup
+        currentTime = new BN(await latestTime());
         fromTime = await latestTime();
         toTime = await latestTime();
         expiryTime = toTime + duration.days(15);
@@ -192,7 +194,7 @@ contract("GeneralTransferManager", async (accounts) => {
         it("Should whitelist the affiliates before the STO attached", async () => {
             let tx = await I_GeneralTransferManager.modifyWhitelistMulti(
                 [account_affiliates1, account_affiliates2],
-                [await latestTime() + duration.days(30), await latestTime() + duration.days(30)],
+                [await latestTime() + duration.days(30), currentTime.add(new BN(duration.days(30)))],
                 [await latestTime() + duration.days(90), await latestTime() + duration.days(90)],
                 [await latestTime() + duration.years(1), await latestTime() + duration.years(1)],
                 [false, false],
@@ -314,9 +316,9 @@ contract("GeneralTransferManager", async (accounts) => {
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor1,
-                await latestTime(),
-                await latestTime(),
-                await latestTime() + duration.days(10),
+                currentTime,
+                currentTime,
+                currentTime.add(new BN(duration.days(10))),
                 true,
                 {
                     from: account_issuer,
@@ -372,7 +374,7 @@ contract("GeneralTransferManager", async (accounts) => {
         it("Should Buy the tokens", async () => {
             // Add the Investor in to the whitelist
             // snap_id = await takeSnapshot();
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, new BN(0), new BN(0), await latestTime() + duration.days(20), true, {
+            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, new BN(0), new BN(0), currentTime.add(new BN(duration.days(20))), true, {
                 from: account_issuer,
                 gas: 6000000
             });
@@ -385,9 +387,9 @@ contract("GeneralTransferManager", async (accounts) => {
 
             tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor2,
-                await latestTime(),
-                await latestTime(),
-                await latestTime() + duration.days(20),
+                currentTime,
+                currentTime,
+                currentTime.add(new BN(duration.days(20))),
                 true,
                 {
                     from: account_issuer,

@@ -90,8 +90,10 @@ contract("ModuleRegistry", async (accounts) => {
     const STOParameters = ["uint256", "uint256", "uint256", "uint256", "uint8[]", "address"];
     const MRProxyParameters = ["address", "address"];
 
+    let currentTime;
+
     before(async () => {
-        // Accounts setup
+        currentTime = new BN(await latestTime());
         account_polymath = accounts[0];
         account_issuer = accounts[1];
         account_investor1 = accounts[9];
@@ -372,7 +374,7 @@ contract("ModuleRegistry", async (accounts) => {
                 assert.equal(_lstVersion[1], 1);
                 let bytesData = encodeModuleCall(
                     ["uint256", "uint256", "uint256", "string"],
-                    [await latestTime(), await latestTime() + duration.days(1), cap, "Test STO"]
+                    [await latestTime(), currentTime.add(new BN(duration.days(1))), cap, "Test STO"]
                 );
 
                 await catchRevert(I_SecurityToken.addModule(I_TestSTOFactory.address, bytesData, new BN(0), new BN(0), { from: token_owner }));
@@ -397,7 +399,7 @@ contract("ModuleRegistry", async (accounts) => {
 
                 let bytesData = encodeModuleCall(
                     ["uint256", "uint256", "uint256", "string"],
-                    [await latestTime(), await latestTime() + duration.days(1), cap, "Test STO"]
+                    [await latestTime(), currentTime.add(new BN(duration.days(1))), cap, "Test STO"]
                 );
 
                 await catchRevert(I_SecurityToken2.addModule(I_TestSTOFactory.address, bytesData, new BN(0), new BN(0), { from: token_owner }));

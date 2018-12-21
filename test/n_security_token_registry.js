@@ -85,8 +85,10 @@ contract("SecurityTokenRegistry", async (accounts) => {
     const cap = new BN(web3.utils.toWei("10000"));
     const someString = "Hello string";
 
+    let currentTime;
+
     before(async () => {
-        // Accounts setup
+        currentTime = new BN(await latestTime());
         account_polymath = accounts[0];
         account_issuer = accounts[1];
         account_investor1 = accounts[9];
@@ -664,7 +666,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
             // Fulfilling the TickerStatus.NN condition
             //
             // await catchRevert(I_STRProxied.modifySecurityToken("LOGAN2", "LOG2", account_temp, dummy_token, "I am custom ST", await latestTime(), {from: account_polymath}));
-            // await I_STRProxied.modifyTicker(account_temp, "LOG2", "LOGAN2", await latestTime(), await latestTime() + duration.days(10), false, {from: account_polymath});
+            // await I_STRProxied.modifyTicker(account_temp, "LOG2", "LOGAN2", await latestTime(), currentTime.add(new BN(duration.days(10))), false, {from: account_polymath});
             // await increaseTime(duration.days(1));
             let tx = await I_STRProxied.modifySecurityToken("LOGAN2", "LOG2", account_temp, dummy_token, "I am custom ST", await latestTime(), {
                 from: account_polymath
@@ -700,7 +702,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
     describe("Test case for modifyTicker", async () => {
         it("Should add the custom ticker --failed because of bad owner", async () => {
             catchRevert(
-                I_STRProxied.modifyTicker(token_owner, "ETH", "Ether", await latestTime(), await latestTime() + duration.days(10), false, {
+                I_STRProxied.modifyTicker(token_owner, "ETH", "Ether", await latestTime(), currentTime.add(new BN(duration.days(10))), false, {
                     from: account_temp
                 }),
                 "tx revert -> failed beacause of bad owner0"
@@ -709,7 +711,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should add the custom ticker --fail ticker length should not be 0", async () => {
             catchRevert(
-                I_STRProxied.modifyTicker(token_owner, "0x0", "Ether", await latestTime(), await latestTime() + duration.days(10), false, {
+                I_STRProxied.modifyTicker(token_owner, "0x0", "Ether", await latestTime(), currentTime.add(new BN(duration.days(10))), false, {
                     from: account_polymath
                 }),
                 "tx revert -> failed beacause ticker length should not be 0"
@@ -718,7 +720,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should add the custom ticker --failed because time should not be 0", async () => {
             catchRevert(
-                I_STRProxied.modifyTicker(token_owner, "ETH", "Ether", new BN(0), await latestTime() + duration.days(10), false, {
+                I_STRProxied.modifyTicker(token_owner, "ETH", "Ether", new BN(0), currentTime.add(new BN(duration.days(10))), false, {
                     from: account_polymath
                 }),
                 "tx revert -> failed because time should not be 0"

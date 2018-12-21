@@ -89,8 +89,10 @@ contract("Upgrade from v1.3.0 to v1.4.0", async (accounts) => {
 
     const STOParameters = ["uint256", "uint256", "uint256", "uint256", "uint8[]", "address"];
     // Prepare polymath network status
+    let currentTime;
+
     before(async () => {
-        // Accounts setup
+        currentTime = new BN(await latestTime());
         POLYMATH = accounts[0];
         ISSUER1 = accounts[1];
         ISSUER2 = accounts[2];

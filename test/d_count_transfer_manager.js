@@ -73,6 +73,7 @@ contract("CountTransferManager", async (accounts) => {
     let currentTime;
 
     before(async () => {
+        currentTime = new BN(await latestTime());
         // Accounts setup
         account_polymath = accounts[0];
         account_issuer = accounts[1];
@@ -83,8 +84,6 @@ contract("CountTransferManager", async (accounts) => {
         account_investor2 = accounts[8];
         account_investor3 = accounts[9];
         account_investor4 = accounts[6];
-
-        currentTime = new BN(await latestTime());
 
         // Step 1: Deploy the genral PM ecosystem
         let instances = await setUpPolymathNetwork(account_polymath, token_owner);

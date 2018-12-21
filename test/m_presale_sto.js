@@ -73,8 +73,10 @@ contract("PreSaleSTO", async (accounts) => {
     const address_zero = "0x0000000000000000000000000000000000000000";
     const STOParameters = ["uint256"];
 
+    let currentTime;
+
     before(async () => {
-        // Accounts setup
+        currentTime = new BN(await latestTime());
         account_polymath = accounts[0];
         account_issuer = accounts[1];
         account_investor1 = accounts[4];

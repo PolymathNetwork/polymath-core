@@ -102,8 +102,10 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
     let perms = ["ADMIN", "WHITELIST", "FLAGS", "TRANSFER_APPROVAL"];
     let totalPerms = perms.length;
 
+    let currentTime;
+
     before(async () => {
-        // Accounts setup
+        currentTime = new BN(await latestTime());
         account_polymath = accounts[0];
         account_issuer = accounts[1];
 
@@ -713,7 +715,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
 
         it("should pass fuzz test for addManualBlocking and revokeManualBlocking with perm TRANSFER_APPROVAL", async () => {
             console.log("1");
-            await I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, await latestTime() + duration.days(1), {
+            await I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, currentTime.add(new BN(duration.days(1))), {
                 from: token_owner
             });
             console.log("2");

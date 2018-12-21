@@ -73,8 +73,10 @@ contract("ManualApprovalTransferManager", async (accounts) => {
 
     const STOParameters = ["uint256", "uint256", "uint256", "uint256", "uint8[]", "address"];
 
+    let currentTime;
+
     before(async () => {
-        // Accounts setup
+        currentTime = new BN(await latestTime());
         account_polymath = accounts[0];
         account_issuer = accounts[1];
 
@@ -172,9 +174,9 @@ contract("ManualApprovalTransferManager", async (accounts) => {
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor1,
-                await latestTime(),
-                await latestTime(),
-                await latestTime() + duration.days(10),
+                currentTime,
+                currentTime,
+                currentTime.add(new BN(duration.days(10))),
                 true,
                 {
                     from: account_issuer,
@@ -202,9 +204,9 @@ contract("ManualApprovalTransferManager", async (accounts) => {
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor2,
-                await latestTime(),
-                await latestTime(),
-                await latestTime() + duration.days(10),
+                currentTime,
+                currentTime,
+                currentTime.add(new BN(duration.days(10))),
                 true,
                 {
                     from: account_issuer,
@@ -291,9 +293,9 @@ contract("ManualApprovalTransferManager", async (accounts) => {
         it("Add a new token holder", async () => {
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor3,
-                await latestTime(),
-                await latestTime(),
-                await latestTime() + duration.days(10),
+                currentTime,
+                currentTime,
+                currentTime.add(new BN(duration.days(10))),
                 true,
                 {
                     from: account_issuer,
@@ -448,7 +450,7 @@ contract("ManualApprovalTransferManager", async (accounts) => {
 
         it("Should fail to add a manual block because invalid _to address", async () => {
             await catchRevert(
-                I_ManualApprovalTransferManager.addManualBlocking(account_investor1, "0x0", await latestTime() + duration.days(1), {
+                I_ManualApprovalTransferManager.addManualBlocking(account_investor1, "0x0", currentTime.add(new BN(duration.days(1))), {
                     from: token_owner
                 })
             );
@@ -461,7 +463,7 @@ contract("ManualApprovalTransferManager", async (accounts) => {
         });
 
         it("Add a manual block for a 2nd investor", async () => {
-            await I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, await latestTime() + duration.days(1), {
+            await I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, currentTime.add(new BN(duration.days(1))), {
                 from: token_owner
             });
         });
@@ -489,7 +491,7 @@ contract("ManualApprovalTransferManager", async (accounts) => {
         });
 
         it("Check manual block ignored after expiry", async () => {
-            await I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, await latestTime() + duration.days(1), {
+            await I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, currentTime.add(new BN(duration.days(1))), {
                 from: token_owner
             });
 

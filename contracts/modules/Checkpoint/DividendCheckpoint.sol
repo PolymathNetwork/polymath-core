@@ -317,7 +317,24 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
                 resultAmount[i] = resultBalance[i].mul(dividend.amount).div(dividend.totalSupply);
             }
         }
-        /* return (investors, resultClaimed, resultExcluded, resultWithheld, resultBalance, resultAmount); */
+    }
+
+    /**
+     * @notice Retrieves list of investors, their balances, and their current withholding tax percentage
+     * @param _checkpointId Checkpoint Id to query for
+     * @return address[] list of investors
+     * @return uint256[] investor balances
+     * @return uint256[] investor withheld percentages
+     */
+    function getCheckpointData(uint256 _checkpointId) external view returns (address[] memory investors, uint256[] memory balances, uint256[] memory withholdings) {
+        require(_checkpointId <= ISecurityToken(securityToken).currentCheckpointId(), "Invalid checkpoint");
+        investors = ISecurityToken(securityToken).getInvestorsAt(_checkpointId);
+        balances = new uint256[](investors.length);
+        withholdings = new uint256[](investors.length);
+        for (uint256 i; i < investors.length; i++) {
+            balances[i] = ISecurityToken(securityToken).balanceOfAt(investors[i], _checkpointId);
+            withholdings[i] = withholdingTax[investors[i]];
+        }
     }
 
     /**

@@ -854,11 +854,6 @@ contract("ERC20DividendCheckpoint", accounts => {
             assert.equal(info[3][2].toNumber(), web3.utils.toWei("0.2", "ether"), "withheld match");
             assert.equal(info[3][3].toNumber(), 0, "withheld match");
 
-            console.log(info[4][0].toNumber());
-            console.log(info[4][1].toNumber());
-            console.log(info[4][2].toNumber());
-            console.log(info[4][3].toNumber());
-            
             assert.equal(info[4][0].toNumber(), (await I_SecurityToken.balanceOfAt(account_investor1, 4)).toNumber(), "balance match");
             assert.equal(info[4][1].toNumber(), (await I_SecurityToken.balanceOfAt(account_investor2, 4)).toNumber(), "balance match");
             assert.equal(info[4][2].toNumber(), (await I_SecurityToken.balanceOfAt(account_temp, 4)).toNumber(), "balance match");
@@ -1102,7 +1097,21 @@ contract("ERC20DividendCheckpoint", accounts => {
                 dividendName,
                 { from: account_manager }
             );
-            assert.equal(tx.logs[0].args._checkpointId.toNumber(), 8);
+            let info = await I_ERC20DividendCheckpoint.getCheckpointData.call(checkpointID);
+            
+            assert.equal(info[0][0], account_investor1, "account match");
+            assert.equal(info[0][1], account_investor2, "account match");
+            assert.equal(info[0][2], account_temp, "account match");
+            assert.equal(info[0][3], account_investor3, "account match");
+            assert.equal(info[1][0].toNumber(), (await I_SecurityToken.balanceOfAt.call(account_investor1, checkpointID)).toNumber(), "balance match");
+            assert.equal(info[1][1].toNumber(), (await I_SecurityToken.balanceOfAt.call(account_investor2, checkpointID)).toNumber(), "balance match");
+            assert.equal(info[1][2].toNumber(), (await I_SecurityToken.balanceOfAt.call(account_temp, checkpointID)).toNumber(), "balance match");
+            assert.equal(info[1][3].toNumber(), (await I_SecurityToken.balanceOfAt.call(account_investor3, checkpointID)).toNumber(), "balance match");
+            assert.equal(info[2][0].toNumber(), 0, "withholding match");
+            assert.equal(info[2][1].toNumber(), BigNumber(10 * 10 ** 16).toNumber(), "withholding match");
+            assert.equal(info[2][2].toNumber(), BigNumber(20 * 10 ** 16).toNumber(), "withholding match");
+            assert.equal(info[2][3].toNumber(), 0, "withholding match");
+            assert.equal(tx.logs[0].args._checkpointId.toNumber(), checkpointID);
         });
 
         it("should allow manager with permission to create dividend with exclusion", async () => {

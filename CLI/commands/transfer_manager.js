@@ -912,7 +912,7 @@ async function blacklistTransferManager() {
 
   let options = ['Add new blacklist'];
   if (currentBlacklists.length > 0) {
-    options.push('Manage existing blacklist');
+    options.push('Manage existing blacklist', 'Explore account');
   }
   options.push('Delete investors from all blacklists', 'Operate with multiple blacklists');
 
@@ -967,6 +967,23 @@ async function blacklistTransferManager() {
         await manageExistingBlacklist(currentBlacklists[index]);
       }
       break;
+    case 'Explore account':
+      let account = readlineSync.question(`Enter the address of the investor: `, {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: `Must be a valid address`
+      });
+      let blacklistNamesToUser = await currentTransferManager.methods.getBlacklistNamesToUser(account).call();
+      if (blacklistNamesToUser.length > 0) {
+        console.log();
+        console.log(`**** Blacklists inlcuding ${account} ****`);
+        blacklistNamesToUser.map(n => console.log(web3.utils.hexToUtf8(n)));
+      } else {
+        console.log(chalk.yellow(`No blacklist includes ${account}`));
+      }
+      console.log();
+      break;
     case 'Delete investors from all blacklists':
       let investorsToRemove = readlineSync.question(`Enter the addresses of the investors separated by comma (i.e. addr1,addr2,addr3): `, {
         limit: function (input) {
@@ -976,9 +993,9 @@ async function blacklistTransferManager() {
       }).split(',');
       let deleteInvestorFromAllBlacklistAction;
       if (investorsToRemove.length === 1) {
-        deleteInvestorFromAllBlacklistAction = currentTransferManager.methods.deleteInvestorFromAllBlacklist(investorsToAdd[0]);
+        deleteInvestorFromAllBlacklistAction = currentTransferManager.methods.deleteInvestorFromAllBlacklist(investorsToRemove[0]);
       } else {
-        deleteInvestorFromAllBlacklistAction = currentTransferManager.methods.deleteInvestorFromAllBlacklistMulti(nvestorsToAdd);
+        deleteInvestorFromAllBlacklistAction = currentTransferManager.methods.deleteInvestorFromAllBlacklistMulti(investorsToRemove);
       }
       let deleteInvestorFromAllBlacklistReceipt = await common.sendTransaction(deleteInvestorFromAllBlacklistAction);
       let deleteInvestorFromAllBlacklistEvents = common.getMultipleEventsFromLogs(currentTransferManager._jsonInterface, deleteInvestorFromAllBlacklistReceipt.logs, 'DeleteInvestorFromBlacklist');
@@ -999,6 +1016,7 @@ async function manageExistingBlacklist(blacklistName) {
   let currentBlacklist = await currentTransferManager.methods.blacklists(blacklistName).call();
   let investors = await currentTransferManager.methods.getListOfAddresses(blacklistName).call();
 
+  console.log();
   console.log(`- Name:                 ${web3.utils.hexToUtf8(blacklistName)}`);
   console.log(`- Start time:           ${moment.unix(currentBlacklist.startTime).format('MMMM Do YYYY, HH:mm:ss')}`);
   console.log(`- End time:             ${moment.unix(currentBlacklist.endTime).format('MMMM Do YYYY, HH:mm:ss')}`);

@@ -46,7 +46,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
     event SetAddresses(
         address indexed _wallet,
         address indexed _reserveWallet,
-        address indexed _usdToken
+        address[] _usdTokens
     );
     event SetLimits(
         uint256 _nonAccreditedLimitUSD,
@@ -79,8 +79,8 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
         _;
     }
 
-    modifier validDAI {
-        require(fundRaiseTypes[uint8(FundRaiseType.DAI)], "DAI not allowed");
+    modifier validSC(address _usdToken) {
+        require(fundRaiseTypes[uint8(FundRaiseType.SC)] && usdTokenEnabled[_usdToken], "USD not allowed");
         _;
     }
 
@@ -105,7 +105,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
      * @param _fundRaiseTypes Types of currency used to collect the funds
      * @param _wallet Ethereum account address to hold the funds
      * @param _reserveWallet Ethereum account address to receive unsold tokens
-     * @param _usdToken Contract address of the stable coin
+     * @param _usdTokens Array of contract addressess of the stable coins
      */
     function configure(
         uint256 _startTime,
@@ -119,7 +119,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
         FundRaiseType[] _fundRaiseTypes,
         address _wallet,
         address _reserveWallet,
-        address _usdToken
+        address[] _usdTokens
     ) public onlyFactory {
         oracleKeys[bytes32("ETH")][bytes32("USD")] = ETH_ORACLE;
         oracleKeys[bytes32("POLY")][bytes32("USD")] = POLY_ORACLE;
@@ -128,7 +128,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
         _modifyTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
         // NB - _setFundRaiseType must come before modifyAddresses
         _setFundRaiseType(_fundRaiseTypes);
-        _modifyAddresses(_wallet, _reserveWallet, _usdToken);
+        _modifyAddresses(_wallet, _reserveWallet, _usdTokens);
         _modifyLimits(_nonAccreditedLimitUSD, _minimumInvestmentUSD);
     }
 
@@ -192,16 +192,16 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
      * @dev Modifies addresses used as wallet, reserve wallet and usd token
      * @param _wallet Address of wallet where funds are sent
      * @param _reserveWallet Address of wallet where unsold tokens are sent
-     * @param _usdToken Address of usd token (DAI)
+     * @param _usdTokens Address of usd tokens
      */
     function modifyAddresses(
         address _wallet,
         address _reserveWallet,
-        address _usdToken
+        address[] _usdTokens
     ) external onlyOwner {
         /*solium-disable-next-line security/no-block-members*/
-        require(now < startTime, "STO already started");
-        _modifyAddresses(_wallet, _reserveWallet, _usdToken);
+        // require(now < startTime, "STO already started");
+        _modifyAddresses(_wallet, _reserveWallet, _usdTokens);
     }
 
     function _modifyLimits(
@@ -250,16 +250,24 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
     function _modifyAddresses(
         address _wallet,
         address _reserveWallet,
-        address _usdToken
+        address[] _usdTokens
     ) internal {
         require(_wallet != address(0) && _reserveWallet != address(0), "Invalid wallet");
-        if (fundRaiseTypes[uint8(FundRaiseType.DAI)]) {
-            require(_usdToken != address(0), "Invalid usdToken");
-        }
         wallet = _wallet;
         reserveWallet = _reserveWallet;
-        usdToken = IERC20(_usdToken);
-        emit SetAddresses(_wallet, _reserveWallet, _usdToken);
+        _modifyUSDTokens(_usdTokens);
+    }
+
+    function _modifyUSDTokens(address[] _usdTokens) internal {
+        for(uint256 i = 0; i < usdTokens.length; i++) {
+            usdTokenEnabled[usdTokens[i]] = false;
+        }
+        usdTokens = _usdTokens;
+        for(i = 0; i < _usdTokens.length; i++) {
+            require(_usdTokens[i] != address(0), "Invalid USD token");
+            usdTokenEnabled[_usdTokens[i]] = true;
+        }
+        emit SetAddresses(wallet, reserveWallet, _usdTokens);
     }
 
     ////////////////////
@@ -348,8 +356,8 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
         buyWithPOLYRateLimited(_beneficiary, _investedPOLY, 0);
     }
 
-    function buyWithUSD(address _beneficiary, uint256 _investedDAI) external {
-        buyWithUSDRateLimited(_beneficiary, _investedDAI, 0);
+    function buyWithUSD(address _beneficiary, uint256 _investedSC, IERC20 _usdToken) external {
+        buyWithUSDRateLimited(_beneficiary, _investedSC, 0, _usdToken);
     }
 
     /**
@@ -379,21 +387,24 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
       * @param _minTokens Minumum number of tokens to buy or else revert
       */
     function buyWithPOLYRateLimited(address _beneficiary, uint256 _investedPOLY, uint256 _minTokens) public validPOLY {
-        _buyWithTokens(_beneficiary, _investedPOLY, FundRaiseType.POLY, _minTokens);
+        _buyWithTokens(_beneficiary, _investedPOLY, FundRaiseType.POLY, _minTokens, polyToken);
     }
 
     /**
-      * @notice Purchase tokens using DAI
+      * @notice Purchase tokens using Stable coins
       * @param _beneficiary Address where security tokens will be sent
-      * @param _investedDAI Amount of DAI invested
+      * @param _investedSC Amount of Stable coins invested
       * @param _minTokens Minumum number of tokens to buy or else revert
+      * @param _usdToken Address of USD stable coin to buy tokens with
       */
-    function buyWithUSDRateLimited(address _beneficiary, uint256 _investedDAI, uint256 _minTokens) public validDAI {
-        _buyWithTokens(_beneficiary, _investedDAI, FundRaiseType.DAI, _minTokens);
+    function buyWithUSDRateLimited(address _beneficiary, uint256 _investedSC, uint256 _minTokens, IERC20 _usdToken)
+        public validSC(_usdToken)
+    {
+        _buyWithTokens(_beneficiary, _investedSC, FundRaiseType.SC, _minTokens, _usdToken);
     }
 
-    function _buyWithTokens(address _beneficiary, uint256 _tokenAmount, FundRaiseType _fundRaiseType, uint256 _minTokens) internal {
-        require(_fundRaiseType == FundRaiseType.POLY || _fundRaiseType == FundRaiseType.DAI, "Invalid raise type");
+    function _buyWithTokens(address _beneficiary, uint256 _tokenAmount, FundRaiseType _fundRaiseType, uint256 _minTokens, IERC20 _token) internal {
+        require(_fundRaiseType == FundRaiseType.POLY || _fundRaiseType == FundRaiseType.SC, "Invalid raise type");
         uint256 initialMinted = getTokensMinted();
         uint256 rate = getRate(_fundRaiseType);
         (uint256 spentUSD, uint256 spentValue) = _buyTokens(_beneficiary, _tokenAmount, rate, _fundRaiseType);
@@ -401,17 +412,18 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
         // Modify storage
         investorInvested[_beneficiary][uint8(_fundRaiseType)] = investorInvested[_beneficiary][uint8(_fundRaiseType)].add(spentValue);
         fundsRaised[uint8(_fundRaiseType)] = fundsRaised[uint8(_fundRaiseType)].add(spentValue);
-        // Forward DAI to issuer wallet
-        IERC20 token = _fundRaiseType == FundRaiseType.POLY ? polyToken : usdToken;
-        require(token.transferFrom(msg.sender, wallet, spentValue), "Transfer failed");
+        if(address(_token) != address(polyToken))
+            stableCoinsRaised[address(_token)] = stableCoinsRaised[address(_token)].add(spentValue);
+        // Forward coins to issuer wallet
+        require(_token.transferFrom(msg.sender, wallet, spentValue), "Transfer failed");
         emit FundsReceived(msg.sender, _beneficiary, spentUSD, _fundRaiseType, _tokenAmount, spentValue, rate);
     }
 
     /**
       * @notice Low level token purchase
       * @param _beneficiary Address where security tokens will be sent
-      * @param _investmentValue Amount of POLY, ETH or DAI invested
-      * @param _fundRaiseType Fund raise type (POLY, ETH, DAI)
+      * @param _investmentValue Amount of POLY, ETH or Stable coins invested
+      * @param _fundRaiseType Fund raise type (POLY, ETH, SC)
       */
     function _buyTokens(
         address _beneficiary,
@@ -427,7 +439,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
         if (!allowBeneficialInvestments) {
             require(_beneficiary == msg.sender, "Beneficiary != funder");
         }
-        
+
         uint256 originalUSD = DecimalMath.mul(_rate, _investmentValue);
         uint256 allowedUSD = _buyTokensChecks(_beneficiary, _investmentValue, originalUSD);
 
@@ -461,8 +473,8 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
     /**
       * @notice Getter function for buyer to calculate how many tokens will they get
       * @param _beneficiary Address where security tokens are to be sent
-      * @param _investmentValue Amount of POLY, ETH or DAI invested
-      * @param _fundRaiseType Fund raise type (POLY, ETH, DAI)
+      * @param _investmentValue Amount of POLY, ETH or Stable coins invested
+      * @param _fundRaiseType Fund raise type (POLY, ETH, SC)
       */
     function buyTokensView(
         address _beneficiary,
@@ -473,7 +485,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
         view
         returns(uint256 spentUSD, uint256 spentValue, uint256 tokensMinted)
     {
-        require(_fundRaiseType == FundRaiseType.POLY || _fundRaiseType == FundRaiseType.DAI || _fundRaiseType == FundRaiseType.ETH, "Invalid raise type");
+        require(_fundRaiseType == FundRaiseType.POLY || _fundRaiseType == FundRaiseType.SC || _fundRaiseType == FundRaiseType.ETH, "Invalid raise type");
         uint256 rate = getRate(_fundRaiseType);
         uint256 originalUSD = DecimalMath.mul(rate, _investmentValue);
         uint256 allowedUSD = _buyTokensChecks(_beneficiary, _investmentValue, originalUSD);
@@ -549,7 +561,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
             tierData.mintedTotal = tierData.mintedTotal.add(tierPurchasedTokens);
         }
         // Now, if there is any remaining USD to be invested, purchase at non-discounted rate
-        if (investedUSD > 0 && 
+        if (investedUSD > 0 &&
             tierData.tokenTotal.sub(tierData.mintedTotal) > 0 &&
             (_fundRaiseType != FundRaiseType.POLY || tierData.tokensDiscountPoly <= tierData.mintedDiscountPoly)
         ) {
@@ -584,7 +596,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
             _investedUSD = _investedUSD.sub(spentUSD);
         }
         // Now, if there is any remaining USD to be invested, purchase at non-discounted rate
-        if (_investedUSD > 0 && 
+        if (_investedUSD > 0 &&
             tierData.tokenTotal.sub(tierData.mintedTotal.add(tokensMinted)) > 0 &&
             (_fundRaiseType != FundRaiseType.POLY || tierData.tokensDiscountPoly <= tierData.mintedDiscountPoly)
         ) {
@@ -608,7 +620,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
         if (purchasedTokens > 0) {
             require(ISecurityToken(securityToken).mint(_beneficiary, purchasedTokens), "Error in minting");
             emit TokenPurchase(msg.sender, _beneficiary, purchasedTokens, spentUSD, _tierPrice, _tier);
-        } 
+        }
     }
 
     function _purchaseTierAmount(
@@ -680,7 +692,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
             return IOracle(_getOracle(bytes32("ETH"), bytes32("USD"))).getPrice();
         } else if (_fundRaiseType == FundRaiseType.POLY) {
             return IOracle(_getOracle(bytes32("POLY"), bytes32("USD"))).getPrice();
-        } else if (_fundRaiseType == FundRaiseType.DAI) {
+        } else if (_fundRaiseType == FundRaiseType.SC) {
             return 1 * 10**18;
         } else {
             revert("Incorrect funding");
@@ -734,7 +746,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
 
     /**
      * @notice Return the total no. of tokens sold for the given fund raise type
-     * param _fundRaiseType The fund raising currency (e.g. ETH, POLY, DAI) to calculate sold tokens for
+     * param _fundRaiseType The fund raising currency (e.g. ETH, POLY, SC) to calculate sold tokens for
      * @return uint256 Total number of tokens sold for ETH
      */
     function getTokensSoldFor(FundRaiseType _fundRaiseType) public view returns (uint256) {
@@ -755,7 +767,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
         uint256[] memory tokensMinted = new uint256[](3);
         tokensMinted[0] = tiers[_tier].minted[uint8(FundRaiseType.ETH)];
         tokensMinted[1] = tiers[_tier].minted[uint8(FundRaiseType.POLY)];
-        tokensMinted[2] = tiers[_tier].minted[uint8(FundRaiseType.DAI)];
+        tokensMinted[2] = tiers[_tier].minted[uint8(FundRaiseType.SC)];
         return tokensMinted;
     }
 
@@ -769,7 +781,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
         uint256 tokensSold;
         tokensSold = tokensSold.add(tiers[_tier].minted[uint8(FundRaiseType.ETH)]);
         tokensSold = tokensSold.add(tiers[_tier].minted[uint8(FundRaiseType.POLY)]);
-        tokensSold = tokensSold.add(tiers[_tier].minted[uint8(FundRaiseType.DAI)]);
+        tokensSold = tokensSold.add(tiers[_tier].minted[uint8(FundRaiseType.SC)]);
         return tokensSold;
     }
 
@@ -779,6 +791,14 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
      */
     function getNumberOfTiers() public view returns (uint256) {
         return tiers.length;
+    }
+
+    /**
+     * @notice Return the usd tokens accepted by the STO
+     * @return address[] usd tokens
+     */
+    function getUsdTokens() public view returns (address[]) {
+        return usdTokens;
     }
 
     /**
@@ -799,7 +819,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
      * @return Amount of funds raised
      * @return Number of individual investors this STO have.
      * @return Amount of tokens sold.
-     * @return Array of bools to show if funding is allowed in ETH, POLY, DAI respectively
+     * @return Array of bools to show if funding is allowed in ETH, POLY, SC respectively
      */
     function getSTODetails() public view returns(uint256, uint256, uint256, uint256[], uint256[], uint256, uint256, uint256, bool[]) {
         uint256[] memory cap = new uint256[](tiers.length);
@@ -811,7 +831,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
         bool[] memory _fundRaiseTypes = new bool[](3);
         _fundRaiseTypes[0] = fundRaiseTypes[uint8(FundRaiseType.ETH)];
         _fundRaiseTypes[1] = fundRaiseTypes[uint8(FundRaiseType.POLY)];
-        _fundRaiseTypes[2] = fundRaiseTypes[uint8(FundRaiseType.DAI)];
+        _fundRaiseTypes[2] = fundRaiseTypes[uint8(FundRaiseType.SC)];
         return (
             startTime,
             endTime,
@@ -830,7 +850,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
      * @return bytes4 Configure function signature
      */
     function getInitFunction() public pure returns (bytes4) {
-        return 0xb0ff041e;
+        return 0xeac2f9e4;
     }
 
     function _getOracle(bytes32 _currency, bytes32 _denominatedCurrency) internal view returns (address) {

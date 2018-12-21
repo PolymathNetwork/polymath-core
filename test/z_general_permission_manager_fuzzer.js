@@ -70,11 +70,6 @@ contract('GeneralPermissionManager', accounts => {
     let I_PolymathRegistry;
     let I_CountTransferManagerFactory;
     let I_CountTransferManager;
-    let I_SingleTradeVolumeRestrictionManagerFactory;
-    let I_SingleTradeVolumeRestrictionManager;
-    let I_SingleTradeVolumeRestrictionPercentageManager;
-    let P_SingleTradeVolumeRestrictionManager;
-    let P_SingleTradeVolumeRestrictionManagerFactory;
     let I_ManualApprovalTransferManagerFactory;
     let I_ManualApprovalTransferManager;
 

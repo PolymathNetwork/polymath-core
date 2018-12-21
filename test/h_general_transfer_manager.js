@@ -196,9 +196,9 @@ contract("GeneralTransferManager", async (accounts) => {
         it("Should whitelist the affiliates before the STO attached", async () => {
             let tx = await I_GeneralTransferManager.modifyWhitelistMulti(
                 [account_affiliates1, account_affiliates2],
-                [await latestTime() + duration.days(30), currentTime.add(new BN(duration.days(30)))],
-                [await latestTime() + duration.days(90), await latestTime() + duration.days(90)],
-                [await latestTime() + duration.years(1), await latestTime() + duration.years(1)],
+                [currentTime + currentTime.add(new BN(duration.days(30))), currentTime.add(new BN(duration.days(30)))],
+                [currentTime + currentTime.add(new BN(duration.days(90))), currentTime.add(new BN(duration.days(90)))],
+                [currentTime + currentTime.add(new BN(duration.days(965))), currentTime.add(new BN(duration.days(365)))],
                 [false, false],
                 {
                     from: account_issuer,
@@ -232,7 +232,7 @@ contract("GeneralTransferManager", async (accounts) => {
         });
 
         it("Should mint the tokens to the affiliates", async () => {
-            await I_SecurityToken.mintMulti([account_affiliates1, account_affiliates2], [100 * Math.pow(10, 18), 100 * Math.pow(10, 18)], {
+            await I_SecurityToken.mintMulti([account_affiliates1, account_affiliates2], [new BN(100).mul(new BN(10).pow(new BN(18))), new BN(10).pow(new BN(20))], {
                 from: account_issuer,
                 gas: 6000000
             });
@@ -415,7 +415,7 @@ contract("GeneralTransferManager", async (accounts) => {
         });
 
         it("Add a from default and check transfers are disabled then enabled in the future", async () => {
-            let tx = await I_GeneralTransferManager.changeDefaults(await latestTime() + duration.days(5), new BN(0), { from: token_owner });
+            let tx = await I_GeneralTransferManager.changeDefaults(currentTime.add(new BN(duration.days(12))), new BN(0), { from: token_owner });
             await I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: account_investor2 });
             await catchRevert(I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 }));
             await increaseTime(duration.days(5));
@@ -423,10 +423,10 @@ contract("GeneralTransferManager", async (accounts) => {
         });
 
         it("Add a to default and check transfers are disabled then enabled in the future", async () => {
-            let tx = await I_GeneralTransferManager.changeDefaults(0, await latestTime() + duration.days(5), { from: token_owner });
+            let tx = await I_GeneralTransferManager.changeDefaults(0, currentTime.add(new BN(duration.days(16))), { from: token_owner });
             await catchRevert(I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: account_investor2 }));
             await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 });
-            await increaseTime(duration.days(5));
+            await increaseTime(duration.days(2));
             await I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("2", "ether")), { from: account_investor2 });
             // revert changes
             await I_GeneralTransferManager.modifyWhitelist(account_investor2, new BN(0), new BN(0), new BN(0), false, {
@@ -583,8 +583,8 @@ contract("GeneralTransferManager", async (accounts) => {
             const sig = signData(
                 I_GeneralTransferManager.address,
                 account_investor2,
-                await latestTime(),
-                await latestTime() + duration.days(80),
+                currentTime.toNumber(),
+                currentTime.add(new BN(duration.days(100))).toNumber(),
                 expiryTime + duration.days(200),
                 true,
                 validFrom,
@@ -599,8 +599,8 @@ contract("GeneralTransferManager", async (accounts) => {
 
             let tx = await I_GeneralTransferManager.modifyWhitelistSigned(
                 account_investor2,
-                await latestTime(),
-                await latestTime() + duration.days(80),
+                currentTime.toNumber(),
+                currentTime.add(new BN(duration.days(100))).toNumber(),
                 expiryTime + duration.days(200),
                 true,
                 validFrom,
@@ -639,8 +639,8 @@ contract("GeneralTransferManager", async (accounts) => {
             const sig = signData(
                 I_GeneralTransferManager.address,
                 account_investor2,
-                await latestTime(),
-                await latestTime() + duration.days(80),
+                currentTime.toNumber(),
+                currentTime.add(new BN(duration.days(100))).toNumber(),
                 expiryTime + duration.days(200),
                 true,
                 validFrom,
@@ -656,8 +656,8 @@ contract("GeneralTransferManager", async (accounts) => {
             await catchRevert(
                 I_GeneralTransferManager.modifyWhitelistSigned(
                     account_investor2,
-                    await latestTime(),
-                    await latestTime() + duration.days(80),
+                    currentTime.toNumber(),
+                    currentTime.add(new BN(duration.days(100))).toNumber(),
                     expiryTime + duration.days(200),
                     true,
                     validFrom,
@@ -685,7 +685,7 @@ contract("GeneralTransferManager", async (accounts) => {
         });
 
         it("Should provide the permission and change the signing address", async () => {
-            let log = await I_GeneralPermissionManager.addDelegate(account_delegate, "My details", { from: token_owner });
+            let log = await I_GeneralPermissionManager.addDelegate(account_delegate, web3.utils.fromAscii("My details"), { from: token_owner });
             assert.equal(log.logs[0].args._delegate, account_delegate);
 
             await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("FLAGS"), true, {
@@ -705,11 +705,11 @@ contract("GeneralTransferManager", async (accounts) => {
         });
 
         it("Should set a budget for the GeneralTransferManager", async () => {
-            await I_SecurityToken.changeModuleBudget(I_GeneralTransferManager.address, 10 * Math.pow(10, 18), true, { from: token_owner });
+            await I_SecurityToken.changeModuleBudget(I_GeneralTransferManager.address, new BN(10).pow(new BN(19)), true, { from: token_owner });
 
             await catchRevert(I_GeneralTransferManager.takeFee(new BN(web3.utils.toWei("1", "ether")), { from: token_owner }));
-            await I_PolyToken.getTokens(10 * Math.pow(10, 18), token_owner);
-            await I_PolyToken.transfer(I_SecurityToken.address, 10 * Math.pow(10, 18), { from: token_owner });
+            await I_PolyToken.getTokens(new BN(10).pow(new BN(19)), token_owner);
+            await I_PolyToken.transfer(I_SecurityToken.address, new BN(10).pow(new BN(19)), { from: token_owner });
         });
 
         it("Factory owner should pull fees - fails as not permissioned by issuer", async () => {
@@ -723,7 +723,7 @@ contract("GeneralTransferManager", async (accounts) => {
             let balanceBefore = await I_PolyToken.balanceOf(account_polymath);
             await I_GeneralTransferManager.takeFee(new BN(web3.utils.toWei("1", "ether")), { from: account_delegate });
             let balanceAfter = await I_PolyToken.balanceOf(account_polymath);
-            assert.equal(balanceBefore.add(new BN(web3.utils.toWei("1", "ether"))).toNumber(), balanceAfter.toNumber(), "Fee is transferred");
+            assert.equal(balanceBefore.add(new BN(web3.utils.toWei("1", "ether"))).toString(), balanceAfter.toString(), "Fee is transferred");
         });
 
         it("Should change the white list transfer variable", async () => {
@@ -911,7 +911,7 @@ contract("GeneralTransferManager", async (accounts) => {
 
     describe("Test cases for the get functions of the dummy sto", async () => {
         it("Should get the raised amount of ether", async () => {
-            assert.equal(await I_DummySTO.getRaised.call(0), new BN(web3.utils.toWei("0", "ether")));
+            assert.equal((await I_DummySTO.getRaised.call(0)).toString(), new BN(web3.utils.toWei("0", "ether")).toString());
         });
 
         it("Should get the raised amount of poly", async () => {

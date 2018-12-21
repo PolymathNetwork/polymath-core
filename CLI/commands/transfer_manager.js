@@ -839,7 +839,7 @@ async function getApprovalsArray() {
 
 async function processApprovalsArray(array) {
   let result = []
-  for (const item in array) {
+  for (const item of array) {
     let ap = await currentTransferManager.methods.approvals(item).call();
     result.push(ap)
   };

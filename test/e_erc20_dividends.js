@@ -719,7 +719,7 @@ contract("ERC20DividendCheckpoint", accounts => {
                 dividendName,
                 { from: token_owner }
             );
-            assert.equal(tx.logs[0].args._checkpointId.toNumber(), 4, "Dividend should be created at checkpoint 3");
+            assert.equal(tx.logs[0].args._checkpointId.toNumber(), 4, "Dividend should be created at checkpoint 4");
         });
 
         it("Should not create new dividend with duplicate exclusion", async () => {
@@ -853,6 +853,22 @@ contract("ERC20DividendCheckpoint", accounts => {
             assert.equal(info[3][1].toNumber(), web3.utils.toWei("0.2", "ether"), "withheld match");
             assert.equal(info[3][2].toNumber(), web3.utils.toWei("0.2", "ether"), "withheld match");
             assert.equal(info[3][3].toNumber(), 0, "withheld match");
+
+            console.log(info[4][0].toNumber());
+            console.log(info[4][1].toNumber());
+            console.log(info[4][2].toNumber());
+            console.log(info[4][3].toNumber());
+            
+            assert.equal(info[4][0].toNumber(), (await I_SecurityToken.balanceOfAt(account_investor1, 4)).toNumber(), "balance match");
+            assert.equal(info[4][1].toNumber(), (await I_SecurityToken.balanceOfAt(account_investor2, 4)).toNumber(), "balance match");
+            assert.equal(info[4][2].toNumber(), (await I_SecurityToken.balanceOfAt(account_temp, 4)).toNumber(), "balance match");
+            assert.equal(info[4][3].toNumber(), (await I_SecurityToken.balanceOfAt(account_investor3, 4)).toNumber(), "balance match");
+
+            assert.equal(info[5][0].toNumber(), 0, "excluded");
+            assert.equal(info[5][1].toNumber(), web3.utils.toWei("2", "ether"), "claim match");
+            assert.equal(info[5][2].toNumber(), web3.utils.toWei("1", "ether"), "claim match");
+            assert.equal(info[5][3].toNumber(), web3.utils.toWei("7", "ether"), "claim match");
+
             let issuerBalance = new BigNumber(await I_PolyToken.balanceOf(token_owner));
             await I_ERC20DividendCheckpoint.withdrawWithholding(3, { from: token_owner, gasPrice: 0 });
             let issuerBalanceAfter = new BigNumber(await I_PolyToken.balanceOf(token_owner));

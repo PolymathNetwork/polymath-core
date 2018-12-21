@@ -39,7 +39,6 @@ async function executeApp() {
   }
 
   let options = ['Create checkpoint', 'Explore address balances'];
-
   if (nonArchivedModules.length > 0) {
     options.push('Config existing modules');
   }
@@ -126,11 +125,15 @@ async function dividendsManager() {
 
   let currentDividends = await getDividends();
   let defaultExcluded = await currentDividendsModule.methods.getDefaultExcluded().call();
+  let currentCheckpointId = await securityToken.methods.currentCheckpointId().call();
 
   console.log(`- Current dividends:       ${currentDividends.length}`);
   console.log(`- Default exclusions:      ${defaultExcluded.length}`);
 
   let options = ['Create checkpoint'];
+  if (currentCheckpointId > 0) {
+    options.push('Explore checkpoint');
+  }
   if (defaultExcluded.length > 0) {
     options.push('Show current default exclusions');
   }
@@ -150,6 +153,8 @@ async function dividendsManager() {
     case 'Create checkpoint':
       await createCheckpointFromDividendModule();
       break;
+    case 'Explore checkpoint':
+      await exploreCheckpoint();
     case 'Show current default exclusions':
       showExcluded(defaultExcluded);
       break;
@@ -179,6 +184,22 @@ async function createCheckpointFromDividendModule() {
   let createCheckpointAction = securityToken.methods.createCheckpoint();
   await common.sendTransaction(createCheckpointAction);
   console.log(chalk.green(`Checkpoint have been created successfully!`));
+}
+
+async function exploreCheckpoint() {
+  let checkpoint = await selectCheckpoint(false);
+
+  let checkpointData = await currentDividendsModule.methods.getCheckpointData(checkpoint).call();
+  let dataTable = [['Investor', `Balance at checkpoint (${tokenSymbol})`, 'Tax withholding set (%)']];
+  for (let i = 0; i < checkpointData.investors.length; i++) {
+    dataTable.push([
+      checkpointData.investors[i],
+      web3.utils.fromWei(checkpointData.balances[i]),
+      parseFloat(web3.utils.fromWei(checkpointData.withholdings[i])) * 100
+    ]);
+  }
+  console.log();
+  console.log(table(dataTable));
 }
 
 async function setDefaultExclusions() {
@@ -432,11 +453,11 @@ function showReport(_name, _tokenSymbol, _amount, _witthheld, _claimed, _investo
   for (let i = 0; i < _investorArray.length; i++) {
     let investor = _investorArray[i];
     let excluded = _excludedArray[i];
-    let amount = !excluded ? web3.utils.fromWei(_amountArray[i]) : 0;
-    let withheld = !excluded ? web3.utils.fromWei(_withheldArray[i]) : 'NA';
-    let withheldPercentage = !excluded ? (withheld !== '0' ? parseFloat(withheld) / parseFloat(amount) * 100 : 0) : 'NA';
-    let received = !excluded ? web3.utils.fromWei(web3.utils.toBN(_amountArray[i]).sub(web3.utils.toBN(_withheldArray[i]))) : 0;
     let withdrawn = _claimedArray[i] ? 'YES' : 'NO';
+    let amount = !excluded ? web3.utils.fromWei(_amountArray[i]) : 0;
+    let withheld = (!excluded && _claimedArray[i]) ? web3.utils.fromWei(_withheldArray[i]) : 'NA';
+    let withheldPercentage = (!excluded && _claimedArray[i]) ? (withheld !== '0' ? parseFloat(withheld) / parseFloat(amount) * 100 : 0) : 'NA';
+    let received = (!excluded && _claimedArray[i]) ? web3.utils.fromWei(web3.utils.toBN(_amountArray[i]).sub(web3.utils.toBN(_withheldArray[i]))) : 0;
     dataTable.push([
       investor,
       amount,

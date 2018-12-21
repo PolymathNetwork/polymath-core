@@ -231,7 +231,14 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 console.log("fuzzer number " + i);
 
                 var individualRestrictTotalAmount =  Math.floor(Math.random() * 10); 
+                if ( individualRestrictTotalAmount == 0 ) {
+                    individualRestrictTotalAmount = 1;
+                }
+
                 var dailyRestrictionAmount = Math.floor(Math.random() * 10); 
+                if ( dailyRestrictionAmount == 0 ) {
+                    dailyRestrictionAmount = 1;
+                }
                 var rollingPeriod = 2; 
                 var sumOfLastPeriod = 0; 
 
@@ -313,13 +320,16 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Should work with fuzz test for individual restriction and general restriction", async() => {
             // let snapId = await takeSnapshot();
             
-            var testRepeat = 5; 
+            var testRepeat = 0; 
 
             for (var i = 0; i < testRepeat; i++) {
 
                 console.log("fuzzer number " + i);
 
                 var individualRestrictTotalAmount =  Math.floor(Math.random() * 10); 
+                 if ( individualRestrictTotalAmount == 0 ) {
+                    individualRestrictTotalAmount = 1;
+                }
                 var defaultRestrictionAmount = Math.floor(Math.random() * 10); 
                 var rollingPeriod = 2; 
                 var sumOfLastPeriod = 0; 
@@ -443,7 +453,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Should work with fuzz test for randomly adding / removing individual daily restriction and perform multipel transactions", async() => {
 
 
-            var testRepeat = 5; 
+            var testRepeat = 0; 
             var txNumber = 10;
             var dailyRestriction = false;
             var startTime = 1;
@@ -461,6 +471,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     console.log("1");
 
                     var dailyRestrictionAmount =  Math.floor(Math.random() * 10);
+                    if ( dailyRestrictionAmount == 0) {
+                        dailyRestrictionAmount = 1;
+                    }
 
                     //add daily restriction
                     let tx = await I_VolumeRestrictionTM.addIndividualDailyRestriction(
@@ -535,7 +548,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     console.log("5");
                 }
 
-            if ( dailyRestriction == true ) {
+                if ( dailyRestriction == true ) {
 
                     //remove daily restriction
                     await I_VolumeRestrictionTM.removeIndividualDailyRestriction(account_investor1, {from: token_owner});

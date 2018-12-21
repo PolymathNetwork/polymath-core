@@ -728,11 +728,11 @@ contract('BlacklistTransferManager', accounts => {
         });
 
         it("Should delete the investor from all the associated blacklist", async() => {
+            let data = await I_BlacklistTransferManager.getBlacklistNamesToUser.call(account_investor1);
             await I_BlacklistTransferManager.addBlacklistType(latestTime()+1000, latestTime()+3000, "g_blacklist", 20, { from: token_owner });
             await I_BlacklistTransferManager.addInvestorToBlacklist(account_investor1, "g_blacklist", { from: token_owner });
             let tx = await I_BlacklistTransferManager.deleteInvestorFromAllBlacklist(account_investor1, { from: token_owner });
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor1.toLowerCase(), "Failed in deleting the investor from the blacklist");
-
         });
 
         it("Only owner has the permission to delete the investor from all the blacklist type", async() => {
@@ -766,10 +766,9 @@ contract('BlacklistTransferManager', accounts => {
             let investor = [account_investor5,account_investor2];
             let tx = await I_BlacklistTransferManager.deleteInvestorFromAllBlacklistMulti(investor, { from: token_owner });
             let event_data = tx.logs;
-            for (var i = 0; i < event_data.length; i++) {
-                let investorName = event_data[i].args._investor;
-                assert.equal(investorName.toLowerCase(), investor[i].toLowerCase(), "Failed in deleting the blacklist");
-            }
+            assert.equal(event_data[0].args._investor, investor[0], "Failed in deleting the blacklist");
+            assert.equal(event_data[1].args._investor, investor[1], "Failed in deleting the blacklist");
+            assert.equal(event_data[2].args._investor, investor[1], "Failed in deleting the blacklist");
         });
 
         it("Should fail in deleting the mutiple investor from all the associated blacklist because only owner can do it.", async() => {
@@ -947,8 +946,6 @@ contract('BlacklistTransferManager', accounts => {
             let perm = await I_BlacklistTransferManager.getPermissions.call();
             assert.equal(perm.length, 1);
         });
-
-
     });
 
     describe("Test cases for the factory", async() => {

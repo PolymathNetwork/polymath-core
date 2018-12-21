@@ -22,6 +22,11 @@ contract("Checkpoints", async function(accounts) {
 
     let message = "Transaction Should Fail!";
 
+    // investor Details
+    let fromTime;
+    let toTime;
+    let expiryTime;
+
     // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;
     let I_SecurityTokenRegistryProxy;
@@ -120,7 +125,7 @@ contract("Checkpoints", async function(accounts) {
 
             I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
-            const log = (await I_SecurityToken_ETH.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
+            const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTransferManager module get added successfully or not
             assert.equal(log.args._types[0].toNumber(), 2);

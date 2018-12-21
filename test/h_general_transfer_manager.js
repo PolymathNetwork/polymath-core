@@ -688,12 +688,12 @@ contract("GeneralTransferManager", async (accounts) => {
             let log = await I_GeneralPermissionManager.addDelegate(account_delegate, "My details", { from: token_owner });
             assert.equal(log.logs[0].args._delegate, account_delegate);
 
-            await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, "FLAGS", true, {
+            await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("FLAGS"), true, {
                 from: token_owner
             });
 
             assert.isTrue(
-                await I_GeneralPermissionManager.checkPermission.call(account_delegate, I_GeneralTransferManager.address, "FLAGS")
+                await I_GeneralPermissionManager.checkPermission.call(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("FLAGS"))
             );
 
             let tx = await I_GeneralTransferManager.changeSigningAddress(account_polymath, { from: account_delegate });
@@ -717,7 +717,7 @@ contract("GeneralTransferManager", async (accounts) => {
         });
 
         it("Factory owner should pull fees", async () => {
-            await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, "FEE_ADMIN", true, {
+            await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("FEE_ADMIN"), true, {
                 from: token_owner
             });
             let balanceBefore = await I_PolyToken.balanceOf(account_polymath);

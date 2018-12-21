@@ -67,6 +67,8 @@ contract("GeneralPermissionManager", async (accounts) => {
     const initRegFee = new BN(web3.utils.toWei("250"));
 
     let currentTime;
+    const address_zero = "0x0000000000000000000000000000000000000000";
+    const one_address = "0x0000000000000000000000000000000000000001";
 
     before(async () => {
         currentTime = new BN(await latestTime());
@@ -209,7 +211,7 @@ contract("GeneralPermissionManager", async (accounts) => {
         });
 
         it("Should fail in adding the delegate -- no delegate address provided", async () => {
-            await catchRevert(I_GeneralPermissionManager.addDelegate("", delegateDetails, { from: token_owner }));
+            await catchRevert(I_GeneralPermissionManager.addDelegate(address_zero, delegateDetails, { from: token_owner }));
         });
 
         it("Should fail to remove the delegate -- failed because delegate does not exisit", async () => {
@@ -227,7 +229,7 @@ contract("GeneralPermissionManager", async (accounts) => {
 
         it("Should fail to provide the permission -- because msg.sender doesn't have permission", async () => {
             await catchRevert(
-                I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, "WHITELIST", true, {
+                I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("WHITELIST"), true, {
                     from: account_investor1
                 })
             );
@@ -235,7 +237,7 @@ contract("GeneralPermissionManager", async (accounts) => {
 
         it("Should check the permission", async () => {
             assert.isFalse(
-                await I_GeneralPermissionManager.checkPermission.call(account_delegate, I_GeneralTransferManager.address, "WHITELIST")
+                await I_GeneralPermissionManager.checkPermission.call(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("WHITELIST"))
             );
         });
 
@@ -252,15 +254,15 @@ contract("GeneralPermissionManager", async (accounts) => {
 
         it("Should check the permission", async () => {
             assert.isTrue(
-                await I_GeneralPermissionManager.checkPermission.call(account_delegate, I_GeneralTransferManager.address, "WHITELIST")
+                await I_GeneralPermissionManager.checkPermission.call(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("WHITELIST"))
             );
         });
 
         it("Security token should deny all permission if all permission managers are disabled", async () => {
             await I_SecurityToken.archiveModule(I_GeneralPermissionManager.address, { from: token_owner });
-            assert.isFalse(await I_SecurityToken.checkPermission.call(account_delegate, I_GeneralTransferManager.address, "WHITELIST"));
+            assert.isFalse(await I_SecurityToken.checkPermission.call(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("WHITELIST")));
             await I_SecurityToken.unarchiveModule(I_GeneralPermissionManager.address, { from: token_owner });
-            assert.isTrue(await I_SecurityToken.checkPermission.call(account_delegate, I_GeneralTransferManager.address, "WHITELIST"));
+            assert.isTrue(await I_SecurityToken.checkPermission.call(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("WHITELIST")));
         });
 
         it("Should fail to remove the delegate -- failed because unauthorized msg.sender", async () => {
@@ -273,7 +275,7 @@ contract("GeneralPermissionManager", async (accounts) => {
 
         it("Should check the permission", async () => {
             assert.isFalse(
-                await I_GeneralPermissionManager.checkPermission.call(account_delegate, I_GeneralTransferManager.address, "WHITELIST")
+                await I_GeneralPermissionManager.checkPermission.call(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("WHITELIST"))
             );
         });
 
@@ -371,7 +373,7 @@ contract("GeneralPermissionManager", async (accounts) => {
             assert.equal(tx.logs[0].args._delegate, account_delegate3);
 
             assert.isTrue(
-                await I_GeneralPermissionManager.checkPermission.call(account_delegate3, I_GeneralTransferManager.address, "WHITELIST")
+                await I_GeneralPermissionManager.checkPermission.call(account_delegate3, I_GeneralTransferManager.address, web3.utils.fromAscii("WHITELIST"))
             );
             assert.isTrue(
                 await I_GeneralPermissionManager.checkPermission.call(
@@ -383,7 +385,7 @@ contract("GeneralPermissionManager", async (accounts) => {
         });
 
         it("Should provide all delegates with specified permission", async () => {
-            await I_GeneralPermissionManager.changePermission(account_delegate2, I_GeneralTransferManager.address, "WHITELIST", true, {
+            await I_GeneralPermissionManager.changePermission(account_delegate2, I_GeneralTransferManager.address, web3.utils.fromAscii("WHITELIST"), true, {
                 from: token_owner
             });
             let tx = await I_GeneralPermissionManager.getAllDelegatesWithPerm.call(I_GeneralTransferManager.address, "WHITELIST");

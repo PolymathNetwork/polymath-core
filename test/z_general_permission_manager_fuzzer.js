@@ -257,14 +257,14 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                 }
 
                 // target permission should alaways be false for each test before assigning
-                if ((await I_GeneralPermissionManager.checkPermission(accounts[j], I_GeneralTransferManager.address, "FLAGS")) === true) {
-                    await I_GeneralPermissionManager.changePermission(accounts[j], I_GeneralTransferManager.address, "FLAGS", false, {
+                if ((await I_GeneralPermissionManager.checkPermission(accounts[j], I_GeneralTransferManager.address, web3.utils.fromAscii("FLAGS"))) === true) {
+                    await I_GeneralPermissionManager.changePermission(accounts[j], I_GeneralTransferManager.address, web3.utils.fromAscii("FLAGS"), false, {
                         from: token_owner
                     });
                 } else if (
-                    (await I_GeneralPermissionManager.checkPermission(accounts[j], I_GeneralTransferManager.address, "WHITELIST")) === true
+                    (await I_GeneralPermissionManager.checkPermission(accounts[j], I_GeneralTransferManager.address, web3.utils.fromAscii("WHITELIST"))) === true
                 ) {
-                    await I_GeneralPermissionManager.changePermission(accounts[j], I_GeneralTransferManager.address, "WHITELIST", false, {
+                    await I_GeneralPermissionManager.changePermission(accounts[j], I_GeneralTransferManager.address, web3.utils.fromAscii("WHITELIST"), false, {
                         from: token_owner
                     });
                 }
@@ -416,8 +416,8 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                 }
 
                 // target permission should alaways be false for each test before assigning
-                if ((await I_GeneralPermissionManager.checkPermission(accounts[j], I_CountTransferManager.address, "ADMIN")) === true) {
-                    await I_GeneralPermissionManager.changePermission(accounts[j], I_CountTransferManager.address, "ADMIN", false, {
+                if ((await I_GeneralPermissionManager.checkPermission(accounts[j], I_CountTransferManager.address, web3.utils.fromAscii("ADMIN"))) === true) {
+                    await I_GeneralPermissionManager.changePermission(accounts[j], I_CountTransferManager.address, web3.utils.fromAscii("ADMIN"), false, {
                         from: token_owner
                     });
                 }
@@ -484,7 +484,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
 
                 // target permission should alaways be false for each test before assigning
                 if (
-                    (await I_GeneralPermissionManager.checkPermission(accounts[j], I_PercentageTransferManager.address, "WHITELIST")) ===
+                    (await I_GeneralPermissionManager.checkPermission(accounts[j], I_PercentageTransferManager.address, web3.utils.fromAscii("WHITELIST"))) ===
                     true
                 ) {
                     await I_GeneralPermissionManager.changePermission(
@@ -530,7 +530,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
 
                 // target permission should alaways be false for each test before assigning
                 if (
-                    (await I_GeneralPermissionManager.checkPermission(accounts[j], I_PercentageTransferManager.address, "WHITELIST")) ===
+                    (await I_GeneralPermissionManager.checkPermission(accounts[j], I_PercentageTransferManager.address, web3.utils.fromAscii("WHITELIST"))) ===
                     true
                 ) {
                     await I_GeneralPermissionManager.changePermission(
@@ -582,9 +582,9 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
 
                 // target permission should alaways be false for each test before assigning
                 if (
-                    (await I_GeneralPermissionManager.checkPermission(accounts[j], I_PercentageTransferManager.address, "ADMIN")) === true
+                    (await I_GeneralPermissionManager.checkPermission(accounts[j], I_PercentageTransferManager.address, web3.utils.fromAscii("ADMIN"))) === true
                 ) {
-                    await I_GeneralPermissionManager.changePermission(accounts[j], I_PercentageTransferManager.address, "ADMIN", false, {
+                    await I_GeneralPermissionManager.changePermission(accounts[j], I_PercentageTransferManager.address, web3.utils.fromAscii("ADMIN"), false, {
                         from: token_owner
                     });
                 }

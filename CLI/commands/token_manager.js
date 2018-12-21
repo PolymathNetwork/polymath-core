@@ -8,7 +8,7 @@ const gbl = require('./common/global');
 const csvParse = require('./helpers/csv');
 
 // Constants
-const MULTIMINT_DATA_CSV = './CLI/data/ST/multi_mint_data.csv';
+const MULTIMINT_DATA_CSV = `${__dirname}/../data/ST/multi_mint_data.csv`;
 
 // Load contract artifacts
 const contracts = require('./helpers/contract_addresses');
@@ -617,7 +617,7 @@ async function getAllModules() {
         let nameTemp = web3.utils.hexToUtf8(details[0]);
         let pausedTemp = null;
         if (type == gbl.constants.MODULES_TYPES.STO || type == gbl.constants.MODULES_TYPES.TRANSFER) {
-          let abiTemp = JSON.parse(require('fs').readFileSync(`./build/contracts/${nameTemp}.json`).toString()).abi;
+          let abiTemp = JSON.parse(require('fs').readFileSync(`${__dirname}/../../build/contracts/${nameTemp}.json`).toString()).abi;
           let contractTemp = new web3.eth.Contract(abiTemp, details[1]);
           pausedTemp = await contractTemp.methods.paused().call();
         }

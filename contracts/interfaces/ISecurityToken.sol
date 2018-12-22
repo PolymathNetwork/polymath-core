@@ -27,7 +27,7 @@ interface ISecurityToken {
      * @param _data Data to indicate validation
      * @return bool
      */
-    function verifyTransfer(address _from, address _to, uint256 _value, bytes _data) public returns (bool);
+    function verifyTransfer(address _from, address _to, uint256 _value, bytes _data) external returns (bool);
 
     /**
      * @notice Mints new tokens and assigns them to the target _investor.

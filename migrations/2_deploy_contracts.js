@@ -95,13 +95,13 @@ module.exports = function(deployer, network, accounts) {
         PolymathAccount = accounts[0];
         PolyToken = DevPolyToken.address; // Development network polytoken address
         deployer
-            .deploy(MockOracle, PolyToken, "POLY", "USD", new BN(0.5).mul(new BN(10).pow(new BN(18))), { from: PolymathAccount })
+            .deploy(MockOracle, PolyToken, web3.utils.fromAscii("POLY"), web3.utils.fromAscii("USD"), new BN(0.5).mul(new BN(10).pow(new BN(18))), { from: PolymathAccount })
             .then(() => {
                 MockOracle.deployed().then(mockedOracle => {
                     POLYOracle = mockedOracle.address;
                 });
             });
-        deployer.deploy(MockOracle, new BN(0), "ETH", "USD", new BN(500).mul(new BN(10).pow(new BN(18))), { from: PolymathAccount }).then(() => {
+        deployer.deploy(MockOracle, nullAddress, web3.utils.fromAscii("ETH"), web3.utils.fromAscii("USD"), new BN(500).mul(new BN(10).pow(new BN(18))), { from: PolymathAccount }).then(() => {
             MockOracle.deployed().then(mockedOracle => {
                 ETHOracle = mockedOracle.address;
             });

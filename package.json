@@ -67,7 +67,7 @@
     "ethereumjs-testrpc": "^6.0.3",
     "ethers": "^4.0.7",
     "fs": "0.0.2",
-    "openzeppelin-solidity": "2.0.0",
+    "openzeppelin-solidity": "^2.1.0-rc.2",
     "prompt": "^1.0.0",
     "readline-sync": "^1.4.9",
     "request": "^2.88.0",

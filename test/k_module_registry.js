@@ -515,7 +515,7 @@ contract("ModuleRegistry", async (accounts) => {
             describe("Test cases for reclaiming funds", async () => {
                 it("Should successfully reclaim POLY tokens -- fail because token address will be 0x", async () => {
                     await I_PolyToken.transfer(I_MRProxied.address, new BN(web3.utils.toWei("1")), { from: token_owner });
-                    catchRevert(I_MRProxied.reclaimERC20("0x000000000000000000000000000000000000000", { from: account_polymath }));
+                    catchRevert(I_MRProxied.reclaimERC20(address_zero, { from: account_polymath }));
                 });
 
                 it("Should successfully reclaim POLY tokens -- not authorised", async () => {
@@ -560,7 +560,7 @@ contract("ModuleRegistry", async (accounts) => {
                 it("Should successfully reclaim POLY tokens -- fail because token address will be 0x", async () => {
                     I_ReclaimERC20 = await ReclaimTokens.at(I_FeatureRegistry.address);
                     await I_PolyToken.transfer(I_ReclaimERC20.address, new BN(web3.utils.toWei("1")), { from: token_owner });
-                    catchRevert(I_ReclaimERC20.reclaimERC20("0x000000000000000000000000000000000000000", { from: account_polymath }));
+                    catchRevert(I_ReclaimERC20.reclaimERC20(address_zero, { from: account_polymath }));
                 });
 
                 it("Should successfully reclaim POLY tokens -- not authorised", async () => {
@@ -596,7 +596,7 @@ contract("ModuleRegistry", async (accounts) => {
                 });
 
                 it("Should fail to transfer the ownership -- 0x address is not allowed", async () => {
-                    catchRevert(I_MRProxied.transferOwnership("0x000000000000000000000000000000000000000", { from: account_polymath }));
+                    catchRevert(I_MRProxied.transferOwnership(address_zero, { from: account_polymath }));
                 });
 
                 it("Should successfully transfer the ownership of the STR", async () => {

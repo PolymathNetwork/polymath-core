@@ -224,7 +224,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Should work with multiple transaction within 1 day with Individual and daily Restrictions", async() => {
             // let snapId = await takeSnapshot();
             
-            var testRepeat = 5; 
+            var testRepeat = 1; 
 
             for (var i = 0; i < testRepeat; i++) {
 
@@ -320,14 +320,14 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Should work with fuzz test for individual restriction and general restriction", async() => {
             // let snapId = await takeSnapshot();
             
-            var testRepeat = 0; 
+            var testRepeat = 1;
 
             for (var i = 0; i < testRepeat; i++) {
 
                 console.log("fuzzer number " + i);
 
                 var individualRestrictTotalAmount =  Math.floor(Math.random() * 10); 
-                 if ( individualRestrictTotalAmount == 0 ) {
+                 if (individualRestrictTotalAmount == 0 ) {
                     individualRestrictTotalAmount = 1;
                 }
                 var defaultRestrictionAmount = Math.floor(Math.random() * 10); 
@@ -362,33 +362,30 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 );
                     
                 console.log("c");
-                var txNumber = 10; //define fuzz test amount for tx 
+                var txNumber = 10; // define fuzz test amount for tx 
 
-                for (var j=0; j<txNumber; j++) {
-
+                for (var j = 0; j < txNumber; j++) {
                     await increaseTime(duration.seconds(5));
                     console.log("2");
 
                     // generate a random amount
                     var transactionAmount = Math.floor(Math.random() * 10);
-                    var accumulatedTxValue = transactionAmount+sumOfLastPeriod;
+                    var accumulatedTxValue = transactionAmount + sumOfLastPeriod;
 
                     console.log("sumOfLastPeriod is " + sumOfLastPeriod + " transactionAmount is " + transactionAmount + " individualRestrictTotalAmount is " + individualRestrictTotalAmount + " defaultRestrictionAmount is " + defaultRestrictionAmount);
 
 
                     // check against daily and total restrictions to determine if the transaction should pass or not
-                    if(accumulatedTxValue > individualRestrictTotalAmount || accumulatedTxValue > defaultRestrictionAmount){
-
+                    if (accumulatedTxValue > individualRestrictTotalAmount || accumulatedTxValue > defaultRestrictionAmount) {
                         console.log("tx should fail");
 
-                        await catchRevert( 
+                        await catchRevert(
                             I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1})
-                        ); 
+                        );
 
                         console.log("tx failed as expected due to over limit");
+                    } else if (accumulatedTxValue <= individualRestrictTotalAmount) {
 
-                    } else if (accumulatedTxValue <= individualRestrictTotalAmount ){
-                        
                         console.log("tx should succeed");
 
                         await I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1});
@@ -418,17 +415,13 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
 
                     // check against daily and total restrictions to determine if the transaction should pass or not
-                    if(accumulatedTxValue > defaultRestrictionAmount){
-
+                    if (accumulatedTxValue > defaultRestrictionAmount) {
                         console.log("tx should fail");
-
                         await catchRevert( 
                             I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1})
-                        ); 
-
+                        );
                         console.log("tx failed as expected due to over limit");
-
-                    } else if ( accumulatedTxValue <= defaultRestrictionAmount ){
+                    } else if ( accumulatedTxValue <= defaultRestrictionAmount ) {
                         
                         console.log("tx should succeed");
 
@@ -453,29 +446,28 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Should work with fuzz test for randomly adding / removing individual daily restriction and perform multipel transactions", async() => {
 
 
-            var testRepeat = 0; 
+            var testRepeat = 1;
             var txNumber = 10;
             var dailyRestriction = false;
             var startTime = 1;
             var sumOfLastPeriod = 0;
             var accumulatedTimeIncrease = 0;
-            var dailyLimitUsed = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+            var dailyLimitUsed = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
             for (var i = 0; i < testRepeat; i++) {
 
-                //randomly add or removing existing daily restriction
+                // randomly add or removing existing daily restriction
                 var random_action = Math.random() >= 0.5; // true -> add false -> remove
 
-                if ( dailyRestriction == false && random_action == true ){
-
+                if (dailyRestriction === false && random_action === true) {
                     console.log("1");
 
                     var dailyRestrictionAmount =  Math.floor(Math.random() * 10);
-                    if ( dailyRestrictionAmount == 0) {
+                    if (dailyRestrictionAmount === 0) {
                         dailyRestrictionAmount = 1;
                     }
 
-                    //add daily restriction
+                    // add daily restriction
                     let tx = await I_VolumeRestrictionTM.addIndividualDailyRestriction(
                         account_investor1,
                         web3.utils.toWei(dailyRestrictionAmount.toString()),
@@ -490,24 +482,19 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     dailyRestriction = true;
 
                     console.log("added daily restriction");
-
-                } else if ( dailyRestriction == true && random_action == false ) {
-
+                } else if (dailyRestriction === true && random_action === false) {
                     console.log("2");
-
-                    //remove daily restriction
+                    // remove daily restriction
                     await I_VolumeRestrictionTM.removeIndividualDailyRestriction(account_investor1, {from: token_owner});
                     console.log("removed daily restriction");
 
                     dailyRestriction = false;
                 }
 
-
                 // perform multiple transactions
 
-                for (var j=0; j<txNumber; j++) {
-                    
-                    var timeIncreaseBetweenTx = Math.floor(Math.random() * 10)*3600;  
+                for (var j = 0; j < txNumber; j++) {
+                    var timeIncreaseBetweenTx = Math.floor(Math.random() * 10) * 3600; 
 
                     await increaseTime(duration.seconds(timeIncreaseBetweenTx));
                     accumulatedTimeIncrease = timeIncreaseBetweenTx + accumulatedTimeIncrease;
@@ -516,27 +503,24 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     // generate a random amount
                     var transactionAmount = Math.floor(Math.random() * 10);
                     
-                    //check today's limit
+                    // check today's limit
                     var dayNumber = Math.floor(accumulatedTimeIncrease/(24*3600)) + 1;
 
                     var todayLimitUsed = dailyLimitUsed[dayNumber];
 
                     console.log("todayLimitUsed is " + todayLimitUsed + " transactionAmount is " + transactionAmount + " dayNumber is " + dayNumber + " dailyRestrictionAmount is " + dailyRestrictionAmount);
 
-
                     // check against daily and total restrictions to determine if the transaction should pass or not
-                    if((todayLimitUsed + transactionAmount) > dailyRestrictionAmount){
-
+                    if ((todayLimitUsed + transactionAmount) > dailyRestrictionAmount) {
                         console.log("tx should fail");
 
-                        await catchRevert( 
+                        await catchRevert(
                             I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1})
-                        ); 
+                        );
 
                         console.log("tx failed as expected due to over limit");
-
-                    } else if ( (todayLimitUsed + transactionAmount) <= dailyRestrictionAmount ){
-                        
+                    } else if ((todayLimitUsed + transactionAmount) <= dailyRestrictionAmount) {
+                       
                         console.log("tx should succeed");
 
                         await I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1});
@@ -548,20 +532,90 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     console.log("5");
                 }
 
-                if ( dailyRestriction == true ) {
+                if (dailyRestriction === true) {
 
-                    //remove daily restriction
+                    // remove daily restriction
                     await I_VolumeRestrictionTM.removeIndividualDailyRestriction(account_investor1, {from: token_owner});
                     console.log("removed daily restriction");
                 }
 
             }
 
-
-
         });
 
 
+
+
+        it("fuzz test exception list", async () => {
+            var testRepeat = 1;
+
+            for (var i = 0; i < testRepeat; i++) {
+                console.log("fuzzer number " + i);
+
+                var individualRestrictTotalAmount =  Math.floor(Math.random() * 10); 
+                 if (individualRestrictTotalAmount === 0 ) {
+                    individualRestrictTotalAmount = 1;
+                }
+                var defaultRestrictionAmount = Math.floor(Math.random() * 10); 
+                var rollingPeriod = 2; 
+                var sumOfLastPeriod = 0; 
+
+                console.log("a");
+
+                // 1 - add individual restriction with a random number
+                let tx = await I_VolumeRestrictionTM.addIndividualRestriction(
+                    account_investor1,
+                    web3.utils.toWei(individualRestrictTotalAmount.toString()),
+                    latestTime() + duration.seconds(1),
+                    rollingPeriod,
+                    latestTime() + duration.days(3),
+                    0,
+                    {
+                        from: token_owner
+                    }
+                );
+
+                tx = await I_VolumeRestrictionTM.changeExemptWalletList(account_investor1, true, {from: token_owner});
+
+                console.log("b");
+
+                var txNumber = 10; // define fuzz test amount for tx
+
+                for (var j = 0; j < txNumber; j++) {
+                    await increaseTime(duration.seconds(5));
+                    console.log("2");
+
+                    // generate a random amount
+                    var transactionAmount = Math.floor(Math.random() * 10);
+                    var accumulatedTxValue = transactionAmount + sumOfLastPeriod;
+
+                    console.log("sumOfLastPeriod is " + sumOfLastPeriod + " transactionAmount is " + transactionAmount + " individualRestrictTotalAmount is " + individualRestrictTotalAmount + " defaultRestrictionAmount is " + defaultRestrictionAmount);
+
+                    // check against daily and total restrictions to determine if the transaction should pass or not
+                    if (accumulatedTxValue > individualRestrictTotalAmount) {
+                        console.log("tx should fail but still succeed due to investor in exempt list");
+
+                        await I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1});
+
+                        console.log("tx passed as expected");
+                    } else if (accumulatedTxValue <= individualRestrictTotalAmount) {
+
+                        console.log("tx should succeed");
+
+                        await I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1});
+
+                        sumOfLastPeriod = sumOfLastPeriod + transactionAmount;
+
+                        console.log("tx succeeded");
+                    }
+                    console.log("3" + txNumber);
+                };
+
+                await I_VolumeRestrictionTM.removeIndividualRestriction(account_investor1, {from: token_owner});
+                console.log("removed daily restriction");
+            }
+
+        });
 
     });
     

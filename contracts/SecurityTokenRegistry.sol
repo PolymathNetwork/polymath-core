@@ -423,27 +423,27 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @param _owner is the address which owns the list of tickers
      */
     function getTickersByOwner(address _owner) external view returns(bytes32[] memory) {
-        uint counter = 0;
-        // accessing the data structure userTotickers[_owner].length
-        bytes32[] memory tickers = getArrayBytes32(Encoder.getKey("userToTickers", _owner));
-        for (uint i = 0; i < tickers.length; i++) {
-            string memory ticker = Util.bytes32ToString(tickers[i]);
-            /*solium-disable-next-line security/no-block-members*/
-            if (getUint(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now || _tickerStatus(ticker)) {
-                counter++;
-            }
-        }
-        bytes32[] memory tempList = new bytes32[](counter);
-        counter = 0;
-        for (uint i = 0; i < tickers.length; i++) {
-            string memory ticker = Util.bytes32ToString(tickers[i]);
-            /*solium-disable-next-line security/no-block-members*/
-            if (getUint(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now || _tickerStatus(ticker)) {
-                tempList[counter] = tickers[i];
-                counter++;
-            }
-        }
-        return tempList;
+        // uint counter = 0;
+        // // accessing the data structure userTotickers[_owner].length
+        // bytes32[] memory tickers = getArrayBytes32(Encoder.getKey("userToTickers", _owner));
+        // for (uint i = 0; i < tickers.length; i++) {
+        //     string memory ticker = Util.bytes32ToString(tickers[i]);
+        //     /*solium-disable-next-line security/no-block-members*/
+        //     if (getUint(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now || _tickerStatus(ticker)) {
+        //         counter++;
+        //     }
+        // }
+        // bytes32[] memory tempList = new bytes32[](counter);
+        // counter = 0;
+        // for (uint i = 0; i < tickers.length; i++) {
+        //     string memory ticker = Util.bytes32ToString(tickers[i]);
+        //     /*solium-disable-next-line security/no-block-members*/
+        //     if (getUint(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now || _tickerStatus(ticker)) {
+        //         tempList[counter] = tickers[i];
+        //         counter++;
+        //     }
+        // }
+        // return tempList;
     }
 
     /**
@@ -454,38 +454,38 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     function getTokensByOwner(address _owner) external view returns(address[] memory) {
         // Loop over all active users, then all associated tickers of those users
         // This ensures we find tokens, even if their owner has been modified
-        address[] memory activeUsers = getArrayAddress(Encoder.getKey("activeUsers"));
-        bytes32[] memory tickers;
-        address token;
-        uint256 count = 0;
-        uint256 i = 0;
-        uint256 j = 0;
-        for (i = 0; i < activeUsers.length; i++) {
-            tickers = getArrayBytes32(Encoder.getKey("userToTickers", activeUsers[i]));
-            for (j = 0; j < tickers.length; j++) {
-                token = getAddress(Encoder.getKey("tickerToSecurityToken", Util.bytes32ToString(tickers[j])));
-                if (token != address(0)) {
-                    if (IOwnable(token).owner() == _owner) {
-                        count = count + 1;
-                    }
-                }
-            }
-        }
-        uint256 index = 0;
-        address[] memory result = new address[](count);
-        for (i = 0; i < activeUsers.length; i++) {
-            tickers = getArrayBytes32(Encoder.getKey("userToTickers", activeUsers[i]));
-            for (j = 0; j < tickers.length; j++) {
-                token = getAddress(Encoder.getKey("tickerToSecurityToken", Util.bytes32ToString(tickers[j])));
-                if (token != address(0)) {
-                    if (IOwnable(token).owner() == _owner) {
-                        result[index] = token;
-                        index = index + 1;
-                    }
-                }
-            }
-        }
-        return result;
+        // address[] memory activeUsers = getArrayAddress(Encoder.getKey("activeUsers"));
+        // bytes32[] memory tickers;
+        // address token;
+        // uint256 count = 0;
+        // uint256 i = 0;
+        // uint256 j = 0;
+        // for (i = 0; i < activeUsers.length; i++) {
+        //     tickers = getArrayBytes32(Encoder.getKey("userToTickers", activeUsers[i]));
+        //     for (j = 0; j < tickers.length; j++) {
+        //         token = getAddress(Encoder.getKey("tickerToSecurityToken", Util.bytes32ToString(tickers[j])));
+        //         if (token != address(0)) {
+        //             if (IOwnable(token).owner() == _owner) {
+        //                 count = count + 1;
+        //             }
+        //         }
+        //     }
+        // }
+        // uint256 index = 0;
+        // address[] memory result = new address[](count);
+        // for (i = 0; i < activeUsers.length; i++) {
+        //     tickers = getArrayBytes32(Encoder.getKey("userToTickers", activeUsers[i]));
+        //     for (j = 0; j < tickers.length; j++) {
+        //         token = getAddress(Encoder.getKey("tickerToSecurityToken", Util.bytes32ToString(tickers[j])));
+        //         if (token != address(0)) {
+        //             if (IOwnable(token).owner() == _owner) {
+        //                 result[index] = token;
+        //                 index = index + 1;
+        //             }
+        //         }
+        //     }
+        // }
+        // return result;
     }
 
     /**
@@ -575,22 +575,22 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         string calldata _tokenDetails,
         uint256 _deployedAt
     ) external onlyOwner {
-        // require(bytes(_name).length > 0 && bytes(_ticker).length > 0, "String length > 0");
-        // require(bytes(_ticker).length <= 10, "Ticker length range (0,10]");
-        // require(_deployedAt != 0 && _owner != address(0), "0 value params not allowed");
-        // string memory ticker = Util.upper(_ticker);
-        // require(_securityToken != address(0), "ST address is 0x");
-        // uint256 registrationTime = getUint(Encoder.getKey("registeredTickers_registrationDate", ticker));
-        // uint256 expiryTime = getUint(Encoder.getKey("registeredTickers_expiryDate", ticker));
-        // if (registrationTime == 0) {
-        //     /*solium-disable-next-line security/no-block-members*/
-        //     registrationTime = now;
-        //     expiryTime = registrationTime.add(getExpiryLimit());
-        // }
-        // set(Encoder.getKey("tickerToSecurityToken", ticker), _securityToken);
-        // _modifyTicker(_owner, ticker, _name, registrationTime, expiryTime, true);
-        // _storeSecurityTokenData(_securityToken, ticker, _tokenDetails, _deployedAt);
-        // emit NewSecurityToken(ticker, _name, _securityToken, _owner, _deployedAt, msg.sender, true, getSecurityTokenLaunchFee());
+        require(bytes(_name).length > 0 && bytes(_ticker).length > 0, "String length > 0");
+        require(bytes(_ticker).length <= 10, "Ticker length range (0,10]");
+        require(_deployedAt != 0 && _owner != address(0), "0 value params not allowed");
+        string memory ticker = Util.upper(_ticker);
+        require(_securityToken != address(0), "ST address is 0x");
+        uint256 registrationTime = getUint(Encoder.getKey("registeredTickers_registrationDate", ticker));
+        uint256 expiryTime = getUint(Encoder.getKey("registeredTickers_expiryDate", ticker));
+        if (registrationTime == 0) {
+            /*solium-disable-next-line security/no-block-members*/
+            registrationTime = now;
+            expiryTime = registrationTime.add(getExpiryLimit());
+        }
+        set(Encoder.getKey("tickerToSecurityToken", ticker), _securityToken);
+        _modifyTicker(_owner, ticker, _name, registrationTime, expiryTime, true);
+        _storeSecurityTokenData(_securityToken, ticker, _tokenDetails, _deployedAt);
+        emit NewSecurityToken(ticker, _name, _securityToken, _owner, _deployedAt, msg.sender, true, getSecurityTokenLaunchFee());
     }
 
     /**

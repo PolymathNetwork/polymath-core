@@ -274,7 +274,7 @@ contract("ManualApprovalTransferManager", async (accounts) => {
                     account_investor4,
                     account_investor4,
                     new BN(web3.utils.toWei("2", "ether")),
-                    "",
+                    "0x0",
                     true,
                     { from: token_owner }
                 )
@@ -286,7 +286,7 @@ contract("ManualApprovalTransferManager", async (accounts) => {
                 account_investor4,
                 account_investor4,
                 new BN(web3.utils.toWei("2", "ether")),
-                "",
+                "0x0",
                 false,
                 { from: token_owner }
             );
@@ -333,9 +333,9 @@ contract("ManualApprovalTransferManager", async (accounts) => {
             await catchRevert(
                 I_ManualApprovalTransferManager.addManualApproval(
                     account_investor1,
-                    "",
+                    address_zero,
                     new BN(web3.utils.toWei("2", "ether")),
-                    await latestTime() + duration.days(1),
+                    currentTime.add(new BN(duration.days(1))),
                     { from: token_owner }
                 )
             );
@@ -358,17 +358,17 @@ contract("ManualApprovalTransferManager", async (accounts) => {
                 account_investor1,
                 account_investor4,
                 new BN(web3.utils.toWei("2", "ether")),
-                await latestTime() + duration.days(1),
+                currentTime.add(new BN(duration.days(1))),
                 { from: token_owner }
             );
         });
 
         it("Add a manual approval for a 5th investor from issuance", async () => {
             await I_ManualApprovalTransferManager.addManualApproval(
-                "",
+                address_zero,
                 account_investor5,
                 new BN(web3.utils.toWei("2", "ether")),
-                await latestTime() + duration.days(1),
+                currentTime.add(new BN(duration.days(1))),
                 { from: token_owner }
             );
         });
@@ -379,14 +379,14 @@ contract("ManualApprovalTransferManager", async (accounts) => {
                     account_investor1,
                     account_investor4,
                     new BN(web3.utils.toWei("2", "ether")),
-                    await latestTime() + duration.days(5),
+                    currentTime.add(new BN(duration.days(5))),
                     { from: token_owner }
                 )
             );
         });
 
         it("Should fail to revoke manual approval because invalid _to address", async () => {
-            await catchRevert(I_ManualApprovalTransferManager.revokeManualApproval(account_investor1, "0x0", { from: token_owner }));
+            await catchRevert(I_ManualApprovalTransferManager.revokeManualApproval(account_investor1, address_zero, { from: token_owner }));
         });
 
         it("Should revoke manual approval", async () => {
@@ -400,7 +400,7 @@ contract("ManualApprovalTransferManager", async (accounts) => {
                 account_investor1,
                 account_investor4,
                 new BN(web3.utils.toWei("2", "ether")),
-                await latestTime() + duration.days(1),
+                currentTime.add(new BN(duration.days(1))),
                 { from: token_owner }
             );
         });
@@ -425,15 +425,14 @@ contract("ManualApprovalTransferManager", async (accounts) => {
                 account_investor1,
                 account_investor4,
                 new BN(web3.utils.toWei("1", "ether")),
-                ""
+                "0x0"
             );
-            console.log(JSON.stringify(verified));
             assert.equal(verified, true);
 
-            verified = await I_SecurityToken.verifyTransfer.call(account_investor1, account_investor4, new BN(web3.utils.toWei("2", "ether")), "");
+            verified = await I_SecurityToken.verifyTransfer.call(account_investor1, account_investor4, new BN(web3.utils.toWei("2", "ether")), "0x0");
             assert.equal(verified, false);
 
-            verified = await I_SecurityToken.verifyTransfer.call(account_investor1, account_investor4, new BN(web3.utils.toWei("1", "ether")), "");
+            verified = await I_SecurityToken.verifyTransfer.call(account_investor1, account_investor4, new BN(web3.utils.toWei("1", "ether")), "0x0");
             assert.equal(verified, true);
         });
 
@@ -452,7 +451,7 @@ contract("ManualApprovalTransferManager", async (accounts) => {
 
         it("Should fail to add a manual block because invalid _to address", async () => {
             await catchRevert(
-                I_ManualApprovalTransferManager.addManualBlocking(account_investor1, "0x0", currentTime.add(new BN(duration.days(1))), {
+                I_ManualApprovalTransferManager.addManualBlocking(account_investor1, address_zero, currentTime.add(new BN(duration.days(1))), {
                     from: token_owner
                 })
             );
@@ -472,7 +471,7 @@ contract("ManualApprovalTransferManager", async (accounts) => {
 
         it("Should fail to add a manual block because blocking already exist", async () => {
             await catchRevert(
-                I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, await latestTime() + duration.days(5), {
+                I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, currentTime.add(new BN(duration.days(5))), {
                     from: token_owner
                 })
             );
@@ -483,7 +482,7 @@ contract("ManualApprovalTransferManager", async (accounts) => {
         });
 
         it("Should fail to revoke manual block because invalid _to address", async () => {
-            await catchRevert(I_ManualApprovalTransferManager.revokeManualBlocking(account_investor1, "0x0", { from: token_owner }));
+            await catchRevert(I_ManualApprovalTransferManager.revokeManualBlocking(account_investor1, address_zero, { from: token_owner }));
         });
 
         it("Revoke manual block and check transfer works", async () => {

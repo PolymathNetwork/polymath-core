@@ -1,28 +1,33 @@
 pragma solidity ^0.4.24;
 
-import "./GeneralPermissionManager.sol";
 import "../ModuleFactory.sol";
+import "../../proxy/GeneralPermissionManagerProxy.sol";
 
 /**
  * @title Factory for deploying GeneralPermissionManager module
  */
 contract GeneralPermissionManagerFactory is ModuleFactory {
 
+    address public logicContract;
+
     /**
      * @notice Constructor
      * @param _setupCost Setup cost of the module
      * @param _usageCost Usage cost of the module
      * @param _subscriptionCost Subscription cost of the module
+     * @param _logicContract Contract address that contains the logic related to `description`
      */
-    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
+    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _logicContract) public
     ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
     {
+        require(_logicContract != address(0), "Invalid address");
         version = "1.0.0";
         name = "GeneralPermissionManager";
         title = "General Permission Manager";
         description = "Manage permissions within the Security Token and attached modules";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        logicContract = _logicContract;
     }
 
     /**
@@ -31,7 +36,7 @@ contract GeneralPermissionManagerFactory is ModuleFactory {
      */
     function deploy(bytes /* _data */) external returns(address) {
         address polyToken = _takeFee();
-        address permissionManager = new GeneralPermissionManager(msg.sender, polyToken);
+        address permissionManager = new GeneralPermissionManagerProxy(msg.sender, polyToken, logicContract);
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(address(permissionManager), getName(), address(this), msg.sender, setupCost, now);
         return permissionManager;

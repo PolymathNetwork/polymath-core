@@ -1,16 +1,12 @@
 pragma solidity ^0.4.24;
 
 import "./TransferManager.sol";
+import "./CountTransferManagerStorage.sol";
 
 /**
  * @title Transfer Manager for limiting maximum number of token holders
  */
-contract CountTransferManager is TransferManager {
-
-    // The maximum number of concurrent token holders
-    uint256 public maxHolderCount;
-
-    bytes32 public constant ADMIN = "ADMIN";
+contract CountTransferManager is CountTransferManagerStorage, TransferManager {
 
     event ModifyHolderCount(uint256 _oldHolderCount, uint256 _newHolderCount);
 

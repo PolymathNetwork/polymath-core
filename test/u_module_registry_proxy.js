@@ -109,7 +109,7 @@ contract("ModuleRegistryProxy", async (accounts) => {
             let bytesProxy = encodeProxyCall(MRProxyParameters, [I_PolymathRegistry.address, account_polymath]);
             await I_ModuleRegistryProxy.upgradeToAndCall("1.0.0", I_ModuleRegistry.address, bytesProxy, { from: account_polymath });
             let c = await OwnedUpgradeabilityProxy.at(I_ModuleRegistryProxy.address);
-            assert.equal(await readStorage(c.address, 12), I_ModuleRegistry.address);
+            assert.equal(await readStorage(c.address, 12), I_ModuleRegistry.address.toLowerCase());
             assert.equal(
                 web3.utils
                     .toAscii(await readStorage(c.address, 11))
@@ -191,7 +191,7 @@ contract("ModuleRegistryProxy", async (accounts) => {
 
         it("Should upgrade the version and implementation address -- Implemenation address should not be 0x", async () => {
             await catchRevert(
-                I_ModuleRegistryProxy.upgradeTo("1.1.0", "0x00000000000000000000000000000000000000", { from: account_polymath })
+                I_ModuleRegistryProxy.upgradeTo("1.1.0", address_zero, { from: account_polymath })
             );
         });
 
@@ -218,7 +218,7 @@ contract("ModuleRegistryProxy", async (accounts) => {
                 "1.1.0",
                 "Version mis-match"
             );
-            assert.equal(await readStorage(c.address, 12), I_MockModuleRegistry.address, "Implemnted address is not matched");
+            assert.equal(await readStorage(c.address, 12), I_MockModuleRegistry.address.toLowerCase(), "Implemnted address is not matched");
             I_MRProxied = await MockModuleRegistry.at(I_ModuleRegistryProxy.address);
         });
     });
@@ -245,7 +245,7 @@ contract("ModuleRegistryProxy", async (accounts) => {
 
         it("Should change the ownership of the contract -- new address should not be 0x", async () => {
             await catchRevert(
-                I_ModuleRegistryProxy.transferProxyOwnership("0x00000000000000000000000000000000000000", { from: account_polymath })
+                I_ModuleRegistryProxy.transferProxyOwnership(address_zero, { from: account_polymath })
             );
         });
 
@@ -267,7 +267,7 @@ contract("ModuleRegistryProxy", async (accounts) => {
                 "1.2.0",
                 "Version mis-match"
             );
-            assert.equal(await readStorage(c.address, 12), I_ModuleRegistry.address, "Implemnted address is not matched");
+            assert.equal(await readStorage(c.address, 12), I_ModuleRegistry.address.toLowerCase(), "Implemnted address is not matched");
             I_MRProxied = await ModuleRegistry.at(I_ModuleRegistryProxy.address);
         });
     });

@@ -26,8 +26,8 @@ contract("Issuance", async (accounts) => {
     let blockNo;
     let balanceOfReceiver;
     let message = "Transaction Should Fail!";
-    const TM_Perm = "WHITELIST";
-    const delegateDetails = "I am delegate";
+    const TM_Perm = web3.utils.fromAscii("WHITELIST");
+    const delegateDetails = web3.utils.fromAscii("I am delegate");
     // investor Details
     let fromTime;
     let toTime;
@@ -138,7 +138,7 @@ contract("Issuance", async (accounts) => {
     describe("Launch SecurityToken & STO on the behalf of the issuer", async () => {
         describe("Create securityToken for the issuer by the polymath", async () => {
             it("POLYMATH: Should register the ticker before the generation of the security token", async () => {
-                await I_PolyToken.getTokens(10000 * Math.pow(10, 18), account_polymath);
+                await I_PolyToken.getTokens(new BN(10000).mul(new BN(10).pow(new BN(18))), account_polymath);
                 await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: account_polymath });
                 let tx = await I_STRProxied.registerTicker(account_polymath, symbol, name, { from: account_polymath });
                 assert.equal(tx.logs[0].args._owner, account_polymath);

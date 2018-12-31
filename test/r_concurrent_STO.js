@@ -56,7 +56,7 @@ contract("Concurrent STO", async (accounts) => {
 
     // Initial fees
     const initRegFee = new BN(web3.utils.toWei("250"));
-    const STOSetupCost = 200 * Math.pow(10, 18);
+    const STOSetupCost = web3.utils.toHex(200 * Math.pow(10, 18));
 
     // Module keys
     const transferManagerKey = 2;

@@ -391,21 +391,21 @@ contract("PreSaleSTO", async (accounts) => {
             await I_PolyToken.transfer(I_PreSaleSTO.address, value, { from: account_investor1 });
             await I_PreSaleSTO.reclaimERC20(I_PolyToken.address, { from: token_owner });
             assert.equal(
-                (await I_PolyToken.balanceOf(account_investor1)).toNumber(),
-                initInvestorBalance.sub(value).toNumber(),
+                (await I_PolyToken.balanceOf(account_investor1)).toString(),
+                initInvestorBalance.sub(value).toString(),
                 "tokens are not transferred out from investor account"
             );
             assert.equal(
-                (await I_PolyToken.balanceOf(token_owner)).toNumber(),
+                (await I_PolyToken.balanceOf(token_owner)).toString(),
                 initOwnerBalance
                     .add(value)
                     .add(initContractBalance)
-                    .toNumber(),
+                    .toString(),
                 "tokens are not added to the owner account"
             );
             assert.equal(
                 (await I_PolyToken.balanceOf(I_PreSaleSTO.address)).toNumber(),
-                new BN(0),
+                new BN(0).toNumber(),
                 "tokens are not trandfered out from STO contract"
             );
         });

@@ -73,8 +73,8 @@ contract("USDTieredSTO Sim", async (accounts) => {
     const STOSetupCost = 0;
 
     // MockOracle USD prices
-    const USDETH = new BN(500).mul(10 ** 18); // 500 USD/ETH
-    const USDPOLY = new BN(25).mul(10 ** 16); // 0.25 USD/POLY
+    const USDETH = new BN(500).mul(new BN(10).pow(new BN(18))); // 500 USD/ETH
+    const USDPOLY = new BN(25).mul(new BN(10).pow(new BN(16))); // 0.25 USD/POLY
 
     // STO Configuration Arrays
     let _startTime = [];
@@ -163,10 +163,19 @@ contract("USDTieredSTO Sim", async (accounts) => {
     };
 
     function getRandomInt(min, max) {
-        return Math.floor(Math.random() * (max - min + 1)) + min;
+        return new BN(Math.floor(new BN(Math.random()).mul(new BN(max).sub(new BN(min).add(new BN(1)))))).add(new BN(min));
+    }
+
+    function minBN(a, b) {
+        if (a.lt(b))
+            return a;
+        else
+            return b;
     }
 
     let currentTime;
+    let e18 = new BN(10).pow(new BN(18));
+    let e16 = new BN(10).pow(new BN(16));
 
     before(async () => {
         currentTime = new BN(await latestTime());
@@ -207,8 +216,8 @@ contract("USDTieredSTO Sim", async (accounts) => {
         [I_USDTieredSTOFactory] = await deployUSDTieredSTOAndVerified(POLYMATH, I_MRProxied, STOSetupCost);
 
         // Step 12: Deploy & Register Mock Oracles
-        I_USDOracle = await MockOracle.new(0, "ETH", "USD", USDETH, { from: POLYMATH }); // 500 dollars per POLY
-        I_POLYOracle = await MockOracle.new(I_PolyToken.address, "POLY", "USD", USDPOLY, { from: POLYMATH }); // 25 cents per POLY
+        I_USDOracle = await MockOracle.new(address_zero, web3.utils.fromAscii("ETH"), web3.utils.fromAscii("USD"), USDETH, { from: POLYMATH }); // 500 dollars per POLY
+        I_POLYOracle = await MockOracle.new(I_PolyToken.address, web3.utils.fromAscii("POLY"), web3.utils.fromAscii("USD"), USDPOLY, { from: POLYMATH }); // 25 cents per POLY
         await I_PolymathRegistry.changeAddress("EthUsdOracle", I_USDOracle.address, { from: POLYMATH });
         await I_PolymathRegistry.changeAddress("PolyUsdOracle", I_POLYOracle.address, { from: POLYMATH });
 
@@ -265,13 +274,13 @@ contract("USDTieredSTO Sim", async (accounts) => {
         it("Should successfully attach the first STO module to the security token", async () => {
             let stoId = 0;
 
-            _startTime.push(await latestTime() + duration.days(2));
-            _endTime.push(_startTime[stoId] + duration.days(100));
-            _ratePerTier.push([BN(0.05 * 10 ** 18), BN(0.13 * 10 ** 18), BN(0.17 * 10 ** 18)]); // [ 0.05 USD/Token, 0.10 USD/Token, 0.15 USD/Token ]
-            _ratePerTierDiscountPoly.push([BN(0.05 * 10 ** 18), BN(0.08 * 10 ** 18), BN(0.13 * 10 ** 18)]); // [ 0.05 USD/Token, 0.08 USD/Token, 0.13 USD/Token ]
-            _tokensPerTierTotal.push([BN(200 * 10 ** 18), BN(500 * 10 ** 18), BN(300 * 10 ** 18)]); // [ 1000 Token, 2000 Token, 1500 Token ]
-            _tokensPerTierDiscountPoly.push([BN(0), BN(50 * 10 ** 18), BN(300 * 10 ** 18)]); // [ 0 Token, 1000 Token, 1500 Token ]
-            _nonAccreditedLimitUSD.push(new BN(10 * 10 ** 18)); // 20 USD
+            _startTime.push(new BN(currentTime).add(new BN(duration.days(2))));
+            _endTime.push(new BN(_startTime[stoId]).add(new BN(currentTime).add(new BN(duration.days(100)))));
+            _ratePerTier.push([new BN(50).mul(e16), new BN(130).mul(e16), new BN(170).mul(e16)]); // [ 0.05 USD/Token, 0.10 USD/Token, 0.15 USD/Token ]
+            _ratePerTierDiscountPoly.push([new BN(50).mul(e16), new BN(80).mul(e16), new BN(130).mul(e16)]); // [ 0.05 USD/Token, 0.08 USD/Token, 0.13 USD/Token ]
+            _tokensPerTierTotal.push([new BN(200).mul(e18), new BN(500).mul(e18), new BN(300).mul(e18)]); // [ 1000 Token, 2000 Token, 1500 Token ]
+            _tokensPerTierDiscountPoly.push([new BN(0), new BN(50).mul(e18), new BN(300).mul(e18)]); // [ 0 Token, 1000 Token, 1500 Token ]
+            _nonAccreditedLimitUSD.push(new BN(10).mul(e18)); // 20 USD
             _minimumInvestmentUSD.push(new BN(0)); // 1 wei USD
             _fundRaiseTypes.push([0, 1, 2]);
             _wallet.push(WALLET);
@@ -300,38 +309,38 @@ contract("USDTieredSTO Sim", async (accounts) => {
             assert.equal(web3.utils.hexToString(tx.logs[2].args._name), "USDTieredSTO", "USDTieredSTOFactory module was not added");
             I_USDTieredSTO_Array.push(await USDTieredSTO.at(tx.logs[2].args._module));
 
-            assert.equal(await I_USDTieredSTO_Array[stoId].startTime.call(), _startTime[stoId], "Incorrect _startTime in config");
-            assert.equal(await I_USDTieredSTO_Array[stoId].endTime.call(), _endTime[stoId], "Incorrect _endTime in config");
+            assert.equal((await I_USDTieredSTO_Array[stoId].startTime.call()).toString(), _startTime[stoId].toString(), "Incorrect _startTime in config");
+            assert.equal((await I_USDTieredSTO_Array[stoId].endTime.call()).toString(), _endTime[stoId].toString(), "Incorrect _endTime in config");
             for (var i = 0; i < _ratePerTier[stoId].length; i++) {
                 assert.equal(
-                    (await I_USDTieredSTO_Array[stoId].tiers.call(i))[0].toNumber(),
-                    _ratePerTier[stoId][i].toNumber(),
+                    (await I_USDTieredSTO_Array[stoId].tiers.call(i))[0].toString(),
+                    _ratePerTier[stoId][i].toString(),
                     "Incorrect _ratePerTier in config"
                 );
                 assert.equal(
-                    (await I_USDTieredSTO_Array[stoId].tiers.call(i))[1].toNumber(),
-                    _ratePerTierDiscountPoly[stoId][i].toNumber(),
+                    (await I_USDTieredSTO_Array[stoId].tiers.call(i))[1].toString(),
+                    _ratePerTierDiscountPoly[stoId][i].toString(),
                     "Incorrect _ratePerTierDiscountPoly in config"
                 );
                 assert.equal(
-                    (await I_USDTieredSTO_Array[stoId].tiers.call(i))[2].toNumber(),
-                    _tokensPerTierTotal[stoId][i].toNumber(),
+                    (await I_USDTieredSTO_Array[stoId].tiers.call(i))[2].toString(),
+                    _tokensPerTierTotal[stoId][i].toString(),
                     "Incorrect _tokensPerTierTotal in config"
                 );
                 assert.equal(
-                    (await I_USDTieredSTO_Array[stoId].tiers.call(i))[3].toNumber(),
-                    _tokensPerTierDiscountPoly[stoId][i].toNumber(),
+                    (await I_USDTieredSTO_Array[stoId].tiers.call(i))[3].toString(),
+                    _tokensPerTierDiscountPoly[stoId][i].toString(),
                     "Incorrect _tokensPerTierDiscountPoly in config"
                 );
             }
             assert.equal(
-                (await I_USDTieredSTO_Array[stoId].nonAccreditedLimitUSD.call()).toNumber(),
-                _nonAccreditedLimitUSD[stoId].toNumber(),
+                (await I_USDTieredSTO_Array[stoId].nonAccreditedLimitUSD.call()).toString(),
+                _nonAccreditedLimitUSD[stoId].toString(),
                 "Incorrect _nonAccreditedLimitUSD in config"
             );
             assert.equal(
-                (await I_USDTieredSTO_Array[stoId].minimumInvestmentUSD.call()).toNumber(),
-                _minimumInvestmentUSD[stoId].toNumber(),
+                (await I_USDTieredSTO_Array[stoId].minimumInvestmentUSD.call()).toString(),
+                _minimumInvestmentUSD[stoId].toString(),
                 "Incorrect _minimumInvestmentUSD in config"
             );
             assert.equal(await I_USDTieredSTO_Array[stoId].wallet.call(), _wallet[stoId], "Incorrect _wallet in config");
@@ -393,10 +402,11 @@ contract("USDTieredSTO Sim", async (accounts) => {
             for (var i = 0; i < _tokensPerTierTotal[stoId].length; i++) {
                 totalTokens = totalTokens.add(_tokensPerTierTotal[stoId][i]);
             }
-            console.log("totalTokens: " + totalTokens.div(10 ** 18).toNumber());
+            console.log("totalTokens: " + totalTokens.div(e18).toNumber());
             let tokensSold = new BN(0);
             while (true) {
-                switch (getRandomInt(0, 5)) {
+                let rn = getRandomInt(0, 5);
+                switch (rn.toNumber()) {
                     case 0: // ACCREDITED1
                         await invest(ACCREDITED1, true);
                         break;
@@ -429,7 +439,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
                 console.log("Next round");
                 tokensSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
                 console.log("Tokens Sold: " + tokensSold.toString());
-                if (tokensSold.gte(totalTokens.sub(1 * 10 ** 18))) {
+                if (tokensSold.gte(totalTokens.sub(new BN(1)).mul(e18))) {
                     console.log(`${tokensSold} tokens sold, simulation completed successfully!`.green);
                     break;
                 }
@@ -442,14 +452,15 @@ contract("USDTieredSTO Sim", async (accounts) => {
                     let USD_to_date = await I_USDTieredSTO_Array[stoId].investorInvestedUSD.call(_investor);
                     USD_remaining = _nonAccreditedLimitUSD[stoId].sub(USD_to_date);
                 } else {
-                    USD_remaining = totalTokens.mul(2);
+                    USD_remaining = totalTokens.mul(new BN(2));
                 }
 
                 let log_remaining = USD_remaining;
                 let isPoly = Math.random() >= 0.33;
                 let isDai = Math.random() >= 0.33;
 
-                let Token_counter = new BN(getRandomInt(1 * 10 ** 10, 50 * 10 ** 10)).mul(10 ** 8);
+                let Token_counter = new BN(getRandomInt(new BN(1).mul(new BN(10).pow(new BN(10))), new BN(1).mul(new BN(10).pow(new BN(10)))));
+                console.log(Token_counter.toString());
                 let investment_USD = new BN(0);
                 let investment_ETH = new BN(0);
                 let investment_POLY = new BN(0);
@@ -484,18 +495,18 @@ contract("USDTieredSTO Sim", async (accounts) => {
                     if (Tokens_total[tier].gt(0)) {
                         if (isPoly) {
                             // 1. POLY and discount (consume up to cap then move to regular)
-                            if (Tokens_discount[tier].gt(0)) {
-                                Token_Tier = new BN.min([Tokens_total[tier], Tokens_discount[tier], Token_counter]);
-                                USD_Tier = Token_Tier.mul(_ratePerTierDiscountPoly[stoId][tier].div(10 ** 18));
+                            if (Tokens_discount[tier].gt(new BN(0))) {
+                                Token_Tier = minBN(minBN(Tokens_total[tier], Tokens_discount[tier]), Token_counter);
+                                USD_Tier = Token_Tier.mul(_ratePerTierDiscountPoly[stoId][tier]).div(e18);
                                 if (USD_Tier.gte(USD_remaining)) {
                                     USD_overflow = USD_Tier.sub(USD_remaining);
-                                    Token_overflow = USD_overflow.mul(10 ** 18).div(_ratePerTierDiscountPoly[stoId][tier]);
+                                    Token_overflow = USD_overflow.mul(e18).div(_ratePerTierDiscountPoly[stoId][tier]);
                                     USD_Tier = USD_Tier.sub(USD_overflow);
                                     Token_Tier = Token_Tier.sub(Token_overflow);
                                     Token_counter = new BN(0);
                                 }
-                                POLY_Tier = new BN(USD_Tier.mul(10 ** 18).toFixed(0));
-                                POLY_Tier = POLY_Tier.div(USDPOLY).toFixed(0);
+                                POLY_Tier = new BN(USD_Tier.mul(e18));
+                                POLY_Tier = POLY_Tier.div(USDPOLY);
                                 USD_remaining = USD_remaining.sub(USD_Tier);
                                 Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
                                 Tokens_discount[tier] = Tokens_discount[tier].sub(Token_Tier);
@@ -505,18 +516,18 @@ contract("USDTieredSTO Sim", async (accounts) => {
                                 investment_POLY = investment_POLY.add(POLY_Tier);
                             }
                             // 2. POLY and regular (consume up to cap then skip to next tier)
-                            if (Tokens_total[tier].gt(0) && Token_counter.gt(0)) {
-                                Token_Tier = new BN.min([Tokens_total[tier], Token_counter]);
-                                USD_Tier = Token_Tier.mul(_ratePerTier[stoId][tier].div(10 ** 18));
+                            if (Tokens_total[tier].gt(new BN(0)) && Token_counter.gt(new BN(0))) {
+                                Token_Tier = minBN(Tokens_total[tier], Token_counter);
+                                USD_Tier = Token_Tier.mul(_ratePerTier[stoId][tier]).div(e18);
                                 if (USD_Tier.gte(USD_remaining)) {
                                     USD_overflow = USD_Tier.sub(USD_remaining);
-                                    Token_overflow = USD_overflow.mul(10 ** 18).div(_ratePerTier[stoId][tier]);
+                                    Token_overflow = USD_overflow.mul(e18).div(_ratePerTier[stoId][tier]);
                                     USD_Tier = USD_Tier.sub(USD_overflow);
                                     Token_Tier = Token_Tier.sub(Token_overflow);
                                     Token_counter = new BN(0);
                                 }
-                                POLY_Tier = new BN(USD_Tier.mul(10 ** 18).toFixed(0));
-                                POLY_Tier = POLY_Tier.div(USDPOLY).toFixed(0);
+                                POLY_Tier = new BN(USD_Tier.mul(e18));
+                                POLY_Tier = POLY_Tier.div(USDPOLY);
                                 USD_remaining = USD_remaining.sub(USD_Tier);
                                 Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
                                 Token_counter = Token_counter.sub(Token_Tier);
@@ -526,16 +537,16 @@ contract("USDTieredSTO Sim", async (accounts) => {
                             }
                         } else if (isDai) {
                             // 3. DAI (consume up to cap then skip to next tier)
-                            Token_Tier = new BN.min([Tokens_total[tier], Token_counter]);
-                            USD_Tier = Token_Tier.mul(_ratePerTier[stoId][tier].div(10 ** 18));
+                            Token_Tier = minBN(Tokens_total[tier], Token_counter);
+                            USD_Tier = Token_Tier.mul(_ratePerTier[stoId][tier]).div(e18);
                             if (USD_Tier.gte(USD_remaining)) {
                                 USD_overflow = USD_Tier.sub(USD_remaining);
-                                Token_overflow = USD_overflow.mul(10 ** 18).div(_ratePerTier[stoId][tier]);
+                                Token_overflow = USD_overflow.mul(e18).div(_ratePerTier[stoId][tier]);
                                 USD_Tier = USD_Tier.sub(USD_overflow);
                                 Token_Tier = Token_Tier.sub(Token_overflow);
                                 Token_counter = new BN(0);
                             }
-                            DAI_Tier = USD_Tier.toFixed(0);
+                            DAI_Tier = USD_Tier;
                             USD_remaining = USD_remaining.sub(USD_Tier);
                             Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
                             Token_counter = Token_counter.sub(Token_Tier);
@@ -544,17 +555,17 @@ contract("USDTieredSTO Sim", async (accounts) => {
                             investment_DAI = investment_USD;
                         } else {
                             // 4. ETH (consume up to cap then skip to next tier)
-                            Token_Tier = new BN.min([Tokens_total[tier], Token_counter]);
-                            USD_Tier = Token_Tier.mul(_ratePerTier[stoId][tier].div(10 ** 18));
+                            Token_Tier = minBN(Tokens_total[tier], Token_counter);
+                            USD_Tier = Token_Tier.mul(_ratePerTier[stoId][tier].div(e18));
                             if (USD_Tier.gte(USD_remaining)) {
                                 USD_overflow = USD_Tier.sub(USD_remaining);
-                                Token_overflow = USD_overflow.mul(10 ** 18).div(_ratePerTier[stoId][tier]);
+                                Token_overflow = USD_overflow.mul(e18).div(_ratePerTier[stoId][tier]);
                                 USD_Tier = USD_Tier.sub(USD_overflow);
                                 Token_Tier = Token_Tier.sub(Token_overflow);
                                 Token_counter = new BN(0);
                             }
-                            ETH_Tier = new BN(USD_Tier.mul(10 ** 18).toFixed(0));
-                            ETH_Tier = ETH_Tier.div(USDETH).toFixed(0);
+                            ETH_Tier = new BN(USD_Tier.mul(e18));
+                            ETH_Tier = ETH_Tier.div(USDETH);
                             USD_remaining = USD_remaining.sub(USD_Tier);
                             Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
                             Token_counter = Token_counter.sub(Token_Tier);
@@ -585,9 +596,9 @@ contract("USDTieredSTO Sim", async (accounts) => {
             async function investFAIL(_investor) {
                 let isPoly = Math.random() >= 0.3;
                 let isDAI = Math.random() >= 0.3;
-                let investment_POLY = new BN(40 * 10 ** 18); // 10 USD = 40 POLY
-                let investment_ETH = new BN(0.02 * 10 ** 18); // 10 USD = 0.02 ETH
-                let investment_DAI = new BN(10 * 10 ** 18); // 10 USD = DAI DAI
+                let investment_POLY = new BN(40).mul(e18); // 10 USD = 40 POLY
+                let investment_ETH = new BN(20).mul(e16); // 10 USD = 0.02 ETH
+                let investment_DAI = new BN(10).mul(e18); // 10 USD = DAI DAI
 
                 if (isPoly) {
                     await I_PolyToken.getTokens(investment_POLY, _investor);
@@ -621,23 +632,23 @@ contract("USDTieredSTO Sim", async (accounts) => {
                 Tokens_discount,
                 tokensSold
             ) {
-                investment_Token = new BN(investment_Token.toFixed(0));
-                investment_USD = new BN(investment_USD.toFixed(0));
-                investment_POLY = new BN(investment_POLY.toFixed(0));
-                investment_DAI = new BN(investment_DAI.toFixed(0));
-                investment_ETH = new BN(investment_ETH.toFixed(0));
+                investment_Token = new BN(investment_Token);
+                investment_USD = new BN(investment_USD);
+                investment_POLY = new BN(investment_POLY);
+                investment_DAI = new BN(investment_DAI);
+                investment_ETH = new BN(investment_ETH);
                 console.log(`
             ------------------- New Investment -------------------
             Investor:   ${_investor}
-            N-A USD Remaining:      ${log_remaining.div(10 ** 18)}
+            N-A USD Remaining:      ${log_remaining.div(e18)}
             Total Cap Remaining:    ${Tokens_total}
             Discount Cap Remaining: ${Tokens_discount}
-            Total Tokens Sold:      ${tokensSold.div(10 ** 18)}
-            Token Investment:       ${investment_Token.div(10 ** 18)}
-            USD Investment:         ${investment_USD.div(10 ** 18)}
-            POLY Investment:        ${investment_POLY.div(10 ** 18)}
-            DAI Investment:         ${investment_DAI.div(10 ** 18)}
-            ETH Investment:         ${investment_ETH.div(10 ** 18)}
+            Total Tokens Sold:      ${tokensSold.div(e18)}
+            Token Investment:       ${investment_Token.div(e18)}
+            USD Investment:         ${investment_USD.div(e18)}
+            POLY Investment:        ${investment_POLY.div(e18)}
+            DAI Investment:         ${investment_DAI.div(e18)}
+            ETH Investment:         ${investment_ETH.div(e18)}
             ------------------------------------------------------
                 `);
 
@@ -676,16 +687,16 @@ contract("USDTieredSTO Sim", async (accounts) => {
                         from: _investor,
                         gasPrice: GAS_PRICE
                     });
-                    gasCost = new BN(GAS_PRICE).mul(tx.receipt.gasUsed);
+                    gasCost = new BN(GAS_PRICE).mul(new BN(tx.receipt.gasUsed));
                     console.log(
-                        `buyWithPOLY: ${investment_Token.div(10 ** 18)} tokens for ${investment_POLY.div(10 ** 18)} POLY by ${_investor}`
+                        `buyWithPOLY: ${investment_Token.div(e18)} tokens for ${investment_POLY.div(e18)} POLY by ${_investor}`
                             .yellow
                     );
                 } else if (isDai && investment_DAI.gt(10)) {
                     tx = await I_USDTieredSTO_Array[stoId].buyWithUSD(_investor, investment_DAI, { from: _investor, gasPrice: GAS_PRICE });
-                    gasCost = new BN(GAS_PRICE).mul(tx.receipt.gasUsed);
+                    gasCost = new BN(GAS_PRICE).mul(new BN(tx.receipt.gasUsed));
                     console.log(
-                        `buyWithUSD: ${investment_Token.div(10 ** 18)} tokens for ${investment_DAI.div(10 ** 18)} DAI by ${_investor}`
+                        `buyWithUSD: ${investment_Token.div(e18)} tokens for ${investment_DAI.div(e18)} DAI by ${_investor}`
                             .yellow
                     );
                 } else if (investment_ETH.gt(0)) {
@@ -694,9 +705,9 @@ contract("USDTieredSTO Sim", async (accounts) => {
                         value: investment_ETH,
                         gasPrice: GAS_PRICE
                     });
-                    gasCost = new BN(GAS_PRICE).mul(tx.receipt.gasUsed);
+                    gasCost = new BN(GAS_PRICE).mul(new BN(tx.receipt.gasUsed));
                     console.log(
-                        `buyWithETH: ${investment_Token.div(10 ** 18)} tokens for ${investment_ETH.div(10 ** 18)} ETH by ${_investor}`
+                        `buyWithETH: ${investment_Token.div(e18)} tokens for ${investment_ETH.div(e18)} ETH by ${_investor}`
                             .yellow
                     );
                 }
@@ -723,215 +734,181 @@ contract("USDTieredSTO Sim", async (accounts) => {
                 // console.log('final_TokenSupply: '+final_TokenSupply.div(10**18).toNumber());
 
                 if (isPoly) {
-                    assert.closeTo(
-                        final_TokenSupply.toNumber(),
-                        init_TokenSupply.add(investment_Token).toNumber(),
-                        TOLERANCE,
+                    assert.equal(
+                        final_TokenSupply.toString(),
+                        init_TokenSupply.add(investment_Token).toString(),                    
                         "Token Supply not changed as expected"
                     );
-                    assert.closeTo(
-                        final_InvestorTokenBal.toNumber(),
-                        init_InvestorTokenBal.add(investment_Token).toNumber(),
-                        TOLERANCE,
+                    assert.equal(
+                        final_InvestorTokenBal.toString(),
+                        init_InvestorTokenBal.add(investment_Token).toString(),                        
                         "Investor Token Balance not changed as expected"
                     );
-                    assert.closeTo(
-                        final_InvestorETHBal.toNumber(),
-                        init_InvestorETHBal.sub(gasCost).toNumber(),
-                        TOLERANCE,
+                    assert.equal(
+                        final_InvestorETHBal.toString(),
+                        init_InvestorETHBal.sub(gasCost).toString(),                        
                         "Investor ETH Balance not changed as expected"
                     );
-                    assert.closeTo(
-                        final_InvestorPOLYBal.toNumber(),
-                        init_InvestorPOLYBal.sub(investment_POLY).toNumber(),
-                        TOLERANCE,
+                    assert.equal(
+                        final_InvestorPOLYBal.toString(),
+                        init_InvestorPOLYBal.sub(investment_POLY).toString(),                        
                         "Investor POLY Balance not changed as expected"
                     );
-                    assert.closeTo(
-                        final_STOTokenSold.toNumber(),
-                        init_STOTokenSold.add(investment_Token).toNumber(),
-                        TOLERANCE,
+                    assert.equal(
+                        final_STOTokenSold.toString(),
+                        init_STOTokenSold.add(investment_Token).toString(),                        
                         "STO Token Sold not changed as expected"
                     );
-                    assert.closeTo(
-                        final_STOETHBal.toNumber(),
-                        init_STOETHBal.toNumber(),
-                        TOLERANCE,
+                    assert.equal(
+                        final_STOETHBal.toString(),
+                        init_STOETHBal.toString(),                        
                         "STO ETH Balance not changed as expected"
                     );
-                    assert.closeTo(
-                        final_STOPOLYBal.toNumber(),
-                        init_STOPOLYBal.toNumber(),
-                        TOLERANCE,
+                    assert.equal(
+                        final_STOPOLYBal.toString(),
+                        init_STOPOLYBal.toString(),                        
                         "STO POLY Balance not changed as expected"
                     );
-                    assert.closeTo(
-                        final_RaisedUSD.toNumber(),
-                        init_RaisedUSD.add(investment_USD).toNumber(),
-                        TOLERANCE,
+                    assert.equal(
+                        final_RaisedUSD.toString(),
+                        init_RaisedUSD.add(investment_USD).toString(),                        
                         "Raised USD not changed as expected"
                     );
-                    assert.closeTo(final_RaisedETH.toNumber(), init_RaisedETH.toNumber(), TOLERANCE, "Raised ETH not changed as expected");
-                    assert.closeTo(
-                        final_RaisedPOLY.toNumber(),
-                        init_RaisedPOLY.add(investment_POLY).toNumber(),
-                        TOLERANCE,
+                    assert.equal(final_RaisedETH.toString(), init_RaisedETH.toString(), "Raised ETH not changed as expected");
+                    assert.equal(
+                        final_RaisedPOLY.toString(),
+                        init_RaisedPOLY.add(investment_POLY).toString(),                        
                         "Raised POLY not changed as expected"
                     );
-                    assert.closeTo(
-                        final_WalletETHBal.toNumber(),
-                        init_WalletETHBal.toNumber(),
-                        TOLERANCE,
+                    assert.equal(
+                        final_WalletETHBal.toString(),
+                        init_WalletETHBal.toString(),                        
                         "Wallet ETH Balance not changed as expected"
                     );
-                    assert.closeTo(
-                        final_WalletPOLYBal.toNumber(),
-                        init_WalletPOLYBal.add(investment_POLY).toNumber(),
-                        TOLERANCE,
+                    assert.equal(
+                        final_WalletPOLYBal.toString(),
+                        init_WalletPOLYBal.add(investment_POLY).toString(),                        
                         "Wallet POLY Balance not changed as expected"
                     );
                 } else if (isDai) {
-                    assert.closeTo(
-                        final_TokenSupply.toNumber(),
-                        init_TokenSupply.add(investment_Token).toNumber(),
-                        TOLERANCE,
+                    assert.equal(
+                        final_TokenSupply.toString(),
+                        init_TokenSupply.add(investment_Token).toString(),                        
                         "Token Supply not changed as expected"
                     );
-                    assert.closeTo(
-                        final_InvestorTokenBal.toNumber(),
-                        init_InvestorTokenBal.add(investment_Token).toNumber(),
-                        TOLERANCE,
+                    assert.equal(
+                        final_InvestorTokenBal.toString(),
+                        init_InvestorTokenBal.add(investment_Token).toString(),                        
                         "Investor Token Balance not changed as expected"
                     );
-                    assert.closeTo(
-                        final_InvestorETHBal.toNumber(),
-                        init_InvestorETHBal.sub(gasCost).toNumber(),
-                        TOLERANCE,
+                    assert.equal(
+                        final_InvestorETHBal.toString(),
+                        init_InvestorETHBal.sub(gasCost).toString(),                        
                         "Investor ETH Balance not changed as expected"
                     );
-                    assert.closeTo(
-                        final_InvestorDAIBal.toNumber(),
-                        init_InvestorDAIBal.sub(investment_DAI).toNumber(),
-                        TOLERANCE,
+                    assert.equal(
+                        final_InvestorDAIBal.toString(),
+                        init_InvestorDAIBal.sub(investment_DAI).toString(),                        
                         "Investor DAI Balance not changed as expected"
                     );
-                    assert.closeTo(
-                        final_STOTokenSold.toNumber(),
-                        init_STOTokenSold.add(investment_Token).toNumber(),
-                        TOLERANCE,
+                    assert.equal(
+                        final_STOTokenSold.toString(),
+                        init_STOTokenSold.add(investment_Token).toString(),                        
                         "STO Token Sold not changed as expected"
                     );
-                    assert.closeTo(
-                        final_STOETHBal.toNumber(),
-                        init_STOETHBal.toNumber(),
-                        TOLERANCE,
+                    assert.equal(
+                        final_STOETHBal.toString(),
+                        init_STOETHBal.toString(),                        
                         "STO ETH Balance not changed as expected"
                     );
-                    assert.closeTo(
-                        final_STODAIBal.toNumber(),
-                        init_STODAIBal.toNumber(),
-                        TOLERANCE,
+                    assert.equal(
+                        final_STODAIBal.toString(),
+                        init_STODAIBal.toString(),                        
                         "STO DAI Balance not changed as expected"
                     );
-                    assert.closeTo(
-                        final_RaisedUSD.toNumber(),
-                        init_RaisedUSD.add(investment_USD).toNumber(),
-                        TOLERANCE,
+                    assert.equal(
+                        final_RaisedUSD.toString(),
+                        init_RaisedUSD.add(investment_USD).toString(),                        
                         "Raised USD not changed as expected"
                     );
-                    assert.closeTo(final_RaisedETH.toNumber(), init_RaisedETH.toNumber(), TOLERANCE, "Raised ETH not changed as expected");
-                    assert.closeTo(
-                        final_RaisedDAI.toNumber(),
-                        init_RaisedDAI.add(investment_DAI).toNumber(),
-                        TOLERANCE,
+                    assert.equal(final_RaisedETH.toString(), init_RaisedETH.toString(),  "Raised ETH not changed as expected");
+                    assert.equal(
+                        final_RaisedDAI.toString(),
+                        init_RaisedDAI.add(investment_DAI).toString(),                        
                         "Raised DAI not changed as expected"
                     );
-                    assert.closeTo(
-                        final_WalletETHBal.toNumber(),
-                        init_WalletETHBal.toNumber(),
-                        TOLERANCE,
+                    assert.equal(
+                        final_WalletETHBal.toString(),
+                        init_WalletETHBal.toString(),                        
                         "Wallet ETH Balance not changed as expected"
                     );
-                    assert.closeTo(
-                        final_WalletDAIBal.toNumber(),
-                        init_WalletDAIBal.add(investment_DAI).toNumber(),
-                        TOLERANCE,
+                    assert.equal(
+                        final_WalletDAIBal.toString(),
+                        init_WalletDAIBal.add(investment_DAI).toString(),                        
                         "Wallet DAI Balance not changed as expected"
                     );
                 } else {
-                    assert.closeTo(
-                        final_TokenSupply.toNumber(),
-                        init_TokenSupply.add(investment_Token).toNumber(),
-                        TOLERANCE,
+                    assert.equal(
+                        final_TokenSupply.toString(),
+                        init_TokenSupply.add(investment_Token).toString(),                        
                         "Token Supply not changed as expected"
                     );
-                    assert.closeTo(
-                        final_InvestorTokenBal.toNumber(),
-                        init_InvestorTokenBal.add(investment_Token).toNumber(),
-                        TOLERANCE,
+                    assert.equal(
+                        final_InvestorTokenBal.toString(),
+                        init_InvestorTokenBal.add(investment_Token).toString(),                        
                         "Investor Token Balance not changed as expected"
                     );
-                    assert.closeTo(
-                        final_InvestorETHBal.toNumber(),
+                    assert.equal(
+                        final_InvestorETHBal.toString(),
                         init_InvestorETHBal
                             .sub(gasCost)
                             .sub(investment_ETH)
-                            .toNumber(),
-                        TOLERANCE,
+                            .toString(),                        
                         "Investor ETH Balance not changed as expected"
                     );
-                    assert.closeTo(
-                        final_InvestorPOLYBal.toNumber(),
-                        init_InvestorPOLYBal.toNumber(),
-                        TOLERANCE,
+                    assert.equal(
+                        final_InvestorPOLYBal.toString(),
+                        init_InvestorPOLYBal.toString(),                        
                         "Investor POLY Balance not changed as expected"
                     );
-                    assert.closeTo(
-                        final_STOTokenSold.toNumber(),
-                        init_STOTokenSold.add(investment_Token).toNumber(),
-                        TOLERANCE,
+                    assert.equal(
+                        final_STOTokenSold.toString(),
+                        init_STOTokenSold.add(investment_Token).toString(),                        
                         "STO Token Sold not changed as expected"
                     );
-                    assert.closeTo(
-                        final_STOETHBal.toNumber(),
-                        init_STOETHBal.toNumber(),
-                        TOLERANCE,
+                    assert.equal(
+                        final_STOETHBal.toString(),
+                        init_STOETHBal.toString(),                        
                         "STO ETH Balance not changed as expected"
                     );
-                    assert.closeTo(
-                        final_STOPOLYBal.toNumber(),
-                        init_STOPOLYBal.toNumber(),
-                        TOLERANCE,
+                    assert.equal(
+                        final_STOPOLYBal.toString(),
+                        init_STOPOLYBal.toString(),                        
                         "STO POLY Balance not changed as expected"
                     );
-                    assert.closeTo(
-                        final_RaisedUSD.toNumber(),
-                        init_RaisedUSD.add(investment_USD).toNumber(),
-                        TOLERANCE,
+                    assert.equal(
+                        final_RaisedUSD.toString(),
+                        init_RaisedUSD.add(investment_USD).toString(),                        
                         "Raised USD not changed as expected"
                     );
-                    assert.closeTo(
-                        final_RaisedETH.toNumber(),
-                        init_RaisedETH.add(investment_ETH).toNumber(),
-                        TOLERANCE,
+                    assert.equal(
+                        final_RaisedETH.toString(),
+                        init_RaisedETH.add(investment_ETH).toString(),                        
                         "Raised ETH not changed as expected"
                     );
-                    assert.closeTo(
-                        final_RaisedPOLY.toNumber(),
-                        init_RaisedPOLY.toNumber(),
-                        TOLERANCE,
+                    assert.equal(
+                        final_RaisedPOLY.toString(),
+                        init_RaisedPOLY.toString(),                        
                         "Raised POLY not changed as expected"
                     );
-                    assert.closeTo(
-                        final_WalletETHBal.toNumber(),
-                        init_WalletETHBal.add(investment_ETH).toNumber(),
-                        TOLERANCE,
+                    assert.equal(
+                        final_WalletETHBal.toString(),
+                        init_WalletETHBal.add(investment_ETH).toString(),                        
                         "Wallet ETH Balance not changed as expected"
                     );
-                    assert.closeTo(
-                        final_WalletPOLYBal.toNumber(),
-                        init_WalletPOLYBal.toNumber(),
-                        TOLERANCE,
+                    assert.equal(
+                        final_WalletPOLYBal.toString(),
+                        init_WalletPOLYBal.toString(),                        
                         "Wallet POLY Balance not changed as expected"
                     );
                 }

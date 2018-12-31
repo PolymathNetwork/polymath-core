@@ -90,6 +90,7 @@ fi
 
 if [ "$COVERAGE" = true ]; then
   curl -o node_modules/solidity-coverage/lib/app.js https://raw.githubusercontent.com/maxsam4/solidity-coverage/relative-path/lib/app.js
+  curl -o node_modules/solidity-parser-sc/build/parser.js https://raw.githubusercontent.com/maxsam4/solidity-parser/solidity-0.5/build/parser.js
   node_modules/.bin/solidity-coverage
   if [ "$CIRCLECI" = true ]; then
     cat coverage/lcov.info | node_modules/.bin/coveralls

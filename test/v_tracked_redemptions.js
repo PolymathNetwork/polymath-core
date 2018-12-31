@@ -1,9 +1,8 @@
 import latestTime from "./helpers/latestTime";
-import { duration, promisifyLogWatch, latestBlock } from "./helpers/utils";
-import takeSnapshot, { increaseTime, revertToSnapshot } from "./helpers/time";
-import { encodeProxyCall } from "./helpers/encodeCall";
-import { catchRevert } from "./helpers/exceptions";
-import { setUpPolymathNetwork, deployRedemptionAndVerifyed } from "./helpers/createInstances";
+import {duration, promisifyLogWatch} from "./helpers/utils";
+import takeSnapshot, {increaseTime, revertToSnapshot} from "./helpers/time";
+import {catchRevert} from "./helpers/exceptions";
+import {deployRedemptionAndVerifyed, setUpPolymathNetwork} from "./helpers/createInstances";
 
 const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
@@ -250,7 +249,7 @@ contract("TrackedRedemption", async (accounts) => {
             let tx = await I_TrackedRedemption.redeemTokens(new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 });
             console.log(JSON.stringify(tx.logs));
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor1.toLowerCase(), "Mismatch address");
-            assert.equal(tx.logs[0].args._value, new BN(web3.utils.toWei("1", "ether")), "Wrong value");
+            assert.equal(web3.utils.fromWei(web3.utils.toBN(tx.logs[0].args._value)), 1, "Wrong value");
         });
 
         it("Get the init data", async () => {

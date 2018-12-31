@@ -253,7 +253,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
 
                 // add account as a Delegate if it is not
                 if ((await I_GeneralPermissionManager.checkDelegate(accounts[j])) !== true) {
-                    await I_GeneralPermissionManager.addDelegate(accounts[j], _details, { from: token_owner });
+                    await I_GeneralPermissionManager.addDelegate(accounts[j], web3.utils.fromAscii(_details), { from: token_owner });
                 }
 
                 // target permission should alaways be false for each test before assigning
@@ -275,7 +275,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                 let toTime = await latestTime() + duration.days(20);
                 let expiryTime = toTime + duration.days(10);
 
-                await I_GeneralPermissionManager.changePermission(accounts[j], I_GeneralTransferManager.address, randomPerms, true, {
+                await I_GeneralPermissionManager.changePermission(accounts[j], I_GeneralTransferManager.address, web3.utils.fromAscii(randomPerms), true, {
                     from: token_owner
                 });
 
@@ -412,7 +412,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
 
                 // add account as a Delegate if it is not
                 if ((await I_GeneralPermissionManager.checkDelegate(accounts[j])) !== true) {
-                    await I_GeneralPermissionManager.addDelegate(accounts[j], _details, { from: token_owner });
+                    await I_GeneralPermissionManager.addDelegate(accounts[j], web3.utils.fromAscii(_details), { from: token_owner });
                 }
 
                 // target permission should alaways be false for each test before assigning
@@ -424,7 +424,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
 
                 // assign a random perm
                 let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
-                await I_GeneralPermissionManager.changePermission(accounts[j], I_CountTransferManager.address, randomPerms, true, {
+                await I_GeneralPermissionManager.changePermission(accounts[j], I_CountTransferManager.address, web3.utils.fromAscii(randomPerms), true, {
                     from: token_owner
                 });
                 if (randomPerms === "ADMIN") {
@@ -479,7 +479,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
 
                 // add account as a Delegate if it is not
                 if ((await I_GeneralPermissionManager.checkDelegate(accounts[j])) !== true) {
-                    await I_GeneralPermissionManager.addDelegate(accounts[j], _details, { from: token_owner });
+                    await I_GeneralPermissionManager.addDelegate(accounts[j], web3.utils.fromAscii(_details), { from: token_owner });
                 }
 
                 // target permission should alaways be false for each test before assigning
@@ -490,7 +490,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                     await I_GeneralPermissionManager.changePermission(
                         accounts[j],
                         I_PercentageTransferManager.address,
-                        "WHITELIST",
+                        web3.utils.fromAscii("WHITELIST"),
                         false,
                         { from: token_owner }
                     );
@@ -498,7 +498,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
 
                 // assign a random perm
                 let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
-                await I_GeneralPermissionManager.changePermission(accounts[j], I_PercentageTransferManager.address, randomPerms, true, {
+                await I_GeneralPermissionManager.changePermission(accounts[j], I_PercentageTransferManager.address, web3.utils.fromAscii(randomPerms), true, {
                     from: token_owner
                 });
 
@@ -525,7 +525,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
 
                 // add account as a Delegate if it is not
                 if ((await I_GeneralPermissionManager.checkDelegate(accounts[j])) !== true) {
-                    await I_GeneralPermissionManager.addDelegate(accounts[j], _details, { from: token_owner });
+                    await I_GeneralPermissionManager.addDelegate(accounts[j], web3.utils.fromAscii(_details), { from: token_owner });
                 }
 
                 // target permission should alaways be false for each test before assigning
@@ -536,7 +536,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                     await I_GeneralPermissionManager.changePermission(
                         accounts[j],
                         I_PercentageTransferManager.address,
-                        "WHITELIST",
+                        web3.utils.fromAscii("WHITELIST"),
                         false,
                         { from: token_owner }
                     );
@@ -544,7 +544,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
 
                 // assign a random perm
                 let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
-                await I_GeneralPermissionManager.changePermission(accounts[j], I_PercentageTransferManager.address, randomPerms, true, {
+                await I_GeneralPermissionManager.changePermission(accounts[j], I_PercentageTransferManager.address, web3.utils.fromAscii(randomPerms), true, {
                     from: token_owner
                 });
 
@@ -577,7 +577,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
 
                 // add account as a Delegate if it is not
                 if ((await I_GeneralPermissionManager.checkDelegate(accounts[j])) !== true) {
-                    await I_GeneralPermissionManager.addDelegate(accounts[j], _details, { from: token_owner });
+                    await I_GeneralPermissionManager.addDelegate(accounts[j], web3.utils.fromAscii(_details), { from: token_owner });
                 }
 
                 // target permission should alaways be false for each test before assigning
@@ -591,7 +591,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
 
                 // assign a random perm
                 let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
-                await I_GeneralPermissionManager.changePermission(accounts[j], I_PercentageTransferManager.address, randomPerms, true, {
+                await I_GeneralPermissionManager.changePermission(accounts[j], I_PercentageTransferManager.address, web3.utils.fromAscii(randomPerms), true, {
                     from: token_owner
                 });
 
@@ -636,7 +636,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
 
                 // add account as a Delegate if it is not
                 if ((await I_GeneralPermissionManager.checkDelegate(accounts[j])) !== true) {
-                    await I_GeneralPermissionManager.addDelegate(accounts[j], _details, { from: token_owner });
+                    await I_GeneralPermissionManager.addDelegate(accounts[j], web3.utils.fromAscii(_details), { from: token_owner });
                 }
 
                 // target permission should alaways be false for each test before assigning
@@ -644,13 +644,13 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                     (await I_GeneralPermissionManager.checkPermission(
                         accounts[j],
                         I_ManualApprovalTransferManager.address,
-                        "TRANSFER_APPROVAL"
+                        web3.utils.fromAscii("TRANSFER_APPROVAL")
                     )) === true
                 ) {
                     await I_GeneralPermissionManager.changePermission(
                         accounts[j],
                         I_ManualApprovalTransferManager.address,
-                        "TRANSFER_APPROVAL",
+                        web3.utils.fromAscii("TRANSFER_APPROVAL"),
                         false,
                         { from: token_owner }
                     );
@@ -658,17 +658,18 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
 
                 // assign a random perm
                 let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
-                await I_GeneralPermissionManager.changePermission(accounts[j], I_ManualApprovalTransferManager.address, randomPerms, true, {
+                await I_GeneralPermissionManager.changePermission(accounts[j], I_ManualApprovalTransferManager.address, web3.utils.fromAscii(randomPerms), true, {
                     from: token_owner
                 });
 
                 if (randomPerms === "TRANSFER_APPROVAL") {
                     console.log("Test number " + i + " with account " + j + " and perm TRANSFER_APPROVAL " + " should pass");
+                    let nextTime = await latestTime() + duration.days(1);
                     await I_ManualApprovalTransferManager.addManualApproval(
                         account_investor1,
                         account_investor4,
                         new BN(web3.utils.toWei("2", "ether")),
-                        await latestTime() + duration.days(1),
+                        nextTime,
                         { from: accounts[j] }
                     );
 
@@ -684,21 +685,23 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                     console.log("Test number " + i + " with account " + j + " and perm TRANSFER_APPROVAL passed as expected");
                 } else {
                     console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " should failed");
+                    let nextTime = await latestTime() + duration.days(1);
                     await catchRevert(
                         I_ManualApprovalTransferManager.addManualApproval(
                             account_investor1,
                             account_investor4,
                             new BN(web3.utils.toWei("2", "ether")),
-                            await latestTime() + duration.days(1),
+                            nextTime,
                             { from: accounts[j] }
                         )
                     );
 
+                    nextTime = await latestTime() + duration.days(1);
                     await I_ManualApprovalTransferManager.addManualApproval(
                         account_investor1,
                         account_investor4,
                         new BN(web3.utils.toWei("2", "ether")),
-                        await latestTime() + duration.days(1),
+                        nextTime,
                         { from: token_owner }
                     );
 
@@ -735,7 +738,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
 
                 // add account as a Delegate if it is not
                 if ((await I_GeneralPermissionManager.checkDelegate(accounts[j])) !== true) {
-                    await I_GeneralPermissionManager.addDelegate(accounts[j], _details, { from: token_owner });
+                    await I_GeneralPermissionManager.addDelegate(accounts[j], web3.utils.fromAscii(_details), { from: token_owner });
                 }
 
                 // target permission should alaways be false for each test before assigning
@@ -743,13 +746,13 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                     (await I_GeneralPermissionManager.checkPermission(
                         accounts[j],
                         I_ManualApprovalTransferManager.address,
-                        "TRANSFER_APPROVAL"
+                        web3.utils.fromAscii("TRANSFER_APPROVAL")
                     )) === true
                 ) {
                     await I_GeneralPermissionManager.changePermission(
                         accounts[j],
                         I_ManualApprovalTransferManager.address,
-                        "TRANSFER_APPROVAL",
+                        web3.utils.fromAscii("TRANSFER_APPROVAL"),
                         false,
                         { from: token_owner }
                     );
@@ -757,16 +760,17 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
 
                 // assign a random perm
                 let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
-                await I_GeneralPermissionManager.changePermission(accounts[j], I_ManualApprovalTransferManager.address, randomPerms, true, {
+                await I_GeneralPermissionManager.changePermission(accounts[j], I_ManualApprovalTransferManager.address, web3.utils.fromAscii(randomPerms), true, {
                     from: token_owner
                 });
 
                 if (randomPerms === "TRANSFER_APPROVAL") {
                     console.log("Test number " + i + " with account " + j + " and perm TRANSFER_APPROVAL " + " should pass");
+                    let nextTime = new BN(await latestTime()).add(new BN(duration.days(1)));
                     await I_ManualApprovalTransferManager.addManualBlocking(
                         account_investor1,
                         account_investor2,
-                        await latestTime() + duration.days(1),
+                        nextTime,
                         {
                             from: accounts[j]
                         }
@@ -778,21 +782,23 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                     console.log("Test number " + i + " with account " + j + " and perm TRANSFER_APPROVAL passed as expected");
                 } else {
                     console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " should failed");
+                    let nextTime = new BN(await latestTime()).add(new BN(duration.days(1)));
                     await catchRevert(
                         I_ManualApprovalTransferManager.addManualBlocking(
                             account_investor1,
                             account_investor2,
-                            await latestTime() + duration.days(1),
+                            nextTime,
                             {
                                 from: accounts[j]
                             }
                         )
                     );
 
+                    nextTime = new BN(await latestTime()).add(new BN(duration.days(1)));
                     await I_ManualApprovalTransferManager.addManualBlocking(
                         account_investor1,
                         account_investor2,
-                        await latestTime() + duration.days(1),
+                        nextTime,
                         {
                             from: token_owner
                         }

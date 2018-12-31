@@ -27,6 +27,7 @@ const DevPolyToken = artifacts.require('./helpers/PolyTokenFaucet.sol')
 const MockOracle = artifacts.require('./MockOracle.sol')
 const TokenLib = artifacts.require('./TokenLib.sol');
 const SecurityToken = artifacts.require('./tokens/SecurityToken.sol')
+const InternalRegistry = artifacts.require('./InternalRegistry.sol');
 
 let BigNumber = require('bignumber.js');
 const cappedSTOSetupCost = new BigNumber(20000).times(new BigNumber(10).pow(18));   // 20K POLY fee
@@ -233,6 +234,8 @@ module.exports = function (deployer, network, accounts) {
     let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignatureProxy, [PolymathRegistry.address, STFactory.address, initRegFee, initRegFee, PolymathAccount]);
     return SecurityTokenRegistryProxy.at(SecurityTokenRegistryProxy.address).upgradeToAndCall("1.0.0", SecurityTokenRegistry.address, bytesProxy, {from: PolymathAccount});
   }).then(() => {
+    return deployer.deploy(InternalRegistry, {from: PolymathAccount});
+  }).then(() => {
     // Assign the address into the SecurityTokenRegistry key
    return polymathRegistry.changeAddress("SecurityTokenRegistry", SecurityTokenRegistryProxy.address, {from: PolymathAccount});
   }).then(() => {
@@ -339,6 +342,7 @@ module.exports = function (deployer, network, accounts) {
     SecurityTokenRegistry (Proxy):        ${SecurityTokenRegistryProxy.address}
     ModuleRegistry (Proxy):               ${ModuleRegistryProxy.address}
     FeatureRegistry:                      ${FeatureRegistry.address}
+    InternalRegsitry:                     ${InternalRegistry.address}
 
     ETHOracle:                            ${ETHOracle}
     POLYOracle:                           ${POLYOracle}

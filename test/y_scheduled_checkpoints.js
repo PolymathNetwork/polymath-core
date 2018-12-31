@@ -161,13 +161,13 @@ contract("ScheduledCheckpoint", async (accounts) => {
             startTime = await latestTime() + 100;
             interval = 24 * 60 * 60;
             console.log("Creating scheduled CP: " + startTime, interval);
-            await I_ScheduledCheckpoint.addSchedule("CP1", startTime, interval, { from: token_owner });
+            await I_ScheduledCheckpoint.addSchedule(web3.utils.fromAscii("CP1"), startTime, interval, { from: token_owner });
             console.log("2: " + await latestTime());
         });
 
         it("Remove (temp) daily checkpoint", async () => {
             let snap_Id = await takeSnapshot();
-            await I_ScheduledCheckpoint.removeSchedule("CP1", { from: token_owner });
+            await I_ScheduledCheckpoint.removeSchedule(web3.utils.fromAscii("CP1"), { from: token_owner });
             await revertToSnapshot(snap_Id);
         });
 
@@ -211,7 +211,7 @@ contract("ScheduledCheckpoint", async (accounts) => {
         });
 
         it("Should have checkpoint created with correct balances", async () => {
-            let cp1 = await I_ScheduledCheckpoint.getSchedule("CP1");
+            let cp1 = await I_ScheduledCheckpoint.getSchedule(web3.utils.fromAscii("CP1"));
             checkSchedule(cp1, "CP1", startTime, startTime + interval, interval, [1], [startTime], [1]);
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor1, 0)).toNumber(), 0);
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor1, 1)).toNumber(), 0);
@@ -249,7 +249,7 @@ contract("ScheduledCheckpoint", async (accounts) => {
         });
 
         it("No additional checkpoints created", async () => {
-            let cp1 = await I_ScheduledCheckpoint.getSchedule("CP1");
+            let cp1 = await I_ScheduledCheckpoint.getSchedule(web3.utils.fromAscii("CP1"));
             checkSchedule(cp1, "CP1", startTime, startTime + interval, interval, [1], [startTime], [1]);
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor2, 0)).toNumber(), 0);
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor2, 1)).toNumber(), 0);
@@ -288,7 +288,7 @@ contract("ScheduledCheckpoint", async (accounts) => {
         });
 
         it("Should have new checkpoint created with correct balances", async () => {
-            let cp1 = await I_ScheduledCheckpoint.getSchedule("CP1");
+            let cp1 = await I_ScheduledCheckpoint.getSchedule(web3.utils.fromAscii("CP1"));
             checkSchedule(cp1, "CP1", startTime, startTime + 2 * interval, interval, [1, 2], [startTime, startTime + interval], [1, 1]);
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor3, 0)).toNumber(), 0);
             assert.equal((await I_SecurityToken.balanceOfAt(account_investor3, 1)).toNumber(), 0);
@@ -308,7 +308,7 @@ contract("ScheduledCheckpoint", async (accounts) => {
             assert.isTrue(await latestTime() > startTime + 3 * interval);
             assert.isTrue(await latestTime() <= startTime + 4 * interval);
             await I_SecurityToken.transfer(account_investor3, new BN(web3.utils.toWei("0.5", "ether")), { from: account_investor1 });
-            let cp1 = await I_ScheduledCheckpoint.getSchedule("CP1");
+            let cp1 = await I_ScheduledCheckpoint.getSchedule(web3.utils.fromAscii("CP1"));
             checkSchedule(
                 cp1,
                 "CP1",
@@ -339,7 +339,7 @@ contract("ScheduledCheckpoint", async (accounts) => {
             await increaseTime(interval);
             await I_ScheduledCheckpoint.updateAll({ from: token_owner });
 
-            let cp1 = await I_ScheduledCheckpoint.getSchedule("CP1");
+            let cp1 = await I_ScheduledCheckpoint.getSchedule(web3.utils.fromAscii("CP1"));
             checkSchedule(
                 cp1,
                 "CP1",

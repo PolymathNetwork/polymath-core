@@ -54,6 +54,7 @@ contract("PercentageTransferManager", async (accounts) => {
     const decimals = 18;
     const contact = "team@polymath.network";
     const managerDetails = web3.utils.fromAscii("Hello");
+    const delegateDetails = web3.utils.fromAscii("I am delegate");
 
     // Module key
     const delegateManagerKey = 1;
@@ -98,6 +99,7 @@ contract("PercentageTransferManager", async (accounts) => {
         account_investor1 = accounts[7];
         account_investor2 = accounts[8];
         account_investor3 = accounts[9];
+        account_investor4 = accounts[5]
         account_delegate = accounts[6];
 
         let instances = await setUpPolymathNetwork(account_polymath, token_owner);
@@ -352,7 +354,7 @@ contract("PercentageTransferManager", async (accounts) => {
         });
 
         it("Should not be able to modify holder percentage to 100 - Unauthorized msg.sender", async () => {
-            await catchRevert(I_PercentageTransferManager.changeHolderPercentage(100 * 10 ** 16, { from: account_delegate }));
+            await catchRevert(I_PercentageTransferManager.changeHolderPercentage(new BN(10).pow(new BN(18)), { from: account_delegate }));
         });
 
         it("Should successfully add the delegate", async () => {
@@ -364,7 +366,7 @@ contract("PercentageTransferManager", async (accounts) => {
             let tx = await I_GeneralPermissionManager.changePermission(
                 account_delegate,
                 I_PercentageTransferManager.address,
-                "ADMIN",
+                web3.utils.fromAscii("ADMIN"),
                 true,
                 { from: token_owner }
             );
@@ -374,9 +376,9 @@ contract("PercentageTransferManager", async (accounts) => {
         it("Modify holder percentage to 100", async () => {
             // Add the Investor in to the whitelist
             // Mint some tokens
-            await I_PercentageTransferManager.changeHolderPercentage(100 * 10 ** 16, { from: account_delegate });
+            await I_PercentageTransferManager.changeHolderPercentage(new BN(10).pow(new BN(18)), { from: account_delegate });
 
-            assert.equal((await I_PercentageTransferManager.maxHolderPercentage()).toNumber(), 100 * 10 ** 16);
+            assert.equal((await I_PercentageTransferManager.maxHolderPercentage()).toString(), (new BN(10).pow(new BN(18))).toString());
         });
 
         it("Should be able to transfer between existing token holders up to limit", async () => {
@@ -385,21 +387,25 @@ contract("PercentageTransferManager", async (accounts) => {
         });
 
         it("Should whitelist in batch --failed because of mismatch in array lengths", async () => {
+            let addressArray = [account_investor3, account_investor4];
             await catchRevert(
-                I_PercentageTransferManager.modifyWhitelistMulti([account_investor3, account_investor4], [false], { from: token_owner })
+                I_PercentageTransferManager.modifyWhitelistMulti(addressArray, [false], { from: token_owner })
             );
         });
 
         it("Should whitelist in batch", async () => {
             let snapId = await takeSnapshot();
-            await I_PercentageTransferManager.modifyWhitelistMulti([account_investor3, account_investor4], [false, true], {
+            let addressArray = [];
+            addressArray.push(account_investor3);
+            addressArray.push(account_investor4);
+            await I_PercentageTransferManager.modifyWhitelistMulti(addressArray, [false, true], {
                 from: token_owner
             });
             await revertToSnapshot(snapId);
         });
 
         it("Should be able to whitelist address and then transfer regardless of holders", async () => {
-            await I_PercentageTransferManager.changeHolderPercentage(30 * 10 ** 16, { from: token_owner });
+            await I_PercentageTransferManager.changeHolderPercentage(new BN(30).mul(new BN(10).pow(new BN(16))), { from: token_owner });
             await I_PercentageTransferManager.modifyWhitelist(account_investor1, true, { from: token_owner });
             await I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("2", "ether")), { from: account_investor3 });
         });

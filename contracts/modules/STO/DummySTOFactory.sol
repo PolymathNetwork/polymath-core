@@ -1,21 +1,25 @@
 pragma solidity ^0.4.24;
 
-import "./DummySTO.sol";
 import "../ModuleFactory.sol";
 import "../../libraries/Util.sol";
+import "../../proxy/DummySTOProxy.sol";
+import "../../interfaces/IBoot.sol";
 
 /**
  * @title Factory for deploying DummySTO module
  */
 contract DummySTOFactory is ModuleFactory {
 
+    address public logicContract;
+
     /**
      * @notice Constructor
      * @param _setupCost Setup cost of the module
      * @param _usageCost Usage cost of the module
      * @param _subscriptionCost Subscription cost of the module
+     * @param _logicContract Contract address that contains the logic related to `description`
      */
-    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
+    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _logicContract) public
     ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
     {
         version = "1.0.0";
@@ -24,6 +28,7 @@ contract DummySTOFactory is ModuleFactory {
         description = "Dummy STO";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        logicContract = _logicContract;
     }
 
     /**
@@ -33,9 +38,9 @@ contract DummySTOFactory is ModuleFactory {
     function deploy(bytes _data) external returns(address) {
         address polyToken = _takeFee();
         //Check valid bytes - can only call module init function
-        DummySTO dummySTO = new DummySTO(msg.sender, polyToken);
+        DummySTOProxy dummySTO = new DummySTOProxy(msg.sender, polyToken, logicContract);
         //Checks that _data is valid (not calling anything it shouldn't)
-        require(Util.getSig(_data) == dummySTO.getInitFunction(), "Invalid data");
+        require(Util.getSig(_data) == IBoot(dummySTO).getInitFunction(), "Invalid data");
         /*solium-disable-next-line security/no-low-level-calls*/
         require(address(dummySTO).call(_data), "Unsuccessfull call");
         /*solium-disable-next-line security/no-block-members*/

@@ -464,7 +464,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @dev Intention is that this is called off-chain so block gas limit is not relevant
      */
     function getTokensByOwner(address _owner) external view returns(address[]) {
-        return _getTokens(_owner);
+        return _getTokens(false, _owner);
     }
 
     /**
@@ -472,14 +472,14 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @dev Intention is that this is called off-chain so block gas limit is not relevant
      */
     function getTokens() external view returns(address[]) {
-        return _getTokens(address(0));
+        return _getTokens(true, address(0));
     }
     /**
      * @notice Returns the list of tokens owned by the selected address
+     * @param _allTokens if _allTokens is true returns all tokens despite on the second parameter
      * @param _owner is the address which owns the list of tickers
-     * @dev If _owner is address(0) returns all tokens
      */
-    function _getTokens(address _owner) internal view returns(address[]) {
+    function _getTokens(bool _allTokens, address _owner) internal view returns(address[]) {
         // Loop over all active users, then all associated tickers of those users
         // This ensures we find tokens, even if their owner has been modified
         address[] memory activeUsers = getArrayAddress(Encoder.getKey("activeUsers"));
@@ -493,7 +493,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
             for (j = 0; j < tickers.length; j++) {
                 token = getAddress(Encoder.getKey("tickerToSecurityToken", Util.bytes32ToString(tickers[j])));
                 if (token != address(0)) {
-                    if (_owner == address(0) || IOwnable(token).owner() == _owner) {
+                    if (_allTokens || IOwnable(token).owner() == _owner) {
                         count = count + 1;
                     }
                 }
@@ -506,7 +506,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
             for (j = 0; j < tickers.length; j++) {
                 token = getAddress(Encoder.getKey("tickerToSecurityToken", Util.bytes32ToString(tickers[j])));
                 if (token != address(0)) {
-                    if (_owner == address(0) || IOwnable(token).owner() == _owner) {
+                    if (_allTokens || IOwnable(token).owner() == _owner) {
                         result[index] = token;
                         index = index + 1;
                     }

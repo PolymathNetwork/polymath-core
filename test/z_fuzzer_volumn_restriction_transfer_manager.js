@@ -219,12 +219,12 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
     });
 
-    describe("Fuzz test", async() => {
+    describe("Fuzz test", async () => {
 
         it("Should work with multiple transaction within 1 day with Individual and daily Restrictions", async() => {
             // let snapId = await takeSnapshot();
             
-            var testRepeat = 1; 
+            var testRepeat = 2; 
 
             for (var i = 0; i < testRepeat; i++) {
 
@@ -268,9 +268,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
                         from: token_owner
                     }
                 );
-                    
+                  
                 console.log("c");
-                var txNumber = 10; //define fuzz test amount for tx within 24 hrs
+                var txNumber = 10; // define fuzz test amount for tx within 24 hrs
 
                 for (var j=0; j<txNumber; j++) {
 
@@ -284,20 +284,17 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
                     console.log("sumOfLastPeriod is " + sumOfLastPeriod + " transactionAmount is " + transactionAmount + " individualRestrictTotalAmount is " + individualRestrictTotalAmount + " dailyRestrictionAmount is " + dailyRestrictionAmount);
 
-
                     // check against daily and total restrictions to determine if the transaction should pass or not
-                    if(accumulatedTxValue > individualRestrictTotalAmount || accumulatedTxValue > dailyRestrictionAmount){
-
+                    if (accumulatedTxValue > individualRestrictTotalAmount || accumulatedTxValue > dailyRestrictionAmount) {
                         console.log("tx should fail");
 
-                        await catchRevert( 
+                        await catchRevert(
                             I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1})
-                        ); 
+                        );
 
                         console.log("tx failed as expected due to over limit");
 
-                    } else if (accumulatedTxValue <= individualRestrictTotalAmount && accumulatedTxValue <= dailyRestrictionAmount ){
-                        
+                    } else if (accumulatedTxValue <= individualRestrictTotalAmount && accumulatedTxValue <= dailyRestrictionAmount) {
                         console.log("tx should succeed");
 
                         await I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1});
@@ -313,14 +310,11 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 await I_VolumeRestrictionTM.removeIndividualRestriction(account_investor1, {from: token_owner});
                 await I_VolumeRestrictionTM.removeIndividualDailyRestriction(account_investor1, {from: token_owner});
             }
-
         });
 
-
         it("Should work with fuzz test for individual restriction and general restriction", async() => {
-            // let snapId = await takeSnapshot();
-            
-            var testRepeat = 1;
+            // let snapId = await takeSnapshot();         
+            var testRepeat = 0;
 
             for (var i = 0; i < testRepeat; i++) {
 
@@ -446,7 +440,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Should work with fuzz test for randomly adding / removing individual daily restriction and perform multipel transactions", async() => {
 
 
-            var testRepeat = 1;
+            var testRepeat = 0;
             var txNumber = 10;
             var dailyRestriction = false;
             var startTime = 1;
@@ -546,8 +540,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
 
 
-        it("fuzz test exception list", async () => {
-            var testRepeat = 1;
+        it("should work in all cases if a sender is added in the exception list", async () => {
+            var testRepeat = 0;
 
             for (var i = 0; i < testRepeat; i++) {
                 console.log("fuzzer number " + i);

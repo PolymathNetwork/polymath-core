@@ -730,180 +730,180 @@ contract("USDTieredSTO Sim", async (accounts) => {
 
                 if (isPoly) {
                     assert.equal(
-                        final_TokenSupply.toString(),
-                        init_TokenSupply.add(investment_Token).toString(),                    
+                        final_TokenSupply.div(new BN(10)).toString(),
+                        init_TokenSupply.add(investment_Token).div(new BN(10)).toString(),                    
                         "Token Supply not changed as expected"
                     );
                     assert.equal(
-                        final_InvestorTokenBal.toString(),
-                        init_InvestorTokenBal.add(investment_Token).toString(),                        
+                        final_InvestorTokenBal.div(new BN(10)).toString(),
+                        init_InvestorTokenBal.add(investment_Token).div(new BN(10)).toString(),                        
                         "Investor Token Balance not changed as expected"
                     );
                     assert.equal(
-                        final_InvestorETHBal.toString(),
-                        init_InvestorETHBal.sub(gasCost).toString(),                        
+                        final_InvestorETHBal.div(new BN(10)).toString(),
+                        init_InvestorETHBal.sub(gasCost).div(new BN(10)).toString(),                        
                         "Investor ETH Balance not changed as expected"
                     );
                     assert.equal(
-                        final_InvestorPOLYBal.toString(),
-                        init_InvestorPOLYBal.sub(investment_POLY).toString(),                        
+                        final_InvestorPOLYBal.div(new BN(10)).toString(),
+                        init_InvestorPOLYBal.sub(investment_POLY).div(new BN(10)).toString(),                        
                         "Investor POLY Balance not changed as expected"
                     );
                     assert.equal(
-                        final_STOTokenSold.toString(),
-                        init_STOTokenSold.add(investment_Token).toString(),                        
+                        final_STOTokenSold.div(new BN(10)).toString(),
+                        init_STOTokenSold.add(investment_Token).div(new BN(10)).toString(),                        
                         "STO Token Sold not changed as expected"
                     );
                     assert.equal(
-                        final_STOETHBal.toString(),
-                        init_STOETHBal.toString(),                        
+                        final_STOETHBal.div(new BN(10)).toString(),
+                        init_STOETHBal.div(new BN(10)).toString(),                        
                         "STO ETH Balance not changed as expected"
                     );
                     assert.equal(
-                        final_STOPOLYBal.toString(),
-                        init_STOPOLYBal.toString(),                        
+                        final_STOPOLYBal.div(new BN(10)).toString(),
+                        init_STOPOLYBal.div(new BN(10)).toString(),                        
                         "STO POLY Balance not changed as expected"
                     );
                     assert.equal(
-                        final_RaisedUSD.toString(),
-                        init_RaisedUSD.add(investment_USD).toString(),                        
+                        final_RaisedUSD.div(new BN(10)).toString(),
+                        init_RaisedUSD.add(investment_USD).div(new BN(10)).toString(),                        
                         "Raised USD not changed as expected"
                     );
-                    assert.equal(final_RaisedETH.toString(), init_RaisedETH.toString(), "Raised ETH not changed as expected");
+                    assert.equal(final_RaisedETH.div(new BN(10)).toString(), init_RaisedETH.div(new BN(10)).toString(), "Raised ETH not changed as expected");
                     assert.equal(
-                        final_RaisedPOLY.toString(),
-                        init_RaisedPOLY.add(investment_POLY).toString(),                        
+                        final_RaisedPOLY.div(new BN(10)).toString(),
+                        init_RaisedPOLY.add(investment_POLY).div(new BN(10)).toString(),                        
                         "Raised POLY not changed as expected"
                     );
                     assert.equal(
-                        final_WalletETHBal.toString(),
-                        init_WalletETHBal.toString(),                        
+                        final_WalletETHBal.div(new BN(10)).toString(),
+                        init_WalletETHBal.div(new BN(10)).toString(),                        
                         "Wallet ETH Balance not changed as expected"
                     );
                     assert.equal(
-                        final_WalletPOLYBal.toString(),
-                        init_WalletPOLYBal.add(investment_POLY).toString(),                        
+                        final_WalletPOLYBal.div(new BN(10)).toString(),
+                        init_WalletPOLYBal.add(investment_POLY).div(new BN(10)).toString(),                        
                         "Wallet POLY Balance not changed as expected"
                     );
                 } else if (isDai) {
                     assert.equal(
-                        final_TokenSupply.toString(),
-                        init_TokenSupply.add(investment_Token).toString(),                        
+                        final_TokenSupply.div(new BN(10)).toString(),
+                        init_TokenSupply.add(investment_Token).div(new BN(10)).toString(),                        
                         "Token Supply not changed as expected"
                     );
                     assert.equal(
-                        final_InvestorTokenBal.toString(),
-                        init_InvestorTokenBal.add(investment_Token).toString(),                        
+                        final_InvestorTokenBal.div(new BN(10)).toString(),
+                        init_InvestorTokenBal.add(investment_Token).div(new BN(10)).toString(),                        
                         "Investor Token Balance not changed as expected"
                     );
                     assert.equal(
-                        final_InvestorETHBal.toString(),
-                        init_InvestorETHBal.sub(gasCost).toString(),                        
+                        final_InvestorETHBal.div(new BN(10)).toString(),
+                        init_InvestorETHBal.sub(gasCost).div(new BN(10)).toString(),                        
                         "Investor ETH Balance not changed as expected"
                     );
                     assert.equal(
-                        final_InvestorDAIBal.toString(),
-                        init_InvestorDAIBal.sub(investment_DAI).toString(),                        
+                        final_InvestorDAIBal.div(new BN(10)).toString(),
+                        init_InvestorDAIBal.sub(investment_DAI).div(new BN(10)).toString(),                        
                         "Investor DAI Balance not changed as expected"
                     );
                     assert.equal(
-                        final_STOTokenSold.toString(),
-                        init_STOTokenSold.add(investment_Token).toString(),                        
+                        final_STOTokenSold.div(new BN(10)).toString(),
+                        init_STOTokenSold.add(investment_Token).div(new BN(10)).toString(),                        
                         "STO Token Sold not changed as expected"
                     );
                     assert.equal(
-                        final_STOETHBal.toString(),
-                        init_STOETHBal.toString(),                        
+                        final_STOETHBal.div(new BN(10)).toString(),
+                        init_STOETHBal.div(new BN(10)).toString(),                        
                         "STO ETH Balance not changed as expected"
                     );
                     assert.equal(
-                        final_STODAIBal.toString(),
-                        init_STODAIBal.toString(),                        
+                        final_STODAIBal.div(new BN(10)).toString(),
+                        init_STODAIBal.div(new BN(10)).toString(),                        
                         "STO DAI Balance not changed as expected"
                     );
                     assert.equal(
-                        final_RaisedUSD.toString(),
-                        init_RaisedUSD.add(investment_USD).toString(),                        
+                        final_RaisedUSD.div(new BN(10)).toString(),
+                        init_RaisedUSD.add(investment_USD).div(new BN(10)).toString(),                        
                         "Raised USD not changed as expected"
                     );
-                    assert.equal(final_RaisedETH.toString(), init_RaisedETH.toString(),  "Raised ETH not changed as expected");
+                    assert.equal(final_RaisedETH.div(new BN(10)).toString(), init_RaisedETH.div(new BN(10)).toString(),  "Raised ETH not changed as expected");
                     assert.equal(
-                        final_RaisedDAI.toString(),
-                        init_RaisedDAI.add(investment_DAI).toString(),                        
+                        final_RaisedDAI.div(new BN(10)).toString(),
+                        init_RaisedDAI.add(investment_DAI).div(new BN(10)).toString(),                        
                         "Raised DAI not changed as expected"
                     );
                     assert.equal(
-                        final_WalletETHBal.toString(),
-                        init_WalletETHBal.toString(),                        
+                        final_WalletETHBal.div(new BN(10)).toString(),
+                        init_WalletETHBal.div(new BN(10)).toString(),                        
                         "Wallet ETH Balance not changed as expected"
                     );
                     assert.equal(
-                        final_WalletDAIBal.toString(),
-                        init_WalletDAIBal.add(investment_DAI).toString(),                        
+                        final_WalletDAIBal.div(new BN(10)).toString(),
+                        init_WalletDAIBal.add(investment_DAI).div(new BN(10)).toString(),                        
                         "Wallet DAI Balance not changed as expected"
                     );
                 } else {
                     assert.equal(
-                        final_TokenSupply.toString(),
-                        init_TokenSupply.add(investment_Token).toString(),                        
+                        final_TokenSupply.div(new BN(10)).toString(),
+                        init_TokenSupply.add(investment_Token).div(new BN(10)).toString(),                        
                         "Token Supply not changed as expected"
                     );
                     assert.equal(
-                        final_InvestorTokenBal.toString(),
-                        init_InvestorTokenBal.add(investment_Token).toString(),                        
+                        final_InvestorTokenBal.div(new BN(10)).toString(),
+                        init_InvestorTokenBal.add(investment_Token).div(new BN(10)).toString(),                        
                         "Investor Token Balance not changed as expected"
                     );
                     assert.equal(
-                        final_InvestorETHBal.toString(),
+                        final_InvestorETHBal.div(new BN(10)).toString(),
                         init_InvestorETHBal
                             .sub(gasCost)
                             .sub(investment_ETH)
-                            .toString(),                        
+                            .div(new BN(10)).toString(),                        
                         "Investor ETH Balance not changed as expected"
                     );
                     assert.equal(
-                        final_InvestorPOLYBal.toString(),
-                        init_InvestorPOLYBal.toString(),                        
+                        final_InvestorPOLYBal.div(new BN(10)).toString(),
+                        init_InvestorPOLYBal.div(new BN(10)).toString(),                        
                         "Investor POLY Balance not changed as expected"
                     );
                     assert.equal(
-                        final_STOTokenSold.toString(),
-                        init_STOTokenSold.add(investment_Token).toString(),                        
+                        final_STOTokenSold.div(new BN(10)).toString(),
+                        init_STOTokenSold.add(investment_Token).div(new BN(10)).toString(),                        
                         "STO Token Sold not changed as expected"
                     );
                     assert.equal(
-                        final_STOETHBal.toString(),
-                        init_STOETHBal.toString(),                        
+                        final_STOETHBal.div(new BN(10)).toString(),
+                        init_STOETHBal.div(new BN(10)).toString(),                        
                         "STO ETH Balance not changed as expected"
                     );
                     assert.equal(
-                        final_STOPOLYBal.toString(),
-                        init_STOPOLYBal.toString(),                        
+                        final_STOPOLYBal.div(new BN(10)).toString(),
+                        init_STOPOLYBal.div(new BN(10)).toString(),                        
                         "STO POLY Balance not changed as expected"
                     );
                     assert.equal(
-                        final_RaisedUSD.toString(),
-                        init_RaisedUSD.add(investment_USD).toString(),                        
+                        final_RaisedUSD.div(new BN(10)).toString(),
+                        init_RaisedUSD.add(investment_USD).div(new BN(10)).toString(),                        
                         "Raised USD not changed as expected"
                     );
                     assert.equal(
-                        final_RaisedETH.toString(),
-                        init_RaisedETH.add(investment_ETH).toString(),                        
+                        final_RaisedETH.div(new BN(10)).toString(),
+                        init_RaisedETH.add(investment_ETH).div(new BN(10)).toString(),                        
                         "Raised ETH not changed as expected"
                     );
                     assert.equal(
-                        final_RaisedPOLY.toString(),
-                        init_RaisedPOLY.toString(),                        
+                        final_RaisedPOLY.div(new BN(10)).toString(),
+                        init_RaisedPOLY.div(new BN(10)).toString(),                        
                         "Raised POLY not changed as expected"
                     );
                     assert.equal(
-                        final_WalletETHBal.toString(),
-                        init_WalletETHBal.add(investment_ETH).toString(),                        
+                        final_WalletETHBal.div(new BN(10)).toString(),
+                        init_WalletETHBal.add(investment_ETH).div(new BN(10)).toString(),                        
                         "Wallet ETH Balance not changed as expected"
                     );
                     assert.equal(
-                        final_WalletPOLYBal.toString(),
-                        init_WalletPOLYBal.toString(),                        
+                        final_WalletPOLYBal.div(new BN(10)).toString(),
+                        init_WalletPOLYBal.div(new BN(10)).toString(),                        
                         "Wallet POLY Balance not changed as expected"
                     );
                 }
@@ -911,7 +911,3 @@ contract("USDTieredSTO Sim", async (accounts) => {
         });
     });
 });
-
-function near(x, y, message) {
-    assert.isAtMost(x, y);
-}

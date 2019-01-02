@@ -310,7 +310,11 @@ contract ManualApprovalTransferManager is ITransferManager {
      * @notice Returns the all active approvals corresponds to an address
      * @param _user Address of the holder corresponds to whom list of manual approvals 
      * need to return
-     * @return List of indexes
+     * @return address[] addresses from
+     * @return address[] addresses to
+     * @return uint256[] allowances provided to the approvals
+     * @return uint256[] expiry times provided to the approvals
+     * @return bytes32[] descriptions provided to the approvals
      */
     function getActiveApprovalsToUser(address _user) external view returns(address[], address[], uint256[], uint256[], bytes32[]) {
         uint256 counter = 0;

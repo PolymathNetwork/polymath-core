@@ -69,6 +69,7 @@ contract("ManualApprovalTransferManager", accounts => {
     const stoKey = 3;
 
     let expiryTimeMA;
+    let approvalTime;
 
     // Initial fee for ticker registry and security token registry
     const initRegFee = web3.utils.toWei("250");
@@ -350,11 +351,12 @@ contract("ManualApprovalTransferManager", accounts => {
         });
 
         it("Add a manual approval for a 4th investor & return correct length", async () => {
+            approvalTime = latestTime() + duration.days(1);
             await I_ManualApprovalTransferManager.addManualApproval(
                 account_investor1,
                 account_investor4,
                 web3.utils.toWei("3", "ether"),
-                latestTime() + duration.days(1),
+                approvalTime,
                 "DESCRIPTION",
                 { 
                     from: token_owner
@@ -374,7 +376,7 @@ contract("ManualApprovalTransferManager", accounts => {
             console.log("2");
             assert.equal(tx[2][0], web3.utils.toWei("3"));
             console.log("3");
-            assert.equal(tx[3][0].toNumber(), latestTime() + duration.days(1));
+            assert.equal(tx[3][0].toNumber(), approvalTime);
             console.log("4");
             assert.equal(web3.utils.toUtf8(tx[4][0]), "DESCRIPTION");
         })

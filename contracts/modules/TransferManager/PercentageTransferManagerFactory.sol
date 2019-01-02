@@ -1,29 +1,35 @@
 pragma solidity ^0.4.24;
 
-import "./PercentageTransferManager.sol";
 import "../ModuleFactory.sol";
 import "../../libraries/Util.sol";
+import "../../proxy/PercentageTransferManagerProxy.sol";
+import "../../interfaces/IBoot.sol";
 
 /**
  * @title Factory for deploying PercentageTransferManager module
  */
 contract PercentageTransferManagerFactory is ModuleFactory {
 
+    address public logicContract;
+
     /**
      * @notice Constructor
      * @param _setupCost Setup cost of the module
      * @param _usageCost Usage cost of the module
      * @param _subscriptionCost Subscription cost of the module
+     * @param _logicContract Contract address that contains the logic related to `description`
      */
-    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
+    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _logicContract) public
     ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
     {
+        require(_logicContract != address(0), "Invalid address");
         version = "1.0.0";
         name = "PercentageTransferManager";
         title = "Percentage Transfer Manager";
         description = "Restrict the number of investors";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        logicContract = _logicContract;
     }
 
     /**
@@ -33,8 +39,8 @@ contract PercentageTransferManagerFactory is ModuleFactory {
      */
     function deploy(bytes _data) external returns(address) {
         address polyToken = _takeFee();
-        PercentageTransferManager percentageTransferManager = new PercentageTransferManager(msg.sender, polyToken);
-        require(Util.getSig(_data) == percentageTransferManager.getInitFunction(), "Provided data is not valid");
+        PercentageTransferManagerProxy percentageTransferManager = new PercentageTransferManagerProxy(msg.sender, polyToken, logicContract);
+        require(Util.getSig(_data) == IBoot(percentageTransferManager).getInitFunction(), "Provided data is not valid");
         /*solium-disable-next-line security/no-low-level-calls*/
         require(address(percentageTransferManager).call(_data), "Unsuccessful call");
         /*solium-disable-next-line security/no-block-members*/

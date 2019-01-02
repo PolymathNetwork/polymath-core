@@ -1,20 +1,17 @@
 pragma solidity ^0.4.24;
 
-import "./ISTO.sol";
+import "./STO.sol";
 import "../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "./PreSaleSTOStorage.sol";
 
 /**
  * @title STO module for private presales
  */
-contract PreSaleSTO is ISTO {
+contract PreSaleSTO is PreSaleSTOStorage, STO {
     using SafeMath for uint256;
 
-    bytes32 public constant PRE_SALE_ADMIN = "PRE_SALE_ADMIN";
-
     event TokensAllocated(address _investor, uint256 _amount);
-
-    mapping (address => uint256) public investors;
 
     /**
      * @notice Constructor
@@ -51,7 +48,7 @@ contract PreSaleSTO is ISTO {
     /**
      * @notice Returns the total no. of tokens sold
      */
-    function getTokensSold() public view returns (uint256) {
+    function getTokensSold() external view returns (uint256) {
         return totalTokensSold;
     }
 

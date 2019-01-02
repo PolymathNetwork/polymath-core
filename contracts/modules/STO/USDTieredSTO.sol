@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "./ISTO.sol";
+import "./STO.sol";
 import "../../interfaces/ISecurityToken.sol";
 import "../../interfaces/IOracle.sol";
 import "../../RegistryUpdater.sol";
@@ -12,7 +12,7 @@ import "./USDTieredSTOStorage.sol";
 /**
  * @title STO module for standard capped crowdsale
  */
-contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
+contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
     using SafeMath for uint256;
 
     string public constant POLY_ORACLE = "PolyUsdOracle";
@@ -713,7 +713,11 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
      * @notice Return the total no. of tokens sold
      * @return uint256 Total number of tokens sold
      */
-    function getTokensSold() public view returns (uint256) {
+    function getTokensSold() external view returns (uint256) {
+        return _getTokensSold();
+    }
+
+    function _getTokensSold() internal view returns (uint256) {
         if (isFinalized)
             return totalTokensSold;
         else
@@ -820,7 +824,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
             rate,
             fundsRaisedUSD,
             investorCount,
-            getTokensSold(),
+            _getTokensSold(),
             _fundRaiseTypes
         );
     }

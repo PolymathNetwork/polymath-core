@@ -1,26 +1,16 @@
 pragma solidity ^0.4.24;
 
-import "./ISTO.sol";
+import "./STO.sol";
 import "../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "./CappedSTOStorage.sol";
 
 /**
  * @title STO module for standard capped crowdsale
  */
-contract CappedSTO is ISTO, ReentrancyGuard {
+contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
     using SafeMath for uint256;
-
-    // Determine whether users can invest on behalf of a beneficiary
-    bool public allowBeneficialInvestments = false;
-    // How many token units a buyer gets (multiplied by 10^18) per wei / base unit of POLY
-    // If rate is 10^18, buyer will get 1 token unit for every wei / base unit of poly.
-    uint256 public rate;
-    //How many token base units this STO will be allowed to sell to investors
-    // 1 full token = 10^decimals_of_token base units
-    uint256 public cap;
-
-    mapping (address => uint256) public investors;
 
     /**
     * Event for token purchase logging
@@ -141,7 +131,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
     /**
      * @notice Return the total no. of tokens sold
      */
-    function getTokensSold() public view returns (uint256) {
+    function getTokensSold() external view returns (uint256) {
         return totalTokensSold;
     }
 

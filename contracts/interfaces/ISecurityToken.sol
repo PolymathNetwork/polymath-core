@@ -18,14 +18,23 @@ interface ISecurityToken {
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
 
-    //transfer, transferFrom must respect the result of verifyTransfer
-    function verifyTransfer(address _from, address _to, uint256 _value) external returns (bool success);
+    /**
+     * @notice Validates a transfer with a TransferManager module if it exists
+     * @dev TransferManager module has a key of 2
+     * @param _from Sender of transfer
+     * @param _to Receiver of transfer
+     * @param _value Value of transfer
+     * @param _data Data to indicate validation
+     * @return bool
+     */
+    function verifyTransfer(address _from, address _to, uint256 _value, bytes _data) external returns (bool);
 
     /**
      * @notice Mints new tokens and assigns them to the target _investor.
      * Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
      * @param _investor Address the tokens will be minted to
      * @param _value is the amount of tokens that will be minted to the investor
+     * @return success
      */
     function mint(address _investor, uint256 _value) external returns (bool success);
 
@@ -56,9 +65,15 @@ interface ISecurityToken {
     event Minted(address indexed _to, uint256 _value);
     event Burnt(address indexed _burner, uint256 _value);
 
-    // Permissions this to a Permission module, which has a key of 1
-    // If no Permission return false - note that IModule withPerm will allow ST owner all permissions anyway
-    // this allows individual modules to override this logic if needed (to not allow ST owner all permissions)
+    /**
+     * @notice Validate permissions with PermissionManager if it exists, If no Permission return false
+     * @dev Note that IModule withPerm will allow ST owner all permissions anyway
+     * @dev this allows individual modules to override this logic if needed (to not allow ST owner all permissions)
+     * @param _delegate address of delegate
+     * @param _module address of PermissionManager module
+     * @param _perm the permissions
+     * @return success
+     */
     function checkPermission(address _delegate, address _module, bytes32 _perm) external view returns (bool);
 
     /**
@@ -68,12 +83,10 @@ interface ISecurityToken {
      * @return address Module address
      * @return address Module factory address
      * @return bool Module archived
-     * @return uint8 Module type
-     * @return uint256 Module index
-     * @return uint256 Name index
-
+     * @return uint8 Array of module types
+     * @return bytes32 Module label
      */
-    function getModule(address _module) external view returns(bytes32, address, address, bool, uint8, uint256, uint256);
+    function getModule(address _module) external view returns (bytes32, address, address, bool, uint8[], bytes32);
 
     /**
      * @notice Returns module list for a module name
@@ -108,6 +121,12 @@ interface ISecurityToken {
     function createCheckpoint() external returns (uint256);
 
     /**
+     * @notice Gets list of times that checkpoints were created
+     * @return List of checkpoint times
+     */
+    function getCheckpointTimes() external view returns(uint256[]);
+
+    /**
      * @notice Gets length of investors array
      * NB - this length may differ from investorCount if the list has not been pruned of zero-balance investors
      * @return Length
@@ -137,13 +156,6 @@ interface ISecurityToken {
      */
     function currentCheckpointId() external view returns (uint256);
 
-    /**
-    * @notice Gets an investor at a particular index
-    * @param _index Index to return address from
-    * @return Investor address
-    */
-    function investors(uint256 _index) external view returns (address);
-
    /**
     * @notice Allows the owner to withdraw unspent POLY stored by them on the ST or any ERC20 token.
     * @dev Owner can transfer POLY to the ST which will be used to pay for modules that require a POLY fee.
@@ -153,11 +165,12 @@ interface ISecurityToken {
     function withdrawERC20(address _tokenContract, uint256 _value) external;
 
     /**
-    * @notice Allows owner to approve more POLY to one of the modules
+    * @notice Allows owner to increase/decrease POLY approval of one of the modules
     * @param _module Module address
-    * @param _budget New budget
+    * @param _change Change in allowance
+    * @param _increase True if budget has to be increased, false if decrease
     */
-    function changeModuleBudget(address _module, uint256 _budget) external;
+    function changeModuleBudget(address _module, uint256 _change, bool _increase) external;
 
     /**
      * @notice Changes the tokenDetails
@@ -170,14 +183,6 @@ interface ISecurityToken {
     * @param _granularity Granularity level of the token
     */
     function changeGranularity(uint256 _granularity) external;
-
-    /**
-    * @notice Removes addresses with zero balances from the investors list
-    * @param _start Index in investors list at which to start removing zero balances
-    * @param _iters Max number of iterations of the for loop
-    * NB - pruning this list will mean you may not be able to iterate over investors on-chain as of a historical checkpoint
-    */
-    function pruneInvestors(uint256 _start, uint256 _iters) external;
 
     /**
      * @notice Freezes all the transfers
@@ -203,6 +208,24 @@ interface ISecurityToken {
      */
     function mintMulti(address[] _investors, uint256[] _values) external returns (bool success);
 
+     /**
+      * @notice Attachs a module to the SecurityToken
+      * @dev  E.G.: On deployment (through the STR) ST gets a TransferManager module attached to it
+      * @dev to control restrictions on transfers.
+      * @param _moduleFactory is the address of the module factory to be added
+      * @param _data is data packed into bytes used to further configure the module (See STO usage)
+      * @param _maxCost max amount of POLY willing to pay to the module.
+      * @param _budget max amount of ongoing POLY willing to assign to the module.
+      * @param _label custom module label.
+      */
+    function addModuleWithLabel(
+        address _moduleFactory,
+        bytes _data,
+        uint256 _maxCost,
+        uint256 _budget,
+        bytes32 _label
+    ) external;
+
     /**
      * @notice Function used to attach a module to the security token
      * @dev  E.G.: On deployment (through the STR) ST gets a TransferManager module attached to it
@@ -213,6 +236,7 @@ interface ISecurityToken {
      * @param _moduleFactory is the address of the module factory to be added
      * @param _data is data packed into bytes used to further configure the module (See STO usage)
      * @param _maxCost max amount of POLY willing to pay to module. (WIP)
+     * @param _budget max amount of ongoing POLY willing to assign to the module.
      */
     function addModule(
         address _moduleFactory,

@@ -7,27 +7,15 @@
 
 pragma solidity ^0.4.24;
 
-import "./ITransferManager.sol";
+import "./TransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "./PercentageTransferManagerStorage.sol";
 
 /**
  * @title Transfer Manager module for limiting percentage of token supply a single address can hold
  */
-contract PercentageTransferManager is ITransferManager {
+contract PercentageTransferManager is PercentageTransferManagerStorage, TransferManager {
     using SafeMath for uint256;
-
-    // Permission key for modifying the whitelist
-    bytes32 public constant WHITELIST = "WHITELIST";
-    bytes32 public constant ADMIN = "ADMIN";
-
-    // Maximum percentage that any holder can have, multiplied by 10**16 - e.g. 20% is 20 * 10**16
-    uint256 public maxHolderPercentage;
-
-    // Ignore transactions which are part of the primary issuance
-    bool public allowPrimaryIssuance = true;
-
-    // Addresses on this list are always able to send / receive tokens
-    mapping (address => bool) public whitelist;
 
     event ModifyHolderPercentage(uint256 _oldHolderPercentage, uint256 _newHolderPercentage);
     event ModifyWhitelist(
@@ -53,7 +41,7 @@ contract PercentageTransferManager is ITransferManager {
      * @param _to Address of the receiver
      * @param _amount The amount of tokens to transfer
      */
-    function verifyTransfer(address _from, address _to, uint256 _amount, bytes /* _data */, bool /* _isTransfer */) public returns(Result) {
+    function verifyTransfer(address _from, address _to, uint256 _amount, bytes /* _data */, bool /* _isTransfer */) external returns(Result) {
         if (!paused) {
             if (_from == address(0) && allowPrimaryIssuance) {
                 return Result.NA;

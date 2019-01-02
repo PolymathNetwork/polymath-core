@@ -6,7 +6,7 @@ import "../interfaces/IModule.sol";
 import "../interfaces/IModuleFactory.sol";
 import "../interfaces/IModuleRegistry.sol";
 import "../interfaces/IFeatureRegistry.sol";
-import "../modules/TransferManager/ITransferManager.sol";
+import "../interfaces/ITransferManager.sol";
 import "../RegistryUpdater.sol";
 import "../libraries/Util.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
@@ -214,17 +214,16 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         securityTokenVersion = SemanticVersion(2,0,0);
     }
 
-    // /**
-    //  * @notice Attachs a module to the SecurityToken
-    //  * @dev  E.G.: On deployment (through the STR) ST gets a TransferManager module attached to it
-    //  * @dev to control restrictions on transfers.
-    //  * @param _moduleFactory is the address of the module factory to be added
-    //  * @param _data is data packed into bytes used to further configure the module (See STO usage)
-    //  * @param _maxCost max amount of POLY willing to pay to the module.
-    //  * @param _budget max amount of ongoing POLY willing to assign to the module.
-    //  * @param _label custom module label.
-    //  */
-
+     /**
+      * @notice Attachs a module to the SecurityToken
+      * @dev  E.G.: On deployment (through the STR) ST gets a TransferManager module attached to it
+      * @dev to control restrictions on transfers.
+      * @param _moduleFactory is the address of the module factory to be added
+      * @param _data is data packed into bytes used to further configure the module (See STO usage)
+      * @param _maxCost max amount of POLY willing to pay to the module.
+      * @param _budget max amount of ongoing POLY willing to assign to the module.
+      * @param _label custom module label.
+      */
     function addModuleWithLabel(
         address _moduleFactory,
         bytes _data,
@@ -344,7 +343,8 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @return address module address
      * @return address module factory address
      * @return bool module archived
-     * @return uint8 module type
+     * @return uint8 array of module types
+     * @return bytes32 module label
      */
     function getModule(address _module) external view returns (bytes32, address, address, bool, uint8[], bytes32) {
         return (modulesToData[_module].name,
@@ -386,7 +386,6 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     }
 
     /**
-
     * @notice allows owner to increase/decrease POLY approval of one of the modules
     * @param _module module address
     * @param _change change in allowance
@@ -632,12 +631,12 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
                 module = modules[TRANSFER_KEY][i];
                 if (!modulesToData[module].isArchived) {
                     unarchived = true;
-                    ITransferManager.Result valid = ITransferManager(module).verifyTransfer(_from, _to, _value, _data, _isTransfer);
-                    if (valid == ITransferManager.Result.INVALID) {
+                    TransferManagerEnums.Result valid = ITransferManager(module).verifyTransfer(_from, _to, _value, _data, _isTransfer);
+                    if (valid == TransferManagerEnums.Result.INVALID) {
                         isInvalid = true;
-                    } else if (valid == ITransferManager.Result.VALID) {
+                    } else if (valid == TransferManagerEnums.Result.VALID) {
                         isValid = true;
-                    } else if (valid == ITransferManager.Result.FORCE_VALID) {
+                    } else if (valid == TransferManagerEnums.Result.FORCE_VALID) {
                         isForceValid = true;
                     }
                 }

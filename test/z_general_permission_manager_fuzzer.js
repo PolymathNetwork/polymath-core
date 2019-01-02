@@ -77,6 +77,7 @@ contract('GeneralPermissionManager Fuzz', accounts => {
     let P_SingleTradeVolumeRestrictionManagerFactory;
     let I_ManualApprovalTransferManagerFactory;
     let I_ManualApprovalTransferManager;
+    let I_STRGetter;
 
     // SecurityToken Details
     const name = "Team";
@@ -136,7 +137,8 @@ contract('GeneralPermissionManager Fuzz', accounts => {
             I_STFactory,
             I_SecurityTokenRegistry,
             I_SecurityTokenRegistryProxy,
-            I_STRProxied
+            I_STRProxied,
+            I_STRGetter
         ] = instances;
 
         // STEP 5: Deploy the GeneralDelegateManagerFactory

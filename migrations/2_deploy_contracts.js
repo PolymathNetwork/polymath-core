@@ -27,7 +27,7 @@ const DevPolyToken = artifacts.require('./helpers/PolyTokenFaucet.sol')
 const MockOracle = artifacts.require('./MockOracle.sol')
 const TokenLib = artifacts.require('./TokenLib.sol');
 const SecurityToken = artifacts.require('./tokens/SecurityToken.sol')
-const InternalRegistry = artifacts.require('./InternalRegistry.sol');
+const STRGetter = artifacts.require('./STRGetter.sol');
 
 let BigNumber = require('bignumber.js');
 const cappedSTOSetupCost = new BigNumber(20000).times(new BigNumber(10).pow(18));   // 20K POLY fee
@@ -112,6 +112,9 @@ module.exports = function (deployer, network, accounts) {
     },{
         type: 'address',
         name: '_owner'
+    },{
+        type: 'address',
+        name: '_getterContract'
     }]
   };
 
@@ -231,10 +234,10 @@ module.exports = function (deployer, network, accounts) {
   }).then(()=> {
     return deployer.deploy(SecurityTokenRegistryProxy, {from: PolymathAccount});
   }).then(() => {
-    let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignatureProxy, [PolymathRegistry.address, STFactory.address, initRegFee, initRegFee, PolymathAccount]);
-    return SecurityTokenRegistryProxy.at(SecurityTokenRegistryProxy.address).upgradeToAndCall("1.0.0", SecurityTokenRegistry.address, bytesProxy, {from: PolymathAccount});
+    return deployer.deploy(STRGetter, {from: PolymathAccount});
   }).then(() => {
-    return deployer.deploy(InternalRegistry, {from: PolymathAccount});
+    let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignatureProxy, [PolymathRegistry.address, STFactory.address, initRegFee, initRegFee, PolymathAccount, STRGetter.address]);
+    return SecurityTokenRegistryProxy.at(SecurityTokenRegistryProxy.address).upgradeToAndCall("1.0.0", SecurityTokenRegistry.address, bytesProxy, {from: PolymathAccount});
   }).then(() => {
     // Assign the address into the SecurityTokenRegistry key
    return polymathRegistry.changeAddress("SecurityTokenRegistry", SecurityTokenRegistryProxy.address, {from: PolymathAccount});
@@ -342,7 +345,7 @@ module.exports = function (deployer, network, accounts) {
     SecurityTokenRegistry (Proxy):        ${SecurityTokenRegistryProxy.address}
     ModuleRegistry (Proxy):               ${ModuleRegistryProxy.address}
     FeatureRegistry:                      ${FeatureRegistry.address}
-    InternalRegsitry:                     ${InternalRegistry.address}
+    STRGetter:                            ${STRGetter.address}
 
     ETHOracle:                            ${ETHOracle}
     POLYOracle:                           ${POLYOracle}

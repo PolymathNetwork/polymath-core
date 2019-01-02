@@ -7,12 +7,14 @@ All notable changes to this project will be documented in this file.
 
 ## Added
 * Added new function `addModuleWithLabel()` which takes an extra param `_label` that used for giving the customize label to the module for display purpose. #428
+* Introduce new contract `STRGetter.sol`. It only contains the getter functions of the STR.
 
 ## Fixed
 * Fixed `addModule` function to be backwards compatible and call the new `addModuleWithLabel` function with an empty label.
 * Fixed event `ModuleAdded` to also emit `_label`.    
 * Fixed function `getModule` to also return the respective module label.
 * Replaced `updatePolyTokenAddress()` function with `updateFromRegistry()` in `SecurityTokenRegistry`.  
+* Migrate all the getters of `SecurityTokenRegsitry.sol` to `STRGetter.sol` contract.
 
 ## Removed
 * Removed `_polyAddress` parameter from constructors of all modules and module factories.

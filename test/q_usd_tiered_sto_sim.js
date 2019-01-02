@@ -57,6 +57,7 @@ contract("USDTieredSTO Sim", accounts => {
     let I_PolyToken;
     let I_DaiToken;
     let I_PolymathRegistry;
+    let I_STRGetter;
 
     // SecurityToken Details for funds raise Type ETH
     const NAME = "Team";
@@ -193,7 +194,8 @@ contract("USDTieredSTO Sim", accounts => {
             I_STFactory,
             I_SecurityTokenRegistry,
             I_SecurityTokenRegistryProxy,
-            I_STRProxied
+            I_STRProxied,
+            I_STRGetter
         ] = instances;
 
        I_DaiToken = await PolyTokenFaucet.new({from: POLYMATH});

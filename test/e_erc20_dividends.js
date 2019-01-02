@@ -54,6 +54,7 @@ contract("ERC20DividendCheckpoint", accounts => {
     let I_SecurityToken;
     let I_PolyToken;
     let I_PolymathRegistry;
+    let I_STRGetter;
 
     // SecurityToken Details
     const name = "Team";
@@ -104,7 +105,8 @@ contract("ERC20DividendCheckpoint", accounts => {
             I_STFactory,
             I_SecurityTokenRegistry,
             I_SecurityTokenRegistryProxy,
-            I_STRProxied
+            I_STRProxied,
+            I_STRGetter
         ] = instances;
 
         [P_ERC20DividendCheckpointFactory] = await deployERC20DividendAndVerifyed(account_polymath, I_MRProxied, web3.utils.toWei("500", "ether"));

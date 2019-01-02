@@ -34,6 +34,7 @@ contract("ModuleRegistryProxy", accounts => {
     let I_SecurityToken;
     let I_ModuleRegistry;
     let I_FeatureRegistry;
+    let I_STRGetter;
 
     let account_polymath;
     let account_temp;
@@ -78,7 +79,8 @@ contract("ModuleRegistryProxy", accounts => {
            I_STFactory,
            I_SecurityTokenRegistry,
            I_SecurityTokenRegistryProxy,
-           I_STRProxied
+           I_STRProxied,
+           I_STRGetter
        ] = instances;
 
         I_ModuleRegistryProxy = await ModuleRegistryProxy.new({from: account_polymath});

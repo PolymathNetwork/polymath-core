@@ -17,7 +17,7 @@ const Web3 = require("web3");
 let BN = Web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
-const TOLERANCE = 2; // Allow balances to be off by 2 WEI for rounding purposes
+//const TOLERANCE = 2; // Allow balances to be off by 2 WEI for rounding purposes
 
 contract("USDTieredSTO Sim", async (accounts) => {
     // Accounts Variable declaration
@@ -163,7 +163,8 @@ contract("USDTieredSTO Sim", async (accounts) => {
     };
 
     function getRandomInt(min, max) {
-        return new BN(Math.floor(new BN(Math.random()).mul(new BN(max).sub(new BN(min).add(new BN(1)))))).add(new BN(min));
+        let random = Math.floor(Math.random() * 10 ** 10);
+        return new BN(random).mul(new BN(max).add(new BN(1)).sub(new BN(min))).div(new BN(10).pow(new BN(10)));
     }
 
     function minBN(a, b) {
@@ -402,11 +403,13 @@ contract("USDTieredSTO Sim", async (accounts) => {
             for (var i = 0; i < _tokensPerTierTotal[stoId].length; i++) {
                 totalTokens = totalTokens.add(_tokensPerTierTotal[stoId][i]);
             }
-            console.log("totalTokens: " + totalTokens.div(e18).toNumber());
+            console.log("totalTokens: " + totalTokens.div(e18).toString());
             let tokensSold = new BN(0);
             while (true) {
                 let rn = getRandomInt(0, 5);
-                switch (rn.toNumber()) {
+                let rno = rn.toNumber();
+                console.log('random no: ', rno);
+                switch (rno) {
                     case 0: // ACCREDITED1
                         await invest(ACCREDITED1, true);
                         break;
@@ -438,8 +441,8 @@ contract("USDTieredSTO Sim", async (accounts) => {
                 }
                 console.log("Next round");
                 tokensSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
-                console.log("Tokens Sold: " + tokensSold.toString());
-                if (tokensSold.gte(totalTokens.sub(new BN(1)).mul(e18))) {
+                console.log("Tokens Sold: " + tokensSold.div(e18).toString());
+                if (tokensSold.gte(totalTokens.sub(new BN(1)))) {
                     console.log(`${tokensSold} tokens sold, simulation completed successfully!`.green);
                     break;
                 }
@@ -459,8 +462,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
                 let isPoly = Math.random() >= 0.33;
                 let isDai = Math.random() >= 0.33;
 
-                let Token_counter = new BN(getRandomInt(new BN(1).mul(new BN(10).pow(new BN(10))), new BN(1).mul(new BN(10).pow(new BN(10)))));
-                console.log(Token_counter.toString());
+                let Token_counter = new BN(getRandomInt(new BN(1).mul(new BN(10).pow(new BN(10))), new BN(5).mul(new BN(10).pow(new BN(11))))).mul(new BN(10).pow(new BN(8)));
                 let investment_USD = new BN(0);
                 let investment_ETH = new BN(0);
                 let investment_POLY = new BN(0);
@@ -470,12 +472,9 @@ contract("USDTieredSTO Sim", async (accounts) => {
                 let Tokens_total = [];
                 let Tokens_discount = [];
                 for (var i = 0; i < _ratePerTier[stoId].length; i++) {
-                    Tokens_total.push(
-                        (await I_USDTieredSTO_Array[stoId].tiers.call(i))[2].sub((await I_USDTieredSTO_Array[stoId].tiers.call(i))[4])
-                    );
-                    Tokens_discount.push(
-                        (await I_USDTieredSTO_Array[stoId].tiers.call(i))[3].sub((await I_USDTieredSTO_Array[stoId].tiers.call(i))[5])
-                    );
+                    let tierData = await I_USDTieredSTO_Array[stoId].tiers.call(i);
+                    Tokens_total.push(new BN(tierData[2]).sub(tierData[4]));
+                    Tokens_discount.push(new BN(tierData[3]).sub(tierData[5]));
                 }
 
                 let tier = 0;
@@ -488,11 +487,11 @@ contract("USDTieredSTO Sim", async (accounts) => {
                 let USD_overflow;
                 let Token_overflow;
 
-                while (Token_counter.gt(0)) {
+                while (Token_counter.gt(new BN(0))) {
                     if (tier == _ratePerTier[stoId].length) {
                         break;
                     }
-                    if (Tokens_total[tier].gt(0)) {
+                    if (Tokens_total[tier].gt(new BN(0))) {
                         if (isPoly) {
                             // 1. POLY and discount (consume up to cap then move to regular)
                             if (Tokens_discount[tier].gt(new BN(0))) {
@@ -556,7 +555,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
                         } else {
                             // 4. ETH (consume up to cap then skip to next tier)
                             Token_Tier = minBN(Tokens_total[tier], Token_counter);
-                            USD_Tier = Token_Tier.mul(_ratePerTier[stoId][tier].div(e18));
+                            USD_Tier = Token_Tier.mul(_ratePerTier[stoId][tier]).div(e18);
                             if (USD_Tier.gte(USD_remaining)) {
                                 USD_overflow = USD_Tier.sub(USD_remaining);
                                 Token_overflow = USD_overflow.mul(e18).div(_ratePerTier[stoId][tier]);
@@ -564,8 +563,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
                                 Token_Tier = Token_Tier.sub(Token_overflow);
                                 Token_counter = new BN(0);
                             }
-                            ETH_Tier = new BN(USD_Tier.mul(e18));
-                            ETH_Tier = ETH_Tier.div(USDETH);
+                            ETH_Tier = USD_Tier.mul(e18).div(USDETH);
                             USD_remaining = USD_remaining.sub(USD_Tier);
                             Tokens_total[tier] = Tokens_total[tier].sub(Token_Tier);
                             Token_counter = Token_counter.sub(Token_Tier);
@@ -574,7 +572,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
                             investment_ETH = investment_ETH.add(ETH_Tier);
                         }
                     }
-                    tier++;
+                    tier = tier + 1;
                 }
 
                 await processInvestment(
@@ -640,15 +638,15 @@ contract("USDTieredSTO Sim", async (accounts) => {
                 console.log(`
             ------------------- New Investment -------------------
             Investor:   ${_investor}
-            N-A USD Remaining:      ${log_remaining.div(e18)}
+            N-A USD Remaining:      ${log_remaining}
             Total Cap Remaining:    ${Tokens_total}
             Discount Cap Remaining: ${Tokens_discount}
-            Total Tokens Sold:      ${tokensSold.div(e18)}
-            Token Investment:       ${investment_Token.div(e18)}
-            USD Investment:         ${investment_USD.div(e18)}
-            POLY Investment:        ${investment_POLY.div(e18)}
-            DAI Investment:         ${investment_DAI.div(e18)}
-            ETH Investment:         ${investment_ETH.div(e18)}
+            Total Tokens Sold:      ${tokensSold}
+            Token Investment:       ${investment_Token}
+            USD Investment:         ${investment_USD}
+            POLY Investment:        ${investment_POLY}
+            DAI Investment:         ${investment_DAI}
+            ETH Investment:         ${investment_ETH}
             ------------------------------------------------------
                 `);
 
@@ -682,7 +680,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
                 let tx;
                 let gasCost = new BN(0);
 
-                if (isPoly && investment_POLY.gt(10)) {
+                if (isPoly && investment_POLY.gt(new BN(10))) {
                     tx = await I_USDTieredSTO_Array[stoId].buyWithPOLY(_investor, investment_POLY, {
                         from: _investor,
                         gasPrice: GAS_PRICE
@@ -692,14 +690,14 @@ contract("USDTieredSTO Sim", async (accounts) => {
                         `buyWithPOLY: ${investment_Token.div(e18)} tokens for ${investment_POLY.div(e18)} POLY by ${_investor}`
                             .yellow
                     );
-                } else if (isDai && investment_DAI.gt(10)) {
+                } else if (isDai && investment_DAI.gt(new BN(10))) {
                     tx = await I_USDTieredSTO_Array[stoId].buyWithUSD(_investor, investment_DAI, { from: _investor, gasPrice: GAS_PRICE });
                     gasCost = new BN(GAS_PRICE).mul(new BN(tx.receipt.gasUsed));
                     console.log(
                         `buyWithUSD: ${investment_Token.div(e18)} tokens for ${investment_DAI.div(e18)} DAI by ${_investor}`
                             .yellow
                     );
-                } else if (investment_ETH.gt(0)) {
+                } else if (investment_ETH.gt(new BN(0))) {
                     tx = await I_USDTieredSTO_Array[stoId].buyWithETH(_investor, {
                         from: _investor,
                         value: investment_ETH,
@@ -711,7 +709,6 @@ contract("USDTieredSTO Sim", async (accounts) => {
                             .yellow
                     );
                 }
-                console.log(investment_POLY.toNumber());
 
                 let final_TokenSupply = await I_SecurityToken.totalSupply();
                 let final_InvestorTokenBal = await I_SecurityToken.balanceOf(_investor);

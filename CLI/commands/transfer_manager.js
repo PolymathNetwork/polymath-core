@@ -829,21 +829,12 @@ async function getApprovalsArray() {
   if (address == gbl.constants.ADDRESS_ZERO) {
     return await getApprovals();
   } else {
-    let approvalsIndex = await getApprovalsToAnAddress(address);
-    if (!approvalsIndex.length) {
+    let approvals = await getApprovalsToAnAddress(address);
+    if (!approvals.length) {
       console.log(chalk.red(`\nThe address is not listed\n`))
     }
-    return await processApprovalsArray(approvalsIndex)
+    return approvals;
   }
-}
-
-async function processApprovalsArray(array) {
-  let result = []
-  for (const item of array) {
-    let ap = await currentTransferManager.methods.approvals(item).call();
-    result.push(ap)
-  };
-  return result
 }
 
 function printMatmRow(from, to, allowance, time, description) {
@@ -851,16 +842,37 @@ function printMatmRow(from, to, allowance, time, description) {
 }
 
 async function getApprovals() {
-  let totalApprovals = await currentTransferManager.methods.getTotalApprovalsLength().call();
+  function ApprovalDetail(_from, _to, _allowance, _expiryTime, _description) {
+    this.from = _from;
+    this.to = _to;
+    this.allowance = _allowance;
+    this.expiryTime = _expiryTime;
+    this.description = _description;
+  }
+
   let results = [];
-  for (let i = 0; i < totalApprovals; i++) {
-    results.push(await currentTransferManager.methods.approvals(i).call());
+  let approvalDetails = await currentTransferManager.methods.getAllApprovals().call();
+  for (let i = 0; i < approvalDetails[0].length; i++) {
+    results.push(new ApprovalDetail(approvalDetails[0][i], approvalDetails[1][i], approvalDetails[2][i], approvalDetails[3][i], approvalDetails[4][i]));
   }
   return results;
 }
 
 async function getApprovalsToAnAddress(address) {
-  return await currentTransferManager.methods.getActiveApprovalsToUser(address).call();
+  function ApprovalDetail(_from, _to, _allowance, _expiryTime, _description) {
+    this.from = _from;
+    this.to = _to;
+    this.allowance = _allowance;
+    this.expiryTime = _expiryTime;
+    this.description = _description;
+  }
+
+  let results = [];
+  let approvals = await currentTransferManager.methods.getActiveApprovalsToUser(address).call();
+  for (let i = 0; i < approvals[0].length; i++) {
+    results.push(new ApprovalDetail(approvals[0][i], approvals[1][i], approvals[2][i], approvals[3][i], approvals[4][i]));
+  }
+  return results;
 }
 
 async function getManualApproval(_from, _to) {

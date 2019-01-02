@@ -12,6 +12,7 @@ const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManagerLogic = artifacts.require("./GeneralTransferManager.sol");
 const GeneralTransferManagerFactory = artifacts.require("./GeneralTransferManagerFactory.sol");
 const GeneralPermissionManagerFactory = artifacts.require("./GeneralPermissionManagerFactory.sol");
+const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager.sol");
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -22,6 +23,7 @@ contract("ModuleRegistryProxy", async (accounts) => {
     let I_SecurityTokenRegistryProxy;
     let I_GeneralTransferManagerFactory;
     let I_GeneralPermissionManagerfactory;
+    let I_GeneralPermissionManagerLogic;
     let I_MockModuleRegistry;
     let I_STFactory;
     let I_PolymathRegistry;
@@ -164,7 +166,8 @@ contract("ModuleRegistryProxy", async (accounts) => {
 
     describe("Feed some data in storage", async () => {
         it("Register and verify the new module", async () => {
-            I_GeneralPermissionManagerfactory = await GeneralPermissionManagerFactory.new(0, new BN(0), new BN(0), {
+            I_GeneralPermissionManagerLogic = await GeneralPermissionManager.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: account_polymath });
+            I_GeneralPermissionManagerfactory = await GeneralPermissionManagerFactory.new(0, new BN(0), new BN(0), I_GeneralPermissionManagerLogic.address, {
                 from: account_polymath
             });
 

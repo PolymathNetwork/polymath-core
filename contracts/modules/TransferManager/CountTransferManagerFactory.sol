@@ -1,30 +1,38 @@
 pragma solidity ^0.5.0;
 
-import "./CountTransferManager.sol";
 import "../ModuleFactory.sol";
 import "../../libraries/Util.sol";
+import "../../proxy/CountTransferManagerProxy.sol";
+import "../../interfaces/IBoot.sol";
 
 /**
  * @title Factory for deploying CountTransferManager module
  */
 contract CountTransferManagerFactory is ModuleFactory {
+
+    address public logicContract;
+
     /**
      * @notice Constructor
      * @param _setupCost Setup cost of the module
      * @param _usageCost Usage cost of the module
      * @param _subscriptionCost Subscription cost of the module
+     * @param _logicContract Contract address that contains the logic related to `description`
      */
     constructor(
         uint256 _setupCost,
         uint256 _usageCost,
-        uint256 _subscriptionCost
+        uint256 _subscriptionCost,
+        address _logicContract
     ) public ModuleFactory(_setupCost, _usageCost, _subscriptionCost) {
+        require(_logicContract != address(0), "Invalid address");
         version = "2.1.0";
         name = "CountTransferManager";
         title = "Count Transfer Manager";
         description = "Restrict the number of investors";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        logicContract = _logicContract;
     }
 
     /**
@@ -34,8 +42,8 @@ contract CountTransferManagerFactory is ModuleFactory {
      */
     function deploy(bytes calldata _data) external returns(address) {
         address polyToken = _takeFee();
-        CountTransferManager countTransferManager = new CountTransferManager(msg.sender, polyToken);
-        require(Util.getSig(_data) == countTransferManager.getInitFunction(), "Provided data is not valid");
+        CountTransferManagerProxy countTransferManager = new CountTransferManagerProxy(msg.sender, polyToken, logicContract);
+        require(Util.getSig(_data) == IBoot(countTransferManager).getInitFunction(), "Provided data is not valid");
         bool success;
         /*solium-disable-next-line security/no-low-level-calls*/
         (success, ) = address(countTransferManager).call(_data);

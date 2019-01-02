@@ -361,13 +361,23 @@ contract("ManualApprovalTransferManager", accounts => {
                 }
             );
             assert.equal((await I_ManualApprovalTransferManager.getTotalApprovalsLength.call()).toNumber(), 1);
-            let data = await I_ManualApprovalTransferManager.approvals.call(0);
-            assert.equal(data[0], account_investor1);
-            assert.equal(data[1], account_investor4);
-            assert.equal(data[2], web3.utils.toWei("3"));
-            assert.equal(web3.utils.toUtf8(data[4]), "DESCRIPTION");
-            assert.equal((await I_ManualApprovalTransferManager.approvalIndex.call(account_investor1, account_investor4)).toNumber(), 1);
         });
+
+        it("Should return all approvals correctly", async () => {
+
+            console.log("current approval length is " + (await I_ManualApprovalTransferManager.getTotalApprovalsLength.call()).toNumber());
+
+            let tx = await I_ManualApprovalTransferManager.getAllApprovals({from: token_owner });
+            assert.equal(tx[0][0], account_investor1);
+            console.log("1");
+            assert.equal(tx[1][0], account_investor4);
+            console.log("2");
+            assert.equal(tx[2][0], web3.utils.toWei("3"));
+            console.log("3");
+            assert.equal(tx[3][0], latestTime() + duration.days(1));
+            console.log("4");
+            assert.equal(web3.utils.toUtf8(tx[4][0]), "DESCRIPTION");
+        })
 
         it("Should try to add the same manual approval for the same `_from` & `_to` address", async() => {
             await catchRevert(
@@ -424,10 +434,12 @@ contract("ManualApprovalTransferManager", accounts => {
             let newBal4 = await I_SecurityToken.balanceOf.call(account_investor4);
             assert.equal((newBal4.minus(oldBal4)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 1);
 
-            assert.equal((await I_ManualApprovalTransferManager.getActiveApprovalsToUser.call(account_investor4)).length, 1)
-            assert.equal((await I_ManualApprovalTransferManager.getActiveApprovalsToUser.call(account_investor1)).length, 1)
-            assert.equal((await I_ManualApprovalTransferManager.getActiveApprovalsToUser.call(account_investor4))[0], 0);
-            assert.equal((await I_ManualApprovalTransferManager.getActiveApprovalsToUser.call(account_investor1))[0], 0);
+
+            let tx = await I_ManualApprovalTransferManager.getActiveApprovalsToUser.call(account_investor1);
+            let tx2 =  await I_ManualApprovalTransferManager.getActiveApprovalsToUser.call(account_investor4);
+
+            assert.equal(tx2[0].length, 1);
+            assert.equal(tx[0].length, 1);
         });
 
         it("Should fail to transact after the approval get expired", async() => {
@@ -454,7 +466,7 @@ contract("ManualApprovalTransferManager", accounts => {
         });
 
         it("Should attach the manual approval for the investor4 again", async() => {
-            assert.equal((await I_ManualApprovalTransferManager.getActiveApprovalsToUser.call(account_investor4)).length, 0);
+            assert.equal((await I_ManualApprovalTransferManager.getActiveApprovalsToUser.call(account_investor4))[0].length, 0);
             await I_ManualApprovalTransferManager.addManualApproval(
                 account_investor1,
                 account_investor4,
@@ -594,8 +606,8 @@ contract("ManualApprovalTransferManager", accounts => {
 
         it("Should revoke the manual Approval b/w investor4 and 1", async() => {
             await I_ManualApprovalTransferManager.revokeManualApproval(account_investor1, account_investor4, {from: token_owner});
-            assert.equal((await I_ManualApprovalTransferManager.getActiveApprovalsToUser.call(account_investor1)).length, 0);
-            assert.equal((await I_ManualApprovalTransferManager.getActiveApprovalsToUser.call(account_investor4)).length, 0);
+            assert.equal((await I_ManualApprovalTransferManager.getActiveApprovalsToUser.call(account_investor1))[0].length, 0);
+            assert.equal((await I_ManualApprovalTransferManager.getActiveApprovalsToUser.call(account_investor4))[0].length, 0);
         });
 
         it("Should fail to revoke the same manual approval again", async() => {
@@ -693,9 +705,9 @@ contract("ManualApprovalTransferManager", accounts => {
             );
 
             assert.equal(await I_ManualApprovalTransferManager.getTotalApprovalsLength.call(), 2);
-            assert.equal((await I_ManualApprovalTransferManager.getActiveApprovalsToUser.call(account_investor3)).length , 2);
-            assert.equal((await I_ManualApprovalTransferManager.getActiveApprovalsToUser.call(account_investor3))[0], 0);
-            assert.equal((await I_ManualApprovalTransferManager.getActiveApprovalsToUser.call(account_investor3))[1], 1);
+            assert.equal((await I_ManualApprovalTransferManager.getActiveApprovalsToUser.call(account_investor3))[0].length , 2);
+            assert.equal((await I_ManualApprovalTransferManager.getActiveApprovalsToUser.call(account_investor3))[0][1], account_investor3);
+            assert.equal((await I_ManualApprovalTransferManager.getActiveApprovalsToUser.call(account_investor3))[1][0], account_investor3);
             let approvalDetail = await I_ManualApprovalTransferManager.getApprovalDetails.call(account_investor2, account_investor3);
             assert.equal(approvalDetail[0].toNumber(), time);
             assert.equal(approvalDetail[1].toNumber(), web3.utils.toWei("2", "ether"));

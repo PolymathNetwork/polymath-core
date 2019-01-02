@@ -312,23 +312,34 @@ contract ManualApprovalTransferManager is ITransferManager {
      * need to return
      * @return List of indexes
      */
-    function getActiveApprovalsToUser(address _user) external view returns(uint256[]) {
+    function getActiveApprovalsToUser(address _user) external view returns(address[], address[], uint256[], uint256[], bytes32[]) {
         uint256 counter = 0;
         for (uint256 i = 0; i < approvals.length; i++) {
             if ((approvals[i].from == _user || approvals[i].to == _user)
                 && approvals[i].expiryTime >= now)
                 counter ++;
         }
-        uint256[] memory indexes = new uint256[](counter);
+
+        address[] memory from = new address[](counter);
+        address[] memory to = new address[](counter);
+        uint256[] memory allowance = new uint256[](counter);
+        uint256[] memory expiryTime = new uint256[](counter);
+        bytes32[] memory description = new bytes32[](counter);
+
         counter = 0;
         for (i = 0; i < approvals.length; i++) {
             if ((approvals[i].from == _user || approvals[i].to == _user)
                 && approvals[i].expiryTime >= now) {
-                indexes[counter] = i;
+
+                from[counter]=approvals[i].from;
+                to[counter]=approvals[i].to;
+                allowance[counter]=approvals[i].allowance;
+                expiryTime[counter]=approvals[i].expiryTime;
+                description[counter]=approvals[i].description;
                 counter ++;
             } 
         }
-        return indexes;
+        return (from, to, allowance, expiryTime, description);
     }
 
     /**
@@ -359,6 +370,35 @@ contract ManualApprovalTransferManager is ITransferManager {
     */
     function getTotalApprovalsLength() external view returns(uint256) {
         return approvals.length;
+    }
+
+    /**
+     * @notice Get the details of all approvals
+     * @return address[] addresses from
+     * @return address[] addresses to
+     * @return uint256[] allowances provided to the approvals
+     * @return uint256[] expiry times provided to the approvals
+     * @return bytes32[] descriptions provided to the approvals
+     */
+    function getAllApprovals() external view returns(address[], address[], uint256[], uint256[], bytes32[]) {
+        address[] memory from = new address[](approvals.length);
+        address[] memory to = new address[](approvals.length);
+        uint256[] memory allowance = new uint256[](approvals.length);
+        uint256[] memory expiryTime = new uint256[](approvals.length);
+        bytes32[] memory description = new bytes32[](approvals.length);
+
+        for (uint256 i = 0; i < approvals.length; i++) {
+
+            from[i]=approvals[i].from;
+            to[i]=approvals[i].to;
+            allowance[i]=approvals[i].allowance;
+            expiryTime[i]=approvals[i].expiryTime;
+            description[i]=approvals[i].description;
+
+        }
+
+        return (from, to, allowance, expiryTime, description);
+        
     }
 
     /**

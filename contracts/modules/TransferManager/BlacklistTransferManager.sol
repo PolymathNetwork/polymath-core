@@ -101,18 +101,14 @@ contract BlacklistTransferManager is ITransferManager {
                     uint256 endTimeTemp = blacklists[investorToBlacklist[_from][i]].endTime;
                     uint256 startTimeTemp = blacklists[investorToBlacklist[_from][i]].startTime;
                     uint256 repeatPeriodTimeTemp = blacklists[investorToBlacklist[_from][i]].repeatPeriodTime * 1 days;
-                    // blacklistTime time is used to find the new startTime and endTime 
-                    // suppose startTime=500,endTime=1500,repeatPeriodTime=500 then blacklistTime =1500
-                    // if you add blacklistTime to startTime and endTime i.e startTime = 2000 and endTime = 3000
-                    uint256 blacklistTime = (endTimeTemp.sub(startTimeTemp)).add(repeatPeriodTimeTemp);
                     /*solium-disable-next-line security/no-block-members*/
                     if (now > startTimeTemp) {
                     // Find the repeating parameter that will be used to calculate the new startTime and endTime
                     // based on the new current time value   
                     /*solium-disable-next-line security/no-block-members*/
-                        uint256 repeater = (now.sub(startTimeTemp)).div(blacklistTime); 
+                        uint256 repeater = (now.sub(startTimeTemp)).div(repeatPeriodTimeTemp); 
                         /*solium-disable-next-line security/no-block-members*/
-                        if (startTimeTemp.add(blacklistTime.mul(repeater)) <= now && endTimeTemp.add(blacklistTime.mul(repeater)) >= now) {
+                        if (startTimeTemp.add(repeatPeriodTimeTemp.mul(repeater)) <= now && endTimeTemp.add(repeatPeriodTimeTemp.mul(repeater)) >= now) {
                             return Result.INVALID;
                         }    
                     }   
@@ -150,9 +146,10 @@ contract BlacklistTransferManager is ITransferManager {
     /**
      * @notice Internal function 
      */
-    function _validParams(uint256 _startTime, uint256 _endTime, bytes32 _blacklistName) internal view {
+    function _validParams(uint256 _startTime, uint256 _endTime, bytes32 _blacklistName, uint256 _repeatPeriodTime) internal view {
         require(_blacklistName != bytes32(0), "Invalid blacklist name"); 
         require(_startTime >= now && _startTime < _endTime, "Invalid start or end date");
+        require(_repeatPeriodTime.mul(1 days) >= _endTime.sub(_startTime) || _repeatPeriodTime == 0);
     }
 
     /**
@@ -164,7 +161,7 @@ contract BlacklistTransferManager is ITransferManager {
     */
     function modifyBlacklistType(uint256 _startTime, uint256 _endTime, bytes32 _blacklistName, uint256 _repeatPeriodTime) public withPerm(ADMIN) {
         require(blacklists[_blacklistName].endTime != 0, "Blacklist type doesn't exist"); 
-        _validParams(_startTime, _endTime, _blacklistName);
+        _validParams(_startTime, _endTime, _blacklistName, _repeatPeriodTime);
         blacklists[_blacklistName] = BlacklistsDetails(_startTime, _endTime, _repeatPeriodTime);
         emit ModifyBlacklistType(_startTime, _endTime, _blacklistName, _repeatPeriodTime);
     }
@@ -342,7 +339,7 @@ contract BlacklistTransferManager is ITransferManager {
 
     function _addBlacklistType(uint256 _startTime, uint256 _endTime, bytes32 _blacklistName, uint256 _repeatPeriodTime) internal {
         require(blacklists[_blacklistName].endTime == 0, "Blacklist type already exist"); 
-        _validParams(_startTime, _endTime, _blacklistName);
+        _validParams(_startTime, _endTime, _blacklistName, _repeatPeriodTime);
         blacklists[_blacklistName] = BlacklistsDetails(_startTime, _endTime, _repeatPeriodTime);
         allBlacklists.push(_blacklistName);
         emit AddBlacklistType(_startTime, _endTime, _blacklistName, _repeatPeriodTime);

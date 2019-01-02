@@ -378,6 +378,14 @@ contract('BlacklistTransferManager', accounts => {
             );    
         });
 
+        it("Should fail in adding the blacklist because repeat period is less than the difference of start time and end time", async() => {
+            await catchRevert(
+                I_BlacklistTransferManager.addBlacklistType(latestTime() + 1000, latestTime() + duration.days(2), "b_blacklist", 1, { 
+                    from: token_owner 
+                 })
+             );    
+         });
+
         it("Should add the mutiple blacklist", async() => {
             //Add the new blacklist
             let startTime = [latestTime()+2000,latestTime()+3000];
@@ -562,7 +570,7 @@ contract('BlacklistTransferManager', accounts => {
 
         it("Should investor be able to transfer token as it is not in blacklist time period", async() => {
             // Jump time
-            await increaseTime(4000);
+            await increaseTime(duration.seconds(4000));
             
             //Trasfer tokens
             await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), { from: account_investor1 });
@@ -574,7 +582,7 @@ contract('BlacklistTransferManager', accounts => {
 
         it("Should fail in transfer the tokens as the investor in blacklist", async() => {
             // Jump time
-            await increaseTime(1727500);
+            await increaseTime(duration.days(20) - 1500);
             await catchRevert(
                 I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), { 
                     from: account_investor1 
@@ -623,8 +631,7 @@ contract('BlacklistTransferManager', accounts => {
         it("Should investor fail in transfer token as it is in blacklist time period", async() => {
            
             // Jump time
-            await increaseTime(690800);
-            
+            await increaseTime(duration.days(8) - 1000);
             //Trasfer tokens
             await catchRevert(
                 I_SecurityToken.transfer(account_investor3, web3.utils.toWei('1', 'ether'), { 
@@ -663,8 +670,7 @@ contract('BlacklistTransferManager', accounts => {
         it("Should investor fail in transfer token as it is in blacklist time period", async() => {
            
             // Jump time
-            await increaseTime(431600);
-            
+            await increaseTime(duration.days(5) - 3000);
             //Trasfer tokens
             await catchRevert(
                  I_SecurityToken.transfer(account_investor4, web3.utils.toWei('1', 'ether'), { 
@@ -966,7 +972,7 @@ contract('BlacklistTransferManager', accounts => {
                         "Allows an issuer to blacklist the addresses.",
                         "Wrong Module added");
             assert.equal(await I_BlacklistTransferManagerFactory.version.call(),
-                        "1.0.0",
+                        "2.1.0",
                         "Wrong Module added");
         
         });

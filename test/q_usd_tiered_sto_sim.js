@@ -403,12 +403,10 @@ contract("USDTieredSTO Sim", async (accounts) => {
             for (var i = 0; i < _tokensPerTierTotal[stoId].length; i++) {
                 totalTokens = totalTokens.add(_tokensPerTierTotal[stoId][i]);
             }
-            console.log("totalTokens: " + totalTokens.div(e18).toString());
             let tokensSold = new BN(0);
             while (true) {
                 let rn = getRandomInt(0, 5);
                 let rno = rn.toNumber();
-                console.log('random no: ', rno);
                 switch (rno) {
                     case 0: // ACCREDITED1
                         await invest(ACCREDITED1, true);

@@ -57,39 +57,6 @@ contract EternalStorage {
         stringStorage[_key] = _value;
     }
 
-    ////////////////////
-    /// get functions
-    ////////////////////
-    /// @notice Get function use to get the value of the singleton state variables
-    /// Ex1- string public version = "0.0.1";
-    /// string _version = getString(keccak256(abi.encodePacked("version"));
-    /// Ex2 - assert(temp1 == temp2); replace to
-    /// assert(getUint(keccak256(abi.encodePacked(temp1)) == getUint(keccak256(abi.encodePacked(temp2));
-    /// Ex3 - mapping(string => SymbolDetails) registeredSymbols; where SymbolDetails is the structure having different type of values as
-    /// {uint256 date, string name, address owner} etc.
-    /// string _name = getString(keccak256(abi.encodePacked("registeredSymbols_name", "TOKEN"));
-
-    function getBool(bytes32 _key) internal view returns (bool) {
-        return boolStorage[_key];
-    }
-
-    function getUint(bytes32 _key) internal view returns (uint256) {
-        return uintStorage[_key];
-    }
-
-    function getAddress(bytes32 _key) internal view returns (address) {
-        return addressStorage[_key];
-    }
-
-    function getString(bytes32 _key) internal view returns (string) {
-        return stringStorage[_key];
-    }
-
-    function getBytes32(bytes32 _key) internal view returns (bytes32) {
-        return bytes32Storage[_key];
-    }
-
-
     ////////////////////////////
     // deleteArray functions
     ////////////////////////////
@@ -192,19 +159,15 @@ contract EternalStorage {
     /// Ex2- uint256 _len =  tokensOwnedByOwner[0x1].length; replace with
     /// getArrayBytes32(keccak256(abi.encodePacked("tokensOwnedByOwner", 0x1)).length;
 
-    function getArrayAddress(bytes32 _key) internal view returns(address[]) {
+    function getArrayAddress(bytes32 _key) public view returns(address[]) {
         return addressArrayStorage[_key];
     }
 
-    function getArrayBytes32(bytes32 _key) internal view returns(bytes32[]) {
+    function getArrayBytes32(bytes32 _key) public view returns(bytes32[]) {
         return bytes32ArrayStorage[_key];
     }
 
-    function getArrayString(bytes32 _key) internal view returns(string[]) {
-        return stringArrayStorage[_key];
-    }
-
-    function getArrayUint(bytes32 _key) internal view returns(uint[]) {
+    function getArrayUint(bytes32 _key) public view returns(uint[]) {
         return uintArrayStorage[_key];
     }
 
@@ -232,31 +195,38 @@ contract EternalStorage {
         stringArrayStorage[_key][_index] = _value;
     }
 
-        /////////////////////////////
-        /// Public getters functions
-        /////////////////////////////
+    /// Public getters functions
+    ////////////////////
+    /// @notice Get function use to get the value of the singleton state variables
+    /// Ex1- string public version = "0.0.1";
+    /// string _version = getString(keccak256(abi.encodePacked("version"));
+    /// Ex2 - assert(temp1 == temp2); replace to
+    /// assert(getUint(keccak256(abi.encodePacked(temp1)) == getUint(keccak256(abi.encodePacked(temp2));
+    /// Ex3 - mapping(string => SymbolDetails) registeredSymbols; where SymbolDetails is the structure having different type of values as
+    /// {uint256 date, string name, address owner} etc.
+    /// string _name = getString(keccak256(abi.encodePacked("registeredSymbols_name", "TOKEN"));
 
-    function getUintValues(bytes32 _variable) public view returns(uint256) {
+    function getUintValue(bytes32 _variable) public view returns(uint256) {
         return uintStorage[_variable];
     }
 
-    function getBoolValues(bytes32 _variable) public view returns(bool) {
+    function getBoolValue(bytes32 _variable) public view returns(bool) {
         return boolStorage[_variable];
     }
 
-    function getStringValues(bytes32 _variable) public view returns(string) {
+    function getStringValue(bytes32 _variable) public view returns(string) {
         return stringStorage[_variable];
     }
 
-    function getAddressValues(bytes32 _variable) public view returns(address) {
+    function getAddressValue(bytes32 _variable) public view returns(address) {
         return addressStorage[_variable];
     }
 
-    function getBytes32Values(bytes32 _variable) public view returns(bytes32) {
+    function getBytes32Value(bytes32 _variable) public view returns(bytes32) {
         return bytes32Storage[_variable];
     }
 
-    function getBytesValues(bytes32 _variable) public view returns(bytes) {
+    function getBytesValue(bytes32 _variable) public view returns(bytes) {
         return bytesStorage[_variable];
     }
 

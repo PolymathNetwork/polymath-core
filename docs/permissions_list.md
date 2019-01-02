@@ -176,18 +176,12 @@
             <td>modifyWhitelistMulti()</td>
         </tr>
         <tr>
-          <td rowspan=4>ManualApprovalTransferManager</td>
+          <td rowspan=2>ManualApprovalTransferManager</td>
           <td>addManualApproval()</td>
-          <td rowspan=4>withPerm(TRANSFER_APPROVAL)</td>
-        </tr>
-        <tr>
-          <td>addManualBlocking()</td>
+          <td rowspan=2>withPerm(TRANSFER_APPROVAL)</td>
         </tr>
         <tr>
           <td>revokeManualApproval()</td>
-        </tr>
-        <tr>
-          <td>revokeManualBlocking()</td>
         </tr>
         <tr>
           <td rowspan=4>PercentageTransferManager</td>

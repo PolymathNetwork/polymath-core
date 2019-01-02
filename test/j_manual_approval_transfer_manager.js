@@ -374,7 +374,7 @@ contract("ManualApprovalTransferManager", accounts => {
             console.log("2");
             assert.equal(tx[2][0], web3.utils.toWei("3"));
             console.log("3");
-            assert.equal(tx[3][0], latestTime() + duration.days(1));
+            assert.equal(tx[3][0].toNumber(), latestTime() + duration.days(1));
             console.log("4");
             assert.equal(web3.utils.toUtf8(tx[4][0]), "DESCRIPTION");
         })

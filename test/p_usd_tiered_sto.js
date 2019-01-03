@@ -1425,6 +1425,14 @@ contract("USDTieredSTO", accounts => {
             let status4 = investorStatus[0].toNumber();
             assert.equal(status4, 1, "Failed to set multiple addresses");
 
+            let totalStatus = await I_USDTieredSTO_Array[stoId].getAccreditedData.call();
+
+            assert.equal(totalStatus[0][0], NONACCREDITED1, "Account match");
+            assert.equal(totalStatus[0][1], ACCREDITED1, "Account match");
+            assert.equal(totalStatus[1][0], false, "Account match");
+            assert.equal(totalStatus[1][1], true, "Account match");
+            assert.equal(totalStatus[2][0].toNumber(), 0, "override match");
+            assert.equal(totalStatus[2][1].toNumber(), 0, "override match");
             await catchRevert(I_USDTieredSTO_Array[stoId].changeAccredited([NONACCREDITED1, ACCREDITED1], [true], { from: ISSUER }));
         });
 
@@ -2148,6 +2156,15 @@ contract("USDTieredSTO", accounts => {
             });
             let investorStatus = await I_USDTieredSTO_Array[stoId].investors.call(NONACCREDITED1);
             console.log("Current limit: " + investorStatus[2].toNumber());
+            let totalStatus = await I_USDTieredSTO_Array[stoId].getAccreditedData.call();
+            
+            assert.equal(totalStatus[0][0], NONACCREDITED1, "Account match");
+            assert.equal(totalStatus[0][1], ACCREDITED1, "Account match");
+            assert.equal(totalStatus[1][0], false, "Account match");
+            assert.equal(totalStatus[1][1], true, "Account match");
+            assert.equal(totalStatus[2][0].toNumber(), _nonAccreditedLimitUSD[stoId].div(2), "override match");
+            assert.equal(totalStatus[2][1].toNumber(), 0, "override match");
+
         });
 
         it("should successfully buy a partial amount and refund balance when reaching NONACCREDITED cap", async () => {

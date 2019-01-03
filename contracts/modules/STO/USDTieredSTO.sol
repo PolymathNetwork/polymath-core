@@ -340,6 +340,23 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
     }
 
     /**
+     * @notice Returns investor accredited & non-accredited override informatiomn
+     * @return address[] list of all configured investors
+     * @return bool[] whether investor is accredited
+     * @return uint256[] any USD overrides for non-accredited limits for the investor
+     */
+    function getAccreditedData() external view returns (address[], bool[], uint256[]) {
+        bool[] memory accrediteds = new bool[](investorsList.length);
+        uint256[] memory nonAccreditedLimitUSDOverrides = new uint256[](investorsList.length);
+        uint256 i;
+        for (i = 0; i < investorsList.length; i++) {
+            accrediteds[i] = (investors[investorsList[i]].accredited == uint8(0)? false: true);
+            nonAccreditedLimitUSDOverrides[i] = investors[investorsList[i]].nonAccreditedLimitUSDOverride;
+        }
+        return (investorsList, accrediteds, nonAccreditedLimitUSDOverrides);
+    }
+
+    /**
      * @notice Function to set allowBeneficialInvestments (allow beneficiary to be different to funder)
      * @param _allowBeneficialInvestments Boolean to allow or disallow beneficial investments
      */

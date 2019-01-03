@@ -298,36 +298,13 @@ contract("CappedSTO", async (accounts) => {
 
     describe("Buy tokens", async () => {
         it("Should buy the tokens -- failed due to startTime is greater than Current time", async () => {
-            await catchRevert(
-                web3.eth.sendTransaction({
-                    from: account_investor1,
-                    to: I_CappedSTO_Array_ETH[0].address,
-                    value: new BN(web3.utils.toWei("1", "ether"))
-                })
-            );
-        });
-
-        it("Should buy the tokens -- failed due to invested amount is zero", async () => {
-            await catchRevert(
-                web3.eth.sendTransaction({
-                    from: account_investor1,
-                    to: I_CappedSTO_Array_ETH[0].address,
-                    value: new BN(web3.utils.toWei("0", "ether"))
-                })
-            );
+            await catchRevert(I_CappedSTO_Array_ETH[0].buyTokens({ from: account_investor1, value: new BN(web3.utils.toWei("1", "ether")) }));
+            await increaseTime(duration.days(1));
         });
 
         it("Should buy the tokens -- Failed due to investor is not in the whitelist", async () => {
-            await catchRevert(
-                web3.eth.sendTransaction({
-                    from: account_investor1,
-                    to: I_CappedSTO_Array_ETH[0].address,
-                    value: new BN(web3.utils.toWei("1", "ether"))
-                })
-            );
-        });
-
-        it("Should Buy the tokens", async () => {
+            await catchRevert(I_CappedSTO_Array_ETH[0].buyTokens({ from: account_investor1, value: new BN(web3.utils.toWei("1", "ether")) }));
+            
             blockNo = await latestBlock();
             fromTime = await latestTime();
             toTime = await latestTime() + duration.days(15);
@@ -336,16 +313,20 @@ contract("CappedSTO", async (accounts) => {
             P_toTime = P_fromTime + duration.days(50);
             P_expiryTime = toTime + duration.days(100);
 
-            balanceOfReceiver = new BN(await web3.eth.getBalance(account_fundsReceiver));
             // Add the Investor in to the whitelist
-
             let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, fromTime, toTime, expiryTime, true, {
                 from: account_issuer
             });
 
             assert.equal(tx.logs[0].args._investor, account_investor1, "Failed in adding the investor in whitelist");
-            // Jump time
-            await increaseTime(duration.days(1));
+        });
+
+        it("Should buy the tokens -- failed due to invested amount is zero", async () => {
+            await catchRevert(I_CappedSTO_Array_ETH[0].buyTokens({ from: account_investor1, value: new BN(web3.utils.toWei("0", "ether")) }));
+        });
+
+        it("Should Buy the tokens", async () => {
+            
             await I_CappedSTO_Array_ETH[0].buyTokens(account_investor1, {
                 from: account_investor1,
                 value: web3.utils.toWei("1", "ether")

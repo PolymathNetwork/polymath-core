@@ -72,6 +72,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     bytes32 constant PAUSED = 0xee35723ac350a69d2a92d3703f17439cbaadf2f093a21ba5bf5f1a53eb2a14d9;
     bytes32 constant OWNER = 0x02016836a56b71f0d02689e69e326f4f4c1b9057164ef592671cf0d37c8040c0;
     bytes32 constant POLYMATHREGISTRY = 0x90eeab7c36075577c7cc5ff366e389fefa8a18289b949bab3529ab4471139d4d;
+    bytes32 constant STRGETTER = 0x982f24b3bd80807ec3cb227ba152e15c07d66855fa8ae6ca536e689205c0e2e9;
 
     // Emit when network becomes paused
     event Pause(uint256 _timestammp);
@@ -191,7 +192,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         set(POLYMATHREGISTRY, _polymathRegistry);
         _setProtocolVersion(_STFactory, uint8(2), uint8(0), uint8(0));
         set(INITIALIZE, true);
-        set(Encoder.getKey("STRGetter"), _getterContract);
+        set(STRGETTER, _getterContract);
         _updateFromRegistry();
     }
 
@@ -213,7 +214,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      */
     function setGetterRegistry(address _getterContract) public onlyOwner {
         require(_getterContract != address(0));
-        set(Encoder.getKey("STRGetter"), _getterContract);
+        set(STRGETTER, _getterContract);
     }
 
     function _implementation() internal view returns(address) {

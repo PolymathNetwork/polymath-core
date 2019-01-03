@@ -2,9 +2,48 @@
 // aren’t included within the original RPC specification.
 // See https://github.com/ethereumjs/testrpc#implemented-methods
 
+// async function increaseTime(duration) {
+//     //let currentTime = (await web3.eth.getBlock('latest')).timestamp
+//     await sendIncreaseTime(duration);
+//     return advanceBlock();
+// }
+
+// async function sendIncreaseTime(duration) {
+//     return new Promise(() => 
+//         web3.currentProvider.send({
+//             jsonrpc: '2.0',
+//             method: 'evm_increaseTime',
+//             params: [duration],
+//         })
+//     );
+// }
+
+// async function advanceBlock() {
+//     return new Promise(() => 
+//         web3.currentProvider.send({
+//             jsonrpc: '2.0',
+//             method: 'evm_mine',
+//         })
+//     );
+// }
+
+const pify = require('pify');
+
+function advanceBlock() {
+  return pify(web3.currentProvider.send)({
+    jsonrpc: '2.0',
+    method: 'evm_mine',
+  });
+}
+
+// Increases ganache time by the passed duration in seconds
 async function increaseTime(duration) {
-    let currentTime = (await web3.eth.getBlock('latest')).timestamp
-    await jumpToTime(currentTime + duration);
+  await pify(web3.currentProvider.send)({
+    jsonrpc: '2.0',
+    method: 'evm_increaseTime',
+    params: [duration],
+  });
+  await advanceBlock();
 }
 
 async function jumpToTime(timestamp) {

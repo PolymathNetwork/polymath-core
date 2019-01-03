@@ -57,7 +57,7 @@ start_testrpc() {
   )
 
   if [ "$COVERAGE" = true ]; then
-    node_modules/.bin/ganache-cli --gasLimit 0xfffffffffff --allowUnlimitedContractSize --port "$testrpc_port" "${accounts[@]}" > /dev/null &
+    node_modules/.bin/testrpc-sc --gasLimit 0xfffffffff --port "$testrpc_port" "${accounts[@]}" > /dev/null &
   else
     node_modules/.bin/ganache-cli --gasLimit 8000000 "${accounts[@]}" > /dev/null &
   fi

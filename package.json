@@ -68,6 +68,7 @@
     "ethers": "^4.0.7",
     "fs": "0.0.2",
     "openzeppelin-solidity": "^2.1.0-rc.2",
+    "pify": "^4.0.1",
     "prompt": "^1.0.0",
     "readline-sync": "^1.4.9",
     "request": "^2.88.0",

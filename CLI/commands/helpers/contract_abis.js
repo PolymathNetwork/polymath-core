@@ -10,6 +10,7 @@ let generalTransferManagerABI;
 let manualApprovalTransferManagerABI;
 let countTransferManagerABI;
 let percentageTransferManagerABI;
+let volumeRestrictionTMABI;
 let generalPermissionManagerABI;
 let polyTokenABI;
 let cappedSTOFactoryABI;
@@ -21,31 +22,34 @@ let ownableABI;
 let iSTOABI;
 let iTransferManagerABI;
 let moduleFactoryABI;
+let erc20ABI;
 
 try {
-    polymathRegistryABI = JSON.parse(require('fs').readFileSync('./build/contracts/PolymathRegistry.json').toString()).abi;
-    securityTokenRegistryABI = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityTokenRegistry.json').toString()).abi;
-    featureRegistryABI = JSON.parse(require('fs').readFileSync('./build/contracts/FeatureRegistry.json').toString()).abi;
-    moduleRegistryABI = JSON.parse(require('fs').readFileSync('./build/contracts/ModuleRegistry.json').toString()).abi;
-    securityTokenABI = JSON.parse(require('fs').readFileSync('./build/contracts/SecurityToken.json').toString()).abi;
-    stoInterfaceABI = JSON.parse(require('fs').readFileSync('./build/contracts/ISTO.json').toString()).abi;
-    cappedSTOABI = JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTO.json').toString()).abi;
-    usdTieredSTOABI = JSON.parse(require('fs').readFileSync('./build/contracts/USDTieredSTO.json').toString()).abi;
-    generalTransferManagerABI = JSON.parse(require('fs').readFileSync('./build/contracts/GeneralTransferManager.json').toString()).abi;
-    manualApprovalTransferManagerABI = JSON.parse(require('fs').readFileSync('./build/contracts/ManualApprovalTransferManager.json').toString()).abi;
-    countTransferManagerABI = JSON.parse(require('fs').readFileSync('./build/contracts/CountTransferManager.json').toString()).abi;
-    percentageTransferManagerABI = JSON.parse(require('fs').readFileSync('./build/contracts/PercentageTransferManager.json').toString()).abi;
-    generalPermissionManagerABI = JSON.parse(require('fs').readFileSync('./build/contracts/GeneralPermissionManager.json').toString()).abi;
-    polyTokenABI = JSON.parse(require('fs').readFileSync('./build/contracts/PolyTokenFaucet.json').toString()).abi;
-    cappedSTOFactoryABI = JSON.parse(require('fs').readFileSync('./build/contracts/CappedSTOFactory.json').toString()).abi;
-    usdTieredSTOFactoryABI = JSON.parse(require('fs').readFileSync('./build/contracts/USDTieredSTOFactory.json').toString()).abi;
-    erc20DividendCheckpointABI = JSON.parse(require('fs').readFileSync('./build/contracts/ERC20DividendCheckpoint.json').toString()).abi;
-    etherDividendCheckpointABI = JSON.parse(require('fs').readFileSync('./build/contracts/EtherDividendCheckpoint.json').toString()).abi;
-    moduleInterfaceABI = JSON.parse(require('fs').readFileSync('./build/contracts/IModule.json').toString()).abi;
-    ownableABI = JSON.parse(require('fs').readFileSync('./build/contracts/Ownable.json').toString()).abi;
-    iSTOABI = JSON.parse(require('fs').readFileSync('./build/contracts/ISTO.json').toString()).abi
-    iTransferManagerABI = JSON.parse(require('fs').readFileSync('./build/contracts/ITransferManager.json').toString()).abi
-    moduleFactoryABI = JSON.parse(require('fs').readFileSync('./build/contracts/ModuleFactory.json').toString()).abi;
+    polymathRegistryABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/PolymathRegistry.json`).toString()).abi;
+    securityTokenRegistryABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/SecurityTokenRegistry.json`).toString()).abi;
+    featureRegistryABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/FeatureRegistry.json`).toString()).abi;
+    moduleRegistryABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/ModuleRegistry.json`).toString()).abi;
+    securityTokenABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/SecurityToken.json`).toString()).abi;
+    stoInterfaceABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/ISTO.json`).toString()).abi;
+    cappedSTOABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/CappedSTO.json`).toString()).abi;
+    usdTieredSTOABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/USDTieredSTO.json`).toString()).abi;
+    generalTransferManagerABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/GeneralTransferManager.json`).toString()).abi;
+    manualApprovalTransferManagerABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/ManualApprovalTransferManager.json`).toString()).abi;
+    countTransferManagerABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/CountTransferManager.json`).toString()).abi;
+    percentageTransferManagerABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/PercentageTransferManager.json`).toString()).abi;
+    volumeRestrictionTMABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/VolumeRestrictionTM.json`).toString()).abi;
+    generalPermissionManagerABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/GeneralPermissionManager.json`).toString()).abi;
+    polyTokenABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/PolyTokenFaucet.json`).toString()).abi;
+    cappedSTOFactoryABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/CappedSTOFactory.json`).toString()).abi;
+    usdTieredSTOFactoryABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/USDTieredSTOFactory.json`).toString()).abi;
+    erc20DividendCheckpointABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/ERC20DividendCheckpoint.json`).toString()).abi;
+    etherDividendCheckpointABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/EtherDividendCheckpoint.json`).toString()).abi;
+    moduleInterfaceABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/IModule.json`).toString()).abi;
+    ownableABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/Ownable.json`).toString()).abi;
+    iSTOABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/ISTO.json`).toString()).abi
+    iTransferManagerABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/ITransferManager.json`).toString()).abi
+    moduleFactoryABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/ModuleFactory.json`).toString()).abi;
+    erc20ABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/DetailedERC20.json`).toString()).abi;
 } catch (err) {
     console.log('\x1b[31m%s\x1b[0m', "Couldn't find contracts' artifacts. Make sure you ran truffle compile first");
     throw err;
@@ -88,6 +92,9 @@ module.exports = {
     percentageTransferManager: function () {
         return percentageTransferManagerABI;
     },
+    volumeRestrictionTM: function () {
+        return volumeRestrictionTMABI;
+    },
     generalPermissionManager: function () {
         return generalPermissionManagerABI;
     },
@@ -120,5 +127,8 @@ module.exports = {
     },
     moduleFactory: function () {
         return moduleFactoryABI;
+    },
+    erc20: function () {
+        return erc20ABI;
     }
 }

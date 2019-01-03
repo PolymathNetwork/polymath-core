@@ -32,9 +32,9 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
     // if allowAllWhitelistTransfers is TRUE, then _toTime and _fromTime is ignored when sending or receiving tokens
     // in any case, any investor sending or receiving tokens, must have a _expiryTime in the future
     event ModifyWhitelist(
-        address _investor,
+        address indexed _investor,
         uint256 _dateAdded,
-        address _addedBy,
+        address indexed _addedBy,
         uint256 _fromTime,
         uint256 _toTime,
         uint256 _expiryTime,

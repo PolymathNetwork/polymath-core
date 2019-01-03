@@ -21,6 +21,7 @@ All notable changes to this project will be documented in this file.
 * Removed individual mappings for tier data removed in UDSTSTO.
 * Removed the old Proxy deployment method of USDTieredSTO and adopt the new inherited proxy deployment approach.
 * Bump the version to `2.1.0`
+* Added `getAccreditedData` to return accredited & non-accredited investor data
 
 ## GeneralTransferManager
 * `getInvestors`, `getAllInvestorsData`, `getInvestorsData` added to GTM to allow easy data queries.
@@ -31,7 +32,7 @@ All notable changes to this project will be documented in this file.
 * Changed the version of `GeneralTransferManagerFactory` from `1.0.0` to `2.1.0`.
 
 ## Manual Approval TransferManager
-* Removed `0x0` check for the `_from` address to `ManualApprovalTransferManager`. This allows for the Issuer/Transfer Agent to approve a one-off mint of tokens that otherwise would not be possible. 
+* Removed `0x0` check for the `_from` address to `ManualApprovalTransferManager`. This allows for the Issuer/Transfer Agent to approve a one-off mint of tokens that otherwise would not be possible.
 * Changed the version of `ManualApprovalTransferManagerFactory` from `1.0.0` to `2.1.0`.   
 * Deployed 2.0.1 `ManualApprovalTransferManagerFactory` to address 0x6af2afad53cb334e62b90ddbdcf3a086f654c298
 * Add `getActiveApprovalsToUser()` function to access all the active approvals for a user whether user is in the `from` or in `to`.  
@@ -90,7 +91,7 @@ All notable changes to this project will be documented in this file.
 * Removed investors list pruning
 * Remove `swarmHash` from the `registerTicker(), addCustomTicker(), generateSecurityToken(), addCustomSecurityToken()` functions of TickerRegistry.sol and SecurityTokenRegistry.sol. #230  
 * Remove `Log` prefix from all the event present in the ecosystem.    
-* Removed `addTagByModuleType` & `removeTagsByModuleType` from MR. 
+* Removed `addTagByModuleType` & `removeTagsByModuleType` from MR.
 
 ======
 

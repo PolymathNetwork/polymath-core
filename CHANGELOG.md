@@ -34,10 +34,21 @@ All notable changes to this project will be documented in this file.
 * Removed `0x0` check for the `_from` address to `ManualApprovalTransferManager`. This allows for the Issuer/Transfer Agent to approve a one-off mint of tokens that otherwise would not be possible. 
 * Changed the version of `ManualApprovalTransferManagerFactory` from `1.0.0` to `2.1.0`.   
 * Deployed 2.0.1 `ManualApprovalTransferManagerFactory` to address 0x6af2afad53cb334e62b90ddbdcf3a086f654c298
+* Add `getActiveApprovalsToUser()` function to access all the active approvals for a user whether user is in the `from` or in `to`.  
+* Add `getApprovalDetails()` to get the details of the approval corresponds to `_from` and `_to` address.
+* Add feature to modify the details of the active approval using `modifyApproval()` & `modifyApprovalMulti()`.
+* Add `addManualApprovalMulti()` and `revokeManualApprovalMulti()` batch function for adding and revoking the manual approval respectively.
 
 ## Dividends
 * Changed the version of `ERC20DividendCheckpointFactory` & `EtherDividendCheckpointFactory` from `1.0.0` to `2.1.0`.
 * Applied proxy pattern to Dividends modules
+
+## Experimental modules
+* Remove the `SingleTradeVolumeRestrictionTMFactory.sol` and its corresponding module `SingleTradeVolumeRestrictionTM.sol`.
+
+## Added
+* Add new module called `VolumeRestrictionTM.sol` under the TransferManager modules list. It will be used to restrict the token
+volume traded in a given rolling period.
 
 ## Changed
 * `getAllModulesAndPermsFromTypes()` does not take securityToken address as a parameter anymore.

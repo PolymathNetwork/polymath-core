@@ -11,6 +11,7 @@ let manualApprovalTransferManagerABI;
 let blacklistTransferManagerABI;
 let countTransferManagerABI;
 let percentageTransferManagerABI;
+let volumeRestrictionTMABI;
 let generalPermissionManagerABI;
 let polyTokenABI;
 let cappedSTOFactoryABI;
@@ -38,6 +39,7 @@ try {
     countTransferManagerABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/CountTransferManager.json`).toString()).abi;
     percentageTransferManagerABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/PercentageTransferManager.json`).toString()).abi;
     blacklistTransferManagerABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/BlacklistTransferManager.json`).toString()).abi;  
+    volumeRestrictionTMABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/VolumeRestrictionTM.json`).toString()).abi;
     generalPermissionManagerABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/GeneralPermissionManager.json`).toString()).abi;
     polyTokenABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/PolyTokenFaucet.json`).toString()).abi;
     cappedSTOFactoryABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/CappedSTOFactory.json`).toString()).abi;
@@ -94,6 +96,9 @@ module.exports = {
     },
     percentageTransferManager: function () {
         return percentageTransferManagerABI;
+    },
+    volumeRestrictionTM: function () {
+        return volumeRestrictionTMABI;
     },
     generalPermissionManager: function () {
         return generalPermissionManagerABI;

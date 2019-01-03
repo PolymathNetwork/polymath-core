@@ -60,9 +60,7 @@ function getPermissionList() {
         },
         ManualApprovalTransferManager: {
             addManualApproval: "TRANSFER_APPROVAL",
-            addManualBlocking: "TRANSFER_APPROVAL",
             revokeManualApproval: "TRANSFER_APPROVAL",
-            revokeManualBlocking: "TRANSFER_APPROVAL"
         },
         PercentageTransferManager: {
             modifyWhitelist: "WHITELIST",

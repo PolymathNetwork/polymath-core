@@ -1,10 +1,13 @@
 const PolymathRegistry = artifacts.require("./PolymathRegistry.sol");
 const GeneralTransferManagerFactory = artifacts.require("./GeneralTransferManagerFactory.sol");
 const GeneralTransferManagerLogic = artifacts.require("./GeneralTransferManager.sol");
+const GeneralPermissionManagerLogic = artifacts.require("./GeneralPermissionManager.sol");
 const GeneralPermissionManagerFactory = artifacts.require("./GeneralPermissionManagerFactory.sol");
+const PercentageTransferManagerLogic = artifacts.require("./PercentageTransferManager.sol");
 const PercentageTransferManagerFactory = artifacts.require("./PercentageTransferManagerFactory.sol");
 const USDTieredSTOLogic = artifacts.require("./USDTieredSTO.sol");
 const CountTransferManagerFactory = artifacts.require("./CountTransferManagerFactory.sol");
+const CountTransferManagerLogic = artifacts.require("./CountTransferManager.sol");
 const EtherDividendCheckpointLogic = artifacts.require("./EtherDividendCheckpoint.sol");
 const ERC20DividendCheckpointLogic = artifacts.require("./ERC20DividendCheckpoint.sol");
 const EtherDividendCheckpointFactory = artifacts.require("./EtherDividendCheckpointFactory.sol");
@@ -12,7 +15,9 @@ const ERC20DividendCheckpointFactory = artifacts.require("./ERC20DividendCheckpo
 const ModuleRegistry = artifacts.require("./ModuleRegistry.sol");
 const ModuleRegistryProxy = artifacts.require("./ModuleRegistryProxy.sol");
 const ManualApprovalTransferManagerFactory = artifacts.require("./ManualApprovalTransferManagerFactory.sol");
+const ManualApprovalTransferManagerLogic = artifacts.require("./ManualApprovalTransferManager.sol");
 const CappedSTOFactory = artifacts.require("./CappedSTOFactory.sol");
+const CappedSTOLogic = artifacts.require("./CappedSTO.sol");
 const USDTieredSTOFactory = artifacts.require("./USDTieredSTOFactory.sol");
 const SecurityTokenRegistry = artifacts.require("./SecurityTokenRegistry.sol");
 const SecurityTokenRegistryProxy = artifacts.require("./SecurityTokenRegistryProxy.sol");
@@ -196,12 +201,32 @@ module.exports = function(deployer, network, accounts) {
             return deployer.deploy(GeneralTransferManagerLogic, nullAddress, nullAddress, { from: PolymathAccount });
         })
         .then(() => {
-            // B) Deploy the GeneralTransferManagerLogic Contract (Factory used to generate the GeneralTransferManager contract and this
+            // B) Deploy the GeneralPermissionManagerLogic Contract (Factory used to generate the GeneralPermissionManager contract and this
+            // manager attach with the securityToken contract at the time of deployment)
+            return deployer.deploy(GeneralPermissionManagerLogic, nullAddress, nullAddress, { from: PolymathAccount });
+        })
+        .then(() => {
+            // B) Deploy the CountTransferManagerLogic Contract (Factory used to generate the CountTransferManager contract and this
+            // manager attach with the securityToken contract at the time of deployment)
+            return deployer.deploy(CountTransferManagerLogic, nullAddress, nullAddress, { from: PolymathAccount });
+        })
+        .then(() => {
+            // B) Deploy the ManualApprovalTransferManagerLogic Contract (Factory used to generate the ManualApprovalTransferManager contract and this
+            // manager attach with the securityToken contract at the time of deployment)
+            return deployer.deploy(ManualApprovalTransferManagerLogic, nullAddress, nullAddress, { from: PolymathAccount });
+        })
+        .then(() => {
+            // B) Deploy the PercentageTransferManagerLogic Contract (Factory used to generate the PercentageTransferManager contract and this
+            // manager attach with the securityToken contract at the time of deployment)
+            return deployer.deploy(PercentageTransferManagerLogic, nullAddress, nullAddress, { from: PolymathAccount });
+        })
+        .then(() => {
+            // B) Deploy the ERC20DividendCheckpointLogic Contract (Factory used to generate the ERC20DividendCheckpoint contract and this
             // manager attach with the securityToken contract at the time of deployment)
             return deployer.deploy(ERC20DividendCheckpointLogic, nullAddress, nullAddress, { from: PolymathAccount });
         })
         .then(() => {
-            // B) Deploy the GeneralTransferManagerLogic Contract (Factory used to generate the GeneralTransferManager contract and this
+            // B) Deploy the EtherDividendCheckpointLogic Contract (Factory used to generate the EtherDividendCheckpoint contract and this
             // manager attach with the securityToken contract at the time of deployment)
             return deployer.deploy(EtherDividendCheckpointLogic, nullAddress, nullAddress, { from: PolymathAccount });
         })
@@ -211,24 +236,37 @@ module.exports = function(deployer, network, accounts) {
             return deployer.deploy(USDTieredSTOLogic, nullAddress, nullAddress, { from: PolymathAccount });
         })
         .then(() => {
+            // B) Deploy the CappedSTOLogic Contract (Factory used to generate the CappedSTO contract and this
+            // manager attach with the securityToken contract at the time of deployment)
+            return deployer.deploy(CappedSTOLogic, nullAddress, nullAddress, { from: PolymathAccount });
+        })
+        .then(() => {
             // B) Deploy the GeneralTransferManagerFactory Contract (Factory used to generate the GeneralTransferManager contract and this
             // manager attach with the securityToken contract at the time of deployment)
-            return deployer.deploy(GeneralTransferManagerFactory, new BN(0), new BN(0), new BN(0), GeneralTransferManagerLogic.address, { from: PolymathAccount });
+            return deployer.deploy(GeneralTransferManagerFactory, new BN(0), new BN(0), new BN(0), GeneralTransferManagerLogic.address, {
+                from: PolymathAccount
+            });
         })
         .then(() => {
             // C) Deploy the GeneralPermissionManagerFactory Contract (Factory used to generate the GeneralPermissionManager contract and
             // this manager attach with the securityToken contract at the time of deployment)
-            return deployer.deploy(GeneralPermissionManagerFactory, new BN(0), new BN(0), new BN(0), { from: PolymathAccount });
+            return deployer.deploy(GeneralPermissionManagerFactory, new BN(0), new BN(0), new BN(0), GeneralPermissionManagerLogic.address, {
+                from: PolymathAccount
+            });
         })
         .then(() => {
             // D) Deploy the CountTransferManagerFactory Contract (Factory used to generate the CountTransferManager contract use
             // to track the counts of the investors of the security token)
-            return deployer.deploy(CountTransferManagerFactory, new BN(0), new BN(0), new BN(0), { from: PolymathAccount });
+            return deployer.deploy(CountTransferManagerFactory, new BN(0), new BN(0), new BN(0), CountTransferManagerLogic.address, {
+                from: PolymathAccount
+            });
         })
         .then(() => {
             // D) Deploy the PercentageTransferManagerFactory Contract (Factory used to generate the PercentageTransferManager contract use
             // to track the percentage of investment the investors could do for a particular security token)
-            return deployer.deploy(PercentageTransferManagerFactory, new BN(0), new BN(0), new BN(0), { from: PolymathAccount });
+            return deployer.deploy(PercentageTransferManagerFactory, new BN(0), new BN(0), new BN(0), PercentageTransferManagerLogic.address, {
+                from: PolymathAccount
+            });
         })
         .then(() => {
             // D) Deploy the EtherDividendCheckpointFactory Contract (Factory used to generate the EtherDividendCheckpoint contract use
@@ -247,7 +285,9 @@ module.exports = function(deployer, network, accounts) {
         .then(() => {
             // D) Deploy the ManualApprovalTransferManagerFactory Contract (Factory used to generate the ManualApprovalTransferManager contract use
             // to manual approve the transfer that will overcome the other transfer restrictions)
-            return deployer.deploy(ManualApprovalTransferManagerFactory, new BN(0), new BN(0), new BN(0), { from: PolymathAccount });
+            return deployer.deploy(ManualApprovalTransferManagerFactory, new BN(0), new BN(0), new BN(0), ManualApprovalTransferManagerLogic.address, {
+                from: PolymathAccount
+            });
         })
         .then(() => {
             // H) Deploy the STVersionProxy001 Contract which contains the logic of deployment of securityToken.
@@ -370,7 +410,7 @@ module.exports = function(deployer, network, accounts) {
         })
         .then(() => {
             // M) Deploy the CappedSTOFactory (Use to generate the CappedSTO contract which will used to collect the funds ).
-            return deployer.deploy(CappedSTOFactory, cappedSTOSetupCost, new BN(0), new BN(0), { from: PolymathAccount });
+            return deployer.deploy(CappedSTOFactory, cappedSTOSetupCost, new BN(0), new BN(0), CappedSTOLogic.address, { from: PolymathAccount });
         })
         .then(() => {
             // N) Register the CappedSTOFactory in the ModuleRegistry to make the factory available at the protocol level.

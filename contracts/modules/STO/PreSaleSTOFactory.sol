@@ -1,30 +1,38 @@
 pragma solidity ^0.5.0;
 
-import "./PreSaleSTO.sol";
 import "../ModuleFactory.sol";
 import "../../libraries/Util.sol";
+import "../../proxy/PreSaleSTOProxy.sol";
+import "../../interfaces/IBoot.sol";
 
 /**
  * @title Factory for deploying PreSaleSTO module
  */
 contract PreSaleSTOFactory is ModuleFactory {
+
+    address public logicContract;
+
     /**
      * @notice Constructor
      * @param _setupCost Setup cost of the module
      * @param _usageCost Usage cost of the module
      * @param _subscriptionCost Subscription cost of the module
+     * @param _logicContract Contract address that contains the logic related to `description`
      */
     constructor(
         uint256 _setupCost,
         uint256 _usageCost,
-        uint256 _subscriptionCost
+        uint256 _subscriptionCost,
+        address _logicContract
     ) public ModuleFactory(_setupCost, _usageCost, _subscriptionCost) {
+        require(_logicContract != address(0), "Invalid address");
         version = "1.0.0";
         name = "PreSaleSTO";
         title = "PreSale STO";
         description = "Allows Issuer to configure pre-sale token allocations";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        logicContract = _logicContract;
     }
 
     /**
@@ -35,16 +43,16 @@ contract PreSaleSTOFactory is ModuleFactory {
     function deploy(bytes calldata _data) external returns(address) {
         address polyToken = _takeFee();
         //Check valid bytes - can only call module init function
-        PreSaleSTO preSaleSTO = new PreSaleSTO(msg.sender, polyToken);
+        address preSaleSTO = address(new PreSaleSTOProxy(msg.sender, polyToken, logicContract));
         //Checks that _data is valid (not calling anything it shouldn't)
-        require(Util.getSig(_data) == preSaleSTO.getInitFunction(), "Invalid data");
+        require(Util.getSig(_data) == IBoot(preSaleSTO).getInitFunction(), "Invalid data");
         bool success;
         /*solium-disable-next-line security/no-low-level-calls*/
-        (success, ) = address(preSaleSTO).call(_data);
+        (success, ) = preSaleSTO.call(_data);
         require(success, "Unsuccessfull call");
         /*solium-disable-next-line security/no-block-members*/
-        emit GenerateModuleFromFactory(address(preSaleSTO), getName(), address(this), msg.sender, setupCost, now);
-        return address(preSaleSTO);
+        emit GenerateModuleFromFactory(preSaleSTO, getName(), address(this), msg.sender, setupCost, now);
+        return preSaleSTO;
     }
 
     /**

@@ -170,13 +170,7 @@ contract("Issuance", async (accounts) => {
             it("POLYMATH: Should successfully attach the STO factory with the security token", async () => {
                 // STEP 4: Deploy the CappedSTOFactory
 
-                I_CappedSTOFactory = await CappedSTOFactory.new(cappedSTOSetupCost, new BN(0), new BN(0), { from: account_polymath });
-
-                assert.notEqual(I_CappedSTOFactory.address.valueOf(), address_zero, "CappedSTOFactory contract was not deployed");
-
-                // (C) : Register the STOFactory
-                await I_MRProxied.registerModule(I_CappedSTOFactory.address, { from: account_polymath });
-                await I_MRProxied.verifyModule(I_CappedSTOFactory.address, true, { from: account_polymath });
+                [I_CappedSTOFactory] = await deployCappedSTOAndVerifyed(account_polymath, I_MRProxied, cappedSTOSetupCost);
 
                 let bytesSTO = encodeModuleCall(STOParameters, [
                     await latestTime() + duration.seconds(5000),

@@ -422,14 +422,19 @@ module.exports = function(deployer, network, accounts) {
     STFactory:                            ${STFactory.address}
     GeneralTransferManagerLogic:          ${GeneralTransferManagerLogic.address}
     GeneralTransferManagerFactory:        ${GeneralTransferManagerFactory.address}
+    GeneralPermissionManagerLogic:        ${GeneralPermissionManagerLogic.address}
     GeneralPermissionManagerFactory:      ${GeneralPermissionManagerFactory.address}
 
+    CappedSTOLogic:                       ${CappedSTOLogic.address}
     CappedSTOFactory:                     ${CappedSTOFactory.address}
-    USDTieredSTOFactory:                  ${USDTieredSTOFactory.address}
     USDTieredSTOLogic:                    ${USDTieredSTOLogic.address}
+    USDTieredSTOFactory:                  ${USDTieredSTOFactory.address}
 
+    CountTransferManagerLogic:            ${CountTransferManagerLogic.address}
     CountTransferManagerFactory:          ${CountTransferManagerFactory.address}
+    PercentageTransferManagerLogic:       ${PercentageTransferManagerLogic.address}
     PercentageTransferManagerFactory:     ${PercentageTransferManagerFactory.address}
+    ManualApprovalTransferManagerLogic:   ${ManualApprovalTransferManagerLogic.address}
     ManualApprovalTransferManagerFactory: ${ManualApprovalTransferManagerFactory.address}
     EtherDividendCheckpointLogic:         ${EtherDividendCheckpointLogic.address}
     ERC20DividendCheckpointLogic:         ${ERC20DividendCheckpointLogic.address}

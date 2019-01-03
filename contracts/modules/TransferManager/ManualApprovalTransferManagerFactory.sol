@@ -1,29 +1,36 @@
 pragma solidity ^0.5.0;
 
-import "./ManualApprovalTransferManager.sol";
 import "../ModuleFactory.sol";
+import "../../proxy/ManualApprovalTransferManagerProxy.sol";
 
 /**
  * @title Factory for deploying ManualApprovalTransferManager module
  */
 contract ManualApprovalTransferManagerFactory is ModuleFactory {
+
+    address public logicContract;
+
     /**
      * @notice Constructor
      * @param _setupCost Setup cost of the module
      * @param _usageCost Usage cost of the module
      * @param _subscriptionCost Subscription cost of the module
+     * @param _logicContract Contract address that contains the logic related to `description`
      */
     constructor(
         uint256 _setupCost,
         uint256 _usageCost,
-        uint256 _subscriptionCost
+        uint256 _subscriptionCost,
+        address _logicContract
     ) public ModuleFactory(_setupCost, _usageCost, _subscriptionCost) {
+        require(_logicContract != address(0), "Invalid address");
         version = "2.0.1";
         name = "ManualApprovalTransferManager";
         title = "Manual Approval Transfer Manager";
         description = "Manage transfers using single approvals / blocking";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        logicContract = _logicContract;
     }
 
     /**
@@ -34,7 +41,7 @@ contract ManualApprovalTransferManagerFactory is ModuleFactory {
         bytes calldata /* _data */
     ) external returns(address) {
         address polyToken = _takeFee();
-        ManualApprovalTransferManager manualTransferManager = new ManualApprovalTransferManager(msg.sender, polyToken);
+        ManualApprovalTransferManagerProxy manualTransferManager = new ManualApprovalTransferManagerProxy(msg.sender, polyToken, logicContract);
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(address(manualTransferManager), getName(), address(this), msg.sender, setupCost, now);
         return address(manualTransferManager);

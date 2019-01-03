@@ -2,45 +2,40 @@ pragma solidity ^0.5.0;
 
 import "./TransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "./ManualApprovalTransferManagerStorage.sol";
 
 /**
  * @title Transfer Manager module for manually approving or blocking transactions between accounts
  */
-contract ManualApprovalTransferManager is TransferManager {
+contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, TransferManager {
     using SafeMath for uint256;
 
-    //Address from which issuances come
-    address public issuanceAddress = address(0);
+    event AddManualApproval(
+        address indexed _from,
+        address indexed _to,
+        uint256 _allowance,
+        uint256 _expiryTime,
+        address indexed _addedBy
+    );
 
-    //Address which can sign whitelist changes
-    address public signingAddress = address(0);
+    event AddManualBlocking(
+        address indexed _from,
+        address indexed _to,
+        uint256 _expiryTime,
+        address indexed _addedBy
+    );
 
-    bytes32 public constant TRANSFER_APPROVAL = "TRANSFER_APPROVAL";
+    event RevokeManualApproval(
+        address indexed _from,
+        address indexed _to,
+        address indexed _addedBy
+    );
 
-    //Manual approval is an allowance (that has been approved) with an expiry time
-    struct ManualApproval {
-        uint256 allowance;
-        uint256 expiryTime;
-    }
-
-    //Manual blocking allows you to specify a list of blocked address pairs with an associated expiry time for the block
-    struct ManualBlocking {
-        uint256 expiryTime;
-    }
-
-    //Store mappings of address => address with ManualApprovals
-    mapping(address => mapping(address => ManualApproval)) public manualApprovals;
-
-    //Store mappings of address => address with ManualBlockings
-    mapping(address => mapping(address => ManualBlocking)) public manualBlockings;
-
-    event AddManualApproval(address indexed _from, address indexed _to, uint256 _allowance, uint256 _expiryTime, address indexed _addedBy);
-
-    event AddManualBlocking(address indexed _from, address indexed _to, uint256 _expiryTime, address indexed _addedBy);
-
-    event RevokeManualApproval(address indexed _from, address indexed _to, address indexed _addedBy);
-
-    event RevokeManualBlocking(address indexed _from, address indexed _to, address indexed _addedBy);
+    event RevokeManualBlocking(
+        address indexed _from,
+        address indexed _to,
+        address indexed _addedBy
+    );
 
     /**
      * @notice Constructor

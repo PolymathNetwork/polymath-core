@@ -1,49 +1,58 @@
 pragma solidity ^0.5.0;
 
-import "./CappedSTO.sol";
 import "../ModuleFactory.sol";
 import "../../libraries/Util.sol";
+import "../../proxy/CappedSTOProxy.sol";
+import "../../interfaces/IBoot.sol";
 
 /**
  * @title Factory for deploying CappedSTO module
  */
 contract CappedSTOFactory is ModuleFactory {
+
+    address public logicContract;
+
     /**
      * @notice Constructor
      * @param _setupCost Setup cost of the module
      * @param _usageCost Usage cost of the module
      * @param _subscriptionCost Subscription cost of the module
+     * @param _logicContract Contract address that contains the logic related to `description`
      */
     constructor(
         uint256 _setupCost,
         uint256 _usageCost,
-        uint256 _subscriptionCost
+        uint256 _subscriptionCost,
+        address _logicContract
     ) public ModuleFactory(_setupCost, _usageCost, _subscriptionCost) {
+        require(_logicContract != address(0), "Invalid address");
         version = "1.0.0";
         name = "CappedSTO";
         title = "Capped STO";
         description = "This smart contract creates a maximum number of tokens (i.e. hard cap) which the total aggregate of tokens acquired by all investors cannot exceed. Security tokens are sent to the investor upon reception of the funds (ETH or POLY), and any security tokens left upon termination of the offering will not be minted.";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        logicContract = _logicContract;
     }
 
     /**
      * @notice Used to launch the Module with the help of factory
+     * @param _data Data used for the intialization of the module factory variables
      * @return address Contract address of the Module
      */
     function deploy(bytes calldata _data) external returns(address) {
         address polyToken = _takeFee();
         //Check valid bytes - can only call module init function
-        CappedSTO cappedSTO = new CappedSTO(msg.sender, polyToken);
+        address cappedSTO = address(new CappedSTOProxy(msg.sender, polyToken, logicContract));
         //Checks that _data is valid (not calling anything it shouldn't)
-        require(Util.getSig(_data) == cappedSTO.getInitFunction(), "Invalid data");
+        require(Util.getSig(_data) == IBoot(cappedSTO).getInitFunction(), "Invalid data");
         bool success;
         /*solium-disable-next-line security/no-low-level-calls*/
-        (success, ) = address(cappedSTO).call(_data);
+        (success, ) = cappedSTO.call(_data);
         require(success, "Unsuccessfull call");
         /*solium-disable-next-line security/no-block-members*/
-        emit GenerateModuleFromFactory(address(cappedSTO), getName(), address(this), msg.sender, setupCost, now);
-        return address(cappedSTO);
+        emit GenerateModuleFromFactory(cappedSTO, getName(), address(this), msg.sender, setupCost, now);
+        return cappedSTO;
     }
 
     /**

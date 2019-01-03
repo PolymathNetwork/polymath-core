@@ -17,13 +17,13 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         uint256 _expiry,
         uint256 _amount,
         uint256 _totalSupply,
-        uint256 _dividendIndex,
+        uint256 indexed _dividendIndex,
         bytes32 indexed _name
     );
-    event EtherDividendClaimed(address indexed _payee, uint256 _dividendIndex, uint256 _amount, uint256 _withheld);
-    event EtherDividendReclaimed(address indexed _claimer, uint256 _dividendIndex, uint256 _claimedAmount);
-    event EtherDividendClaimFailed(address indexed _payee, uint256 _dividendIndex, uint256 _amount, uint256 _withheld);
-    event EtherDividendWithholdingWithdrawn(address indexed _claimer, uint256 _dividendIndex, uint256 _withheldAmount);
+    event EtherDividendClaimed(address indexed _payee, uint256 indexed _dividendIndex, uint256 _amount, uint256 _withheld);
+    event EtherDividendReclaimed(address indexed _claimer, uint256 indexed _dividendIndex, uint256 _claimedAmount);
+    event EtherDividendClaimFailed(address indexed _payee, uint256 indexed _dividendIndex, uint256 _amount, uint256 _withheld);
+    event EtherDividendWithholdingWithdrawn(address indexed _claimer, uint256 indexed _dividendIndex, uint256 _withheldAmount);
 
     /**
      * @notice Constructor

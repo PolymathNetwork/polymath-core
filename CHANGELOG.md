@@ -44,6 +44,13 @@ All notable changes to this project will be documented in this file.
 * Changed the version of `ERC20DividendCheckpointFactory` & `EtherDividendCheckpointFactory` from `1.0.0` to `2.1.0`.
 * Applied proxy pattern to Dividends modules
 
+## Experimental modules
+* Remove the `SingleTradeVolumeRestrictionTMFactory.sol` and its corresponding module `SingleTradeVolumeRestrictionTM.sol`.
+
+## Added
+* Add new module called `VolumeRestrictionTM.sol` under the TransferManager modules list. It will be used to restrict the token
+volume traded in a given rolling period.
+
 ## Changed
 * `getAllModulesAndPermsFromTypes()` does not take securityToken address as a parameter anymore.
 

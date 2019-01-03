@@ -143,7 +143,7 @@
             <td>allocateTokensMulti()</td>
         </tr>
         <tr>
-            <td rowspan=39>TransferManager</td>
+            <td rowspan=31>TransferManager</td>
             <td>CountTransferManager</td>
             <td>changeHolderCount()</td>
             <td>withPerm(ADMIN)</td>
@@ -199,70 +199,46 @@
             <td> changeHolderPercentage() </td>
         </tr>
         <tr>
-            <td rowspan=4> LockupVolumeRestrictionTM</td>
-            <td>addLockup()</td>
-            <td rowspan=4> withPerm(ADMIN) </td>
+            <td rowspan=13> VolumeRestrictionTM </td>
+            <td> changeExemptWalletList() </td>
+            <td rowspan=13> withPerm(ADMIN) </td>
         </tr>
         <tr>
-            <td> addLockUpMulti() </td>
+            <td>addIndividualRestriction()</td>
         </tr>
         <tr>
-            <td> removeLockUp() </td>
+            <td>addIndividualRestrictionMulti()</td>
         </tr>
         <tr>
-            <td> modifyLockUp() </td>
+            <td>addGlobalRestriction()</td>
         </tr>
         <tr>
-            <td rowspan=17> SingleTradeVolumeRestrictionTM </td>
-            <td> setAllowPrimaryIssuance() </td>
-            <td rowspan=17> withPerm(ADMIN) </td>
+            <td>addDailyGlobalRestriction()</td>
         </tr>
         <tr>
-            <td>changeTransferLimitToPercentage()</td>
+            <td>removeIndividualRestriction()</td>
         </tr>
         <tr>
-            <td>changeTransferLimitToTokens()</td>
+            <td>removeIndividualRestrictionMulti()</td>
         </tr>
         <tr>
-            <td>changeGlobalLimitInTokens()</td>
+            <td>removeGlobalRestriction()</td>
         </tr>
         <tr>
-            <td>changeGlobalLimitInPercentage()</td>
+            <td>removeDailyGlobalRestriction()</td>
         </tr>
         <tr>
-            <td>addExemptWallet()</td>
+            <td>modifyIndividualRestriction()</td>
         </tr>
         <tr>
-            <td>removeExemptWallet()</td>
+            <td>modifyIndividualRestrictionMulti()</td>
         </tr>
         <tr>
-            <td>addExemptWalletMulti()</td>
+            <td>modifyGlobalRestriction()</td>
         </tr>
         <tr>
-            <td>removeExemptWalletMulti()</td>
-        </tr>
-        <tr>
-            <td>setTransferLimitInTokens()</td>
-        </tr>
-        <tr>
-            <td>setTransferLimitInPercentage()</td>
-        </tr>
-        <tr>
-            <td>removeTransferLimitInPercentage()</td>
-        </tr>
-        <tr>
-            <td>removeTransferLimitInTokens()</td>
-        </tr>
-        <tr>
-            <td>setTransferLimitInTokensMulti()</td>
-        </tr>
-        <tr>
-            <td>setTransferLimitInPercentageMulti()</td>
-        </tr>
-        <tr>
-            <td>removeTransferLimitInTokensMulti()</td>
-        </tr>
-        <tr>
+            <td>modifyDailyGlobalRestriction()</td>
+        </tr>  
             <td> removeTransferLimitInPercentageMulti </td>
         </tr>      
         <tr></tr>

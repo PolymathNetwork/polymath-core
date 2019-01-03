@@ -15,6 +15,14 @@ const PERCENTAGE_WHITELIST_DATA_CSV = `${__dirname}/../data/Transfer/PercentageT
 const ADD_MANUAL_APPROVAL_DATA_CSV = `${__dirname}/../data/Transfer/MATM/add_manualapproval_data.csv`;
 const MODIFY_MANUAL_APPROVAL_DATA_CSV = `${__dirname}/../data/Transfer/MATM/modify_manualapproval_data.csv`;
 const REVOKE_MANUAL_APPROVAL_DATA_CSV = `${__dirname}/../data/Transfer/MATM/revoke_manualapproval_data.csv`;
+const ADD_DAILY_RESTRICTIONS_DATA_CSV = `${__dirname}/../data/Transfer/VRTM/add_daily_restriction_data.csv`;
+const MODIFY_DAILY_RESTRICTIONS_DATA_CSV = `${__dirname}/../data/Transfer/VRTM/modify_daily_restriction_data.csv`;
+const REMOVE_DAILY_RESTRICTIONS_DATA_CSV = `${__dirname}/../data/Transfer/VRTM/remove_daily_restriction_data.csv`;
+const ADD_RESTRICTIONS_DATA_CSV = `${__dirname}/../data/Transfer/VRTM/add_restriction_data.csv`;
+const MODIFY_RESTRICTIONS_DATA_CSV = `${__dirname}/../data/Transfer/VRTM/modify_restriction_data.csv`;
+const REMOVE_RESTRICTIONS_DATA_CSV = `${__dirname}/../data/Transfer/VRTM/remove_restriction_data.csv`;
+
+const RESTRICTION_TYPES = ['Fixed', 'Percentage'];
 
 const MATM_MENU_ADD = 'Add new manual approval';
 const MATM_MENU_MANAGE = 'Manage existing approvals';
@@ -226,23 +234,10 @@ async function configExistingModules(tmModules) {
       currentTransferManager.setProvider(web3.currentProvider);
       await percentageTransferManager();
       break;
-    case 'SingleTradeVolumeRestrictionTM':
-      //currentTransferManager = new web3.eth.Contract(abis.singleTradeVolumeRestrictionTM(), tmModules[index].address);
-      //currentTransferManager.setProvider(web3.currentProvider);
-      //await singleTradeVolumeRestrictionTM();
-      console.log(chalk.red(`
-        *********************************
-        This option is not yet available.
-        *********************************`
-      ));
-      break;
-    case 'LookupVolumeRestrictionTM':
-      //await lookupVolumeRestrictionTM();
-      console.log(chalk.red(`
-        *********************************
-        This option is not yet available.
-        *********************************`
-      ));
+    case 'VolumeRestrictionTM':
+      currentTransferManager = new web3.eth.Contract(abis.volumeRestrictionTM(), tmModules[index].address);
+      currentTransferManager.setProvider(web3.currentProvider);
+      await volumeRestrictionTM();
       break;
   }
 }
@@ -274,56 +269,6 @@ async function addTransferManagerModule() {
         let allowPercentagePrimaryIssuance = readlineSync.keyInYNStrict(`Do you want to ignore transactions which are part of the primary issuance? `);
         let configurePercentageTM = abis.percentageTransferManager().find(o => o.name === 'configure' && o.type === 'function');
         bytes = web3.eth.abi.encodeFunctionCall(configurePercentageTM, [maxHolderPercentage, allowPercentagePrimaryIssuance]);
-        break;
-      case 'SingleTradeVolumeRestrictionTM':
-        /*
-        let isTransferLimitInPercentage = !!readlineSync.keyInSelect(['In tokens', 'In percentage'], 'How do you want to set the transfer limit? ', {cancel: false});
-        let globalTransferLimitInPercentageOrToken;
-        if (isTransferLimitInPercentage) {
-          globalTransferLimitInPercentageOrToken = toWeiPercentage(readlineSync.question('Enter the percentage for default limit: ', {
-            limit: function(input) {
-              return (parseInt(input) > 0 && parseInt(input) <= 100);
-            },
-            limitMessage: "Must be greater than 0 and less than 100"
-          })); 
-        } else {
-          globalTransferLimitInPercentageOrToken = web3.utils.toWei(readlineSync.question('Enter the amount of tokens for default limit: ', {
-            limit: function(input) {
-              return parseInt(input) > 0;
-            },
-            limitMessage: "Must be greater than 0"
-          })); 
-        }
-        let allowPrimaryIssuance = readlineSync.keyInYNStrict(`Do you want to allow all primary issuance transfers? `);
-        bytes = web3.eth.abi.encodeFunctionCall( {
-          name: 'configure',
-          type: 'function',
-          inputs: [
-            {
-              type: 'bool',
-              name: '_isTransferLimitInPercentage'
-            },{
-              type: 'uint256',
-              name: '_globalTransferLimitInPercentageOrToken'
-            },{
-              type: 'bool',
-              name: '_isTransferLimitInPercentage'
-            }
-          ]
-        }, [isTransferLimitInPercentage, globalTransferLimitInPercentageOrToken, allowPrimaryIssuance]);
-      */
-        console.log(chalk.red(`
-          *********************************
-          This option is not yet available.
-          *********************************`
-        ));
-        break;
-      case 'LookupVolumeRestrictionTM':
-        console.log(chalk.red(`
-          *********************************
-          This option is not yet available.
-          *********************************`
-        ));
         break;
     }
     let selectedTMFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, gbl.constants.MODULES_TYPES.TRANSFER, options[index]);
@@ -427,10 +372,10 @@ async function generalTransferManager() {
         limitMessage: "Must be a valid address"
       });
       let now = Math.floor(Date.now() / 1000);
-      let fromTime = readlineSync.questionInt(`Enter the time(Unix Epoch time) when the sale lockup period ends and the investor can freely sell his tokens(now = ${now}): `, { defaultInput: now });
-      let toTime = readlineSync.questionInt(`Enter the time(Unix Epoch time) when the purchase lockup period ends and the investor can freely purchase tokens from others(now = ${now}): `, { defaultInput: now });
+      let fromTime = readlineSync.questionInt(`Enter the time (Unix Epoch time) when the sale lockup period ends and the investor can freely sell his tokens (now = ${now}): `, { defaultInput: now });
+      let toTime = readlineSync.questionInt(`Enter the time (Unix Epoch time) when the purchase lockup period ends and the investor can freely purchase tokens from others (now = ${now}): `, { defaultInput: now });
       let oneHourFromNow = Math.floor(Date.now() / 1000 + 3600);
-      let expiryTime = readlineSync.questionInt(`Enter the time till investors KYC will be validated(after that investor need to do re - KYC) (1 hour from now = ${oneHourFromNow}): `, { defaultInput: oneHourFromNow });
+      let expiryTime = readlineSync.questionInt(`Enter the time till investors KYC will be validated (after that investor need to do re - KYC) (1 hour from now = ${oneHourFromNow}): `, { defaultInput: oneHourFromNow });
       let canBuyFromSTO = readlineSync.keyInYNStrict('Is the investor a restricted investor?');
       let modifyWhitelistAction = currentTransferManager.methods.modifyWhitelist(investor, fromTime, toTime, expiryTime, canBuyFromSTO);
       let modifyWhitelistReceipt = await common.sendTransaction(modifyWhitelistAction);
@@ -1108,184 +1053,631 @@ async function percentageTransferManager() {
   }
 }
 
-async function singleTradeVolumeRestrictionTM() {
-  console.log(chalk.blue(`Single Trade Volume Restriction Transfer Manager at ${currentTransferManager.options.address} `));
-  console.log();
+async function volumeRestrictionTM() {
+  console.log('\n', chalk.blue(`Volume Restriction Transfer Manager at ${currentTransferManager.options.address}`, '\n'));
 
-  // Show current data
-  let displayIsInPercentage = await currentTransferManager.methods.isTransferLimitInPercentage().call();
-  let displayGlobalTransferLimit;
-  if (displayIsInPercentage) {
-    displayGlobalTransferLimit = fromWeiPercentage(await currentTransferManager.methods.globalTransferLimitInPercentage().call());
-  } else {
-    displayGlobalTransferLimit = web3.utils.fromWei(await currentTransferManager.methods.globalTransferLimitInTokens().call());
+  let defaultDailyRestriction = await currentTransferManager.methods.defaultDailyRestriction().call();
+  let hasDefaultDailyRestriction = parseInt(defaultDailyRestriction.startTime) !== 0;
+  let defaultRestriction = await currentTransferManager.methods.defaultRestriction().call();
+  let hasDefaultRestriction = parseInt(defaultRestriction.startTime) !== 0;
+
+  console.log(`- Default daily restriction:     ${hasDefaultDailyRestriction ? '' : 'None'}`);
+  if (hasDefaultDailyRestriction) {
+    console.log(`     Type:                         ${RESTRICTION_TYPES[defaultDailyRestriction.typeOfRestriction]}`);
+    console.log(`     Allowed tokens:               ${defaultDailyRestriction.typeOfRestriction === "0" ? `${web3.utils.fromWei(defaultDailyRestriction.allowedTokens)} ${tokenSymbol}` : `${fromWeiPercentage(defaultDailyRestriction.allowedTokens)}%`}`);
+    console.log(`     Start time:                   ${moment.unix(defaultDailyRestriction.startTime).format('MMMM Do YYYY, HH:mm:ss')}`);
+    console.log(`     Rolling period:               ${defaultDailyRestriction.rollingPeriodInDays} days`);
+    console.log(`     End time:                     ${moment.unix(defaultDailyRestriction.endTime).format('MMMM Do YYYY, HH:mm:ss')} `);
   }
-  let displayAllowPrimaryIssuance = await currentTransferManager.methods.allowPrimaryIssuance().call();
+  console.log(`- Default restriction:           ${hasDefaultRestriction ? '' : 'None'} `);
+  if (hasDefaultRestriction) {
+    console.log(`     Type:                         ${RESTRICTION_TYPES[defaultRestriction.typeOfRestriction]}`);
+    console.log(`     Allowed tokens:               ${defaultRestriction.typeOfRestriction === "0" ? `${web3.utils.fromWei(defaultRestriction.allowedTokens)} ${tokenSymbol}` : `${fromWeiPercentage(defaultRestriction.allowedTokens)}%`}`);
+    console.log(`     Start time:                   ${moment.unix(defaultRestriction.startTime).format('MMMM Do YYYY, HH:mm:ss')}`);
+    console.log(`     Rolling period:               ${defaultRestriction.rollingPeriodInDays} days`);
+    console.log(`     End time:                     ${moment.unix(defaultRestriction.endTime).format('MMMM Do YYYY, HH:mm:ss')} `);
+  }
 
-  console.log(`- Limit type: ${displayIsInPercentage ? `Percentage` : `Tokens`} `);
-  console.log(`- Default transfer limit: ${displayGlobalTransferLimit} ${displayIsInPercentage ? `%` : `${tokenSymbol}`} `);
-  console.log(`- Allow primary issuance: ${displayAllowPrimaryIssuance ? `YES` : `NO`} `);
-  // ------------------
+  let options = [
+    'Change exempt wallet',
+    'Change default restrictions',
+    'Change individual restrictions',
+    'Explore account',
+    'Operate with multiple restrictions'
+  ];
+
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
+  let optionSelected = index !== -1 ? options[index] : 'RETURN';
+  console.log('Selected:', optionSelected, '\n');
+  switch (optionSelected) {
+    case 'Change exempt wallet':
+      await changeExemptWallet();
+      break;
+    case 'Change default restrictions':
+      await changeDefaultRestrictions(hasDefaultDailyRestriction, hasDefaultRestriction);
+      break;
+    case 'Change individual restrictions':
+      await changeIndividualRestrictions();
+      break;
+    case 'Explore account':
+      await exploreAccount();
+      break;
+    case 'Operate with multiple restrictions':
+      await operateWithMultipleRestrictions();
+      break;
+    case 'RETURN':
+      return;
+  }
+
+  await volumeRestrictionTM();
+}
+
+async function changeExemptWallet() {
+  let options = [
+    'Add exempt wallet',
+    'Remove exempt wallet'
+  ];
+
+  let change;
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
+  let optionSelected = index !== -1 ? options[index] : 'RETURN';
+  console.log('Selected:', optionSelected, '\n');
+  switch (optionSelected) {
+    case 'Add exempt wallet':
+      change = true;
+      break;
+    case 'Remove exempt wallet':
+      change = false;
+      break;
+    case 'RETURN':
+      return;
+  }
+
+  let wallet = readlineSync.question('Enter the wallet to change: ', {
+    limit: function (input) {
+      return web3.utils.isAddress(input);
+    },
+    limitMessage: "Must be a valid address"
+  });
+  let changeExemptWalletAction = currentTransferManager.methods.changeExemptWalletList(wallet, change);
+  let changeExemptWalletReceipt = await common.sendTransaction(changeExemptWalletAction);
+  let changeExemptWalletEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeExemptWalletReceipt.logs, 'ChangedExemptWalletList');
+  console.log(chalk.green(`${changeExemptWalletEvent._wallet} has been ${changeExemptWalletEvent._change ? `added to` : `removed from`} exempt wallets successfully!`));
+}
+
+async function changeDefaultRestrictions(hasDefaultDailyRestriction, hasDefaultRestriction) {
+  let options = [];
+  if (!hasDefaultDailyRestriction) {
+    options.push('Add default daily restriction');
+  } else {
+    options.push('Modify default daily restriction', 'Remove default daily restriction');
+  }
+
+  if (!hasDefaultRestriction) {
+    options.push('Add default restriction');
+  } else {
+    options.push('Modify default restriction', 'Remove default restriction');
+  }
+
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
+  let optionSelected = index !== -1 ? options[index] : 'RETURN';
+  console.log('Selected:', optionSelected, '\n');
+  switch (optionSelected) {
+    case 'Add default daily restriction':
+      let defaultDailyRestrictoToAdd = inputRestrictionData(true);
+      let addDefaultDailyRestrictionAction = currentTransferManager.methods.addDefaultDailyRestriction(
+        defaultDailyRestrictoToAdd.allowedTokens,
+        defaultDailyRestrictoToAdd.startTime,
+        defaultDailyRestrictoToAdd.endTime,
+        defaultDailyRestrictoToAdd.restrictionType
+      );
+      let addDefaultDailyRestrictionReceipt = await common.sendTransaction(addDefaultDailyRestrictionAction);
+      let addDefaultDailyRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addDefaultDailyRestrictionReceipt.logs, 'AddDefaultDailyRestriction');
+      console.log(chalk.green(`Daily default restriction has been added successfully!`));
+      break;
+    case 'Modify default daily restriction':
+      let defaultDailyRestrictoToModify = inputRestrictionData(true);
+      let modifyDefaultDailyRestrictionAction = currentTransferManager.methods.modifyDefaultDailyRestriction(
+        defaultDailyRestrictoToModify.allowedTokens,
+        defaultDailyRestrictoToModify.startTime,
+        defaultDailyRestrictoToModify.endTime,
+        defaultDailyRestrictoToModify.restrictionType
+      );
+      let modifyDefaultDailyRestrictionReceipt = await common.sendTransaction(modifyDefaultDailyRestrictionAction);
+      let modifyDefaultDailyRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, modifyDefaultDailyRestrictionReceipt.logs, 'ModifyDefaultDailyRestriction');
+      console.log(chalk.green(`Daily default restriction has been modified successfully!`));
+      break;
+    case 'Remove default daily restriction':
+      let removeDefaultDailyRestrictionAction = currentTransferManager.methods.removeDefaultDailyRestriction();
+      let removeDefaultDailyRestrictionReceipt = await common.sendTransaction(removeDefaultDailyRestrictionAction);
+      let removeDefaultDailyRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, removeDefaultDailyRestrictionReceipt.logs, 'DefaultDailyRestrictionRemoved');
+      console.log(chalk.green(`Daily default restriction has been removed successfully!`));
+      break;
+    case 'Add default restriction':
+      let defaultRestrictoToAdd = inputRestrictionData(false);
+      let addDefaultRestrictionAction = currentTransferManager.methods.addDefaultRestriction(
+        defaultRestrictoToAdd.allowedTokens,
+        defaultRestrictoToAdd.startTime,
+        defaultRestrictoToAdd.rollingPeriodInDays,
+        defaultRestrictoToAdd.endTime,
+        defaultRestrictoToAdd.restrictionType
+      );
+      let addDefaultRestrictionReceipt = await common.sendTransaction(addDefaultRestrictionAction);
+      let addDefaultRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addDefaultRestrictionReceipt.logs, 'AddDefaultRestriction');
+      console.log(chalk.green(`Default restriction has been added successfully!`));
+      break;
+    case 'Modify default restriction':
+      let defaultRestrictoToModify = inputRestrictionData(false);
+      let modifyDefaultRestrictionAction = currentTransferManager.methods.modifyDefaultRestriction(
+        defaultRestrictoToModify.allowedTokens,
+        defaultRestrictoToModify.startTime,
+        defaultRestrictoToModify.rollingPeriodInDays,
+        defaultRestrictoToModify.endTime,
+        defaultRestrictoToModify.restrictionType
+      );
+      let modifyDefaultRestrictionReceipt = await common.sendTransaction(modifyDefaultRestrictionAction);
+      let modifyDefaultRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, modifyDefaultRestrictionReceipt.logs, 'ModifyDefaultRestriction');
+      console.log(chalk.green(`Default restriction has been modified successfully!`));
+      break;
+    case 'Remove default restriction':
+      let removeDefaultRestrictionAction = currentTransferManager.methods.removeDefaultRestriction();
+      let removeDefaultRestrictionReceipt = await common.sendTransaction(removeDefaultRestrictionAction);
+      let removeDefaultRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, removeDefaultRestrictionReceipt.logs, 'DefaultRestrictionRemoved');
+      console.log(chalk.green(`Default restriction has been removed successfully!`));
+      break;
+  }
+}
+
+async function changeIndividualRestrictions() {
+  let holder = readlineSync.question('Enter the address of the token holder, whom restriction will be implied: ', {
+    limit: function (input) {
+      return web3.utils.isAddress(input);
+    },
+    limitMessage: "Must be a valid address"
+  });
+
+  let currentDailyRestriction = await currentTransferManager.methods.individualDailyRestriction(holder).call();
+  let hasDailyRestriction = parseInt(currentDailyRestriction.startTime) !== 0;
+  let currentRestriction = await currentTransferManager.methods.individualRestriction(holder).call();
+  let hasRestriction = parseInt(currentRestriction.startTime) !== 0;
+
+  console.log(`*** Current individual restrictions for ${holder} ***`, '\n');
+
+  console.log(`- Daily restriction:    ${hasDailyRestriction ? '' : 'None'}`);
+  if (hasDailyRestriction) {
+    console.log(`     Type:                         ${RESTRICTION_TYPES[currentDailyRestriction.typeOfRestriction]}`);
+    console.log(`     Allowed tokens:               ${currentDailyRestriction.typeOfRestriction === "0" ? `${web3.utils.fromWei(currentDailyRestriction.allowedTokens)} ${tokenSymbol}` : `${fromWeiPercentage(currentDailyRestriction.allowedTokens)}%`}`);
+    console.log(`     Start time:                   ${moment.unix(currentDailyRestriction.startTime).format('MMMM Do YYYY, HH:mm:ss')}`);
+    console.log(`     Rolling period:               ${currentDailyRestriction.rollingPeriodInDays} days`);
+    console.log(`     End time:                     ${moment.unix(currentDailyRestriction.endTime).format('MMMM Do YYYY, HH:mm:ss')} `);
+  }
+  console.log(`- Other restriction: ${hasRestriction ? '' : 'None'} `);
+  if (hasRestriction) {
+    console.log(`     Type:                         ${RESTRICTION_TYPES[currentRestriction.typeOfRestriction]}`);
+    console.log(`     Allowed tokens:               ${currentRestriction.typeOfRestriction === "0" ? `${web3.utils.fromWei(currentRestriction.allowedTokens)} ${tokenSymbol}` : `${fromWeiPercentage(currentRestriction.allowedTokens)}%`}`);
+    console.log(`     Start time:                   ${moment.unix(currentRestriction.startTime).format('MMMM Do YYYY, HH:mm:ss')}`);
+    console.log(`     Rolling period:               ${currentRestriction.rollingPeriodInDays} days`);
+    console.log(`     End time:                     ${moment.unix(currentRestriction.endTime).format('MMMM Do YYYY, HH:mm:ss')} `);
+  }
 
   let options = [];
-  if (displayAllowPrimaryIssuance) {
-    options.push('Disallow primary issuance');
+  if (!hasDailyRestriction) {
+    options.push('Add individual daily restriction');
   } else {
-    options.push('Allow primary issuance');
-  }
-  options.push('Add exempted wallet', 'Remove exempted wallet');
-  if (displayIsInPercentage) {
-    options.push('Change transfer limit to tokens', 'Change default percentage limit',
-      'Set percentage transfer limit per account', 'Remove percentage transfer limit per account');
-  } else {
-    options.push('Change transfer limit to percentage', 'Change default tokens limit',
-      'Set tokens transfer limit per account', 'Remove tokens transfer limit per account');
+    options.push('Modify individual daily restriction', 'Remove individual daily restriction');
   }
 
-  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Return' });
-  let optionSelected = options[index];
-  console.log('Selected:', index != -1 ? optionSelected : 'Return', '\n');
+  if (!hasRestriction) {
+    options.push('Add individual restriction');
+  } else {
+    options.push('Modify individual restriction', 'Remove individual restriction');
+  }
+
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
+  let optionSelected = index !== -1 ? options[index] : 'RETURN';
+  console.log('Selected:', optionSelected, '\n');
   switch (optionSelected) {
-    case 'Allow primary issuance':
-    case 'Disallow primary issuance':
-      let disallowPrimaryIssuanceAction = currentTransferManager.methods.setAllowPrimaryIssuance(!displayAllowPrimaryIssuance);
-      await common.sendTransaction(disallowPrimaryIssuanceAction);
+    case 'Add individual daily restriction':
+      let dailyRestrictoToAdd = inputRestrictionData(true);
+      let addDailyRestrictionAction = currentTransferManager.methods.addIndividualDailyRestriction(
+        holder,
+        dailyRestrictoToAdd.allowedTokens,
+        dailyRestrictoToAdd.startTime,
+        dailyRestrictoToAdd.endTime,
+        dailyRestrictoToAdd.restrictionType
+      );
+      let addDailyRestrictionReceipt = await common.sendTransaction(addDailyRestrictionAction);
+      let addDailyRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addDailyRestrictionReceipt.logs, 'AddIndividualDailyRestriction');
+      console.log(chalk.green(`Daily restriction for ${addDailyRestrictionEvent._holder} has been added successfully!`));
       break;
-    case 'Add exempted wallet':
-      let walletToExempt = readlineSync.question('Enter the wallet to exempt: ', {
-        limit: function (input) {
-          return web3.utils.isAddress(input);
-        },
-        limitMessage: "Must be a valid address"
-      });
-      let addExemptWalletAction = currentTransferManager.methods.addExemptWallet(walletToExempt);
-      let addExemptWalletReceipt = await common.sendTransaction(addExemptWalletAction);
-      let addExemptWalletEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addExemptWalletReceipt.logs, 'ExemptWalletAdded');
-      console.log(chalk.green(`${addExemptWalletEvent._wallet} has been exempted sucessfully!`));
+    case 'Modify individual daily restriction':
+      let dailyRestrictoToModify = inputRestrictionData(true);
+      let modifyDailyRestrictionAction = currentTransferManager.methods.modifyIndividualDailyRestriction(
+        holder,
+        dailyRestrictoToModify.allowedTokens,
+        dailyRestrictoToModify.startTime,
+        dailyRestrictoToModify.endTime,
+        dailyRestrictoToModify.restrictionType
+      );
+      let modifyDailyRestrictionReceipt = await common.sendTransaction(modifyDailyRestrictionAction);
+      let modifyDailyRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, modifyDailyRestrictionReceipt.logs, 'ModifyIndividualDailyRestriction');
+      console.log(chalk.green(`Daily restriction for ${modifyDailyRestrictionEvent._holder} has been modified successfully!`));
       break;
-    case 'Remove exempted wallet':
-      let exemptedWallet = readlineSync.question('Enter the wallet to remove from exempt: ', {
-        limit: function (input) {
-          return web3.utils.isAddress(input);
-        },
-        limitMessage: "Must be a valid address"
-      });
-      let removeExemptWalletAction = currentTransferManager.methods.removeExemptWallet(exemptedWallet);
-      let removeExemptWalletReceipt = await common.sendTransaction(removeExemptWalletAction);
-      let removeExemptWalletEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, removeExemptWalletReceipt.logs, 'ExemptWalletRemoved');
-      console.log(chalk.green(`${removeExemptWalletEvent._wallet} has been removed from exempt wallets sucessfully!`));
+    case 'Remove individual daily restriction':
+      let removeDailyRestrictionAction = currentTransferManager.methods.removeIndividualDailyRestriction(holder);
+      let removeDailyRestrictionReceipt = await common.sendTransaction(removeDailyRestrictionAction);
+      let removeDailyRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, removeDailyRestrictionReceipt.logs, 'IndividualDailyRestrictionRemoved');
+      console.log(chalk.green(`Daily restriction for ${removeDailyRestrictionEvent._holder} has been removed successfully!`));
       break;
-    case 'Change transfer limit to tokens':
-      let newDefaultLimitInTokens = web3.utils.toWei(readlineSync.question('Enter the amount of tokens for default limit: ', {
-        limit: function (input) {
-          return parseInt(input) > 0;
-        },
-        limitMessage: "Must be greater than zero"
-      }));
-      let changeTransferLimitToTokensAction = currentTransferManager.methods.changeTransferLimitToTokens(newDefaultLimitInTokens);
-      let changeTransferLimitToTokensReceipt = await common.sendTransaction(changeTransferLimitToTokensAction);
-      let changeTransferLimitToTokensEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeTransferLimitToTokensReceipt.logs, 'GlobalTransferLimitInTokensSet');
-      console.log(chalk.green(`Transfer limit has been set to tokens sucessfully!`));
-      console.log(chalk.green(`The default transfer limit is ${web3.utils.fromWei(changeTransferLimitToTokensEvent._amount)} ${tokenSymbol} `));
+    case 'Add individual restriction':
+      let restrictoToAdd = inputRestrictionData(false);
+      let addRestrictionAction = currentTransferManager.methods.addIndividualRestriction(
+        holder,
+        restrictoToAdd.allowedTokens,
+        restrictoToAdd.startTime,
+        restrictoToAdd.rollingPeriodInDays,
+        restrictoToAdd.endTime,
+        restrictoToAdd.restrictionType
+      );
+      let addRestrictionReceipt = await common.sendTransaction(addRestrictionAction);
+      let addRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addRestrictionReceipt.logs, 'AddIndividualRestriction');
+      console.log(chalk.green(`Restriction for ${addRestrictionEvent._holder} has been added successfully!`));
       break;
-    case 'Change transfer limit to percentage':
-      let newDefaultLimitInPercentage = toWeiPercentage(readlineSync.question('Enter the percentage for default limit: ', {
-        limit: function (input) {
-          return (parseInt(input) > 0 && parseInt(input) <= 100);
-        },
-        limitMessage: "Must be greater than 0 and less than 100"
-      }));
-      let changeTransferLimitToPercentageAction = currentTransferManager.methods.changeTransferLimitToPercentage(newDefaultLimitInPercentage);
-      let changeTransferLimitToPercentageReceipt = await common.sendTransaction(changeTransferLimitToPercentageAction);
-      let changeTransferLimitToPercentageEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeTransferLimitToPercentageReceipt.logs, 'GlobalTransferLimitInPercentageSet');
-      console.log(chalk.green(`Transfer limit has been set to tokens sucessfully!`));
-      console.log(chalk.green(`The default transfer limit is ${fromWeiPercentage(changeTransferLimitToPercentageEvent._percentage)} % `));
+    case 'Modify individual restriction':
+      let restrictoToModify = inputRestrictionData(false);
+      let modifyRestrictionAction = currentTransferManager.methods.modifyIndividualRestriction(
+        holder,
+        restrictoToModify.allowedTokens,
+        restrictoToModify.startTime,
+        restrictoToModify.rollingPeriodInDays,
+        restrictoToModify.endTime,
+        restrictoToModify.restrictionType
+      );
+      let modifyRestrictionReceipt = await common.sendTransaction(modifyRestrictionAction);
+      let modifyRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, modifyRestrictionReceipt.logs, 'ModifyIndividualRestriction');
+      console.log(chalk.green(`Restriction for ${modifyRestrictionEvent._holder} has been modified successfully!`));
       break;
-    case 'Change default percentage limit':
-      let defaultLimitInPercentage = toWeiPercentage(readlineSync.question('Enter the percentage for default limit: ', {
-        limit: function (input) {
-          return (parseInt(input) > 0 && parseInt(input) <= 100);
-        },
-        limitMessage: "Must be greater than 0 and less than 100"
-      }));
-      let changeGlobalLimitInPercentageAction = currentTransferManager.methods.changeGlobalLimitInPercentage(defaultLimitInPercentage);
-      let changeGlobalLimitInPercentageReceipt = await common.sendTransaction(changeGlobalLimitInPercentageAction);
-      let changeGlobalLimitInPercentageEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeGlobalLimitInPercentageReceipt.logs, 'GlobalTransferLimitInPercentageSet');
-      console.log(chalk.green(`The default transfer limit is ${fromWeiPercentage(changeGlobalLimitInPercentageEvent._percentage)} % `));
+    case 'Remove individual restriction':
+      let removeRestrictionAction = currentTransferManager.methods.removeIndividualRestriction(holder);
+      let removeRestrictionReceipt = await common.sendTransaction(removeRestrictionAction);
+      let removeRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, removeRestrictionReceipt.logs, 'IndividualRestrictionRemoved');
+      console.log(chalk.green(`Restriction for ${removeRestrictionEvent._holder} has been removed successfully!`));
       break;
-    case 'Change default tokens limit':
-      let defaultLimitInTokens = web3.utils.toWei(readlineSync.question('Enter the amount of tokens for default limit: ', {
-        limit: function (input) {
-          return parseInt(input) > 0;
-        },
-        limitMessage: "Must be greater than zero"
-      }));
-      let changeGlobalLimitInTokensAction = currentTransferManager.methods.changeGlobalLimitInTokens(defaultLimitInTokens);
-      let changeGlobalLimitInTokensReceipt = await common.sendTransaction(changeGlobalLimitInTokensAction);
-      let changeGlobalLimitInTokensEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeGlobalLimitInTokensReceipt.logs, 'GlobalTransferLimitInTokensSet');
-      console.log(chalk.green(`The default transfer limit is ${web3.utils.fromWei(changeGlobalLimitInTokensEvent._amount)} ${tokenSymbol} `));
+    case 'RETURN':
+      return;
+  }
+}
+
+async function exploreAccount() {
+  let account = readlineSync.question('Enter the account to explore: ', {
+    limit: function (input) {
+      return web3.utils.isAddress(input);
+    },
+    limitMessage: "Must be a valid address"
+  });
+
+  let appliyngdDailyRestriction = null;
+  let applyingOtherRestriction = null;
+  let hasIndividualRestrictions = false;
+  let isExempted = await currentTransferManager.methods.exemptList(account).call();
+  if (!isExempted) {
+    let indiviaulDailyRestriction = await currentTransferManager.methods.individualDailyRestriction(account).call();
+    if (parseInt(indiviaulDailyRestriction.endTime) !== 0) {
+      appliyngdDailyRestriction = indiviaulDailyRestriction;
+    }
+    let otherRestriction = await currentTransferManager.methods.individualRestriction(account).call();
+    if (parseInt(otherRestriction.endTime) !== 0) {
+      applyingOtherRestriction = otherRestriction;
+    }
+
+    hasIndividualRestrictions = applyingOtherRestriction || appliyngdDailyRestriction;
+
+    if (!hasIndividualRestrictions) {
+      let defaultDailyRestriction = await currentTransferManager.methods.defaultDailyRestriction().call();
+      if (parseInt(defaultDailyRestriction.endTime) !== 0) {
+        appliyngdDailyRestriction = defaultDailyRestriction;
+      }
+      let defaultOtherRestriction = await currentTransferManager.methods.defaultRestriction().call();
+      if (parseInt(defaultOtherRestriction.endTime) === 0) {
+        applyingOtherRestriction = defaultOtherRestriction;
+      }
+    }
+  }
+
+  console.log(`*** Applying restrictions for ${account} ***`, '\n');
+
+  console.log(`- Daily restriction:       ${appliyngdDailyRestriction ? (!hasIndividualRestrictions ? 'default' : '') : 'None'}`);
+  if (appliyngdDailyRestriction) {
+    console.log(`     Type:                 ${RESTRICTION_TYPES[appliyngdDailyRestriction.typeOfRestriction]}`);
+    console.log(`     Allowed tokens:       ${appliyngdDailyRestriction.typeOfRestriction === "0" ? `${web3.utils.fromWei(appliyngdDailyRestriction.allowedTokens)} ${tokenSymbol}` : `${fromWeiPercentage(appliyngdDailyRestriction.allowedTokens)}%`}`);
+    console.log(`     Start time:           ${moment.unix(appliyngdDailyRestriction.startTime).format('MMMM Do YYYY, HH:mm:ss')}`);
+    console.log(`     Rolling period:       ${appliyngdDailyRestriction.rollingPeriodInDays} days`);
+    console.log(`     End time:             ${moment.unix(appliyngdDailyRestriction.endTime).format('MMMM Do YYYY, HH:mm:ss')} `);
+  }
+  console.log(`- Other restriction:       ${applyingOtherRestriction ? (!hasIndividualRestrictions ? 'default' : '') : 'None'} `);
+  if (applyingOtherRestriction) {
+    console.log(`     Type:                 ${RESTRICTION_TYPES[applyingOtherRestriction.typeOfRestriction]}`);
+    console.log(`     Allowed tokens:       ${applyingOtherRestriction.typeOfRestriction === "0" ? `${web3.utils.fromWei(applyingOtherRestriction.allowedTokens)} ${tokenSymbol}` : `${fromWeiPercentage(applyingOtherRestriction.allowedTokens)}%`}`);
+    console.log(`     Start time:           ${moment.unix(applyingOtherRestriction.startTime).format('MMMM Do YYYY, HH:mm:ss')}`);
+    console.log(`     Rolling period:       ${applyingOtherRestriction.rollingPeriodInDays} days`);
+    console.log(`     End time:             ${moment.unix(applyingOtherRestriction.endTime).format('MMMM Do YYYY, HH:mm:ss')} `);
+  }
+
+  if (applyingOtherRestriction || appliyngdDailyRestriction) {
+    let bucketDetails;
+    if (hasIndividualRestrictions) {
+      bucketDetails = await currentTransferManager.methods.getIndividualBucketDetailsToUser(account).call();
+    } else {
+      bucketDetails = await currentTransferManager.methods.getDefaultBucketDetailsToUser(account).call();
+    }
+    let now = Math.floor(Date.now() / 1000) - gbl.constants.DURATION.days(1);
+    let tradedByUserLastDay = await currentTransferManager.methods.getTotalTradedByUser(account, now).call();
+    console.log();
+    console.log(`Last trade:                                        ${bucketDetails[0]}`);
+    console.log(`Last daily trade:                                  ${bucketDetails[3]}`);
+    console.log(`Days since rolling period started:                 ${bucketDetails[2]}`);
+    console.log(`Transacted amount since rolling period started:    ${web3.utils.fromWei(bucketDetails[1])}`);
+    console.log(`Transacted amount within last 24 hours:            ${web3.utils.fromWei(tradedByUserLastDay)}`);
+    console.log();
+  }
+}
+
+async function operateWithMultipleRestrictions() {
+  let options = [
+    'Add multiple individual daily restrictions',
+    'Modify multiple individual daily restrictions',
+    'Remove multiple individual daily restrictions',
+    'Add multiple individual restrictions',
+    'Modify multiple individual restrictions',
+    'Remove multiple individual restrictions'
+  ];
+
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
+  let optionSelected = index !== -1 ? options[index] : 'RETURN';
+  console.log('Selected:', optionSelected, '\n');
+  switch (optionSelected) {
+    case 'Add multiple individual daily restrictions':
+      await addDailyRestrictionsInBatch();
       break;
-    case 'Set percentage transfer limit per account':
-      let percentageAccount = readlineSync.question('Enter the wallet: ', {
-        limit: function (input) {
-          return web3.utils.isAddress(input);
-        },
-        limitMessage: "Must be a valid address"
-      });
-      let accountLimitInPercentage = toWeiPercentage(readlineSync.question(`Enter the transfer limit for ${percentageAccount} in percentage: `, {
-        limit: function (input) {
-          return (parseInt(input) > 0 && parseInt(input) <= 100);
-        },
-        limitMessage: "Must be greater than 0 and less than 100"
-      }));
-      let setTransferLimitInPercentageAction = currentTransferManager.methods.setTransferLimitInPercentage(percentageAccount, accountLimitInPercentage);
-      let setTransferLimitInPercentageReceipt = await common.sendTransaction(setTransferLimitInPercentageAction);
-      let setTransferLimitInPercentageEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, setTransferLimitInPercentageReceipt.logs, 'TransferLimitInPercentageSet');
-      console.log(chalk.green(`The transfer limit for ${setTransferLimitInPercentageEvent._wallet} is ${fromWeiPercentage(setTransferLimitInPercentageEvent._percentage)} % `));
+    case 'Modify multiple individual daily restrictions':
+      await modifyDailyRestrictionsInBatch();
       break;
-    case 'Set tokens transfer limit per account':
-      let tokensAccount = readlineSync.question('Enter the wallet: ', {
-        limit: function (input) {
-          return web3.utils.isAddress(input);
-        },
-        limitMessage: "Must be a valid address"
-      });
-      let accountLimitInTokens = web3.utils.toWei(readlineSync.question(`Enter the transfer limit for ${tokensAccount} in amount of tokens: `, {
-        limit: function (input) {
-          return parseInt(input) > 0;
-        },
-        limitMessage: "Must be greater than zero"
-      }));
-      let setTransferLimitInTokensAction = currentTransferManager.methods.setTransferLimitInTokens(tokensAccount, accountLimitInTokens);
-      let setTransferLimitInTokensReceipt = await common.sendTransaction(setTransferLimitInTokensAction);
-      let setTransferLimitInTokensEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, setTransferLimitInTokensReceipt.logs, 'TransferLimitInTokensSet');
-      console.log(chalk.green(`The transfer limit for ${setTransferLimitInTokensEvent._wallet} is ${web3.utils.fromWei(setTransferLimitInTokensEvent._amount)} ${tokenSymbol} `));
+    case 'Remove multiple individual daily restrictions':
+      await removeDailyRestrictionsInBatch();
       break;
-    case 'Remove percentage transfer limit per account':
-      let percentageAccountToRemove = readlineSync.question('Enter the wallet to remove: ', {
-        limit: function (input) {
-          return web3.utils.isAddress(input);
-        },
-        limitMessage: "Must be a valid address"
-      });
-      let removeTransferLimitInPercentageAction = currentTransferManager.methods.removeTransferLimitInPercentage(percentageAccountToRemove);
-      let removeTransferLimitInPercentageReceipt = await common.sendTransaction(removeTransferLimitInPercentageAction);
-      let removeTransferLimitInPercentageEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, removeTransferLimitInPercentageReceipt.logs, 'TransferLimitInPercentageRemoved');
-      console.log(chalk.green(`The transfer limit for ${removeTransferLimitInPercentageEvent._wallet} is the default limit`));
+    case 'Add multiple individual restrictions':
+      await addRestrictionsInBatch();
       break;
-    case 'Remove tokens transfer limit per account':
-      let tokensAccountToRemove = readlineSync.question('Enter the wallet to remove: ', {
-        limit: function (input) {
-          return web3.utils.isAddress(input);
-        },
-        limitMessage: "Must be a valid address"
-      });
-      let removeTransferLimitInTokensAction = currentTransferManager.methods.removeTransferLimitInTokens(tokensAccountToRemove);
-      let removeTransferLimitInTokensReceipt = await common.sendTransaction(removeTransferLimitInTokensAction);
-      let removeTransferLimitInTokensEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, removeTransferLimitInTokensReceipt.logs, 'TransferLimitInTokensRemoved');
-      console.log(chalk.green(`The transfer limit for ${removeTransferLimitInTokensEvent._wallet} is the default limit`));
+    case 'Modify multiple individual restrictions':
+      await modifyRestrictionsInBatch();
+      break;
+    case 'Remove multiple individual restrictions':
+      await removeRestrictionsInBatch();
       break;
   }
+}
+
+async function addDailyRestrictionsInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${ADD_DAILY_RESTRICTIONS_DATA_CSV}): `, {
+    defaultInput: ADD_DAILY_RESTRICTIONS_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(
+    row => web3.utils.isAddress(row[0]) &&
+      !isNaN(row[1]) &&
+      moment.unix(row[2]).isValid() &&
+      moment.unix(row[3]).isValid() &&
+      typeof row[4] === 'string' && RESTRICTION_TYPES.includes(row[4]));
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [holderArray, allowanceArray, startTimeArray, endTimeArray, restrictionTypeArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to add daily restrictions to the following accounts: \n\n`, holderArray[batch], '\n');
+    allowanceArray[batch] = allowanceArray[batch].map(n => web3.utils.toWei(n.toString()));
+    restrictionTypeArray[batch] = restrictionTypeArray[batch].map(n => RESTRICTION_TYPES.indexOf(n));
+    let action = currentTransferManager.methods.addIndividualDailyRestrictionMulti(holderArray[batch], allowanceArray[batch], startTimeArray[batch], endTimeArray[batch], restrictionTypeArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Add multiple daily restrictions transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
+async function modifyDailyRestrictionsInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${MODIFY_DAILY_RESTRICTIONS_DATA_CSV}): `, {
+    defaultInput: MODIFY_DAILY_RESTRICTIONS_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(
+    row => web3.utils.isAddress(row[0]) &&
+      !isNaN(row[1]) &&
+      moment.unix(row[2]).isValid() &&
+      moment.unix(row[3]).isValid() &&
+      typeof row[4] === 'string' && RESTRICTION_TYPES.includes(row[4]));
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [holderArray, allowanceArray, startTimeArray, endTimeArray, restrictionTypeArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to modify daily restrictions to the following accounts: \n\n`, holderArray[batch], '\n');
+    allowanceArray[batch] = allowanceArray[batch].map(n => web3.utils.toWei(n.toString()));
+    restrictionTypeArray[batch] = restrictionTypeArray[batch].map(n => RESTRICTION_TYPES.indexOf(n));
+    let action = currentTransferManager.methods.modifyIndividualDailyRestrictionMulti(holderArray[batch], allowanceArray[batch], startTimeArray[batch], endTimeArray[batch], restrictionTypeArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Modify multiple daily restrictions transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
+async function removeDailyRestrictionsInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${REMOVE_DAILY_RESTRICTIONS_DATA_CSV}): `, {
+    defaultInput: REMOVE_DAILY_RESTRICTIONS_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(row => web3.utils.isAddress(row[0]));
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [holderArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to remove daily restrictions to the following accounts: \n\n`, holderArray[batch], '\n');
+    let action = currentTransferManager.methods.removeIndividualDailyRestrictionMulti(holderArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Remove multiple daily restrictions transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
+async function addRestrictionsInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${ADD_RESTRICTIONS_DATA_CSV}): `, {
+    defaultInput: ADD_RESTRICTIONS_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(
+    row => web3.utils.isAddress(row[0]) &&
+      !isNaN(row[1]) &&
+      moment.unix(row[2]).isValid() &&
+      (!isNaN(row[3]) && (parseFloat(row[3]) % 1 === 0)) &&
+      moment.unix(row[4]).isValid() &&
+      typeof row[5] === 'string' && RESTRICTION_TYPES.includes(row[5]));
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [holderArray, allowanceArray, startTimeArray, rollingPeriodArray, endTimeArray, restrictionTypeArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to add restrictions to the following accounts: \n\n`, holderArray[batch], '\n');
+    allowanceArray[batch] = allowanceArray[batch].map(n => web3.utils.toWei(n.toString()));
+    restrictionTypeArray[batch] = restrictionTypeArray[batch].map(n => RESTRICTION_TYPES.indexOf(n));
+    let action = currentTransferManager.methods.addIndividualRestrictionMulti(holderArray[batch], allowanceArray[batch], startTimeArray[batch], rollingPeriodArray[batch], endTimeArray[batch], restrictionTypeArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Add multiple restrictions transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
+async function modifyRestrictionsInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${MODIFY_RESTRICTIONS_DATA_CSV}): `, {
+    defaultInput: MODIFY_RESTRICTIONS_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(
+    row => web3.utils.isAddress(row[0]) &&
+      !isNaN(row[1]) &&
+      moment.unix(row[2]).isValid() &&
+      (!isNaN(row[3]) && (parseFloat(row[3]) % 1 === 0)) &&
+      moment.unix(row[4]).isValid() &&
+      typeof row[5] === 'string' && RESTRICTION_TYPES.includes(row[5]));
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [holderArray, allowanceArray, startTimeArray, rollingPeriodArray, endTimeArray, restrictionTypeArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to modify restrictions to the following accounts: \n\n`, holderArray[batch], '\n');
+    allowanceArray[batch] = allowanceArray[batch].map(n => web3.utils.toWei(n.toString()));
+    restrictionTypeArray[batch] = restrictionTypeArray[batch].map(n => RESTRICTION_TYPES.indexOf(n));
+    let action = currentTransferManager.methods.modifyIndividualRestrictionMulti(holderArray[batch], allowanceArray[batch], startTimeArray[batch], rollingPeriodArray[batch], endTimeArray[batch], restrictionTypeArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Modify multiple restrictions transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
+async function removeRestrictionsInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${REMOVE_RESTRICTIONS_DATA_CSV}): `, {
+    defaultInput: REMOVE_RESTRICTIONS_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(row => web3.utils.isAddress(row[0]));
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [holderArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to remove restrictions to the following accounts: \n\n`, holderArray[batch], '\n');
+    let action = currentTransferManager.methods.removeIndividualRestrictionMulti(holderArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Remove multiple restrictions transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
+function inputRestrictionData(isDaily) {
+  let restriction = {};
+  restriction.restrictionType = readlineSync.keyInSelect(RESTRICTION_TYPES, 'How do you want to set the allowance? ', { cancel: false });
+  if (restriction.restrictionType == RESTRICTION_TYPES.indexOf('Fixed')) {
+    restriction.allowedTokens = web3.utils.toWei(readlineSync.questionInt(`Enter the maximum amount of tokens allowed to be traded every ${isDaily ? 'day' : 'rolling period'}: `).toString());
+  } else {
+    restriction.allowedTokens = toWeiPercentage(readlineSync.questionInt(`Enter the maximum percentage of total supply allowed to be traded every ${isDaily ? 'day' : 'rolling period'}: `).toString());
+  }
+  if (isDaily) {
+    restriction.rollingPeriodInDays = 1;
+  } else {
+    restriction.rollingPeriodInDays = readlineSync.questionInt(`Enter the rolling period in days (10 days): `, { defaultInput: 10 });
+  }
+  restriction.startTime = readlineSync.questionInt(`Enter the time (Unix Epoch time) at which restriction get into effect (now = 0): `, { defaultInput: 0 });
+  let oneMonthFromNow = Math.floor(Date.now() / 1000) + gbl.constants.DURATION.days(30);
+  restriction.endTime = readlineSync.question(`Enter the time (Unix Epoch time) when the purchase lockup period ends and the investor can freely purchase tokens from others (1 week from now = ${oneMonthFromNow}): `, {
+    limit: function (input) {
+      return input > restriction.startTime + gbl.constants.DURATION.days(restriction.rollingPeriodInDays);
+    },
+    limitMessage: 'Must be greater than startTime + rolling period',
+    defaultInput: oneMonthFromNow
+  });
+  return restriction;
 }
 
 /*
@@ -1417,7 +1809,7 @@ async function selectToken() {
 
 async function logTotalInvestors() {
   let investorsCount = await securityToken.methods.getInvestorCount().call();
-  console.log(chalk.yellow(`Total investors at the moment: ${investorsCount}`));
+  console.log(chalk.yellow(`Total investors at the moment: ${investorsCount} `));
 }
 
 async function logBalance(from, totalSupply) {

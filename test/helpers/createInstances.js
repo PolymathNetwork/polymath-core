@@ -32,6 +32,8 @@ const PolyTokenFaucet = artifacts.require("./PolyTokenFaucet.sol");
 const DummySTOFactory = artifacts.require("./DummySTOFactory.sol");
 const MockBurnFactory = artifacts.require("./MockBurnFactory.sol");
 const MockWrongTypeFactory = artifacts.require("./MockWrongTypeFactory.sol");
+const VolumeRestrictionTMFactory = artifacts.require("./VolumeRestrictionTMFactory.sol");
+const VolumeRestrictionTM = artifacts.require("./VolumeRestrictionTM.sol");
 const VestingEscrowWalletFactory = artifacts.require("./VestingEscrowWalletFactory.sol");
 const VestingEscrowWallet = artifacts.require("./VestingEscrowWallet.sol");
 
@@ -53,11 +55,13 @@ let I_EtherDividendCheckpointFactory;
 let I_CountTransferManagerFactory;
 let I_ERC20DividendCheckpointLogic;
 let I_ERC20DividendCheckpointFactory;
+let I_VolumeRestrictionTMFactory;
 let I_GeneralPermissionManagerFactory;
 let I_GeneralTransferManagerLogic;
 let I_GeneralTransferManagerFactory;
 let I_VestingEscrowWalletFactory;
 let I_GeneralTransferManager;
+let I_VolumeRestrictionTMLogic;
 let I_ModuleRegistryProxy;
 let I_PreSaleSTOFactory;
 let I_ModuleRegistry;
@@ -219,7 +223,7 @@ export async function deployGTMAndVerifyed(accountPolymath, MRProxyInstance, pol
     I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(polyToken, setupCost, 0, 0, I_GeneralTransferManagerLogic.address, { from: accountPolymath });
 
     assert.notEqual(
-        I_GeneralPermissionManagerFactory.address.valueOf(),
+        I_GeneralTransferManagerFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",
         "GeneralPermissionManagerFactory contract was not deployed"
     );
@@ -227,6 +231,22 @@ export async function deployGTMAndVerifyed(accountPolymath, MRProxyInstance, pol
     // (B) :  Register the GeneralDelegateManagerFactory
     await registerAndVerifyByMR(I_GeneralTransferManagerFactory.address, accountPolymath, MRProxyInstance);
     return new Array(I_GeneralTransferManagerFactory);
+}
+
+export async function deployVRTMAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+    I_VolumeRestrictionTMLogic = await VolumeRestrictionTM.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
+
+    I_VolumeRestrictionTMFactory = await VolumeRestrictionTMFactory.new(polyToken, setupCost, 0, 0, I_VolumeRestrictionTMLogic.address, { from: accountPolymath });
+
+    assert.notEqual(
+        I_VolumeRestrictionTMFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "VolumeRestrictionTMFactory contract was not deployed"
+    );
+
+    // (B) :  Register the GeneralDelegateManagerFactory
+    await registerAndVerifyByMR(I_VolumeRestrictionTMFactory.address, accountPolymath, MRProxyInstance);
+    return new Array(I_VolumeRestrictionTMFactory);
 }
 
 export async function deployCountTMAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {

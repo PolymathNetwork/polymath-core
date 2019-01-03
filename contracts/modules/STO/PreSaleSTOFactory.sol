@@ -43,16 +43,16 @@ contract PreSaleSTOFactory is ModuleFactory {
     function deploy(bytes calldata _data) external returns(address) {
         address polyToken = _takeFee();
         //Check valid bytes - can only call module init function
-        PreSaleSTOProxy preSaleSTO = new PreSaleSTOProxy(msg.sender, polyToken, logicContract);
+        address preSaleSTO = address(new PreSaleSTOProxy(msg.sender, polyToken, logicContract));
         //Checks that _data is valid (not calling anything it shouldn't)
         require(Util.getSig(_data) == IBoot(preSaleSTO).getInitFunction(), "Invalid data");
         bool success;
         /*solium-disable-next-line security/no-low-level-calls*/
-        (success, ) = address(preSaleSTO).call(_data);
+        (success, ) = preSaleSTO.call(_data);
         require(success, "Unsuccessfull call");
         /*solium-disable-next-line security/no-block-members*/
-        emit GenerateModuleFromFactory(address(preSaleSTO), getName(), address(this), msg.sender, setupCost, now);
-        return address(preSaleSTO);
+        emit GenerateModuleFromFactory(preSaleSTO, getName(), address(this), msg.sender, setupCost, now);
+        return preSaleSTO;
     }
 
     /**

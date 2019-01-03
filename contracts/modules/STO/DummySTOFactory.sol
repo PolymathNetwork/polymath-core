@@ -36,21 +36,22 @@ contract DummySTOFactory is ModuleFactory {
 
     /**
      * @notice Used to launch the Module with the help of factory
+     * @param _data Data used for the intialization of the module factory variables
      * @return address Contract address of the Module
      */
     function deploy(bytes calldata _data) external returns(address) {
         address polyToken = _takeFee();
         //Check valid bytes - can only call module init function
-        DummySTOProxy dummySTO = new DummySTOProxy(msg.sender, polyToken, logicContract);
+        address dummySTO = address(new DummySTOProxy(msg.sender, polyToken, logicContract));
         //Checks that _data is valid (not calling anything it shouldn't)
         require(Util.getSig(_data) == IBoot(dummySTO).getInitFunction(), "Invalid data");
         bool success;
         /*solium-disable-next-line security/no-low-level-calls*/
-        (success, ) = address(dummySTO).call(_data);
+        (success, ) = dummySTO.call(_data);
         require(success, "Unsuccessfull call");
         /*solium-disable-next-line security/no-block-members*/
-        emit GenerateModuleFromFactory(address(dummySTO), getName(), address(this), msg.sender, setupCost, now);
-        return address(dummySTO);
+        emit GenerateModuleFromFactory(dummySTO, getName(), address(this), msg.sender, setupCost, now);
+        return dummySTO;
     }
 
     /**

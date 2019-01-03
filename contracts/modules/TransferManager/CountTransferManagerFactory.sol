@@ -42,15 +42,15 @@ contract CountTransferManagerFactory is ModuleFactory {
      */
     function deploy(bytes calldata _data) external returns(address) {
         address polyToken = _takeFee();
-        CountTransferManagerProxy countTransferManager = new CountTransferManagerProxy(msg.sender, polyToken, logicContract);
+        address countTransferManager = address(new CountTransferManagerProxy(msg.sender, polyToken, logicContract));
         require(Util.getSig(_data) == IBoot(countTransferManager).getInitFunction(), "Provided data is not valid");
         bool success;
         /*solium-disable-next-line security/no-low-level-calls*/
-        (success, ) = address(countTransferManager).call(_data);
+        (success, ) = countTransferManager.call(_data);
         require(success, "Unsuccessful call");
         /*solium-disable-next-line security/no-block-members*/
-        emit GenerateModuleFromFactory(address(countTransferManager), getName(), address(this), msg.sender, setupCost, now);
-        return address(countTransferManager);
+        emit GenerateModuleFromFactory(countTransferManager, getName(), address(this), msg.sender, setupCost, now);
+        return countTransferManager;
 
     }
 

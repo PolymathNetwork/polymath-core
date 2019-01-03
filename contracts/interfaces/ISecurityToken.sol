@@ -23,7 +23,6 @@ interface ISecurityToken {
      * @param _from Sender of transfer
      * @param _to Receiver of transfer
      * @param _value Value of transfer
-     * @param _data Data to indicate validation
      * @return bool
      */
     function verifyTransfer(address _from, address _to, uint256 _value) external returns(bool success);
@@ -85,7 +84,7 @@ interface ISecurityToken {
      * @return uint8 Array of module types
      * @return bytes32 Module label
      */
-    function getModule(address _module) external view returns (bytes32, address, address, bool, uint8[], bytes32);
+    function getModule(address _module) external view returns (bytes32, address, address, bool, uint8[] memory, bytes32);
 
     /**
      * @notice Returns module list for a module name
@@ -123,7 +122,7 @@ interface ISecurityToken {
      * @notice Gets list of times that checkpoints were created
      * @return List of checkpoint times
      */
-    function getCheckpointTimes() external view returns(uint256[]);
+    function getCheckpointTimes() external view returns(uint256[] memory);
 
     /**
      * @notice Gets length of investors array
@@ -219,7 +218,7 @@ interface ISecurityToken {
       */
     function addModuleWithLabel(
         address _moduleFactory,
-        bytes _data,
+        bytes calldata _data,
         uint256 _maxCost,
         uint256 _budget,
         bytes32 _label

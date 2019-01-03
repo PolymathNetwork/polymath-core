@@ -205,7 +205,7 @@ contract("SecurityToken", async (accounts) => {
         });
 
         it("Should mint the tokens before attaching the STO", async () => {
-            await I_SecurityToken.mint(account_affiliate1, new BN(100).mul(new BN(10).pow(new BN(18))), { from: token_owner, gas: 500000 });
+            await I_SecurityToken.mint(account_affiliate1, new BN(100).mul(new BN(10).pow(new BN(18))));
             let balance = await I_SecurityToken.balanceOf(account_affiliate1);
             assert.equal(balance.div(new BN(10).pow(new BN(18))).toNumber(), 100);
         });
@@ -240,8 +240,7 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should mint the tokens for multiple afiliated investors before attaching the STO", async () => {
             await I_SecurityToken.mintMulti([account_affiliate1, account_affiliate2], [new BN(100).mul(new BN(10).pow(new BN(18))), new BN(110).mul(new BN(10).pow(new BN(18)))], {
-                from: token_owner,
-                gas: 500000
+                from: token_owner
             });
             let balance1 = await I_SecurityToken.balanceOf(account_affiliate1);
             assert.equal(balance1.div(new BN(10).pow(new BN(18))).toNumber(), 200);
@@ -336,7 +335,7 @@ contract("SecurityToken", async (accounts) => {
         });
 
         it("Should successfully mint tokens while STO attached", async () => {
-            await I_SecurityToken.mint(account_affiliate1, new BN(100).mul(new BN(10).pow(new BN(18))), { from: token_owner, gas: 500000 });
+            await I_SecurityToken.mint(account_affiliate1, new BN(100).mul(new BN(10).pow(new BN(18))), { from: token_owner });
             let balance = await I_SecurityToken.balanceOf(account_affiliate1);
             assert.equal(balance.div(new BN(10).pow(new BN(18))).toNumber(), 300);
         });
@@ -345,7 +344,7 @@ contract("SecurityToken", async (accounts) => {
             let id = await takeSnapshot();
             await I_SecurityToken.freezeMinting({ from: token_owner });
 
-            await catchRevert(I_SecurityToken.mint(account_affiliate1, new BN(100).mul(new BN(10).pow(new BN(18))), { from: token_owner, gas: 500000 }));
+            await catchRevert(I_SecurityToken.mint(account_affiliate1, new BN(100).mul(new BN(10).pow(new BN(18))), { from: token_owner }));
             await revertToSnapshot(id);
         });
     });
@@ -671,15 +670,14 @@ contract("SecurityToken", async (accounts) => {
         });
 
         it("Should successfully mint tokens while STO attached", async () => {
-            await I_SecurityToken.mint(account_affiliate1, new BN(100).mul(new BN(10).pow(new BN(18))), { from: token_owner, gas: 500000 });
+            await I_SecurityToken.mint(account_affiliate1, new BN(100).mul(new BN(10).pow(new BN(18))), { from: token_owner });
             let balance = await I_SecurityToken.balanceOf(account_affiliate1);
             assert.equal(balance.div(new BN(10).pow(new BN(18))).toNumber(), 400);
         });
 
         it("Should mint the tokens for multiple afiliated investors while STO attached", async () => {
             await I_SecurityToken.mintMulti([account_affiliate1, account_affiliate2], [new BN(100).mul(new BN(10).pow(new BN(18))), new BN(110).mul(new BN(10).pow(new BN(18)))], {
-                from: token_owner,
-                gas: 500000
+                from: token_owner
             });
             let balance1 = await I_SecurityToken.balanceOf(account_affiliate1);
             assert.equal(balance1.div(new BN(10).pow(new BN(18))).toNumber(), 500);

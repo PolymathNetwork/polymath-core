@@ -75,9 +75,7 @@ contract USDTieredSTOStorage {
     // Amount in fund raise type invested by each investor
     mapping (address => mapping (uint8 => uint256)) public investorInvested;
 
-    // List of accredited investors
-    /* mapping (address => bool) public accredited; */
-
+    // Accredited & non-accredited investor data
     mapping (address => Investor) public investors;
 
     // List of active stable coin addresses

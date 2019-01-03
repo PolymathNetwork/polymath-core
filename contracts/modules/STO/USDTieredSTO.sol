@@ -325,7 +325,6 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
         //nonAccreditedLimitUSDOverride
         require(_investors.length == _nonAccreditedLimit.length, "Array length mismatch");
         for (uint256 i = 0; i < _investors.length; i++) {
-            /* require(_nonAccreditedLimit[i] > 0, "Limit = 0"); */
             investors[_investors[i]].nonAccreditedLimitUSDOverride = _nonAccreditedLimit[i];
             _addToInvestorsList(_investors[i]);
             emit SetNonAccreditedLimit(_investors[i], _nonAccreditedLimit[i]);

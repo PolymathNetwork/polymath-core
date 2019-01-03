@@ -224,7 +224,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Should work with multiple transaction within 1 day with Individual and daily Restrictions", async() => {
             // let snapId = await takeSnapshot();
             
-            var testRepeat = 2; 
+            var testRepeat = 0; 
 
             for (var i = 0; i < testRepeat; i++) {
 
@@ -603,6 +603,98 @@ contract('VolumeRestrictionTransferManager', accounts => {
                         console.log("tx succeeded");
                     }
                     console.log("3" + txNumber);
+                };
+
+                await I_VolumeRestrictionTM.removeIndividualRestriction(account_investor1, {from: token_owner});
+                console.log("removed daily restriction");
+            }
+        });
+
+        it("should work if IR is modified", async () => {
+            var testRepeat = 1;
+
+            for (var i = 0; i < testRepeat; i++) {
+                console.log("fuzzer number " + i);
+
+                var individualRestrictTotalAmount =  Math.floor(Math.random() * 10); 
+                 if (individualRestrictTotalAmount === 0 ) {
+                    individualRestrictTotalAmount = 1;
+                }
+                var defaultRestrictionAmount = Math.floor(Math.random() * 10); 
+                var rollingPeriod = 2; 
+                var sumOfLastPeriod = 0; 
+
+                console.log("a");
+
+                // 1 - add individual restriction with a random number
+                let tx = await I_VolumeRestrictionTM.addIndividualRestriction(
+                    account_investor1,
+                    web3.utils.toWei(individualRestrictTotalAmount.toString()),
+                    latestTime() + duration.days(2),
+                    rollingPeriod,
+                    latestTime() + duration.days(5),
+                    0,
+                    {
+                        from: token_owner
+                    }
+                );
+
+                console.log("b");
+
+                var txNumber = 10; // define fuzz test amount for tx
+
+                for (var j = 0; j < txNumber; j++) {
+                    console.log("starting test number "+j);
+
+                    // modify IR
+                    var newIR =  Math.floor(Math.random() * 10); 
+                     if (newIR === 0 ) {
+                        newIR = 1;
+                    }
+
+                    console.log("3");
+                    console.log(latestTime());
+                    console.log((await I_VolumeRestrictionTM.individualRestriction(account_investor1, {from: token_owner})));
+                    console.log(latestTime() + duration.days(1+j));
+                    await I_VolumeRestrictionTM.modifyIndividualRestriction(
+                        account_investor1,
+                        web3.utils.toWei(newIR.toString()),
+                        latestTime() + duration.days(1+j),
+                        rollingPeriod,
+                        latestTime() + duration.days(5+j),
+                        0,
+                        { from: token_owner }
+                    );
+
+                    console.log("4");
+                    let snapId = await takeSnapshot(); 
+                    await increaseTime(duration.days(2+j));
+
+                    // generate a random amount
+                    var transactionAmount = Math.floor(Math.random() * 10);
+                    var accumulatedTxValue = transactionAmount + sumOfLastPeriod;
+
+                    console.log("sumOfLastPeriod is " + sumOfLastPeriod + " transactionAmount is " + transactionAmount + " individualRestrictTotalAmount is " + individualRestrictTotalAmount + " defaultRestrictionAmount is " + defaultRestrictionAmount);
+
+                    // check against daily and total restrictions to determine if the transaction should pass or not
+                    if (accumulatedTxValue > newIR) {
+                        console.log("tx should fail but still succeed due to investor in exempt list");
+
+                        await catchRevert (I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1}));
+
+                        console.log("tx failed as expected");
+                    } else if (accumulatedTxValue <= newIR) {
+
+                        console.log("tx should succeed");
+
+                        await I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1});
+
+                        sumOfLastPeriod = sumOfLastPeriod + transactionAmount;
+
+                        console.log("tx succeeded");
+                    }
+                    await revertToSnapshot(snapId);
+                    console.log("finished test number "+j);
                 };
 
                 await I_VolumeRestrictionTM.removeIndividualRestriction(account_investor1, {from: token_owner});

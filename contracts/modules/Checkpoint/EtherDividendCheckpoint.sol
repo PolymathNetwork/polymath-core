@@ -8,7 +8,7 @@ import "../../interfaces/IOwnable.sol";
  */
 contract EtherDividendCheckpoint is DividendCheckpoint {
     using SafeMath for uint256;
-    
+
     event EtherDividendDeposited(
         address indexed _depositor,
         uint256 _checkpointId,
@@ -176,8 +176,10 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
             /*solium-disable-next-line security/no-send*/
             if (_payee.send(claimAfterWithheld)) {
                 _dividend.claimedAmount = _dividend.claimedAmount.add(claim);
-                _dividend.dividendWithheld = _dividend.dividendWithheld.add(withheld);
-                investorWithheld[_payee] = investorWithheld[_payee].add(withheld);
+                if (withheld > 0) {
+                    _dividend.totalWithheld = _dividend.totalWithheld.add(withheld);
+                    _dividend.withheld[_payee] = withheld;
+                }
                 emit EtherDividendClaimed(_payee, _dividendIndex, claim, withheld);
             } else {
                 _dividend.claimed[_payee] = false;
@@ -210,8 +212,8 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
     function withdrawWithholding(uint256 _dividendIndex) external withPerm(MANAGE) {
         require(_dividendIndex < dividends.length, "Incorrect dividend index");
         Dividend storage dividend = dividends[_dividendIndex];
-        uint256 remainingWithheld = dividend.dividendWithheld.sub(dividend.dividendWithheldReclaimed);
-        dividend.dividendWithheldReclaimed = dividend.dividendWithheld;
+        uint256 remainingWithheld = dividend.totalWithheld.sub(dividend.totalWithheldWithdrawn);
+        dividend.totalWithheldWithdrawn = dividend.totalWithheld;
         address owner = IOwnable(securityToken).owner();
         owner.transfer(remainingWithheld);
         emit EtherDividendWithholdingWithdrawn(owner, _dividendIndex, remainingWithheld);

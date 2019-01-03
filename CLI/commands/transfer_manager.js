@@ -10,23 +10,19 @@ const { table } = require('table')
 
 ///////////////////
 // Constants
-<<<<<<< HEAD
-const WHITELIST_DATA_CSV = './CLI/data/Transfer/GTM/whitelist_data.csv';
-const PERCENTAGE_WHITELIST_DATA_CSV = './CLI/data/Transfer/PercentageTM/whitelist_data.csv';
-const ADD_DAILY_RESTRICTIONS_DATA_CSV = './CLI/data/Transfer/VRTM/add_daily_restriction_data.csv';
-const MODIFY_DAILY_RESTRICTIONS_DATA_CSV = './CLI/data/Transfer/VRTM/modify_daily_restriction_data.csv';
-const REMOVE_DAILY_RESTRICTIONS_DATA_CSV = './CLI/data/Transfer/VRTM/remove_daily_restriction_data.csv';
-const ADD_RESTRICTIONS_DATA_CSV = './CLI/data/Transfer/VRTM/add_restriction_data.csv';
-const MODIFY_RESTRICTIONS_DATA_CSV = './CLI/data/Transfer/VRTM/modify_restriction_data.csv';
-const REMOVE_RESTRICTIONS_DATA_CSV = './CLI/data/Transfer/VRTM/remove_restriction_data.csv';
-
-const RESTRICTION_TYPES = ['Fixed', 'Percentage'];
-=======
 const WHITELIST_DATA_CSV = `${__dirname}/../data/Transfer/GTM/whitelist_data.csv`;
 const PERCENTAGE_WHITELIST_DATA_CSV = `${__dirname}/../data/Transfer/PercentageTM/whitelist_data.csv`;
 const ADD_MANUAL_APPROVAL_DATA_CSV = `${__dirname}/../data/Transfer/MATM/add_manualapproval_data.csv`;
 const MODIFY_MANUAL_APPROVAL_DATA_CSV = `${__dirname}/../data/Transfer/MATM/modify_manualapproval_data.csv`;
 const REVOKE_MANUAL_APPROVAL_DATA_CSV = `${__dirname}/../data/Transfer/MATM/revoke_manualapproval_data.csv`;
+const ADD_DAILY_RESTRICTIONS_DATA_CSV = `${__dirname}/../data/Transfer/VRTM/add_daily_restriction_data.csv`;
+const MODIFY_DAILY_RESTRICTIONS_DATA_CSV = `${__dirname}/../data/Transfer/VRTM/modify_daily_restriction_data.csv`;
+const REMOVE_DAILY_RESTRICTIONS_DATA_CSV = `${__dirname}/../data/Transfer/VRTM/remove_daily_restriction_data.csv`;
+const ADD_RESTRICTIONS_DATA_CSV = `${__dirname}/../data/Transfer/VRTM/add_restriction_data.csv`;
+const MODIFY_RESTRICTIONS_DATA_CSV = `${__dirname}/../data/Transfer/VRTM/modify_restriction_data.csv`;
+const REMOVE_RESTRICTIONS_DATA_CSV = `${__dirname}/../data/Transfer/VRTM/remove_restriction_data.csv`;
+
+const RESTRICTION_TYPES = ['Fixed', 'Percentage'];
 
 const MATM_MENU_ADD = 'Add new manual approval';
 const MATM_MENU_MANAGE = 'Manage existing approvals';
@@ -39,7 +35,6 @@ const MATM_MENU_MANAGE_REVOKE = 'Revoke this approval';
 const MATM_MENU_OPERATE_ADD = 'Add multiple approvals in batch';
 const MATM_MENU_OPERATE_MODIFY = 'Modify multiple approvals in batch';
 const MATM_MENU_OPERATE_REVOKE = 'Revoke multiple approvals in batch';
->>>>>>> dev-2.1.0
 
 // App flow
 let tokenSymbol;
@@ -564,35 +559,8 @@ async function manualApprovalTransferManager() {
     case MATM_MENU_ADD:
       await matmAdd();
       break;
-<<<<<<< HEAD
-    case 'Add manual approval':
-      from = readlineSync.question('Enter the address from which transfers will be approved: ', {
-        limit: function (input) {
-          return web3.utils.isAddress(input);
-        },
-        limitMessage: "Must be a valid address"
-      });
-      to = readlineSync.question('Enter the address to which transfers will be approved: ', {
-        limit: function (input) {
-          return web3.utils.isAddress(input);
-        },
-        limitMessage: "Must be a valid address"
-      });
-      if (!await getManualApproval(from, to)) {
-        let allowance = readlineSync.question('Enter the amount of tokens which will be approved: ');
-        let oneHourFromNow = Math.floor(Date.now() / 1000 + 3600);
-        let expiryTime = readlineSync.questionInt(`Enter the time (Unix Epoch time) until which the transfer is allowed (1 hour from now = ${oneHourFromNow}): `, { defaultInput: oneHourFromNow });
-        let addManualApprovalAction = currentTransferManager.methods.addManualApproval(from, to, web3.utils.toWei(allowance), expiryTime);
-        let addManualApprovalReceipt = await common.sendTransaction(addManualApprovalAction);
-        let addManualApprovalEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addManualApprovalReceipt.logs, 'AddManualApproval');
-        console.log(chalk.green(`Manual approval has been added successfully!`));
-      } else {
-        console.log(chalk.red(`A manual approval already exists from ${from} to ${to}.Revoke it first if you want to add a new one.`));
-      }
-=======
     case MATM_MENU_MANAGE:
       await matmManage();
->>>>>>> dev-2.1.0
       break;
     case MATM_MENU_EXPLORE:
       await matmExplore();
@@ -668,17 +636,6 @@ async function matmManage() {
       let index2 = readlineSync.keyInSelect(manageOptions, 'What do you want to do?', {
         cancel: 'RETURN'
       });
-<<<<<<< HEAD
-      if (!await getManualBlocking(from, to)) {
-        let oneHourFromNow = Math.floor(Date.now() / 1000 + 3600);
-        let expiryTime = readlineSync.questionInt(`Enter the time (Unix Epoch time) until which the transfer is blocked (1 hour from now = ${oneHourFromNow}): `, { defaultInput: oneHourFromNow });
-        let addManualBlockingAction = currentTransferManager.methods.addManualBlocking(from, to, expiryTime);
-        let addManualBlockingReceipt = await common.sendTransaction(addManualBlockingAction);
-        let addManualBlockingEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addManualBlockingReceipt.logs, 'AddManualBlocking');
-        console.log(chalk.green(`Manual blocking has been added successfully!`));
-      } else {
-        console.log(chalk.red(`A manual blocking already exists from ${from} to ${to}.Revoke it first if you want to add a new one.`));
-=======
       let optionSelected2 = index2 != -1 ? manageOptions[index2] : 'RETURN';
       console.log('Selected:', optionSelected2, '\n');
 
@@ -697,7 +654,6 @@ async function matmManage() {
             await matmManageRevoke(selectedApproval);
             break;
         }
->>>>>>> dev-2.1.0
       }
     }
   } else {
@@ -1417,7 +1373,7 @@ async function exploreAccount() {
     hasIndividualRestrictions = applyingOtherRestriction || appliyngdDailyRestriction;
 
     if (!hasIndividualRestrictions) {
-      let defaultDailyRestriction = await currentTransferManager.methods.defaultDailyRestriction(account).call();
+      let defaultDailyRestriction = await currentTransferManager.methods.defaultDailyRestriction().call();
       if (parseInt(defaultDailyRestriction.endTime) !== 0) {
         appliyngdDailyRestriction = defaultDailyRestriction;
       }

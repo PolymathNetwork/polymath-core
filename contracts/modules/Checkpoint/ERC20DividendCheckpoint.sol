@@ -25,20 +25,20 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
     );
     event ERC20DividendClaimed(
         address indexed _payee,
-        uint256 _dividendIndex,
+        uint256 indexed _dividendIndex,
         address indexed _token,
         uint256 _amount,
         uint256 _withheld
     );
     event ERC20DividendReclaimed(
         address indexed _claimer,
-        uint256 _dividendIndex,
+        uint256 indexed _dividendIndex,
         address indexed _token,
         uint256 _claimedAmount
     );
     event ERC20DividendWithholdingWithdrawn(
         address indexed _claimer,
-        uint256 _dividendIndex,
+        uint256 indexed _dividendIndex,
         address indexed _token,
         uint256 _withheldAmount
     );

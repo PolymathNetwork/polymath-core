@@ -10,11 +10,12 @@ import "./storage/EternalStorage.sol";
 import "./libraries/Util.sol";
 import "./libraries/Encoder.sol";
 import "./libraries/VersionUtils.sol";
+import "./proxy/Proxy.sol";
 
 /**
  * @title Registry contract for issuers to register their tickers and security tokens
  */
-contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
+contract SecurityTokenRegistry is EternalStorage, Proxy {
 
     /**
      * @notice state variables
@@ -71,6 +72,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     bytes32 constant PAUSED = 0xee35723ac350a69d2a92d3703f17439cbaadf2f093a21ba5bf5f1a53eb2a14d9;
     bytes32 constant OWNER = 0x02016836a56b71f0d02689e69e326f4f4c1b9057164ef592671cf0d37c8040c0;
     bytes32 constant POLYMATHREGISTRY = 0x90eeab7c36075577c7cc5ff366e389fefa8a18289b949bab3529ab4471139d4d;
+    bytes32 constant STRGETTER = 0x982f24b3bd80807ec3cb227ba152e15c07d66855fa8ae6ca536e689205c0e2e9;
 
     // Emit when network becomes paused
     event Pause(uint256 _timestammp);
@@ -162,21 +164,23 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
      * @param _STFactory is the address of the Proxy contract for Security Tokens
      * @param _stLaunchFee is the fee in POLY required to launch a token
      * @param _tickerRegFee is the fee in POLY required to register a ticker
-     * @param _owner is the owner of the STR
+     * @param _owner is the owner of the STR,
+     * @param _getterContract Contract address of the contract which consists getter functions.
      */
     function initialize(
         address _polymathRegistry,
         address _STFactory,
         uint256 _stLaunchFee,
         uint256 _tickerRegFee,
-        address _owner
+        address _owner,
+        address _getterContract
     )
         external
         payable
     {
         require(!getBool(INITIALIZE),"already initialized");
         require(
-            _STFactory != address(0) && _owner != address(0) && _polymathRegistry != address(0),
+            _STFactory != address(0) && _owner != address(0) && _polymathRegistry != address(0) && _getterContract != address(0),
             "Invalid address"
         );
         require(_stLaunchFee != 0 && _tickerRegFee != 0, "Fees should not be 0");
@@ -188,6 +192,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         set(POLYMATHREGISTRY, _polymathRegistry);
         _setProtocolVersion(_STFactory, uint8(2), uint8(0), uint8(0));
         set(INITIALIZE, true);
+        set(STRGETTER, _getterContract);
         _updateFromRegistry();
     }
 
@@ -201,6 +206,19 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     function _updateFromRegistry() internal {
         address polymathRegistry = getAddress(POLYMATHREGISTRY);
         set(POLYTOKEN, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"));
+    }
+
+    /**
+     * @notice Set the getter contract address
+     * @param _getterContract Address of the contract  
+     */
+    function setGetterRegistry(address _getterContract) public onlyOwner {
+        require(_getterContract != address(0));
+        set(STRGETTER, _getterContract);
+    }
+
+    function _implementation() internal view returns(address) {
+        return getAddress(Encoder.getKey("STRGetter"));
     }
 
     /////////////////////////////
@@ -219,7 +237,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         require(_owner != address(0), "Owner should not be 0x");
         require(bytes(_ticker).length > 0 && bytes(_ticker).length <= 10, "Ticker length range (0,10]");
         // Attempt to charge the reg fee if it is > 0 POLY
-        uint256 tickerFee = getTickerRegistrationFee();
+        uint256 tickerFee = getUint(TICKERREGFEE);
         if (tickerFee > 0)
             require(IERC20(getAddress(POLYTOKEN)).transferFrom(msg.sender, address(this), tickerFee), "Insufficent allowance");
         string memory ticker = Util.upper(_ticker);
@@ -230,7 +248,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
             _deleteTickerOwnership(previousOwner, ticker);
         }
         /*solium-disable-next-line security/no-block-members*/
-        _addTicker(_owner, ticker, _tokenName, now, now.add(getExpiryLimit()), false, false, tickerFee);
+        _addTicker(_owner, ticker, _tokenName, now, now.add(getUint(EXPIRYLIMIT)), false, false, tickerFee);
     }
 
     /**
@@ -245,7 +263,9 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         bool _status, 
         bool _fromAdmin, 
         uint256 _fee
-        ) internal {
+    ) 
+        internal
+    {
         _setTickerOwnership(_owner, _ticker);
         _storeTickerDetails(_ticker, _owner, _registrationDate, _expiryDate, _tokenName, _status);
         emit RegisterTicker(_owner, _ticker, _tokenName, _registrationDate, _expiryDate, _fromAdmin, _fee);
@@ -268,7 +288,10 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         uint256 _registrationDate,
         uint256 _expiryDate,
         bool _status
-        ) external onlyOwner {
+    ) 
+        external
+        onlyOwner
+    {
         require(bytes(_ticker).length > 0 && bytes(_ticker).length <= 10, "Ticker length range (0,10]");
         require(_expiryDate != 0 && _registrationDate != 0, "Dates should not be 0");
         require(_registrationDate <= _expiryDate, "Registration date should < expiry date");
@@ -287,7 +310,9 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         uint256 _registrationDate,
         uint256 _expiryDate,
         bool _status
-        ) internal {
+    ) 
+        internal
+    {
         address currentOwner = _tickerOwner(_ticker);
         if (currentOwner != address(0)) {
             _deleteTickerOwnership(currentOwner, _ticker);
@@ -368,7 +393,9 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         uint256 _expiryDate,
         string _tokenName,
         bool _status
-        ) internal {
+    )   
+        internal
+    {
         bytes32 key = Encoder.getKey("registeredTickers_owner", _ticker);
         if (getAddress(key) != _owner)
             set(key, _owner);
@@ -430,103 +457,6 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         set(EXPIRYLIMIT, _newExpiry);
     }
 
-    /**
-     * @notice Returns the list of tickers owned by the selected address
-     * @param _owner is the address which owns the list of tickers
-     */
-    function getTickersByOwner(address _owner) external view returns(bytes32[]) {
-        uint counter = 0;
-        // accessing the data structure userTotickers[_owner].length
-        bytes32[] memory tickers = getArrayBytes32(Encoder.getKey("userToTickers", _owner));
-        for (uint i = 0; i < tickers.length; i++) {
-            string memory ticker = Util.bytes32ToString(tickers[i]);
-            /*solium-disable-next-line security/no-block-members*/
-            if (getUint(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now || _tickerStatus(ticker)) {
-                counter ++;
-            }
-        }
-        bytes32[] memory tempList = new bytes32[](counter);
-        counter = 0;
-        for (i = 0; i < tickers.length; i++) {
-            ticker = Util.bytes32ToString(tickers[i]);
-            /*solium-disable-next-line security/no-block-members*/
-            if (getUint(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now || _tickerStatus(ticker)) {
-                tempList[counter] = tickers[i];
-                counter ++;
-            }
-        }
-        return tempList;
-    }
-
-    /**
-     * @notice Returns the list of tokens owned by the selected address
-     * @param _owner is the address which owns the list of tickers
-     * @dev Intention is that this is called off-chain so block gas limit is not relevant
-     */
-    function getTokensByOwner(address _owner) external view returns(address[]) {
-        // Loop over all active users, then all associated tickers of those users
-        // This ensures we find tokens, even if their owner has been modified
-        address[] memory activeUsers = getArrayAddress(Encoder.getKey("activeUsers"));
-        bytes32[] memory tickers;
-        address token;
-        uint256 count = 0;
-        uint256 i = 0;
-        uint256 j = 0;
-        for (i = 0; i < activeUsers.length; i++) {
-            tickers = getArrayBytes32(Encoder.getKey("userToTickers", activeUsers[i]));
-            for (j = 0; j < tickers.length; j++) {
-                token = getAddress(Encoder.getKey("tickerToSecurityToken", Util.bytes32ToString(tickers[j])));
-                if (token != address(0)) {
-                    if (IOwnable(token).owner() == _owner) {
-                        count = count + 1;
-                    }
-                }
-            }
-        }
-        uint256 index = 0;
-        address[] memory result = new address[](count);
-        for (i = 0; i < activeUsers.length; i++) {
-            tickers = getArrayBytes32(Encoder.getKey("userToTickers", activeUsers[i]));
-            for (j = 0; j < tickers.length; j++) {
-                token = getAddress(Encoder.getKey("tickerToSecurityToken", Util.bytes32ToString(tickers[j])));
-                if (token != address(0)) {
-                    if (IOwnable(token).owner() == _owner) {
-                        result[index] = token;
-                        index = index + 1;
-                    }
-                }
-            }
-        }
-        return result;
-    }
-
-    /**
-     * @notice Returns the owner and timestamp for a given ticker
-     * @param _ticker is the ticker symbol
-     * @return address
-     * @return uint256
-     * @return uint256
-     * @return string
-     * @return bool
-     */
-    function getTickerDetails(string _ticker) external view returns (address, uint256, uint256, string, bool) {
-        string memory ticker = Util.upper(_ticker);
-        bool tickerStatus = _tickerStatus(ticker);
-        uint256 expiryDate = getUint(Encoder.getKey("registeredTickers_expiryDate", ticker));
-        /*solium-disable-next-line security/no-block-members*/
-        if ((tickerStatus == true) || (expiryDate > now)) {
-            return
-            (
-                _tickerOwner(ticker),
-                getUint(Encoder.getKey("registeredTickers_registrationDate", ticker)),
-                expiryDate,
-                getString(Encoder.getKey("registeredTickers_tokenName", ticker)),
-                tickerStatus
-            );
-        } else
-            return (address(0), uint256(0), uint256(0), "", false);
-    }
-
     /////////////////////////////
     // Security Token Management
     /////////////////////////////
@@ -548,11 +478,11 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         /*solium-disable-next-line security/no-block-members*/
         require(getUint(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now, "Ticker gets expired");
 
-        uint256 launchFee = getSecurityTokenLaunchFee();
+        uint256 launchFee = getUint(STLAUNCHFEE);
         if (launchFee > 0)
             require(IERC20(getAddress(POLYTOKEN)).transferFrom(msg.sender, address(this), launchFee), "Insufficient allowance");
 
-        address newSecurityTokenAddress = ISTFactory(getSTFactoryAddress()).deployToken(
+        address newSecurityTokenAddress = ISTFactory(getAddress(Encoder.getKey("protocolVersionST", getUint(Encoder.getKey("latestVersion"))))).deployToken(
             _name,
             ticker,
             18,
@@ -599,12 +529,12 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         if (registrationTime == 0) {
             /*solium-disable-next-line security/no-block-members*/
             registrationTime = now;
-            expiryTime = registrationTime.add(getExpiryLimit());
+            expiryTime = registrationTime.add(getUint(EXPIRYLIMIT));
         }
         set(Encoder.getKey("tickerToSecurityToken", ticker), _securityToken);
         _modifyTicker(_owner, ticker, _name, registrationTime, expiryTime, true);
         _storeSecurityTokenData(_securityToken, ticker, _tokenDetails, _deployedAt);
-        emit NewSecurityToken(ticker, _name, _securityToken, _owner, _deployedAt, msg.sender, true, getSecurityTokenLaunchFee());
+        emit NewSecurityToken(ticker, _name, _securityToken, _owner, _deployedAt, msg.sender, true, getUint(STLAUNCHFEE));
     }
 
     /**
@@ -623,33 +553,6 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
     */
     function isSecurityToken(address _securityToken) external view returns (bool) {
         return (keccak256(bytes(getString(Encoder.getKey("securityTokens_ticker", _securityToken)))) != keccak256(""));
-    }
-
-    /**
-     * @notice Returns the security token address by ticker symbol
-     * @param _ticker is the ticker of the security token
-     * @return address
-     */
-    function getSecurityTokenAddress(string _ticker) external view returns (address) {
-        string memory ticker = Util.upper(_ticker);
-        return getAddress(Encoder.getKey("tickerToSecurityToken", ticker));
-    }
-
-     /**
-     * @notice Returns the security token data by address
-     * @param _securityToken is the address of the security token.
-     * @return string is the ticker of the security Token.
-     * @return address is the issuer of the security Token.
-     * @return string is the details of the security token.
-     * @return uint256 is the timestamp at which security Token was deployed.
-     */
-    function getSecurityTokenData(address _securityToken) external view returns (string, address, string, uint256) {
-        return (
-            getString(Encoder.getKey("securityTokens_ticker", _securityToken)),
-            IOwnable(_securityToken).owner(),
-            getString(Encoder.getKey("securityTokens_tokenDetails", _securityToken)),
-            getUint(Encoder.getKey("securityTokens_deployedAt", _securityToken))
-        );
     }
 
     /////////////////////////////
@@ -740,47 +643,21 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
         _version[1] = _minor;
         _version[2] = _patch;
         uint24 _packedVersion = VersionUtils.pack(_major, _minor, _patch);
-        require(VersionUtils.isValidVersion(getProtocolVersion(), _version),"In-valid version");
+        require(
+            VersionUtils.isValidVersion(VersionUtils.unpack(uint24(getUint(Encoder.getKey("latestVersion")))), _version),
+            "In-valid version"
+        );
         set(Encoder.getKey("latestVersion"), uint256(_packedVersion));
         set(Encoder.getKey("protocolVersionST", getUint(Encoder.getKey("latestVersion"))), _STFactoryAddress);
     }
 
     /**
-     * @notice Returns the current STFactory Address
+     * @notice Changes the PolyToken address. Only Polymath.
+     * @param _newAddress is the address of the polytoken.
      */
-    function getSTFactoryAddress() public view returns(address) {
-        return getAddress(Encoder.getKey("protocolVersionST", getUint(Encoder.getKey("latestVersion"))));
-    }
-
-    /**
-     * @notice Gets Protocol version
-     */
-    function getProtocolVersion() public view returns(uint8[]) {
-        return VersionUtils.unpack(uint24(getUint(Encoder.getKey("latestVersion"))));
-    }
-
-    /**
-     * @notice Gets the security token launch fee
-     * @return Fee amount
-     */
-    function getSecurityTokenLaunchFee() public view returns(uint256) {
-        return getUint(STLAUNCHFEE);
-    }
-
-    /**
-     * @notice Gets the ticker registration fee
-     * @return Fee amount
-     */
-    function getTickerRegistrationFee() public view returns(uint256) {
-        return getUint(TICKERREGFEE);
-    }
-
-    /**
-     * @notice Gets the expiry limit
-     * @return Expiry limit
-     */
-    function getExpiryLimit() public view returns(uint256) {
-        return getUint(EXPIRYLIMIT);
+    function updatePolyTokenAddress(address _newAddress) external onlyOwner {
+        require(_newAddress != address(0), "Invalid address");
+        set(POLYTOKEN, _newAddress);
     }
 
     /**

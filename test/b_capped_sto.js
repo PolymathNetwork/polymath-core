@@ -58,6 +58,7 @@ contract("CappedSTO", accounts => {
     let I_PolymathRegistry;
     let I_STRProxied;
     let I_MRProxied;
+    let I_STRGetter;
     let pauseTime;
 
     // SecurityToken Details for funds raise Type ETH
@@ -125,7 +126,8 @@ contract("CappedSTO", accounts => {
             I_STFactory,
             I_SecurityTokenRegistry,
             I_SecurityTokenRegistryProxy,
-            I_STRProxied
+            I_STRProxied, 
+            I_STRGetter
         ] = instances;
 
         // STEP 5: Deploy the GeneralDelegateManagerFactory

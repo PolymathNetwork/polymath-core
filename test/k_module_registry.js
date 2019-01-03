@@ -66,6 +66,7 @@ contract("ModuleRegistry", accounts => {
     let I_DummySTOFactory;
     let I_PolymathRegistry;
     let I_SecurityToken2;
+    let I_STRGetter;
 
     // SecurityToken Details (Launched ST on the behalf of the issuer)
     const name = "Demo Token";
@@ -121,7 +122,8 @@ contract("ModuleRegistry", accounts => {
            I_STFactory,
            I_SecurityTokenRegistry,
            I_SecurityTokenRegistryProxy,
-           I_STRProxied
+           I_STRProxied,
+           I_STRGetter
        ] = instances;
 
        I_ModuleRegistryProxy = await ModuleRegistryProxy.new({from: account_polymath});

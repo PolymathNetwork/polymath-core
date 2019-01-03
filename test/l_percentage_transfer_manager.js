@@ -50,7 +50,8 @@ contract("PercentageTransferManager", accounts => {
     let I_STFactory;
     let I_SecurityToken;
     let I_PolyToken;
-    var I_PolymathRegistry;
+    let I_STRGetter;
+    let I_PolymathRegistry;
 
     // SecurityToken Details
     const name = "Team";
@@ -109,7 +110,8 @@ contract("PercentageTransferManager", accounts => {
             I_STFactory,
             I_SecurityTokenRegistry,
             I_SecurityTokenRegistryProxy,
-            I_STRProxied
+            I_STRProxied,
+            I_STRGetter
         ] = instances;
 
         // STEP 2: Deploy the GeneralDelegateManagerFactory

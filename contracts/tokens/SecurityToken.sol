@@ -85,8 +85,8 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     // Emit at the time when module get added
     event ModuleAdded(
         uint8[] _types,
-        bytes32 _name,
-        address _moduleFactory,
+        bytes32 indexed _name,
+        address indexed _moduleFactory,
         address _module,
         uint256 _moduleCost,
         uint256 _budget,

@@ -205,7 +205,7 @@ contract("SecurityToken", async (accounts) => {
         });
 
         it("Should mint the tokens before attaching the STO", async () => {
-            await I_SecurityToken.mint(account_affiliate1, new BN(100).mul(new BN(10).pow(new BN(18))));
+            await I_SecurityToken.mint(account_affiliate1, new BN(100).mul(new BN(10).pow(new BN(18))), { from: token_owner });
             let balance = await I_SecurityToken.balanceOf(account_affiliate1);
             assert.equal(balance.div(new BN(10).pow(new BN(18))).toNumber(), 100);
         });

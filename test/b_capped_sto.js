@@ -298,13 +298,13 @@ contract("CappedSTO", async (accounts) => {
 
     describe("Buy tokens", async () => {
         it("Should buy the tokens -- failed due to startTime is greater than Current time", async () => {
-            await catchRevert(I_CappedSTO_Array_ETH[0].buyTokens({ from: account_investor1, value: new BN(web3.utils.toWei("1", "ether")) }));
+            await catchRevert(I_CappedSTO_Array_ETH[0].buyTokens(account_investor1, { from: account_investor1, value: new BN(web3.utils.toWei("1", "ether")) }));
             await increaseTime(duration.days(1));
         });
 
         it("Should buy the tokens -- Failed due to investor is not in the whitelist", async () => {
-            await catchRevert(I_CappedSTO_Array_ETH[0].buyTokens({ from: account_investor1, value: new BN(web3.utils.toWei("1", "ether")) }));
-            
+            await catchRevert(I_CappedSTO_Array_ETH[0].buyTokens(account_investor1, { from: account_investor1, value: new BN(web3.utils.toWei("1", "ether")) }));
+
             blockNo = await latestBlock();
             fromTime = await latestTime();
             toTime = await latestTime() + duration.days(15);
@@ -322,10 +322,12 @@ contract("CappedSTO", async (accounts) => {
         });
 
         it("Should buy the tokens -- failed due to invested amount is zero", async () => {
-            await catchRevert(I_CappedSTO_Array_ETH[0].buyTokens({ from: account_investor1, value: new BN(web3.utils.toWei("0", "ether")) }));
+            await catchRevert(I_CappedSTO_Array_ETH[0].buyTokens(account_investor1, { from: account_investor1, value: new BN(web3.utils.toWei("0", "ether")) }));
         });
 
         it("Should Buy the tokens", async () => {
+
+            balanceOfReceiver = new BN(await web3.eth.getBalance(account_fundsReceiver));
             
             await I_CappedSTO_Array_ETH[0].buyTokens(account_investor1, {
                 from: account_investor1,

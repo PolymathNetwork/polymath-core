@@ -1429,7 +1429,8 @@ contract("USDTieredSTO", async (accounts) => {
                 from: NONACCREDITED1,
                 to: I_USDTieredSTO_Array[stoId].address,
                 value: investment_ETH,
-                gasPrice: GAS_PRICE
+                gasPrice: GAS_PRICE,
+                gas: 7000000
             });
             let gasCost1 = new BN(GAS_PRICE).mul(new BN(tx1.gasUsed));
             console.log("          Gas fallback purchase: ".grey + new BN(tx1.gasUsed).toString().grey);

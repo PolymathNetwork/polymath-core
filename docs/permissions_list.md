@@ -143,7 +143,7 @@
             <td>allocateTokensMulti()</td>
         </tr>
         <tr>
-            <td rowspan=53>TransferManager</td>
+            <td rowspan=42>TransferManager</td>
             <td>CountTransferManager</td>
             <td>changeHolderCount()</td>
             <td>withPerm(ADMIN)</td>
@@ -238,41 +238,7 @@
         </tr>
         <tr>
             <td>modifyDailyGlobalRestriction()</td>
-        </tr>  
-            <td> removeTransferLimitInPercentageMulti </td>
-        </tr>      
-        <tr></tr>
-        <tr>
-            <td rowspan=16>Wallet</td>
-            <td rowspan=16>VestingEscrowWallet</td>
-            <td>changeTreasuryWallet()</td>
-            <td>onlyOwner</td>
-        </tr>
-        <tr>
-            <td>depositTokens()</td>
-            <td rowspan=15>withPerm(ADMIN)</td>
-        </tr>
-        <tr>
-            <td>sendToTreasury()</td>
-        </tr>
-        <tr>
-            <td>pushAvailableTokens()</td>
-        </tr>
-        <tr>
-            <td>addTemplate()</td>
-        </tr>
-        <tr>
-            <td>removeTemplate()</td>
-        </tr>
-        <tr>
-            <td>addSchedule()</td>
-        </tr>
-        <tr>
-            <td>addScheduleFromTemplate()</td>
-        </tr>
-        <tr>
-            <td>modifySchedule()</td>
-        </tr>
+        </tr>     
         <tr>
             <td rowspan=14> BlacklistTransferManager </td>
             <td> addBlacklistType() </td>
@@ -316,6 +282,37 @@
         </tr>
         <tr>
             <td> deleteMultiInvestorsFromBlacklistMulti() </td>
+        </tr>
+        <tr>
+            <td rowspan=16>Wallet</td>
+            <td rowspan=16>VestingEscrowWallet</td>
+            <td>changeTreasuryWallet()</td>
+            <td>onlyOwner</td>
+        </tr>
+        <tr>
+            <td>depositTokens()</td>
+            <td rowspan=15>withPerm(ADMIN)</td>
+        </tr>
+        <tr>
+            <td>sendToTreasury()</td>
+        </tr>
+        <tr>
+            <td>pushAvailableTokens()</td>
+        </tr>
+        <tr>
+            <td>addTemplate()</td>
+        </tr>
+        <tr>
+            <td>removeTemplate()</td>
+        </tr>
+        <tr>
+            <td>addSchedule()</td>
+        </tr>
+        <tr>
+            <td>addScheduleFromTemplate()</td>
+        </tr>
+        <tr>
+            <td>modifySchedule()</td>
         </tr>
         <tr>
             <td>revokeSchedule()</td>

@@ -68,30 +68,20 @@ function getPermissionList() {
             setAllowPrimaryIssuance: "ADMIN",
             changeHolderPercentage: "ADMIN"
         },
-        LockupVolumeRestrictionTM: {
-            addLockup: "ADMIN",
-            addLockUpMulti: "ADMIN",
-            removeLockUp: "ADMIN",
-            modifyLockUp: "ADMIN"
-        },
-        SingleTradeVolumeRestrictionTM: {
-            setAllowPrimaryIssuance: "ADMIN",
-            changeTransferLimitToPercentage: "ADMIN",
-            changeTransferLimitToTokens: "ADMIN",
-            changeGlobalLimitInTokens: "ADMIN",
-            changeGlobalLimitInPercentage: "ADMIN",
-            addExemptWallet: "ADMIN",
-            removeExemptWallet: "ADMIN",
-            addExemptWalletMulti: "ADMIN",
-            removeExemptWalletMulti: "ADMIN",
-            setTransferLimitInTokens: "ADMIN",
-            setTransferLimitInPercentage: "ADMIN",
-            removeTransferLimitInPercentage: "ADMIN",
-            removeTransferLimitInTokens: "ADMIN",
-            setTransferLimitInTokensMulti: "ADMIN",
-            setTransferLimitInPercentageMulti: "ADMIN",
-            removeTransferLimitInTokensMulti: "ADMIN",
-            removeTransferLimitInPercentageMulti: "ADMIN"
+        VolumeRestrictionTM: {
+            changeExemptWalletList: "ADMIN",
+            addIndividualRestriction: "ADMIN",
+            addIndividualRestrictionMulti: "ADMIN",
+            addGlobalRestriction: "ADMIN",
+            addDailyGlobalRestriction: "ADMIN",
+            removeIndividualRestriction: "ADMIN",
+            removeIndividualRestrictionMulti: "ADMIN",
+            removeGlobalRestriction: "ADMIN",
+            removeDailyGlobalRestriction: "ADMIN",
+            modifyIndividualRestriction: "ADMIN",
+            modifyIndividualRestrictionMulti: "ADMIN",
+            modifyGlobalRestriction: "ADMIN",
+            modifyDailyGlobalRestriction: "ADMIN"
         },
         BlacklistTransferManager: {
             addBlacklistType: "ADMIN",
@@ -108,6 +98,24 @@ function getPermissionList() {
             deleteInvestorFromAllBlacklistMulti: "ADMIN",
             deleteInvestorFromBlacklist: "ADMIN",
             deleteMultiInvestorsFromBlacklistMulti: "ADMIN",
+        },
+        VestingEscrowWallet: {
+            changeTreasuryWallet: "ONLY_OWNER",
+            depositTokens: "ADMIN",
+            sendToTreasury: "ADMIN",
+            pushAvailableTokens: "ADMIN",
+            addTemplate: "ADMIN",
+            removeTemplate: "ADMIN",
+            addSchedule: "ADMIN",
+            addScheduleFromTemplate: "ADMIN",
+            modifySchedule: "ADMIN",
+            revokeSchedule: "ADMIN",
+            revokeAllSchedules: "ADMIN",
+            pushAvailableTokensMulti: "ADMIN",
+            addScheduleMulti: "ADMIN",
+            addScheduleFromTemplateMulti: "ADMIN",
+            revokeSchedulesMulti: "ADMIN",
+            modifyScheduleMulti: "ADMIN"
         }
     }
 }

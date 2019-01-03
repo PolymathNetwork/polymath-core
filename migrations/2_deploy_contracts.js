@@ -9,6 +9,8 @@ const EtherDividendCheckpointLogic = artifacts.require('./EtherDividendCheckpoin
 const ERC20DividendCheckpointLogic = artifacts.require('./ERC20DividendCheckpoint.sol')
 const EtherDividendCheckpointFactory = artifacts.require('./EtherDividendCheckpointFactory.sol')
 const ERC20DividendCheckpointFactory = artifacts.require('./ERC20DividendCheckpointFactory.sol')
+const VestingEscrowWalletFactory = artifacts.require('./VestingEscrowWalletFactory.sol');
+const VestingEscrowWalletLogic = artifacts.require('./VestingEscrowWallet.sol');
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
 const ModuleRegistryProxy = artifacts.require('./ModuleRegistryProxy.sol');
 const ManualApprovalTransferManagerFactory = artifacts.require('./ManualApprovalTransferManagerFactory.sol')
@@ -154,17 +156,25 @@ module.exports = function (deployer, network, accounts) {
     // manager attach with the securityToken contract at the time of deployment)
     return deployer.deploy(GeneralTransferManagerLogic, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", {from: PolymathAccount});
   }).then(() => {
-    // B) Deploy the GeneralTransferManagerLogic Contract (Factory used to generate the GeneralTransferManager contract and this
+    // B) Deploy the ERC20DividendCheckpointLogic Contract (Factory used to generate the ERC20DividendCheckpoint contract and this
     // manager attach with the securityToken contract at the time of deployment)
     return deployer.deploy(ERC20DividendCheckpointLogic, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", {from: PolymathAccount});
   }).then(() => {
-    // B) Deploy the GeneralTransferManagerLogic Contract (Factory used to generate the GeneralTransferManager contract and this
+    // B) Deploy the EtherDividendCheckpointLogic Contract (Factory used to generate the EtherDividendCheckpoint contract and this
     // manager attach with the securityToken contract at the time of deployment)
     return deployer.deploy(EtherDividendCheckpointLogic, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", {from: PolymathAccount});
+  }).then(() => {
+    // B) Deploy the VestingEscrowWalletLogic Contract (Factory used to generate the VestingEscrowWallet contract and this
+    // manager attach with the securityToken contract at the time of deployment)
+    return deployer.deploy(VestingEscrowWalletLogic, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", {from: PolymathAccount});
   }).then(() => {
     // B) Deploy the USDTieredSTOLogic Contract (Factory used to generate the USDTieredSTO contract and this
     // manager attach with the securityToken contract at the time of deployment)
     return deployer.deploy(USDTieredSTOLogic, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", {from: PolymathAccount});
+  }).then(() => {
+    // B) Deploy the VestingEscrowWalletFactory Contract (Factory used to generate the VestingEscrowWallet contract and this
+    // manager attach with the securityToken contract at the time of deployment)
+    return deployer.deploy(VestingEscrowWalletFactory, PolyToken, 0, 0, 0, VestingEscrowWalletLogic.address, {from: PolymathAccount});
   }).then(() => {
     // B) Deploy the GeneralTransferManagerFactory Contract (Factory used to generate the GeneralTransferManager contract and this
     // manager attach with the securityToken contract at the time of deployment)
@@ -220,6 +230,10 @@ module.exports = function (deployer, network, accounts) {
     // D) Register the PercentageTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
     // So any securityToken can use that factory to generate the PercentageTransferManager contract.
     return moduleRegistry.registerModule(PercentageTransferManagerFactory.address, {from: PolymathAccount});
+  }).then(() => {
+    // D) Register the VestingEscrowWalletFactory in the ModuleRegistry to make the factory available at the protocol level.
+    // So any securityToken can use that factory to generate the VestingEscrowWallet contract.
+    return moduleRegistry.registerModule(VestingEscrowWalletFactory.address, {from: PolymathAccount});
   }).then(() => {
     // D) Register the CountTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
     // So any securityToken can use that factory to generate the CountTransferManager contract.
@@ -280,6 +294,11 @@ module.exports = function (deployer, network, accounts) {
     // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
     return moduleRegistry.verifyModule(ManualApprovalTransferManagerFactory.address, true, {from: PolymathAccount});
   }).then(() => {
+    // F) Once the VestingEscrowWalletFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
+    // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
+    // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
+    return moduleRegistry.verifyModule(VestingEscrowWalletFactory.address, true, {from: PolymathAccount});
+  }).then(() => {
     // M) Deploy the CappedSTOFactory (Use to generate the CappedSTO contract which will used to collect the funds ).
     return deployer.deploy(CappedSTOFactory, PolyToken, cappedSTOSetupCost, 0, 0, {from: PolymathAccount})
   }).then(() => {
@@ -337,6 +356,8 @@ module.exports = function (deployer, network, accounts) {
     ERC20DividendCheckpointLogic:         ${ERC20DividendCheckpointLogic.address}
     EtherDividendCheckpointFactory:       ${EtherDividendCheckpointFactory.address}
     ERC20DividendCheckpointFactory:       ${ERC20DividendCheckpointFactory.address}
+    VestingEscrowWalletFactory:           ${VestingEscrowWalletFactory.address}
+    VestingEscrowWalletLogic:             ${VestingEscrowWalletLogic.address}
     ---------------------------------------------------------------------------------
     `);
     console.log('\n');

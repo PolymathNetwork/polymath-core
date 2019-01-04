@@ -965,7 +965,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
                     // Every loop execution subtracts one day's trade volume. 
                     // Loop starts from the first day covered in sumOfLastPeriod upto the day that is covered by rolling period.
                     uint256 temp = _bucketDetails.daysCovered.sub(counter.sub(_rollingPeriodInDays));
-                    temp = _bucketDetails.lastTradedDayTime.sub(temp).mul(1 days);
+                    temp = _bucketDetails.lastTradedDayTime.sub(temp.mul(1 days));
                     sumOfLastPeriod = sumOfLastPeriod.sub(bucket[_from][temp]);
                 }
             // Adding the last amount that is transacted on the `_fromTime` not actually doing it but left written to understand

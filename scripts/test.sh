@@ -92,7 +92,7 @@ if [ "$COVERAGE" = true ] || [ "$TRAVIS_PULL_REQUEST" > 0 ] && [ "$NOT_FORK" != 
   curl -o node_modules/solidity-coverage/lib/app.js https://raw.githubusercontent.com/maxsam4/solidity-coverage/relative-path/lib/app.js
   if [ "$CIRCLECI" = true ] || [ "$TRAVIS_PULL_REQUEST" > 0 ] && [ "$NOT_FORK" != true ]; then
     export COVERALLS_PARALLEL=true
-    mv solcover1.js solcover.js
+    mv .solcover1.js .solcover.js
   fi
   node_modules/.bin/solidity-coverage
   if [ "$CIRCLECI" = true ] || [ "$TRAVIS_PULL_REQUEST" > 0 ] && [ "$NOT_FORK" != true ]; then

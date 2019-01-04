@@ -83,16 +83,13 @@ else
   fi
 fi
 
-
-curl -o node_modules/solidity-coverage/lib/app.js https://raw.githubusercontent.com/maxsam4/solidity-coverage/relative-path/lib/app.js
 if [ "$CIRCLECI" = true ] || [ "$TRAVIS_PULL_REQUEST" > 0 ] && [ "$NOT_FORK" != true ]; then
+  curl -o node_modules/solidity-coverage/lib/app.js https://raw.githubusercontent.com/maxsam4/solidity-coverage/relative-path/lib/app.js
   export COVERALLS_PARALLEL=true
   mv .solcover2.js .solcover.js
-fi
-node_modules/.bin/solidity-coverage
-if [ "$CIRCLECI" = true ] || [ "$TRAVIS_PULL_REQUEST" > 0 ] && [ "$NOT_FORK" != true ]; then
+  node_modules/.bin/solidity-coverage
   cat coverage/lcov.info | node_modules/.bin/coveralls || echo 'Failed to report coverage to Coveralls'
-fi
-if [ "$CIRCLECI" = true ]; then
-  curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_BUILD_NUM&payload[status]=done"
+  if [ "$CIRCLECI" = true ]; then
+    curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_BUILD_NUM&payload[status]=done"
+  fi
 fi

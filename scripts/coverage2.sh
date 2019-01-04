@@ -94,7 +94,5 @@ if [ "$CIRCLECI" = true ] || [ "$TRAVIS_PULL_REQUEST" > 0 ] && [ "$NOT_FORK" != 
   cat coverage/lcov.info | node_modules/.bin/coveralls || echo 'Failed to report coverage to Coveralls'
 fi
 if [ "$CIRCLECI" = true ]; then
-  echo 'sleeping for 5 minutes to make sure first coverage completes. Blame circleci for not supporting webhooks in workflows'
-  sleep 5m
   curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_BUILD_NUM&payload[status]=done"
 fi

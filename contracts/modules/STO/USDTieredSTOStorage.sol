@@ -39,7 +39,7 @@ contract USDTieredSTOStorage {
         uint8 accredited;
         // Whether we have seen the investor before (already added to investors list)
         uint8 seen;
-        // An override for nonAccreditedLimitUSD (0 = no override)
+        // Overrides for default limit in USD for non-accredited investors multiplied by 10**18 (0 = no override)
         uint256 nonAccreditedLimitUSDOverride;
     }
 

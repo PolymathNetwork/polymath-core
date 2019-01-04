@@ -1,4 +1,5 @@
 /node_modules
+/CLI/node_modules
 /build
 /CLI/node_modules
 .npm-debug.log
@@ -12,3 +13,14 @@ bridge.log
 scTopics
 coverageEnv
 /flat
+/tempPoly
+.eslintrc.js
+package-lock.json
+bridge.log
+.node-xml*
+.solcover.js.bk
+allFiredEvents
+extract/
+extract.py
+extract.zip
+/test-results

@@ -1,79 +1,68 @@
 pragma solidity ^0.4.24;
 
 import "./CappedSTO.sol";
-import "../../interfaces/IModuleFactory.sol";
-import "../../interfaces/IModule.sol";
+import "../ModuleFactory.sol";
+import "../../libraries/Util.sol";
 
 /**
  * @title Factory for deploying CappedSTO module
  */
-contract CappedSTOFactory is IModuleFactory {
+contract CappedSTOFactory is ModuleFactory {
 
     /**
      * @notice Constructor
      * @param _polyAddress Address of the polytoken
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-      IModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+    ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
-
+        version = "1.0.0";
+        name = "CappedSTO";
+        title = "Capped STO";
+        description = "Use to collects the funds and once the cap is reached then investment will be no longer entertained";
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
 
      /**
-     * @notice used to launch the Module with the help of factory
+     * @notice Used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
     function deploy(bytes _data) external returns(address) {
         if(setupCost > 0)
-            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
+            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Sufficent Allowance is not provided");
         //Check valid bytes - can only call module init function
         CappedSTO cappedSTO = new CappedSTO(msg.sender, address(polyToken));
         //Checks that _data is valid (not calling anything it shouldn't)
-        require(getSig(_data) == cappedSTO.getInitFunction(), "Provided data is not valid");
-        require(address(cappedSTO).call(_data), "Un-successfull call");
-        emit LogGenerateModuleFromFactory(address(cappedSTO), getName(), address(this), msg.sender, now);
+        require(Util.getSig(_data) == cappedSTO.getInitFunction(), "Invalid data");
+        /*solium-disable-next-line security/no-low-level-calls*/
+        require(address(cappedSTO).call(_data), "Unsuccessfull call");
+        /*solium-disable-next-line security/no-block-members*/
+        emit GenerateModuleFromFactory(address(cappedSTO), getName(), address(this), msg.sender, setupCost, now);
         return address(cappedSTO);
     }
 
     /**
      * @notice Type of the Module factory
      */
-    function getType() public view returns(uint8) {
-        return 3;
+    function getTypes() external view returns(uint8[]) {
+        uint8[] memory res = new uint8[](1);
+        res[0] = 3;
+        return res;
     }
 
     /**
-     * @notice Get the name of the Module
+     * @notice Returns the instructions associated with the module
      */
-    function getName() public view returns(bytes32) {
-        return "CappedSTO";
-    }
-
-    /**
-     * @notice Get the description of the Module
-     */
-    function getDescription() public view returns(string) {
-        return "Capped STO";
-    }
-
-    /**
-     * @notice Get the title of the Module
-     */
-    function getTitle() public view returns(string) {
-        return "Capped STO";
-    }
-
-    /**
-     * @notice Get the Instructions that helped to used the module
-     */
-    function getInstructions() public view returns(string) {
+    function getInstructions() external view returns(string) {
+        /*solium-disable-next-line max-len*/
         return "Initialises a capped STO. Init parameters are _startTime (time STO starts), _endTime (time STO ends), _cap (cap in tokens for STO), _rate (POLY/ETH to token rate), _fundRaiseType (whether you are raising in POLY or ETH), _polyToken (address of POLY token), _fundsReceiver (address which will receive funds)";
     }
 
     /**
      * @notice Get the tags related to the module factory
      */
-    function getTags() public view returns(bytes32[]) {
+    function getTags() external view returns(bytes32[]) {
         bytes32[] memory availableTags = new bytes32[](4);
         availableTags[0] = "Capped";
         availableTags[1] = "Non-refundable";

@@ -9,6 +9,7 @@ var chalk = require('chalk');
 ////////////////////////
 // App flow
 let polyToken;
+let usdToken;
 
 async function executeApp(beneficiary, amount, remoteNetwork) {
   await global.initialize(remoteNetwork);
@@ -29,6 +30,10 @@ async function setup(){
     let polytokenABI = abis.polyToken();
     polyToken = new web3.eth.Contract(polytokenABI, polytokenAddress);
     polyToken.setProvider(web3.currentProvider);
+
+    let usdTokenAddress = await contracts.usdToken();
+    usdToken = new web3.eth.Contract(polytokenABI, usdTokenAddress);
+    usdToken.setProvider(web3.currentProvider);
   } catch (err) {
     console.log(err)
     console.log('\x1b[31m%s\x1b[0m',"There was a problem getting the contracts. Make sure they are deployed to the selected network.");
@@ -38,10 +43,11 @@ async function setup(){
 
 async function send_poly(beneficiary, amount) {
   let issuerBalance = await polyToken.methods.balanceOf(Issuer.address).call({from : Issuer.address});
-  console.log(chalk.blue(`Hello user you have '${(new BigNumber(issuerBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY'\n`))
+  console.log(chalk.blue(`Hello User, your current balance is '${(new BigNumber(issuerBalance).dividedBy(new BigNumber(10).pow(18))).toNumber()} POLY'\n`))
 
   if (typeof beneficiary === 'undefined' && typeof amount === 'undefined') {
-    let options = ['250 POLY for ticker registration','500 POLY for token launch + ticker reg', '20K POLY for CappedSTO Module', '20.5K POLY for Ticker + Token + CappedSTO', '100.5K POLY for Ticker + Token + USDTieredSTO','As many POLY as you want'];
+    let options = ['250 POLY for ticker registration','500 POLY for token launch + ticker reg', '20K POLY for CappedSTO Module', 
+                  '20.5K POLY for Ticker + Token + CappedSTO', '100.5K POLY for Ticker + Token + USDTieredSTO','As many POLY as you want', '10K USD Tokens'];
     index = readlineSync.keyInSelect(options, 'What do you want to do?');
     console.log("Selected:", index != -1 ? options[index] : 'Cancel');
     switch (index) {
@@ -68,6 +74,16 @@ async function send_poly(beneficiary, amount) {
       case 5:
         beneficiary =  readlineSync.question(`Enter beneficiary of transfer ('${Issuer.address}'): `);
         amount = readlineSync.questionInt(`Enter the no. of POLY Tokens: `).toString();
+        break;
+      case 6:
+        beneficiary = readlineSync.question(`Enter beneficiary 10K USD Tokens ('${Issuer.address}'): `);
+        if (beneficiary == "") beneficiary = Issuer.address;
+        let getTokensAction = usdToken.methods.getTokens(web3.utils.toWei('10000'), beneficiary);
+        await common.sendTransaction(Issuer, getTokensAction, defaultGasPrice);
+        let balance = await usdToken.methods.balanceOf(beneficiary).call();
+        let balanceInPoly = new BigNumber(balance).dividedBy(new BigNumber(10).pow(18));
+        console.log(chalk.green(`Congratulations! balance of ${beneficiary} address is ${balanceInPoly.toNumber()} USD Tokens`));    
+        process.exit(0);
         break;
       case -1:
         process.exit(0);

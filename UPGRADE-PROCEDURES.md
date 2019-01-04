@@ -1,3 +1,17 @@
+## 1.4.0 -> 2.0.0
+
+### SecurityTokenRegistry
+
+1. Migrate existing Tickers and Security Tokens
+- a) Run strMigrator command on polymath-cli
+- b) Enter the SecurityTokenRegistry v2.0.0 address
+- c) Enter the TickerRegistry v1.4.0 address
+- d) Tickers are read and listed.
+- e) Enter 'y' to migrate all listed tickers
+- f) Enter the SecurityTokenRegistry v1.4.0 address
+- g) Security Tokens are read and listed 
+- h) Enter 'y' to migrate all listed Security Tokens
+
 ## 1.3.0 -> 1.4.0
 
 ### USDTieredSTO & Oracles

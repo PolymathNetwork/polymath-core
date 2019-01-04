@@ -2,16 +2,17 @@ pragma solidity ^0.4.24;
 
 import "openzeppelin-solidity/contracts/math/Math.sol";
 import "../interfaces/IERC20.sol";
-import "../interfaces/ISecurityToken.sol";
 import "../interfaces/IModule.sol";
 import "../interfaces/IModuleFactory.sol";
 import "../interfaces/IModuleRegistry.sol";
-import "../interfaces/IST20.sol";
+import "../interfaces/IFeatureRegistry.sol";
 import "../modules/TransferManager/ITransferManager.sol";
-import "../modules/PermissionManager/IPermissionManager.sol";
-import "../interfaces/ITokenBurner.sol";
 import "../RegistryUpdater.sol";
+import "../libraries/Util.sol";
 import "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/StandardToken.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/DetailedERC20.sol";
+import "../libraries/TokenLib.sol";
 
 /**
 * @title Security Token contract
@@ -20,47 +21,70 @@ import "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
 * @notice - Transfers are restricted
 * @notice - Modules can be attached to it to control its behaviour
 * @notice - ST should not be deployed directly, but rather the SecurityTokenRegistry should be used
+* @notice - ST does not inherit from ISecurityToken due to:
+* @notice - https://github.com/ethereum/solidity/issues/4847
 */
-contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
+contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, RegistryUpdater {
     using SafeMath for uint256;
 
-    bytes32 public constant securityTokenVersion = "0.0.1";
+    TokenLib.InvestorDataStorage investorData;
 
-    // Reference to token burner contract
-    ITokenBurner public tokenBurner;
-
-    // Use to halt all the transactions
-    bool public freeze = false;
-
-    struct ModuleData {
-        bytes32 name;
-        address moduleAddress;
+    // Used to hold the semantic version data
+    struct SemanticVersion {
+        uint8 major;
+        uint8 minor;
+        uint8 patch;
     }
 
-    // Structures to maintain checkpoints of balances for governance / dividends
-    struct Checkpoint {
-        uint256 checkpointId;
-        uint256 value;
-    }
+    SemanticVersion securityTokenVersion;
 
-    mapping (address => Checkpoint[]) public checkpointBalances;
-    Checkpoint[] public checkpointTotalSupply;
+    // off-chain data
+    string public tokenDetails;
 
-    bool public finishedIssuerMinting = false;
-    bool public finishedSTOMinting = false;
+    uint8 constant PERMISSION_KEY = 1;
+    uint8 constant TRANSFER_KEY = 2;
+    uint8 constant MINT_KEY = 3;
+    uint8 constant CHECKPOINT_KEY = 4;
+    uint8 constant BURN_KEY = 5;
 
-    mapping (bytes4 => bool) transferFunctions;
+    uint256 public granularity;
 
-    // Module list should be order agnostic!
-    mapping (uint8 => ModuleData[]) public modules;
+    // Value of current checkpoint
+    uint256 public currentCheckpointId;
 
-    uint8 public constant MAX_MODULES = 20;
+    // Used to temporarily halt all transactions
+    bool public transfersFrozen;
 
-    mapping (address => bool) public investorListed;
+    // Used to permanently halt all minting
+    bool public mintingFrozen;
+
+    // Used to permanently halt controller actions
+    bool public controllerDisabled;
+
+    // Address whitelisted by issuer as controller
+    address public controller;
+
+    // Records added modules - module list should be order agnostic!
+    mapping (uint8 => address[]) modules;
+
+    // Records information about the module
+    mapping (address => TokenLib.ModuleData) modulesToData;
+
+    // Records added module names - module list should be order agnostic!
+    mapping (bytes32 => address[]) names;
+
+    // Map each investor to a series of checkpoints
+    mapping (address => TokenLib.Checkpoint[]) checkpointBalances;
+
+    // List of checkpoints that relate to total supply
+    TokenLib.Checkpoint[] checkpointTotalSupply;
+
+    // Times at which each checkpoint was created
+    uint256[] checkpointTimes;
 
     // Emit at the time when module get added
-    event LogModuleAdded(
-        uint8 indexed _type,
+    event ModuleAdded(
+        uint8[] _types,
         bytes32 _name,
         address _moduleFactory,
         address _module,
@@ -70,56 +94,94 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
     );
 
     // Emit when the token details get updated
-    event LogUpdateTokenDetails(string _oldDetails, string _newDetails);
+    event UpdateTokenDetails(string _oldDetails, string _newDetails);
     // Emit when the granularity get changed
-    event LogGranularityChanged(uint256 _oldGranularity, uint256 _newGranularity);
+    event GranularityChanged(uint256 _oldGranularity, uint256 _newGranularity);
+    // Emit when Module get archived from the securityToken
+    event ModuleArchived(uint8[] _types, address _module, uint256 _timestamp);
+    // Emit when Module get unarchived from the securityToken
+    event ModuleUnarchived(uint8[] _types, address _module, uint256 _timestamp);
     // Emit when Module get removed from the securityToken
-    event LogModuleRemoved(uint8 indexed _type, address _module, uint256 _timestamp);
+    event ModuleRemoved(uint8[] _types, address _module, uint256 _timestamp);
     // Emit when the budget allocated to a module is changed
-    event LogModuleBudgetChanged(uint8 indexed _moduleType, address _module, uint256 _budget);
-    // Emit when all the transfers get freeze
-    event LogFreezeTransfers(bool _freeze, uint256 _timestamp);
+    event ModuleBudgetChanged(uint8[] _moduleTypes, address _module, uint256 _oldBudget, uint256 _budget);
+    // Emit when transfers are frozen or unfrozen
+    event FreezeTransfers(bool _status, uint256 _timestamp);
     // Emit when new checkpoint created
-    event LogCheckpointCreated(uint256 indexed _checkpointId, uint256 _timestamp);
-    // Emit when the minting get finished for the Issuer
-    event LogFinishMintingIssuer(uint256 _timestamp);
-    // Emit when the minting get finished for the STOs
-    event LogFinishMintingSTO(uint256 _timestamp);
-    // Change the STR address in the event of a upgrade
-    event LogChangeSTRAddress(address indexed _oldAddress, address indexed _newAddress);
+    event CheckpointCreated(uint256 indexed _checkpointId, uint256 _timestamp);
+    // Emit when is permanently frozen by the issuer
+    event FreezeMinting(uint256 _timestamp);
+    // Events to log minting and burning
+    event Minted(address indexed _to, uint256 _value);
+    event Burnt(address indexed _from, uint256 _value);
 
-    // If _fallback is true, then for STO module type we only allow the module if it is set, if it is not set we only allow the owner
-    // for other _moduleType we allow both issuer and module.
-    modifier onlyModule(uint8 _moduleType, bool _fallback) {
-      //Loop over all modules of type _moduleType
-        bool isModuleType = false;
-        for (uint8 i = 0; i < modules[_moduleType].length; i++) {
-            isModuleType = isModuleType || (modules[_moduleType][i].moduleAddress == msg.sender);
+    // Events to log controller actions
+    event SetController(address indexed _oldController, address indexed _newController);
+    event ForceTransfer(
+        address indexed _controller,
+        address indexed _from,
+        address indexed _to,
+        uint256 _value,
+        bool _verifyTransfer,
+        bytes _data
+    );
+    event ForceBurn(
+        address indexed _controller,
+        address indexed _from,
+        uint256 _value,
+        bool _verifyTransfer,
+        bytes _data
+    );
+    event DisableController(uint256 _timestamp);
+
+    function _isModule(address _module, uint8 _type) internal view returns (bool) {
+        require(modulesToData[_module].module == _module, "Wrong address");
+        require(!modulesToData[_module].isArchived, "Module archived");
+        for (uint256 i = 0; i < modulesToData[_module].moduleTypes.length; i++) {
+            if (modulesToData[_module].moduleTypes[i] == _type) {
+                return true;
+            }
         }
-        if (_fallback && !isModuleType) {
-            if (_moduleType == STO_KEY)
-                require(modules[_moduleType].length == 0 && msg.sender == owner, "Sender is not owner or STO module is attached");
-            else
-                require(msg.sender == owner, "Sender is not owner");
-        } else {
-            require(isModuleType, "Sender is not correct module type");
-        }
+        return false;
+    }
+
+    // Require msg.sender to be the specified module type
+    modifier onlyModule(uint8 _type) {
+        require(_isModule(msg.sender, _type));
         _;
     }
 
-    modifier checkGranularity(uint256 _amount) {
-        require(_amount % granularity == 0, "Unable to modify token balances at this granularity");
-        _;
-    }
-
-    // Checks whether the minting is allowed or not, check for the owner if owner is no the msg.sender then check
-    // for the finishedSTOMinting flag because only STOs and owner are allowed for minting
-    modifier isMintingAllowed() {
+    // Require msg.sender to be the specified module type or the owner of the token
+    modifier onlyModuleOrOwner(uint8 _type) {
         if (msg.sender == owner) {
-            require(!finishedIssuerMinting, "Minting is finished for Issuer");
+            _;
         } else {
-            require(!finishedSTOMinting, "Minting is finished for STOs");
+            require(_isModule(msg.sender, _type));
+            _;
         }
+    }
+
+    modifier checkGranularity(uint256 _value) {
+        require(_value % granularity == 0, "Invalid granularity");
+        _;
+    }
+
+    modifier isMintingAllowed() {
+        require(!mintingFrozen, "Minting frozen");
+        _;
+    }
+
+    modifier isEnabled(string _nameKey) {
+        require(IFeatureRegistry(featureRegistry).getFeatureStatus(_nameKey));
+        _;
+    }
+
+    /**
+     * @notice Revert if called by an account which is not a controller
+     */
+    modifier onlyController() {
+        require(msg.sender == controller, "Not controller");
+        require(!controllerDisabled, "Controller disabled");
         _;
     }
 
@@ -129,7 +191,7 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
      * @param _symbol Symbol of the Token
      * @param _decimals Decimals for the securityToken
      * @param _granularity granular level of the token
-     * @param _tokenDetails Details of the token that are stored off-chain (IPFS hash)
+     * @param _tokenDetails Details of the token that are stored off-chain
      * @param _polymathRegistry Contract address of the polymath registry
      */
     constructor (
@@ -148,18 +210,17 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
         updateFromRegistry();
         tokenDetails = _tokenDetails;
         granularity = _granularity;
-        transferFunctions[bytes4(keccak256("transfer(address,uint256)"))] = true;
-        transferFunctions[bytes4(keccak256("transferFrom(address,address,uint256)"))] = true;
-        transferFunctions[bytes4(keccak256("mint(address,uint256)"))] = true;
-        transferFunctions[bytes4(keccak256("burn(uint256)"))] = true;
+        securityTokenVersion = SemanticVersion(2,0,0);
     }
 
     /**
-     * @notice Function used to attach the module in security token
-     * @param _moduleFactory Contract address of the module factory that needs to be attached
-     * @param _data Data used for the intialization of the module factory variables
-     * @param _maxCost Maximum cost of the Module factory
-     * @param _budget Budget of the Module factory
+     * @notice Attachs a module to the SecurityToken
+     * @dev  E.G.: On deployment (through the STR) ST gets a TransferManager module attached to it
+     * @dev to control restrictions on transfers.
+     * @param _moduleFactory is the address of the module factory to be added
+     * @param _data is data packed into bytes used to further configure the module (See STO usage)
+     * @param _maxCost max amount of POLY willing to pay to the module.
+     * @param _budget max amount of ongoing POLY willing to assign to the module.
      */
     function addModule(
         address _moduleFactory,
@@ -167,260 +228,289 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
         uint256 _maxCost,
         uint256 _budget
     ) external onlyOwner nonReentrant {
-        _addModule(_moduleFactory, _data, _maxCost, _budget);
+        //Check that the module factory exists in the ModuleRegistry - will throw otherwise
+        IModuleRegistry(moduleRegistry).useModule(_moduleFactory);
+        IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
+        uint8[] memory moduleTypes = moduleFactory.getTypes();
+        uint256 moduleCost = moduleFactory.getSetupCost();
+        require(moduleCost <= _maxCost, "Invalid cost");
+        //Approve fee for module
+        ERC20(polyToken).approve(_moduleFactory, moduleCost);
+        //Creates instance of module from factory
+        address module = moduleFactory.deploy(_data);
+        require(modulesToData[module].module == address(0), "Module exists");
+        //Approve ongoing budget
+        ERC20(polyToken).approve(module, _budget);
+        //Add to SecurityToken module map
+        bytes32 moduleName = moduleFactory.getName();
+        uint256[] memory moduleIndexes = new uint256[](moduleTypes.length);
+        uint256 i;
+        for (i = 0; i < moduleTypes.length; i++) {
+            moduleIndexes[i] = modules[moduleTypes[i]].length;
+            modules[moduleTypes[i]].push(module);
+        }
+        modulesToData[module] = TokenLib.ModuleData(
+            moduleName, module, _moduleFactory, false, moduleTypes, moduleIndexes, names[moduleName].length
+        );
+        names[moduleName].push(module);
+        //Emit log event
+        /*solium-disable-next-line security/no-block-members*/
+        emit ModuleAdded(moduleTypes, moduleName, _moduleFactory, module, moduleCost, _budget, now);
     }
 
     /**
-    * @notice _addModule handles the attachment (or replacement) of modules for the ST
-    * @dev  E.G.: On deployment (through the STR) ST gets a TransferManager module attached to it
-    * @dev to control restrictions on transfers.
-    * @dev You are allowed to add a new moduleType if:
-    * @dev - there is no existing module of that type yet added
-    * @dev - the last member of the module list is replacable
-    * @param _moduleFactory is the address of the module factory to be added
-    * @param _data is data packed into bytes used to further configure the module (See STO usage)
-    * @param _maxCost max amount of POLY willing to pay to module. (WIP)
+    * @notice Archives a module attached to the SecurityToken
+    * @param _module address of module to archive
     */
-    function _addModule(address _moduleFactory, bytes _data, uint256 _maxCost, uint256 _budget) internal {
-        //Check that module exists in registry - will throw otherwise
-        IModuleRegistry(moduleRegistry).useModule(_moduleFactory);
-        IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
-        uint8 moduleType = moduleFactory.getType();
-        require(modules[moduleType].length < MAX_MODULES, "Limit of MAX MODULES is reached");
-        uint256 moduleCost = moduleFactory.setupCost();
-        require(moduleCost <= _maxCost, "Max Cost is always be greater than module cost");
-        //Approve fee for module
-        require(ERC20(polyToken).approve(_moduleFactory, moduleCost), "Not able to approve the module cost");
-        //Creates instance of module from factory
-        address module = moduleFactory.deploy(_data);
-        //Approve ongoing budget
-        require(ERC20(polyToken).approve(module, _budget), "Not able to approve the budget");
-        //Add to SecurityToken module map
-        bytes32 moduleName = moduleFactory.getName();
-        modules[moduleType].push(ModuleData(moduleName, module));
-        //Emit log event
-        emit LogModuleAdded(moduleType, moduleName, _moduleFactory, module, moduleCost, _budget, now);
+    function archiveModule(address _module) external onlyOwner {
+        TokenLib.archiveModule(modulesToData[_module], _module);
+    }
+
+    /**
+    * @notice Unarchives a module attached to the SecurityToken
+    * @param _module address of module to unarchive
+    */
+    function unarchiveModule(address _module) external onlyOwner {
+        TokenLib.unarchiveModule(modulesToData[_module], _module);
     }
 
     /**
     * @notice Removes a module attached to the SecurityToken
-    * @param _moduleType is which type of module we are trying to remove
-    * @param _moduleIndex is the index of the module within the chosen type
+    * @param _module address of module to unarchive
     */
-    function removeModule(uint8 _moduleType, uint8 _moduleIndex) external onlyOwner {
-        require(_moduleIndex < modules[_moduleType].length,
-        "Module index doesn't exist as per the choosen module type");
-        require(modules[_moduleType][_moduleIndex].moduleAddress != address(0),
-        "Module contract address should not be 0x");
-        //Take the last member of the list, and replace _moduleIndex with this, then shorten the list by one
-        emit LogModuleRemoved(_moduleType, modules[_moduleType][_moduleIndex].moduleAddress, now);
-        modules[_moduleType][_moduleIndex] = modules[_moduleType][modules[_moduleType].length - 1];
-        modules[_moduleType].length = modules[_moduleType].length - 1;
-    }
-
-    /**
-     * @notice Returns module list for a module type
-     * @param _moduleType is which type of module we are trying to get
-     * @param _moduleIndex is the index of the module within the chosen type
-     * @return bytes32
-     * @return address
-     */
-    function getModule(uint8 _moduleType, uint _moduleIndex) public view returns (bytes32, address) {
-        if (modules[_moduleType].length > 0) {
-            return (
-                modules[_moduleType][_moduleIndex].name,
-                modules[_moduleType][_moduleIndex].moduleAddress
-            );
-        } else {
-            return ("", address(0));
+    function removeModule(address _module) external onlyOwner {
+        require(modulesToData[_module].isArchived, "Not archived");
+        require(modulesToData[_module].module != address(0), "Module missing");
+        /*solium-disable-next-line security/no-block-members*/
+        emit ModuleRemoved(modulesToData[_module].moduleTypes, _module, now);
+        // Remove from module type list
+        uint8[] memory moduleTypes = modulesToData[_module].moduleTypes;
+        for (uint256 i = 0; i < moduleTypes.length; i++) {
+            _removeModuleWithIndex(moduleTypes[i], modulesToData[_module].moduleIndexes[i]);
+            /* modulesToData[_module].moduleType[moduleTypes[i]] = false; */
         }
-
+        // Remove from module names list
+        uint256 index = modulesToData[_module].nameIndex;
+        bytes32 name = modulesToData[_module].name;
+        uint256 length = names[name].length;
+        names[name][index] = names[name][length - 1];
+        names[name].length = length - 1;
+        if ((length - 1) != index) {
+            modulesToData[names[name][index]].nameIndex = index;
+        }
+        // Remove from modulesToData
+        delete modulesToData[_module];
     }
 
     /**
-     * @notice returns module list for a module name - will return first match
-     * @param _moduleType is which type of module we are trying to get
-     * @param _name is the name of the module within the chosen type
-     * @return bytes32
-     * @return address
-     */
-    function getModuleByName(uint8 _moduleType, bytes32 _name) public view returns (bytes32, address) {
-        if (modules[_moduleType].length > 0) {
-            for (uint256 i = 0; i < modules[_moduleType].length; i++) {
-                if (modules[_moduleType][i].name == _name) {
-                  return (
-                      modules[_moduleType][i].name,
-                      modules[_moduleType][i].moduleAddress
-                  );
+    * @notice Internal - Removes a module attached to the SecurityToken by index
+    */
+    function _removeModuleWithIndex(uint8 _type, uint256 _index) internal {
+        uint256 length = modules[_type].length;
+        modules[_type][_index] = modules[_type][length - 1];
+        modules[_type].length = length - 1;
+
+        if ((length - 1) != _index) {
+            //Need to find index of _type in moduleTypes of module we are moving
+            uint8[] memory newTypes = modulesToData[modules[_type][_index]].moduleTypes;
+            for (uint256 i = 0; i < newTypes.length; i++) {
+                if (newTypes[i] == _type) {
+                    modulesToData[modules[_type][_index]].moduleIndexes[i] = _index;
                 }
             }
-            return ("", address(0));
-        } else {
-            return ("", address(0));
         }
     }
 
     /**
-    * @notice allows the owner to withdraw unspent POLY stored by them on the ST.
+     * @notice Returns the data associated to a module
+     * @param _module address of the module
+     * @return bytes32 name
+     * @return address module address
+     * @return address module factory address
+     * @return bool module archived
+     * @return uint8 module type
+     */
+    function getModule(address _module) external view returns (bytes32, address, address, bool, uint8[]) {
+        return (modulesToData[_module].name,
+        modulesToData[_module].module,
+        modulesToData[_module].moduleFactory,
+        modulesToData[_module].isArchived,
+        modulesToData[_module].moduleTypes);
+    }
+
+    /**
+     * @notice Returns a list of modules that match the provided name
+     * @param _name name of the module
+     * @return address[] list of modules with this name
+     */
+    function getModulesByName(bytes32 _name) external view returns (address[]) {
+        return names[_name];
+    }
+
+    /**
+     * @notice Returns a list of modules that match the provided module type
+     * @param _type type of the module
+     * @return address[] list of modules with this type
+     */
+    function getModulesByType(uint8 _type) external view returns (address[]) {
+        return modules[_type];
+    }
+
+   /**
+    * @notice Allows the owner to withdraw unspent POLY stored by them on the ST or any ERC20 token.
     * @dev Owner can transfer POLY to the ST which will be used to pay for modules that require a POLY fee.
-    * @param _amount amount of POLY to withdraw
+    * @param _tokenContract Address of the ERC20Basic compliance token
+    * @param _value amount of POLY to withdraw
     */
-    function withdrawPoly(uint256 _amount) public onlyOwner {
-        require(ERC20(polyToken).transfer(owner, _amount), "In-sufficient balance");
+    function withdrawERC20(address _tokenContract, uint256 _value) external onlyOwner {
+        require(_tokenContract != address(0));
+        IERC20 token = IERC20(_tokenContract);
+        require(token.transfer(owner, _value));
     }
 
     /**
-    * @notice allows owner to approve more POLY to one of the modules
-    * @param _moduleType module type
-    * @param _moduleIndex module index
-    * @param _budget new budget
+
+    * @notice allows owner to increase/decrease POLY approval of one of the modules
+    * @param _module module address
+    * @param _change change in allowance
+    * @param _increase true if budget has to be increased, false if decrease
     */
-    function changeModuleBudget(uint8 _moduleType, uint8 _moduleIndex, uint256 _budget) public onlyOwner {
-        require(_moduleType != 0, "Module type cannot be zero");
-        require(_moduleIndex < modules[_moduleType].length, "Incorrrect module index");
-        uint256 _currentAllowance = IERC20(polyToken).allowance(address(this), modules[_moduleType][_moduleIndex].moduleAddress);
-        if (_budget < _currentAllowance) {
-            require(IERC20(polyToken).decreaseApproval(modules[_moduleType][_moduleIndex].moduleAddress, _currentAllowance.sub(_budget)), "Insufficient balance to decreaseApproval");
+    function changeModuleBudget(address _module, uint256 _change, bool _increase) external onlyOwner {
+        require(modulesToData[_module].module != address(0), "Module missing");
+        uint256 currentAllowance = IERC20(polyToken).allowance(address(this), _module);
+        uint256 newAllowance;
+        if (_increase) {
+            require(IERC20(polyToken).increaseApproval(_module, _change), "IncreaseApproval fail");
+            newAllowance = currentAllowance.add(_change);
         } else {
-            require(IERC20(polyToken).increaseApproval(modules[_moduleType][_moduleIndex].moduleAddress, _budget.sub(_currentAllowance)), "Insufficient balance to increaseApproval");
+            require(IERC20(polyToken).decreaseApproval(_module, _change), "Insufficient allowance");
+            newAllowance = currentAllowance.sub(_change);
         }
-        emit LogModuleBudgetChanged(_moduleType, modules[_moduleType][_moduleIndex].moduleAddress, _budget);
+        emit ModuleBudgetChanged(modulesToData[_module].moduleTypes, _module, currentAllowance, newAllowance);
     }
 
     /**
-     * @notice change the tokenDetails
+     * @notice updates the tokenDetails associated with the token
      * @param _newTokenDetails New token details
      */
-    function updateTokenDetails(string _newTokenDetails) public onlyOwner {
-        emit LogUpdateTokenDetails(tokenDetails, _newTokenDetails);
+    function updateTokenDetails(string _newTokenDetails) external onlyOwner {
+        emit UpdateTokenDetails(tokenDetails, _newTokenDetails);
         tokenDetails = _newTokenDetails;
     }
 
     /**
-    * @notice allows owner to change token granularity
+    * @notice Allows owner to change token granularity
     * @param _granularity granularity level of the token
     */
-    function changeGranularity(uint256 _granularity) public onlyOwner {
-        require(_granularity != 0, "Granularity can not be 0");
-        emit LogGranularityChanged(granularity, _granularity);
+    function changeGranularity(uint256 _granularity) external onlyOwner {
+        require(_granularity != 0, "Invalid granularity");
+        emit GranularityChanged(granularity, _granularity);
         granularity = _granularity;
     }
 
     /**
-    * @notice keeps track of the number of non-zero token holders
+    * @notice Keeps track of the number of non-zero token holders
     * @param _from sender of transfer
     * @param _to receiver of transfer
     * @param _value value of transfer
     */
-    function adjustInvestorCount(address _from, address _to, uint256 _value) internal {
-        if ((_value == 0) || (_from == _to)) {
-            return;
-        }
-        // Check whether receiver is a new token holder
-        if ((balanceOf(_to) == 0) && (_to != address(0))) {
-            investorCount = investorCount.add(1);
-        }
-        // Check whether sender is moving all of their tokens
-        if (_value == balanceOf(_from)) {
-            investorCount = investorCount.sub(1);
-        }
-        //Also adjust investor list
-        if (!investorListed[_to] && (_to != address(0))) {
-            investors.push(_to);
-            investorListed[_to] = true;
-        }
-
+    function _adjustInvestorCount(address _from, address _to, uint256 _value) internal {
+        TokenLib.adjustInvestorCount(investorData, _from, _to, _value, balanceOf(_to), balanceOf(_from));
     }
 
     /**
-    * @notice removes addresses with zero balances from the investors list
-    * @param _start Index in investor list at which to start removing zero balances
-    * @param _iters Max number of iterations of the for loop
-    * NB - pruning this list will mean you may not be able to iterate over investors on-chain as of a historical checkpoint
-    */
-    function pruneInvestors(uint256 _start, uint256 _iters) public onlyOwner {
-        for (uint256 i = _start; i < Math.min256(_start.add(_iters), investors.length); i++) {
-            if ((i < investors.length) && (balanceOf(investors[i]) == 0)) {
-                investorListed[investors[i]] = false;
-                investors[i] = investors[investors.length - 1];
-                investors.length--;
+     * @notice returns an array of investors
+     * NB - this length may differ from investorCount as it contains all investors that ever held tokens
+     * @return list of addresses
+     */
+    function getInvestors() external view returns(address[]) {
+        return investorData.investors;
+    }
+
+    /**
+     * @notice returns an array of investors at a given checkpoint
+     * NB - this length may differ from investorCount as it contains all investors that ever held tokens
+     * @param _checkpointId Checkpoint id at which investor list is to be populated
+     * @return list of investors
+     */
+    function getInvestorsAt(uint256 _checkpointId) external view returns(address[]) {
+        uint256 count = 0;
+        uint256 i;
+        for (i = 0; i < investorData.investors.length; i++) {
+            if (balanceOfAt(investorData.investors[i], _checkpointId) > 0) {
+                count++;
             }
         }
+        address[] memory investors = new address[](count);
+        count = 0;
+        for (i = 0; i < investorData.investors.length; i++) {
+            if (balanceOfAt(investorData.investors[i], _checkpointId) > 0) {
+                investors[count] = investorData.investors[i];
+                count++;
+            }
+        }
+        return investors;
     }
 
     /**
-     * @notice gets length of investors array
-     * NB - this length may differ from investorCount if list has not been pruned of zero balance investors
-     * @return length
+     * @notice generates subset of investors
+     * NB - can be used in batches if investor list is large
+     * @param _start Position of investor to start iteration from
+     * @param _end Position of investor to stop iteration at
+     * @return list of investors
      */
-    function getInvestorsLength() public view returns(uint256) {
-        return investors.length;
+    function iterateInvestors(uint256 _start, uint256 _end) external view returns(address[]) {
+        require(_end <= investorData.investors.length, "Invalid end");
+        address[] memory investors = new address[](_end.sub(_start));
+        uint256 index = 0;
+        for (uint256 i = _start; i < _end; i++) {
+            investors[index] = investorData.investors[i];
+            index++;
+        }
+        return investors;
     }
 
     /**
-     * @notice freeze all the transfers
+     * @notice Returns the investor count
+     * @return Investor count
      */
-    function freezeTransfers() public onlyOwner {
-        require(!freeze);
-        freeze = true;
-        emit LogFreezeTransfers(freeze, now);
+    function getInvestorCount() external view returns(uint256) {
+        return investorData.investorCount;
     }
 
     /**
-     * @notice un-freeze all the transfers
+     * @notice freezes transfers
      */
-    function unfreezeTransfers() public onlyOwner {
-        require(freeze);
-        freeze = false;
-        emit LogFreezeTransfers(freeze, now);
+    function freezeTransfers() external onlyOwner {
+        require(!transfersFrozen, "Already frozen");
+        transfersFrozen = true;
+        /*solium-disable-next-line security/no-block-members*/
+        emit FreezeTransfers(true, now);
     }
 
     /**
-     * @notice adjust totalsupply at checkpoint after minting or burning tokens
+     * @notice Unfreeze transfers
      */
-    function adjustTotalSupplyCheckpoints() internal {
-        adjustCheckpoints(checkpointTotalSupply, totalSupply());
+    function unfreezeTransfers() external onlyOwner {
+        require(transfersFrozen, "Not frozen");
+        transfersFrozen = false;
+        /*solium-disable-next-line security/no-block-members*/
+        emit FreezeTransfers(false, now);
     }
 
     /**
-     * @notice adjust token holder balance at checkpoint after a token transfer
+     * @notice Internal - adjusts totalSupply at checkpoint after minting or burning tokens
+     */
+    function _adjustTotalSupplyCheckpoints() internal {
+        TokenLib.adjustCheckpoints(checkpointTotalSupply, totalSupply(), currentCheckpointId);
+    }
+
+    /**
+     * @notice Internal - adjusts token holder balance at checkpoint after a token transfer
      * @param _investor address of the token holder affected
      */
-    function adjustBalanceCheckpoints(address _investor) internal {
-        adjustCheckpoints(checkpointBalances[_investor], balanceOf(_investor));
-    }
-
-    /**
-     * @notice store the changes to the checkpoint objects
-     * @param _checkpoints the affected checkpoint object array
-     * @param _newValue the new value that needs to be stored
-     */
-    function adjustCheckpoints(Checkpoint[] storage _checkpoints, uint256 _newValue) internal {
-        //No checkpoints set yet
-        if (currentCheckpointId == 0) {
-            return;
-        }
-        //No previous checkpoint data - add current balance against checkpoint
-        if (_checkpoints.length == 0) {
-            _checkpoints.push(
-                Checkpoint({
-                    checkpointId: currentCheckpointId,
-                    value: _newValue
-                })
-            );
-            return;
-        }
-        //No new checkpoints since last update
-        if (_checkpoints[_checkpoints.length - 1].checkpointId == currentCheckpointId) {
-            return;
-        }
-        //New checkpoint, so record balance
-        _checkpoints.push(
-            Checkpoint({
-                checkpointId: currentCheckpointId,
-                value: _newValue
-            })
-        );
+    function _adjustBalanceCheckpoints(address _investor) internal {
+        TokenLib.adjustCheckpoints(checkpointBalances[_investor], balanceOf(_investor), currentCheckpointId);
     }
 
     /**
@@ -430,10 +520,18 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
      * @return bool success
      */
     function transfer(address _to, uint256 _value) public returns (bool success) {
-        adjustInvestorCount(msg.sender, _to, _value);
-        require(verifyTransfer(msg.sender, _to, _value), "Transfer is not valid");
-        adjustBalanceCheckpoints(msg.sender);
-        adjustBalanceCheckpoints(_to);
+        return transferWithData(_to, _value, "");
+    }
+
+    /**
+     * @notice Overloaded version of the transfer function
+     * @param _to receiver of transfer
+     * @param _value value of transfer
+     * @param _data data to indicate validation
+     * @return bool success
+     */
+    function transferWithData(address _to, uint256 _value, bytes _data) public returns (bool success) {
+        require(_updateTransfer(msg.sender, _to, _value, _data), "Transfer invalid");
         require(super.transfer(_to, _value));
         return true;
     }
@@ -445,99 +543,162 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
      * @param _value value of transfer
      * @return bool success
      */
-    function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
-        adjustInvestorCount(_from, _to, _value);
-        require(verifyTransfer(_from, _to, _value), "Transfer is not valid");
-        adjustBalanceCheckpoints(_from);
-        adjustBalanceCheckpoints(_to);
+    function transferFrom(address _from, address _to, uint256 _value) public returns(bool) {
+        return transferFromWithData(_from, _to, _value, "");
+    }
+
+    /**
+     * @notice Overloaded version of the transferFrom function
+     * @param _from sender of transfer
+     * @param _to receiver of transfer
+     * @param _value value of transfer
+     * @param _data data to indicate validation
+     * @return bool success
+     */
+    function transferFromWithData(address _from, address _to, uint256 _value, bytes _data) public returns(bool) {
+        require(_updateTransfer(_from, _to, _value, _data), "Transfer invalid");
         require(super.transferFrom(_from, _to, _value));
         return true;
     }
 
     /**
-     * @notice validate transfer with TransferManager module if it exists
-     * @dev TransferManager module has a key of 2
+     * @notice Updates internal variables when performing a transfer
      * @param _from sender of transfer
      * @param _to receiver of transfer
-     * @param _amount value of transfer
+     * @param _value value of transfer
+     * @param _data data to indicate validation
+     * @return bool success
+     */
+    function _updateTransfer(address _from, address _to, uint256 _value, bytes _data) internal nonReentrant returns(bool) {
+        // NB - the ordering in this function implies the following:
+        //  - investor counts are updated before transfer managers are called - i.e. transfer managers will see
+        //investor counts including the current transfer.
+        //  - checkpoints are updated after the transfer managers are called. This allows TMs to create
+        //checkpoints as though they have been created before the current transactions,
+        //  - to avoid the situation where a transfer manager transfers tokens, and this function is called recursively,
+        //the function is marked as nonReentrant. This means that no TM can transfer (or mint / burn) tokens.
+        _adjustInvestorCount(_from, _to, _value);
+        bool verified = _verifyTransfer(_from, _to, _value, _data, true);
+        _adjustBalanceCheckpoints(_from);
+        _adjustBalanceCheckpoints(_to);
+        return verified;
+    }
+
+    /**
+     * @notice Validate transfer with TransferManager module if it exists
+     * @dev TransferManager module has a key of 2
+     * @dev _isTransfer boolean flag is the deciding factor for whether the
+     * state variables gets modified or not within the different modules. i.e isTransfer = true
+     * leads to change in the modules environment otherwise _verifyTransfer() works as a read-only
+     * function (no change in the state).
+     * @param _from sender of transfer
+     * @param _to receiver of transfer
+     * @param _value value of transfer
+     * @param _data data to indicate validation
+     * @param _isTransfer whether transfer is being executed
      * @return bool
      */
-    function verifyTransfer(address _from, address _to, uint256 _amount) public checkGranularity(_amount) returns (bool) {
-        if (!freeze) {
-            bool isTransfer = false;
-            if (transferFunctions[getSig(msg.data)]) {
-              isTransfer = true;
-            }
-            if (modules[TRANSFERMANAGER_KEY].length == 0) {
-                return true;
-            }
+    function _verifyTransfer(
+        address _from,
+        address _to,
+        uint256 _value,
+        bytes _data,
+        bool _isTransfer
+    ) internal checkGranularity(_value) returns (bool) {
+        if (!transfersFrozen) {
             bool isInvalid = false;
             bool isValid = false;
             bool isForceValid = false;
-            for (uint8 i = 0; i < modules[TRANSFERMANAGER_KEY].length; i++) {
-                ITransferManager.Result valid = ITransferManager(modules[TRANSFERMANAGER_KEY][i].moduleAddress).verifyTransfer(_from, _to, _amount, isTransfer);
-                if (valid == ITransferManager.Result.INVALID) {
-                    isInvalid = true;
-                }
-                if (valid == ITransferManager.Result.VALID) {
-                    isValid = true;
-                }
-                if (valid == ITransferManager.Result.FORCE_VALID) {
-                    isForceValid = true;
+            bool unarchived = false;
+            address module;
+            for (uint256 i = 0; i < modules[TRANSFER_KEY].length; i++) {
+                module = modules[TRANSFER_KEY][i];
+                if (!modulesToData[module].isArchived) {
+                    unarchived = true;
+                    ITransferManager.Result valid = ITransferManager(module).verifyTransfer(_from, _to, _value, _data, _isTransfer);
+                    if (valid == ITransferManager.Result.INVALID) {
+                        isInvalid = true;
+                    } else if (valid == ITransferManager.Result.VALID) {
+                        isValid = true;
+                    } else if (valid == ITransferManager.Result.FORCE_VALID) {
+                        isForceValid = true;
+                    }
                 }
             }
-            return isForceValid ? true : (isInvalid ? false : isValid);
-      }
-      return false;
+            // If no unarchived modules, return true by default
+            return unarchived ? (isForceValid ? true : (isInvalid ? false : isValid)) : true;
+        }
+        return false;
     }
 
     /**
-     * @notice End token minting period permanently for Issuer
+     * @notice Validates a transfer with a TransferManager module if it exists
+     * @dev TransferManager module has a key of 2
+     * @param _from sender of transfer
+     * @param _to receiver of transfer
+     * @param _value value of transfer
+     * @param _data data to indicate validation
+     * @return bool
      */
-    function finishMintingIssuer() public onlyOwner {
-        finishedIssuerMinting = true;
-        emit LogFinishMintingIssuer(now);
+    function verifyTransfer(address _from, address _to, uint256 _value, bytes _data) public returns (bool) {
+        return _verifyTransfer(_from, _to, _value, _data, false);
     }
 
     /**
-     * @notice End token minting period permanently for STOs
+     * @notice Permanently freeze minting of this security token.
+     * @dev It MUST NOT be possible to increase `totalSuppy` after this function is called.
      */
-    function finishMintingSTO() public onlyOwner {
-        finishedSTOMinting = true;
-        emit LogFinishMintingSTO(now);
+    function freezeMinting() external isMintingAllowed() isEnabled("freezeMintingAllowed") onlyOwner {
+        mintingFrozen = true;
+        /*solium-disable-next-line security/no-block-members*/
+        emit FreezeMinting(now);
+    }
+
+    /**
+     * @notice Mints new tokens and assigns them to the target _investor.
+     * @dev Can only be called by the issuer or STO attached to the token
+     * @param _investor Address where the minted tokens will be delivered
+     * @param _value Number of tokens be minted
+     * @return success
+     */
+    function mint(address _investor, uint256 _value) public returns (bool success) {
+        return mintWithData(_investor, _value, "");
     }
 
     /**
      * @notice mints new tokens and assigns them to the target _investor.
-     * @dev Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
-     * @param _investor Address to whom the minted tokens will be dilivered
-     * @param _amount Number of tokens get minted
+     * @dev Can only be called by the issuer or STO attached to the token
+     * @param _investor Address where the minted tokens will be delivered
+     * @param _value Number of tokens be minted
+     * @param _data data to indicate validation
      * @return success
      */
-    function mint(address _investor, uint256 _amount) public onlyModule(STO_KEY, true) checkGranularity(_amount) isMintingAllowed() returns (bool success) {
-        require(_investor != address(0), "Investor address should not be 0x");
-        adjustInvestorCount(address(0), _investor, _amount);
-        require(verifyTransfer(address(0), _investor, _amount), "Transfer is not valid");
-        adjustBalanceCheckpoints(_investor);
-        adjustTotalSupplyCheckpoints();
-        totalSupply_ = totalSupply_.add(_amount);
-        balances[_investor] = balances[_investor].add(_amount);
-        emit Minted(_investor, _amount);
-        emit Transfer(address(0), _investor, _amount);
+    function mintWithData(
+        address _investor,
+        uint256 _value,
+        bytes _data
+        ) public onlyModuleOrOwner(MINT_KEY) isMintingAllowed() returns (bool success) {
+        require(_investor != address(0), "Investor is 0");
+        require(_updateTransfer(address(0), _investor, _value, _data), "Transfer invalid");
+        _adjustTotalSupplyCheckpoints();
+        totalSupply_ = totalSupply_.add(_value);
+        balances[_investor] = balances[_investor].add(_value);
+        emit Minted(_investor, _value);
+        emit Transfer(address(0), _investor, _value);
         return true;
     }
 
     /**
-     * @notice mints new tokens and assigns them to the target _investor.
-     * Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
+     * @notice Mints new tokens and assigns them to the target _investor.
+     * @dev Can only be called by the issuer or STO attached to the token.
      * @param _investors A list of addresses to whom the minted tokens will be dilivered
-     * @param _amounts A list of number of tokens get minted and transfer to corresponding address of the investor from _investor[] list
+     * @param _values A list of number of tokens get minted and transfer to corresponding address of the investor from _investor[] list
      * @return success
      */
-    function mintMulti(address[] _investors, uint256[] _amounts) public onlyModule(STO_KEY, true) returns (bool success) {
-        require(_investors.length == _amounts.length, "Mis-match in the length of the arrays");
+    function mintMulti(address[] _investors, uint256[] _values) external returns (bool success) {
+        require(_investors.length == _values.length, "Incorrect inputs");
         for (uint256 i = 0; i < _investors.length; i++) {
-            mint(_investors[i], _amounts[i]);
+            mint(_investors[i], _values[i]);
         }
         return true;
     }
@@ -552,67 +713,65 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
      * @return success
      */
     function checkPermission(address _delegate, address _module, bytes32 _perm) public view returns(bool) {
-        if (modules[PERMISSIONMANAGER_KEY].length == 0) {
-            return false;
+        for (uint256 i = 0; i < modules[PERMISSION_KEY].length; i++) {
+            if (!modulesToData[modules[PERMISSION_KEY][i]].isArchived)
+                return TokenLib.checkPermission(modules[PERMISSION_KEY], _delegate, _module, _perm);
         }
-
-        for (uint8 i = 0; i < modules[PERMISSIONMANAGER_KEY].length; i++) {
-            if (IPermissionManager(modules[PERMISSIONMANAGER_KEY][i].moduleAddress).checkPermission(_delegate, _module, _perm)) {
-                return true;
-            }
-        }
+        return false;
     }
 
-    /**
-     * @notice used to set the token Burner address. It only be called by the owner
-     * @param _tokenBurner Address of the token burner contract
-     */
-    function setTokenBurner(address _tokenBurner) public onlyOwner {
-        tokenBurner = ITokenBurner(_tokenBurner);
+    function _burn(address _from, uint256 _value, bytes _data) internal returns(bool) {
+        require(_value <= balances[_from], "Value too high");
+        bool verified = _updateTransfer(_from, address(0), _value, _data);
+        _adjustTotalSupplyCheckpoints();
+        balances[_from] = balances[_from].sub(_value);
+        totalSupply_ = totalSupply_.sub(_value);
+        emit Burnt(_from, _value);
+        emit Transfer(_from, address(0), _value);
+        return verified;
     }
 
     /**
      * @notice Burn function used to burn the securityToken
-     * @param _value No. of token that get burned
+     * @param _value No. of tokens that get burned
+     * @param _data data to indicate validation
      */
-    function burn(uint256 _value) checkGranularity(_value) public {
-        adjustInvestorCount(msg.sender, address(0), _value);
-        require(tokenBurner != address(0), "Token Burner contract address is not set yet");
-        require(verifyTransfer(msg.sender, address(0), _value), "Transfer is not valid");
-        require(_value <= balances[msg.sender], "Value should no be greater than the balance of msg.sender");
-        adjustBalanceCheckpoints(msg.sender);
-        adjustTotalSupplyCheckpoints();
-        // no need to require value <= totalSupply, since that would imply the
-        // sender's balance is greater than the totalSupply, which *should* be an assertion failure
-
-        balances[msg.sender] = balances[msg.sender].sub(_value);
-        require(tokenBurner.burn(msg.sender, _value), "Token burner process is not validated");
-        totalSupply_ = totalSupply_.sub(_value);
-        emit Burnt(msg.sender, _value);
-        emit Transfer(msg.sender, address(0), _value);
+    function burnWithData(uint256 _value, bytes _data) public onlyModule(BURN_KEY) {
+        require(_burn(msg.sender, _value, _data), "Burn invalid");
     }
 
     /**
-     * @notice Get function signature from _data
-     * @param _data passed data
-     * @return bytes4 sig
+     * @notice Burn function used to burn the securityToken on behalf of someone else
+     * @param _from Address for whom to burn tokens
+     * @param _value No. of tokens that get burned
+     * @param _data data to indicate validation
      */
-    function getSig(bytes _data) internal pure returns (bytes4 sig) {
-        uint len = _data.length < 4 ? _data.length : 4;
-        for (uint i = 0; i < len; i++) {
-            sig = bytes4(uint(sig) + uint(_data[i]) * (2 ** (8 * (len - 1 - i))));
-        }
+    function burnFromWithData(address _from, uint256 _value, bytes _data) public onlyModule(BURN_KEY) {
+        require(_value <= allowed[_from][msg.sender], "Value too high");
+        allowed[_from][msg.sender] = allowed[_from][msg.sender].sub(_value);
+        require(_burn(_from, _value, _data), "Burn invalid");
     }
 
     /**
      * @notice Creates a checkpoint that can be used to query historical balances / totalSuppy
      * @return uint256
      */
-    function createCheckpoint() public onlyModule(CHECKPOINT_KEY, true) returns(uint256) {
+    function createCheckpoint() external onlyModuleOrOwner(CHECKPOINT_KEY) returns(uint256) {
         require(currentCheckpointId < 2**256 - 1);
         currentCheckpointId = currentCheckpointId + 1;
-        emit LogCheckpointCreated(currentCheckpointId, now);
+        /*solium-disable-next-line security/no-block-members*/
+        checkpointTimes.push(now);
+        /*solium-disable-next-line security/no-block-members*/
+        emit CheckpointCreated(currentCheckpointId, now);
         return currentCheckpointId;
+    }
+
+    /**
+     * @notice Gets list of times that checkpoints were created
+     * @return List of checkpoint times
+     */
+    function getCheckpointTimes() external view returns(uint256[]) {
+        return checkpointTimes;
     }
 
     /**
@@ -620,50 +779,9 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
      * @param _checkpointId Checkpoint ID to query
      * @return uint256
      */
-    function totalSupplyAt(uint256 _checkpointId) public view returns(uint256) {
-        return getValueAt(checkpointTotalSupply, _checkpointId, totalSupply());
-    }
-
-    /**
-     * @notice Queries value at a defined checkpoint
-     * @param checkpoints is array of Checkpoint objects
-     * @param _checkpointId Checkpoint ID to query
-     * @param _currentValue Current value of checkpoint
-     * @return uint256
-     */
-    function getValueAt(Checkpoint[] storage checkpoints, uint256 _checkpointId, uint256 _currentValue) internal view returns(uint256) {
+    function totalSupplyAt(uint256 _checkpointId) external view returns(uint256) {
         require(_checkpointId <= currentCheckpointId);
-        //Checkpoint id 0 is when the token is first created - everyone has a zero balance
-        if (_checkpointId == 0) {
-          return 0;
-        }
-        if (checkpoints.length == 0) {
-            return _currentValue;
-        }
-        if (checkpoints[0].checkpointId >= _checkpointId) {
-            return checkpoints[0].value;
-        }
-        if (checkpoints[checkpoints.length - 1].checkpointId < _checkpointId) {
-            return _currentValue;
-        }
-        if (checkpoints[checkpoints.length - 1].checkpointId == _checkpointId) {
-            return checkpoints[checkpoints.length - 1].value;
-        }
-        uint256 min = 0;
-        uint256 max = checkpoints.length - 1;
-        while (max > min) {
-            uint256 mid = (max + min) / 2;
-            if (checkpoints[mid].checkpointId == _checkpointId) {
-                max = mid;
-                break;
-            }
-            if (checkpoints[mid].checkpointId < _checkpointId) {
-                min = mid + 1;
-            } else {
-                max = mid;
-            }
-        }
-        return checkpoints[max].value;
+        return TokenLib.getValueAt(checkpointTotalSupply, _checkpointId, totalSupply());
     }
 
     /**
@@ -672,7 +790,71 @@ contract SecurityToken is ISecurityToken, ReentrancyGuard, RegistryUpdater {
      * @param _checkpointId Checkpoint ID to query as of
      */
     function balanceOfAt(address _investor, uint256 _checkpointId) public view returns(uint256) {
-        return getValueAt(checkpointBalances[_investor], _checkpointId, balanceOf(_investor));
+        require(_checkpointId <= currentCheckpointId);
+        return TokenLib.getValueAt(checkpointBalances[_investor], _checkpointId, balanceOf(_investor));
+    }
+
+    /**
+     * @notice Used by the issuer to set the controller addresses
+     * @param _controller address of the controller
+     */
+    function setController(address _controller) public onlyOwner {
+        require(!controllerDisabled);
+        emit SetController(controller, _controller);
+        controller = _controller;
+    }
+
+    /**
+     * @notice Used by the issuer to permanently disable controller functionality
+     * @dev enabled via feature switch "disableControllerAllowed"
+     */
+    function disableController() external isEnabled("disableControllerAllowed") onlyOwner {
+        require(!controllerDisabled);
+        controllerDisabled = true;
+        delete controller;
+        /*solium-disable-next-line security/no-block-members*/
+        emit DisableController(now);
+    }
+
+    /**
+     * @notice Used by a controller to execute a forced transfer
+     * @param _from address from which to take tokens
+     * @param _to address where to send tokens
+     * @param _value amount of tokens to transfer
+     * @param _data data to indicate validation
+     * @param _log data attached to the transfer by controller to emit in event
+     */
+    function forceTransfer(address _from, address _to, uint256 _value, bytes _data, bytes _log) public onlyController {
+        require(_to != address(0));
+        require(_value <= balances[_from]);
+        bool verified = _updateTransfer(_from, _to, _value, _data);
+        balances[_from] = balances[_from].sub(_value);
+        balances[_to] = balances[_to].add(_value);
+        emit ForceTransfer(msg.sender, _from, _to, _value, verified, _log);
+        emit Transfer(_from, _to, _value);
+    }
+
+    /**
+     * @notice Used by a controller to execute a forced burn
+     * @param _from address from which to take tokens
+     * @param _value amount of tokens to transfer
+     * @param _data data to indicate validation
+     * @param _log data attached to the transfer by controller to emit in event
+     */
+    function forceBurn(address _from, uint256 _value, bytes _data, bytes _log) public onlyController {
+        bool verified = _burn(_from, _value, _data);
+        emit ForceBurn(msg.sender, _from, _value, verified, _log);
+    }
+
+    /**
+     * @notice Returns the version of the SecurityToken
+     */
+    function getVersion() external view returns(uint8[]) {
+        uint8[] memory _version = new uint8[](3);
+        _version[0] = securityTokenVersion.major;
+        _version[1] = securityTokenVersion.minor;
+        _version[2] = securityTokenVersion.patch;
+        return _version;
     }
 
 }

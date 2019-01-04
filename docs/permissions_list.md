@@ -11,26 +11,97 @@
     </thead>
     <tbody>
         <tr>
-            <td rowspan=4> Checkpoint </td>
-            <td rowspan=2>ERC20DividendCheckpoint</td>
+            <td rowspan=24> Checkpoint </td>
+            <td rowspan=12>ERC20DividendCheckpoint</td>
             <td>pushDividendPayment()</td>
-            <td rowspan=4> withPerm(DISTRIBUTE)</td>
+            <td rowspan=2> withPerm(DISTRIBUTE)</td>
         </tr>
         <tr>
             <td>pushDividendPaymentToAddresses()</td>
         </tr>
         <tr>
-            <td rowspan=2>EtherDividendCheckpoint</td>
+            <td> setDefaultExcluded() </td>
+            <td rowspan=9> withPerm(MANAGE) </td>
+        </tr>
+        <tr>
+            <td> setWithholding() </td>
+        </tr>
+        <tr>
+            <td> setWithholdingFixed() </td>
+        </tr>
+        <tr>
+            <td> createDividend() </td>
+        </tr>
+        <tr>
+            <td> createDividendWithCheckpoint() </td>
+        </tr>
+        <tr>
+            <td> createDividendWithExclusions() </td>
+        </tr>
+        <tr>
+            <td> createDividendWithCheckpointAndExclusions() </td>
+        </tr>
+        <tr>
+            <td> reclaimDividend() </td>
+        </tr>
+        <tr>
+            <td> withdrawWithholding() </td>
+        </tr>
+        </tr>
+            <td> createCheckpoint() </td>
+            <td> withPerm(CHECKPOINT) </td>
+        </tr>
+        <tr>
+            <td rowspan=12>EtherDividendCheckpoint</td>
             <td>pushDividendPayment()</td>
+            <td rowspan=2> withPerm(DISTRIBUTE) </td>
         </tr>
         <tr>
             <td>pushDividendPaymentToAddresses()</td>
+        </tr>
+        <tr>
+            <td> setDefaultExcluded() </td>
+            <td rowspan=9> withPerm(MANAGE) </td>
+        </tr>
+        <tr>
+            <td> setWithholding() </td>
+        </tr>
+        <tr>
+            <td> setWithholdingFixed() </td>
+        </tr>
+        <tr>
+            <td> createDividend() </td>
+        </tr>
+        <tr>
+            <td> createDividendWithCheckpoint() </td>
+        </tr>
+        <tr>
+            <td> createDividendWithExclusions() </td>
+        </tr>
+        <tr>
+            <td> createDividendWithCheckpointAndExclusions() </td>
+        </tr>
+        <tr>
+            <td> reclaimDividend() </td>
+        </tr>
+        <tr>
+            <td> withdrawWithholding() </td>
+        </tr>
+        </tr>
+            <td> createCheckpoint() </td>
+            <td> withPerm(CHECKPOINT) </td>
         </tr>
          <tr>
-            <td> PermissionManager </td>
-            <td>GeneralPermissionManager</td>
-            <td>addPermission()</td>
-            <td> withPerm(CHANGE_PERMISSION)</td>
+            <td rowspan=3> PermissionManager </td>
+            <td rowspan=3>GeneralPermissionManager</td>
+            <td>addDelegate()</td>
+            <td rowspan=3> withPerm(CHANGE_PERMISSION)</td>
+        </tr>
+        <tr>
+            <td> changePermission() </td>
+        </tr>
+        <tr>
+            <td> changePermissionMulti() </td>
         </tr>
         <tr>
             <td rowspan=10>STO</td>
@@ -72,7 +143,7 @@
             <td>allocateTokensMulti()</td>
         </tr>
         <tr>
-            <td rowspan=14>TransferManager</td>
+            <td rowspan=39>TransferManager</td>
             <td>CountTransferManager</td>
             <td>changeHolderCount()</td>
             <td>withPerm(ADMIN)</td>
@@ -119,9 +190,86 @@
           <td>revokeManualBlocking()</td>
         </tr>
         <tr>
-          <td>PercentageTransferManager</td>
+          <td rowspan=4>PercentageTransferManager</td>
           <td>modifyWhitelist()</td>
-          <td>withPerm(WHITELIST)</td>
+          <td rowspan=2>withPerm(WHITELIST)</td>
+        </tr>
+        <tr>
+            <td> modifyWhitelistMulti() </td>
+        </tr>
+        <tr>
+            <td> setAllowPrimaryIssuance() </td>
+            <td rowspan=2> withPerm(ADMIN) </td>
+        </tr>
+        <tr>
+            <td> changeHolderPercentage() </td>
+        </tr>
+        <tr>
+            <td rowspan=4> LockupVolumeRestrictionTM</td>
+            <td>addLockup()</td>
+            <td rowspan=4> withPerm(ADMIN) </td>
+        </tr>
+        <tr>
+            <td> addLockUpMulti() </td>
+        </tr>
+        <tr>
+            <td> removeLockUp() </td>
+        </tr>
+        <tr>
+            <td> modifyLockUp() </td>
+        </tr>
+        <tr>
+            <td rowspan=17> SingleTradeVolumeRestrictionTM </td>
+            <td> setAllowPrimaryIssuance() </td>
+            <td rowspan=17> withPerm(ADMIN) </td>
+        </tr>
+        <tr>
+            <td>changeTransferLimitToPercentage()</td>
+        </tr>
+        <tr>
+            <td>changeTransferLimitToTokens()</td>
+        </tr>
+        <tr>
+            <td>changeGlobalLimitInTokens()</td>
+        </tr>
+        <tr>
+            <td>changeGlobalLimitInPercentage()</td>
+        </tr>
+        <tr>
+            <td>addExemptWallet()</td>
+        </tr>
+        <tr>
+            <td>removeExemptWallet()</td>
+        </tr>
+        <tr>
+            <td>addExemptWalletMulti()</td>
+        </tr>
+        <tr>
+            <td>removeExemptWalletMulti()</td>
+        </tr>
+        <tr>
+            <td>setTransferLimitInTokens()</td>
+        </tr>
+        <tr>
+            <td>setTransferLimitInPercentage()</td>
+        </tr>
+        <tr>
+            <td>removeTransferLimitInPercentage()</td>
+        </tr>
+        <tr>
+            <td>removeTransferLimitInTokens()</td>
+        </tr>
+        <tr>
+            <td>setTransferLimitInTokensMulti()</td>
+        </tr>
+        <tr>
+            <td>setTransferLimitInPercentageMulti()</td>
+        </tr>
+        <tr>
+            <td>removeTransferLimitInTokensMulti()</td>
+        </tr>
+        <tr>
+            <td> removeTransferLimitInPercentageMulti </td>
         </tr>
     </tbody>
  </table>

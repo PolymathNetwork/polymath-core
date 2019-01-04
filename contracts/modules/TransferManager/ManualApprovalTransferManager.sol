@@ -3,15 +3,6 @@ pragma solidity ^0.4.24;
 import "./ITransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
-/////////////////////
-// Module permissions
-/////////////////////
-//                                        Owner       TRANSFER_APPROVAL
-// addManualApproval                        X                 X
-// addManualBlocking                        X                 X
-// revokeManualApproval                     X                 X
-// revokeManualBlocking                     X                 X
-
 /**
  * @title Transfer Manager module for manually approving or blocking transactions between accounts
  */
@@ -43,31 +34,31 @@ contract ManualApprovalTransferManager is ITransferManager {
     //Store mappings of address => address with ManualBlockings
     mapping (address => mapping (address => ManualBlocking)) public manualBlockings;
 
-    event LogAddManualApproval(
-        address _from,
-        address _to,
+    event AddManualApproval(
+        address indexed _from,
+        address indexed _to,
         uint256 _allowance,
         uint256 _expiryTime,
-        address _addedBy
+        address indexed _addedBy
     );
 
-    event LogAddManualBlocking(
-        address _from,
-        address _to,
+    event AddManualBlocking(
+        address indexed _from,
+        address indexed _to,
         uint256 _expiryTime,
-        address _addedBy
+        address indexed _addedBy
     );
 
-    event LogRevokeManualApproval(
-        address _from,
-        address _to,
-        address _addedBy
+    event RevokeManualApproval(
+        address indexed _from,
+        address indexed _to,
+        address indexed _addedBy
     );
 
-    event LogRevokeManualBlocking(
-        address _from,
-        address _to,
-        address _addedBy
+    event RevokeManualBlocking(
+        address indexed _from,
+        address indexed _to,
+        address indexed _addedBy
     );
 
     /**
@@ -77,7 +68,7 @@ contract ManualApprovalTransferManager is ITransferManager {
      */
     constructor (address _securityToken, address _polyAddress)
     public
-    IModule(_securityToken, _polyAddress)
+    Module(_securityToken, _polyAddress)
     {
     }
 
@@ -88,22 +79,22 @@ contract ManualApprovalTransferManager is ITransferManager {
         return bytes4(0);
     }
 
-    /**
-    * @notice default implementation of verifyTransfer used by SecurityToken
-    * If the transfer request comes from the STO, it only checks that the investor is in the whitelist
-    * If the transfer request comes from a token holder, it checks that:
-    * a) Both are on the whitelist
-    * b) Seller's sale lockup period is over
-    * c) Buyer's purchase lockup is over
-    */
-    function verifyTransfer(address _from, address _to, uint256 _amount, bool _isTransfer) public returns(Result) {
+    /** @notice Used to verify the transfer transaction and allow a manually approved transqaction to bypass other restrictions
+     * @param _from Address of the sender
+     * @param _to Address of the receiver
+     * @param _amount The amount of tokens to transfer
+     * @param _isTransfer Whether or not this is an actual transfer or just a test to see if the tokens would be transferrable
+     */
+    function verifyTransfer(address _from, address _to, uint256 _amount, bytes /* _data */, bool _isTransfer) public returns(Result) {
         // function must only be called by the associated security token if _isTransfer == true
-        require(_isTransfer == false || msg.sender == securityToken, "Sender is not owner");
+        require(_isTransfer == false || msg.sender == securityToken, "Sender is not the owner");
         // manual blocking takes precidence over manual approval
         if (!paused) {
+            /*solium-disable-next-line security/no-block-members*/
             if (manualBlockings[_from][_to].expiryTime >= now) {
                 return Result.INVALID;
             }
+            /*solium-disable-next-line security/no-block-members*/
             if ((manualApprovals[_from][_to].expiryTime >= now) && (manualApprovals[_from][_to].allowance >= _amount)) {
                 if (_isTransfer) {
                     manualApprovals[_from][_to].allowance = manualApprovals[_from][_to].allowance.sub(_amount);
@@ -115,62 +106,60 @@ contract ManualApprovalTransferManager is ITransferManager {
     }
 
     /**
-    * @notice adds a pair of addresses to manual approvals
+    * @notice Adds a pair of addresses to manual approvals
     * @param _from is the address from which transfers are approved
     * @param _to is the address to which transfers are approved
     * @param _allowance is the approved amount of tokens
     * @param _expiryTime is the time until which the transfer is allowed
     */
     function addManualApproval(address _from, address _to, uint256 _allowance, uint256 _expiryTime) public withPerm(TRANSFER_APPROVAL) {
-        require(_from != address(0), "Invalid from address");
         require(_to != address(0), "Invalid to address");
+        /*solium-disable-next-line security/no-block-members*/
         require(_expiryTime > now, "Invalid expiry time");
         require(manualApprovals[_from][_to].allowance == 0, "Approval already exists");
         manualApprovals[_from][_to] = ManualApproval(_allowance, _expiryTime);
-        emit LogAddManualApproval(_from, _to, _allowance, _expiryTime, msg.sender);
+        emit AddManualApproval(_from, _to, _allowance, _expiryTime, msg.sender);
     }
 
     /**
-    * @notice adds a pair of addresses to manual blockings
+    * @notice Adds a pair of addresses to manual blockings
     * @param _from is the address from which transfers are blocked
     * @param _to is the address to which transfers are blocked
     * @param _expiryTime is the time until which the transfer is blocked
     */
     function addManualBlocking(address _from, address _to, uint256 _expiryTime) public withPerm(TRANSFER_APPROVAL) {
-        require(_from != address(0), "Invalid from address");
         require(_to != address(0), "Invalid to address");
+        /*solium-disable-next-line security/no-block-members*/
         require(_expiryTime > now, "Invalid expiry time");
-        require(manualApprovals[_from][_to].expiryTime == 0, "Blocking already exists");
+        require(manualBlockings[_from][_to].expiryTime == 0, "Blocking already exists");
         manualBlockings[_from][_to] = ManualBlocking(_expiryTime);
-        emit LogAddManualBlocking(_from, _to, _expiryTime, msg.sender);
+        emit AddManualBlocking(_from, _to, _expiryTime, msg.sender);
     }
 
     /**
-    * @notice removes a pairs of addresses from manual approvals
+    * @notice Removes a pairs of addresses from manual approvals
     * @param _from is the address from which transfers are approved
     * @param _to is the address to which transfers are approved
     */
     function revokeManualApproval(address _from, address _to) public withPerm(TRANSFER_APPROVAL) {
-        require(_from != address(0), "Invalid from address");
         require(_to != address(0), "Invalid to address");
         delete manualApprovals[_from][_to];
-        emit LogRevokeManualApproval(_from, _to, msg.sender);
+        emit RevokeManualApproval(_from, _to, msg.sender);
     }
 
     /**
-    * @notice removes a pairs of addresses from manual approvals
+    * @notice Removes a pairs of addresses from manual approvals
     * @param _from is the address from which transfers are approved
     * @param _to is the address to which transfers are approved
     */
     function revokeManualBlocking(address _from, address _to) public withPerm(TRANSFER_APPROVAL) {
-        require(_from != address(0), "Invalid from address");
         require(_to != address(0), "Invalid to address");
         delete manualBlockings[_from][_to];
-        emit LogRevokeManualBlocking(_from, _to, msg.sender);
+        emit RevokeManualBlocking(_from, _to, msg.sender);
     }
 
     /**
-     * @notice Return the permissions flag that are associated with ManualApproval transfer manager
+     * @notice Returns the permissions flag that are associated with ManualApproval transfer manager
      */
     function getPermissions() public view returns(bytes32[]) {
         bytes32[] memory allPermissions = new bytes32[](1);

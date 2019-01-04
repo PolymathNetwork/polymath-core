@@ -1,12 +1,12 @@
 pragma solidity ^0.4.24;
 
 import "./ManualApprovalTransferManager.sol";
-import "../../interfaces/IModuleFactory.sol";
+import "../ModuleFactory.sol";
 
 /**
  * @title Factory for deploying ManualApprovalTransferManager module
  */
-contract ManualApprovalTransferManagerFactory is IModuleFactory {
+contract ManualApprovalTransferManagerFactory is ModuleFactory {
 
     /**
      * @notice Constructor
@@ -16,9 +16,14 @@ contract ManualApprovalTransferManagerFactory is IModuleFactory {
      * @param _subscriptionCost Subscription cost of the module
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-      IModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+    ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
-
+        version = "2.0.1";
+        name = "ManualApprovalTransferManager";
+        title = "Manual Approval Transfer Manager";
+        description = "Manage transfers using single approvals / blocking";
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
 
      /**
@@ -29,49 +34,32 @@ contract ManualApprovalTransferManagerFactory is IModuleFactory {
         if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
         address manualTransferManager = new ManualApprovalTransferManager(msg.sender, address(polyToken));
-        emit LogGenerateModuleFromFactory(address(manualTransferManager), getName(), address(this), msg.sender, now);
+        /*solium-disable-next-line security/no-block-members*/
+        emit GenerateModuleFromFactory(address(manualTransferManager), getName(), address(this), msg.sender, setupCost, now);
         return address(manualTransferManager);
     }
 
     /**
      * @notice Type of the Module factory
      */
-    function getType() public view returns(uint8) {
-        return 2;
+    function getTypes() external view returns(uint8[]) {
+        uint8[] memory res = new uint8[](1);
+        res[0] = 2;
+        return res;
     }
 
     /**
-     * @notice Get the name of the Module
+     * @notice Returns the instructions associated with the module
      */
-    function getName() public view returns(bytes32) {
-        return "ManualApprovalTransferManager";
-    }
-
-    /**
-     * @notice Get the description of the Module
-     */
-    function getDescription() public view returns(string) {
-        return "Manage transfers using single approvals / blocking";
-    }
-
-    /**
-     * @notice Get the title of the Module
-     */
-    function getTitle() public view returns(string) {
-        return "Manual Approval Transfer Manager";
-    }
-
-    /**
-     * @notice Get the Instructions that helped to used the module
-     */
-    function getInstructions() public view returns(string) {
+    function getInstructions() external view returns(string) {
+        /*solium-disable-next-line max-len*/
         return "Allows an issuer to set manual approvals or blocks for specific pairs of addresses and amounts. Init function takes no parameters.";
     }
 
     /**
      * @notice Get the tags related to the module factory
      */
-    function getTags() public view returns(bytes32[]) {
+    function getTags() external view returns(bytes32[]) {
         bytes32[] memory availableTags = new bytes32[](2);
         availableTags[0] = "ManualApproval";
         availableTags[1] = "Transfer Restriction";

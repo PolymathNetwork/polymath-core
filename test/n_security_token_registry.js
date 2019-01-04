@@ -564,11 +564,11 @@ contract("SecurityTokenRegistry", accounts => {
 
             let securityTokenTmp = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
-            let tokens = await I_STRProxied.getTokensByOwner.call(token_owner);
+            let tokens = await I_Getter.getTokensByOwner.call(token_owner);
             assert.equal(tokens.length, 1);
             assert.equal(tokens[0], I_SecurityToken.address);
 
-            let allTokens = await I_STRProxied.getTokens.call();
+            let allTokens = await I_Getter.getTokens.call();
             assert.equal(allTokens.length, 2);
             assert.equal(allTokens[0], securityTokenTmp.address);
             assert.equal(allTokens[1], I_SecurityToken.address);

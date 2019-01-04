@@ -955,28 +955,19 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
             counter = counter.add(_diffDays);
         } else {
             for (i = 0; i < _diffDays; i++) {
-            counter++;
-            // This condition is to check whether the first rolling period is covered or not
-            // if not then it continues and adding 0 value into sumOfLastPeriod without subtracting
-            // the earlier value at that index
-            if (counter >= _rollingPeriodInDays) {
-                // Subtracting the former value(Sum of all the txn amount of that day) from the sumOfLastPeriod
-                // The below line subtracts (the traded volume on days no longer covered by rolling period) from sumOfLastPeriod.
-                // Every loop execution subtracts one day's trade volume. 
-                // Loop starts from the first day covered in sumOfLastPeriod upto the day that is covered by rolling period.
-                sumOfLastPeriod = 
-                    sumOfLastPeriod.sub(
-                        bucket[_from][_bucketDetails.lastTradedDayTime.sub(
-                            (
-                                _bucketDetails.daysCovered.sub(
-                                    counter.sub(
-                                        _rollingPeriodInDays
-                                    )
-                                )
-                            ).mul(1 days)
-                        )]
-                    );
-            }
+                counter++;
+                // This condition is to check whether the first rolling period is covered or not
+                // if not then it continues and adding 0 value into sumOfLastPeriod without subtracting
+                // the earlier value at that index
+                if (counter >= _rollingPeriodInDays) {
+                    // Subtracting the former value(Sum of all the txn amount of that day) from the sumOfLastPeriod
+                    // The below line subtracts (the traded volume on days no longer covered by rolling period) from sumOfLastPeriod.
+                    // Every loop execution subtracts one day's trade volume. 
+                    // Loop starts from the first day covered in sumOfLastPeriod upto the day that is covered by rolling period.
+                    uint256 temp = _bucketDetails.daysCovered.sub(counter.sub(_rollingPeriodInDays));
+                    temp = _bucketDetails.lastTradedDayTime.sub(temp).mul(1 days);
+                    sumOfLastPeriod = sumOfLastPeriod.sub(bucket[_from][temp]);
+                }
             // Adding the last amount that is transacted on the `_fromTime` not actually doing it but left written to understand
             // the alogrithm
             //_bucketDetails.sumOfLastPeriod = _bucketDetails.sumOfLastPeriod.add(uint256(0));

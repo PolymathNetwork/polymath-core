@@ -28,18 +28,6 @@ contract ModuleFactory is IModuleFactory, Ownable {
     // @dev uint24 consists packed value of uint8 _major, uint8 _minor, uint8 _patch
     mapping(string => uint24) compatibleSTVersionRange;
 
-    event ChangeFactorySetupFee(uint256 _oldSetupCost, uint256 _newSetupCost, address _moduleFactory);
-    event ChangeFactoryUsageFee(uint256 _oldUsageCost, uint256 _newUsageCost, address _moduleFactory);
-    event ChangeFactorySubscriptionFee(uint256 _oldSubscriptionCost, uint256 _newMonthlySubscriptionCost, address _moduleFactory);
-    event GenerateModuleFromFactory(
-        address _module,
-        bytes32 indexed _moduleName,
-        address indexed _moduleFactory,
-        address _creator,
-        uint256 _timestamp
-    );
-    event ChangeSTVersionBound(string _boundType, uint8 _major, uint8 _minor, uint8 _patch);
-
     /**
      * @notice Constructor
      * @param _polyAddress Address of the polytoken

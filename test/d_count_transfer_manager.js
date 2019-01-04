@@ -54,6 +54,7 @@ contract("CountTransferManager", accounts => {
     let I_SecurityToken2;
     let I_PolyToken;
     let I_PolymathRegistry;
+    let I_STRGetter;
 
     // SecurityToken Details
     const name = "Team";
@@ -101,7 +102,8 @@ contract("CountTransferManager", accounts => {
             I_STFactory,
             I_SecurityTokenRegistry,
             I_SecurityTokenRegistryProxy,
-            I_STRProxied
+            I_STRProxied,
+            I_STRGetter
         ] = instances;
 
         // STEP 2: Deploy the CountTransferManager

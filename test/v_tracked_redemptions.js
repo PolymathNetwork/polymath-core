@@ -52,6 +52,7 @@ contract("TrackedRedemption", accounts => {
     let I_MRProxied;
     let I_PolymathRegistry;
     let P_TrackedRedemptionFactory;
+    let I_STRGetter;
 
     // SecurityToken Details
     const name = "Team";
@@ -99,7 +100,8 @@ contract("TrackedRedemption", accounts => {
            I_STFactory,
            I_SecurityTokenRegistry,
            I_SecurityTokenRegistryProxy,
-           I_STRProxied
+           I_STRProxied,
+           I_STRGetter
        ] = instances;
 
 

@@ -68,6 +68,7 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
     let I_MRProxied;
     let I_STRProxied;
     let I_STRProxiedNew;
+    let I_STRGetter;
 
     let I_SecurityTokenRegistry;
     //let I_UpgradedSecurityTokenRegistry
@@ -114,7 +115,8 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
             I_STFactory,
             I_SecurityTokenRegistry,
             I_SecurityTokenRegistryProxy,
-            I_STRProxied
+            I_STRProxied,
+            I_STRGetter
         ] = instances;
 
         // STEP 4: Deploy the GeneralDelegateManagerFactory

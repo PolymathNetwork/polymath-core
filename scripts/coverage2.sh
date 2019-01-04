@@ -55,12 +55,7 @@ start_testrpc() {
     --account="0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501208,1000000000000000000000000"
     --account="0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501209,1000000000000000000000000"
   )
-
-  if [ "$COVERAGE" = true ] || [ "$TRAVIS_PULL_REQUEST" > 0 ] && [ "$NOT_FORK" != true ]; then
-    node_modules/.bin/testrpc-sc --gasLimit 0xfffffffffff --port "$testrpc_port" "${accounts[@]}" > /dev/null &
-  else
-    node_modules/.bin/ganache-cli --gasLimit 8000000 "${accounts[@]}" > /dev/null &
-  fi
+  node_modules/.bin/testrpc-sc --gasLimit 0xfffffffffff --port "$testrpc_port" "${accounts[@]}" > /dev/null &
 
   testrpc_pid=$!
 }
@@ -92,25 +87,15 @@ if [ "$COVERAGE" = true ] || [ "$TRAVIS_PULL_REQUEST" > 0 ] && [ "$NOT_FORK" != 
   curl -o node_modules/solidity-coverage/lib/app.js https://raw.githubusercontent.com/maxsam4/solidity-coverage/relative-path/lib/app.js
   if [ "$CIRCLECI" = true ] || [ "$TRAVIS_PULL_REQUEST" > 0 ] && [ "$NOT_FORK" != true ]; then
     export COVERALLS_PARALLEL=true
-    mv solcover1.js solcover.js
+    mv solcover2.js solcover.js
   fi
   node_modules/.bin/solidity-coverage
   if [ "$CIRCLECI" = true ] || [ "$TRAVIS_PULL_REQUEST" > 0 ] && [ "$NOT_FORK" != true ]; then
     cat coverage/lcov.info | node_modules/.bin/coveralls || echo 'Failed to report coverage to Coveralls'
   fi
-else
-  if [ "$CIRCLECI" = true ]; then # using mocha junit reporter for parallelism in CircleCI 
-    mkdir test-results
-    mkdir test-results/mocha
-    rm truffle-config.js
-    mv truffle-ci.js truffle-config.js
-    # only run poly oracle and upgrade tests if cron job by CI
-    if [ "$CIRCLE_CI_CRON" = true ]; then
-      node_modules/.bin/truffle test `ls test/*.js | circleci tests split --split-by=timings`
-    else
-      node_modules/.bin/truffle test `find test/*.js ! -name a_poly_oracle.js -and ! -name s_v130_to_v140_upgrade.js | circleci tests split --split-by=timings`
-    fi
-  else
-    node_modules/.bin/truffle test `find test/*.js ! -name a_poly_oracle.js -and ! -name s_v130_to_v140_upgrade.js`
+  if [ "$CIRCLECI" = true ]; then
+    echo 'sleeping for 5 minutes to make sure first coverage completes. Blame circleci for not supporting webhooks in workflows'
+    sleep 5m
+    curl -k https://coveralls.io/webhook?repo_token=$COVERALLS_REPO_TOKEN -d "payload[build_num]=$CIRCLE_BUILD_NUM&payload[status]=done"
   fi
 fi

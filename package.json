@@ -24,6 +24,7 @@
     "migrate:kovan": "truffle migrate --network=kovan --reset --all",
     "migrate:mainnet": "truffle migrate --network=mainnet",
     "coverage": "scripts/coverage.sh",
+    "coverage2": "scripts/coverage2.sh",
     "flatten-modules": "sol-merger './contracts/modules/*/*.sol' ./flat/modules",
     "flatten-token": "sol-merger './contracts/tokens/*.sol' ./flat/tokens",
     "flatten-mocks": "sol-merger './contracts/mocks/*.sol' ./flat/mocks",

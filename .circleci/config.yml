@@ -57,6 +57,26 @@ jobs:
             - node_modules
       - store_artifacts:
           path: ./coverage/lcov.info
+  coverage2:
+    docker:
+      - image: circleci/node:8
+    steps:
+      - checkout
+      - restore_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+      - run: yarn install
+      - run: sudo npm i truffle -g
+      - run: node --version
+      - run: truffle version
+      - run: 
+          command: npm run coverage2
+          no_output_timeout: 1h
+      - save_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+          paths:
+            - node_modules
+      - store_artifacts:
+          path: ./coverage/lcov.info
   docs:
     docker:
       - image: circleci/node:8
@@ -78,6 +98,7 @@ workflows:
   commit:
     jobs:
       - coverage
+      - coverage2
   daily-builds:
     triggers:
       - schedule:
@@ -91,6 +112,7 @@ workflows:
                 - dev-3.0.0
     jobs:
       - coverage
+      - coverage2
   docs:
     jobs:
       - docs:

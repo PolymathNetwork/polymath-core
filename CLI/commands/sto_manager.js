@@ -5,6 +5,7 @@ const abis = require('./helpers/contract_abis');
 const common = require('./common/common_functions');
 const gbl = require('./common/global');
 const csvParse = require('./helpers/csv');
+const { table } = require('table');
 const STABLE = 'STABLE';
 
 ///////////////////
@@ -45,8 +46,8 @@ async function executeApp() {
     }
     options.push('Add new STO module');
 
-    let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Exit' });
-    let optionSelected = index != -1 ? options[index] : 'Exit';
+    let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'EXIT' });
+    let optionSelected = index != -1 ? options[index] : 'EXIT';
     console.log('Selected:', optionSelected, '\n');
     switch (optionSelected) {
       case 'Show existing STO information':
@@ -60,7 +61,7 @@ async function executeApp() {
       case 'Add new STO module':
         await addSTOModule();
         break;
-      case 'Exit':
+      case 'EXIT':
         exit = true;
         break;
     }
@@ -97,6 +98,7 @@ async function showSTO(selectedSTO, currentSTO) {
       break;
     case 'USDTieredSTO':
       await usdTieredSTO_status(currentSTO);
+      await showAccreditedData(currentSTO);
       break;
   }
 }
@@ -126,8 +128,8 @@ async function addSTOModule(stoConfig) {
       let moduleFactory = new web3.eth.Contract(moduleFactoryABI, m);
       return web3.utils.hexToUtf8(await moduleFactory.methods.name().call());
     }));
-    let index = readlineSync.keyInSelect(options, 'What type of STO do you want?', { cancel: 'Return' });
-    optionSelected = index != -1 ? options[index] : 'Return';
+    let index = readlineSync.keyInSelect(options, 'What type of STO do you want?', { cancel: 'RETURN' });
+    optionSelected = index != -1 ? options[index] : 'RETURN';
   } else {
     optionSelected = stoConfig.type;
   }
@@ -271,8 +273,6 @@ async function cappedSTO_status(currentSTO) {
   - Tokens remaining:  ${web3.utils.fromWei(displayCap.sub(displayTokensSold))} ${displayTokenSymbol.toUpperCase()}
   - Investor count:    ${displayInvestorCount}
   `);
-
-  console.log(chalk.green(`\n${(web3.utils.fromWei(await getBalance(Issuer.address, gbl.constants.FUND_RAISE_TYPES.POLY)))} POLY balance remaining at issuer address ${Issuer.address}`));
 }
 
 ////////////////////
@@ -579,6 +579,7 @@ async function usdTieredSTO_status(currentSTO) {
   let displayStartTime = await currentSTO.methods.startTime().call();
   let displayEndTime = await currentSTO.methods.endTime().call();
   let displayCurrentTier = parseInt(await currentSTO.methods.currentTier().call()) + 1;
+  let test = await currentSTO.methods.nonAccreditedLimitUSD().call();
   let displayNonAccreditedLimitUSD = web3.utils.fromWei(await currentSTO.methods.nonAccreditedLimitUSD().call());
   let displayMinimumInvestmentUSD = web3.utils.fromWei(await currentSTO.methods.minimumInvestmentUSD().call());
   let displayWallet = await currentSTO.methods.wallet().call();
@@ -752,8 +753,6 @@ async function usdTieredSTO_status(currentSTO) {
     + displayFundsRaisedPerType + `
       Total USD:                 ${displayFundsRaisedUSD} USD
   `);
-
-  console.log(chalk.green(`\n${(web3.utils.fromWei(await getBalance(Issuer.address, gbl.constants.FUND_RAISE_TYPES.POLY)))} POLY balance remaining at issuer address ${Issuer.address}`));
 }
 
 async function checkStableBalance(walletAddress, stableAddress) {
@@ -789,9 +788,10 @@ async function usdTieredSTO_configure(currentSTO) {
         'Modify limits configuration', 'Modify funding configuration');
     }
 
-    let index = readlineSync.keyInSelect(options, 'What do you want to do?');
-    switch (index) {
-      case 0:
+    let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
+    let selected = index != -1 ? options[index] : 'Exit';
+    switch (selected) {
+      case 'Finalize STO':
         let reserveWallet = await currentSTO.methods.reserveWallet().call();
         let isVerified = await securityToken.methods.verifyTransfer('0x0000000000000000000000000000000000000000', reserveWallet, 0, web3.utils.fromAscii("")).call();
         if (isVerified) {
@@ -803,7 +803,7 @@ async function usdTieredSTO_configure(currentSTO) {
           console.log(chalk.red(`Reserve wallet (${reserveWallet}) is not able to receive remaining tokens. Check if this address is whitelisted.`));
         }
         break;
-      case 1:
+      case 'Change accredited account':
         let investor = readlineSync.question('Enter the address to change accreditation: ');
         let isAccredited = readlineSync.keyInYNStrict(`Is ${investor} accredited?`);
         let investors = [investor];
@@ -812,10 +812,10 @@ async function usdTieredSTO_configure(currentSTO) {
         // 2 GAS?
         await common.sendTransaction(changeAccreditedAction);
         break;
-      case 2:
+      case 'Change accredited in batch':
         await changeAccreditedInBatch(currentSTO);
         break;
-      case 3:
+      case 'Change non accredited limit for an account':
         let account = readlineSync.question('Enter the address to change non accredited limit: ');
         let limit = readlineSync.question(`Enter the limit in USD: `);
         let accounts = [account];
@@ -823,31 +823,58 @@ async function usdTieredSTO_configure(currentSTO) {
         let changeNonAccreditedLimitAction = currentSTO.methods.changeNonAccreditedLimit(accounts, limits);
         await common.sendTransaction(changeNonAccreditedLimitAction);
         break;
-      case 4:
+      case 'Change non accredited limits in batch':
         await changeNonAccreditedLimitsInBatch(currentSTO);
         break;
-      case 5:
+      case 'Modify times configuration':
         await modfifyTimes(currentSTO);
         await usdTieredSTO_status(currentSTO);
         break;
-      case 6:
+      case 'Modify tiers configuration':
         await modfifyTiers(currentSTO);
         await usdTieredSTO_status(currentSTO);
         break;
-      case 7:
+      case 'Modify addresses configuration':
         await modfifyAddresses(currentSTO);
         await usdTieredSTO_status(currentSTO);
         break;
-      case 8:
+      case 'Modify limits configuration':
         await modfifyLimits(currentSTO);
         await usdTieredSTO_status(currentSTO);
         break;
-      case 9:
+      case 'Modify funding configuration':
         await modfifyFunding(currentSTO);
         await usdTieredSTO_status(currentSTO);
         break;
     }
   }
+}
+
+async function showAccreditedData(currentSTO) {
+  let accreditedData = await currentSTO.methods.getAccreditedData().call();
+  let investorArray = accreditedData[0];
+  let accreditedArray = accreditedData[1];
+  let nonAccreditedLimitArray = accreditedData[2];
+
+  if (investorArray.length > 0) {
+    let dataTable = [['Investor', 'Is accredited', 'Non-accredited limit (USD)']];
+    for (let i = 0; i < investorArray.length; i++) {
+      dataTable.push([
+        investorArray[i],
+        accreditedArray[i] ? 'YES' : 'NO',
+        accreditedArray[i] ? 'N/A' : (nonAccreditedLimitArray[i] !== '0' ? web3.utils.fromWei(nonAccreditedLimitArray[i]) : 'default')
+      ]);
+    }
+    console.log();
+    console.log(`************************************ ACCREDITED DATA *************************************`);
+    console.log();
+    console.log(table(dataTable));
+  } else {
+    console.log();
+    console.log(chalk.yellow(`There is no accredited data to show`));
+    console.log();
+  }
+
 }
 
 async function changeAccreditedInBatch(currentSTO) {
@@ -898,6 +925,7 @@ async function changeNonAccreditedLimitsInBatch(currentSTO) {
   let batches = common.splitIntoBatches(validData, batchSize);
   let [investorArray, limitArray] = common.transposeBatches(batches);
   for (let batch = 0; batch < batches.length; batch++) {
+    limitArray[batch] = limitArray[batch].map(a => web3.utils.toWei(new web3.utils.BN(a)));
     console.log(`Batch ${batch + 1} - Attempting to change non accredited limit to accounts:\n\n`, investorArray[batch], '\n');
     let action = await currentSTO.methods.changeNonAccreditedLimit(investorArray[batch], limitArray[batch]);
     let receipt = await common.sendTransaction(action);
@@ -1052,8 +1080,8 @@ async function selectToken() {
   });
   options.push('Enter token symbol manually');
 
-  let index = readlineSync.keyInSelect(options, 'Select a token:', { cancel: 'Exit' });
-  let selected = index != -1 ? options[index] : 'Exit';
+  let index = readlineSync.keyInSelect(options, 'Select a token:', { cancel: 'EXIT' });
+  let selected = index != -1 ? options[index] : 'EXIT';
   switch (selected) {
     case 'Enter token symbol manually':
       result = readlineSync.question('Enter the token symbol: ');

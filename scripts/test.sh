@@ -56,6 +56,7 @@ start_testrpc() {
     --account="0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501209,1000000000000000000000000"
   )
 
+
   if [ "$COVERAGE" = true ] || [ "$TRAVIS_PULL_REQUEST" > 0 ] && [ "$NOT_FORK" != true ]; then
     node_modules/.bin/testrpc-sc --gasLimit 0xfffffffffff --port "$testrpc_port" "${accounts[@]}" > /dev/null &
   else

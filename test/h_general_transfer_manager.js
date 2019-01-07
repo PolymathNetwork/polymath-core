@@ -57,6 +57,7 @@ contract("GeneralTransferManager", async (accounts) => {
     let I_PolyToken;
     let I_PolymathRegistry;
     let P_GeneralTransferManagerFactory;
+    let I_STRGetter;
 
     // SecurityToken Details
     const name = "Team";
@@ -121,7 +122,8 @@ contract("GeneralTransferManager", async (accounts) => {
             I_STFactory,
             I_SecurityTokenRegistry,
             I_SecurityTokenRegistryProxy,
-            I_STRProxied
+            I_STRProxied,
+            I_STRGetter
         ] = instances;
 
         [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);

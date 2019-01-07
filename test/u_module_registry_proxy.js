@@ -34,6 +34,7 @@ contract("ModuleRegistryProxy", async (accounts) => {
     let I_SecurityToken;
     let I_ModuleRegistry;
     let I_FeatureRegistry;
+    let I_STRGetter;
 
     let account_polymath;
     let account_temp;
@@ -65,25 +66,26 @@ contract("ModuleRegistryProxy", async (accounts) => {
         token_owner = accounts[2];
         account_polymath_new = accounts[3];
 
-        // Step 1: Deploy the genral PM ecosystem
-        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
+       // Step 1: Deploy the genral PM ecosystem
+       let instances = await setUpPolymathNetwork(account_polymath, token_owner);
 
-        [
-            I_PolymathRegistry,
-            I_PolyToken,
-            I_FeatureRegistry,
-            I_ModuleRegistry,
-            I_ModuleRegistryProxy,
-            I_MRProxied,
-            I_GeneralTransferManagerFactory,
-            I_STFactory,
-            I_SecurityTokenRegistry,
-            I_SecurityTokenRegistryProxy,
-            I_STRProxied
-        ] = instances;
+       [
+           I_PolymathRegistry,
+           I_PolyToken,
+           I_FeatureRegistry,
+           I_ModuleRegistry,
+           I_ModuleRegistryProxy,
+           I_MRProxied,
+           I_GeneralTransferManagerFactory,
+           I_STFactory,
+           I_SecurityTokenRegistry,
+           I_SecurityTokenRegistryProxy,
+           I_STRProxied,
+           I_STRGetter
+       ] = instances;
 
-        I_ModuleRegistryProxy = await ModuleRegistryProxy.new({ from: account_polymath });
-        I_ModuleRegistry = await ModuleRegistry.new({ from: account_polymath });
+        I_ModuleRegistryProxy = await ModuleRegistryProxy.new({from: account_polymath});
+        I_ModuleRegistry = await ModuleRegistry.new({from: account_polymath });
 
         await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistryProxy.address, { from: account_polymath });
 

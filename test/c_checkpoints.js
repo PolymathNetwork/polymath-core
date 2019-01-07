@@ -44,6 +44,7 @@ contract("Checkpoints", async function(accounts) {
     let I_SecurityToken;
     let I_PolyToken;
     let I_PolymathRegistry;
+    let I_STRGetter;
 
     // SecurityToken Details
     const name = "Team";
@@ -89,7 +90,8 @@ contract("Checkpoints", async function(accounts) {
             I_STFactory,
             I_SecurityTokenRegistry,
             I_SecurityTokenRegistryProxy,
-            I_STRProxied
+            I_STRProxied,
+            I_STRGetter
         ] = instances;
 
         // Printing all the contract addresses

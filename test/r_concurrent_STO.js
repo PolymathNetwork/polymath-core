@@ -44,6 +44,7 @@ contract("Concurrent STO", async (accounts) => {
     let I_SecurityToken;
     let I_PolyToken;
     let I_PolymathRegistry;
+    let I_STRGetter;
 
     // STO instance declaration
     let I_CappedSTOFactory;
@@ -81,22 +82,23 @@ contract("Concurrent STO", async (accounts) => {
         account_investor2 = accounts[4];
         account_investor3 = accounts[5];
 
-        // Step:1 Create the polymath ecosystem contract instances
-        let instances = await setUpPolymathNetwork(account_polymath, account_issuer);
+       // Step:1 Create the polymath ecosystem contract instances
+       let instances = await setUpPolymathNetwork(account_polymath, account_issuer);
 
-        [
-            I_PolymathRegistry,
-            I_PolyToken,
-            I_FeatureRegistry,
-            I_ModuleRegistry,
-            I_ModuleRegistryProxy,
-            I_MRProxied,
-            I_GeneralTransferManagerFactory,
-            I_STFactory,
-            I_SecurityTokenRegistry,
-            I_SecurityTokenRegistryProxy,
-            I_STRProxied
-        ] = instances;
+       [
+           I_PolymathRegistry,
+           I_PolyToken,
+           I_FeatureRegistry,
+           I_ModuleRegistry,
+           I_ModuleRegistryProxy,
+           I_MRProxied,
+           I_GeneralTransferManagerFactory,
+           I_STFactory,
+           I_SecurityTokenRegistry,
+           I_SecurityTokenRegistryProxy,
+           I_STRProxied,
+           I_STRGetter
+       ] = instances;
 
         // STEP 2: Deploy the STO Factories
 

@@ -61,6 +61,7 @@ contract("USDTieredSTO", async (accounts) => {
     let I_DaiToken;
     let I_PolymathRegistry;
     let P_USDTieredSTOFactory;
+    let I_STRGetter;
 
     // SecurityToken Details for funds raise Type ETH
     const NAME = "Team";
@@ -217,24 +218,25 @@ contract("USDTieredSTO", async (accounts) => {
         INVESTOR2 = accounts[8];
         INVESTOR3 = accounts[9];
 
-        // Step:1 Create the polymath ecosystem contract instances
-        let instances = await setUpPolymathNetwork(POLYMATH, ISSUER);
+         // Step:1 Create the polymath ecosystem contract instances
+         let instances = await setUpPolymathNetwork(POLYMATH, ISSUER);
 
-        [
-            I_PolymathRegistry,
-            I_PolyToken,
-            I_FeatureRegistry,
-            I_ModuleRegistry,
-            I_ModuleRegistryProxy,
-            I_MRProxied,
-            I_GeneralTransferManagerFactory,
-            I_STFactory,
-            I_SecurityTokenRegistry,
-            I_SecurityTokenRegistryProxy,
-            I_STRProxied
-        ] = instances;
+         [
+             I_PolymathRegistry,
+             I_PolyToken,
+             I_FeatureRegistry,
+             I_ModuleRegistry,
+             I_ModuleRegistryProxy,
+             I_MRProxied,
+             I_GeneralTransferManagerFactory,
+             I_STFactory,
+             I_SecurityTokenRegistry,
+             I_SecurityTokenRegistryProxy,
+             I_STRProxied,
+             I_STRGetter
+         ] = instances;
 
-        I_DaiToken = await PolyTokenFaucet.new({ from: POLYMATH });
+        I_DaiToken = await PolyTokenFaucet.new({from: POLYMATH});
         // STEP 4: Deploy the GeneralDelegateManagerFactory
         [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(POLYMATH, I_MRProxied, 0);
 

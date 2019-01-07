@@ -46,6 +46,7 @@ contract("TrackedRedemption", async (accounts) => {
     let I_MRProxied;
     let I_PolymathRegistry;
     let P_TrackedRedemptionFactory;
+    let I_STRGetter;
 
     // SecurityToken Details
     const name = "Team";
@@ -83,22 +84,24 @@ contract("TrackedRedemption", async (accounts) => {
 
         // ----------- POLYMATH NETWORK Configuration ------------
 
-        // Step 1: Deploy the genral PM ecosystem
-        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
+       // Step 1: Deploy the genral PM ecosystem
+       let instances = await setUpPolymathNetwork(account_polymath, token_owner);
 
-        [
-            I_PolymathRegistry,
-            I_PolyToken,
-            I_FeatureRegistry,
-            I_ModuleRegistry,
-            I_ModuleRegistryProxy,
-            I_MRProxied,
-            I_GeneralTransferManagerFactory,
-            I_STFactory,
-            I_SecurityTokenRegistry,
-            I_SecurityTokenRegistryProxy,
-            I_STRProxied
-        ] = instances;
+       [
+           I_PolymathRegistry,
+           I_PolyToken,
+           I_FeatureRegistry,
+           I_ModuleRegistry,
+           I_ModuleRegistryProxy,
+           I_MRProxied,
+           I_GeneralTransferManagerFactory,
+           I_STFactory,
+           I_SecurityTokenRegistry,
+           I_SecurityTokenRegistryProxy,
+           I_STRProxied,
+           I_STRGetter
+       ] = instances;
+
 
         // STEP 4: Deploy the TrackedRedemption
         [I_TrackedRedemptionFactory] = await deployRedemptionAndVerifyed(account_polymath, I_MRProxied, 0);

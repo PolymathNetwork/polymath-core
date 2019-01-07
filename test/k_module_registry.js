@@ -63,6 +63,7 @@ contract("ModuleRegistry", async (accounts) => {
     let I_DummySTOFactory;
     let I_PolymathRegistry;
     let I_SecurityToken2;
+    let I_STRGetter;
 
     // SecurityToken Details (Launched ST on the behalf of the issuer)
     const name = "Demo Token";
@@ -107,24 +108,25 @@ contract("ModuleRegistry", async (accounts) => {
         account_temp = accounts[8];
         token_owner = account_issuer;
 
-        // Step 1: Deploy the genral PM ecosystem
-        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
+       // Step 1: Deploy the genral PM ecosystem
+       let instances = await setUpPolymathNetwork(account_polymath, token_owner);
 
-        [
-            I_PolymathRegistry,
-            I_PolyToken,
-            I_FeatureRegistry,
-            I_ModuleRegistry,
-            I_ModuleRegistryProxy,
-            I_MRProxied,
-            I_GeneralTransferManagerFactory,
-            I_STFactory,
-            I_SecurityTokenRegistry,
-            I_SecurityTokenRegistryProxy,
-            I_STRProxied
-        ] = instances;
+       [
+           I_PolymathRegistry,
+           I_PolyToken,
+           I_FeatureRegistry,
+           I_ModuleRegistry,
+           I_ModuleRegistryProxy,
+           I_MRProxied,
+           I_GeneralTransferManagerFactory,
+           I_STFactory,
+           I_SecurityTokenRegistry,
+           I_SecurityTokenRegistryProxy,
+           I_STRProxied,
+           I_STRGetter
+       ] = instances;
 
-        I_ModuleRegistryProxy = await ModuleRegistryProxy.new({ from: account_polymath });
+       I_ModuleRegistryProxy = await ModuleRegistryProxy.new({from: account_polymath});
 
         // Printing all the contract addresses
         console.log(`

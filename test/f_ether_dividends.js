@@ -51,6 +51,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
     let I_PolyToken;
     let I_MRProxied;
     let I_PolymathRegistry;
+    let I_STRGetter;
 
     // SecurityToken Details
     const name = "Team";
@@ -85,28 +86,25 @@ contract("EtherDividendCheckpoint", async (accounts) => {
         account_manager = accounts[5];
         account_temp = accounts[2];
 
-        // Step 1: Deploy the genral PM ecosystem
-        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
+         // Step 1: Deploy the genral PM ecosystem
+         let instances = await setUpPolymathNetwork(account_polymath, token_owner);
 
-        [
-            I_PolymathRegistry,
-            I_PolyToken,
-            I_FeatureRegistry,
-            I_ModuleRegistry,
-            I_ModuleRegistryProxy,
-            I_MRProxied,
-            I_GeneralTransferManagerFactory,
-            I_STFactory,
-            I_SecurityTokenRegistry,
-            I_SecurityTokenRegistryProxy,
-            I_STRProxied
-        ] = instances;
+         [
+             I_PolymathRegistry,
+             I_PolyToken,
+             I_FeatureRegistry,
+             I_ModuleRegistry,
+             I_ModuleRegistryProxy,
+             I_MRProxied,
+             I_GeneralTransferManagerFactory,
+             I_STFactory,
+             I_SecurityTokenRegistry,
+             I_SecurityTokenRegistryProxy,
+             I_STRProxied,
+             I_STRGetter
+         ] = instances;
 
-        [P_EtherDividendCheckpointFactory] = await deployEtherDividendAndVerifyed(
-            account_polymath,
-            I_MRProxied,
-            new BN(web3.utils.toWei("500", "ether"))
-        );
+        [P_EtherDividendCheckpointFactory] = await deployEtherDividendAndVerifyed(account_polymath, I_MRProxied, web3.utils.toWei("500", "ether"));
         [I_EtherDividendCheckpointFactory] = await deployEtherDividendAndVerifyed(account_polymath, I_MRProxied, 0);
 
         // Printing all the contract addresses

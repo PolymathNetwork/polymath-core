@@ -27,6 +27,8 @@ const DevPolyToken = artifacts.require("./helpers/PolyTokenFaucet.sol");
 const MockOracle = artifacts.require("./MockOracle.sol");
 const TokenLib = artifacts.require("./TokenLib.sol");
 const SecurityToken = artifacts.require("./tokens/SecurityToken.sol");
+const STRGetter = artifacts.require('./STRGetter.sol');
+
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -136,6 +138,10 @@ module.exports = function(deployer, network, accounts) {
             {
                 type: "address",
                 name: "_owner"
+            },
+            {
+                type: 'address',
+                name: '_getterContract'
             }
         ]
     };
@@ -309,15 +315,19 @@ module.exports = function(deployer, network, accounts) {
             return deployer.deploy(SecurityTokenRegistryProxy, { from: PolymathAccount });
         })
         .then(() => {
+            return deployer.deploy(STRGetter, {from: PolymathAccount});
+        })
+        .then(() => {
             return SecurityTokenRegistryProxy.at(SecurityTokenRegistryProxy.address);
         })
-        .then(securityTokenRegistryProxy => {
+        .then((securityTokenRegistryProxy) => {
             let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignatureProxy, [
                 PolymathRegistry.address,
                 STFactory.address,
                 initRegFee,
                 initRegFee,
-                PolymathAccount
+                PolymathAccount,
+                STRGetter.address
             ]);
             return securityTokenRegistryProxy.upgradeToAndCall("1.0.0", SecurityTokenRegistry.address, bytesProxy, {
                 from: PolymathAccount
@@ -455,6 +465,7 @@ module.exports = function(deployer, network, accounts) {
     SecurityTokenRegistry (Proxy):        ${SecurityTokenRegistryProxy.address}
     ModuleRegistry (Proxy):               ${ModuleRegistryProxy.address}
     FeatureRegistry:                      ${FeatureRegistry.address}
+    STRGetter:                            ${STRGetter.address}
 
     ETHOracle:                            ${ETHOracle}
     POLYOracle:                           ${POLYOracle}

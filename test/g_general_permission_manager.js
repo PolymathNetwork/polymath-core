@@ -50,6 +50,7 @@ contract("GeneralPermissionManager", async (accounts) => {
     let I_STRProxied;
     let I_PolyToken;
     let I_PolymathRegistry;
+    let I_STRGetter;
 
     // SecurityToken Details
     const name = "Team";
@@ -99,7 +100,8 @@ contract("GeneralPermissionManager", async (accounts) => {
             I_STFactory,
             I_SecurityTokenRegistry,
             I_SecurityTokenRegistryProxy,
-            I_STRProxied
+            I_STRProxied,
+            I_STRGetter
         ] = instances;
 
         // STEP 5: Deploy the GeneralDelegateManagerFactory

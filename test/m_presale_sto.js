@@ -49,6 +49,7 @@ contract("PreSaleSTO", async (accounts) => {
     let I_PreSaleSTO;
     let I_PolyToken;
     let I_PolymathRegistry;
+    let I_STRGetter;
 
     // SecurityToken Details for funds raise Type ETH
     const name = "Team";
@@ -99,7 +100,8 @@ contract("PreSaleSTO", async (accounts) => {
             I_STFactory,
             I_SecurityTokenRegistry,
             I_SecurityTokenRegistryProxy,
-            I_STRProxied
+            I_STRProxied,
+            I_STRGetter
         ] = instances;
 
         // STEP 4: Deploy the PreSaleSTOFactory

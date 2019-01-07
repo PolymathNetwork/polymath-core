@@ -51,6 +51,7 @@ contract("Issuance", async (accounts) => {
     let I_CappedSTO;
     let I_PolyToken;
     let I_PolymathRegistry;
+    let I_STRGetter;
 
     // SecurityToken Details (Launched ST on the behalf of the issuer)
     const name = "Demo Token";
@@ -108,7 +109,8 @@ contract("Issuance", async (accounts) => {
             I_STFactory,
             I_SecurityTokenRegistry,
             I_SecurityTokenRegistryProxy,
-            I_STRProxied
+            I_STRProxied,
+            I_STRGetter
         ] = instances;
 
         // STEP 2: Deploy the GeneralDelegateManagerFactory

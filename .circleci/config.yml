@@ -39,15 +39,15 @@ jobs:
           path: ./test-results/mocha/results.xml
   coverage:
     docker:
-      - image: circleci/node:8
+      - image: maxsam4/solidity-kit:0.4.24
     steps:
       - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
       - run: yarn install
-      - run: sudo npm i truffle -g
       - run: node --version
       - run: truffle version
+      - run: node_modules/.bin/truffle version
       - run: 
           command: npm run coverage
           no_output_timeout: 1h

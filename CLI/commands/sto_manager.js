@@ -871,7 +871,7 @@ async function changeAccreditedInBatch(currentSTO) {
   let [investorArray, isAccreditedArray] = common.transposeBatches(batches);
   for (let batch = 0; batch < batches.length; batch++) {
     console.log(`Batch ${batch + 1} - Attempting to change accredited accounts:\n\n`, investorArray[batch], '\n');
-    let action = await currentSTO.methods.changeAccredited(investorArray[batch], isAccreditedArray[batch]);
+    let action = currentSTO.methods.changeAccredited(investorArray[batch], isAccreditedArray[batch]);
     let receipt = await common.sendTransaction(action);
     console.log(chalk.green('Change accredited transaction was successful.'));
     console.log(`${receipt.gasUsed} gas used. Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
@@ -899,7 +899,7 @@ async function changeNonAccreditedLimitsInBatch(currentSTO) {
   let [investorArray, limitArray] = common.transposeBatches(batches);
   for (let batch = 0; batch < batches.length; batch++) {
     console.log(`Batch ${batch + 1} - Attempting to change non accredited limit to accounts:\n\n`, investorArray[batch], '\n');
-    let action = await currentSTO.methods.changeNonAccreditedLimit(investorArray[batch], limitArray[batch]);
+    let action = currentSTO.methods.changeNonAccreditedLimit(investorArray[batch], limitArray[batch]);
     let receipt = await common.sendTransaction(action);
     console.log(chalk.green('Change non accredited limits transaction was successful.'));
     console.log(`${receipt.gasUsed} gas used. Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);

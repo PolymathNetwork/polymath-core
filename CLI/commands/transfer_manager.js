@@ -11,6 +11,11 @@ const { table } = require('table')
 ///////////////////
 // Constants
 const WHITELIST_DATA_CSV = `${__dirname}/../data/Transfer/GTM/whitelist_data.csv`;
+const ADD_BLACKLIST_DATA_CSV = `${__dirname}/../data/Transfer/BlacklistTM/add_blacklist_data.csv`;
+const MODIFY_BLACKLIST_DATA_CSV = `${__dirname}/../data/Transfer/BlacklistTM/modify_blacklist_data.csv`;
+const DELETE_BLACKLIST_DATA_CSV = `${__dirname}/../data/Transfer/BlacklistTM/delete_blacklist_data.csv`;
+const ADD_INVESTOR_BLACKLIST_DATA_CSV = `${__dirname}/../data/Transfer/BlacklistTM/add_investor_blacklist_data.csv`;
+const REMOVE_INVESTOR_BLACKLIST_DATA_CSV = `${__dirname}/../data/Transfer/BlacklistTM/remove_investor_blacklist_data.csv`;
 const PERCENTAGE_WHITELIST_DATA_CSV = `${__dirname}/../data/Transfer/PercentageTM/whitelist_data.csv`;
 const ADD_MANUAL_APPROVAL_DATA_CSV = `${__dirname}/../data/Transfer/MATM/add_manualapproval_data.csv`;
 const MODIFY_MANUAL_APPROVAL_DATA_CSV = `${__dirname}/../data/Transfer/MATM/modify_manualapproval_data.csv`;
@@ -44,98 +49,95 @@ let moduleRegistry;
 let currentTransferManager;
 
 async function executeApp() {
-  let exit = false;
-  while (!exit) {
-    console.log('\n', chalk.blue('Transfer Manager - Main Menu', '\n'));
+  console.log('\n', chalk.blue('Transfer Manager - Main Menu', '\n'));
 
-    let tmModules = await getAllModulesByType(gbl.constants.MODULES_TYPES.TRANSFER);
-    let nonArchivedModules = tmModules.filter(m => !m.archived);
-    if (nonArchivedModules.length > 0) {
-      console.log(`Transfer Manager modules attached:`);
-      nonArchivedModules.map(m => console.log(`- ${m.name} at ${m.address}`))
-    } else {
-      console.log(`There are no Transfer Manager modules attached`);
-    }
-
-    let options = ['Verify transfer', 'Transfer'];
-    let forcedTransferDisabled = await securityToken.methods.controllerDisabled().call();
-    if (!forcedTransferDisabled) {
-      options.push('Forced transfers');
-    }
-    if (nonArchivedModules.length > 0) {
-      options.push('Config existing modules');
-    }
-    options.push('Add new Transfer Manager module');
-
-    let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Exit' });
-    let optionSelected = index != -1 ? options[index] : 'Exit';
-    console.log('Selected:', optionSelected, '\n');
-    switch (optionSelected) {
-      case 'Verify transfer':
-        let verifyTotalSupply = web3.utils.fromWei(await securityToken.methods.totalSupply().call());
-        await logTotalInvestors();
-        let verifyTransferFrom = readlineSync.question(`Enter the sender account (${Issuer.address}): `, {
-          limit: function (input) {
-            return web3.utils.isAddress(input);
-          },
-          limitMessage: "Must be a valid address",
-          defaultInput: Issuer.address
-        });
-        await logBalance(verifyTransferFrom, verifyTotalSupply);
-        let verifyTransferTo = readlineSync.question('Enter the receiver account: ', {
-          limit: function (input) {
-            return web3.utils.isAddress(input);
-          },
-          limitMessage: "Must be a valid address",
-        });
-        await logBalance(verifyTransferTo, verifyTotalSupply);
-        let verifyTransferAmount = readlineSync.question('Enter amount of tokens to verify: ');
-        let isVerified = await securityToken.methods.verifyTransfer(verifyTransferFrom, verifyTransferTo, web3.utils.toWei(verifyTransferAmount), web3.utils.fromAscii("")).call();
-        if (isVerified) {
-          console.log(chalk.green(`\n${verifyTransferAmount} ${tokenSymbol} can be transferred from ${verifyTransferFrom} to ${verifyTransferTo}!`));
-        } else {
-          console.log(chalk.red(`\n${verifyTransferAmount} ${tokenSymbol} can't be transferred from ${verifyTransferFrom} to ${verifyTransferTo}!`));
-        }
-        break;
-      case 'Transfer':
-        let totalSupply = web3.utils.fromWei(await securityToken.methods.totalSupply().call());
-        await logTotalInvestors();
-        await logBalance(Issuer.address, totalSupply);
-        let transferTo = readlineSync.question('Enter beneficiary of tranfer: ', {
-          limit: function (input) {
-            return web3.utils.isAddress(input);
-          },
-          limitMessage: "Must be a valid address"
-        });
-        await logBalance(transferTo, totalSupply);
-        let transferAmount = readlineSync.question('Enter amount of tokens to transfer: ');
-        let isTranferVerified = await securityToken.methods.verifyTransfer(Issuer.address, transferTo, web3.utils.toWei(transferAmount), web3.utils.fromAscii("")).call();
-        if (isTranferVerified) {
-          let transferAction = securityToken.methods.transfer(transferTo, web3.utils.toWei(transferAmount));
-          let receipt = await common.sendTransaction(transferAction);
-          let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'Transfer');
-          console.log(chalk.green(`${event.from} transferred ${web3.utils.fromWei(event.value)} ${tokenSymbol} to ${event.to} successfully!`));
-          await logTotalInvestors();
-          await logBalance(Issuer.address, totalSupply);
-          await logBalance(transferTo, totalSupply);
-        } else {
-          console.log(chalk.red(`Transfer failed at verification. Please review the transfer restrictions.`));
-        }
-        break;
-      case 'Forced transfers':
-        await forcedTransfers();
-        break;
-      case 'Config existing modules':
-        await configExistingModules(nonArchivedModules);
-        break;
-      case 'Add new Transfer Manager module':
-        await addTransferManagerModule();
-        break;
-      case 'Exit':
-        exit = true;
-        break
-    }
+  let tmModules = await getAllModulesByType(gbl.constants.MODULES_TYPES.TRANSFER);
+  let nonArchivedModules = tmModules.filter(m => !m.archived);
+  if (nonArchivedModules.length > 0) {
+    console.log(`Transfer Manager modules attached:`);
+    nonArchivedModules.map(m => console.log(`- ${m.name} at ${m.address}`))
+  } else {
+    console.log(`There are no Transfer Manager modules attached`);
   }
+
+  let options = ['Verify transfer', 'Transfer'];
+  let forcedTransferDisabled = await securityToken.methods.controllerDisabled().call();
+  if (!forcedTransferDisabled) {
+    options.push('Forced transfers');
+  }
+  if (nonArchivedModules.length > 0) {
+    options.push('Config existing modules');
+  }
+  options.push('Add new Transfer Manager module');
+
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'EXIT' });
+  let optionSelected = index !== -1 ? options[index] : 'EXIT';
+  console.log('Selected:', optionSelected, '\n');
+  switch (optionSelected) {
+    case 'Verify transfer':
+      let verifyTransferFrom = readlineSync.question(`Enter the sender account (${Issuer.address}): `, {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address",
+        defaultInput: Issuer.address
+      });
+      let verifyFromBalance = web3.utils.fromWei(await securityToken.methods.balanceOf(verifyTransferFrom).call());
+      console.log(chalk.yellow(`Balance of ${verifyTransferFrom}: ${verifyFromBalance} ${tokenSymbol}`));
+      let verifyTransferTo = readlineSync.question('Enter the receiver account: ', {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address",
+      });
+      let verifyToBalance = web3.utils.fromWei(await securityToken.methods.balanceOf(verifyTransferTo).call());
+      console.log(chalk.yellow(`Balance of ${verifyTransferTo}: ${verifyToBalance} ${tokenSymbol}`));
+      let verifyTransferAmount = readlineSync.question('Enter amount of tokens to verify: ');
+      let isVerified = await securityToken.methods.verifyTransfer(verifyTransferFrom, verifyTransferTo, web3.utils.toWei(verifyTransferAmount), web3.utils.fromAscii("")).call();
+      if (isVerified) {
+        console.log(chalk.green(`\n${verifyTransferAmount} ${tokenSymbol} can be transferred from ${verifyTransferFrom} to ${verifyTransferTo}!`));
+      } else {
+        console.log(chalk.red(`\n${verifyTransferAmount} ${tokenSymbol} can't be transferred from ${verifyTransferFrom} to ${verifyTransferTo}!`));
+      }
+      break;
+    case 'Transfer':
+      let fromBalance = web3.utils.fromWei(await securityToken.methods.balanceOf(Issuer.address).call());
+      console.log(chalk.yellow(`Balance of ${Issuer.address}: ${fromBalance} ${tokenSymbol}`));
+      let transferTo = readlineSync.question('Enter beneficiary of tranfer: ', {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address"
+      });
+      let toBalance = web3.utils.fromWei(await securityToken.methods.balanceOf(transferTo).call());
+      console.log(chalk.yellow(`Balance of ${transferTo}: ${toBalance} ${tokenSymbol}`));
+      let transferAmount = readlineSync.question('Enter amount of tokens to transfer: ');
+      let isTranferVerified = await securityToken.methods.verifyTransfer(Issuer.address, transferTo, web3.utils.toWei(transferAmount), web3.utils.fromAscii("")).call();
+      if (isTranferVerified) {
+        let transferAction = securityToken.methods.transfer(transferTo, web3.utils.toWei(transferAmount));
+        let receipt = await common.sendTransaction(transferAction);
+        let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'Transfer');
+        console.log(chalk.green(`${event.from} transferred ${web3.utils.fromWei(event.value)} ${tokenSymbol} to ${event.to} successfully!`));
+        console.log(`Balance of ${Issuer.address} after transfer: ${web3.utils.fromWei(await securityToken.methods.balanceOf(Issuer.address).call())} ${tokenSymbol}`);
+        console.log(`Balance of ${transferTo} after transfer: ${web3.utils.fromWei(await securityToken.methods.balanceOf(transferTo).call())} ${tokenSymbol}`);
+      } else {
+        console.log(chalk.red(`Transfer failed at verification. Please review the transfer restrictions.`));
+      }
+      break;
+    case 'Forced transfers':
+      await forcedTransfers();
+      break;
+    case 'Config existing modules':
+      await configExistingModules(nonArchivedModules);
+      break;
+    case 'Add new Transfer Manager module':
+      await addTransferManagerModule();
+      break;
+    case 'EXIT':
+      return;
+  }
+
+  await executeApp();
 }
 
 async function forcedTransfers() {
@@ -144,8 +146,8 @@ async function forcedTransfers() {
   if (controller == Issuer.address) {
     options.push('Force Transfer');
   }
-  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Return' });
-  let optionSelected = index != -1 ? options[index] : 'Return';
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
+  let optionSelected = index !== -1 ? options[index] : 'RETURN';
   console.log('Selected:', optionSelected, '\n');
   switch (optionSelected) {
     case 'Disable controller':
@@ -204,14 +206,18 @@ async function forcedTransfers() {
       console.log(`Balance of ${from} after transfer: ${web3.utils.fromWei(await securityToken.methods.balanceOf(from).call())} ${tokenSymbol}`);
       console.log(`Balance of ${to} after transfer: ${web3.utils.fromWei(await securityToken.methods.balanceOf(to).call())} ${tokenSymbol}`);
       break;
+    case 'RETURN':
+      return;
   }
+
+  await forcedTransfers();
 }
 
 async function configExistingModules(tmModules) {
   let options = tmModules.map(m => `${m.name} at ${m.address}`);
-  let index = readlineSync.keyInSelect(options, 'Which module do you want to config? ', { cancel: 'Return' });
-  console.log('Selected:', index != -1 ? options[index] : 'Return', '\n');
-  let moduleNameSelected = index != -1 ? tmModules[index].name : 'Return';
+  let index = readlineSync.keyInSelect(options, 'Which module do you want to config? ', { cancel: 'RETURN' });
+  console.log('Selected:', index !== -1 ? options[index] : 'RETURN', '\n');
+  let moduleNameSelected = index !== -1 ? tmModules[index].name : 'RETURN';
 
   switch (moduleNameSelected) {
     case 'GeneralTransferManager':
@@ -234,6 +240,11 @@ async function configExistingModules(tmModules) {
       currentTransferManager.setProvider(web3.currentProvider);
       await percentageTransferManager();
       break;
+    case 'BlacklistTransferManager':
+      currentTransferManager = new web3.eth.Contract(abis.blacklistTransferManager(), tmModules[index].address);
+      currentTransferManager.setProvider(web3.currentProvider);
+      await blacklistTransferManager();
+      break;
     case 'VolumeRestrictionTM':
       currentTransferManager = new web3.eth.Contract(abis.volumeRestrictionTM(), tmModules[index].address);
       currentTransferManager.setProvider(web3.currentProvider);
@@ -250,7 +261,7 @@ async function addTransferManagerModule() {
     return web3.utils.hexToUtf8(await moduleFactory.methods.name().call());
   }));
 
-  let index = readlineSync.keyInSelect(options, 'Which Transfer Manager module do you want to add? ', { cancel: 'Return' });
+  let index = readlineSync.keyInSelect(options, 'Which Transfer Manager module do you want to add? ', { cancel: 'RETURN' });
   if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]} module?`)) {
     let bytes = web3.utils.fromAscii('', 16);
     switch (options[index]) {
@@ -332,9 +343,9 @@ async function generalTransferManager() {
     options.push('Allow all burn transfers');
   }
 
-  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Return' });
-  let optionSelected = options[index];
-  console.log('Selected:', index != -1 ? optionSelected : 'Return', '\n');
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
+  let optionSelected = index !== -1 ? options[index] : 'RETURN';
+  console.log('Selected:', optionSelected, '\n');
   switch (optionSelected) {
     case `Show investors`:
       console.log('***** List of investors on whitelist *****');
@@ -474,7 +485,11 @@ async function generalTransferManager() {
         console.log(chalk.green(`The burning mechanism is deactivated!`));
       }
       break;
+    case 'RETURN':
+      return;
   }
+
+  await generalTransferManager();
 }
 
 function showWhitelistTable(investorsArray, fromTimeArray, toTimeArray, expiryTimeArray, canBuyFromSTOArray) {
@@ -529,7 +544,7 @@ async function modifyWhitelistInBatch(_csvFilePath, _batchSize) {
   let [investorArray, fromTimesArray, toTimesArray, expiryTimeArray, canBuyFromSTOArray] = common.transposeBatches(batches);
   for (let batch = 0; batch < batches.length; batch++) {
     console.log(`Batch ${batch + 1} - Attempting to modify whitelist to accounts: \n\n`, investorArray[batch], '\n');
-    let action = await currentTransferManager.methods.modifyWhitelistMulti(investorArray[batch], fromTimesArray[batch], toTimesArray[batch], expiryTimeArray[batch], canBuyFromSTOArray[batch]);
+    let action = currentTransferManager.methods.modifyWhitelistMulti(investorArray[batch], fromTimesArray[batch], toTimesArray[batch], expiryTimeArray[batch], canBuyFromSTOArray[batch]);
     let receipt = await common.sendTransaction(action);
     console.log(chalk.green('Modify whitelist transaction was successful.'));
     console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
@@ -934,9 +949,9 @@ async function countTransferManager() {
   console.log(`- Max holder count:        ${displayMaxHolderCount}`);
 
   let options = ['Change max holder count']
-  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Return' });
-  let optionSelected = options[index];
-  console.log('Selected:', index != -1 ? optionSelected : 'Return', '\n');
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
+  let optionSelected = index !== -1 ? options[index] : 'RETURN';
+  console.log('Selected:', optionSelected, '\n');
   switch (optionSelected) {
     case 'Change max holder count':
       let maxHolderCount = readlineSync.question('Enter the maximum no. of holders the SecurityToken is allowed to have: ');
@@ -945,7 +960,11 @@ async function countTransferManager() {
       let changeHolderCountEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeHolderCountReceipt.logs, 'ModifyHolderCount');
       console.log(chalk.green(`Max holder count has been set to ${changeHolderCountEvent._newHolderCount} sucessfully!`));
       break;
+    case 'RETURN':
+      return;
   }
+
+  await countTransferManager();
 }
 
 async function percentageTransferManager() {
@@ -964,9 +983,9 @@ async function percentageTransferManager() {
   } else {
     options.push('Allow primary issuance');
   }
-  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Return' });
-  let optionSelected = options[index];
-  console.log('Selected:', index != -1 ? optionSelected : 'Return', '\n');
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
+  let optionSelected = index !== -1 ? options[index] : 'RETURN';
+  console.log('Selected:', optionSelected, '\n');
   switch (optionSelected) {
     case 'Change max holder percentage':
       let maxHolderPercentage = toWeiPercentage(readlineSync.question('Enter the maximum amount of tokens in percentage that an investor can hold: ', {
@@ -1049,7 +1068,438 @@ async function percentageTransferManager() {
         console.log(chalk.green(`Transactions which are part of the primary issuance will NOT be ignored!`));
       }
       break;
+    case 'RETURN':
+      return;
+  }
 
+  await percentageTransferManager();
+}
+
+async function blacklistTransferManager() {
+  console.log(chalk.blue(`Blacklist Transfer Manager at ${currentTransferManager.options.address}`), '\n');
+
+  let currentBlacklists = await currentTransferManager.methods.getAllBlacklists().call();
+  console.log(`- Blacklists:    ${currentBlacklists.length}`);
+
+  let options = ['Add new blacklist'];
+  if (currentBlacklists.length > 0) {
+    options.push('Manage existing blacklist', 'Explore account');
+  }
+  options.push('Delete investors from all blacklists', 'Operate with multiple blacklists');
+
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: "RETURN" });
+  let optionSelected = index !== -1 ? options[index] : 'RETURN';
+  console.log('Selected:', optionSelected, '\n');
+  switch (optionSelected) {
+    case 'Add new blacklist':
+      let name = readlineSync.question(`Enter the name of the blacklist type: `, {
+        limit: function (input) {
+          return input !== "";
+        },
+        limitMessage: `Invalid blacklist name`
+      });
+      let minuteFromNow = Math.floor(Date.now() / 1000) + 60;
+      let startTime = readlineSync.questionInt(`Enter the start date (Unix Epoch time) of the blacklist type (a minute from now = ${minuteFromNow}): `, { defaultInput: minuteFromNow });
+      let oneDayFromStartTime = startTime + 24 * 60 * 60;
+      let endTime = readlineSync.questionInt(`Enter the end date (Unix Epoch time) of the blacklist type (1 day from start time = ${oneDayFromStartTime}): `, { defaultInput: oneDayFromStartTime });
+      let repeatPeriodTime = readlineSync.questionInt(`Enter the repeat period (days) of the blacklist type, 0 to disable (90 days): `, { defaultInput: 90 });
+      if (readlineSync.keyInYNStrict(`Do you want to add an investor to this blacklist type? `)) {
+        let investor = readlineSync.question(`Enter the address of the investor: `, {
+          limit: function (input) {
+            return web3.utils.isAddress(input);
+          },
+          limitMessage: `Must be a valid address`
+        });
+        let addInvestorToNewBlacklistAction = currentTransferManager.methods.addInvestorToNewBlacklist(
+          startTime,
+          endTime,
+          web3.utils.toHex(name),
+          repeatPeriodTime,
+          investor
+        );
+        let addInvestorToNewBlacklistReceipt = await common.sendTransaction(addInvestorToNewBlacklistAction);
+        let addNewBlacklistEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addInvestorToNewBlacklistReceipt.logs, 'AddBlacklistType');
+        console.log(chalk.green(`${web3.utils.hexToUtf8(addNewBlacklistEvent._blacklistName)} blacklist type has been added successfully!`));
+        let addInvestorToNewBlacklistEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addInvestorToNewBlacklistReceipt.logs, 'AddInvestorToBlacklist');
+        console.log(chalk.green(`${addInvestorToNewBlacklistEvent._investor} has been added to ${web3.utils.hexToUtf8(addInvestorToNewBlacklistEvent._blacklistName)} successfully!`));
+      } else {
+        let addBlacklistTypeAction = currentTransferManager.methods.addBlacklistType(startTime, endTime, web3.utils.toHex(name), repeatPeriodTime);
+        let addBlacklistTypeReceipt = await common.sendTransaction(addBlacklistTypeAction);
+        let addBlacklistTypeEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addBlacklistTypeReceipt.logs, 'AddBlacklistType');
+        console.log(chalk.green(`${web3.utils.hexToUtf8(addBlacklistTypeEvent._blacklistName)} blacklist type has been added successfully!`));
+      }
+      break;
+    case 'Manage existing blacklist':
+      let options = currentBlacklists.map(b => web3.utils.hexToUtf8(b));
+      let index = readlineSync.keyInSelect(options, 'Which blacklist type do you want to manage? ', { cancel: "RETURN" });
+      let optionSelected = index !== -1 ? options[index] : 'RETURN';
+      console.log('Selected:', optionSelected, '\n');
+      if (index !== -1) {
+        await manageExistingBlacklist(currentBlacklists[index]);
+      }
+      break;
+    case 'Explore account':
+      let account = readlineSync.question(`Enter the address of the investor: `, {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: `Must be a valid address`
+      });
+      let blacklistNamesToUser = await currentTransferManager.methods.getBlacklistNamesToUser(account).call();
+      if (blacklistNamesToUser.length > 0) {
+        console.log();
+        console.log(`**** Blacklists inlcuding ${account} ****`);
+        blacklistNamesToUser.map(n => console.log(web3.utils.hexToUtf8(n)));
+      } else {
+        console.log(chalk.yellow(`No blacklist includes ${account}`));
+      }
+      console.log();
+      break;
+    case 'Delete investors from all blacklists':
+      let investorsToRemove = readlineSync.question(`Enter the addresses of the investors separated by comma (i.e. addr1,addr2,addr3): `, {
+        limit: function (input) {
+          return (input !== '' && input.split(",").every(a => web3.utils.isAddress(a)));
+        },
+        limitMessage: `All addresses must be valid`
+      }).split(',');
+      let deleteInvestorFromAllBlacklistAction;
+      if (investorsToRemove.length === 1) {
+        deleteInvestorFromAllBlacklistAction = currentTransferManager.methods.deleteInvestorFromAllBlacklist(investorsToRemove[0]);
+      } else {
+        deleteInvestorFromAllBlacklistAction = currentTransferManager.methods.deleteInvestorFromAllBlacklistMulti(investorsToRemove);
+      }
+      let deleteInvestorFromAllBlacklistReceipt = await common.sendTransaction(deleteInvestorFromAllBlacklistAction);
+      let deleteInvestorFromAllBlacklistEvents = common.getMultipleEventsFromLogs(currentTransferManager._jsonInterface, deleteInvestorFromAllBlacklistReceipt.logs, 'DeleteInvestorFromBlacklist');
+      deleteInvestorFromAllBlacklistEvents.map(e => console.log(chalk.green(`${e._investor} has been removed from ${web3.utils.hexToUtf8(e._blacklistName)} successfully!`)));
+      break;
+    case 'Operate with multiple blacklists':
+      await operateWithMultipleBlacklists(currentBlacklists);
+      break;
+    case 'RETURN':
+      return;
+  }
+
+  await blacklistTransferManager();
+}
+
+async function manageExistingBlacklist(blacklistName) {
+  // Show current data
+  let currentBlacklist = await currentTransferManager.methods.blacklists(blacklistName).call();
+  let investors = await currentTransferManager.methods.getListOfAddresses(blacklistName).call();
+
+  console.log();
+  console.log(`- Name:                 ${web3.utils.hexToUtf8(blacklistName)}`);
+  console.log(`- Start time:           ${moment.unix(currentBlacklist.startTime).format('MMMM Do YYYY, HH:mm:ss')}`);
+  console.log(`- End time:             ${moment.unix(currentBlacklist.endTime).format('MMMM Do YYYY, HH:mm:ss')}`);
+  console.log(`- Span:                 ${(currentBlacklist.endTime - currentBlacklist.startTime) / 60 / 60 / 24} days`);
+  console.log(`- Repeat period time:   ${currentBlacklist.repeatPeriodTime} days`);
+  console.log(`- Investors:            ${investors.length}`);
+  // ------------------
+
+  let options = [
+    "Modify properties",
+    "Show investors",
+    "Add investors",
+    "Remove investor",
+    "Delete this blacklist type"
+  ];
+
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
+  let optionSelected = index !== -1 ? options[index] : 'RETURN';
+  console.log('Selected:', optionSelected, '\n');
+  switch (optionSelected) {
+    case 'Modify properties':
+      let minuteFromNow = Math.floor(Date.now() / 1000) + 60;
+      let startTime = readlineSync.questionInt(`Enter the start date (Unix Epoch time) of the blacklist type (a minute from now = ${minuteFromNow}): `, { defaultInput: minuteFromNow });
+      let oneDayFromStartTime = startTime + 24 * 60 * 60;
+      let endTime = readlineSync.questionInt(`Enter the end date (Unix Epoch time) of the blacklist type (1 day from start time = ${oneDayFromStartTime}): `, { defaultInput: oneDayFromStartTime });
+      let repeatPeriodTime = readlineSync.questionInt(`Enter the repeat period (days) of the blacklist type, 0 to disable (90 days): `, { defaultInput: 90 });
+      let modifyBlacklistTypeAction = currentTransferManager.methods.modifyBlacklistType(
+        startTime,
+        endTime,
+        blacklistName,
+        repeatPeriodTime
+      );
+      let modifyBlacklistTypeReceipt = await common.sendTransaction(modifyBlacklistTypeAction);
+      let modifyBlacklistTypeEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, modifyBlacklistTypeReceipt.logs, 'ModifyBlacklistType');
+      console.log(chalk.green(`${web3.utils.hexToUtf8(modifyBlacklistTypeEvent._blacklistName)} blacklist type has been modified successfully!`));
+      break;
+    case 'Show investors':
+      if (investors.length > 0) {
+        console.log("************ List of investors ************");
+        investors.map(i => console.log(i));
+      } else {
+        console.log(chalk.yellow("There are no investors yet"));
+      }
+      break;
+    case 'Add investors':
+      let investorsToAdd = readlineSync.question(`Enter the addresses of the investors separated by comma (i.e. addr1,addr2,addr3): `, {
+        limit: function (input) {
+          return (input !== '' && input.split(",").every(a => web3.utils.isAddress(a)));
+        },
+        limitMessage: `All addresses must be valid`
+      }).split(",");
+      let addInvestorToBlacklistAction;
+      if (investorsToAdd.length === 1) {
+        addInvestorToBlacklistAction = currentTransferManager.methods.addInvestorToBlacklist(investorsToAdd[0], blacklistName);
+      } else {
+        addInvestorToBlacklistAction = currentTransferManager.methods.addInvestorToBlacklistMulti(investorsToAdd, blacklistName);
+      }
+      let addInvestorToBlacklistReceipt = await common.sendTransaction(addInvestorToBlacklistAction);
+      let addInvestorToBlacklistEvents = common.getMultipleEventsFromLogs(currentTransferManager._jsonInterface, addInvestorToBlacklistReceipt.logs, 'AddInvestorToBlacklist');
+      addInvestorToBlacklistEvents.map(e => console.log(chalk.green(`${e._investor} has been added to ${web3.utils.hexToUtf8(e._blacklistName)} successfully!`)));
+      break;
+    case "Remove investor":
+      let investorsToRemove = readlineSync.question(`Enter the address of the investor: `, {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: `Must be a valid address`
+      });
+      let deleteInvestorFromBlacklistAction = currentTransferManager.methods.deleteInvestorFromBlacklist(investorsToRemove, blacklistName);
+      let deleteInvestorFromBlacklistReceipt = await common.sendTransaction(deleteInvestorFromBlacklistAction);
+      let deleteInvestorFromBlacklistEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, deleteInvestorFromBlacklistReceipt.logs, 'DeleteInvestorFromBlacklist');
+      console.log(chalk.green(`${deleteInvestorFromBlacklistEvent._investor} has been removed from ${web3.utils.hexToUtf8(deleteInvestorFromBlacklistEvent._blacklistName)} successfully!`));
+      break;
+    case "Delete this blacklist type":
+      let isEmpty = investors.length === 0;
+      if (!isEmpty) {
+        console.log(chalk.yellow(`This blacklist have investors added on it. To delete it you must remove them first.`));
+        if (readlineSync.keyInYNStrict(`Do you want to remove them? `)) {
+          let data = investors.map(i => [i, blacklistName])
+          let batches = common.splitIntoBatches(data, gbl.constants.DEFAULT_BATCH_SIZE);
+          let [investorArray, blacklistNameArray] = common.transposeBatches(batches);
+          for (let batch = 0; batch < batches.length; batch++) {
+            console.log(`Batch ${batch + 1} - Attempting to remove the following investors:\n\n`, investorArray[batch], '\n');
+            let action = currentTransferManager.methods.deleteMultiInvestorsFromBlacklistMulti(investorArray[batch], blacklistNameArray[batch]);
+            let receipt = await common.sendTransaction(action);
+            console.log(chalk.green('Remove investors from multiple blacklists transaction was successful.'));
+            console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+          }
+          isEmpty = true;
+        }
+      }
+      if (isEmpty) {
+        let deleteBlacklistTypeAction = currentTransferManager.methods.deleteBlacklistType(blacklistName);
+        let deleteBlacklistTypeReceipt = await common.sendTransaction(deleteBlacklistTypeAction);
+        let deleteBlacklistTypeEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, deleteBlacklistTypeReceipt.logs, 'DeleteBlacklistType');
+        console.log(chalk.green(`${web3.utils.hexToUtf8(deleteBlacklistTypeEvent._blacklistName)} blacklist type has been deleted successfully!`));
+      }
+      return;
+    case 'RETURN':
+      return;
+  }
+
+  await manageExistingBlacklist(blacklistName);
+}
+
+async function operateWithMultipleBlacklists(currentBlacklists) {
+  let options = ['Add multiple blacklists'];
+  if (currentBlacklists.length > 0) {
+    options.push('Modify multiple blacklists');
+  }
+  options.push(
+    'Delete multiple blacklists',
+    'Add investors to multiple blacklists',
+    'Remove investors from multiple blacklists'
+  );
+
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
+  let optionSelected = index !== -1 ? options[index] : 'RETURN';
+  console.log('Selected:', optionSelected, '\n');
+  switch (optionSelected) {
+    case 'Add multiple blacklists':
+      await addBlacklistsInBatch();
+      break;
+    case 'Modify multiple blacklists':
+      await modifyBlacklistsInBatch();
+      break;
+    case 'Delete multiple blacklists':
+      await deleteBlacklistsInBatch();
+      break;
+    case 'Add investors to multiple blacklists':
+      await addInvestorsToBlacklistsInBatch();
+      break;
+    case 'Remove investors from multiple blacklists':
+      await removeInvestorsFromBlacklistsInBatch();
+      break;
+  }
+}
+
+async function addBlacklistsInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${ADD_BLACKLIST_DATA_CSV}): `, {
+    defaultInput: ADD_BLACKLIST_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(
+    row => moment.unix(row[0]).isValid() &&
+      moment.unix(row[1]).isValid() &&
+      typeof row[2] === 'string' &&
+      (!isNaN(row[3] && (parseFloat(row[3]) % 1 === 0))));
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [startTimeArray, endTimeArray, blacklistNameArray, repeatPeriodTimeArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to add the following blacklists:\n\n`, blacklistNameArray[batch], '\n');
+    blacklistNameArray[batch] = blacklistNameArray[batch].map(n => web3.utils.toHex(n));
+    let action = currentTransferManager.methods.addBlacklistTypeMulti(startTimeArray[batch], endTimeArray[batch], blacklistNameArray[batch], repeatPeriodTimeArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Add multiple blacklists transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
+async function modifyBlacklistsInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${MODIFY_BLACKLIST_DATA_CSV}): `, {
+    defaultInput: MODIFY_BLACKLIST_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(
+    row => moment.unix(row[0]).isValid() &&
+      moment.unix(row[1]).isValid() &&
+      typeof row[2] === 'string' &&
+      (!isNaN(row[3] && (parseFloat(row[3]) % 1 === 0))));
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [startTimeArray, endTimeArray, blacklistNameArray, repeatPeriodTimeArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to modify the following blacklists:\n\n`, blacklistNameArray[batch], '\n');
+    blacklistNameArray[batch] = blacklistNameArray[batch].map(n => web3.utils.toHex(n));
+    let action = currentTransferManager.methods.modifyBlacklistTypeMulti(startTimeArray[batch], endTimeArray[batch], blacklistNameArray[batch], repeatPeriodTimeArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Modify multiple blacklists transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
+async function deleteBlacklistsInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${DELETE_BLACKLIST_DATA_CSV}): `, {
+    defaultInput: DELETE_BLACKLIST_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(row => typeof row[0] === 'string');
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+
+  let verifiedData = [];
+  let unverifiedData = [];
+  for (const row of validData) {
+    let blacklistName = row[0];
+    let verifiedTransaction = (await currentTransferManager.methods.getListOfAddresses(web3.utils.toHex(blacklistName)).call()).length === 0;
+    if (verifiedTransaction) {
+      verifiedData.push(row);
+    } else {
+      unverifiedData.push(row);
+    }
+  }
+
+  let batches = common.splitIntoBatches(verifiedData, batchSize);
+  let [blacklistNameArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to delete the following blacklists:\n\n`, blacklistNameArray[batch], '\n');
+    blacklistNameArray[batch] = blacklistNameArray[batch].map(n => web3.utils.toHex(n));
+    let action = currentTransferManager.methods.deleteBlacklistTypeMulti(blacklistNameArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Delete multiple blacklists transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+
+  if (unverifiedData.length > 0) {
+    console.log("*****************************************************************************************************************");
+    console.log('The following data would failed as these blacklists have investors. They must be empty to be able to delete them.\n');
+    console.log(chalk.red(unverifiedData.map(d => `${d[0]}`).join('\n')));
+    console.log("*****************************************************************************************************************");
+  }
+}
+
+async function addInvestorsToBlacklistsInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${ADD_INVESTOR_BLACKLIST_DATA_CSV}): `, {
+    defaultInput: ADD_INVESTOR_BLACKLIST_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(
+    row => web3.utils.isAddress(row[0]) &&
+      typeof row[1] === 'string');
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [investorArray, blacklistNameArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to add the following investors:\n\n`, investorArray[batch], '\n');
+    blacklistNameArray[batch] = blacklistNameArray[batch].map(n => web3.utils.toHex(n));
+    let action = currentTransferManager.methods.addMultiInvestorToBlacklistMulti(investorArray[batch], blacklistNameArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Add investors to multiple blacklists transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
+async function removeInvestorsFromBlacklistsInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${REMOVE_INVESTOR_BLACKLIST_DATA_CSV}): `, {
+    defaultInput: REMOVE_INVESTOR_BLACKLIST_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(
+    row => web3.utils.isAddress(row[0]) &&
+      typeof row[1] === 'string');
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [investorArray, blacklistNameArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to remove the following investors:\n\n`, investorArray[batch], '\n');
+    blacklistNameArray[batch] = blacklistNameArray[batch].map(n => web3.utils.toHex(n));
+    let action = currentTransferManager.methods.deleteMultiInvestorsFromBlacklistMulti(investorArray[batch], blacklistNameArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Remove investors from multiple blacklists transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
   }
 }
 
@@ -1790,8 +2240,8 @@ async function selectToken() {
   });
   options.push('Enter token symbol manually');
 
-  let index = readlineSync.keyInSelect(options, 'Select a token:', { cancel: 'Exit' });
-  let selected = index != -1 ? options[index] : 'Exit';
+  let index = readlineSync.keyInSelect(options, 'Select a token:', { cancel: 'EXIT' });
+  let selected = index !== -1 ? options[index] : 'EXIT';
   switch (selected) {
     case 'Enter token symbol manually':
       result = readlineSync.question('Enter the token symbol: ');

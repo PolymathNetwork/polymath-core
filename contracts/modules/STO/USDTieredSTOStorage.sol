@@ -88,9 +88,6 @@ contract USDTieredSTOStorage {
     // Default limit in USD for non-accredited investors multiplied by 10**18
     uint256 public nonAccreditedLimitUSD;
 
-    // Overrides for default limit in USD for non-accredited investors multiplied by 10**18
-    /* mapping (address => uint256) public nonAccreditedLimitUSDOverride; */
-
     // Minimum investable amount in USD
     uint256 public minimumInvestmentUSD;
 

@@ -267,8 +267,8 @@ contract("SecurityTokenRegistry", async (accounts) => {
             await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {
                 from: account_polymath
             });
-            I_Getter = STRGetter.at(I_SecurityTokenRegistryProxy.address);
-            I_STRProxied = SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
+            I_Getter = await STRGetter.at(I_SecurityTokenRegistryProxy.address);
+            I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
         });
     });
 
@@ -579,9 +579,6 @@ contract("SecurityTokenRegistry", async (accounts) => {
             assert.equal(tx.logs[2].args._ticker, symbol2, "SecurityToken doesn't get deployed");
 
             I_SecurityToken002 = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
-            let tokens = await I_STRProxied.getTokensByOwner.call(token_owner);
-            assert.equal(tokens[0], I_SecurityToken.address);
-            assert.equal(tokens[1], I_SecurityToken002.address);
             const log = (await I_SecurityToken002.getPastEvents('ModuleAdded'))[0];
             // Verify that GeneralTransferManager module get added successfully or not
             assert.equal(log.args._types[0].toNumber(), transferManagerKey);

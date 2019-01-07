@@ -115,7 +115,8 @@ export async function setUpPolymathNetwork(account_polymath, token_owner) {
     await setInPolymathRegistry(account_polymath);
     // STEP 9: Register the Modules with the ModuleRegistry contract
     await registerGTM(account_polymath);
-    let tempArray = new Array(I_PolymathRegistry,
+    let tempArray = new Array(
+        I_PolymathRegistry,
         I_PolyToken,
         I_FeatureRegistry,
         I_ModuleRegistry,
@@ -125,7 +126,9 @@ export async function setUpPolymathNetwork(account_polymath, token_owner) {
         I_STFactory,
         I_SecurityTokenRegistry,
         I_SecurityTokenRegistryProxy,
-        I_STRProxied);
+        I_STRProxied,
+        I_STRGetter
+    );
     
     return Promise.all(tempArray);
 }

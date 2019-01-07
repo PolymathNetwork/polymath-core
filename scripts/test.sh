@@ -88,11 +88,32 @@ else
   fi
 fi
 
+if [ "$TRAVIS" = true ]; then
+  npm i -g truffle
+  rm truffle-config.js
+  mv truffle-ci.js truffle-config.js
+  curl -L -o solidity-ubuntu-trusty.zip https://github.com/ethereum/solidity/releases/download/v0.4.24/solidity-ubuntu-trusty.zip
+  unzip solidity-ubuntu-trusty.zip
+  mv solc /usr/bin/solc
+  mv lllc /usr/bin/lllc
+  truffle version
+fi
+
 if [ "$COVERAGE" = true ] || [ "$TRAVIS_PULL_REQUEST" > 0 ] && [ "$NOT_FORK" != true ]; then
   curl -o node_modules/solidity-coverage/lib/app.js https://raw.githubusercontent.com/maxsam4/solidity-coverage/relative-path/lib/app.js
   if [ "$CIRCLECI" = true ]; then
     rm truffle-config.js
     mv truffle-ci.js truffle-config.js
+  fi
+  if [ "$TRAVIS" = true ]; then
+    npm i -g truffle
+    rm truffle-config.js
+    mv truffle-ci.js truffle-config.js
+    curl -L -o solidity-ubuntu-trusty.zip https://github.com/ethereum/solidity/releases/download/v0.4.24/solidity-ubuntu-trusty.zip
+    unzip solidity-ubuntu-trusty.zip
+    mv solc /usr/bin/solc
+    mv lllc /usr/bin/lllc
+    truffle version
   fi
   node_modules/.bin/solidity-coverage
   if [ "$CIRCLECI" = true ] || [ "$TRAVIS_PULL_REQUEST" > 0 ] && [ "$NOT_FORK" != true ]; then

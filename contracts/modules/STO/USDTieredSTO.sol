@@ -306,7 +306,12 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
     function changeAccredited(address[] _investors, bool[] _accredited) public onlyOwner {
         require(_investors.length == _accredited.length, "Array length mismatch");
         for (uint256 i = 0; i < _investors.length; i++) {
-            accredited[_investors[i]] = _accredited[i];
+            if (_accredited[i]) {
+                investors[_investors[i]].accredited = uint8(1);
+            } else {
+                investors[_investors[i]].accredited = uint8(0);
+            }
+            _addToInvestorsList(_investors[i]);
             emit SetAccredited(_investors[i], _accredited[i]);
         }
     }
@@ -320,10 +325,34 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
         //nonAccreditedLimitUSDOverride
         require(_investors.length == _nonAccreditedLimit.length, "Array length mismatch");
         for (uint256 i = 0; i < _investors.length; i++) {
-            require(_nonAccreditedLimit[i] > 0, "Limit = 0");
-            nonAccreditedLimitUSDOverride[_investors[i]] = _nonAccreditedLimit[i];
+            investors[_investors[i]].nonAccreditedLimitUSDOverride = _nonAccreditedLimit[i];
+            _addToInvestorsList(_investors[i]);
             emit SetNonAccreditedLimit(_investors[i], _nonAccreditedLimit[i]);
         }
+    }
+
+    function _addToInvestorsList(address _investor) internal {
+        if (investors[_investor].seen == uint8(0)) {
+            investors[_investor].seen = uint8(1);
+            investorsList.push(_investor);
+        }
+    }
+
+    /**
+     * @notice Returns investor accredited & non-accredited override informatiomn
+     * @return address[] list of all configured investors
+     * @return bool[] whether investor is accredited
+     * @return uint256[] any USD overrides for non-accredited limits for the investor
+     */
+    function getAccreditedData() external view returns (address[], bool[], uint256[]) {
+        bool[] memory accrediteds = new bool[](investorsList.length);
+        uint256[] memory nonAccreditedLimitUSDOverrides = new uint256[](investorsList.length);
+        uint256 i;
+        for (i = 0; i < investorsList.length; i++) {
+            accrediteds[i] = (investors[investorsList[i]].accredited == uint8(0)? false: true);
+            nonAccreditedLimitUSDOverrides[i] = investors[investorsList[i]].nonAccreditedLimitUSDOverride;
+        }
+        return (investorsList, accrediteds, nonAccreditedLimitUSDOverrides);
     }
 
     /**
@@ -525,8 +554,8 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
         require(investedUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestmentUSD, "Total investment < minimumInvestmentUSD");
         netInvestedUSD = investedUSD;
         // Check for non-accredited cap
-        if (!accredited[_beneficiary]) {
-            uint256 investorLimitUSD = (nonAccreditedLimitUSDOverride[_beneficiary] == 0) ? nonAccreditedLimitUSD : nonAccreditedLimitUSDOverride[_beneficiary];
+        if (investors[_beneficiary].accredited == uint8(0)) {
+            uint256 investorLimitUSD = (investors[_beneficiary].nonAccreditedLimitUSDOverride == 0) ? nonAccreditedLimitUSD : investors[_beneficiary].nonAccreditedLimitUSDOverride;
             require(investorInvestedUSD[_beneficiary] < investorLimitUSD, "Over Non-accredited investor limit");
             if (investedUSD.add(investorInvestedUSD[_beneficiary]) > investorLimitUSD)
                 netInvestedUSD = investorLimitUSD.sub(investorInvestedUSD[_beneficiary]);

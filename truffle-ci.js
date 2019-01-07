@@ -35,10 +35,6 @@ module.exports = {
     },
   },
   mocha: {
-    enableTimeouts: false,
-    reporter: "mocha-junit-reporter",
-    reporterOptions: {
-      mochaFile: './test-results/mocha/results.xml'
-    }
+    enableTimeouts: false
   }
 };

@@ -143,7 +143,7 @@
             <td>allocateTokensMulti()</td>
         </tr>
         <tr>
-            <td rowspan=31>TransferManager</td>
+            <td rowspan=42>TransferManager</td>
             <td>CountTransferManager</td>
             <td>changeHolderCount()</td>
             <td>withPerm(ADMIN)</td>
@@ -238,10 +238,51 @@
         </tr>
         <tr>
             <td>modifyDailyGlobalRestriction()</td>
-        </tr>  
-            <td> removeTransferLimitInPercentageMulti </td>
-        </tr>      
-        <tr></tr>
+        </tr>     
+        <tr>
+            <td rowspan=14> BlacklistTransferManager </td>
+            <td> addBlacklistType() </td>
+            <td rowspan=14> withPerm(ADMIN) </td>
+        </tr>
+        <tr>
+            <td> addBlacklistTypeMulti() </td>
+        </tr>
+        <tr>
+            <td> modifyBlacklistType() </td>
+        </tr>
+        <tr>
+            <td> modifyBlacklistTypeMulti() </td>
+        </tr>
+        <tr>
+            <td> deleteBlacklistType() </td>
+        </tr>
+        <tr>
+            <td> deleteBlacklistTypeMulti() </td>
+        </tr>
+        <tr>
+            <td> addInvestorToBlacklist() </td>
+        </tr>
+        <tr>
+            <td> addInvestorToBlacklistMulti() </td>
+        </tr>
+        <tr>
+            <td> addMultiInvestorToBlacklistMulti() </td>
+        </tr>
+        <tr>
+            <td> addInvestorToNewBlacklist() </td>
+        </tr>
+        <tr>
+            <td> deleteInvestorFromAllBlacklist() </td>
+        </tr>
+        <tr>
+            <td> deleteInvestorFromAllBlacklistMulti() </td>
+        </tr>
+        <tr>
+            <td> deleteInvestorFromBlacklist() </td>
+        </tr>
+        <tr>
+            <td> deleteMultiInvestorsFromBlacklistMulti() </td>
+        </tr>
         <tr>
             <td rowspan=16>Wallet</td>
             <td rowspan=16>VestingEscrowWallet</td>

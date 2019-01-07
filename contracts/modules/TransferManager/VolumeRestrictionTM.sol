@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "./ITransferManager.sol";
-import "./VolumeRestrictionTMStorage.sol";
+import "../../storage/VolumeRestrictionTMStorage.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "../../libraries/BokkyPooBahsDateTimeLibrary.sol";
 

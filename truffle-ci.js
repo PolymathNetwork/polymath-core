@@ -17,6 +17,17 @@ module.exports = {
       gasPrice: 0x01      // <-- Use this low gas price
     }
   },
+  compilers: {
+    solc: {
+      version: "native",  
+      settings: {
+        optimizer: {
+          enabled: true, 
+          runs: 200    
+        }
+      }
+    }
+  },
   solc: {
     optimizer: {
       enabled: true,
@@ -24,10 +35,6 @@ module.exports = {
     },
   },
   mocha: {
-    enableTimeouts: false,
-    reporter: "mocha-junit-reporter",
-    reporterOptions: {
-      mochaFile: './test-results/mocha/results.xml'
-    }
+    enableTimeouts: false
   }
 };

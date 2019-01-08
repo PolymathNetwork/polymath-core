@@ -504,7 +504,7 @@ async function pauseModule(modules) {
     let moduleABI;
     if (modules[index].type == gbl.constants.MODULES_TYPES.STO) {
       moduleABI = abis.ISTO();
-    } else if (modules[index].type == gbl.constants.MODULES_TYPES.STO) {
+    } else if (modules[index].type == gbl.constants.MODULES_TYPES.TRANSFER) {
       moduleABI = abis.ITransferManager();
     } else {
       console.log(chalk.red(`Only STO and TM modules can be paused/unpaused`));
@@ -525,7 +525,7 @@ async function unpauseModule(modules) {
     let moduleABI;
     if (modules[index].type == gbl.constants.MODULES_TYPES.STO) {
       moduleABI = abis.ISTO();
-    } else if (modules[index].type == gbl.constants.MODULES_TYPES.STO) {
+    } else if (modules[index].type == gbl.constants.MODULES_TYPES.TRANSFER) {
       moduleABI = abis.ITransferManager();
     } else {
       console.log(chalk.red(`Only STO and TM modules can be paused/unpaused`));

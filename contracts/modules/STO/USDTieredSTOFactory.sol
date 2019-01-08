@@ -45,7 +45,7 @@ contract USDTieredSTOFactory is ModuleFactory {
         require(Util.getSig(_data) == IBoot(usdTieredSTO).getInitFunction(), "Invalid data");
         bool success;
         /*solium-disable-next-line security/no-low-level-calls*/
-        (success, ) = address(usdTieredSTO).call(_data);
+        (success, ) = usdTieredSTO.call(_data);
         require(success, "Unsuccessfull call");
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(usdTieredSTO, getName(), address(this), msg.sender, setupCost, now);

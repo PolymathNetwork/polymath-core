@@ -27,7 +27,7 @@ contract FeatureRegistry is IFeatureRegistry, ReclaimTokens {
      * @param _nameKey is the key for the feature status mapping
      * @param _newStatus is the new feature status
      */
-    function setFeatureStatus(string memory _nameKey, bool _newStatus) public onlyOwner {
+    function setFeatureStatus(string calldata _nameKey, bool _newStatus) external onlyOwner {
         bytes32 key = keccak256(bytes(_nameKey));
         require(featureStatus[key] != _newStatus, "Status unchanged");
         emit ChangeFeatureStatus(_nameKey, _newStatus);

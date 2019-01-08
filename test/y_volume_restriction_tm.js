@@ -214,8 +214,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await I_SecurityToken.mint(account_investor1, web3.utils.toWei("40", "ether"), {from: token_owner});
             await I_SecurityToken.mint(account_investor2, web3.utils.toWei("30", "ether"), {from: token_owner});
             await I_SecurityToken.mint(account_investor3, web3.utils.toWei("30", "ether"), {from: token_owner});
-            
-            // Check the balance of the investors 
+
+            // Check the balance of the investors
             let bal1 = await I_SecurityToken.balanceOf.call(account_investor1);
             let bal2 = await I_SecurityToken.balanceOf.call(account_investor2);
             // Verifying the balances
@@ -406,10 +406,10 @@ contract('VolumeRestrictionTransferManager', accounts => {
                         from: token_owner
                     }
                 );
-            
             assert.equal(tx.logs[0].args._holder, account_investor1);
             assert.equal(tx.logs[0].args._typeOfRestriction, 0);
             let data = await I_VolumeRestrictionTM.getRestrictedAddresses.call();
+            console.log(data);
             assert.equal(data[0][0], account_investor1);
             assert.equal(data[1][0].toNumber(), 0);
 
@@ -544,6 +544,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal((await I_VolumeRestrictionTM.individualRestriction.call(account_investor4))[2].toNumber(), 5);
 
             let data = await I_VolumeRestrictionTM.getRestrictedAddresses.call();
+            console.log(data);
             assert.equal(data[0].length, 4);
         });
 
@@ -563,7 +564,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal((await I_VolumeRestrictionTM.individualRestriction.call(account_investor2))[3].toNumber(), 0);
             let data = await I_VolumeRestrictionTM.getRestrictedAddresses.call();
             assert.equal(data[0].length, 3);
-            for (let i = 0; i < data.length; i++) {
+            for (let i = 0; i < data[0].length; i++) {
                 assert.notEqual(data[0][i], account_investor2);
                 assert.equal(data[1][i], 0);
             }
@@ -615,7 +616,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                         from: token_owner
                     }
                 );
-            
+
             assert.equal(tx.logs[1].args._holder, account_investor1);
             assert.equal(tx.logs[1].args._typeOfRestriction, 0);
             let data = await I_VolumeRestrictionTM.getRestrictedAddresses.call();
@@ -639,14 +640,14 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 Gas estimation (Individual): ${await I_SecurityToken.transfer.estimateGas(account_investor3, web3.utils.toWei('.3'), {from: account_investor1})}`
             );
             await I_SecurityToken.transfer(account_investor3, web3.utils.toWei('.3'), {from: account_investor1});
-            // Check the balance of the investors 
+            // Check the balance of the investors
             let bal1 = await I_SecurityToken.balanceOf.call(account_investor1);
             // Verifying the balances
             assert.equal(web3.utils.fromWei((bal1.toNumber()).toString()), 34.7);
 
             let data = await I_VolumeRestrictionTM.getIndividualBucketDetailsToUser.call(account_investor1);
             await print(data, account_investor1);
-            
+
             assert.equal(
                 (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor1, data[0]))
                 .dividedBy(new BigNumber(10).pow(18)).toNumber(),
@@ -760,7 +761,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("2"), {from: account_investor3});
             let data = await I_VolumeRestrictionTM.getIndividualBucketDetailsToUser.call(account_investor3);
             await print(data, account_investor3);
-            
+
             await increaseTime(duration.minutes(15));
 
             console.log(`
@@ -780,7 +781,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Should fail to transfer more tokens --because of the above limit", async() => {
             await catchRevert(
                 I_SecurityToken.transfer(account_investor2, web3.utils.toWei(".1"), {from: account_investor3})
-            ); 
+            );
         });
 
         it("Should try to send after the one day completion", async() => {
@@ -841,7 +842,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             );
 
             await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("2"), {from: account_investor1});
-            // Check the balance of the investors 
+            // Check the balance of the investors
             let bal1 = await I_SecurityToken.balanceOf.call(account_investor1);
             // Verifying the balances
             assert.equal(web3.utils.fromWei((bal1.toNumber()).toString()), 32.7);
@@ -882,7 +883,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     from: token_owner
                 }
             );
-        
+
             assert.equal(tx.logs[0].args._holder, account_investor3);
             assert.equal(tx.logs[0].args._typeOfRestriction, 1);
 
@@ -903,11 +904,11 @@ contract('VolumeRestrictionTransferManager', accounts => {
             console.log(`
                 Gas estimation (Individual + Individual daily): ${await I_SecurityToken.transfer.estimateGas(account_investor2, web3.utils.toWei("4"), {from: account_investor3})}`
             );
-            // Check the balance of the investors 
+            // Check the balance of the investors
             let bal1 = await I_SecurityToken.balanceOf.call(account_investor3);
             await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("4"), {from: account_investor3});
             tempArray3.push(4);
-            // Check the balance of the investors 
+            // Check the balance of the investors
             let bal2 = await I_SecurityToken.balanceOf.call(account_investor3);
             // Verifying the balances
             assert.equal(web3.utils.fromWei(((bal1.minus(bal2)).toNumber()).toString()), 4);
@@ -951,7 +952,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal(dataAdd[1][0].toNumber(), 2);
             assert.equal(dataAdd[0][1], account_investor3);
             assert.equal(dataAdd[1][1].toNumber(), 0);
-            
+
             let startTime = (await I_VolumeRestrictionTM.individualRestriction.call(account_investor3))[1].toNumber();
 
             // transfer more tokens on the same day
@@ -1041,7 +1042,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 )
             );
         });
-        
+
         it("Should modify the individual daily restriction", async() => {
             await I_VolumeRestrictionTM.modifyIndividualDailyRestriction(
                     account_investor3,
@@ -1146,7 +1147,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should fail to transact tokens more than the allowed in the second rolling period", async() => {
-            await increaseTime(duration.days(4)); 
+            await increaseTime(duration.days(4));
             let i
             for (i = 0; i < 3; i++) {
                 tempArray3.push(0);
@@ -1167,7 +1168,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             let allowedAmount = (tempArray3[0] + 1);
             //sell tokens upto the limit
             await I_SecurityToken.transfer(account_investor2, web3.utils.toWei(allowedAmount.toString()), {from: account_investor3});
-            
+
             tempArray3.push(allowedAmount);
             let data = await I_VolumeRestrictionTM.getIndividualBucketDetailsToUser.call(account_investor3);
             await print(data, account_investor3);
@@ -1196,11 +1197,11 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
             //sell tokens upto the limit
             await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("7"), {from: account_investor3});
-            
+
             tempArray3.push(7)
             let data = await I_VolumeRestrictionTM.getIndividualBucketDetailsToUser.call(account_investor3);
             await print(data, account_investor3);
- 
+
             // get the trade amount using the timestamp
             let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toNumber()))
             .dividedBy(new BigNumber(10).pow(18)).toNumber();
@@ -1231,7 +1232,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
             let data = await I_VolumeRestrictionTM.getIndividualBucketDetailsToUser.call(account_investor3);
             await print(data, account_investor3);
- 
+
             // get the trade amount using the timestamp
             let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toNumber()))
             .dividedBy(new BigNumber(10).pow(18)).toNumber();
@@ -1252,7 +1253,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
     });
 
     describe("Test cases for the Default restrictions", async() => {
-        
+
         it("Should add the investor 4 in the whitelist", async() => {
             await I_GeneralTransferManager.modifyWhitelist(
                 account_investor4,
@@ -1302,10 +1303,10 @@ contract('VolumeRestrictionTransferManager', accounts => {
             let startTimedaily = (await I_VolumeRestrictionTM.defaultDailyRestriction.call())[1].toNumber();
             //sell tokens upto the limit
             await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("3.57"), {from: account_investor4});
-            
+
             let data = await I_VolumeRestrictionTM.getDefaultBucketDetailsToUser.call(account_investor4);
             await print(data, account_investor3);
- 
+
             // get the trade amount using the timestamp
             let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor4, data[3].toNumber()))
             .dividedBy(new BigNumber(10).pow(18)).toNumber();
@@ -1365,7 +1366,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
             let data = await I_VolumeRestrictionTM.getDefaultBucketDetailsToUser.call(account_investor3);
             await print(data, account_investor3);
- 
+
             // get the trade amount using the timestamp
             let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toNumber()))
             .dividedBy(new BigNumber(10).pow(18)).toNumber();
@@ -1421,7 +1422,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
             let data = await I_VolumeRestrictionTM.getDefaultBucketDetailsToUser.call(account_investor3);
             await print(data, account_investor3);
- 
+
             // get the trade amount using the timestamp
             let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toNumber()))
             .dividedBy(new BigNumber(10).pow(18)).toNumber();
@@ -1478,7 +1479,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
             let data = await I_VolumeRestrictionTM.getDefaultBucketDetailsToUser.call(account_investor3);
             await print(data, account_investor3);
- 
+
             // get the trade amount using the timestamp
             let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toNumber()))
             .dividedBy(new BigNumber(10).pow(18)).toNumber();
@@ -1593,5 +1594,5 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ''), "Maximum Volume");
         });
     });
-    
+
 });

@@ -19,7 +19,10 @@ contract MockWrongTypeFactory is MockBurnFactory {
         uint256 _setupCost,
         uint256 _usageCost,
         uint256 _subscriptionCost
-    ) public MockBurnFactory(_setupCost, _usageCost, _subscriptionCost) {
+    ) 
+        public 
+        MockBurnFactory(_setupCost, _usageCost, _subscriptionCost) 
+    {
 
     }
 

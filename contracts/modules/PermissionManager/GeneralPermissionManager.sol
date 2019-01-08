@@ -109,7 +109,10 @@ contract GeneralPermissionManager is GeneralPermissionManagerStorage, IPermissio
         address[] calldata _modules,
         bytes32[] calldata _perms,
         bool[] calldata _valids
-    ) external withPerm(CHANGE_PERMISSION) {
+    ) 
+        external 
+        withPerm(CHANGE_PERMISSION) 
+    {
         require(_delegate != address(0), "invalid address");
         require(_modules.length > 0, "0 length is not allowed");
         require(_modules.length == _perms.length, "Array length mismatch");

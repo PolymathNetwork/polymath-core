@@ -21,7 +21,10 @@ contract MockFactory is DummySTOFactory {
         uint256 _usageCost,
         uint256 _subscriptionCost,
         address _logicContract
-    ) public DummySTOFactory(_setupCost, _usageCost, _subscriptionCost, _logicContract) {
+    ) 
+        public 
+        DummySTOFactory(_setupCost, _usageCost, _subscriptionCost, _logicContract) 
+    {
     }
 
     /**

@@ -17,7 +17,10 @@ contract ScheduledCheckpointFactory is ModuleFactory {
         uint256 _setupCost,
         uint256 _usageCost,
         uint256 _subscriptionCost
-    ) public ModuleFactory(_setupCost, _usageCost, _subscriptionCost) {
+    ) 
+        public 
+        ModuleFactory(_setupCost, _usageCost, _subscriptionCost) 
+    {
         version = "1.0.0";
         name = "ScheduledCheckpoint";
         title = "Schedule Checkpoints";
@@ -32,7 +35,10 @@ contract ScheduledCheckpointFactory is ModuleFactory {
      */
     function deploy(
         bytes calldata /* _data */
-    ) external returns(address) {
+    ) 
+        external 
+        returns(address) 
+    {
         address polyToken = _takeFee();
         address scheduledCheckpoint = address(new ScheduledCheckpoint(msg.sender, polyToken));
         emit GenerateModuleFromFactory(scheduledCheckpoint, getName(), address(this), msg.sender, setupCost, now);

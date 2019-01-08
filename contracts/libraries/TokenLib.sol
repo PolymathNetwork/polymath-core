@@ -162,7 +162,9 @@ library TokenLib {
         uint256 _value,
         uint256 _balanceTo,
         uint256 _balanceFrom
-    ) public {
+    ) 
+        public 
+    {
         if ((_value == 0) || (_from == _to)) {
             return;
         }

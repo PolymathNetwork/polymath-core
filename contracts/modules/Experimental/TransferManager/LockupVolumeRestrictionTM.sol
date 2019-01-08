@@ -67,7 +67,10 @@ contract LockupVolumeRestrictionTM is TransferManager {
         uint256 _amount,
         bytes calldata, /* _data */
         bool _isTransfer
-    ) external returns(Result) {
+    ) 
+        external 
+        returns(Result) 
+    {
         // only attempt to verify the transfer if the token is unpaused, this isn't a mint txn, and there exists a lockup for this user
         if (!paused && _from != address(0) && lockUps[_from].length != 0) {
             // check if this transfer is valid
@@ -90,7 +93,10 @@ contract LockupVolumeRestrictionTM is TransferManager {
         uint _releaseFrequencySeconds,
         uint _startTime,
         uint _totalAmount
-    ) public withPerm(ADMIN) {
+    ) 
+        public 
+        withPerm(ADMIN) 
+    {
         uint256 startTime = _startTime;
         _checkLockUpParams(_lockUpPeriodSeconds, _releaseFrequencySeconds, _totalAmount);
 
@@ -126,7 +132,10 @@ contract LockupVolumeRestrictionTM is TransferManager {
         uint[] calldata _releaseFrequenciesSeconds,
         uint[] calldata _startTimes,
         uint[] calldata _totalAmounts
-    ) external withPerm(ADMIN) {
+    ) 
+        external 
+        withPerm(ADMIN) 
+    {
         require(
             _userAddresses.length == _lockUpPeriodsSeconds.length && _userAddresses.length == _releaseFrequenciesSeconds.length && _userAddresses.length == _startTimes.length && _userAddresses.length == _totalAmounts.length, /*solium-disable-line operator-whitespace*/ /*solium-disable-line operator-whitespace*/
             "Input array length mismatch"
@@ -182,7 +191,10 @@ contract LockupVolumeRestrictionTM is TransferManager {
         uint _releaseFrequencySeconds,
         uint _startTime,
         uint _totalAmount
-    ) public withPerm(ADMIN) {
+    ) 
+        public 
+        withPerm(ADMIN) 
+    {
         require(_lockUpIndex < lockUps[_userAddress].length, "Array out of bounds exception");
 
         uint256 startTime = _startTime;
@@ -320,7 +332,11 @@ contract LockupVolumeRestrictionTM is TransferManager {
         uint amount,
         uint totalSum,
         uint alreadyWithdrawnSum
-    ) internal view returns(Result) {
+    ) 
+        internal 
+        view 
+        returns(Result) 
+    {
         // the amount the user wants to withdraw is greater than their allowed amounts according to the lockups.  however, if the user has like, 10 tokens, but only 4 are locked up, we should let the transfer go through for those 6 that aren't locked up
         uint currentUserBalance = ISecurityToken(securityToken).balanceOf(userAddress);
         uint stillLockedAmount = totalSum.sub(alreadyWithdrawnSum);

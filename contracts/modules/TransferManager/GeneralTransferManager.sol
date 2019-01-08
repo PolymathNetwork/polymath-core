@@ -194,7 +194,10 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         uint256 _toTime,
         uint256 _expiryTime,
         bool _canBuyFromSTO
-    ) public withPerm(WHITELIST) {
+    ) 
+        public 
+        withPerm(WHITELIST) 
+    {
         _modifyWhitelist(_investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
     }
 
@@ -269,7 +272,9 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         uint8 _v,
         bytes32 _r,
         bytes32 _s
-    ) public {
+    ) 
+        public 
+    {
         /*solium-disable-next-line security/no-block-members*/
         require(_validFrom <= now, "ValidFrom is too early");
         /*solium-disable-next-line security/no-block-members*/

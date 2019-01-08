@@ -48,7 +48,16 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
      * @param _amount Amount of specified token for dividend
      * @param _name Name/Title for identification
      */
-    function createDividend(uint256 _maturity, uint256 _expiry, address _token, uint256 _amount, bytes32 _name) external withPerm(MANAGE) {
+    function createDividend(
+        uint256 _maturity, 
+        uint256 _expiry, 
+        address _token, 
+        uint256 _amount, 
+        bytes32 _name
+    ) 
+        external 
+        withPerm(MANAGE) 
+    {
         createDividendWithExclusions(_maturity, _expiry, _token, _amount, excluded, _name);
     }
 
@@ -68,7 +77,10 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
         uint256 _amount,
         uint256 _checkpointId,
         bytes32 _name
-    ) external withPerm(MANAGE) {
+    ) 
+        external 
+        withPerm(MANAGE) 
+    {
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, _token, _amount, _checkpointId, excluded, _name);
     }
 
@@ -88,7 +100,10 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
         uint256 _amount,
         address[] memory _excluded,
         bytes32 _name
-    ) public withPerm(MANAGE) {
+    ) 
+        public 
+        withPerm(MANAGE) 
+    {
         uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, _token, _amount, checkpointId, _excluded, _name);
     }
@@ -111,7 +126,10 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
         uint256 _checkpointId,
         address[] memory _excluded,
         bytes32 _name
-    ) public withPerm(MANAGE) {
+    ) 
+        public 
+        withPerm(MANAGE) 
+    {
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, _token, _amount, _checkpointId, _excluded, _name);
     }
 
@@ -133,7 +151,9 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
         uint256 _checkpointId,
         address[] memory _excluded,
         bytes32 _name
-    ) internal {
+    ) 
+        internal 
+    {
         ISecurityToken securityTokenInstance = ISecurityToken(securityToken);
         require(_excluded.length <= EXCLUDED_ADDRESS_LIMIT, "Too many addresses excluded");
         require(_expiry > _maturity, "Expiry before maturity");
@@ -188,7 +208,9 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
         uint256 currentSupply,
         uint256 dividendIndex,
         bytes32 _name
-    ) internal {
+    ) 
+        internal 
+    {
         /*solium-disable-next-line security/no-block-members*/
         emit ERC20DividendDeposited(
             msg.sender,

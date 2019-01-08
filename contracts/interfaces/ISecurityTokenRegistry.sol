@@ -29,7 +29,8 @@ interface ISecurityTokenRegistry {
         address _securityToken,
         string calldata _tokenDetails,
         uint256 _deployedAt
-    ) external;
+    ) 
+    external;
 
     /**
      * @notice Registers the token ticker for its particular owner
@@ -139,7 +140,8 @@ interface ISecurityTokenRegistry {
         uint256 _registrationDate,
         uint256 _expiryDate,
         bool _status
-    ) external;
+    ) 
+    external;
 
     /**
      * @notice Removes the ticker details and associated ownership & security token mapping

@@ -40,7 +40,10 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
         uint256 _amount,
         bytes calldata, /* _data */
         bool /* _isTransfer */
-    ) external returns(Result) {
+    ) 
+        external 
+        returns(Result) 
+    {
         if (!paused) {
             if (_from == address(0) && allowPrimaryIssuance) {
                 return Result.NA;

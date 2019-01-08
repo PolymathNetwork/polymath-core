@@ -25,7 +25,10 @@ contract STFactory is ISTFactory {
         address _issuer,
         bool _divisible,
         address _polymathRegistry
-    ) external returns(address) {
+    ) 
+        external 
+        returns(address) 
+    {
         SecurityToken newSecurityToken = new SecurityToken(
             _name,
             _symbol,

@@ -466,7 +466,10 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         string calldata _ticker,
         string calldata _tokenDetails,
         bool _divisible
-    ) external whenNotPausedOrOwner {
+    ) 
+        external 
+        whenNotPausedOrOwner 
+    {
         require(bytes(_name).length > 0 && bytes(_ticker).length > 0, "Ticker length > 0");
         string memory ticker = Util.upper(_ticker);
         bytes32 statusKey = Encoder.getKey("registeredTickers_status", ticker);
@@ -513,7 +516,10 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         address _securityToken,
         string calldata _tokenDetails,
         uint256 _deployedAt
-    ) external onlyOwner {
+    ) 
+        external 
+        onlyOwner 
+    {
         require(bytes(_name).length > 0 && bytes(_ticker).length > 0, "String length > 0");
         require(bytes(_ticker).length <= 10, "Ticker length range (0,10]");
         require(_deployedAt != 0 && _owner != address(0), "0 value params not allowed");

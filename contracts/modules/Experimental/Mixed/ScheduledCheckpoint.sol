@@ -89,7 +89,10 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
         uint256, /* _amount */
         bytes calldata, /* _data */
         bool _isTransfer
-    ) external returns(Result) {
+    ) 
+        external 
+        returns(Result) 
+    {
         require(_isTransfer == false || msg.sender == securityToken, "Sender is not owner");
         if (paused || !_isTransfer) {
             return Result.NA;
@@ -110,7 +113,7 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
         uint256[] memory,
         uint256[] memory,
         uint256[] memory
-    ) {
+    ){
         return (schedules[_name].name, schedules[_name].startTime, schedules[_name].nextTime, schedules[_name].interval, schedules[_name].checkpointIds, schedules[_name].timestamps, schedules[_name].periods);
     }
 

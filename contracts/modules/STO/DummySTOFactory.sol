@@ -24,7 +24,10 @@ contract DummySTOFactory is ModuleFactory {
         uint256 _usageCost,
         uint256 _subscriptionCost,
         address _logicContract
-    ) public ModuleFactory(_setupCost, _usageCost, _subscriptionCost) {
+    ) 
+        public 
+        ModuleFactory(_setupCost, _usageCost, _subscriptionCost) 
+    {
         version = "1.0.0";
         name = "DummySTO";
         title = "Dummy STO";

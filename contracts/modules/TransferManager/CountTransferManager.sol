@@ -29,7 +29,10 @@ contract CountTransferManager is CountTransferManagerStorage, TransferManager {
         uint256 _amount,
         bytes calldata /* _data */,
         bool /* _isTransfer */
-    ) external returns(Result) {
+    ) 
+        external 
+        returns(Result) 
+    {
         if (!paused) {
             if (maxHolderCount < ISecurityToken(securityToken).getInvestorCount()) {
                 // Allow transfers to existing maxHolders

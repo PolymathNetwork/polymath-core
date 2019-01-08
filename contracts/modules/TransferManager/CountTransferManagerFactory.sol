@@ -24,7 +24,9 @@ contract CountTransferManagerFactory is ModuleFactory {
         uint256 _usageCost,
         uint256 _subscriptionCost,
         address _logicContract
-    ) public ModuleFactory(_setupCost, _usageCost, _subscriptionCost) {
+    ) 
+        public ModuleFactory(_setupCost, _usageCost, _subscriptionCost) 
+    {
         require(_logicContract != address(0), "Invalid address");
         version = "2.1.0";
         name = "CountTransferManager";

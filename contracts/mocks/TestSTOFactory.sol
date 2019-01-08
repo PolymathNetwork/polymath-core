@@ -15,7 +15,10 @@ contract TestSTOFactory is DummySTOFactory {
         uint256 _usageCost,
         uint256 _subscriptionCost,
         address _logicContract
-    ) public DummySTOFactory(_setupCost, _usageCost, _subscriptionCost, _logicContract) {
+    ) 
+        public 
+        DummySTOFactory(_setupCost, _usageCost, _subscriptionCost, _logicContract) 
+    {
         version = "1.0.0";
         name = "TestSTO";
         title = "Test STO";

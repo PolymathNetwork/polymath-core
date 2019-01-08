@@ -60,7 +60,10 @@ contract SingleTradeVolumeRestrictionTM is TransferManager {
         uint256 _amount,
         bytes calldata /* _data */,
         bool /* _isTransfer */
-    ) external returns(Result) {
+    ) 
+        external 
+        returns(Result) 
+    {
         bool validTransfer;
 
         if (exemptWallets[_from] || paused) return Result.NA;
@@ -97,7 +100,10 @@ contract SingleTradeVolumeRestrictionTM is TransferManager {
         bool _isTransferLimitInPercentage,
         uint256 _globalTransferLimitInPercentageOrToken,
         bool _allowPrimaryIssuance
-    ) public onlyFactory {
+    ) 
+        public 
+        onlyFactory 
+    s{
         isTransferLimitInPercentage = _isTransferLimitInPercentage;
         if (isTransferLimitInPercentage) {
             changeGlobalLimitInPercentage(_globalTransferLimitInPercentageOrToken);

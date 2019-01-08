@@ -108,7 +108,10 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
         address payable _wallet,
         address _reserveWallet,
         address _usdToken
-    ) public onlyFactory {
+    ) 
+        public 
+        onlyFactory 
+    {
         oracleKeys[bytes32("ETH")][bytes32("USD")] = ETH_ORACLE;
         oracleKeys[bytes32("POLY")][bytes32("USD")] = POLY_ORACLE;
         require(endTime == 0, "Already configured");
@@ -153,7 +156,10 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
         uint256[] calldata _ratePerTierDiscountPoly,
         uint256[] calldata _tokensPerTierTotal,
         uint256[] calldata _tokensPerTierDiscountPoly
-    ) external onlyOwner {
+    ) 
+        external 
+        onlyOwner 
+    {
         /*solium-disable-next-line security/no-block-members*/
         require(now < startTime, "STO already started");
         _modifyTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
@@ -193,7 +199,9 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
         uint256[] memory _ratePerTierDiscountPoly,
         uint256[] memory _tokensPerTierTotal,
         uint256[] memory _tokensPerTierDiscountPoly
-    ) internal {
+    ) 
+        internal 
+    {
         require(_tokensPerTierTotal.length > 0, "No tiers provided");
         require(
             _ratePerTier.length == _tokensPerTierTotal.length && _ratePerTierDiscountPoly.length == _tokensPerTierTotal.length && _tokensPerTierDiscountPoly.length == _tokensPerTierTotal.length,
@@ -385,7 +393,12 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
         uint256 _investmentValue,
         uint256 _rate,
         FundRaiseType _fundRaiseType
-    ) internal nonReentrant whenNotPaused returns(uint256 spentUSD, uint256 spentValue) {
+    ) 
+        internal 
+        nonReentrant 
+        whenNotPaused 
+        returns(uint256 spentUSD, uint256 spentValue) 
+    {
         if (!allowBeneficialInvestments) {
             require(_beneficiary == msg.sender, "Beneficiary != funder");
         }
@@ -454,9 +467,15 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
         spentValue = DecimalMath.div(spentUSD, rate);
     }
 
-    function _buyTokensChecks(address _beneficiary, uint256 _investmentValue, uint256 investedUSD) internal view returns(
-        uint256 netInvestedUSD
-    ) {
+    function _buyTokensChecks(
+        address _beneficiary, 
+        uint256 _investmentValue, 
+        uint256 investedUSD
+    ) 
+        internal 
+        view 
+        returns(uint256 netInvestedUSD) 
+    {
         require(isOpen(), "STO not open");
         require(_investmentValue > 0, "No funds were sent");
 
@@ -563,7 +582,10 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
         uint256 _tierRemaining,
         uint256 _investedUSD,
         uint256 _tier
-    ) internal returns(uint256 spentUSD, uint256 purchasedTokens, bool gotoNextTier) {
+    ) 
+        internal 
+        returns(uint256 spentUSD, uint256 purchasedTokens, bool gotoNextTier) 
+    {
         (spentUSD, purchasedTokens, gotoNextTier) = _purchaseTierAmount(_tierPrice, _tierRemaining, _investedUSD);
         if (purchasedTokens > 0) {
             require(ISecurityToken(securityToken).mint(_beneficiary, purchasedTokens), "Error in minting");
@@ -571,11 +593,15 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
         }
     }
 
-    function _purchaseTierAmount(uint256 _tierPrice, uint256 _tierRemaining, uint256 _investedUSD) internal view returns(
-        uint256 spentUSD,
-        uint256 purchasedTokens,
-        bool gotoNextTier
-    ) {
+    function _purchaseTierAmount(
+        uint256 _tierPrice, 
+        uint256 _tierRemaining, 
+        uint256 _investedUSD
+    ) 
+        internal 
+        view 
+        returns(uint256 spentUSD,uint256 purchasedTokens,bool gotoNextTier) 
+    {
         uint256 maximumTokens = DecimalMath.div(_investedUSD, _tierPrice);
         uint256 granularity = ISecurityToken(securityToken).granularity();
         maximumTokens = maximumTokens.div(granularity);
@@ -767,7 +793,8 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
         uint256,
         uint256,
         bool[] memory
-    ) {
+    ) 
+    {
         uint256[] memory cap = new uint256[](tiers.length);
         uint256[] memory rate = new uint256[](tiers.length);
         for (uint256 i = 0; i < tiers.length; i++) {

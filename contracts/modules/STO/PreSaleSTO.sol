@@ -72,7 +72,10 @@ contract PreSaleSTO is PreSaleSTOStorage, STO {
         uint256 _amount,
         uint256 _etherContributed,
         uint256 _polyContributed
-    ) public withPerm(PRE_SALE_ADMIN) {
+    ) 
+        public 
+        withPerm(PRE_SALE_ADMIN) 
+    {
         /*solium-disable-next-line security/no-block-members*/
         require(now <= endTime, "Already passed Endtime");
         require(_amount > 0, "No. of tokens provided should be greater the zero");
@@ -99,7 +102,10 @@ contract PreSaleSTO is PreSaleSTOStorage, STO {
         uint256[] memory _amounts,
         uint256[] memory _etherContributed,
         uint256[] memory _polyContributed
-    ) public withPerm(PRE_SALE_ADMIN) {
+    ) 
+        public 
+        withPerm(PRE_SALE_ADMIN) 
+    {
         require(_investors.length == _amounts.length, "Mis-match in length of the arrays");
         require(_etherContributed.length == _polyContributed.length, "Mis-match in length of the arrays");
         require(_etherContributed.length == _investors.length, "Mis-match in length of the arrays");

@@ -113,7 +113,11 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
     function pushDividendPaymentToAddresses(
         uint256 _dividendIndex,
         address payable[] memory _payees
-    ) public withPerm(DISTRIBUTE) validDividendIndex(_dividendIndex) {
+    ) 
+        public 
+        withPerm(DISTRIBUTE) 
+        validDividendIndex(_dividendIndex) 
+    {
         Dividend storage dividend = dividends[_dividendIndex];
         for (uint256 i = 0; i < _payees.length; i++) {
             if ((!dividend.claimed[_payees[i]]) && (!dividend.dividendExcluded[_payees[i]])) {
@@ -132,7 +136,10 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
         uint256 _dividendIndex,
         uint256 _start,
         uint256 _iterations
-    ) public withPerm(DISTRIBUTE) validDividendIndex(_dividendIndex) {
+    ) public 
+      withPerm(DISTRIBUTE) 
+      validDividendIndex(_dividendIndex) 
+    {
         Dividend storage dividend = dividends[_dividendIndex];
         address[] memory investors = ISecurityToken(securityToken).getInvestors();
         uint256 numberInvestors = Math.min(investors.length, _start.add(_iterations));

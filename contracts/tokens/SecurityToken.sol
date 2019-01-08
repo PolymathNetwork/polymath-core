@@ -196,7 +196,10 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         uint256 _granularity,
         string memory _tokenDetails,
         address _polymathRegistry
-    ) public ERC20Detailed(_name, _symbol, _decimals) RegistryUpdater(_polymathRegistry) {
+    ) 
+        public 
+        ERC20Detailed(_name, _symbol, _decimals) RegistryUpdater(_polymathRegistry) 
+    {
         //When it is created, the owner is the STR
         updateFromRegistry();
         tokenDetails = _tokenDetails;
@@ -220,7 +223,10 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         uint256 _maxCost,
         uint256 _budget,
         bytes32 _label
-    ) public onlyOwner nonReentrant {
+    ) 
+        public 
+        onlyOwner nonReentrant 
+    {
         //Check that the module factory exists in the ModuleRegistry - will throw otherwise
         IModuleRegistry(moduleRegistry).useModule(_moduleFactory);
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
@@ -607,7 +613,11 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         uint256 _value,
         bytes memory _data,
         bool _isTransfer
-    ) internal checkGranularity(_value) returns(bool) {
+    ) 
+        internal 
+        checkGranularity(_value) 
+        returns(bool) 
+    {
         if (!transfersFrozen) {
             bool isInvalid = false;
             bool isValid = false;
@@ -680,7 +690,12 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         address _investor,
         uint256 _value,
         bytes memory _data
-    ) public onlyModuleOrOwner(MINT_KEY) isMintingAllowed returns(bool success) {
+    ) 
+        public 
+        onlyModuleOrOwner(MINT_KEY) 
+        isMintingAllowed 
+        returns(bool success) 
+    {
         require(_updateTransfer(address(0), _investor, _value, _data), "Transfer invalid");
         _adjustTotalSupplyCheckpoints();
         _mint(_investor, _value);

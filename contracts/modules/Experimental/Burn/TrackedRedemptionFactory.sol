@@ -17,7 +17,10 @@ contract TrackedRedemptionFactory is ModuleFactory {
         uint256 _setupCost,
         uint256 _usageCost,
         uint256 _subscriptionCost
-    ) public ModuleFactory(_setupCost, _usageCost, _subscriptionCost) {
+    ) 
+        public 
+        ModuleFactory(_setupCost, _usageCost, _subscriptionCost) 
+    {
         version = "1.0.0";
         name = "TrackedRedemption";
         title = "Tracked Redemption";
@@ -32,7 +35,10 @@ contract TrackedRedemptionFactory is ModuleFactory {
      */
     function deploy(
         bytes calldata /* _data */
-    ) external returns(address) {
+    ) 
+        external 
+        returns(address) 
+    {
         address polyToken = _takeFee();
         address trackedRedemption = address(new TrackedRedemption(msg.sender, polyToken));
         /*solium-disable-next-line security/no-block-members*/

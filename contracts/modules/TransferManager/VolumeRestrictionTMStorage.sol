@@ -33,7 +33,7 @@ contract VolumeRestrictionTMStorage {
         // Type of period will be enum index of TypeOfPeriod enum
         uint8 typeOfPeriod;
         // Index of the array where the holder address lives
-        uint64 index;
+        uint128 index;
     }
 
     // Global restriction that applies to all token holders

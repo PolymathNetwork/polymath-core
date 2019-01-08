@@ -217,10 +217,10 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
     }
 
     function _addRestrictionData(address _holder, uint8 _callFrom) internal {
-        uint64 index = restrictedHolders[_holder].index;
+        uint128 index = restrictedHolders[_holder].index;
         if (restrictedHolders[_holder].seen == 0) {
             restrictedAddresses.push(_holder);
-            index = uint64(restrictedAddresses.length);
+            index = uint128(restrictedAddresses.length);
         }
         uint8 _type = _getTypeOfPeriod(restrictedHolders[_holder].typeOfPeriod, _callFrom, _holder);
         restrictedHolders[_holder] = RestrictedHolder(uint8(1), _type, index);
@@ -469,8 +469,14 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
     }
 
     function _deleteHolderFromList(address _holder, uint8 _typeOfPeriod) internal {
+        // Deleting the holder if holder's type of Period is `Both` type otherwise
+        // it will assign the given type `_typeOfPeriod` to the _holder typeOfPeriod
+        // `_typeOfPeriod` it always be contrary to the removing restriction
+        // if removing restriction is individual then typeOfPeriod is TypeOfPeriod.OneDay
+        // in uint8 its value is 1. if removing restriction is daily individual then typeOfPeriod
+        // is TypeOfPeriod.MultipleDays in uint8 its value is 0.
         if (restrictedHolders[_holder].typeOfPeriod != uint8(TypeOfPeriod.Both)) {
-            uint64 index = restrictedHolders[_holder].index;
+            uint128 index = restrictedHolders[_holder].index;
             uint256 _len = restrictedAddresses.length;
             if (index != _len) {
                 restrictedHolders[restrictedAddresses[_len - 1]].index = index;
@@ -694,7 +700,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
             _startTimes.length == _holders.length &&
             _holders.length == _endTimes.length &&
             _endTimes.length == _restrictionTypes.length,
-            "Array length mismatch"
+            "Length mismatch"
         );
         require(_holders.length == _allowedTokens.length, "Length mismatch");
         for (uint256 i = 0; i < _holders.length; i++) {
@@ -1110,7 +1116,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         require(_endTime > _startTime, "Invalid times");
         // Maximum limit for the rollingPeriod is 365 days
         require(_rollingPeriodDays >= 1 && _rollingPeriodDays <= 365, "Invalid rollingperiod");
-        require(BokkyPooBahsDateTimeLibrary.diffDays(_startTime, _endTime) >= _rollingPeriodDays, "Invalid start & end time");
+        require(BokkyPooBahsDateTimeLibrary.diffDays(_startTime, _endTime) >= _rollingPeriodDays, "Invalid times");
     }   
 
     function _checkLengthOfArray(
@@ -1128,7 +1134,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
             _startTimes.length == _rollingPeriodInDays.length &&
             _rollingPeriodInDays.length == _endTimes.length &&
             _endTimes.length == _restrictionTypes.length,
-            "Array length mismatch"
+            "Length mismatch"
         );
     }
 

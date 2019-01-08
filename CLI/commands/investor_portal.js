@@ -245,7 +245,7 @@ async function processAddressWithBalance(array) {
     for (const address of array) {
         let symbol = await checkSymbol(address);
         let balance = await checkBalance(address);
-        list.push({'address': address, 'symbol': symbol, 'balance': balance})
+        list.push({ 'address': address, 'symbol': symbol, 'balance': balance })
     }
     return list
 }
@@ -254,7 +254,7 @@ async function processAddress(array) {
     let list = [];
     for (const address of array) {
         let symbol = await checkSymbol(address);
-        list.push({"symbol": symbol, "address": address})
+        list.push({ "symbol": symbol, "address": address })
     }
     return list
 }
@@ -277,8 +277,7 @@ async function checkBalance(address) {
     }
 }
 
-async function showUserInfoForUSDTieredSTO()
-{
+async function showUserInfoForUSDTieredSTO() {
     let stableSymbols = [];
     let listOfStableCoins = await currentSTO.methods.getUsdTokens().call();
 
@@ -306,11 +305,12 @@ async function showUserInfoForUSDTieredSTO()
     console.log(`    - Whitelisted:           ${(displayCanBuy) ? 'YES' : 'NO'}`);
     console.log(`    - Valid KYC:             ${(displayValidKYC) ? 'YES' : 'NO'}`);
 
-    let displayIsUserAccredited = await currentSTO.methods.accredited(User.address).call();
+    let investorData = await currentSTO.methods.investors(User.address).call();
+    let displayIsUserAccredited = investorData.accredited == 1;
     console.log(`    - Accredited:            ${(displayIsUserAccredited) ? "YES" : "NO"}`)
 
-    if (!await currentSTO.methods.accredited(User.address).call()) {
-        let displayOverrideNonAccreditedLimitUSD = web3.utils.fromWei(await currentSTO.methods.nonAccreditedLimitUSDOverride(User.address).call())
+    if (!displayIsUserAccredited) {
+        let displayOverrideNonAccreditedLimitUSD = web3.utils.fromWei(investorData.nonAccreditedLimitUSDOverride);
         let displayNonAccreditedLimitUSD = displayOverrideNonAccreditedLimitUSD != 0 ? displayOverrideNonAccreditedLimitUSD : web3.utils.fromWei(await currentSTO.methods.nonAccreditedLimitUSD().call());
         let displayTokensRemainingAllocation = displayNonAccreditedLimitUSD - displayInvestorInvestedUSD;
         console.log(`    - Remaining allocation:  ${(displayTokensRemainingAllocation > 0 ? displayTokensRemainingAllocation : 0)} USD`);
@@ -402,7 +402,7 @@ async function showUSDTieredSTOInfo() {
             })
         } else {
             displayFundsRaisedPerType += `
-        ${type}:\t\t\t   ${fundsRaised} ${type}`;    
+        ${type}:\t\t\t   ${fundsRaised} ${type}`;
         }
         //Only show sold per raise type is more than one are allowed
         if (raiseTypes.length > 1) {
@@ -420,7 +420,7 @@ async function showUSDTieredSTOInfo() {
     let displayRaiseType = raiseTypes.join(' - ');
     //If STO has stable coins, we list them one by one
     if (stableSymbols.length) {
-        displayRaiseType = displayRaiseType.replace(STABLE, "") + `${stableSymbols.map((obj) => {return obj.symbol}).toString().replace(`,`,` - `)}`
+        displayRaiseType = displayRaiseType.replace(STABLE, "") + `${stableSymbols.map((obj) => { return obj.symbol }).toString().replace(`,`, ` - `)}`
     }
 
     let now = Math.floor(Date.now() / 1000);

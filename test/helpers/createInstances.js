@@ -15,6 +15,7 @@ const EtherDividendCheckpointFactory = artifacts.require("./EtherDividendCheckpo
 const ManualApprovalTransferManagerFactory = artifacts.require("./ManualApprovalTransferManagerFactory.sol");
 const TrackedRedemptionFactory = artifacts.require("./TrackedRedemptionFactory.sol");
 const PercentageTransferManagerFactory = artifacts.require("./PercentageTransferManagerFactory.sol");
+const BlacklistTransferManagerFactory = artifacts.require("./BlacklistTransferManagerFactory.sol");
 const ScheduledCheckpointFactory = artifacts.require('./ScheduledCheckpointFactory.sol');
 const USDTieredSTOFactory = artifacts.require("./USDTieredSTOFactory.sol");
 const USDTieredSTO = artifacts.require("./USDTieredSTO");
@@ -75,6 +76,7 @@ let I_STFactory;
 let I_USDTieredSTOLogic;
 let I_PolymathRegistry;
 let I_SecurityTokenRegistryProxy;
+let I_BlacklistTransferManagerFactory;
 let I_VestingEscrowWalletLogic;
 let I_STRProxied;
 let I_MRProxied;
@@ -284,6 +286,18 @@ export async function deployPercentageTMAndVerified(accountPolymath, MRProxyInst
 
     await registerAndVerifyByMR(I_PercentageTransferManagerFactory.address, accountPolymath, MRProxyInstance);
     return new Array(I_PercentageTransferManagerFactory);
+}
+
+export async function deployBlacklistTMAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+    I_BlacklistTransferManagerFactory = await BlacklistTransferManagerFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
+    assert.notEqual(
+        I_BlacklistTransferManagerFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "BlacklistTransferManagerFactory contract was not deployed"
+    );
+
+    await registerAndVerifyByMR(I_BlacklistTransferManagerFactory.address, accountPolymath, MRProxyInstance);
+    return new Array(I_BlacklistTransferManagerFactory);
 }
 
 export async function deployLockupVolumeRTMAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {

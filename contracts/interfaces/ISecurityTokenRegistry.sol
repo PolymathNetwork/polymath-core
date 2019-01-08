@@ -109,7 +109,7 @@ interface ISecurityTokenRegistry {
      * @notice Returns the list of all tokens
      * @dev Intention is that this is called off-chain so block gas limit is not relevant
      */
-    function getTokens() external view returns(address[]);
+    function getTokens() external view returns(address[] memory);
 
     /**
      * @notice Returns the owner and timestamp for a given ticker

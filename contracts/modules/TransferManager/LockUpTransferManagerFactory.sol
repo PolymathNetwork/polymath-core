@@ -35,7 +35,7 @@ contract LockUpTransferManagerFactory is ModuleFactory {
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
         LockUpTransferManager lockUpTransferManager = new LockUpTransferManager(msg.sender, address(polyToken));
         /*solium-disable-next-line security/no-block-members*/
-        emit GenerateModuleFromFactory(address(lockUpTransferManager), getName(), address(this), msg.sender, now);
+        emit GenerateModuleFromFactory(address(lockUpTransferManager), getName(), address(this), msg.sender, setupCost, now);
         return address(lockUpTransferManager);
     }
 

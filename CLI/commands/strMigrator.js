@@ -216,7 +216,7 @@ async function step_get_deployed_tokens(securityTokenRegistry, singleTicker) {
       let event = common.getEventFromLogs(securityTokenRegistry._jsonInterface, [log], 'LogNewSecurityToken');
       if (typeof singleTicker === 'undefined' || event._ticker == singleTicker) {
         let tokenAddress = event._securityTokenAddress;
-        let securityTokenABI = JSON.parse(require('fs').readFileSync('./CLI/data/SecurityToken1-4-0.json').toString()).abi;
+        let securityTokenABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../data/SecurityToken1-4-0.json`).toString()).abi;
         console.log(`Creating SecurityToken contract instance of address: ${tokenAddress}...`);
         let token = new web3.eth.Contract(securityTokenABI, tokenAddress);
         token.setProvider(web3.currentProvider);
@@ -230,7 +230,7 @@ async function step_get_deployed_tokens(securityTokenRegistry, singleTicker) {
 
 
         let gmtAddress = (await token.methods.getModule(2, 0).call())[1];
-        let gtmABI = JSON.parse(require('fs').readFileSync('./CLI/data/GeneralTransferManager1-4-0.json').toString()).abi;
+        let gtmABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../data/GeneralTransferManager1-4-0.json`).toString()).abi;
         let gmt = new web3.eth.Contract(gtmABI, gmtAddress);
         //let gtmEvents = await gmt.getPastEvents('LogModifyWhitelist', { fromBlock: event.blockNumber}); 
         let gtmLogs = await getLogsFromEtherscan(gmt.options.address, 0, 'latest', 'LogModifyWhitelist(address,uint256,address,uint256,uint256,uint256,bool)');
@@ -284,7 +284,7 @@ async function step_launch_STs(tokens, securityTokenRegistry, tokenAddress) {
     let failed = [];
     let totalGas = new web3.utils.BN(0);
     let polymathRegistryAddress = await contracts.polymathRegistry();
-    let STFactoryABI = JSON.parse(require('fs').readFileSync('./build/contracts/STFactory.json').toString()).abi;
+    let STFactoryABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../build/contracts/STFactory.json`).toString()).abi;
     let STFactoryAddress = await securityTokenRegistry.methods.getSTFactoryAddress().call();
     let STFactory = new web3.eth.Contract(STFactoryABI, STFactoryAddress);
     for (const t of tokens) {

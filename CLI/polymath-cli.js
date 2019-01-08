@@ -12,9 +12,9 @@ const transfer_manager = require('./commands/transfer_manager');
 const contract_manager = require('./commands/contract_manager');
 const strMigrator = require('./commands/strMigrator');
 const permission_manager = require('./commands/permission_manager');
-const time = require('./commands/helpers/time')
+const time = require('./commands/helpers/time');
 const gbl = require('./commands/common/global');
-const program = require('commander');
+const program = require('commander');	
 const moment = require('moment');
 const yaml = require('js-yaml');
 const fs = require('fs');
@@ -120,10 +120,17 @@ program
   .command('transfer_manager')
   .alias('tm')
   .option('-t, --securityToken <tokenSymbol>', 'Selects a ST to manage transfer modules')
+  .option('-w, --whitelist <csvFilePath>', 'Whitelists addresses according to a csv file')
+  .option('-b, --batchSize <batchSize>', 'Max number of records per transaction')
   .description('Runs transfer_manager')
   .action(async function (cmd) {
     await gbl.initialize(program.remoteNode);
-    await transfer_manager.executeApp(cmd.securityToken);
+    if (cmd.whitelist) {
+      let batchSize = cmd.batchSize ? cmd.batchSize : gbl.constants.DEFAULT_BATCH_SIZE;
+      await transfer_manager.modifyWhitelistInBatch(cmd.securityToken, cmd.whitelist, batchSize);
+    } else {
+      await transfer_manager.executeApp(cmd.securityToken);
+    }
   });
 
 program
@@ -155,24 +162,23 @@ program
     await permission_manager.executeApp();
   });
 
-program
-  .command('time_travel')
-  .alias('tt')
-  .option('-p, --period <seconds>', 'Period of time in seconds to increase')
-  .option('-d, --toDate <date>', 'Human readable date ("MM/DD/YY [HH:mm:ss]") to travel to')
-  .option('-e, --toEpochTime <epochTime>', 'Unix Epoch time to travel to')
-  .description('Increases time on EVM according to given value.')
-  .action(async function (cmd) {
-    await gbl.initialize(program.remoteNode);
-    if (cmd.period) {
-      await time.increaseTimeByDuration(parseInt(cmd.period));
-    } else if (cmd.toDate) {
-      await time.increaseTimeToDate(cmd.toDate);
-    } else if (cmd.toEpochTime) {
-      await time.increaseTimeToEpochDate(cmd.toEpochTime);
-    }
+  program	
+  .command('time_travel')	
+  .alias('tt')	
+  .option('-p, --period <seconds>', 'Period of time in seconds to increase')	
+  .option('-d, --toDate <date>', 'Human readable date ("MM/DD/YY [HH:mm:ss]") to travel to')	
+  .option('-e, --toEpochTime <epochTime>', 'Unix Epoch time to travel to')	
+  .description('Increases time on EVM according to given value.')	
+  .action(async function (cmd) {	
+    await gbl.initialize(program.remoteNode);	
+    if (cmd.period) {	
+      await time.increaseTimeByDuration(parseInt(cmd.period));	
+    } else if (cmd.toDate) {	
+      await time.increaseTimeToDate(cmd.toDate);	
+    } else if (cmd.toEpochTime) {	
+      await time.increaseTimeToEpochDate(cmd.toEpochTime);	
+    }	
   });
-
 program.parse(process.argv);
 
 if (typeof program.commands.length == 0) {

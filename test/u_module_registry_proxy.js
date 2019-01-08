@@ -153,11 +153,11 @@ contract("ModuleRegistryProxy", accounts => {
 
         it("Verify the initialize data", async () => {
             assert.equal(
-                await I_MRProxied.getAddressValues.call(web3.utils.soliditySha3("owner")),
+                await I_MRProxied.getAddressValue.call(web3.utils.soliditySha3("owner")),
                 account_polymath,
                 "Should equal to right address"
             );
-            assert.equal(await I_MRProxied.getAddressValues.call(web3.utils.soliditySha3("polymathRegistry")), I_PolymathRegistry.address);
+            assert.equal(await I_MRProxied.getAddressValue.call(web3.utils.soliditySha3("polymathRegistry")), I_PolymathRegistry.address);
         });
     });
 

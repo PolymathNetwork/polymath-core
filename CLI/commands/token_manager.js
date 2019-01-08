@@ -8,7 +8,7 @@ const gbl = require('./common/global');
 const csvParse = require('./helpers/csv');
 
 // Constants
-const MULTIMINT_DATA_CSV = './CLI/data/ST/multi_mint_data.csv';
+const MULTIMINT_DATA_CSV = `${__dirname}/../data/ST/multi_mint_data.csv`;
 
 // Load contract artifacts
 const contracts = require('./helpers/contract_addresses');
@@ -388,7 +388,7 @@ async function multiMint(_csvFilePath, _batchSize) {
   for (let batch = 0; batch < batches.length; batch++) {
     console.log(`Batch ${batch + 1} - Attempting to mint tokens to accounts: \n\n`, investorArray[batch], '\n');
     amountArray[batch] = amountArray[batch].map(a => web3.utils.toWei(a.toString()));
-    let action = await securityToken.methods.mintMulti(investorArray[batch], amountArray[batch]);
+    let action = securityToken.methods.mintMulti(investorArray[batch], amountArray[batch]);
     let receipt = await common.sendTransaction(action);
     console.log(chalk.green('Multi mint transaction was successful.'));
     console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
@@ -617,7 +617,7 @@ async function getAllModules() {
         let nameTemp = web3.utils.hexToUtf8(details[0]);
         let pausedTemp = null;
         if (type == gbl.constants.MODULES_TYPES.STO || type == gbl.constants.MODULES_TYPES.TRANSFER) {
-          let abiTemp = JSON.parse(require('fs').readFileSync(`./build/contracts/${nameTemp}.json`).toString()).abi;
+          let abiTemp = JSON.parse(require('fs').readFileSync(`${__dirname}/../../build/contracts/${nameTemp}.json`).toString()).abi;
           let contractTemp = new web3.eth.Contract(abiTemp, details[1]);
           pausedTemp = await contractTemp.methods.paused().call();
         }

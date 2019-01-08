@@ -67,7 +67,7 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
     // Initial fee for ticker registry and security token registry
     const initRegFee = web3.utils.toWei("250");
 
-    before(async() => {
+    before(async () => {
         // Accounts setup
         account_polymath = accounts[0];
         account_issuer = accounts[1];
@@ -118,11 +118,11 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
         `);
     });
 
-    describe("Generate the SecurityToken", async() => {
+    describe("Generate the SecurityToken", async () => {
 
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let tx = await I_STRProxied.registerTicker(token_owner, symbol, contact, { from : token_owner });
+            let tx = await I_STRProxied.registerTicker(token_owner, symbol, contact, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._ticker, symbol.toUpperCase());
         });
@@ -137,27 +137,27 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
 
             I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
 
-            const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({from: _blockNo}), 1);
+            const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({ from: _blockNo }), 1);
 
             // Verify that GeneralTransferManager module get added successfully or not
             assert.equal(log.args._types[0].toNumber(), 2);
             assert.equal(
                 web3.utils.toAscii(log.args._name)
-                .replace(/\u0000/g, ''),
+                    .replace(/\u0000/g, ''),
                 "GeneralTransferManager"
             );
         });
 
         it("Should intialize the auto attached modules", async () => {
-          let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
-          I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
+            let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
+            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
         });
 
     });
 
-    describe("Buy tokens using on-chain whitelist and test locking them up and attempting to transfer", async() => {
+    describe("Buy tokens using on-chain whitelist and test locking them up and attempting to transfer", async () => {
 
-        it("Should Buy the tokens", async() => {
+        it("Should Buy the tokens", async () => {
             // Add the Investor in to the whitelist
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
@@ -184,7 +184,7 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
             );
         });
 
-        it("Should Buy some more tokens", async() => {
+        it("Should Buy some more tokens", async () => {
             // Add the Investor in to the whitelist
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
@@ -211,18 +211,18 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
         it("Should unsuccessfully attach the VolumeRestrictionTransferManager factory with the security token -- failed because Token is not paid", async () => {
             await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
             await catchRevert(
-                 I_SecurityToken.addModule(P_VolumeRestrictionTransferManagerFactory.address, 0, web3.utils.toWei("500", "ether"), 0, { from: token_owner })
+                I_SecurityToken.addModule(P_VolumeRestrictionTransferManagerFactory.address, 0, web3.utils.toWei("500", "ether"), 0, { from: token_owner })
             )
         });
 
         it("Should successfully attach the VolumeRestrictionTransferManager factory with the security token", async () => {
             let snapId = await takeSnapshot();
-            await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), {from: token_owner});
+            await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), { from: token_owner });
             const tx = await I_SecurityToken.addModule(P_VolumeRestrictionTransferManagerFactory.address, 0, web3.utils.toWei("500", "ether"), 0, { from: token_owner });
             assert.equal(tx.logs[3].args._types[0].toNumber(), transferManagerKey, "VolumeRestrictionTransferManagerFactory doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[3].args._name)
-                .replace(/\u0000/g, ''),
+                    .replace(/\u0000/g, ''),
                 "LockupVolumeRestrictionTM",
                 "VolumeRestrictionTransferManagerFactory module was not added"
             );
@@ -235,14 +235,14 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
             assert.equal(tx.logs[2].args._types[0].toNumber(), transferManagerKey, "VolumeRestrictionTransferManager doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name)
-                .replace(/\u0000/g, ''),
+                    .replace(/\u0000/g, ''),
                 "LockupVolumeRestrictionTM",
                 "VolumeRestrictionTransferManager module was not added"
             );
             I_VolumeRestrictionTransferManager = VolumeRestrictionTransferManager.at(tx.logs[2].args._module);
         });
 
-        it("Add a new token holder", async() => {
+        it("Add a new token holder", async () => {
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor3,
@@ -266,11 +266,11 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
             );
         });
 
-        it("Should pause the tranfers at transferManager level", async() => {
-            let tx = await I_VolumeRestrictionTransferManager.pause({from: token_owner});
+        it("Should pause the tranfers at transferManager level", async () => {
+            let tx = await I_VolumeRestrictionTransferManager.pause({ from: token_owner });
         });
 
-        it("Should still be able to transfer between existing token holders up to limit", async() => {
+        it("Should still be able to transfer between existing token holders up to limit", async () => {
             // Add the Investor in to the whitelist
             // Mint some tokens
             await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('1', 'ether'), { from: account_investor2 });
@@ -281,11 +281,11 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
             );
         });
 
-        it("Should unpause the tranfers at transferManager level", async() => {
-            await I_VolumeRestrictionTransferManager.unpause({from: token_owner});
+        it("Should unpause the tranfers at transferManager level", async () => {
+            await I_VolumeRestrictionTransferManager.unpause({ from: token_owner });
         });
 
-        it("Should prevent the creation of a lockup with bad parameters where the totalAmount is zero", async() => {
+        it("Should prevent the creation of a lockup with bad parameters where the totalAmount is zero", async () => {
             // create a lockup
             // this will generate an exception because the totalAmount is zero
             await catchRevert(
@@ -293,7 +293,7 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
             )
         });
 
-        it("Should prevent the creation of a lockup with bad parameters where the releaseFrequencySeconds is zero", async() => {
+        it("Should prevent the creation of a lockup with bad parameters where the releaseFrequencySeconds is zero", async () => {
             // create a lockup
             // this will generate an exception because the releaseFrequencySeconds is zero
             await catchRevert(
@@ -301,7 +301,7 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
             );
         });
 
-        it("Should prevent the creation of a lockup with bad parameters where the lockUpPeriodSeconds is zero", async() => {
+        it("Should prevent the creation of a lockup with bad parameters where the lockUpPeriodSeconds is zero", async () => {
             // create a lockup
             // this will generate an exception because the lockUpPeriodSeconds is zero
             await catchRevert(
@@ -310,7 +310,7 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
         });
 
 
-        it("Should prevent the creation of a lockup with bad parameters where the total amount to be released is more granular than allowed by the token", async() => {
+        it("Should prevent the creation of a lockup with bad parameters where the total amount to be released is more granular than allowed by the token", async () => {
             // create a lockup
             // this will generate an exception because we're locking up 5e17 tokens but the granularity is 5e18 tokens
             await catchRevert(
@@ -318,7 +318,7 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
             );
         });
 
-        it("Should prevent the creation of a lockup with bad parameters where the lockUpPeriodSeconds is not evenly divisible by releaseFrequencySeconds", async() => {
+        it("Should prevent the creation of a lockup with bad parameters where the lockUpPeriodSeconds is not evenly divisible by releaseFrequencySeconds", async () => {
 
             // balance should be 9000000000000000000 here (9 eth)
             let balance = await I_SecurityToken.balanceOf(account_investor2)
@@ -332,7 +332,7 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
             );
         });
 
-        it("Should prevent the creation of a lockup with bad parameters where the total amount being locked up isn't evenly divisible by the number of total periods", async() => {
+        it("Should prevent the creation of a lockup with bad parameters where the total amount being locked up isn't evenly divisible by the number of total periods", async () => {
 
             // create a lockup for a balance of 1 eth
             // over 16e18 seconds total, with 4e18 periods of 4 seconds each.
@@ -342,7 +342,7 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
             );
         });
 
-        it("Should prevent the creation of a lockup with bad parameters where the amount to be released per period is too granular for the token", async() => {
+        it("Should prevent the creation of a lockup with bad parameters where the amount to be released per period is too granular for the token", async () => {
 
             // balance should be 9000000000000000000 here (9 eth)
             let balance = await I_SecurityToken.balanceOf(account_investor2)
@@ -356,7 +356,7 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
 
         });
 
-        it("Should prevent the transfer of tokens in a lockup", async() => {
+        it("Should prevent the transfer of tokens in a lockup", async () => {
 
             let balance = await I_SecurityToken.balanceOf(account_investor2)
             console.log("balance", balance.dividedBy(new BigNumber(1).times(new BigNumber(10).pow(18))).toNumber());
@@ -374,7 +374,7 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
             );
         });
 
-        it("Should allow the transfer of tokens in a lockup if a period has passed", async() => {
+        it("Should allow the transfer of tokens in a lockup if a period has passed", async () => {
 
             // wait 4 seconds
             await increaseTime(duration.seconds(4));
@@ -382,14 +382,14 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
             await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('3', 'ether'), { from: account_investor2 });
         });
 
-        it("Should prevent the transfer of tokens if the amount is larger than the amount allowed by lockups", async() => {
+        it("Should prevent the transfer of tokens if the amount is larger than the amount allowed by lockups", async () => {
 
             await catchRevert(
                 I_SecurityToken.transfer(account_investor1, web3.utils.toWei('4', 'ether'), { from: account_investor2 })
             );
         });
 
-        it("Should allow the transfer of more tokens in a lockup if another period has passed", async() => {
+        it("Should allow the transfer of more tokens in a lockup if another period has passed", async () => {
 
             // wait 4 more seconds
             await increaseTime(4000);
@@ -397,7 +397,7 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
             await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('3', 'ether'), { from: account_investor2 });
         });
 
-        it("Should allow the transfer of all tokens in a lockup if the entire lockup has passed", async() => {
+        it("Should allow the transfer of all tokens in a lockup if the entire lockup has passed", async () => {
 
             let balance = await I_SecurityToken.balanceOf(account_investor2)
 
@@ -407,7 +407,7 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
             await I_SecurityToken.transfer(account_investor1, balance, { from: account_investor2 });
         });
 
-        it("Should prevent the transfer of tokens in an edited lockup", async() => {
+        it("Should prevent the transfer of tokens in an edited lockup", async () => {
 
 
             // balance here should be 12000000000000000000 (12e18 or 12 eth)
@@ -453,7 +453,7 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
 
         });
 
-        it("Should succesfully modify the lockup - fail because array index out of bound", async() => {
+        it("Should successfully modify the lockup - fail because array index out of bound", async () => {
             // balance here should be 12000000000000000000 (12e18 or 12 eth)
             let balance = await I_SecurityToken.balanceOf(account_investor1);
             await catchRevert(
@@ -461,13 +461,13 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
             );
         })
 
-        it("Should succesfully get the lockup - fail because array index out of bound", async() => {
+        it("Should successfully get the lockup - fail because array index out of bound", async () => {
             await catchRevert(
                 I_VolumeRestrictionTransferManager.getLockUp(account_investor1, 9)
             );
         })
 
-        it("Should be possible to remove a lockup -- couldn't transfer because of lock up", async() => {
+        it("Should be possible to remove a lockup -- couldn't transfer because of lock up", async () => {
 
             let acct1Balance = await I_SecurityToken.balanceOf(account_investor1)
 
@@ -482,7 +482,7 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
             // remove the lockup
             await I_VolumeRestrictionTransferManager.removeLockUp(account_investor1, 0, { from: token_owner });
 
-           lockUpCount = await I_VolumeRestrictionTransferManager.getLockUpsLength(account_investor1);
+            lockUpCount = await I_VolumeRestrictionTransferManager.getLockUpsLength(account_investor1);
             assert.equal(lockUpCount, 0)
 
             let acct2BalanceBefore = await I_SecurityToken.balanceOf(account_investor2)
@@ -492,13 +492,13 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
             assert.equal(acct2BalanceAfter.sub(acct2BalanceBefore).toString(), acct1Balance.toString())
         });
 
-        it("Should try to remove the lockup --failed because of index is out of bounds", async() => {
+        it("Should try to remove the lockup --failed because of index is out of bounds", async () => {
             await catchRevert(
                 I_VolumeRestrictionTransferManager.removeLockUp(account_investor2, 7, { from: token_owner })
             );
         })
 
-        it("Should be possible to create multiple lockups at once", async() => {
+        it("Should be possible to create multiple lockups at once", async () => {
 
             let balancesBefore = {}
 
@@ -571,22 +571,22 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
 
         });
 
-        it("Should revert if the parameters are bad when creating multiple lockups", async() => {
+        it("Should revert if the parameters are bad when creating multiple lockups", async () => {
 
             await catchRevert(
                 // pass in the wrong number of params.  txn should revert
-            I_VolumeRestrictionTransferManager.addLockUpMulti(
-                [account_investor2, account_investor3],
-                [16, 8],
-                [2], // this array should have 2 elements but it has 1, which should cause a revert
-                [0, 0],
-                [web3.utils.toWei('1', 'ether'), web3.utils.toWei('1', 'ether')],
-                { from: token_owner }
-            )
+                I_VolumeRestrictionTransferManager.addLockUpMulti(
+                    [account_investor2, account_investor3],
+                    [16, 8],
+                    [2], // this array should have 2 elements but it has 1, which should cause a revert
+                    [0, 0],
+                    [web3.utils.toWei('1', 'ether'), web3.utils.toWei('1', 'ether')],
+                    { from: token_owner }
+                )
             );
         });
 
-        it("Should be possible to create a lockup with a specific start time in the future", async() => {
+        it("Should be possible to create a lockup with a specific start time in the future", async () => {
 
             // remove all lockups for account 2
             let lockUpsLength = await I_VolumeRestrictionTransferManager.getLockUpsLength(account_investor2);
@@ -613,7 +613,7 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
 
         });
 
-        it("Should be possible to edit a lockup with a specific start time in the future", async() => {
+        it("Should be possible to edit a lockup with a specific start time in the future", async () => {
 
             // edit the lockup
             let now = latestTime();
@@ -697,7 +697,7 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
             );
         });
 
-        it("Should be possible to stack lockups", async() => {
+        it("Should be possible to stack lockups", async () => {
             // should be 17000000000000000000
             let balance = await I_SecurityToken.balanceOf(account_investor1)
 
@@ -763,13 +763,13 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
         });
 
 
-        it("Should get configuration function signature", async() => {
+        it("Should get configuration function signature", async () => {
             let sig = await I_VolumeRestrictionTransferManager.getInitFunction.call();
             assert.equal(web3.utils.hexToNumber(sig), 0);
         });
 
 
-        it("Should get the permission", async() => {
+        it("Should get the permission", async () => {
             let perm = await I_VolumeRestrictionTransferManager.getPermissions.call();
             assert.equal(perm.length, 1);
             // console.log(web3.utils.toAscii(perm[0]).replace(/\u0000/g, ''))
@@ -778,28 +778,28 @@ contract('LockupVolumeRestrictionTransferManager', accounts => {
 
     });
 
-    describe("VolumeRestriction Transfer Manager Factory test cases", async() => {
+    describe("VolumeRestriction Transfer Manager Factory test cases", async () => {
 
-        it("Should get the exact details of the factory", async() => {
-            assert.equal(await I_VolumeRestrictionTransferManagerFactory.getSetupCost.call(),0);
-            assert.equal((await I_VolumeRestrictionTransferManagerFactory.getTypes.call())[0],2);
+        it("Should get the exact details of the factory", async () => {
+            assert.equal(await I_VolumeRestrictionTransferManagerFactory.getSetupCost.call(), 0);
+            assert.equal((await I_VolumeRestrictionTransferManagerFactory.getTypes.call())[0], 2);
             assert.equal(web3.utils.toAscii(await I_VolumeRestrictionTransferManagerFactory.getName.call())
-                        .replace(/\u0000/g, ''),
-                        "LockupVolumeRestrictionTM",
-                        "Wrong Module added");
+                .replace(/\u0000/g, ''),
+                "LockupVolumeRestrictionTM",
+                "Wrong Module added");
             assert.equal(await I_VolumeRestrictionTransferManagerFactory.description.call(),
-                        "Manage transfers using lock ups over time",
-                        "Wrong Module added");
+                "Manage transfers using lock ups over time",
+                "Wrong Module added");
             assert.equal(await I_VolumeRestrictionTransferManagerFactory.title.call(),
-                        "Lockup Volume Restriction Transfer Manager",
-                        "Wrong Module added");
+                "Lockup Volume Restriction Transfer Manager",
+                "Wrong Module added");
             assert.equal(await I_VolumeRestrictionTransferManagerFactory.getInstructions.call(),
-                        "Allows an issuer to set lockup periods for user addresses, with funds distributed over time. Init function takes no parameters.",
-                        "Wrong Module added");
+                "Allows an issuer to set lockup periods for user addresses, with funds distributed over time. Init function takes no parameters.",
+                "Wrong Module added");
             assert.equal(await I_VolumeRestrictionTransferManagerFactory.version.call(), "1.0.0");
         });
 
-        it("Should get the tags of the factory", async() => {
+        it("Should get the tags of the factory", async () => {
             let tags = await I_VolumeRestrictionTransferManagerFactory.getTags.call();
             assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ''), "Volume");
         });

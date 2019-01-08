@@ -409,6 +409,10 @@ contract('VolumeRestrictionTransferManager', accounts => {
             
             assert.equal(tx.logs[0].args._holder, account_investor1);
             assert.equal(tx.logs[0].args._typeOfRestriction, 0);
+            let data = await I_VolumeRestrictionTM.getRestrictedAddresses.call();
+            assert.equal(data[0][0], account_investor1);
+            assert.equal(data[1][0].toNumber(), 0);
+
         });
 
         it("Should add the restriction for multiple investor -- failed because of bad owner", async() => {
@@ -538,6 +542,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal((await I_VolumeRestrictionTM.individualRestriction.call(account_investor2))[2].toNumber(), 3);
             assert.equal((await I_VolumeRestrictionTM.individualRestriction.call(account_delegate3))[2].toNumber(), 4);
             assert.equal((await I_VolumeRestrictionTM.individualRestriction.call(account_investor4))[2].toNumber(), 5);
+
+            let data = await I_VolumeRestrictionTM.getRestrictedAddresses.call();
+            assert.equal(data[0].length, 4);
         });
 
         it("Should remove the restriction multi -- failed because of address is 0", async() => {
@@ -554,6 +561,12 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Should successfully remove the restriction", async() => {
             await I_VolumeRestrictionTM.removeIndividualRestriction(account_investor2, {from: token_owner});
             assert.equal((await I_VolumeRestrictionTM.individualRestriction.call(account_investor2))[3].toNumber(), 0);
+            let data = await I_VolumeRestrictionTM.getRestrictedAddresses.call();
+            assert.equal(data[0].length, 3);
+            for (let i = 0; i < data.length; i++) {
+                assert.notEqual(data[0][i], account_investor2);
+                assert.equal(data[1][i], 0);
+            }
         });
 
         it("Should remove the restriction -- failed because restriction not present anymore", async() => {
@@ -569,6 +582,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     from: token_owner
                 }
             )
+            let data = await I_VolumeRestrictionTM.getRestrictedAddresses.call();
+            assert.equal(data[0].length, 1);
         });
 
         it("Should add the restriction succesfully after the expiry of previous one for investor 1", async() => {
@@ -603,6 +618,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
             
             assert.equal(tx.logs[1].args._holder, account_investor1);
             assert.equal(tx.logs[1].args._typeOfRestriction, 0);
+            let data = await I_VolumeRestrictionTM.getRestrictedAddresses.call();
+            assert.equal(data[0].length, 1);
+            assert.equal(data[0][0], account_investor1);
         });
 
         it("Should not successfully transact the tokens -- failed because volume is above the limit", async() => {
@@ -717,6 +735,10 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal(tx.logs[0].args._holder, account_investor3);
             assert.equal(tx.logs[0].args._typeOfRestriction, 0);
             assert.equal((tx.logs[0].args._allowedTokens).toNumber(), web3.utils.toWei("6"));
+            let data = await I_VolumeRestrictionTM.getRestrictedAddresses.call();
+            assert.equal(data[0].length, 2);
+            assert.equal(data[0][1], account_investor3);
+            assert.equal(data[1][1], 1);
             let dataRestriction = await I_VolumeRestrictionTM.individualDailyRestriction.call(account_investor3);
             console.log(`
                 *** Individual Daily restriction data ***
@@ -793,6 +815,12 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal(tx.logs[0].args._holder, account_investor1);
             assert.equal((tx.logs[0].args._typeOfRestriction).toNumber(), 1);
             assert.equal((tx.logs[0].args._allowedTokens).dividedBy(new BigNumber(10).pow(16)).toNumber(), 5);
+            let data = await I_VolumeRestrictionTM.getRestrictedAddresses.call();
+            assert.equal(data[0].length, 2);
+            assert.equal(data[0][1], account_investor3);
+            assert.equal(data[0][0], account_investor1);
+            assert.equal(data[1][1].toNumber(), 1);
+            assert.equal(data[1][0].toNumber(), 2);
             let dataRestriction = await I_VolumeRestrictionTM.individualDailyRestriction.call(account_investor1);
             console.log(`
                 *** Individual Daily restriction data ***
@@ -857,6 +885,13 @@ contract('VolumeRestrictionTransferManager', accounts => {
         
             assert.equal(tx.logs[0].args._holder, account_investor3);
             assert.equal(tx.logs[0].args._typeOfRestriction, 1);
+
+            let data = await I_VolumeRestrictionTM.getRestrictedAddresses.call();
+            assert.equal(data[0].length, 2);
+            assert.equal(data[0][1], account_investor3);
+            assert.equal(data[0][0], account_investor1);
+            assert.equal(data[1][1].toNumber(), 2);
+            assert.equal(data[1][0].toNumber(), 2);
         });
 
         it("Should transfer the token by the investor 3 with in the (Individual + Individual daily limit)", async() => {
@@ -910,7 +945,13 @@ contract('VolumeRestrictionTransferManager', accounts => {
             // remove the Individual daily restriction
             let tx = await I_VolumeRestrictionTM.removeIndividualDailyRestriction(account_investor3, {from: token_owner});
             assert.equal(tx.logs[0].args._holder, account_investor3);
-
+            let dataAdd = await I_VolumeRestrictionTM.getRestrictedAddresses.call();
+            assert.equal(dataAdd[0].length, 2);
+            assert.equal(dataAdd[0][0], account_investor1);
+            assert.equal(dataAdd[1][0].toNumber(), 2);
+            assert.equal(dataAdd[0][1], account_investor3);
+            assert.equal(dataAdd[1][1].toNumber(), 0);
+            
             let startTime = (await I_VolumeRestrictionTM.individualRestriction.call(account_investor3))[1].toNumber();
 
             // transfer more tokens on the same day

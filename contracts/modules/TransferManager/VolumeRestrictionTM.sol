@@ -205,6 +205,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
             _endTime,
             RestrictionType(_restrictionType)
         );
+        _addRestrictionData(_holder, uint8(TypeOfPeriod.MultipleDays));
         emit AddIndividualRestriction(
             _holder,
             _allowedTokens,
@@ -213,6 +214,16 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
             _endTime,
             _restrictionType
         );
+    }
+
+    function _addRestrictionData(address _holder, uint8 _callFrom) internal {
+        uint64 index = restrictedHolders[_holder].index;
+        if (restrictedHolders[_holder].seen == 0) {
+            restrictedAddresses.push(_holder);
+            index = uint64(restrictedAddresses.length);
+        }
+        uint8 _type = _getTypeOfPeriod(restrictedHolders[_holder].typeOfPeriod, _callFrom, _holder);
+        restrictedHolders[_holder] = RestrictedHolder(uint8(1), _type, index);
     }
 
     /**
@@ -270,6 +281,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
             _endTime,
             RestrictionType(_restrictionType)
         );
+        _addRestrictionData(_holder, uint8(TypeOfPeriod.OneDay));
         emit AddIndividualDailyRestriction(
             _holder,
             _allowedTokens,
@@ -449,10 +461,26 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         require(_holder != address(0), "Invalid address");
         require(individualRestriction[_holder].endTime != 0, "Not present");
         individualRestriction[_holder] = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
+        _deleteHolderFromList(_holder, uint8(TypeOfPeriod.OneDay));
         userToBucket[_holder].lastTradedDayTime = 0;
         userToBucket[_holder].sumOfLastPeriod = 0;
         userToBucket[_holder].daysCovered = 0;
         emit IndividualRestrictionRemoved(_holder);
+    }
+
+    function _deleteHolderFromList(address _holder, uint8 _typeOfPeriod) internal {
+        if (restrictedHolders[_holder].typeOfPeriod != uint8(TypeOfPeriod.Both)) {
+            uint64 index = restrictedHolders[_holder].index;
+            uint256 _len = restrictedAddresses.length;
+            if (index != _len) {
+                restrictedHolders[restrictedAddresses[_len - 1]].index = index;
+                restrictedAddresses[index - 1] = restrictedAddresses[_len - 1];
+            }
+            delete restrictedHolders[_holder];
+            restrictedAddresses.length--;
+        } else {
+            restrictedHolders[_holder].typeOfPeriod = _typeOfPeriod;
+        }
     }
 
     /**
@@ -478,6 +506,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         require(_holder != address(0), "Invalid address");
         require(individualDailyRestriction[_holder].endTime != 0, "Not present");
         individualDailyRestriction[_holder] = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
+        _deleteHolderFromList(_holder, uint8(TypeOfPeriod.MultipleDays));
         userToBucket[_holder].dailyLastTradedDayTime = 0;
         emit IndividualDailyRestrictionRemoved(_holder);
     }
@@ -1153,6 +1182,28 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         return bytes4(0);
     }
 
+    function _getTypeOfPeriod(uint8 _currentTypeOfPeriod, uint8 _callFrom, address _holder) internal view returns(uint8) {
+        if (_currentTypeOfPeriod != _callFrom && individualRestriction[_holder].endTime != uint256(0))
+            return uint8(TypeOfPeriod.Both);
+        else
+            return _callFrom;
+    }
+
+    /**
+     * @notice use to get the list of token holders who are restricted by the VRTM
+     * @return address List of addresses that are restricted by the VRTM
+     * @return uint8 Array of the Type of period restriction on the addresses. 0 - address
+     * has only individual restriction, 1 - address has only individual daily restriction & 2
+     * it means address has both type of restriction where rolling period is 24 hrs & multiple days as well
+     */
+    function getRestrictedAddresses() external view returns(address[], uint8[]) {
+        uint8[] memory typeOfPeriodRestriction = new uint8[](restrictedAddresses.length);
+        for (uint256 i = 0; i < restrictedAddresses.length; i++) {
+            typeOfPeriodRestriction[i] = restrictedHolders[restrictedAddresses[i]].typeOfPeriod;
+        }
+        return (restrictedAddresses, typeOfPeriodRestriction);
+    }
+
     /**
      * @notice Returns the permissions flag that are associated with Percentage transfer Manager
      */
@@ -1161,5 +1212,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         allPermissions[0] = ADMIN;
         return allPermissions;
     }
+
+
 
 }

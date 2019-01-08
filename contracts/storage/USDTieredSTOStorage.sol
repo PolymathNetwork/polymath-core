@@ -34,6 +34,15 @@ contract USDTieredSTOStorage {
         uint256 mintedDiscountPoly;
     }
 
+    struct Investor {
+        // Whether investor is accredited (0 = non-accredited, 1 = accredited)
+        uint8 accredited;
+        // Whether we have seen the investor before (already added to investors list)
+        uint8 seen;
+        // Overrides for default limit in USD for non-accredited investors multiplied by 10**18 (0 = no override)
+        uint256 nonAccreditedLimitUSDOverride;
+    }
+
     mapping (bytes32 => mapping (bytes32 => string)) oracleKeys;
 
     // Determine whether users can invest on behalf of a beneficiary
@@ -66,17 +75,18 @@ contract USDTieredSTOStorage {
     // Amount in fund raise type invested by each investor
     mapping (address => mapping (uint8 => uint256)) public investorInvested;
 
-    // List of accredited investors
-    mapping (address => bool) public accredited;
+    // Accredited & non-accredited investor data
+    mapping (address => Investor) public investors;
 
     // List of active stable coin addresses
     mapping (address => bool) public usdTokenEnabled;
 
+    // List of all addresses that have been added as accredited or non-accredited without
+    // the default limit
+    address[] public investorsList;
+
     // Default limit in USD for non-accredited investors multiplied by 10**18
     uint256 public nonAccreditedLimitUSD;
-
-    // Overrides for default limit in USD for non-accredited investors multiplied by 10**18
-    mapping (address => uint256) public nonAccreditedLimitUSDOverride;
 
     // Minimum investable amount in USD
     uint256 public minimumInvestmentUSD;

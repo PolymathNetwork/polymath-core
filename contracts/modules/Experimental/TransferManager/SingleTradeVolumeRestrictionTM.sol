@@ -103,7 +103,7 @@ contract SingleTradeVolumeRestrictionTM is TransferManager {
     ) 
         public 
         onlyFactory 
-    s{
+    {
         isTransferLimitInPercentage = _isTransferLimitInPercentage;
         if (isTransferLimitInPercentage) {
             changeGlobalLimitInPercentage(_globalTransferLimitInPercentageOrToken);

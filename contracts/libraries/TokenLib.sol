@@ -2,6 +2,7 @@ pragma solidity ^0.5.0;
 
 import "../modules/PermissionManager/IPermissionManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "../interfaces/IPoly.sol";
 
 library TokenLib {
     using SafeMath for uint256;
@@ -37,6 +38,10 @@ library TokenLib {
     event ModuleArchived(uint8[] _types, address _module, uint256 _timestamp);
     // Emit when Module is unarchived from the SecurityToken
     event ModuleUnarchived(uint8[] _types, address _module, uint256 _timestamp);
+    // Emit when Module get removed from the securityToken
+    event ModuleRemoved(uint8[] _types, address _module, uint256 _timestamp);
+    // Emit when the budget allocated to a module is changed
+    event ModuleBudgetChanged(uint8[] _moduleTypes, address _module, uint256 _oldBudget, uint256 _budget);
 
     /**
     * @notice Archives a module attached to the SecurityToken
@@ -61,6 +66,95 @@ library TokenLib {
         /*solium-disable-next-line security/no-block-members*/
         emit ModuleUnarchived(_moduleData.moduleTypes, _module, now);
         _moduleData.isArchived = false;
+    }
+
+    /**
+    * @notice Removes a module attached to the SecurityToken
+    * @param _module address of module to unarchive
+    */
+    function removeModule(
+        address _module,
+        mapping(uint8 => address[]) storage _modules,
+        mapping(address => ModuleData) storage _modulesToData,
+        mapping(bytes32 => address[]) storage _names
+    )
+        public
+    {
+        require(_modulesToData[_module].isArchived, "Not archived");
+        require(_modulesToData[_module].module != address(0), "Module missing");
+        /*solium-disable-next-line security/no-block-members*/
+        emit ModuleRemoved(_modulesToData[_module].moduleTypes, _module, now);
+        // Remove from module type list
+        uint8[] memory moduleTypes = _modulesToData[_module].moduleTypes;
+        for (uint256 i = 0; i < moduleTypes.length; i++) {
+            _removeModuleWithIndex(moduleTypes[i], _modulesToData[_module].moduleIndexes[i], _modules, _modulesToData);
+            /* modulesToData[_module].moduleType[moduleTypes[i]] = false; */
+        }
+        // Remove from module names list
+        uint256 index = _modulesToData[_module].nameIndex;
+        bytes32 name = _modulesToData[_module].name;
+        uint256 length = _names[name].length;
+        _names[name][index] = _names[name][length - 1];
+        _names[name].length = length - 1;
+        if ((length - 1) != index) {
+            _modulesToData[_names[name][index]].nameIndex = index;
+        }
+        // Remove from modulesToData
+        delete _modulesToData[_module];
+    }
+
+    /**
+    * @notice Internal - Removes a module attached to the SecurityToken by index
+    */
+    function _removeModuleWithIndex(
+        uint8 _type,
+        uint256 _index,
+        mapping(uint8 => address[]) storage _modules,
+        mapping(address => ModuleData) storage _modulesToData
+    )
+        internal
+    {
+        uint256 length = _modules[_type].length;
+        _modules[_type][_index] = _modules[_type][length - 1];
+        _modules[_type].length = length - 1;
+
+        if ((length - 1) != _index) {
+            //Need to find index of _type in moduleTypes of module we are moving
+            uint8[] memory newTypes = _modulesToData[_modules[_type][_index]].moduleTypes;
+            for (uint256 i = 0; i < newTypes.length; i++) {
+                if (newTypes[i] == _type) {
+                    _modulesToData[_modules[_type][_index]].moduleIndexes[i] = _index;
+                }
+            }
+        }
+    }
+
+    /**
+    * @notice allows owner to increase/decrease POLY approval of one of the modules
+    * @param _module module address
+    * @param _change change in allowance
+    * @param _increase true if budget has to be increased, false if decrease
+    */
+    function changeModuleBudget(
+        address _module,
+        uint256 _change,
+        bool _increase,
+        address _polyToken,
+        mapping(address => ModuleData) storage _modulesToData
+    )
+        public
+    {
+        require(_modulesToData[_module].module != address(0), "Module missing");
+        uint256 currentAllowance = IPoly(_polyToken).allowance(address(this), _module);
+        uint256 newAllowance;
+        if (_increase) {
+            require(IPoly(_polyToken).increaseApproval(_module, _change), "IncreaseApproval fail");
+            newAllowance = currentAllowance.add(_change);
+        } else {
+            require(IPoly(_polyToken).decreaseApproval(_module, _change), "Insufficient allowance");
+            newAllowance = currentAllowance.sub(_change);
+        }
+        emit ModuleBudgetChanged(_modulesToData[_module].moduleTypes, _module, currentAllowance, newAllowance);
     }
 
     /**

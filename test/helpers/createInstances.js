@@ -127,9 +127,8 @@ export async function setUpPolymathNetwork(account_polymath, token_owner) {
         I_SecurityTokenRegistry,
         I_SecurityTokenRegistryProxy,
         I_STRProxied,
-        I_STRProxied
+        I_STRGetter
     );
-    // returning I_STRProxied instead of I_STRGetter because proxy should automatically act as getter.
     return Promise.all(tempArray);
 }
 
@@ -226,7 +225,7 @@ async function deploySTR(account_polymath) {
     ]);
     await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, { from: account_polymath });
     I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
-
+    I_STRGetter = await STRGetter.at(I_SecurityTokenRegistryProxy.address);
     return new Array(I_SecurityTokenRegistry, I_SecurityTokenRegistryProxy, I_STRProxied, I_STRGetter);
 }
 

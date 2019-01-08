@@ -107,6 +107,7 @@ contract("SecurityTokenRegistryProxy", async (accounts) => {
         // __upgradeabilityOwner -- index 13
 
         it("Should attach the implementation and version", async () => {
+            I_STRGetter = await STRGetter.new({from: account_polymath});
             let bytesProxy = encodeProxyCall(STRProxyParameters, [
                 I_PolymathRegistry.address,
                 I_STFactory.address,
@@ -128,6 +129,7 @@ contract("SecurityTokenRegistryProxy", async (accounts) => {
                 "1.0.0"
             );
             I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
+            I_STRGetter = await STRGetter.at(I_SecurityTokenRegistryProxy.address);
         });
 
         it("Verify the initialize data", async () => {

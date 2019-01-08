@@ -196,7 +196,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         Dividend storage dividend = dividends[_dividendIndex];
         dividend.reclaimed = true;
         uint256 remainingAmount = dividend.amount.sub(dividend.claimedAmount);
-        address payable owner = IOwnable(securityToken).owner();
+        address payable owner = address(uint160(IOwnable(securityToken).owner()));
         owner.transfer(remainingAmount);
         emit EtherDividendReclaimed(owner, _dividendIndex, remainingAmount);
     }
@@ -210,7 +210,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         Dividend storage dividend = dividends[_dividendIndex];
         uint256 remainingWithheld = dividend.dividendWithheld.sub(dividend.dividendWithheldReclaimed);
         dividend.dividendWithheldReclaimed = dividend.dividendWithheld;
-        address payable owner = IOwnable(securityToken).owner();
+        address payable owner = address(uint160(IOwnable(securityToken).owner()));
         owner.transfer(remainingWithheld);
         emit EtherDividendWithholdingWithdrawn(owner, _dividendIndex, remainingWithheld);
     }

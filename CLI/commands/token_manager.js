@@ -571,9 +571,9 @@ async function removeModule(modules) {
   }
 }
 
-async function changeBudget() {
+async function changeBudget(modules) {
   let options = modules.map(m => `${m.name} (${m.address})`);
-  let index = readlineSync.keyInSelect(options, 'Which module would you like to remove?');
+  let index = readlineSync.keyInSelect(options, 'Which module would you like to change budget for?');
   if (index != -1) {
     console.log("\nSelected: ", options[index]);
     let increase = 0 == readlineSync.keyInSelect(['Increase', 'Decrease'], `Do you want to increase or decrease budget?`, { cancel: false });

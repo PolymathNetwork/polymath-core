@@ -127,9 +127,9 @@ export async function setUpPolymathNetwork(account_polymath, token_owner) {
         I_SecurityTokenRegistry,
         I_SecurityTokenRegistryProxy,
         I_STRProxied,
-        I_STRGetter
+        I_STRProxied
     );
-    
+    // returning I_STRProxied instead of I_STRGetter because proxy should automatically act as getter.
     return Promise.all(tempArray);
 }
 

@@ -554,11 +554,11 @@ contract("SecurityTokenRegistry", async (accounts) => {
             // Verify the successful generation of the security token
             assert.equal(tx.logs[2].args._ticker, "TMP", "SecurityToken doesn't get deployed");
 
-            let securityTokenTmp = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+            let securityTokenTmp = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
             let tokens = await I_Getter.getTokensByOwner.call(token_owner);
-            assert.equal(tokens.length, 1);
-            assert.equal(tokens[0], I_SecurityToken.address);
+            assert.equal(tokens.length, 1, "tokens array length error");
+            assert.equal(tokens[0], I_SecurityToken.address, "ST address incorrect");
 
             let allTokens = await I_Getter.getTokens.call();
             assert.equal(allTokens.length, 2);

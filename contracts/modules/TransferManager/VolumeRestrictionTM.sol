@@ -183,7 +183,6 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         internal
     {
 
-        /* uint256 startTime = _startTime; */
         if (_startTime == 0) {
             _startTime = now;
         }
@@ -192,7 +191,6 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
             "Not Allowed"
         );
         require(_holder != address(0) && !exemptList[_holder], "Invalid address");
-        /* require(_startTime >= now, "Invalid startTime"); */
         _checkInputParams(_allowedTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType, now);
 
         if (individualRestriction[_holder].endTime != 0) {
@@ -263,8 +261,6 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
     )
         internal
     {
-
-        /* uint256 startTime = _startTime; */
         if (_startTime == 0) {
             _startTime = now;
         }
@@ -272,7 +268,6 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
             individualDailyRestriction[_holder].endTime < now,
             "Not Allowed"
         );
-        /* require(startTime >= now, "Invalid startTime"); */
         _checkInputParams(_allowedTokens, _startTime, 1, _endTime, _restrictionType, now);
         individualDailyRestriction[_holder] = VolumeRestriction(
             _allowedTokens,
@@ -310,14 +305,8 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         public
         withPerm(ADMIN)
     {
+        //NB - we duplicate _startTimes below to allow function reuse
         _checkLengthOfArray(_holders, _allowedTokens, _startTimes, _startTimes, _endTimes, _restrictionTypes);
-        /* require(
-            _allowedTokens.length == _startTimes.length &&
-            _startTimes.length == _holders.length &&
-            _holders.length == _endTimes.length &&
-            _endTimes.length == _restrictionTypes.length,
-            "Array length mismatch"
-        ); */
         for (uint256 i = 0; i < _holders.length; i++) {
             _addIndividualDailyRestriction(
                 _holders[i],
@@ -350,7 +339,6 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         withPerm(ADMIN)
     {
         _checkLengthOfArray(_holders, _allowedTokens, _startTimes, _rollingPeriodInDays, _endTimes, _restrictionTypes);
-        /* require(_holders.length == _allowedTokens.length, "Length mismatch"); */
         for (uint256 i = 0; i < _holders.length; i++) {
             _addIndividualRestriction(
                 _holders[i],
@@ -389,7 +377,6 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
             defaultRestriction.endTime < now,
             "Not Allowed"
         );
-        /* require(startTime >= now, "Invalid startTime"); */
         _checkInputParams(_allowedTokens, startTime, _rollingPeriodInDays, _endTime, _restrictionType, now);
         defaultRestriction = VolumeRestriction(
             _allowedTokens,
@@ -431,7 +418,6 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
             defaultDailyRestriction.endTime < now,
             "Not Allowed"
         );
-        /* require(startTime >= now, "Invalid startTime"); */
         _checkInputParams(_allowedTokens, startTime, 1, _endTime, _restrictionType, now);
         defaultDailyRestriction = VolumeRestriction(
             _allowedTokens,
@@ -592,7 +578,6 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
             _startTime = now;
         }
         require(individualRestriction[_holder].startTime > now, "Not Allowed");
-        /* require(startTime >= now, "Invalid startTime"); */
         _checkInputParams(_allowedTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType, now);
         individualRestriction[_holder] = VolumeRestriction(
             _allowedTokens,
@@ -650,19 +635,12 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
     )
         internal
     {
-        /* uint256 startTime = _startTime; */
         if (_startTime == 0) {
             _startTime = now;
         }
         _checkInputParams(_allowedTokens, _startTime, 1, _endTime, _restrictionType,
           (individualDailyRestriction[_holder].startTime <= now ? individualDailyRestriction[_holder].startTime : now)
         );
-        // If old startTime is already passed then new startTime should be greater than or equal to the
-        // old startTime otherwise any past startTime can be allowed in compare to earlier startTime.
-        /* if (individualDailyRestriction[_holder].startTime <= now)
-            require(startTime >= individualDailyRestriction[_holder].startTime, "Invalid StartTime");
-        else
-            require(startTime >= now); */
         individualDailyRestriction[_holder] = VolumeRestriction(
             _allowedTokens,
             _startTime,
@@ -698,14 +676,8 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         public
         withPerm(ADMIN)
     {
-       require(
-            _allowedTokens.length == _startTimes.length &&
-            _startTimes.length == _holders.length &&
-            _holders.length == _endTimes.length &&
-            _endTimes.length == _restrictionTypes.length,
-            "Length mismatch"
-        );
-        require(_holders.length == _allowedTokens.length, "Length mismatch");
+        //NB - we duplicate _startTimes below to allow function reuse
+        _checkLengthOfArray(_holders, _allowedTokens, _startTimes, _startTimes, _endTimes, _restrictionTypes);
         for (uint256 i = 0; i < _holders.length; i++) {
             _modifyIndividualDailyRestriction(
                 _holders[i],
@@ -738,7 +710,6 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         withPerm(ADMIN)
     {
         _checkLengthOfArray(_holders, _allowedTokens, _startTimes, _rollingPeriodInDays, _endTimes, _restrictionTypes);
-        /* require(_holders.length == _allowedTokens.length, "Length mismatch"); */
         for (uint256 i = 0; i < _holders.length; i++) {
             _modifyIndividualRestriction(
                 _holders[i],
@@ -1236,7 +1207,6 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
             (lastTradedDayTime[i + restrictedAddresses.length], sumOfLastPeriod[i + restrictedAddresses.length], daysCovered[i + restrictedAddresses.length], dailyLastTradedDayTime[i + restrictedAddresses.length]) =
                 getDefaultBucketDetailsToUser(restrictedAddresses[i]);
         }
-        /* return (allAddresses, typeOfPeriodRestriction, lastTradedDayTime, sumOfLastPeriod, daysCovered, dailyLastTradedDayTime); */
     }
 
     /**

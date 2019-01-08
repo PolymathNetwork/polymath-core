@@ -543,6 +543,30 @@ contract("SecurityTokenRegistry", async (accounts) => {
             await I_STRProxied.generateSecurityToken(name, "CCC", tokenDetails, false, { from: token_owner }),
                 await revertToSnapshot(snap_Id);
         });
+
+        it("Should get all created security tokens", async() => {
+            let snap_Id = await takeSnapshot();
+            await I_PolyToken.getTokens(web3.utils.toWei("500"), account_temp);
+            await I_PolyToken.approve(I_STRProxied.address, web3.utils.toWei("500"), { from: account_temp });
+            await I_STRProxied.registerTicker(account_temp, "TMP", name, { from: account_temp });
+            let tx = await I_STRProxied.generateSecurityToken(name, "TMP", tokenDetails, false, { from: account_temp });
+
+            // Verify the successful generation of the security token
+            assert.equal(tx.logs[2].args._ticker, "TMP", "SecurityToken doesn't get deployed");
+
+            let securityTokenTmp = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+
+            let tokens = await I_Getter.getTokensByOwner.call(token_owner);
+            assert.equal(tokens.length, 1);
+            assert.equal(tokens[0], I_SecurityToken.address);
+
+            let allTokens = await I_Getter.getTokens.call();
+            assert.equal(allTokens.length, 2);
+            assert.equal(allTokens[0], securityTokenTmp.address);
+            assert.equal(allTokens[1], I_SecurityToken.address);
+
+            await revertToSnapshot(snap_Id);
+        });
     });
 
     describe("Generate SecurityToken v2", async () => {

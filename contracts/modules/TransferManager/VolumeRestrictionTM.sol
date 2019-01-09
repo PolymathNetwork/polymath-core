@@ -136,7 +136,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
      * @param _change Boolean value used to add (i.e true) or remove (i.e false) from the list
      */
     function changeExemptWalletList(address _wallet, bool _change) public withPerm(ADMIN) {
-        require(_wallet != address(0), "Invalid address");
+        require(_wallet != address(0));
         exemptList[_wallet] = _change;
         emit ChangedExemptWalletList(_wallet, _change);
     }
@@ -446,7 +446,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
     /// @notice Internal function to facilitate the removal of individual restriction
     function _removeIndividualRestriction(address _holder) internal {
         require(_holder != address(0), "Invalid address");
-        require(individualRestriction[_holder].endTime != 0, "Not present");
+        require(individualRestriction[_holder].endTime != 0);
         individualRestriction[_holder] = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
         _deleteHolderFromList(_holder, uint8(TypeOfPeriod.OneDay));
         userToBucket[_holder].lastTradedDayTime = 0;
@@ -497,7 +497,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
     /// @notice Internal function to facilitate the removal of individual daily restriction
     function _removeIndividualDailyRestriction(address _holder) internal {
         require(_holder != address(0), "Invalid address");
-        require(individualDailyRestriction[_holder].endTime != 0, "Not present");
+        require(individualDailyRestriction[_holder].endTime != 0);
         individualDailyRestriction[_holder] = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
         _deleteHolderFromList(_holder, uint8(TypeOfPeriod.MultipleDays));
         userToBucket[_holder].dailyLastTradedDayTime = 0;
@@ -1088,7 +1088,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         } else {
             require(
                 _allowedTokens > 0 && _allowedTokens <= 100 * 10 ** 16,
-                "Percentage is not within (0,100]"
+                "Invalid value"
             );
         }
         require(_endTime > _startTime, "Invalid times");
@@ -1186,7 +1186,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
      * @return uint256[] List of daysCovered, first group for individuals, second group for default
      * @return uint256[] List of dailyLastTradedDayTime, first group for individuals, second group for default
      */
-    function getRestrictedAddresses() external view returns(
+    /*function getRestrictedAddresses() external view returns(
         address[] memory allAddresses,
         uint8[] memory typeOfPeriodRestriction,
         uint256[] memory lastTradedDayTime,
@@ -1207,6 +1207,62 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
             (lastTradedDayTime[i + restrictedAddresses.length], sumOfLastPeriod[i + restrictedAddresses.length], daysCovered[i + restrictedAddresses.length], dailyLastTradedDayTime[i + restrictedAddresses.length]) =
                 getDefaultBucketDetailsToUser(restrictedAddresses[i]);
         }
+    }*/
+    
+    function getRestrictedAddresses() external view returns(
+        address[] memory allAddresses,
+        uint256[] memory allowedTokens,
+        uint256[] memory startTime,
+        uint256[] memory rollingPeriodInDays,
+        uint256[] memory endTime,
+        uint8[] memory typeOfRestriction
+    ) {
+        uint256 counter = 0;
+        uint256 i = 0;
+        for (i = 0; i < restrictedAddresses.length; i++) {
+            counter = counter + (restrictedHolders[restrictedAddresses[i]].typeOfPeriod == uint8(2) ? 2 : 1);
+        }
+        allAddresses = new address[](counter);
+        allowedTokens = new uint256[](counter);
+        startTime = new uint256[](counter);
+        rollingPeriodInDays = new uint256[](counter);
+        endTime = new uint256[](counter);
+        typeOfRestriction = new uint8[](counter);
+        counter = 0;
+        for (i = 0; i < restrictedAddresses.length; i++) {
+            allAddresses[counter] =  restrictedAddresses[i];
+            if (restrictedHolders[restrictedAddresses[i]].typeOfPeriod == uint8(TypeOfPeriod.MultipleDays)) {
+                _setValues(individualRestriction[restrictedAddresses[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
+            }
+            else if (restrictedHolders[restrictedAddresses[i]].typeOfPeriod == uint8(TypeOfPeriod.OneDay)) {
+                _setValues(individualDailyRestriction[restrictedAddresses[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
+            }
+            else if (restrictedHolders[restrictedAddresses[i]].typeOfPeriod == uint8(TypeOfPeriod.Both)) {
+                _setValues(individualRestriction[restrictedAddresses[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
+                counter = counter + 1;
+                allAddresses[counter] =  restrictedAddresses[i];
+                _setValues(individualDailyRestriction[restrictedAddresses[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
+            }
+            counter ++;
+        }
+    }
+
+    function _setValues(
+        VolumeRestriction memory restriction,
+        uint256[] memory allowedTokens,
+        uint256[] memory startTime,
+        uint256[] memory rollingPeriodInDays,
+        uint256[] memory endTime,
+        uint8[] memory typeOfRestriction,
+        uint256 index
+    ) 
+        internal
+    {
+        allowedTokens[index] = restriction.allowedTokens;
+        startTime[index] = restriction.startTime;
+        rollingPeriodInDays[index] = restriction.rollingPeriodInDays;
+        endTime[index] = restriction.endTime;
+        typeOfRestriction[index] = uint8(restriction.typeOfRestriction);
     }
 
     /**

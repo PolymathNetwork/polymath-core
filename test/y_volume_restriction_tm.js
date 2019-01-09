@@ -89,16 +89,6 @@ contract('VolumeRestrictionTransferManager', accounts => {
         `)
     }
 
-    // async function printAll(data) {
-    //     let investors = data[0];
-    //     for (let i = 0; i < investors.length; i++) {
-    //         console.log("Individual Restrictions: ");
-    //         await print([data[2][i], data[3][i], data[4][i], data[5][i]], investors[i]);
-    //         console.log("Daily Restrictions: ");
-    //         await print([data[2][i + investors.length], data[3][i + investors.length], data[4][i + investors.length], data[5][i + investors.length]], investors[i]);
-    //     }
-    // }
-
     async function printRestrictedData(data) {
         let investors = data[0];
         for (let i = 0 ; i < investors.length; i++) {
@@ -110,7 +100,6 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 Allowed Tokens: ${web3.utils.fromWei(data[1][i].toString())}
                 Type of Restriction: ${data[5][i].toNumber()}
             `)
-            console.log("\n");
         }
     }
 
@@ -587,7 +576,6 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal((await I_VolumeRestrictionTM.individualRestriction.call(account_investor2))[3].toNumber(), 0);
             let data = await I_VolumeRestrictionTM.getRestrictedAddresses.call();
             await printRestrictedData(data);
-            //await printAll(data);
             assert.equal(data[0].length, 3);
             for (let i = 0; i < data[0].length; i++) {
                 assert.notEqual(data[0][i], account_investor2);
@@ -609,7 +597,6 @@ contract('VolumeRestrictionTransferManager', accounts => {
             )
             let data = await I_VolumeRestrictionTM.getRestrictedAddresses.call();
             await printRestrictedData(data);
-            //await printAll(data);
             assert.equal(data[0].length, 1);
         });
 
@@ -647,7 +634,6 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal(tx.logs[1].args._typeOfRestriction, 0);
             let data = await I_VolumeRestrictionTM.getRestrictedAddresses.call();
             await printRestrictedData(data);
-            //await printAll(data);
             assert.equal(data[0].length, 1);
             assert.equal(data[0][0], account_investor1);
         });
@@ -766,10 +752,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal((tx.logs[0].args._allowedTokens).toNumber(), web3.utils.toWei("6"));
             let data = await I_VolumeRestrictionTM.getRestrictedAddresses.call();
             await printRestrictedData(data);
-            //await printAll(data);
             assert.equal(data[0].length, 2);
             assert.equal(data[0][1], account_investor3);
-            //assert.equal(data[1][1], 1);
             let dataRestriction = await I_VolumeRestrictionTM.individualDailyRestriction.call(account_investor3);
             console.log(`
                 *** Individual Daily restriction data ***
@@ -848,12 +832,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal((tx.logs[0].args._allowedTokens).dividedBy(new BigNumber(10).pow(16)).toNumber(), 5);
             let data = await I_VolumeRestrictionTM.getRestrictedAddresses.call();
             await printRestrictedData(data);
-            //await printAll(data);
             assert.equal(data[0].length, 3);
             assert.equal(data[0][2], account_investor3);
             assert.equal(data[0][0], account_investor1);
-            // // assert.equal(data[1][1].toNumber(), 1);
-            // // assert.equal(data[1][0].toNumber(), 2);
             let dataRestriction = await I_VolumeRestrictionTM.individualDailyRestriction.call(account_investor1);
             console.log(`
                 *** Individual Daily restriction data ***
@@ -921,12 +902,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
             let data = await I_VolumeRestrictionTM.getRestrictedAddresses.call();
             await printRestrictedData(data);
-            //await printAll(data);
             assert.equal(data[0].length, 4);
             assert.equal(data[0][2], account_investor3);
             assert.equal(data[0][0], account_investor1);
-            // assert.equal(data[1][1].toNumber(), 2);
-            // assert.equal(data[1][0].toNumber(), 2);
         });
 
         it("Should transfer the token by the investor 3 with in the (Individual + Individual daily limit)", async() => {
@@ -982,7 +960,6 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal(tx.logs[0].args._holder, account_investor3);
             let dataAdd = await I_VolumeRestrictionTM.getRestrictedAddresses.call();
             await printRestrictedData(dataAdd);
-            // //await printAll(dataAdd);
             assert.equal(dataAdd[0].length, 3);
             assert.equal(dataAdd[0][0], account_investor1);
             assert.equal(dataAdd[0][2], account_investor3);

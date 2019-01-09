@@ -785,15 +785,11 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         if (_startTime == 0) {
             startTime = now;
         }
+        // If old startTime is already passed then new startTime should be greater than or equal to the
+        // old startTime otherwise any past startTime can be allowed in compare to earlier startTime.
         _checkInputParams(_allowedTokens, startTime, 1, _endTime, _restrictionType,
             (defaultDailyRestriction.startTime <= now ? defaultDailyRestriction.startTime : now)
         );
-        // If old startTime is already passed then new startTime should be greater than or equal to the
-        // old startTime otherwise any past startTime can be allowed in compare to earlier startTime.
-        /* if (defaultDailyRestriction.startTime <= now)
-            require(startTime >= defaultDailyRestriction.startTime, "Invalid StartTime");
-        else
-            require(startTime >= now); */
         defaultDailyRestriction = VolumeRestriction(
             _allowedTokens,
             startTime,
@@ -1174,41 +1170,17 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         else
             return _callFrom;
     }
-
-    /**
-     * @notice use to get the list of token holders who are restricted by the VRTM
-     * @return address[] List of addresses that are restricted by the VRTM
-     * @return uint8[] Array of the Type of period restriction on the addresses. 0 - address
-     * has only individual restriction, 1 - address has only individual daily restriction & 2
-     * it means address has both type of restriction where rolling period is 24 hrs & multiple days as well
-     * @return uint256[] List of lastTradedDayTime, first group for individuals, second group for default
-     * @return uint256[] List of sumOfLastPeriod, first group for individuals, second group for default
-     * @return uint256[] List of daysCovered, first group for individuals, second group for default
-     * @return uint256[] List of dailyLastTradedDayTime, first group for individuals, second group for default
-     */
-    /*function getRestrictedAddresses() external view returns(
-        address[] memory allAddresses,
-        uint8[] memory typeOfPeriodRestriction,
-        uint256[] memory lastTradedDayTime,
-        uint256[] memory sumOfLastPeriod,
-        uint256[] memory daysCovered,
-        uint256[] memory dailyLastTradedDayTime
-    ) {
-        allAddresses = restrictedAddresses;
-        typeOfPeriodRestriction = new uint8[](restrictedAddresses.length);
-        lastTradedDayTime = new uint256[](2 * restrictedAddresses.length);
-        sumOfLastPeriod = new uint256[](2 * restrictedAddresses.length);
-        daysCovered = new uint256[](2 * restrictedAddresses.length);
-        dailyLastTradedDayTime = new uint256[](2 * restrictedAddresses.length);
-        for (uint256 i = 0; i < restrictedAddresses.length; i++) {
-            typeOfPeriodRestriction[i] = restrictedHolders[restrictedAddresses[i]].typeOfPeriod;
-            (lastTradedDayTime[i], sumOfLastPeriod[i], daysCovered[i], dailyLastTradedDayTime[i]) =
-                getIndividualBucketDetailsToUser(restrictedAddresses[i]);
-            (lastTradedDayTime[i + restrictedAddresses.length], sumOfLastPeriod[i + restrictedAddresses.length], daysCovered[i + restrictedAddresses.length], dailyLastTradedDayTime[i + restrictedAddresses.length]) =
-                getDefaultBucketDetailsToUser(restrictedAddresses[i]);
-        }
-    }*/
     
+    /**
+     * @notice Provide the restriction details of all the restricted addresses
+     * @return address List of the restricted addresses
+     * @return uint256 List of the tokens allowed to the restricted addresses corresponds to restricted address
+     * @return uint256 List of the start time of the restriction corresponds to restricted address
+     * @return uint256 List of the rolling period in days for a restriction corresponds to restricted address.
+     * @return uint256 List of the end time of the restriction corresponds to restricted address.
+     * @return uint8 List of the type of restriction to validate the value of the `allowedTokens` 
+     * of the restriction corresponds to restricted address
+     */
     function getRestrictedAddresses() external view returns(
         address[] memory allAddresses,
         uint256[] memory allowedTokens,

@@ -20,7 +20,7 @@ const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager')
 // modules for test
 const CountTransferManager = artifacts.require("./CountTransferManager");
 const ManualApprovalTransferManager = artifacts.require('./ManualApprovalTransferManager');
-const VolumeRestrictionTransferManager = artifacts.require('./LockupVolumeRestrictionTM');
+const VolumeRestrictionTransferManager = artifacts.require('./LockUpTransferManager');
 const PercentageTransferManager = artifacts.require('./PercentageTransferManager');
 
 

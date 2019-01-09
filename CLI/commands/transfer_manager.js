@@ -6,7 +6,7 @@ const contracts = require('./helpers/contract_addresses');
 const abis = require('./helpers/contract_abis');
 const gbl = require('./common/global');
 const csvParse = require('./helpers/csv');
-const { table } = require('table')
+const { table } = require('table');
 
 ///////////////////
 // Constants
@@ -26,6 +26,11 @@ const REMOVE_DAILY_RESTRICTIONS_DATA_CSV = `${__dirname}/../data/Transfer/VRTM/r
 const ADD_CUSTOM_RESTRICTIONS_DATA_CSV = `${__dirname}/../data/Transfer/VRTM/add_custom_restriction_data.csv`;
 const MODIFY_CUSTOM_RESTRICTIONS_DATA_CSV = `${__dirname}/../data/Transfer/VRTM/modify_custom_restriction_data.csv`;
 const REMOVE_CUSTOM_RESTRICTIONS_DATA_CSV = `${__dirname}/../data/Transfer/VRTM/remove_custom_restriction_data.csv`;
+const ADD_LOCKUP_DATA_CSV = `${__dirname}/../data/Transfer/LockupTM/add_lockup_data.csv`;
+const MODIFY_LOCKUP_DATA_CSV = `${__dirname}/../data/Transfer/LockupTM/modify_lockup_data.csv`;
+const DELETE_LOCKUP_DATA_CSV = `${__dirname}/../data/Transfer/LockupTM/delete_lockup_data.csv`;
+const ADD_LOCKUP_INVESTOR_DATA_CSV = `${__dirname}/../data/Transfer/LockupTM/add_lockup_investor_data.csv`;
+const REMOVE_LOCKUP_INVESTOR_DATA_CSV = `${__dirname}/../data/Transfer/LockupTM/remove_lockup_investor_data.csv`;
 
 const RESTRICTION_TYPES = ['Fixed', 'Percentage'];
 
@@ -71,7 +76,7 @@ async function executeApp() {
   options.push('Add new Transfer Manager module');
 
   let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'EXIT' });
-  let optionSelected = index !== -1 ? options[index] : 'EXIT';
+  let optionSelected = index != -1 ? options[index] : 'EXIT';
   console.log('Selected:', optionSelected, '\n');
   switch (optionSelected) {
     case 'Verify transfer':
@@ -241,6 +246,11 @@ async function configExistingModules(tmModules) {
       currentTransferManager.setProvider(web3.currentProvider);
       await percentageTransferManager();
       break;
+    case 'LockUpTransferManager':
+      currentTransferManager = new web3.eth.Contract(abis.lockUpTransferManager(), tmModules[index].address);
+      currentTransferManager.setProvider(web3.currentProvider);
+      await lockUpTransferManager();
+      break;
     case 'BlacklistTransferManager':
       currentTransferManager = new web3.eth.Contract(abis.blacklistTransferManager(), tmModules[index].address);
       currentTransferManager.setProvider(web3.currentProvider);
@@ -292,7 +302,7 @@ async function addTransferManagerModule() {
 }
 
 async function generalTransferManager() {
-  console.log(chalk.blue(`General Transfer Manager at ${currentTransferManager.options.address}`), '\n');
+  console.log('\n', chalk.blue(`General Transfer Manager at ${currentTransferManager.options.address}`), '\n');
 
   // Show current data
   let displayIssuanceAddress = await currentTransferManager.methods.issuanceAddress().call();
@@ -553,7 +563,7 @@ async function modifyWhitelistInBatch(_csvFilePath, _batchSize) {
 }
 
 async function manualApprovalTransferManager() {
-  console.log(chalk.blue(`Manual Approval Transfer Manager at ${currentTransferManager.options.address} `), '\n');
+  console.log('\n', chalk.blue(`Manual Approval Transfer Manager at ${currentTransferManager.options.address} `), '\n');
 
   let totalApprovals = await currentTransferManager.methods.getTotalApprovalsLength().call();
   console.log(`- Current active approvals:      ${totalApprovals}`);
@@ -942,7 +952,7 @@ function getBinarySize(string) {
 }
 
 async function countTransferManager() {
-  console.log(chalk.blue(`Count Transfer Manager at ${currentTransferManager.options.address}`), '\n');
+  console.log('\n', chalk.blue(`Count Transfer Manager at ${currentTransferManager.options.address}`), '\n');
 
   // Show current data
   let displayMaxHolderCount = await currentTransferManager.methods.maxHolderCount().call();
@@ -969,7 +979,7 @@ async function countTransferManager() {
 }
 
 async function percentageTransferManager() {
-  console.log(chalk.blue(`Percentage Transfer Manager at ${currentTransferManager.options.address}`), '\n');
+  console.log('\n', chalk.blue(`Percentage Transfer Manager at ${currentTransferManager.options.address}`), '\n');
 
   // Show current data
   let displayMaxHolderPercentage = await currentTransferManager.methods.maxHolderPercentage().call();
@@ -1069,15 +1079,13 @@ async function percentageTransferManager() {
         console.log(chalk.green(`Transactions which are part of the primary issuance will NOT be ignored!`));
       }
       break;
-    case 'RETURN':
-      return;
   }
 
   await percentageTransferManager();
 }
 
 async function blacklistTransferManager() {
-  console.log(chalk.blue(`Blacklist Transfer Manager at ${currentTransferManager.options.address}`), '\n');
+  console.log('\n', chalk.blue(`Blacklist Transfer Manager at ${currentTransferManager.options.address}`), '\n');
 
   let currentBlacklists = await currentTransferManager.methods.getAllBlacklists().call();
   console.log(`- Blacklists:    ${currentBlacklists.length}`);
@@ -2180,6 +2188,401 @@ function inputRestrictionData(isDaily) {
   return restriction;
 }
 
+async function lockUpTransferManager() {
+  console.log('\n', chalk.blue(`Lockup Transfer Manager at ${currentTransferManager.options.address}`), '\n');
+
+  let currentLockups = await currentTransferManager.methods.getAllLockups().call();
+  console.log(`- Lockups:    ${currentLockups.length}`);
+
+  let options = ['Add new lockup'];
+  if (currentLockups.length > 0) {
+    options.push('Manage existing lockups', 'Explore investor');
+  }
+  options.push('Operate with multiple lockups');
+
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
+  let optionSelected = index !== -1 ? options[index] : 'RETURN';
+  console.log('Selected:', optionSelected, '\n');
+  switch (optionSelected) {
+    case 'Add new lockup':
+      let name = readlineSync.question(`Enter the name of the lockup type: `, {
+        limit: function (input) {
+          return input !== "";
+        },
+        limitMessage: `Invalid lockup name`
+      });
+      let lockupAmount = readlineSync.questionInt(`Enter the amount of tokens that will be locked: `);
+      let minuteFromNow = Math.floor(Date.now() / 1000) + 60;
+      let startTime = readlineSync.questionInt(`Enter the start time (Unix Epoch time) of the lockup type (a minute from now = ${minuteFromNow}): `, { defaultInput: minuteFromNow });
+      let lockUpPeriodSeconds = readlineSync.questionInt(`Enter the total period (seconds) of the lockup type (ten minutes = 600): `, { defaultInput: 600 });
+      let releaseFrequencySeconds = readlineSync.questionInt(`Enter how often to release a tranche of tokens in seconds (one minute = 60): `, { defaultInput: 60 });
+      if (readlineSync.keyInYNStrict(`Do you want to add an investor to this lockup type? `)) {
+        let investor = readlineSync.question(`Enter the address of the investor: `, {
+          limit: function (input) {
+            return web3.utils.isAddress(input);
+          },
+          limitMessage: `Must be a valid address`
+        });
+        let addNewLockUpToUserAction = currentTransferManager.methods.addNewLockUpToUser(
+          investor,
+          web3.utils.toWei(lockupAmount.toString()),
+          startTime,
+          lockUpPeriodSeconds,
+          releaseFrequencySeconds,
+          web3.utils.toHex(name)
+        );
+        let addNewLockUpToUserReceipt = await common.sendTransaction(addNewLockUpToUserAction);
+        let addNewLockUpToUserEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addNewLockUpToUserReceipt.logs, 'AddNewLockUpType');
+        console.log(chalk.green(`${web3.utils.hexToUtf8(addNewLockUpToUserEvent._lockupName)} lockup type has been added successfully!`));
+        let addLockUpToUserEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addNewLockUpToUserReceipt.logs, 'AddLockUpToUser');
+        console.log(chalk.green(`${addLockUpToUserEvent._userAddress} has been added to ${web3.utils.hexToUtf8(addLockUpToUserEvent._lockupName)} successfully!`));
+      } else {
+        let addLockupTypeAction = currentTransferManager.methods.addNewLockUpType(web3.utils.toWei(lockupAmount.toString()), startTime, lockUpPeriodSeconds, releaseFrequencySeconds, web3.utils.toHex(name));
+        let addLockupTypeReceipt = await common.sendTransaction(addLockupTypeAction);
+        let addLockupTypeEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addLockupTypeReceipt.logs, 'AddNewLockUpType');
+        console.log(chalk.green(`${web3.utils.hexToUtf8(addLockupTypeEvent._lockupName)} lockup type has been added successfully!`));
+      }
+      break;
+    case 'Manage existing lockups':
+      let options = currentLockups.map(b => web3.utils.hexToUtf8(b));
+      let index = readlineSync.keyInSelect(options, 'Which lockup type do you want to manage? ', { cancel: 'RETURN' });
+      let optionSelected = index !== -1 ? options[index] : 'RETURN';
+      console.log('Selected:', optionSelected, '\n');
+      if (index !== -1) {
+        await manageExistingLockups(currentLockups[index]);
+      }
+      break;
+    case 'Explore investor':
+      let investorToExplore = readlineSync.question('Enter the address you want to explore: ', {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address"
+      });
+      let lockupsToInvestor = await currentTransferManager.methods.getLockupsNamesToUser(investorToExplore).call();
+      if (lockupsToInvestor.length > 0) {
+        let lockedTokenToInvestor = await currentTransferManager.methods.getLockedTokenToUser(investorToExplore).call();
+        console.log(chalk.green(`The address ${investorToExplore} has ${web3.utils.fromWei(lockedTokenToInvestor)} ${tokenSymbol} locked across the following ${lockupsToInvestor.length} lockups: `));
+        lockupsToInvestor.map(l => console.log(chalk.green(`- ${web3.utils.hexToUtf8(l)}`)));
+      } else {
+        console.log(chalk.yellow(`The address ${investorToExplore} has no lockups`));
+      }
+      break;
+    case 'Operate with multiple lockups':
+      await operateWithMultipleLockups(currentLockups);
+      break;
+    case 'RETURN':
+      return;
+  }
+
+  await lockUpTransferManager();
+}
+
+async function manageExistingLockups(lockupName) {
+  console.log('\n', chalk.blue(`Lockup ${web3.utils.hexToUtf8(lockupName)}`), '\n');
+
+  // Show current data
+  let currentLockup = await currentTransferManager.methods.getLockUp(lockupName).call();
+  let investors = await currentTransferManager.methods.getListOfAddresses(lockupName).call();
+
+  console.log(`- Amount:               ${web3.utils.fromWei(currentLockup.lockupAmount)} ${tokenSymbol}`);
+  console.log(`- Currently unlocked:   ${web3.utils.fromWei(currentLockup.unlockedAmount)}  ${tokenSymbol}`);
+  console.log(`- Start time:           ${moment.unix(currentLockup.startTime).format('MMMM Do YYYY, HH:mm:ss')}`);
+  console.log(`- Lockup period:        ${currentLockup.lockUpPeriodSeconds} seconds`);
+  console.log(`- End time:             ${moment.unix(currentLockup.endTime).add(parseInt(currentLockup.lockUpPeriodSeconds)).format('MMMM Do YYYY, HH:mm:ss')}`);
+  console.log(`- Release frequency:    ${currentLockup.releaseFrequencySeconds} senconds`);
+  console.log(`- Investors:            ${investors.length}`);
+  // ------------------
+
+  let options = [
+    'Modify properties',
+    'Show investors',
+    'Add this lockup to investors',
+    'Remove this lockup from investors',
+    'Delete this lockup type'
+  ];
+
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
+  let optionSelected = index !== -1 ? options[index] : 'RETURN';
+  console.log('Selected:', optionSelected, '\n');
+  switch (optionSelected) {
+    case 'Modify properties':
+      let lockupAmount = readlineSync.questionInt(`Enter the amount of tokens that will be locked: `);
+      let minuteFromNow = Math.floor(Date.now() / 1000) + 60;
+      let startTime = readlineSync.questionInt(`Enter the start time (Unix Epoch time) of the lockup type (a minute from now = ${minuteFromNow}): `, { defaultInput: minuteFromNow });
+      let lockUpPeriodSeconds = readlineSync.questionInt(`Enter the total period (seconds) of the lockup type (ten minutes = 600): `, { defaultInput: 600 });
+      let releaseFrequencySeconds = readlineSync.questionInt(`Enter how often to release a tranche of tokens in seconds (one minute = 60): `, { defaultInput: 60 });
+      let modifyLockUpTypeAction = currentTransferManager.methods.modifyLockUpType(lockupAmount, startTime, lockUpPeriodSeconds, releaseFrequencySeconds, lockupName);
+      let modifyLockUpTypeReceipt = await common.sendTransaction(modifyLockUpTypeAction);
+      let modifyLockUpTypeEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, modifyLockUpTypeReceipt.logs, 'ModifyLockUpType');
+      console.log(chalk.green(`${web3.utils.hexToUtf8(modifyLockUpTypeEvent._lockupName)} lockup type has been modified successfully!`));
+      break;
+    case 'Show investors':
+      if (investors.length > 0) {
+        console.log("************ List of investors ************");
+        investors.map(i => console.log(i));
+      } else {
+        console.log(chalk.yellow("There are no investors yet"));
+      }
+      break;
+    case 'Add this lockup to investors':
+      let investorsToAdd = readlineSync.question(`Enter the addresses of the investors separated by comma (i.e.addr1, addr2, addr3): `, {
+        limit: function (input) {
+          return (input !== '' && input.split(",").every(a => web3.utils.isAddress(a)));
+        },
+        limitMessage: `All addresses must be valid`
+      }).split(",");
+      let addInvestorToLockupAction;
+      if (investorsToAdd.length === 1) {
+        addInvestorToLockupAction = currentTransferManager.methods.addLockUpByName(investorsToAdd[0], lockupName);
+      } else {
+        addInvestorToLockupAction = currentTransferManager.methods.addLockUpByNameMulti(investorsToAdd, investorsToAdd.map(i => lockupName));
+      }
+      let addInvestorToLockupReceipt = await common.sendTransaction(addInvestorToLockupAction);
+      let addInvestorToLockupEvents = common.getMultipleEventsFromLogs(currentTransferManager._jsonInterface, addInvestorToLockupReceipt.logs, 'AddLockUpToUser');
+      addInvestorToLockupEvents.map(e => console.log(chalk.green(`${e._userAddress} has been added to ${web3.utils.hexToUtf8(e._lockupName)} successfully!`)));
+      break;
+    case 'Remove this lockup from investors':
+      let investorsToRemove = readlineSync.question(`Enter the addresses of the investors separated by comma (i.e.addr1, addr2, addr3): `, {
+        limit: function (input) {
+          return (input !== '' && input.split(",").every(a => web3.utils.isAddress(a)));
+        },
+        limitMessage: `All addresses must be valid`
+      }).split(",");
+      let removeLockupFromInvestorAction;
+      if (investorsToRemove.length === 1) {
+        removeLockupFromInvestorAction = currentTransferManager.methods.removeLockUpFromUser(investorsToRemove[0], lockupName);
+      } else {
+        removeLockupFromInvestorAction = currentTransferManager.methods.removeLockUpFromUserMulti(investorsToRemove, investorsToRemove.map(i => lockupName));
+      }
+      let removeLockUpFromUserReceipt = await common.sendTransaction(removeLockupFromInvestorAction);
+      let removeLockUpFromUserEvents = common.getMultipleEventsFromLogs(currentTransferManager._jsonInterface, removeLockUpFromUserReceipt.logs, 'RemoveLockUpFromUser');
+      removeLockUpFromUserEvents.map(e => console.log(chalk.green(`${e._userAddress} has been removed to ${web3.utils.hexToUtf8(e._lockupName)} successfully!`)));
+      break;
+    case 'Delete this lockup type':
+      let isEmpty = investors.length === 0;
+      if (!isEmpty) {
+        console.log(chalk.yellow(`This lockup have investors added to it. To delete it you must remove them first.`));
+        if (readlineSync.keyInYNStrict(`Do you want to remove them? `)) {
+          let data = investors.map(i => [i, lockupName])
+          let batches = common.splitIntoBatches(data, gbl.constants.DEFAULT_BATCH_SIZE);
+          let [investorArray, lockupNameArray] = common.transposeBatches(batches);
+          for (let batch = 0; batch < batches.length; batch++) {
+            console.log(`Batch ${batch + 1} - Attempting to remove the following investors:\n\n`, investorArray[batch], '\n');
+            let action = currentTransferManager.methods.removeLockUpFromUserMulti(investorArray[batch], lockupNameArray[batch]);
+            let receipt = await common.sendTransaction(action);
+            console.log(chalk.green('Remove lockups from multiple investors transaction was successful.'));
+            console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+          }
+          isEmpty = true;
+        }
+      }
+      if (isEmpty) {
+        let removeLockupTypeAction = currentTransferManager.methods.removeLockupType(lockupName);
+        let removeLockupTypeReceipt = await common.sendTransaction(removeLockupTypeAction);
+        let removeLockupTypeEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, removeLockupTypeReceipt.logs, 'RemoveLockUpType');
+        console.log(chalk.green(`${web3.utils.hexToUtf8(removeLockupTypeEvent._lockupName)} lockup type has been deleted successfully!`));
+      }
+      return;
+    case 'RETURN':
+      return;
+  }
+
+  await manageExistingLockups(lockupName);
+}
+
+async function operateWithMultipleLockups(currentLockups) {
+  let options = ['Add multiple lockups'];
+  if (currentLockups.length > 0) {
+    options.push('Modify multiple lockups');
+  }
+  options.push(
+    'Delete multiple lockups',
+    'Add lockups to multiple investors',
+    'Remove lockups from multiple investors'
+  );
+
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
+  let optionSelected = index !== -1 ? options[index] : 'RETURN';
+  console.log('Selected:', optionSelected, '\n');
+  switch (optionSelected) {
+    case 'Add multiple lockups':
+      await addLockupsInBatch();
+      break;
+    case 'Modify multiple lockups':
+      await modifyLockupsInBatch();
+      break;
+    case 'Delete multiple lockups':
+      await deleteLockupsInBatch();
+      break;
+    case 'Add lockups to multiple investors':
+      await addLockupsToInvestorsInBatch();
+      break;
+    case 'Remove lockups from multiple investors':
+      await removeLockupsFromInvestorsInBatch();
+      break;
+  }
+}
+
+async function addLockupsInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${ADD_LOCKUP_DATA_CSV}): `, {
+    defaultInput: ADD_LOCKUP_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(
+    row => !isNaN(row[0]) &&
+      moment.unix(row[1]).isValid() &&
+      (!isNaN(row[2] && (parseFloat(row[2]) % 1 === 0))) &&
+      (!isNaN(row[3] && (parseFloat(row[3]) % 1 === 0))) &&
+      typeof row[4] === 'string');
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [amountArray, startTimeArray, lockUpPeriodArray, releaseFrequencyArray, lockupNameArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to add the following lockups: \n\n`, lockupNameArray[batch], '\n');
+    lockupNameArray[batch] = lockupNameArray[batch].map(n => web3.utils.toHex(n));
+    let action = currentTransferManager.methods.addNewLockUpTypeMulti(amountArray[batch], startTimeArray[batch], lockUpPeriodArray[batch], releaseFrequencyArray[batch], lockupNameArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Add multiple lockups transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
+async function modifyLockupsInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${MODIFY_LOCKUP_DATA_CSV}): `, {
+    defaultInput: MODIFY_LOCKUP_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(
+    row => !isNaN(row[0]) &&
+      moment.unix(row[1]).isValid() &&
+      (!isNaN(row[2] && (parseFloat(row[2]) % 1 === 0))) &&
+      (!isNaN(row[3] && (parseFloat(row[3]) % 1 === 0))) &&
+      typeof row[4] === 'string');
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [amountArray, startTimeArray, lockUpPeriodArray, releaseFrequencyArray, lockupNameArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to modify the following lockups: \n\n`, lockupNameArray[batch], '\n');
+    lockupNameArray[batch] = lockupNameArray[batch].map(n => web3.utils.toHex(n));
+    let action = currentTransferManager.methods.modifyLockUpTypeMulti(amountArray[batch], startTimeArray[batch], lockUpPeriodArray[batch], releaseFrequencyArray[batch], lockupNameArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Modify multiple lockups transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
+async function deleteLockupsInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${DELETE_LOCKUP_DATA_CSV}): `, {
+    defaultInput: DELETE_LOCKUP_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(row => typeof row[0] === 'string');
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [lockupNameArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to delete the following lockups: \n\n`, lockupNameArray[batch], '\n');
+    lockupNameArray[batch] = lockupNameArray[batch].map(n => web3.utils.toHex(n));
+    let action = currentTransferManager.methods.removeLockupTypeMulti(lockupNameArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Delete multiple lockups transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
+async function addLockupsToInvestorsInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${ADD_LOCKUP_INVESTOR_DATA_CSV}): `, {
+    defaultInput: ADD_LOCKUP_INVESTOR_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(
+    row => web3.utils.isAddress(row[0]) &&
+      typeof row[1] === 'string');
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [investorArray, lockupNameArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to add lockups to the following investors: \n\n`, investorArray[batch], '\n');
+    lockupNameArray[batch] = lockupNameArray[batch].map(n => web3.utils.toHex(n));
+    let action = currentTransferManager.methods.addLockUpByNameMulti(investorArray[batch], lockupNameArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Add lockups to multiple investors transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
+async function removeLockupsFromInvestorsInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${REMOVE_LOCKUP_INVESTOR_DATA_CSV}): `, {
+    defaultInput: REMOVE_LOCKUP_INVESTOR_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(
+    row => web3.utils.isAddress(row[0]) &&
+      typeof row[1] === 'string');
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [investorArray, lockupNameArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to remove the following investors: \n\n`, investorArray[batch], '\n');
+    lockupNameArray[batch] = lockupNameArray[batch].map(n => web3.utils.toHex(n));
+    let action = currentTransferManager.methods.removeLockUpFromUserMulti(investorArray[batch], lockupNameArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Remove lockups from multiple investors transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
 /*
 // Copied from tests
 function signData(tmAddress, investorAddress, fromTime, toTime, expiryTime, restricted, validFrom, validTo, pk) {
@@ -2291,7 +2694,7 @@ async function selectToken() {
   options.push('Enter token symbol manually');
 
   let index = readlineSync.keyInSelect(options, 'Select a token:', { cancel: 'EXIT' });
-  let selected = index !== -1 ? options[index] : 'EXIT';
+  let selected = index != -1 ? options[index] : 'EXIT';
   switch (selected) {
     case 'Enter token symbol manually':
       result = readlineSync.question('Enter the token symbol: ');
@@ -2315,7 +2718,7 @@ async function logTotalInvestors() {
 async function logBalance(from, totalSupply) {
   let fromBalance = web3.utils.fromWei(await securityToken.methods.balanceOf(from).call());
   let percentage = totalSupply != '0' ? ` - ${parseFloat(fromBalance) / parseFloat(totalSupply) * 100}% of total supply` : '';
-  console.log(chalk.yellow(`Balance of ${from}: ${fromBalance} ${tokenSymbol}${percentage}`));
+  console.log(chalk.yellow(`Balance of ${from}: ${fromBalance} ${tokenSymbol} ${percentage} `));
 }
 
 module.exports = {

@@ -1472,6 +1472,23 @@ async function addInvestorsToBlacklistsInBatch() {
   }
 }
 
+function makeBatchRequest(calls) {
+  let batch = new web3.BatchRequest();
+
+  let promises = calls.map(call => {
+    return new Promise((res, rej) => {
+      let req = call.request({ from: Issuer.address }, (err, data) => {
+        if (err) rej(err);
+        else res(data)
+      });
+      batch.add(req)
+    })
+  })
+  batch.execute()
+
+  return Promise.all(promises)
+}
+
 async function removeInvestorsFromBlacklistsInBatch() {
   let csvFilePath = readlineSync.question(`Enter the path for csv data file (${REMOVE_INVESTOR_BLACKLIST_DATA_CSV}): `, {
     defaultInput: REMOVE_INVESTOR_BLACKLIST_DATA_CSV
@@ -1529,6 +1546,7 @@ async function volumeRestrictionTM() {
   }
 
   let options = [
+    'Show restrictios',
     'Change exempt wallet',
     'Change default restrictions',
     'Change individual restrictions',
@@ -1540,6 +1558,17 @@ async function volumeRestrictionTM() {
   let optionSelected = index !== -1 ? options[index] : 'RETURN';
   console.log('Selected:', optionSelected, '\n');
   switch (optionSelected) {
+    case 'Show restrictios':
+      let addressesAndRestrictions = await currentTransferManager.methods.getRestrictedAddresses().call();
+      showRestrictionTable(
+        addressesAndRestrictions[0],
+        addressesAndRestrictions[1],
+        addressesAndRestrictions[5],
+        addressesAndRestrictions[3],
+        addressesAndRestrictions[2],
+        addressesAndRestrictions[4],
+      );
+      break;
     case 'Change exempt wallet':
       await changeExemptWallet();
       break;
@@ -1560,6 +1589,21 @@ async function volumeRestrictionTM() {
   }
 
   await volumeRestrictionTM();
+}
+
+function showRestrictionTable(investorArray, amountArray, typeArray, rollingPeriodArray, startTimeArray, endTimeTimeArray) {
+  let dataTable = [['Investor', 'Maximum transfer (# or %)', 'Rolling period (days)', 'Start date', 'End date']];
+  for (let i = 0; i < investorArray.length; i++) {
+    dataTable.push([
+      investorArray[i],
+      typeArray[i] === "0" ? `${web3.utils.fromWei(amountArray[i])} ${tokenSymbol}` : `${fromWeiPercentage(amountArray[i])}%`,
+      rollingPeriodArray[i],
+      moment.unix(startTimeArray[i]).format('MM/DD/YYYY HH:mm'),
+      moment.unix(endTimeTimeArray[i]).format('MM/DD/YYYY HH:mm')
+    ]);
+  }
+  console.log();
+  console.log(table(dataTable));
 }
 
 async function changeExemptWallet() {

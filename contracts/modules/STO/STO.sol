@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "../../Pausable.sol";
 import "../Module.sol";
@@ -10,10 +10,10 @@ import "../../interfaces/ISTO.sol";
 /**
  * @title Base abstract contract to be extended by all STO modules
  */
-contract STO is ISTO, STOStorage, Module, Pausable  {
+contract STO is ISTO, STOStorage, Module, Pausable {
     using SafeMath for uint256;
 
-    enum FundRaiseType { ETH, POLY, DAI }
+    enum FundRaiseType {ETH, POLY, DAI}
 
     // Event
     event SetFundRaiseTypes(FundRaiseType[] _fundRaiseTypes);
@@ -33,7 +33,7 @@ contract STO is ISTO, STOStorage, Module, Pausable  {
     /**
      * @notice Returns funds raised by the STO
      */
-    function getRaised(FundRaiseType _fundRaiseType) public view returns (uint256) {
+    function getRaised(FundRaiseType _fundRaiseType) public view returns(uint256) {
         return fundsRaised[uint8(_fundRaiseType)];
     }
 
@@ -53,7 +53,7 @@ contract STO is ISTO, STOStorage, Module, Pausable  {
         super._unpause();
     }
 
-    function _setFundRaiseType(FundRaiseType[] _fundRaiseTypes) internal {
+    function _setFundRaiseType(FundRaiseType[] memory _fundRaiseTypes) internal {
         // FundRaiseType[] parameter type ensures only valid values for _fundRaiseTypes
         require(_fundRaiseTypes.length > 0, "Raise type is not specified");
         fundRaiseTypes[uint8(FundRaiseType.ETH)] = false;

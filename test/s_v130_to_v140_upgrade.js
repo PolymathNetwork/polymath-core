@@ -1,6 +1,6 @@
 const Web3 = require("web3");
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
-const BigNumber = require("bignumber.js");
+let BN = Web3.utils.BN;
 
 import latestTime from "./helpers/latestTime";
 import { duration } from "./helpers/utils";
@@ -18,7 +18,7 @@ const SecurityToken = artifacts.require("./SecurityToken.sol");
 const PolyTokenFaucet = artifacts.require("./PolyTokenFaucet.sol");
 const ManualApprovalTransferManagerFactory = artifacts.require("./ManualApprovalTransferManagerFactory.sol");
 
-contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
+contract("Upgrade from v1.3.0 to v1.4.0", async (accounts) => {
     // Accounts Variable declaration
     let POLYMATH;
     let ISSUER1;
@@ -31,9 +31,10 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
     let tx;
 
     // Initial fee for ticker registry and security token registry
-    const REGFEE = web3.utils.toWei("250");
+    const REGFEE = new BN(web3.utils.toWei("250"));
     const STOSetupCost = 0;
     const address_zero = "0x0000000000000000000000000000000000000000";
+    const one_address = "0x0000000000000000000000000000000000000001";
 
     // Module key
     const STOKEY = 3;
@@ -90,14 +91,16 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
 
     const STOParameters = ["uint256", "uint256", "uint256", "uint256", "uint8[]", "address"];
     // Prepare polymath network status
+    let currentTime;
+
     before(async () => {
-        // Accounts setup
+        currentTime = new BN(await latestTime());
         POLYMATH = accounts[0];
         ISSUER1 = accounts[1];
         ISSUER2 = accounts[2];
         ISSUER3 = accounts[3];
         MULTISIG = accounts[4];
-        
+
         I_DaiToken = await PolyTokenFaucet.new({ from: POLYMATH });
 
         // ----------- POLYMATH NETWORK Configuration ------------
@@ -154,13 +157,13 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
         await I_PolyToken.approve(I_STRProxied.address, REGFEE, { from: ISSUER1 });
         let tx = await I_STRProxied.generateSecurityToken(name1, symbol1, tokenDetails1, false, { from: ISSUER1 });
         assert.equal(tx.logs[2].args._ticker, symbol1, "SecurityToken doesn't get deployed");
-        I_SecurityToken1 = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+        I_SecurityToken1 = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
         // (B) :  TOK2
         await I_PolyToken.approve(I_STRProxied.address, REGFEE, { from: ISSUER2 });
         tx = await I_STRProxied.generateSecurityToken(name2, symbol2, tokenDetails2, false, { from: ISSUER2 });
         assert.equal(tx.logs[2].args._ticker, symbol2, "SecurityToken doesn't get deployed");
-        I_SecurityToken2 = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+        I_SecurityToken2 = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
         // Printing all the contract addresses
         console.log(`
@@ -186,30 +189,17 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
         // Step 1: Deploy Oracles
         // 1a - Deploy POLY Oracle
         it("Should successfully deploy POLY Oracle and register on PolymathRegistry", async () => {
-            I_POLYOracle = await PolyOracle.new({ from: POLYMATH, value: web3.utils.toWei("1") });
+            I_POLYOracle = await PolyOracle.new({ from: POLYMATH, value: new BN(web3.utils.toWei("1")) });
             console.log(I_POLYOracle.address);
-            assert.notEqual(
-                I_POLYOracle.address.valueOf(),
-                address_zero,
-                "POLYOracle contract was not deployed"
-            );
+            assert.notEqual(I_POLYOracle.address.valueOf(), address_zero, "POLYOracle contract was not deployed");
             tx = await I_PolymathRegistry.changeAddress("PolyUsdOracle", I_POLYOracle.address, { from: POLYMATH });
             assert.equal(tx.logs[0].args._nameKey, "PolyUsdOracle");
             assert.equal(tx.logs[0].args._newAddress, I_POLYOracle.address);
         });
         // 1b - Deploy ETH Oracle
         it("Should successfully deploy ETH Oracle and register on PolymathRegistry", async () => {
-            I_USDOracle = await ETHOracle.new(
-                "0x216d678c14be600cb88338e763bb57755ca2b1cf",
-                address_zero,
-                "ETH",
-                { from: POLYMATH }
-            );
-            assert.notEqual(
-                I_USDOracle.address.valueOf(),
-                address_zero,
-                "USDOracle contract was not deployed"
-            );
+            I_USDOracle = await ETHOracle.new("0x216d678c14be600cb88338e763bb57755ca2b1cf", address_zero, "ETH", { from: POLYMATH });
+            assert.notEqual(I_USDOracle.address.valueOf(), address_zero, "USDOracle contract was not deployed");
             tx = await I_PolymathRegistry.changeAddress("EthUsdOracle", I_USDOracle.address, { from: POLYMATH });
             assert.equal(tx.logs[0].args._nameKey, "EthUsdOracle");
             assert.equal(tx.logs[0].args._newAddress, I_USDOracle.address);
@@ -220,18 +210,10 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
         // Step 1: Deploy USDTieredSTOFactory\
         it("Should successfully deploy USDTieredSTOFactory", async () => {
             I_USDTieredSTOProxyFactory = await USDTieredSTOProxyFactory.new();
-            I_USDTieredSTOFactory = await USDTieredSTOFactory.new(
-                STOSetupCost,
-                0,
-                0,
-                I_USDTieredSTOProxyFactory.address,
-                { from: POLYMATH }
-            );
-            assert.notEqual(
-                I_USDTieredSTOFactory.address.valueOf(),
-                address_zero,
-                "USDTieredSTOFactory contract was not deployed"
-            );
+            I_USDTieredSTOFactory = await USDTieredSTOFactory.new(STOSetupCost, new BN(0), new BN(0), I_USDTieredSTOProxyFactory.address, {
+                from: POLYMATH
+            });
+            assert.notEqual(I_USDTieredSTOFactory.address.valueOf(), address_zero, "USDTieredSTOFactory contract was not deployed");
             let setupCost = await I_USDTieredSTOFactory.setupCost({ from: POLYMATH });
             assert.equal(setupCost, STOSetupCost);
         });
@@ -248,12 +230,8 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
     describe("CappedSTOFactory deploy", async () => {
         // Step 1: Deploy new CappedSTOFactory
         it("Should successfully deploy CappedSTOFactory", async () => {
-            I_UpgradedCappedSTOFactory = await CappedSTOFactory.new(STOSetupCost, 0, 0, { from: POLYMATH });
-            assert.notEqual(
-                I_UpgradedCappedSTOFactory.address.valueOf(),
-                address_zero,
-                "CappedSTOFactory contract was not deployed"
-            );
+            I_UpgradedCappedSTOFactory = await CappedSTOFactory.new(STOSetupCost, new BN(0), new BN(0), { from: POLYMATH });
+            assert.notEqual(I_UpgradedCappedSTOFactory.address.valueOf(), address_zero, "CappedSTOFactory contract was not deployed");
             let setupCost = await I_UpgradedCappedSTOFactory.setupCost({ from: POLYMATH });
             assert.equal(setupCost, STOSetupCost);
         });
@@ -278,7 +256,7 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
     describe("ManualApprovalTransferManagerFactory deploy", async () => {
         // Step 1: Deploy new ManualApprovalTransferManager
         it("Should successfully deploy ManualApprovalTransferManagerFactory", async () => {
-            I_ManualApprovalTransferManagerFactory = await ManualApprovalTransferManagerFactory.new(0, 0, 0, {
+            I_ManualApprovalTransferManagerFactory = await ManualApprovalTransferManagerFactory.new(0, new BN(0), new BN(0), {
                 from: POLYMATH
             });
             assert.notEqual(
@@ -348,14 +326,14 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
     describe("Polymath network status post migration", async () => {
         // Launch STO for TOK1
         it("Should successfully launch USDTieredSTO for first security token", async () => {
-            let _startTime = latestTime() + duration.days(1);
+            let _startTime = await latestTime() + duration.days(1);
             let _endTime = _startTime + duration.days(180);
-            let _ratePerTier = [BigNumber(0.1).mul(10 ** 18), BigNumber(0.15).mul(10 ** 18), BigNumber(0.2).mul(10 ** 18)];
-            let _ratePerTierDiscountPoly = [BigNumber(0), BigNumber(0), BigNumber(0)];
-            let _tokensPerTierTotal = [BigNumber(100).mul(10 ** 18), BigNumber(200).mul(10 ** 18), BigNumber(300).mul(10 ** 18)];
-            let _tokensPerTierDiscountPoly = [BigNumber(0), BigNumber(0), BigNumber(0)];
-            let _nonAccreditedLimitUSD = new BigNumber(100).mul(10 ** 18);
-            let _minimumInvestmentUSD = new BigNumber(5).mul(10 ** 18);
+            let _ratePerTier = [BN(0.1).mul(10 ** 18), BN(0.15).mul(10 ** 18), BN(0.2).mul(10 ** 18)];
+            let _ratePerTierDiscountPoly = [BN(0), BN(0), BN(0)];
+            let _tokensPerTierTotal = [BN(100).mul(10 ** 18), BN(200).mul(10 ** 18), BN(300).mul(10 ** 18)];
+            let _tokensPerTierDiscountPoly = [BN(0), BN(0), BN(0)];
+            let _nonAccreditedLimitUSD = new BN(100).mul(10 ** 18);
+            let _minimumInvestmentUSD = new BN(5).mul(10 ** 18);
             let _fundRaiseTypes = [0, 1];
             let _wallet = ISSUER1;
             let _reserveWallet = ISSUER1;
@@ -433,10 +411,10 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
 
-            let tx = await I_SecurityToken1.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER1 });
+            let tx = await I_SecurityToken1.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: ISSUER1 });
             assert.equal(tx.logs[2].args._types[0], STOKEY, "USDTieredSTO doesn't get deployed");
             assert.equal(web3.utils.hexToString(tx.logs[2].args._name), "USDTieredSTO", "USDTieredSTOFactory module was not added");
-            I_USDTieredSTO = USDTieredSTO.at(tx.logs[2].args._module);
+            I_USDTieredSTO = await USDTieredSTO.at(tx.logs[2].args._module);
         });
 
         /*
@@ -445,36 +423,36 @@ contract("Upgrade from v1.3.0 to v1.4.0", accounts => {
             await I_PolyToken.approve(I_STRProxiedNew.address, REGFEE, { from: ISSUER3});
             tx = await I_STRProxiedNew.generateSecurityToken(name3, symbol3, tokenDetails3, false, { from: ISSUER3 });
             assert.equal(tx.logs[1].args._ticker, symbol3, "SecurityToken doesn't get deployed");
-            I_SecurityToken3 = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
+            I_SecurityToken3 = await SecurityToken.at(tx.logs[1].args._securityTokenAddress);
         });
         */
 
         // Launch NewCappedSTO for TOK2
         it("Should successfully launch CappedSTO for third security token", async () => {
-            let startTime = latestTime() + duration.days(1);
+            let startTime = await latestTime() + duration.days(1);
             let endTime = startTime + duration.days(30);
-            let cap = web3.utils.toWei("500000");
+            let cap = new BN(web3.utils.toWei("500000"));
             let rate = 1000;
             let fundRaiseType = 0;
             let fundsReceiver = ISSUER3;
 
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, [fundRaiseType], fundsReceiver]);
 
-            let tx = await I_SecurityToken2.addModule(I_UpgradedCappedSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER2 });
+            let tx = await I_SecurityToken2.addModule(I_UpgradedCappedSTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: ISSUER2 });
             assert.equal(tx.logs[2].args._types[0], STOKEY, "CappedSTO doesn't get deployed");
             assert.equal(web3.utils.hexToString(tx.logs[2].args._name), "CappedSTO", "CappedSTOFactory module was not added");
         });
 
         // Attach ManualApprovalTransferManager module for TOK2
         it("Should successfully attach the ManualApprovalTransferManagerFactory with the second token", async () => {
-            const tx = await I_SecurityToken2.addModule(I_ManualApprovalTransferManagerFactory.address, "", 0, 0, { from: ISSUER2 });
+            const tx = await I_SecurityToken2.addModule(I_ManualApprovalTransferManagerFactory.address, "0x0", new BN(0), new BN(0), { from: ISSUER2 });
             assert.equal(tx.logs[2].args._types[0].toNumber(), TMKEY, "ManualApprovalTransferManagerFactory doesn't get deployed");
             assert.equal(
                 web3.utils.toUtf8(tx.logs[2].args._name),
                 "ManualApprovalTransferManager",
                 "ManualApprovalTransferManagerFactory module was not added"
             );
-            I_ManualApprovalTransferManagerFactory = ManualApprovalTransferManagerFactory.at(tx.logs[2].args._module);
+            I_ManualApprovalTransferManagerFactory = await ManualApprovalTransferManagerFactory.at(tx.logs[2].args._module);
         });
     });
 });

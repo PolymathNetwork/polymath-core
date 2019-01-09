@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "./DividendCheckpoint.sol";
 import "./ERC20DividendCheckpointStorage.sol";
@@ -23,19 +23,8 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
         uint256 _dividendIndex,
         bytes32 indexed _name
     );
-    event ERC20DividendClaimed(
-        address indexed _payee,
-        uint256 _dividendIndex,
-        address indexed _token,
-        uint256 _amount,
-        uint256 _withheld
-    );
-    event ERC20DividendReclaimed(
-        address indexed _claimer,
-        uint256 _dividendIndex,
-        address indexed _token,
-        uint256 _claimedAmount
-    );
+    event ERC20DividendClaimed(address indexed _payee, uint256 _dividendIndex, address indexed _token, uint256 _amount, uint256 _withheld);
+    event ERC20DividendReclaimed(address indexed _claimer, uint256 _dividendIndex, address indexed _token, uint256 _claimedAmount);
     event ERC20DividendWithholdingWithdrawn(
         address indexed _claimer,
         uint256 _dividendIndex,
@@ -47,9 +36,8 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
      * @notice Constructor
      * @param _securityToken Address of the security token
      */
-    constructor (address _securityToken, address _polyToken) public
-    Module(_securityToken, _polyToken)
-    {
+    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
+
     }
 
     /**
@@ -61,14 +49,14 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
      * @param _name Name/Title for identification
      */
     function createDividend(
-        uint256 _maturity,
-        uint256 _expiry,
-        address _token,
-        uint256 _amount,
+        uint256 _maturity, 
+        uint256 _expiry, 
+        address _token, 
+        uint256 _amount, 
         bytes32 _name
-    )
-        external
-        withPerm(MANAGE)
+    ) 
+        external 
+        withPerm(MANAGE) 
     {
         createDividendWithExclusions(_maturity, _expiry, _token, _amount, excluded, _name);
     }
@@ -89,9 +77,9 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
         uint256 _amount,
         uint256 _checkpointId,
         bytes32 _name
-    )
-        external
-        withPerm(MANAGE)
+    ) 
+        external 
+        withPerm(MANAGE) 
     {
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, _token, _amount, _checkpointId, excluded, _name);
     }
@@ -110,11 +98,11 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
         uint256 _expiry,
         address _token,
         uint256 _amount,
-        address[] _excluded,
+        address[] memory _excluded,
         bytes32 _name
-    )
-        public
-        withPerm(MANAGE)
+    ) 
+        public 
+        withPerm(MANAGE) 
     {
         uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, _token, _amount, checkpointId, _excluded, _name);
@@ -136,11 +124,11 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
         address _token,
         uint256 _amount,
         uint256 _checkpointId,
-        address[] _excluded,
+        address[] memory _excluded,
         bytes32 _name
-    )
-        public
-        withPerm(MANAGE)
+    ) 
+        public 
+        withPerm(MANAGE) 
     {
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, _token, _amount, _checkpointId, _excluded, _name);
     }
@@ -161,10 +149,10 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
         address _token,
         uint256 _amount,
         uint256 _checkpointId,
-        address[] _excluded,
+        address[] memory _excluded,
         bytes32 _name
-    )
-        internal
+    ) 
+        internal 
     {
         ISecurityToken securityTokenInstance = ISecurityToken(securityToken);
         require(_excluded.length <= EXCLUDED_ADDRESS_LIMIT, "Too many addresses excluded");
@@ -180,23 +168,23 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
         uint256 currentSupply = securityTokenInstance.totalSupplyAt(_checkpointId);
         uint256 excludedSupply = 0;
         dividends.push(
-          Dividend(
-            _checkpointId,
-            now, /*solium-disable-line security/no-block-members*/
-            _maturity,
-            _expiry,
-            _amount,
-            0,
-            0,
-            false,
-            0,
-            0,
-            _name
-          )
+            Dividend(
+                _checkpointId,
+                now, /*solium-disable-line security/no-block-members*/
+                _maturity,
+                _expiry,
+                _amount,
+                0,
+                0,
+                false,
+                0,
+                0,
+                _name
+            )
         );
 
         for (uint256 j = 0; j < _excluded.length; j++) {
-            require (_excluded[j] != address(0), "Invalid address");
+            require(_excluded[j] != address(0), "Invalid address");
             require(!dividends[dividendIndex].dividendExcluded[_excluded[j]], "duped exclude address");
             excludedSupply = excludedSupply.add(securityTokenInstance.balanceOfAt(_excluded[j], _checkpointId));
             dividends[dividendIndex].dividendExcluded[_excluded[j]] = true;
@@ -220,11 +208,22 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
         uint256 currentSupply,
         uint256 dividendIndex,
         bytes32 _name
-    )
-        internal
+    ) 
+        internal 
     {
         /*solium-disable-next-line security/no-block-members*/
-        emit ERC20DividendDeposited(msg.sender, _checkpointId, now, _maturity, _expiry, _token, _amount, currentSupply, dividendIndex, _name);
+        emit ERC20DividendDeposited(
+            msg.sender,
+            _checkpointId,
+            now,
+            _maturity,
+            _expiry,
+            _token,
+            _amount,
+            currentSupply,
+            dividendIndex,
+            _name
+        );
     }
 
     /**
@@ -233,7 +232,7 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
      * @param _dividend Storage with previously issued dividends
      * @param _dividendIndex Dividend to pay
      */
-    function _payDividend(address _payee, Dividend storage _dividend, uint256 _dividendIndex) internal {
+    function _payDividend(address payable _payee, Dividend storage _dividend, uint256 _dividendIndex) internal {
         (uint256 claim, uint256 withheld) = calculateDividend(_dividendIndex, _payee);
         _dividend.claimed[_payee] = true;
         _dividend.claimedAmount = claim.add(_dividend.claimedAmount);

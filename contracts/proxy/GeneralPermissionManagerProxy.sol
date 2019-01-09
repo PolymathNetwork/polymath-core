@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "./OwnedProxy.sol";
 import "../Pausable.sol";
@@ -18,9 +18,13 @@ contract GeneralPermissionManagerProxy is GeneralPermissionManagerStorage, Modul
     * @param _polyAddress Address of the polytoken
     * @param _implementation representing the address of the new implementation to be set
     */
-    constructor (address _securityToken, address _polyAddress, address _implementation)
-    public
-    ModuleStorage(_securityToken, _polyAddress)
+    constructor (
+        address _securityToken, 
+        address _polyAddress, 
+        address _implementation
+    )
+        public
+        ModuleStorage(_securityToken, _polyAddress)
     {
         require(
             _implementation != address(0),

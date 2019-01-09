@@ -11,10 +11,10 @@ const CountTransferManagerFactory = artifacts.require("./CountTransferManagerFac
 const CountTransferManager = artifacts.require("./CountTransferManager");
 
 const Web3 = require("web3");
-const BigNumber = require("bignumber.js");
+let BN = Web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
-contract("CountTransferManager", accounts => {
+contract("CountTransferManager", async (accounts) => {
     // Accounts Variable declaration
     let account_polymath;
     let account_issuer;
@@ -23,11 +23,6 @@ contract("CountTransferManager", accounts => {
     let account_investor2;
     let account_investor3;
     let account_investor4;
-
-    // investor Details
-    let fromTime = latestTime();
-    let toTime = latestTime();
-    let expiryTime = toTime + duration.days(15);
 
     let message = "Transaction Should Fail!";
 
@@ -70,13 +65,16 @@ contract("CountTransferManager", accounts => {
     const stoKey = 3;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = web3.utils.toWei("250");
+    const initRegFee = new BN(web3.utils.toWei("250"));
 
     // CountTransferManager details
     const holderCount = 2; // Maximum number of token holders
     let bytesSTO = encodeModuleCall(["uint256"], [holderCount]);
 
+    let currentTime;
+
     before(async () => {
+        currentTime = new BN(await latestTime());
         // Accounts setup
         account_polymath = accounts[0];
         account_issuer = accounts[1];
@@ -109,7 +107,7 @@ contract("CountTransferManager", accounts => {
         // STEP 2: Deploy the CountTransferManager
         [I_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, 0);
         // STEP 3: Deploy Paid the CountTransferManager
-        [P_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, web3.utils.toWei("500", "ether"));
+        [P_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, new BN(web3.utils.toWei("500", "ether")));
 
         // Printing all the contract addresses
         console.log(`
@@ -138,14 +136,14 @@ contract("CountTransferManager", accounts => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let _blockNo = latestBlock();
+            
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
             // Verify the successful generation of the security token
             assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
-            I_SecurityToken = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+            I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
-            const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({ from: _blockNo }), 1);
+            const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTransferManager module get added successfully or not
             assert.equal(log.args._types[0].toNumber(), 2);
@@ -154,13 +152,13 @@ contract("CountTransferManager", accounts => {
 
         it("Should intialize the auto attached modules", async () => {
             let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
-            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
+            I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
 
         it("Should successfully attach the CountTransferManager factory with the security token", async () => {
-            await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
+            await I_PolyToken.getTokens(new BN(web3.utils.toWei("500", "ether")), token_owner);
             await catchRevert(
-                I_SecurityToken.addModule(P_CountTransferManagerFactory.address, bytesSTO, web3.utils.toWei("500", "ether"), 0, {
+                I_SecurityToken.addModule(P_CountTransferManagerFactory.address, bytesSTO, new BN(web3.utils.toWei("500", "ether")), new BN(0), {
                     from: token_owner
                 })
             );
@@ -168,12 +166,12 @@ contract("CountTransferManager", accounts => {
 
         it("Should successfully attach the CountTransferManager factory with the security token", async () => {
             let snapId = await takeSnapshot();
-            await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), { from: token_owner });
+            await I_PolyToken.transfer(I_SecurityToken.address, new BN(web3.utils.toWei("500", "ether")), { from: token_owner });
             const tx = await I_SecurityToken.addModule(
                 P_CountTransferManagerFactory.address,
                 bytesSTO,
-                web3.utils.toWei("500", "ether"),
-                0,
+                new BN(web3.utils.toWei("500", "ether")),
+                new BN(0),
                 { from: token_owner }
             );
             assert.equal(tx.logs[3].args._types[0].toNumber(), transferManagerKey, "CountTransferManagerFactory doesn't get deployed");
@@ -182,19 +180,19 @@ contract("CountTransferManager", accounts => {
                 "CountTransferManager",
                 "CountTransferManagerFactory module was not added"
             );
-            P_CountTransferManager = CountTransferManager.at(tx.logs[3].args._module);
+            P_CountTransferManager = await CountTransferManager.at(tx.logs[3].args._module);
             await revertToSnapshot(snapId);
         });
 
         it("Should successfully attach the CountTransferManager with the security token", async () => {
-            const tx = await I_SecurityToken.addModule(I_CountTransferManagerFactory.address, bytesSTO, 0, 0, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_CountTransferManagerFactory.address, bytesSTO, new BN(0), new BN(0), { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), transferManagerKey, "CountTransferManager doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
                 "CountTransferManager",
                 "CountTransferManager module was not added"
             );
-            I_CountTransferManager = CountTransferManager.at(tx.logs[2].args._module);
+            I_CountTransferManager = await CountTransferManager.at(tx.logs[2].args._module);
         });
     });
 
@@ -204,9 +202,9 @@ contract("CountTransferManager", accounts => {
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor1,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(10),
+                currentTime,
+                currentTime,
+                currentTime.add(new BN(duration.days(10))),
                 true,
                 {
                     from: account_issuer,
@@ -224,9 +222,9 @@ contract("CountTransferManager", accounts => {
             await increaseTime(5000);
 
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor1, web3.utils.toWei("1", "ether"), { from: token_owner });
+            await I_SecurityToken.mint(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), web3.utils.toWei("1", "ether"));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
         });
 
         it("Should Buy some more tokens", async () => {
@@ -234,9 +232,9 @@ contract("CountTransferManager", accounts => {
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor2,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(10),
+                currentTime,
+                currentTime,
+                currentTime.add(new BN(duration.days(10))),
                 true,
                 {
                     from: account_issuer,
@@ -251,19 +249,19 @@ contract("CountTransferManager", accounts => {
             );
 
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor2, web3.utils.toWei("2", "ether"), { from: token_owner });
+            await I_SecurityToken.mint(account_investor2, new BN(web3.utils.toWei("2", "ether")), { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toNumber(), web3.utils.toWei("2", "ether"));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toString(), new BN(web3.utils.toWei("2", "ether")).toString());
         });
 
-        it("Should able to buy some more tokens (more than 2 hoders) -- because CountTransferManager is paused", async() => {
-            await I_CountTransferManager.pause({from: account_issuer });
+        it("Should able to buy some more tokens (more than 2 hoders) -- because CountTransferManager is paused", async () => {
+            await I_CountTransferManager.pause({ from: account_issuer });
             let snapId = await takeSnapshot();
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor3,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(10),
+                currentTime,
+                currentTime,
+                currentTime.add(new BN(duration.days(10))),
                 true,
                 {
                     from: account_issuer,
@@ -277,18 +275,18 @@ contract("CountTransferManager", accounts => {
                 "Failed in adding the investor in whitelist"
             );
 
-            await I_SecurityToken.mint(account_investor3, web3.utils.toWei("3", "ether"), { from: token_owner })
+            await I_SecurityToken.mint(account_investor3, new BN(web3.utils.toWei("3", "ether")), { from: token_owner });
             await revertToSnapshot(snapId);
-        })
+        });
 
         it("Should fail to buy some more tokens (more than 2 holders)", async () => {
-            await I_CountTransferManager.unpause({from: account_issuer });
+            await I_CountTransferManager.unpause({ from: account_issuer });
             // Add the Investor in to the whitelist
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor3,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(10),
+                currentTime,
+                currentTime,
+                currentTime.add(new BN(duration.days(10))),
                 true,
                 {
                     from: account_issuer,
@@ -302,23 +300,23 @@ contract("CountTransferManager", accounts => {
                 "Failed in adding the investor in whitelist"
             );
 
-            await catchRevert(I_SecurityToken.mint(account_investor3, web3.utils.toWei("3", "ether"), { from: token_owner }));
+            await catchRevert(I_SecurityToken.mint(account_investor3, new BN(web3.utils.toWei("3", "ether")), { from: token_owner }));
         });
 
         it("Should still be able to add to original token holders", async () => {
             // Add the Investor in to the whitelist
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor2, web3.utils.toWei("2", "ether"), { from: token_owner });
+            await I_SecurityToken.mint(account_investor2, new BN(web3.utils.toWei("2", "ether")), { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toNumber(), web3.utils.toWei("4", "ether"));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toString(), new BN(web3.utils.toWei("4", "ether")).toString());
         });
 
         it("Should still be able to transfer between existing token holders before count change", async () => {
             // Add the Investor in to the whitelist
             // Mint some tokens
-            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("2", "ether"), { from: account_investor2 });
+            await I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("2", "ether")), { from: account_investor2 });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toNumber(), web3.utils.toWei("2", "ether"));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toString(), new BN(web3.utils.toWei("2", "ether")).toString());
         });
 
         it("Should fail in modifying the holder count", async () => {
@@ -336,18 +334,18 @@ contract("CountTransferManager", accounts => {
         it("Should still be able to transfer between existing token holders after count change", async () => {
             // Add the Investor in to the whitelist
             // Mint some tokens
-            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("2", "ether"), { from: account_investor1 });
+            await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("2", "ether")), { from: account_investor1 });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toNumber(), web3.utils.toWei("4", "ether"));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toString(), new BN(web3.utils.toWei("4", "ether")).toString());
         });
 
         it("Should not be able to transfer to a new token holder", async () => {
             // await I_CountTransferManager.unpause({from: token_owner});
-            await catchRevert(I_SecurityToken.transfer(account_investor3, web3.utils.toWei("2", "ether"), { from: account_investor2 }));
+            await catchRevert(I_SecurityToken.transfer(account_investor3, new BN(web3.utils.toWei("2", "ether")), { from: account_investor2 }));
         });
 
         it("Should be able to consolidate balances", async () => {
-            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), { from: account_investor1 });
+            await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 });
         });
 
         it("Should get the permission list", async () => {
@@ -357,27 +355,26 @@ contract("CountTransferManager", accounts => {
 
         describe("Test cases for adding and removing acc holder at the same time", async () => {
             it("deploy a new token & auto attach modules", async () => {
-
                 //register ticker and deploy token
                 await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
                 let tx = await I_STRProxied.registerTicker(token_owner, symbol2, contact, { from: token_owner });
 
                 await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-                let _blockNo = latestBlock();
+                
                 let tx2 = await I_STRProxied.generateSecurityToken(name, symbol2, tokenDetails, false, { from: token_owner });
 
-                I_SecurityToken2 = SecurityToken.at(tx2.logs[2].args._securityTokenAddress);
+                I_SecurityToken2 = await SecurityToken.at(tx2.logs[2].args._securityTokenAddress);
 
                 let moduleData = (await I_SecurityToken2.getModulesByType(2))[0];
-                I_GeneralTransferManager2 = GeneralTransferManager.at(moduleData);
+                I_GeneralTransferManager2 = await GeneralTransferManager.at(moduleData);
             });
 
             it("add 3 holders to the token", async () => {
-                                await I_GeneralTransferManager2.modifyWhitelist(
+                await I_GeneralTransferManager2.modifyWhitelist(
                     account_investor1,
-                    latestTime(),
-                    latestTime(),
-                    latestTime() + duration.days(10),
+                    currentTime,
+                    currentTime,
+                    currentTime.add(new BN(duration.days(10))),
                     true,
                     {
                         from: account_issuer,
@@ -387,9 +384,9 @@ contract("CountTransferManager", accounts => {
 
                 await I_GeneralTransferManager2.modifyWhitelist(
                     account_investor2,
-                    latestTime(),
-                    latestTime(),
-                    latestTime() + duration.days(10),
+                    currentTime,
+                    currentTime,
+                    currentTime.add(new BN(duration.days(10))),
                     true,
                     {
                         from: account_issuer,
@@ -399,9 +396,9 @@ contract("CountTransferManager", accounts => {
 
                 await I_GeneralTransferManager2.modifyWhitelist(
                     account_investor3,
-                    latestTime(),
-                    latestTime(),
-                    latestTime() + duration.days(10),
+                    currentTime,
+                    currentTime,
+                    currentTime.add(new BN(duration.days(10))),
                     true,
                     {
                         from: account_issuer,
@@ -411,9 +408,9 @@ contract("CountTransferManager", accounts => {
 
                 await I_GeneralTransferManager2.modifyWhitelist(
                     account_investor4,
-                    latestTime(),
-                    latestTime(),
-                    latestTime() + duration.days(10),
+                    currentTime,
+                    currentTime,
+                    currentTime.add(new BN(duration.days(10))),
                     true,
                     {
                         from: account_issuer,
@@ -425,46 +422,46 @@ contract("CountTransferManager", accounts => {
                 await increaseTime(5000);
 
                 // Add 3 holders to the token
-                await I_SecurityToken2.mint(account_investor1, web3.utils.toWei("1", "ether"), { from: token_owner });
-                await I_SecurityToken2.mint(account_investor2, web3.utils.toWei("1", "ether"), { from: token_owner });
-                await I_SecurityToken2.mint(account_investor3, web3.utils.toWei("1", "ether"), { from: token_owner });
-                assert.equal((await I_SecurityToken2.balanceOf(account_investor1)).toNumber(), web3.utils.toWei("1", "ether"));
+                await I_SecurityToken2.mint(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner });
+                await I_SecurityToken2.mint(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: token_owner });
+                await I_SecurityToken2.mint(account_investor3, new BN(web3.utils.toWei("1", "ether")), { from: token_owner });
+                assert.equal((await I_SecurityToken2.balanceOf(account_investor1)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
             });
 
             it("Should intialize the auto attached modules", async () => {
                 let moduleData = (await I_SecurityToken2.getModulesByType(2))[0];
-                I_GeneralTransferManager2 = GeneralTransferManager.at(moduleData);
+                I_GeneralTransferManager2 = await GeneralTransferManager.at(moduleData);
             });
 
             it("Should successfully attach the CountTransferManager factory with the security token", async () => {
-                await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
+                await I_PolyToken.getTokens(new BN(web3.utils.toWei("500", "ether")), token_owner);
                 await catchRevert(
-                    I_SecurityToken2.addModule(P_CountTransferManagerFactory.address, bytesSTO, web3.utils.toWei("500", "ether"), 0, {
+                    I_SecurityToken2.addModule(P_CountTransferManagerFactory.address, bytesSTO, new BN(web3.utils.toWei("500", "ether")), new BN(0), {
                         from: token_owner
                     })
                 );
             });
 
             it("Should successfully attach the CountTransferManager with the security token and set max holder to 2", async () => {
-                const tx = await I_SecurityToken2.addModule(I_CountTransferManagerFactory.address, bytesSTO, 0, 0, { from: token_owner });
+                const tx = await I_SecurityToken2.addModule(I_CountTransferManagerFactory.address, bytesSTO, new BN(0), new BN(0), { from: token_owner });
                 assert.equal(tx.logs[2].args._types[0].toNumber(), transferManagerKey, "CountTransferManager doesn't get deployed");
                 assert.equal(
                     web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
                     "CountTransferManager",
                     "CountTransferManager module was not added"
                 );
-                I_CountTransferManager2 = CountTransferManager.at(tx.logs[2].args._module);
-                await I_CountTransferManager2.changeHolderCount(2, {from: token_owner});
-                console.log('current max holder number is '+ await I_CountTransferManager2.maxHolderCount({from: token_owner}));
+                I_CountTransferManager2 = await CountTransferManager.at(tx.logs[2].args._module);
+                await I_CountTransferManager2.changeHolderCount(2, { from: token_owner });
+                console.log("current max holder number is " + (await I_CountTransferManager2.maxHolderCount({ from: token_owner })));
             });
 
             it("Should allow add a new token holder while transfer all the tokens at one go", async () => {
-                let amount = (await I_SecurityToken2.balanceOf(account_investor2)).toNumber();
-                let investorCount =  await  I_SecurityToken2.getInvestorCount({from: account_investor2 });
+                let amount = await I_SecurityToken2.balanceOf(account_investor2);
+                let investorCount = await I_SecurityToken2.getInvestorCount({ from: account_investor2 });
                 console.log("current investor count is " + investorCount);
                 await I_SecurityToken2.transfer(account_investor4, amount, { from: account_investor2 });
-                assert((await I_SecurityToken2.balanceOf(account_investor4)).toNumber(), amount, {from: account_investor2 });
-                assert(await I_SecurityToken2.getInvestorCount({from: account_investor2 }), investorCount);
+                assert((await I_SecurityToken2.balanceOf(account_investor4)).toString(), amount.toString(), { from: account_investor2 });
+                assert(await I_SecurityToken2.getInvestorCount({ from: account_investor2 }), investorCount);
             });
         });
 
@@ -496,78 +493,68 @@ contract("CountTransferManager", accounts => {
             });
         });
 
-        describe("Test cases for the ModuleFactory", async() => {
-            it("Should successfully change the SetupCost -- fail beacuse of bad owner", async() => {
+        describe("Test cases for the ModuleFactory", async () => {
+            it("Should successfully change the SetupCost -- fail beacuse of bad owner", async () => {
                 await catchRevert(
-                    I_CountTransferManagerFactory.changeFactorySetupFee(web3.utils.toWei("500"), {from: account_investor3})
+                    I_CountTransferManagerFactory.changeFactorySetupFee(new BN(web3.utils.toWei("500")), { from: account_investor3 })
                 );
             });
 
-            it("Should successfully change the setupCost", async() => {
-                await I_CountTransferManagerFactory.changeFactorySetupFee(web3.utils.toWei("800"), { from: account_polymath });
-                assert.equal(await I_CountTransferManagerFactory.getSetupCost.call(), web3.utils.toWei("800"));
-            })
+            it("Should successfully change the setupCost", async () => {
+                await I_CountTransferManagerFactory.changeFactorySetupFee(new BN(web3.utils.toWei("800")), { from: account_polymath });
+                assert.equal((await I_CountTransferManagerFactory.getSetupCost.call()).toString(), new BN(web3.utils.toWei("800")).toString());
+            });
 
-            it("Should successfully change the usage fee -- fail beacuse of bad owner", async() => {
+            it("Should successfully change the usage fee -- fail beacuse of bad owner", async () => {
                 await catchRevert(
-                    I_CountTransferManagerFactory.changeFactoryUsageFee(web3.utils.toWei("500"), {from: account_investor3})
+                    I_CountTransferManagerFactory.changeFactoryUsageFee(new BN(web3.utils.toWei("500")), { from: account_investor3 })
                 );
             });
 
-            it("Should successfully change the usage fee", async() => {
-                await I_CountTransferManagerFactory.changeFactoryUsageFee(web3.utils.toWei("800"), { from: account_polymath });
-                assert.equal(await I_CountTransferManagerFactory.usageCost.call(), web3.utils.toWei("800"));
+            it("Should successfully change the usage fee", async () => {
+                await I_CountTransferManagerFactory.changeFactoryUsageFee(new BN(web3.utils.toWei("800")), { from: account_polymath });
+                assert.equal((await I_CountTransferManagerFactory.usageCost.call()).toString(), new BN(web3.utils.toWei("800")).toString());
             });
 
-            it("Should successfully change the subscription fee -- fail beacuse of bad owner", async() => {
+            it("Should successfully change the subscription fee -- fail beacuse of bad owner", async () => {
                 await catchRevert(
-                    I_CountTransferManagerFactory.changeFactorySubscriptionFee(web3.utils.toWei("500"), {from: account_investor3})
+                    I_CountTransferManagerFactory.changeFactorySubscriptionFee(new BN(web3.utils.toWei("500")), { from: account_investor3 })
                 );
             });
 
-            it("Should successfully change the subscription fee", async() => {
-                await I_CountTransferManagerFactory.changeFactorySubscriptionFee(web3.utils.toWei("800"), { from: account_polymath });
-                assert.equal(await I_CountTransferManagerFactory.monthlySubscriptionCost.call(), web3.utils.toWei("800"));
+            it("Should successfully change the subscription fee", async () => {
+                await I_CountTransferManagerFactory.changeFactorySubscriptionFee(new BN(web3.utils.toWei("800")), { from: account_polymath });
+                assert.equal((await I_CountTransferManagerFactory.monthlySubscriptionCost.call()), new BN(web3.utils.toWei("800")).toString());
             });
 
-            it("Should successfully change the version of the factory -- failed because of bad owner", async() => {
-                await catchRevert(
-                    I_CountTransferManagerFactory.changeVersion("5.0.0", {from: account_investor3})
-                );
+            it("Should successfully change the version of the factory -- failed because of bad owner", async () => {
+                await catchRevert(I_CountTransferManagerFactory.changeVersion("5.0.0", { from: account_investor3 }));
             });
 
-            it("Should successfully change the version of the fatory -- failed because of the 0 string", async() => {
-                await catchRevert(
-                    I_CountTransferManagerFactory.changeVersion("", {from: account_polymath})
-                );
+            it("Should successfully change the version of the fatory -- failed because of the 0 string", async () => {
+                await catchRevert(I_CountTransferManagerFactory.changeVersion("", { from: account_polymath }));
             });
 
-            it("Should successfully change the version of the fatory", async() => {
-                await I_CountTransferManagerFactory.changeVersion("5.0.0", {from: account_polymath});
+            it("Should successfully change the version of the fatory", async () => {
+                await I_CountTransferManagerFactory.changeVersion("5.0.0", { from: account_polymath });
                 assert.equal(await I_CountTransferManagerFactory.version.call(), "5.0.0");
             });
-        })
+        });
 
-        describe("Test case for the changeSTVersionBounds", async() => {
-            it("Should successfully change the version bounds -- failed because of the non permitted bound type", async() => {
-                await catchRevert(
-                    I_CountTransferManagerFactory.changeSTVersionBounds("middleType", [1,2,3], {from: account_polymath})
-                );
-            })
+        describe("Test case for the changeSTVersionBounds", async () => {
+            it("Should successfully change the version bounds -- failed because of the non permitted bound type", async () => {
+                await catchRevert(I_CountTransferManagerFactory.changeSTVersionBounds("middleType", [1, 2, 3], { from: account_polymath }));
+            });
 
-            it("Should successfully change the version bound --failed because the new version length < 3", async()=> {
-                await catchRevert(
-                    I_CountTransferManagerFactory.changeSTVersionBounds("lowerBound", [1,2], {from: account_polymath})
-                );
-            })
+            it("Should successfully change the version bound --failed because the new version length < 3", async () => {
+                await catchRevert(I_CountTransferManagerFactory.changeSTVersionBounds("lowerBound", [1, 2], { from: account_polymath }));
+            });
 
-            it("Should successfully change the version bound", async()=> {
-                await I_CountTransferManagerFactory.changeSTVersionBounds("lowerBound", [1,2,1], {from: account_polymath});
-                await I_CountTransferManagerFactory.changeSTVersionBounds("lowerBound", [1,4,9], {from: account_polymath});
-                await catchRevert(
-                    I_CountTransferManagerFactory.changeSTVersionBounds("lowerBound", [1,0,0], {from: account_polymath})
-                );
-            })
-        })
+            it("Should successfully change the version bound", async () => {
+                await I_CountTransferManagerFactory.changeSTVersionBounds("lowerBound", [1, 2, 1], { from: account_polymath });
+                await I_CountTransferManagerFactory.changeSTVersionBounds("lowerBound", [1, 4, 9], { from: account_polymath });
+                await catchRevert(I_CountTransferManagerFactory.changeSTVersionBounds("lowerBound", [1, new BN(0), 0], { from: account_polymath }));
+            });
+        });
     });
 });

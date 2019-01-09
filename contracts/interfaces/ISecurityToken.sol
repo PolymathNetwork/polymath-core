@@ -1,20 +1,19 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 /**
  * @title Interface for all security tokens
  */
 interface ISecurityToken {
-
     // Standard ERC20 interface
-    function decimals() external view returns (uint8);
-    function totalSupply() external view returns (uint256);
-    function balanceOf(address _owner) external view returns (uint256);
-    function allowance(address _owner, address _spender) external view returns (uint256);
-    function transfer(address _to, uint256 _value) external returns (bool);
-    function transferFrom(address _from, address _to, uint256 _value) external returns (bool);
-    function approve(address _spender, uint256 _value) external returns (bool);
-    function decreaseApproval(address _spender, uint _subtractedValue) external returns (bool);
-    function increaseApproval(address _spender, uint _addedValue) external returns (bool);
+    function decimals() external view returns(uint8);
+    function totalSupply() external view returns(uint256);
+    function balanceOf(address _owner) external view returns(uint256);
+    function allowance(address _owner, address _spender) external view returns(uint256);
+    function transfer(address _to, uint256 _value) external returns(bool);
+    function transferFrom(address _from, address _to, uint256 _value) external returns(bool);
+    function approve(address _spender, uint256 _value) external returns(bool);
+    function decreaseApproval(address _spender, uint _subtractedValue) external returns(bool);
+    function increaseApproval(address _spender, uint _addedValue) external returns(bool);
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
 
@@ -24,10 +23,9 @@ interface ISecurityToken {
      * @param _from Sender of transfer
      * @param _to Receiver of transfer
      * @param _value Value of transfer
-     * @param _data Data to indicate validation
      * @return bool
      */
-    function verifyTransfer(address _from, address _to, uint256 _value, bytes _data) external returns (bool);
+    function verifyTransfer(address _from, address _to, uint256 _value, bytes calldata _data) external returns(bool success);
 
     /**
      * @notice Mints new tokens and assigns them to the target _investor.
@@ -36,7 +34,7 @@ interface ISecurityToken {
      * @param _value is the amount of tokens that will be minted to the investor
      * @return success
      */
-    function mint(address _investor, uint256 _value) external returns (bool success);
+    function mint(address _investor, uint256 _value) external returns(bool success);
 
     /**
      * @notice Mints new tokens and assigns them to the target _investor.
@@ -45,7 +43,7 @@ interface ISecurityToken {
      * @param _value is The amount of tokens that will be minted to the investor
      * @param _data Data to indicate validation
      */
-    function mintWithData(address _investor, uint256 _value, bytes _data) external returns (bool success);
+    function mintWithData(address _investor, uint256 _value, bytes calldata _data) external returns(bool success);
 
     /**
      * @notice Used to burn the securityToken on behalf of someone else
@@ -53,14 +51,14 @@ interface ISecurityToken {
      * @param _value No. of tokens to be burned
      * @param _data Data to indicate validation
      */
-    function burnFromWithData(address _from, uint256 _value, bytes _data) external;
+    function burnFromWithData(address _from, uint256 _value, bytes calldata _data) external;
 
     /**
      * @notice Used to burn the securityToken
      * @param _value No. of tokens to be burned
      * @param _data Data to indicate validation
      */
-    function burnWithData(uint256 _value, bytes _data) external;
+    function burnWithData(uint256 _value, bytes calldata _data) external;
 
     event Minted(address indexed _to, uint256 _value);
     event Burnt(address indexed _burner, uint256 _value);
@@ -74,7 +72,7 @@ interface ISecurityToken {
      * @param _perm the permissions
      * @return success
      */
-    function checkPermission(address _delegate, address _module, bytes32 _perm) external view returns (bool);
+    function checkPermission(address _delegate, address _module, bytes32 _perm) external view returns(bool);
 
     /**
      * @notice Returns module list for a module type
@@ -86,52 +84,52 @@ interface ISecurityToken {
      * @return uint8 Array of module types
      * @return bytes32 Module label
      */
-    function getModule(address _module) external view returns (bytes32, address, address, bool, uint8[], bytes32);
+    function getModule(address _module) external view returns (bytes32, address, address, bool, uint8[] memory, bytes32);
 
     /**
      * @notice Returns module list for a module name
      * @param _name Name of the module
      * @return address[] List of modules with this name
      */
-    function getModulesByName(bytes32 _name) external view returns (address[]);
+    function getModulesByName(bytes32 _name) external view returns(address[] memory);
 
     /**
      * @notice Returns module list for a module type
      * @param _type Type of the module
      * @return address[] List of modules with this type
      */
-    function getModulesByType(uint8 _type) external view returns (address[]);
+    function getModulesByType(uint8 _type) external view returns(address[] memory);
 
     /**
      * @notice Queries totalSupply at a specified checkpoint
      * @param _checkpointId Checkpoint ID to query as of
      */
-    function totalSupplyAt(uint256 _checkpointId) external view returns (uint256);
+    function totalSupplyAt(uint256 _checkpointId) external view returns(uint256);
 
     /**
      * @notice Queries balance at a specified checkpoint
      * @param _investor Investor to query balance for
      * @param _checkpointId Checkpoint ID to query as of
      */
-    function balanceOfAt(address _investor, uint256 _checkpointId) external view returns (uint256);
+    function balanceOfAt(address _investor, uint256 _checkpointId) external view returns(uint256);
 
     /**
      * @notice Creates a checkpoint that can be used to query historical balances / totalSuppy
      */
-    function createCheckpoint() external returns (uint256);
+    function createCheckpoint() external returns(uint256);
 
     /**
      * @notice Gets list of times that checkpoints were created
      * @return List of checkpoint times
      */
-    function getCheckpointTimes() external view returns(uint256[]);
+    function getCheckpointTimes() external view returns(uint256[] memory);
 
     /**
      * @notice Gets length of investors array
      * NB - this length may differ from investorCount if the list has not been pruned of zero-balance investors
      * @return Length
      */
-    function getInvestors() external view returns (address[]);
+    function getInvestors() external view returns(address[] memory);
 
     /**
      * @notice returns an array of investors at a given checkpoint
@@ -139,7 +137,7 @@ interface ISecurityToken {
      * @param _checkpointId Checkpoint id at which investor list is to be populated
      * @return list of investors
      */
-    function getInvestorsAt(uint256 _checkpointId) external view returns(address[]);
+    function getInvestorsAt(uint256 _checkpointId) external view returns(address[] memory);
 
     /**
      * @notice generates subset of investors
@@ -148,13 +146,13 @@ interface ISecurityToken {
      * @param _end Position of investor to stop iteration at
      * @return list of investors
      */
-    function iterateInvestors(uint256 _start, uint256 _end) external view returns(address[]);
-    
+    function iterateInvestors(uint256 _start, uint256 _end) external view returns(address[] memory);
+
     /**
      * @notice Gets current checkpoint ID
      * @return Id
      */
-    function currentCheckpointId() external view returns (uint256);
+    function currentCheckpointId() external view returns(uint256);
 
    /**
     * @notice Allows the owner to withdraw unspent POLY stored by them on the ST or any ERC20 token.
@@ -176,7 +174,7 @@ interface ISecurityToken {
      * @notice Changes the tokenDetails
      * @param _newTokenDetails New token details
      */
-    function updateTokenDetails(string _newTokenDetails) external;
+    function updateTokenDetails(string calldata _newTokenDetails) external;
 
     /**
     * @notice Allows the owner to change token granularity
@@ -206,7 +204,7 @@ interface ISecurityToken {
      * @param _values A list of the amount of tokens to mint to corresponding addresses from _investor[] list
      * @return Success
      */
-    function mintMulti(address[] _investors, uint256[] _values) external returns (bool success);
+    function mintMulti(address[] calldata _investors, uint256[] calldata _values) external returns(bool success);
 
      /**
       * @notice Attachs a module to the SecurityToken
@@ -220,7 +218,7 @@ interface ISecurityToken {
       */
     function addModuleWithLabel(
         address _moduleFactory,
-        bytes _data,
+        bytes calldata _data,
         uint256 _maxCost,
         uint256 _budget,
         bytes32 _label
@@ -238,12 +236,7 @@ interface ISecurityToken {
      * @param _maxCost max amount of POLY willing to pay to module. (WIP)
      * @param _budget max amount of ongoing POLY willing to assign to the module.
      */
-    function addModule(
-        address _moduleFactory,
-        bytes _data,
-        uint256 _maxCost,
-        uint256 _budget
-    ) external;
+    function addModule(address _moduleFactory, bytes calldata _data, uint256 _maxCost, uint256 _budget) external;
 
     /**
     * @notice Archives a module attached to the SecurityToken
@@ -277,7 +270,7 @@ interface ISecurityToken {
      * @param _data data to indicate validation
      * @param _log data attached to the transfer by controller to emit in event
      */
-    function forceTransfer(address _from, address _to, uint256 _value, bytes _data, bytes _log) external;
+    function forceTransfer(address _from, address _to, uint256 _value, bytes calldata _data, bytes calldata _log) external;
 
     /**
      * @notice Used by a controller to execute a foced burn
@@ -286,34 +279,34 @@ interface ISecurityToken {
      * @param _data data to indicate validation
      * @param _log data attached to the transfer by controller to emit in event
      */
-    function forceBurn(address _from, uint256 _value, bytes _data, bytes _log) external;
+    function forceBurn(address _from, uint256 _value, bytes calldata _data, bytes calldata _log) external;
 
     /**
      * @notice Used by the issuer to permanently disable controller functionality
      * @dev enabled via feature switch "disableControllerAllowed"
      */
-     function disableController() external;
+    function disableController() external;
 
-     /**
+    /**
      * @notice Used to get the version of the securityToken
      */
-     function getVersion() external view returns(uint8[]);
+    function getVersion() external view returns(uint8[] memory);
 
-     /**
+    /**
      * @notice Gets the investor count
      */
-     function getInvestorCount() external view returns(uint256);
+    function getInvestorCount() external view returns(uint256);
 
-     /**
+    /**
       * @notice Overloaded version of the transfer function
       * @param _to receiver of transfer
       * @param _value value of transfer
       * @param _data data to indicate validation
       * @return bool success
       */
-     function transferWithData(address _to, uint256 _value, bytes _data) external returns (bool success);
+    function transferWithData(address _to, uint256 _value, bytes calldata _data) external returns(bool success);
 
-     /**
+    /**
       * @notice Overloaded version of the transferFrom function
       * @param _from sender of transfer
       * @param _to receiver of transfer
@@ -321,11 +314,11 @@ interface ISecurityToken {
       * @param _data data to indicate validation
       * @return bool success
       */
-     function transferFromWithData(address _from, address _to, uint256 _value, bytes _data) external returns(bool);
+    function transferFromWithData(address _from, address _to, uint256 _value, bytes calldata _data) external returns(bool);
 
-     /**
+    /**
       * @notice Provides the granularity of the token
       * @return uint256
       */
-     function granularity() external view returns(uint256);
+    function granularity() external view returns(uint256);
 }

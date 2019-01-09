@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "../RegistryUpdater.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
@@ -11,7 +11,6 @@ import "../libraries/VersionUtils.sol";
  * @notice Contract is abstract
  */
 contract ModuleFactory is IModuleFactory, Ownable {
-
     uint256 public usageCost;
     uint256 public monthlySubscriptionCost;
 
@@ -43,7 +42,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
     /**
      * @notice Constructor
      */
-    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public {
+    constructor(uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public {
         setupCost = _setupCost;
         usageCost = _usageCost;
         monthlySubscriptionCost = _subscriptionCost;
@@ -81,7 +80,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @notice Updates the title of the ModuleFactory
      * @param _newTitle New Title that will replace the old one.
      */
-    function changeTitle(string _newTitle) public onlyOwner {
+    function changeTitle(string memory _newTitle) public onlyOwner {
         require(bytes(_newTitle).length > 0, "Invalid title");
         title = _newTitle;
     }
@@ -90,7 +89,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @notice Updates the description of the ModuleFactory
      * @param _newDesc New description that will replace the old one.
      */
-    function changeDescription(string _newDesc) public onlyOwner {
+    function changeDescription(string memory _newDesc) public onlyOwner {
         require(bytes(_newDesc).length > 0, "Invalid description");
         description = _newDesc;
     }
@@ -100,7 +99,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @param _newName New name that will replace the old one.
      */
     function changeName(bytes32 _newName) public onlyOwner {
-        require(_newName != bytes32(0),"Invalid name");
+        require(_newName != bytes32(0), "Invalid name");
         name = _newName;
     }
 
@@ -108,7 +107,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @notice Updates the version of the ModuleFactory
      * @param _newVersion New name that will replace the old one.
      */
-    function changeVersion(string _newVersion) public onlyOwner {
+    function changeVersion(string memory _newVersion) public onlyOwner {
         require(bytes(_newVersion).length > 0, "Invalid version");
         version = _newVersion;
     }
@@ -118,10 +117,11 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @param _boundType Type of bound
      * @param _newVersion new version array
      */
-    function changeSTVersionBounds(string _boundType, uint8[] _newVersion) external onlyOwner {
+    function changeSTVersionBounds(string calldata _boundType, uint8[] calldata _newVersion) external onlyOwner {
         require(
-            keccak256(abi.encodePacked(_boundType)) == keccak256(abi.encodePacked("lowerBound")) ||
-            keccak256(abi.encodePacked(_boundType)) == keccak256(abi.encodePacked("upperBound")),
+            keccak256(abi.encodePacked(_boundType)) == keccak256(abi.encodePacked("lowerBound")) || keccak256(
+                abi.encodePacked(_boundType)
+            ) == keccak256(abi.encodePacked("upperBound")),
             "Must be a valid bound type"
         );
         require(_newVersion.length == 3);
@@ -137,7 +137,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @notice Used to get the lower bound
      * @return lower bound
      */
-    function getLowerSTVersionBounds() external view returns(uint8[]) {
+    function getLowerSTVersionBounds() external view returns(uint8[] memory) {
         return VersionUtils.unpack(compatibleSTVersionRange["lowerBound"]);
     }
 
@@ -145,30 +145,29 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @notice Used to get the upper bound
      * @return upper bound
      */
-    function getUpperSTVersionBounds() external view returns(uint8[]) {
+    function getUpperSTVersionBounds() external view returns(uint8[] memory) {
         return VersionUtils.unpack(compatibleSTVersionRange["upperBound"]);
     }
 
     /**
      * @notice Get the setup cost of the module
      */
-    function getSetupCost() external view returns (uint256) {
+    function getSetupCost() external view returns(uint256) {
         return setupCost;
     }
 
-   /**
+    /**
     * @notice Get the name of the Module
     */
-    function getName() public view returns (bytes32) {
+    function getName() public view returns(bytes32) {
         return name;
     }
 
-    function _takeFee() internal returns (address) {
+    function _takeFee() internal returns(address) {
         address polyToken = RegistryUpdater(msg.sender).polyToken();
         require(polyToken != address(0), "Invalid POLY token");
         if (setupCost > 0) {
-            require(IERC20(polyToken).transferFrom(msg.sender, owner(), setupCost),
-                "Insufficient allowance for module fee");
+            require(IERC20(polyToken).transferFrom(msg.sender, owner(), setupCost), "Insufficient allowance for module fee");
         }
         return polyToken;
     }

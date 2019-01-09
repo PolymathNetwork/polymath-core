@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "../../proxy/ERC20DividendCheckpointProxy.sol";
 import "../ModuleFactory.sol";
@@ -7,7 +7,6 @@ import "../ModuleFactory.sol";
  * @title Factory for deploying ERC20DividendCheckpoint module
  */
 contract ERC20DividendCheckpointFactory is ModuleFactory {
-
     address public logicContract;
 
     /**
@@ -17,8 +16,14 @@ contract ERC20DividendCheckpointFactory is ModuleFactory {
      * @param _subscriptionCost Subscription cost of the module
      * @param _logicContract Contract address that contains the logic related to `description`
      */
-    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _logicContract) public
-    ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
+    constructor(
+        uint256 _setupCost,
+        uint256 _usageCost,
+        uint256 _subscriptionCost,
+        address _logicContract
+    ) 
+        public 
+        ModuleFactory(_setupCost, _usageCost, _subscriptionCost) 
     {
         require(_logicContract != address(0), "Invalid logic contract");
         version = "2.1.0";
@@ -34,9 +39,14 @@ contract ERC20DividendCheckpointFactory is ModuleFactory {
      * @notice Used to launch the Module with the help of factory
      * @return Address Contract address of the Module
      */
-    function deploy(bytes /* _data */) external returns(address) {
+    function deploy(
+        bytes calldata /* _data */
+    ) 
+        external 
+        returns(address) 
+    {
         address polyToken = _takeFee();
-        address erc20DividendCheckpoint = new ERC20DividendCheckpointProxy(msg.sender, polyToken, logicContract);
+        address erc20DividendCheckpoint = address(new ERC20DividendCheckpointProxy(msg.sender, polyToken, logicContract));
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(erc20DividendCheckpoint, getName(), address(this), msg.sender, setupCost, now);
         return erc20DividendCheckpoint;
@@ -45,7 +55,7 @@ contract ERC20DividendCheckpointFactory is ModuleFactory {
     /**
      * @notice Type of the Module factory
      */
-    function getTypes() external view returns(uint8[]) {
+    function getTypes() external view returns(uint8[] memory) {
         uint8[] memory res = new uint8[](1);
         res[0] = 4;
         return res;
@@ -54,14 +64,14 @@ contract ERC20DividendCheckpointFactory is ModuleFactory {
     /**
      * @notice Returns the instructions associated with the module
      */
-    function getInstructions() external view returns(string) {
+    function getInstructions() external view returns(string memory) {
         return "Create ERC20 dividend to be paid out to token holders based on their balances at dividend creation time";
     }
 
     /**
      * @notice Get the tags related to the module factory
      */
-    function getTags() external view returns(bytes32[]) {
+    function getTags() external view returns(bytes32[] memory) {
         bytes32[] memory availableTags = new bytes32[](3);
         availableTags[0] = "ERC20";
         availableTags[1] = "Dividend";

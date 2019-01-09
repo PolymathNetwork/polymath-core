@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "./storage/EternalStorage.sol";
 import "./libraries/Util.sol";
@@ -16,11 +16,12 @@ contract STRGetter is EternalStorage {
      * @notice Returns the list of tickers owned by the selected address
      * @param _owner is the address which owns the list of tickers
      */
-    function getTickersByOwner(address _owner) external view returns(bytes32[]) {
+    function getTickersByOwner(address _owner) external view returns(bytes32[] memory) {
         uint counter = 0;
         // accessing the data structure userTotickers[_owner].length
         bytes32[] memory tickers = getArrayBytes32(Encoder.getKey("userToTickers", _owner));
-        for (uint i = 0; i < tickers.length; i++) {
+        uint i;
+        for (i = 0; i < tickers.length; i++) {
             string memory ticker = Util.bytes32ToString(tickers[i]);
             /*solium-disable-next-line security/no-block-members*/
             if (getUint(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now || getTickerStatus(ticker)) {
@@ -30,7 +31,7 @@ contract STRGetter is EternalStorage {
         bytes32[] memory tempList = new bytes32[](counter);
         counter = 0;
         for (i = 0; i < tickers.length; i++) {
-            ticker = Util.bytes32ToString(tickers[i]);
+            string memory ticker = Util.bytes32ToString(tickers[i]);
             /*solium-disable-next-line security/no-block-members*/
             if (getUint(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now || getTickerStatus(ticker)) {
                 tempList[counter] = tickers[i];
@@ -45,7 +46,7 @@ contract STRGetter is EternalStorage {
      * @param _owner is the address which owns the list of tickers
      * @dev Intention is that this is called off-chain so block gas limit is not relevant
      */
-    function getTokensByOwner(address _owner) external view returns(address[]) {
+    function getTokensByOwner(address _owner) external view returns(address[] memory) {
         return _getTokens(false, _owner);
     }
 
@@ -53,7 +54,7 @@ contract STRGetter is EternalStorage {
      * @notice Returns the list of all tokens
      * @dev Intention is that this is called off-chain so block gas limit is not relevant
      */
-    function getTokens() external view returns(address[]) {
+    function getTokens() external view returns(address[] memory) {
         return _getTokens(true, address(0));
     }
     /**
@@ -61,7 +62,7 @@ contract STRGetter is EternalStorage {
      * @param _allTokens if _allTokens is true returns all tokens despite on the second parameter
      * @param _owner is the address which owns the list of tickers
      */
-    function _getTokens(bool _allTokens, address _owner) internal view returns(address[]) {
+    function _getTokens(bool _allTokens, address _owner) internal view returns(address[] memory) {
         // Loop over all active users, then all associated tickers of those users
         // This ensures we find tokens, even if their owner has been modified
         address[] memory activeUsers = getArrayAddress(Encoder.getKey("activeUsers"));
@@ -107,7 +108,7 @@ contract STRGetter is EternalStorage {
      * @return string
      * @return bool
      */
-    function getTickerDetails(string _ticker) external view returns (address, uint256, uint256, string, bool) {
+    function getTickerDetails(string calldata _ticker) external view returns (address, uint256, uint256, string memory, bool) {
         string memory ticker = Util.upper(_ticker);
         bool tickerStatus = getTickerStatus(ticker);
         uint256 expiryDate = getUint(Encoder.getKey("registeredTickers_expiryDate", ticker));
@@ -131,7 +132,7 @@ contract STRGetter is EternalStorage {
      * @param _ticker is the ticker of the security token
      * @return address
      */
-    function getSecurityTokenAddress(string _ticker) external view returns (address) {
+    function getSecurityTokenAddress(string calldata _ticker) external view returns (address) {
         string memory ticker = Util.upper(_ticker);
         return getAddress(Encoder.getKey("tickerToSecurityToken", ticker));
     }
@@ -144,7 +145,7 @@ contract STRGetter is EternalStorage {
     * @return string is the details of the security token.
     * @return uint256 is the timestamp at which security Token was deployed.
     */
-    function getSecurityTokenData(address _securityToken) external view returns (string, address, string, uint256) {
+    function getSecurityTokenData(address _securityToken) external view returns (string memory, address, string memory, uint256) {
         return (
             getString(Encoder.getKey("securityTokens_ticker", _securityToken)),
             IOwnable(_securityToken).owner(),
@@ -163,7 +164,7 @@ contract STRGetter is EternalStorage {
     /**
      * @notice Gets Protocol version
      */
-    function getProtocolVersion() public view returns(uint8[]) {
+    function getProtocolVersion() public view returns(uint8[] memory) {
         return VersionUtils.unpack(uint24(getUint(Encoder.getKey("latestVersion"))));
     }
 
@@ -196,7 +197,7 @@ contract STRGetter is EternalStorage {
      * @param _ticker Ticker whose status need to determine
      * @return bool 
      */
-    function getTickerStatus(string _ticker) public view returns(bool) {
+    function getTickerStatus(string memory _ticker) public view returns(bool) {
         return getBool(Encoder.getKey("registeredTickers_status", _ticker));
     }
 
@@ -205,7 +206,7 @@ contract STRGetter is EternalStorage {
      * @param _ticker Ticker whose owner need to determine
      * @return address Address of the owner
      */
-    function getTickerOwner(string _ticker) public view returns(address) {
+    function getTickerOwner(string memory _ticker) public view returns(address) {
         return getAddress(Encoder.getKey("registeredTickers_owner", _ticker));
     }
 

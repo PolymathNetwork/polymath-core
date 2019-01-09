@@ -5,7 +5,7 @@
  * higher than the intended limit.
  */
 
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "./TransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
@@ -18,22 +18,15 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
     using SafeMath for uint256;
 
     event ModifyHolderPercentage(uint256 _oldHolderPercentage, uint256 _newHolderPercentage);
-    event ModifyWhitelist(
-        address _investor,
-        uint256 _dateAdded,
-        address _addedBy,
-        bool    _valid
-    );
+    event ModifyWhitelist(address _investor, uint256 _dateAdded, address _addedBy, bool _valid);
     event SetAllowPrimaryIssuance(bool _allowPrimaryIssuance, uint256 _timestamp);
 
     /**
      * @notice Constructor
      * @param _securityToken Address of the security token
      */
-    constructor (address _securityToken, address _polyToken)
-    public
-    Module(_securityToken, _polyToken)
-    {
+    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
+
     }
 
     /** @notice Used to verify the transfer transaction and prevent a given account to end up with more tokens than allowed
@@ -41,7 +34,16 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
      * @param _to Address of the receiver
      * @param _amount The amount of tokens to transfer
      */
-    function verifyTransfer(address _from, address _to, uint256 _amount, bytes /* _data */, bool /* _isTransfer */) external returns(Result) {
+    function verifyTransfer(
+        address _from,
+        address _to,
+        uint256 _amount,
+        bytes calldata, /* _data */
+        bool /* _isTransfer */
+    ) 
+        external 
+        returns(Result) 
+    {
         if (!paused) {
             if (_from == address(0) && allowPrimaryIssuance) {
                 return Result.NA;
@@ -51,7 +53,7 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
                 return Result.NA;
             }
             uint256 newBalance = ISecurityToken(securityToken).balanceOf(_to).add(_amount);
-            if (newBalance.mul(uint256(10)**18).div(ISecurityToken(securityToken).totalSupply()) > maxHolderPercentage) {
+            if (newBalance.mul(uint256(10) ** 18).div(ISecurityToken(securityToken).totalSupply()) > maxHolderPercentage) {
                 return Result.INVALID;
             }
             return Result.NA;
@@ -71,7 +73,7 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
     /**
      * @notice This function returns the signature of configure function
      */
-    function getInitFunction() public pure returns (bytes4) {
+    function getInitFunction() public pure returns(bytes4) {
         return bytes4(keccak256("configure(uint256,bool)"));
     }
 
@@ -100,7 +102,7 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
     * @param _investors Array of the addresses to whitelist
     * @param _valids Array of boolean value to decide whether or not the address it to be added or removed from the whitelist
     */
-    function modifyWhitelistMulti(address[] _investors, bool[] _valids) public withPerm(WHITELIST) {
+    function modifyWhitelistMulti(address[] memory _investors, bool[] memory _valids) public withPerm(WHITELIST) {
         require(_investors.length == _valids.length, "Input array length mis-match");
         for (uint i = 0; i < _investors.length; i++) {
             modifyWhitelist(_investors[i], _valids[i]);
@@ -121,7 +123,7 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
     /**
      * @notice Return the permissions flag that are associated with Percentage transfer Manager
      */
-    function getPermissions() public view returns(bytes32[]) {
+    function getPermissions() public view returns(bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](2);
         allPermissions[0] = WHITELIST;
         allPermissions[1] = ADMIN;

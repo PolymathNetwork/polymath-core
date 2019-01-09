@@ -1,8 +1,9 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 /**
  * @title Storage layout for the STO contract
  */
+
 contract STOStorage {
 
     mapping (uint8 => bool) public fundRaiseTypes;
@@ -17,8 +18,8 @@ contract STOStorage {
     // Number of individual investors
     uint256 public investorCount;
     // Address where ETH & POLY funds are delivered
-    address public wallet;
-     // Final amount of tokens sold
+    address payable public wallet;
+    // Final amount of tokens sold
     uint256 public totalTokensSold;
 
 }

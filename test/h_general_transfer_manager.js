@@ -7,17 +7,16 @@ import { encodeProxyCall, encodeModuleCall } from "./helpers/encodeCall";
 import { catchRevert } from "./helpers/exceptions";
 import { setUpPolymathNetwork, deployGPMAndVerifyed, deployDummySTOAndVerifyed, deployGTMAndVerifyed } from "./helpers/createInstances";
 
-
 const DummySTO = artifacts.require("./DummySTO.sol");
 const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager");
 
 const Web3 = require("web3");
-const BigNumber = require("bignumber.js");
+let BN = Web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
-contract("GeneralTransferManager", accounts => {
+contract("GeneralTransferManager", async (accounts) => {
     // Accounts Variable declaration
     let account_polymath;
     let account_issuer;
@@ -32,9 +31,9 @@ contract("GeneralTransferManager", accounts => {
     let account_affiliates2;
 
     // investor Details
-    let fromTime = latestTime();
-    let toTime = latestTime();
-    let expiryTime = toTime + duration.days(15);
+    let fromTime;
+    let toTime;
+    let expiryTime;
 
     let message = "Transaction Should Fail!";
 
@@ -73,17 +72,27 @@ contract("GeneralTransferManager", accounts => {
     const stoKey = 3;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = web3.utils.toWei("250");
+    const initRegFee = new BN(web3.utils.toWei("250"));
 
     // Dummy STO details
-    const startTime = latestTime() + duration.seconds(5000); // Start time will be 5000 seconds more than the latest time
-    const endTime = startTime + duration.days(80); // Add 80 days more
-    const cap = web3.utils.toWei("10", "ether");
+    let startTime;
+    let endTime;
+    const cap = new BN(web3.utils.toWei("10", "ether"));
     const someString = "A string which is not used";
     const STOParameters = ["uint256", "uint256", "uint256", "string"];
 
+    let currentTime;
+    const address_zero = "0x0000000000000000000000000000000000000000";
+    const one_address = "0x0000000000000000000000000000000000000001";
+
     before(async () => {
-        // Accounts setup
+        currentTime = new BN(await latestTime());
+        fromTime = await latestTime();
+        toTime = await latestTime();
+        expiryTime = toTime + duration.days(15);
+        startTime = await latestTime() + duration.seconds(5000); // Start time will be 5000 seconds more than the latest time
+        endTime = startTime + duration.days(80); // Add 80 days more
+
         account_polymath = accounts[0];
         account_issuer = accounts[1];
 
@@ -118,9 +127,9 @@ contract("GeneralTransferManager", accounts => {
         ] = instances;
 
         [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
-        [P_GeneralTransferManagerFactory] = await deployGTMAndVerifyed(account_polymath, I_MRProxied, web3.utils.toWei("500"));
+        [P_GeneralTransferManagerFactory] = await deployGTMAndVerifyed(account_polymath, I_MRProxied, new BN(web3.utils.toWei("500")));
         [I_DummySTOFactory] = await deployDummySTOAndVerifyed(account_polymath, I_MRProxied, 0);
-        [P_DummySTOFactory] = await deployDummySTOAndVerifyed(account_polymath, I_MRProxied, web3.utils.toWei("500"));
+        [P_DummySTOFactory] = await deployDummySTOAndVerifyed(account_polymath, I_MRProxied, new BN(web3.utils.toWei("500")));
 
         // Printing all the contract addresses
         console.log(`
@@ -151,15 +160,15 @@ contract("GeneralTransferManager", accounts => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let _blockNo = latestBlock();
+            
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
-            I_SecurityToken = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+            I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
-            const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({ from: _blockNo }), 1);
+            const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTransferManager module get added successfully or not
             assert.equal(log.args._types[0].toNumber(), 2);
@@ -168,28 +177,30 @@ contract("GeneralTransferManager", accounts => {
 
         it("Should intialize the auto attached modules", async () => {
             let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
-            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
+            I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
 
-        it("Should attach the paid GTM -- failed because of no tokens", async() => {
+        it("Should attach the paid GTM -- failed because of no tokens", async () => {
             await catchRevert(
-                I_SecurityToken.addModule(P_GeneralTransferManagerFactory.address, "", web3.utils.toWei("500"), 0, {from: account_issuer})
+                I_SecurityToken.addModule(P_GeneralTransferManagerFactory.address, "0x0", new BN(web3.utils.toWei("500")), new BN(0), { from: account_issuer })
             );
         });
 
-        it("Should attach the paid GTM", async() => {
+        it("Should attach the paid GTM", async () => {
             let snap_id = await takeSnapshot();
-            await I_PolyToken.getTokens(web3.utils.toWei("500"), I_SecurityToken.address);
-            await I_SecurityToken.addModule(P_GeneralTransferManagerFactory.address, "", web3.utils.toWei("500"), 0, {from: account_issuer});
+            await I_PolyToken.getTokens(new BN(web3.utils.toWei("500")), I_SecurityToken.address);
+            await I_SecurityToken.addModule(P_GeneralTransferManagerFactory.address, "0x0", new BN(web3.utils.toWei("500")), new BN(0), {
+                from: account_issuer
+            });
             await revertToSnapshot(snap_id);
         });
 
         it("Should whitelist the affiliates before the STO attached", async () => {
             let tx = await I_GeneralTransferManager.modifyWhitelistMulti(
                 [account_affiliates1, account_affiliates2],
-                [latestTime() + duration.days(30), latestTime() + duration.days(30)],
-                [latestTime() + duration.days(90), latestTime() + duration.days(90)],
-                [latestTime() + duration.years(1), latestTime() + duration.years(1)],
+                [currentTime + currentTime.add(new BN(duration.days(30))), currentTime.add(new BN(duration.days(30)))],
+                [currentTime + currentTime.add(new BN(duration.days(90))), currentTime.add(new BN(duration.days(90)))],
+                [currentTime + currentTime.add(new BN(duration.days(965))), currentTime.add(new BN(duration.days(365)))],
                 [false, false],
                 {
                     from: account_issuer,
@@ -206,110 +217,102 @@ contract("GeneralTransferManager", accounts => {
         it("Should whitelist lots of addresses and check gas", async () => {
             let mockInvestors = [];
             for (let i = 0; i < 50; i++) {
-                mockInvestors.push("0x1000000000000000000000000000000000000000".substring(0,42-i.toString().length) + i.toString());
+                mockInvestors.push("0x1000000000000000000000000000000000000000".substring(0, 42 - i.toString().length) + i.toString());
             }
 
             let times = range1(50);
             let bools = rangeB(50);
-            let tx = await I_GeneralTransferManager.modifyWhitelistMulti(
-                mockInvestors,
-                times,
-                times,
-                times,
-                bools,
-                {
-                    from: account_issuer,
-                    gas: 7900000
-                }
-            );
+            let tx = await I_GeneralTransferManager.modifyWhitelistMulti(mockInvestors, times, times, times, bools, {
+                from: account_issuer,
+                gas: 7900000
+            });
             console.log("Multi Whitelist x 50: " + tx.receipt.gasUsed);
-            assert.deepEqual(await I_GeneralTransferManager.getInvestors.call(), [account_affiliates1, account_affiliates2].concat(mockInvestors));
+            assert.deepEqual(
+                await I_GeneralTransferManager.getInvestors.call(),
+                [account_affiliates1, account_affiliates2].concat(mockInvestors)
+            );
         });
 
         it("Should mint the tokens to the affiliates", async () => {
-            await I_SecurityToken.mintMulti([account_affiliates1, account_affiliates2], [100 * Math.pow(10, 18), 100 * Math.pow(10, 18)], {
+            await I_SecurityToken.mintMulti([account_affiliates1, account_affiliates2], [new BN(100).mul(new BN(10).pow(new BN(18))), new BN(10).pow(new BN(20))], {
                 from: account_issuer,
                 gas: 6000000
             });
-            assert.equal((await I_SecurityToken.balanceOf.call(account_affiliates1)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 100);
-            assert.equal((await I_SecurityToken.balanceOf.call(account_affiliates2)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 100);
+            assert.equal((await I_SecurityToken.balanceOf.call(account_affiliates1)).div(new BN(10).pow(new BN(18))).toNumber(), 100);
+            assert.equal((await I_SecurityToken.balanceOf.call(account_affiliates2)).div(new BN(10).pow(new BN(18))).toNumber(), 100);
         });
-
 
         it("Should successfully attach the STO factory with the security token -- failed because of no tokens", async () => {
             let bytesSTO = encodeModuleCall(STOParameters, [
-                latestTime() + duration.seconds(1000),
-                latestTime() + duration.days(40),
+                await latestTime() + duration.seconds(1000),
+                await latestTime() + duration.days(40),
                 cap,
                 someString
             ]);
             await catchRevert(
-                I_SecurityToken.addModule(P_DummySTOFactory.address, bytesSTO, web3.utils.toWei("500"), 0, { from: token_owner })
+                I_SecurityToken.addModule(P_DummySTOFactory.address, bytesSTO, new BN(web3.utils.toWei("500")), new BN(0), { from: token_owner })
             );
         });
 
         it("Should successfully attach the STO factory with the security token", async () => {
             let snap_id = await takeSnapshot();
             let bytesSTO = encodeModuleCall(STOParameters, [
-                latestTime() + duration.seconds(1000),
-                latestTime() + duration.days(40),
+                await latestTime() + duration.seconds(1000),
+                await latestTime() + duration.days(40),
                 cap,
                 someString
             ]);
-            await I_PolyToken.getTokens(web3.utils.toWei("500"), I_SecurityToken.address);
-            const tx = await I_SecurityToken.addModule(P_DummySTOFactory.address, bytesSTO, web3.utils.toWei("500"), 0, { from: token_owner });
+            await I_PolyToken.getTokens(new BN(web3.utils.toWei("500")), I_SecurityToken.address);
+            const tx = await I_SecurityToken.addModule(P_DummySTOFactory.address, bytesSTO, new BN(web3.utils.toWei("500")), new BN(0), {
+                from: token_owner
+            });
             assert.equal(tx.logs[3].args._types[0].toNumber(), stoKey, "DummySTO doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[3].args._name).replace(/\u0000/g, ""),
                 "DummySTO",
                 "DummySTOFactory module was not added"
             );
-            I_DummySTO = DummySTO.at(tx.logs[3].args._module);
+            I_DummySTO = await DummySTO.at(tx.logs[3].args._module);
             await revertToSnapshot(snap_id);
         });
 
         it("Should successfully attach the STO factory with the security token - invalid data", async () => {
-            let bytesSTO = encodeModuleCall(['uint256', 'string'], [
-                latestTime() + duration.seconds(1000),
-                someString
-            ]);
-            await catchRevert(
-                I_SecurityToken.addModule(P_DummySTOFactory.address, bytesSTO, 0, 0, { from: token_owner })
-            );
+            let bytesSTO = encodeModuleCall(["uint256", "string"], [await latestTime() + duration.seconds(1000), someString]);
+            await catchRevert(I_SecurityToken.addModule(P_DummySTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: token_owner }));
         });
 
         it("Should successfully attach the STO factory with the security token", async () => {
             let bytesSTO = encodeModuleCall(STOParameters, [
-                latestTime() + duration.seconds(1000),
-                latestTime() + duration.days(40),
+                await latestTime() + duration.seconds(1000),
+                await latestTime() + duration.days(40),
                 cap,
                 someString
             ]);
-            const tx = await I_SecurityToken.addModule(I_DummySTOFactory.address, bytesSTO, 0, 0, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_DummySTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), stoKey, "DummySTO doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
                 "DummySTO",
                 "DummySTOFactory module was not added"
             );
-            I_DummySTO = DummySTO.at(tx.logs[2].args._module);
+            I_DummySTO = await DummySTO.at(tx.logs[2].args._module);
         });
 
         it("Should successfully attach the permission manager factory with the security token", async () => {
-            const tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, 0, 0, 0, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, new BN(0), new BN(0), new BN(0), { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), delegateManagerKey, "GeneralPermissionManager doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
                 "GeneralPermissionManager",
                 "GeneralPermissionManager module was not added"
             );
-            I_GeneralPermissionManager = GeneralPermissionManager.at(tx.logs[2].args._module);
+            I_GeneralPermissionManager = await GeneralPermissionManager.at(tx.logs[2].args._module);
         });
     });
 
     describe("Buy tokens using on-chain whitelist", async () => {
         it("Should buy the tokens -- Failed due to investor is not in the whitelist", async () => {
-            await catchRevert(I_DummySTO.generateTokens(account_investor1, web3.utils.toWei("1", "ether"), { from: token_owner }));
+            await catchRevert(I_DummySTO.generateTokens(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner }));
         });
 
         it("Should Buy the tokens", async () => {
@@ -317,9 +320,9 @@ contract("GeneralTransferManager", accounts => {
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor1,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(10),
+                currentTime,
+                currentTime,
+                currentTime.add(new BN(duration.days(10))),
                 true,
                 {
                     from: account_issuer,
@@ -337,37 +340,35 @@ contract("GeneralTransferManager", accounts => {
             await increaseTime(5000);
 
             // Mint some tokens
-            await I_DummySTO.generateTokens(account_investor1, web3.utils.toWei("1", "ether"), { from: token_owner });
+            await I_DummySTO.generateTokens(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), web3.utils.toWei("1", "ether"));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
         });
 
         it("Should fail in buying the token from the STO", async () => {
-            await catchRevert(I_DummySTO.generateTokens(account_affiliates1, web3.utils.toWei("1", "ether"), { from: token_owner }));
+            await catchRevert(I_DummySTO.generateTokens(account_affiliates1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner }));
         });
 
-        it("Should fail in buying the tokens from the STO -- because amount is 0", async() => {
-            await catchRevert(
-                I_DummySTO.generateTokens(account_investor1, 0, { from: token_owner })
-            );
+        it("Should fail in buying the tokens from the STO -- because amount is 0", async () => {
+            await catchRevert(I_DummySTO.generateTokens(account_investor1, new BN(0), { from: token_owner }));
         });
 
-        it("Should fail in buying the tokens from the STO -- because STO is paused", async() => {
-            await I_DummySTO.pause({from: account_issuer });
-            await catchRevert(I_DummySTO.generateTokens(account_investor1, web3.utils.toWei("1", "ether"), { from: token_owner }));
+        it("Should fail in buying the tokens from the STO -- because STO is paused", async () => {
+            await I_DummySTO.pause({ from: account_issuer });
+            await catchRevert(I_DummySTO.generateTokens(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner }));
             // Reverting the changes releated to pause
-            await I_DummySTO.unpause({from: account_issuer });
+            await I_DummySTO.unpause({ from: account_issuer });
         });
 
-        it("Should buy more tokens from the STO to investor1", async() => {
-            await I_DummySTO.generateTokens(account_investor1, web3.utils.toWei("1", "ether"), { from: token_owner });
-            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), web3.utils.toWei("2", "ether"));
+        it("Should buy more tokens from the STO to investor1", async () => {
+            await I_DummySTO.generateTokens(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner });
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), new BN(web3.utils.toWei("2", "ether")).toString());
         });
 
         it("Should fail in investing the money in STO -- expiry limit reached", async () => {
             await increaseTime(duration.days(10));
 
-            await catchRevert(I_DummySTO.generateTokens(account_investor1, web3.utils.toWei("1", "ether"), { from: token_owner }));
+            await catchRevert(I_DummySTO.generateTokens(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner }));
         });
     });
 
@@ -377,17 +378,10 @@ contract("GeneralTransferManager", accounts => {
         it("Should Buy the tokens", async () => {
             // Add the Investor in to the whitelist
             // snap_id = await takeSnapshot();
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
-                account_investor1,
-                0,
-                0,
-                latestTime() + duration.days(20),
-                true,
-                {
-                    from: account_issuer,
-                    gas: 6000000
-                }
-            );
+            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, new BN(0), new BN(0), currentTime.add(new BN(duration.days(20))), true, {
+                from: account_issuer,
+                gas: 6000000
+            });
 
             assert.equal(
                 tx.logs[0].args._investor.toLowerCase(),
@@ -397,9 +391,9 @@ contract("GeneralTransferManager", accounts => {
 
             tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor2,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(20),
+                currentTime,
+                currentTime,
+                currentTime.add(new BN(duration.days(20))),
                 true,
                 {
                     from: account_issuer,
@@ -417,54 +411,44 @@ contract("GeneralTransferManager", accounts => {
             await increaseTime(5000);
 
             // Can transfer tokens
-            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), {from: account_investor1});
-            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), web3.utils.toWei("1", "ether"));
-            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), web3.utils.toWei("1", "ether"));
+            await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 });
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
         });
 
         it("Add a from default and check transfers are disabled then enabled in the future", async () => {
-            let tx = await I_GeneralTransferManager.changeDefaults(latestTime() + duration.days(5), 0, {from: token_owner});
-            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), {from: account_investor2});
-            await catchRevert(I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), {from: account_investor1}));
+            let tx = await I_GeneralTransferManager.changeDefaults(currentTime.add(new BN(duration.days(12))), new BN(0), { from: token_owner });
+            await I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: account_investor2 });
+            await catchRevert(I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 }));
             await increaseTime(duration.days(5));
-            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), {from: account_investor1});
+            await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 });
         });
 
         it("Add a to default and check transfers are disabled then enabled in the future", async () => {
-            let tx = await I_GeneralTransferManager.changeDefaults(0, latestTime() + duration.days(5), {from: token_owner});
-            await catchRevert(I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), {from: account_investor2}));
-            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), {from: account_investor1});
-            await increaseTime(duration.days(5));
-            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("2", "ether"), {from: account_investor2});
+            let tx = await I_GeneralTransferManager.changeDefaults(0, currentTime.add(new BN(duration.days(16))), { from: token_owner });
+            await catchRevert(I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: account_investor2 }));
+            await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 });
+            await increaseTime(duration.days(2));
+            await I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("2", "ether")), { from: account_investor2 });
             // revert changes
-            await I_GeneralTransferManager.modifyWhitelist(
-                account_investor2,
-                0,
-                0,
-                0,
-                false,
-                {
-                    from: account_issuer,
-                    gas: 6000000
-                }
-            );
-            await I_GeneralTransferManager.changeDefaults(0, 0, {from: token_owner});
+            await I_GeneralTransferManager.modifyWhitelist(account_investor2, new BN(0), new BN(0), new BN(0), false, {
+                from: account_issuer,
+                gas: 6000000
+            });
+            await I_GeneralTransferManager.changeDefaults(0, new BN(0), { from: token_owner });
         });
-
-
-
     });
 
     describe("Buy tokens using off-chain whitelist", async () => {
         it("Should buy the tokens -- Failed due to investor is not in the whitelist", async () => {
-            await catchRevert(I_DummySTO.generateTokens(account_investor2, web3.utils.toWei("1", "ether"), { from: token_owner }));
+            await catchRevert(I_DummySTO.generateTokens(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: token_owner }));
         });
 
         it("Should buy the tokens -- Failed due to incorrect signature input", async () => {
             // Add the Investor in to the whitelist
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
-            let validFrom = latestTime();
-            let validTo = latestTime() + duration.days(5);
+            let validFrom = await latestTime();
+            let validTo = await latestTime() + duration.days(5);
             let nonce = 5;
             const sig = signData(
                 account_investor2,
@@ -507,8 +491,8 @@ contract("GeneralTransferManager", accounts => {
         it("Should buy the tokens -- Failed due to incorrect signature timing", async () => {
             // Add the Investor in to the whitelist
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
-            let validFrom = latestTime() - 100;
-            let validTo = latestTime() - 1;
+            let validFrom = await latestTime() - 100;
+            let validTo = await latestTime() - 1;
             let nonce = 5;
             const sig = signData(
                 I_GeneralTransferManager.address,
@@ -551,8 +535,8 @@ contract("GeneralTransferManager", accounts => {
         it("Should buy the tokens -- Failed due to incorrect signature signer", async () => {
             // Add the Investor in to the whitelist
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
-            let validFrom = latestTime();
-            let validTo = latestTime() + 60 * 60;
+            let validFrom = await latestTime();
+            let validTo = await latestTime() + 60 * 60;
             let nonce = 5;
             const sig = signData(
                 account_investor2,
@@ -595,14 +579,14 @@ contract("GeneralTransferManager", accounts => {
         it("Should Buy the tokens", async () => {
             // Add the Investor in to the whitelist
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
-            let validFrom = latestTime();
-            let validTo = latestTime() + duration.days(5);
+            let validFrom = await latestTime();
+            let validTo = await latestTime() + duration.days(5);
             let nonce = 5;
             const sig = signData(
                 I_GeneralTransferManager.address,
                 account_investor2,
-                latestTime(),
-                latestTime() + duration.days(80),
+                currentTime.toNumber(),
+                currentTime.add(new BN(duration.days(100))).toNumber(),
                 expiryTime + duration.days(200),
                 true,
                 validFrom,
@@ -617,8 +601,8 @@ contract("GeneralTransferManager", accounts => {
 
             let tx = await I_GeneralTransferManager.modifyWhitelistSigned(
                 account_investor2,
-                latestTime(),
-                latestTime() + duration.days(80),
+                currentTime.toNumber(),
+                currentTime.add(new BN(duration.days(100))).toNumber(),
                 expiryTime + duration.days(200),
                 true,
                 validFrom,
@@ -643,22 +627,22 @@ contract("GeneralTransferManager", accounts => {
             await increaseTime(10000);
             // Mint some tokens
 
-            await I_DummySTO.generateTokens(account_investor2, web3.utils.toWei("1", "ether"), { from: token_owner });
+            await I_DummySTO.generateTokens(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toNumber(), web3.utils.toWei("1", "ether"));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
         });
 
-        it("Should fail if the txn is generated with same nonce", async() => {
+        it("Should fail if the txn is generated with same nonce", async () => {
             // Add the Investor in to the whitelist
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
-            let validFrom = latestTime();
-            let validTo = latestTime() + duration.days(5);
+            let validFrom = await latestTime();
+            let validTo = await latestTime() + duration.days(5);
             let nonce = 5;
             const sig = signData(
                 I_GeneralTransferManager.address,
                 account_investor2,
-                latestTime(),
-                latestTime() + duration.days(80),
+                currentTime.toNumber(),
+                currentTime.add(new BN(duration.days(100))).toNumber(),
                 expiryTime + duration.days(200),
                 true,
                 validFrom,
@@ -671,25 +655,26 @@ contract("GeneralTransferManager", accounts => {
             const s = `0x${sig.s.toString("hex")}`;
             const v = sig.v;
 
-            await catchRevert(I_GeneralTransferManager.modifyWhitelistSigned(
-                account_investor2,
-                latestTime(),
-                latestTime() + duration.days(80),
-                expiryTime + duration.days(200),
-                true,
-                validFrom,
-                validTo,
-                nonce,
-                v,
-                r,
-                s,
-                {
-                    from: account_investor2,
-                    gas: 6000000
-                }
-            )
+            await catchRevert(
+                I_GeneralTransferManager.modifyWhitelistSigned(
+                    account_investor2,
+                    currentTime.toNumber(),
+                    currentTime.add(new BN(duration.days(100))).toNumber(),
+                    expiryTime + duration.days(200),
+                    true,
+                    validFrom,
+                    validTo,
+                    nonce,
+                    v,
+                    r,
+                    s,
+                    {
+                        from: account_investor2,
+                        gas: 6000000
+                    }
+                )
             );
-        })
+        });
 
         it("Should fail in changing the signing address", async () => {
             await catchRevert(I_GeneralTransferManager.changeSigningAddress(account_polymath, { from: account_investor4 }));
@@ -701,16 +686,16 @@ contract("GeneralTransferManager", accounts => {
             assert.equal(web3.utils.toAscii(perm[1]).replace(/\u0000/g, ""), "FLAGS");
         });
 
-        it("Should provide the permission and change the signing address", async() => {
-            let log = await I_GeneralPermissionManager.addDelegate(account_delegate, "My details", {from: token_owner});
+        it("Should provide the permission and change the signing address", async () => {
+            let log = await I_GeneralPermissionManager.addDelegate(account_delegate, web3.utils.fromAscii("My details"), { from: token_owner });
             assert.equal(log.logs[0].args._delegate, account_delegate);
 
-            await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, "FLAGS", true, {
+            await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("FLAGS"), true, {
                 from: token_owner
             });
 
             assert.isTrue(
-                await I_GeneralPermissionManager.checkPermission.call(account_delegate, I_GeneralTransferManager.address, "FLAGS")
+                await I_GeneralPermissionManager.checkPermission.call(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("FLAGS"))
             );
 
             let tx = await I_GeneralTransferManager.changeSigningAddress(account_polymath, { from: account_delegate });
@@ -718,29 +703,29 @@ contract("GeneralTransferManager", accounts => {
         });
 
         it("Should fail to pull fees as no budget set", async () => {
-            await catchRevert(I_GeneralTransferManager.takeFee(web3.utils.toWei("1", "ether"), { from: account_polymath }));
+            await catchRevert(I_GeneralTransferManager.takeFee(new BN(web3.utils.toWei("1", "ether")), { from: account_polymath }));
         });
 
         it("Should set a budget for the GeneralTransferManager", async () => {
-            await I_SecurityToken.changeModuleBudget(I_GeneralTransferManager.address, 10 * Math.pow(10, 18), true, { from: token_owner });
+            await I_SecurityToken.changeModuleBudget(I_GeneralTransferManager.address, new BN(10).pow(new BN(19)), true, { from: token_owner });
 
-            await catchRevert(I_GeneralTransferManager.takeFee(web3.utils.toWei("1", "ether"), { from: token_owner }));
-            await I_PolyToken.getTokens(10 * Math.pow(10, 18), token_owner);
-            await I_PolyToken.transfer(I_SecurityToken.address, 10 * Math.pow(10, 18), { from: token_owner });
+            await catchRevert(I_GeneralTransferManager.takeFee(new BN(web3.utils.toWei("1", "ether")), { from: token_owner }));
+            await I_PolyToken.getTokens(new BN(10).pow(new BN(19)), token_owner);
+            await I_PolyToken.transfer(I_SecurityToken.address, new BN(10).pow(new BN(19)), { from: token_owner });
         });
 
         it("Factory owner should pull fees - fails as not permissioned by issuer", async () => {
-            await catchRevert(I_GeneralTransferManager.takeFee(web3.utils.toWei("1", "ether"), { from: account_delegate }));
+            await catchRevert(I_GeneralTransferManager.takeFee(new BN(web3.utils.toWei("1", "ether")), { from: account_delegate }));
         });
 
         it("Factory owner should pull fees", async () => {
-            await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, "FEE_ADMIN", true, {
+            await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("FEE_ADMIN"), true, {
                 from: token_owner
             });
             let balanceBefore = await I_PolyToken.balanceOf(account_polymath);
-            await I_GeneralTransferManager.takeFee(web3.utils.toWei("1", "ether"), { from: account_delegate });
+            await I_GeneralTransferManager.takeFee(new BN(web3.utils.toWei("1", "ether")), { from: account_delegate });
             let balanceAfter = await I_PolyToken.balanceOf(account_polymath);
-            assert.equal(balanceBefore.add(web3.utils.toWei("1", "ether")).toNumber(), balanceAfter.toNumber(), "Fee is transferred");
+            assert.equal(balanceBefore.add(new BN(web3.utils.toWei("1", "ether"))).toString(), balanceAfter.toString(), "Fee is transferred");
         });
 
         it("Should change the white list transfer variable", async () => {
@@ -751,7 +736,7 @@ contract("GeneralTransferManager", accounts => {
         it("should failed in trasfering the tokens", async () => {
             let tx = await I_GeneralTransferManager.changeAllowAllWhitelistTransfers(true, { from: token_owner });
             await I_GeneralTransferManager.pause({ from: token_owner });
-            await catchRevert(I_SecurityToken.transfer(account_investor1, web3.utils.toWei("2", "ether"), { from: account_investor2 }));
+            await catchRevert(I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("2", "ether")), { from: account_investor2 }));
         });
 
         it("Should change the Issuance address", async () => {
@@ -773,8 +758,8 @@ contract("GeneralTransferManager", accounts => {
 
     describe("WhiteList that addresses", async () => {
         it("Should fail in adding the investors in whitelist", async () => {
-            let fromTime = latestTime();
-            let toTime = latestTime() + duration.days(20);
+            let fromTime = await latestTime();
+            let toTime = await latestTime() + duration.days(20);
             let expiryTime = toTime + duration.days(10);
 
             await catchRevert(
@@ -793,8 +778,8 @@ contract("GeneralTransferManager", accounts => {
         });
 
         it("Should fail in adding the investors in whitelist -- array length mismatch", async () => {
-            let fromTime = latestTime();
-            let toTime = latestTime() + duration.days(20);
+            let fromTime = await latestTime();
+            let toTime = await latestTime() + duration.days(20);
             let expiryTime = toTime + duration.days(10);
 
             await catchRevert(
@@ -813,8 +798,8 @@ contract("GeneralTransferManager", accounts => {
         });
 
         it("Should fail in adding the investors in whitelist -- array length mismatch", async () => {
-            let fromTime = latestTime();
-            let toTime = latestTime() + duration.days(20);
+            let fromTime = await latestTime();
+            let toTime = await latestTime() + duration.days(20);
             let expiryTime = toTime + duration.days(10);
 
             await catchRevert(
@@ -833,8 +818,8 @@ contract("GeneralTransferManager", accounts => {
         });
 
         it("Should fail in adding the investors in whitelist -- array length mismatch", async () => {
-            let fromTime = latestTime();
-            let toTime = latestTime() + duration.days(20);
+            let fromTime = await latestTime();
+            let toTime = await latestTime() + duration.days(20);
             let expiryTime = toTime + duration.days(10);
 
             await catchRevert(
@@ -853,8 +838,8 @@ contract("GeneralTransferManager", accounts => {
         });
 
         it("Should successfully add the investors in whitelist", async () => {
-            let fromTime = latestTime();
-            let toTime = latestTime() + duration.days(20);
+            let fromTime = await latestTime();
+            let toTime = await latestTime() + duration.days(20);
             let expiryTime = toTime + duration.days(10);
 
             let tx = await I_GeneralTransferManager.modifyWhitelistMulti(
@@ -920,7 +905,7 @@ contract("GeneralTransferManager", accounts => {
             assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ""), "Dummy");
         });
 
-        it("Should get the version of factory", async() => {
+        it("Should get the version of factory", async () => {
             let version = await I_DummySTOFactory.version.call();
             assert.equal(version, "1.0.0");
         });
@@ -928,11 +913,11 @@ contract("GeneralTransferManager", accounts => {
 
     describe("Test cases for the get functions of the dummy sto", async () => {
         it("Should get the raised amount of ether", async () => {
-            assert.equal(await I_DummySTO.getRaised.call(0), web3.utils.toWei("0", "ether"));
+            assert.equal((await I_DummySTO.getRaised.call(0)).toString(), new BN(web3.utils.toWei("0", "ether")).toString());
         });
 
         it("Should get the raised amount of poly", async () => {
-            assert.equal((await I_DummySTO.getRaised.call(1)).toNumber(), web3.utils.toWei("0", "ether"));
+            assert.equal((await I_DummySTO.getRaised.call(1)).toString(), new BN(web3.utils.toWei("0", "ether")).toString());
         });
 
         it("Should get the investors", async () => {
@@ -944,11 +929,15 @@ contract("GeneralTransferManager", accounts => {
             assert.equal(web3.utils.toAscii(tx[0]).replace(/\u0000/g, ""), "ADMIN");
         });
 
-        it("Should get the amount of tokens sold", async() => {
+        it("Should get the amount of tokens sold", async () => {
             assert.equal(await I_DummySTO.getTokensSold.call(), 0);
-        })
+        });
     });
 });
 
-function range1(i) {return i?range1(i-1).concat(i):[]}
-function rangeB(i) {return i?rangeB(i-1).concat(0):[]}
+function range1(i) {
+    return i ? range1(i - 1).concat(i) : [];
+}
+function rangeB(i) {
+    return i ? rangeB(i - 1).concat(0) : [];
+}

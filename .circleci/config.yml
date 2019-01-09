@@ -2,13 +2,12 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/node:8
+      - image: maxsam4/solidity-kit
     steps:
       - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
       - run: yarn install
-      - run: sudo npm i truffle -g
       - run: node --version
       - run: truffle version
       - run: truffle compile
@@ -18,14 +17,13 @@ jobs:
             - node_modules
   test:
     docker:
-      - image: circleci/node:8
+      - image: maxsam4/solidity-kit
     parallelism: 2
     steps:
       - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
       - run: yarn install
-      - run: sudo npm i truffle -g
       - run: node --version
       - run: truffle version
       - run: npm run test
@@ -39,13 +37,12 @@ jobs:
           path: ./test-results/mocha/results.xml
   coverage:
     docker:
-      - image: circleci/node:8
+      - image: maxsam4/solidity-kit
     steps:
       - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
       - run: yarn install
-      - run: sudo npm i truffle -g
       - run: node --version
       - run: truffle version
       - run: 
@@ -59,13 +56,12 @@ jobs:
           path: ./coverage/lcov.info
   docs:
     docker:
-      - image: circleci/node:8
+      - image: maxsam4/solidity-kit
     steps:
       - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
       - run: yarn install
-      - run: sudo npm i truffle -g
       - run: node --version
       - run: truffle version
       - run: npm run docs

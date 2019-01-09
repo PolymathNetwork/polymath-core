@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "../ModuleFactory.sol";
 import "../../proxy/GeneralPermissionManagerProxy.sol";
@@ -17,8 +17,14 @@ contract GeneralPermissionManagerFactory is ModuleFactory {
      * @param _subscriptionCost Subscription cost of the module
      * @param _logicContract Contract address that contains the logic related to `description`
      */
-    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _logicContract) public
-    ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
+    constructor(
+        uint256 _setupCost,
+        uint256 _usageCost,
+        uint256 _subscriptionCost,
+        address _logicContract
+    ) 
+        public 
+        ModuleFactory(_setupCost, _usageCost, _subscriptionCost) 
     {
         require(_logicContract != address(0), "Invalid address");
         version = "1.0.0";
@@ -34,9 +40,14 @@ contract GeneralPermissionManagerFactory is ModuleFactory {
      * @notice Used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
-    function deploy(bytes /* _data */) external returns(address) {
+    function deploy(
+        bytes calldata /* _data */
+    ) 
+        external 
+        returns(address) 
+    {
         address polyToken = _takeFee();
-        address permissionManager = new GeneralPermissionManagerProxy(msg.sender, polyToken, logicContract);
+        address permissionManager = address(new GeneralPermissionManagerProxy(msg.sender, polyToken, logicContract));
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(address(permissionManager), getName(), address(this), msg.sender, setupCost, now);
         return permissionManager;
@@ -45,7 +56,7 @@ contract GeneralPermissionManagerFactory is ModuleFactory {
     /**
      * @notice Type of the Module factory
      */
-    function getTypes() external view returns(uint8[]) {
+    function getTypes() external view returns(uint8[] memory) {
         uint8[] memory res = new uint8[](1);
         res[0] = 1;
         return res;
@@ -54,7 +65,7 @@ contract GeneralPermissionManagerFactory is ModuleFactory {
     /**
      * @notice Returns the instructions associated with the module
      */
-    function getInstructions() external view returns(string) {
+    function getInstructions() external view returns(string memory) {
         /*solium-disable-next-line max-len*/
         return "Add and remove permissions for the SecurityToken and associated modules. Permission types should be encoded as bytes32 values and attached using withPerm modifier to relevant functions. No initFunction required.";
     }
@@ -62,7 +73,7 @@ contract GeneralPermissionManagerFactory is ModuleFactory {
     /**
      * @notice Get the tags related to the module factory
      */
-    function getTags() external view returns(bytes32[]) {
+    function getTags() external view returns(bytes32[] memory) {
         bytes32[] memory availableTags = new bytes32[](0);
         return availableTags;
     }

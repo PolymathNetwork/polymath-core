@@ -7,8 +7,7 @@ import {
     deployDummySTOAndVerifyed,
     deployCappedSTOAndVerifyed,
     deployPresaleSTOAndVerified
-    } from "./helpers/createInstances";
-
+} from "./helpers/createInstances";
 
 // Import contract ABIs
 const CappedSTO = artifacts.require("./CappedSTO.sol");
@@ -18,10 +17,10 @@ const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 
 const Web3 = require("web3");
-const BigNumber = require("bignumber.js");
+let BN = Web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
-contract("Concurrent STO", accounts => {
+contract("Concurrent STO", async (accounts) => {
     // Accounts variable declaration
     let account_polymath;
     let account_issuer;
@@ -57,8 +56,8 @@ contract("Concurrent STO", accounts => {
     let message = "Transaction Should Fail!";
 
     // Initial fees
-    const initRegFee = web3.utils.toWei("250");
-    const STOSetupCost = 200 * Math.pow(10, 18);
+    const initRegFee = new BN(web3.utils.toWei("250"));
+    const STOSetupCost = web3.utils.toHex(200 * Math.pow(10, 18));
 
     // Module keys
     const transferManagerKey = 2;
@@ -70,8 +69,12 @@ contract("Concurrent STO", accounts => {
     const DummySTOParameters = ["uint256", "uint256", "uint256", "string"];
     const PresaleSTOParameters = ["uint256"];
 
+    let currentTime;
+    const address_zero = "0x0000000000000000000000000000000000000000";
+    const one_address = "0x0000000000000000000000000000000000000001";
+
     before(async () => {
-        // Accounts setup
+        currentTime = new BN(await latestTime());
         account_polymath = accounts[0];
         account_issuer = accounts[1];
         account_fundsReceiver = accounts[2];
@@ -139,13 +142,13 @@ contract("Concurrent STO", accounts => {
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.getTokens(initRegFee, account_issuer);
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: account_issuer });
-            let _blockNo = latestBlock();
+            
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: account_issuer });
             assert.equal(tx.logs[2].args._ticker, symbol, "SecurityToken doesn't get deployed");
 
-            I_SecurityToken = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+            I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
-            const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({ from: _blockNo }), 1);
+            const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTransferManager module get added successfully or not
             assert.equal(log.args._types[0].toNumber(), transferManagerKey);
@@ -154,12 +157,12 @@ contract("Concurrent STO", accounts => {
 
         it("Should intialize the auto attached modules", async () => {
             let moduleData = (await I_SecurityToken.getModulesByType(transferManagerKey))[0];
-            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
+            I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
 
         it("Should whitelist account_investor1", async () => {
-            let fromTime = latestTime();
-            let toTime = latestTime() + duration.days(15);
+            let fromTime = await latestTime();
+            let toTime = await latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(100);
             let canBuyFromSTO = true;
 
@@ -175,10 +178,10 @@ contract("Concurrent STO", accounts => {
     describe("Add STO and verify transfer", async () => {
         it("Should attach STO modules up to the max number, then fail", async () => {
             const MAX_MODULES = 10;
-            const startTime = latestTime() + duration.days(1);
-            const endTime = latestTime() + duration.days(90);
-            const cap = web3.utils.toWei("10000");
-            const rate = web3.utils.toWei("1000");
+            const startTime = await latestTime() + duration.days(1);
+            const endTime = await latestTime() + duration.days(90);
+            const cap = new BN(web3.utils.toWei("10000"));
+            const rate = new BN(web3.utils.toWei("1000"));
             const fundRaiseType = [0];
             const budget = 0;
             const maxCost = STOSetupCost;
@@ -208,7 +211,7 @@ contract("Concurrent STO", accounts => {
                             "CappedSTO",
                             `Wrong STO module added at index ${STOIndex}`
                         );
-                        I_STO_Array.push(CappedSTO.at(tx1.logs[3].args._module));
+                        I_STO_Array.push(await CappedSTO.at(tx1.logs[3].args._module));
                         break;
                     case 1:
                         // Dummy STO
@@ -221,7 +224,7 @@ contract("Concurrent STO", accounts => {
                             "DummySTO",
                             `Wrong STO module added at index ${STOIndex}`
                         );
-                        I_STO_Array.push(DummySTO.at(tx2.logs[3].args._module));
+                        I_STO_Array.push(await DummySTO.at(tx2.logs[3].args._module));
                         break;
                     case 2:
                         // Pre Sale STO
@@ -234,7 +237,7 @@ contract("Concurrent STO", accounts => {
                             "PreSaleSTO",
                             `Wrong STO module added at index ${STOIndex}`
                         );
-                        I_STO_Array.push(PreSaleSTO.at(tx3.logs[3].args._module));
+                        I_STO_Array.push(await PreSaleSTO.at(tx3.logs[3].args._module));
                         break;
                 }
             }
@@ -249,30 +252,34 @@ contract("Concurrent STO", accounts => {
                         // Capped STO ETH
                         await I_STO_Array[STOIndex].buyTokens(account_investor1, {
                             from: account_investor1,
-                            value: web3.utils.toWei("1", "ether")
+                            value: new BN(web3.utils.toWei("1", "ether"))
                         });
                         assert.equal(web3.utils.fromWei((await I_STO_Array[STOIndex].getRaised.call(0)).toString()), 1);
                         assert.equal(await I_STO_Array[STOIndex].investorCount.call(), 1);
                         break;
                     case 1:
                         // Dummy STO
-                        await I_STO_Array[STOIndex].generateTokens(account_investor1, web3.utils.toWei("1000"), { from: account_issuer });
+                        await I_STO_Array[STOIndex].generateTokens(account_investor1, new BN(web3.utils.toWei("1000")), { from: account_issuer });
                         assert.equal(await I_STO_Array[STOIndex].investorCount.call(), 1);
                         assert.equal(
-                            (await I_STO_Array[STOIndex].investors.call(account_investor1)).dividedBy(new BigNumber(10).pow(18)).toNumber(),
+                            (await I_STO_Array[STOIndex].investors.call(account_investor1))
+                                .div(new BN(10).pow(new BN(18)))
+                                .toNumber(),
                             1000
                         );
                         break;
                     case 2:
                         // Pre Sale STO
-                        await I_STO_Array[STOIndex].allocateTokens(account_investor1, web3.utils.toWei("1000"), web3.utils.toWei("1"), 0, {
+                        await I_STO_Array[STOIndex].allocateTokens(account_investor1, new BN(web3.utils.toWei("1000")), new BN(web3.utils.toWei("1")), new BN(0), {
                             from: account_issuer
                         });
                         assert.equal(web3.utils.fromWei((await I_STO_Array[STOIndex].getRaised.call(0)).toString()), 1);
                         assert.equal(web3.utils.fromWei((await I_STO_Array[STOIndex].getRaised.call(1)).toString()), 0);
                         assert.equal(await I_STO_Array[STOIndex].investorCount.call(), 1);
                         assert.equal(
-                            (await I_STO_Array[STOIndex].investors.call(account_investor1)).dividedBy(new BigNumber(10).pow(18)).toNumber(),
+                            (await I_STO_Array[STOIndex].investors.call(account_investor1))
+                                .div(new BN(10).pow(new BN(18)))
+                                .toNumber(),
                             1000
                         );
                         break;

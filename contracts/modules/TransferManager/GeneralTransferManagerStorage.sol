@@ -1,10 +1,9 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 /**
  * @title Transfer Manager module for core transfer validation functionality
  */
 contract GeneralTransferManagerStorage {
-
     //Address from which issuances come
     address public issuanceAddress = address(0);
 
@@ -37,7 +36,7 @@ contract GeneralTransferManagerStorage {
 
     // An address can only send / receive tokens once their corresponding uint256 > block.number
     // (unless allowAllTransfers == true or allowAllWhitelistTransfers == true)
-    mapping (address => TimeRestriction) public whitelist;
+    mapping(address => TimeRestriction) public whitelist;
     // Map of used nonces by customer
     mapping(address => mapping(uint256 => bool)) public nonceMap;
 

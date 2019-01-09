@@ -1,11 +1,10 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "../interfaces/IOracle.sol";
 import "../external/IMedianizer.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 contract MakerDAOOracle is IOracle, Ownable {
-
     address public medianizer;
     address public currencyAddress;
     bytes32 public currencySymbol;
@@ -24,7 +23,7 @@ contract MakerDAOOracle is IOracle, Ownable {
       * @param _currencyAddress Address of currency (0x0 for ETH)
       * @param _currencySymbol Symbol of currency
       */
-    constructor (address _medianizer, address _currencyAddress, bytes32 _currencySymbol) public {
+    constructor(address _medianizer, address _currencyAddress, bytes32 _currencySymbol) public {
         medianizer = _medianizer;
         currencyAddress = _currencyAddress;
         currencySymbol = _currencySymbol;

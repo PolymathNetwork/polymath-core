@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "./TransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
@@ -41,16 +41,14 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
      * @notice Constructor
      * @param _securityToken Address of the security token
      */
-    constructor (address _securityToken, address _polyToken)
-    public
-    Module(_securityToken, _polyToken)
-    {
+    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
+
     }
 
     /**
      * @notice This function returns the signature of configure function
      */
-    function getInitFunction() public pure returns (bytes4) {
+    function getInitFunction() public pure returns(bytes4) {
         return bytes4(0);
     }
 
@@ -60,7 +58,16 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
      * @param _amount The amount of tokens to transfer
      * @param _isTransfer Whether or not this is an actual transfer or just a test to see if the tokens would be transferrable
      */
-    function verifyTransfer(address _from, address _to, uint256 _amount, bytes /* _data */, bool _isTransfer) external returns(Result) {
+    function verifyTransfer(
+        address _from,
+        address _to,
+        uint256 _amount,
+        bytes calldata, /* _data */
+        bool _isTransfer
+    ) 
+        external 
+        returns(Result) 
+    {
         // function must only be called by the associated security token if _isTransfer == true
         require(_isTransfer == false || msg.sender == securityToken, "Sender is not the owner");
         // manual blocking takes precidence over manual approval
@@ -136,7 +143,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
     /**
      * @notice Returns the permissions flag that are associated with ManualApproval transfer manager
      */
-    function getPermissions() public view returns(bytes32[]) {
+    function getPermissions() public view returns(bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](1);
         allPermissions[0] = TRANSFER_APPROVAL;
         return allPermissions;

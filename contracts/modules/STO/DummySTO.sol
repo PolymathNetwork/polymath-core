@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "./STO.sol";
 import "../../interfaces/ISecurityToken.sol";
@@ -15,9 +15,8 @@ contract DummySTO is DummySTOStorage, STO {
      * @notice Constructor
      * @param _securityToken Address of the security token
      */
-    constructor (address _securityToken, address _polyToken) public
-    Module(_securityToken, _polyToken)
-    {
+    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
+
     }
 
     /**
@@ -27,7 +26,7 @@ contract DummySTO is DummySTOStorage, STO {
      * @param _cap Maximum No. of tokens for sale
      * @param _someString Any string that contails the details
      */
-    function configure(uint256 _startTime, uint256 _endTime, uint256 _cap, string _someString) public onlyFactory {
+    function configure(uint256 _startTime, uint256 _endTime, uint256 _cap, string memory _someString) public onlyFactory {
         startTime = _startTime;
         endTime = _endTime;
         cap = _cap;
@@ -37,7 +36,7 @@ contract DummySTO is DummySTOStorage, STO {
     /**
      * @notice This function returns the signature of configure function
      */
-    function getInitFunction() public pure returns (bytes4) {
+    function getInitFunction() public pure returns(bytes4) {
         return bytes4(keccak256("configure(uint256,uint256,uint256,string)"));
     }
 
@@ -55,27 +54,27 @@ contract DummySTO is DummySTOStorage, STO {
         }
         //TODO: Add SafeMath maybe
         investors[_investor] = investors[_investor] + _amount;
-        emit GenerateTokens (_investor, _amount);
+        emit GenerateTokens(_investor, _amount);
     }
 
     /**
      * @notice Returns the total no. of investors
      */
-    function getNumberInvestors() public view returns (uint256) {
+    function getNumberInvestors() public view returns(uint256) {
         return investorCount;
     }
 
     /**
      * @notice Returns the total no. of investors
      */
-    function getTokensSold() external view returns (uint256) {
+    function getTokensSold() external view returns(uint256) {
         return 0;
     }
 
     /**
      * @notice Returns the permissions flag that are associated with STO
      */
-    function getPermissions() public view returns(bytes32[]) {
+    function getPermissions() public view returns(bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](1);
         allPermissions[0] = ADMIN;
         return allPermissions;

@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "../ModuleFactory.sol";
 import "../../libraries/Util.sol";
@@ -19,8 +19,13 @@ contract CountTransferManagerFactory is ModuleFactory {
      * @param _subscriptionCost Subscription cost of the module
      * @param _logicContract Contract address that contains the logic related to `description`
      */
-    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _logicContract) public
-    ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
+    constructor(
+        uint256 _setupCost,
+        uint256 _usageCost,
+        uint256 _subscriptionCost,
+        address _logicContract
+    ) 
+        public ModuleFactory(_setupCost, _usageCost, _subscriptionCost) 
     {
         require(_logicContract != address(0), "Invalid address");
         version = "2.1.0";
@@ -37,22 +42,24 @@ contract CountTransferManagerFactory is ModuleFactory {
      * @param _data Data used for the intialization of the module factory variables
      * @return address Contract address of the Module
      */
-    function deploy(bytes _data) external returns(address) {
+    function deploy(bytes calldata _data) external returns(address) {
         address polyToken = _takeFee();
-        CountTransferManagerProxy countTransferManager = new CountTransferManagerProxy(msg.sender, polyToken, logicContract);
+        address countTransferManager = address(new CountTransferManagerProxy(msg.sender, polyToken, logicContract));
         require(Util.getSig(_data) == IBoot(countTransferManager).getInitFunction(), "Provided data is not valid");
+        bool success;
         /*solium-disable-next-line security/no-low-level-calls*/
-        require(address(countTransferManager).call(_data), "Unsuccessful call");
+        (success, ) = countTransferManager.call(_data);
+        require(success, "Unsuccessful call");
         /*solium-disable-next-line security/no-block-members*/
-        emit GenerateModuleFromFactory(address(countTransferManager), getName(), address(this), msg.sender, setupCost, now);
-        return address(countTransferManager);
+        emit GenerateModuleFromFactory(countTransferManager, getName(), address(this), msg.sender, setupCost, now);
+        return countTransferManager;
 
     }
 
     /**
      * @notice Type of the Module factory
      */
-    function getTypes() external view returns(uint8[]) {
+    function getTypes() external view returns(uint8[] memory) {
         uint8[] memory res = new uint8[](1);
         res[0] = 2;
         return res;
@@ -61,14 +68,14 @@ contract CountTransferManagerFactory is ModuleFactory {
     /**
      * @notice Returns the instructions associated with the module
      */
-    function getInstructions() external view returns(string) {
+    function getInstructions() external view returns(string memory) {
         return "Allows an issuer to restrict the total number of non-zero token holders";
     }
 
     /**
      * @notice Get the tags related to the module factory
      */
-    function getTags() external view returns(bytes32[]) {
+    function getTags() external view returns(bytes32[] memory) {
         bytes32[] memory availableTags = new bytes32[](2);
         availableTags[0] = "Count";
         availableTags[1] = "Transfer Restriction";

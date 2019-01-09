@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity ^0.5.0;
 
 import "./Proxy.sol";
 
@@ -7,7 +7,6 @@ import "./Proxy.sol";
  * @dev This contract combines an upgradeability proxy with basic authorization control functionalities
  */
 contract OwnedProxy is Proxy {
-
     // Owner of the contract
     address private __owner;
 
@@ -43,7 +42,7 @@ contract OwnedProxy is Proxy {
     * @dev Tells the address of the owner
     * @return the address of the owner
     */
-    function _owner() internal view returns (address) {
+    function _owner() internal view returns(address) {
         return __owner;
     }
 
@@ -58,7 +57,7 @@ contract OwnedProxy is Proxy {
     /**
     * @notice Internal function to provide the address of the implementation contract
     */
-    function _implementation() internal view returns (address) {
+    function _implementation() internal view returns(address) {
         return __implementation;
     }
 
@@ -66,7 +65,7 @@ contract OwnedProxy is Proxy {
     * @dev Tells the address of the proxy owner
     * @return the address of the proxy owner
     */
-    function proxyOwner() external ifOwner returns (address) {
+    function proxyOwner() external ifOwner returns(address) {
         return _owner();
     }
 
@@ -74,7 +73,7 @@ contract OwnedProxy is Proxy {
     * @dev Tells the address of the current implementation
     * @return address of the current implementation
     */
-    function implementation() external ifOwner returns (address) {
+    function implementation() external ifOwner returns(address) {
         return _implementation();
     }
 

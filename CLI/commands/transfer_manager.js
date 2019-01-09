@@ -1536,7 +1536,7 @@ async function volumeRestrictionTM() {
     console.log(`     Rolling period:               ${defaultDailyRestriction.rollingPeriodInDays} days`);
     console.log(`     End time:                     ${moment.unix(defaultDailyRestriction.endTime).format('MMMM Do YYYY, HH:mm:ss')} `);
   }
-  console.log(`- Default restriction:           ${hasDefaultRestriction ? '' : 'None'} `);
+  console.log(`- Default restriction:           ${hasDefaultRestriction ? '' : 'None'}`);
   if (hasDefaultRestriction) {
     console.log(`     Type:                         ${RESTRICTION_TYPES[defaultRestriction.typeOfRestriction]}`);
     console.log(`     Allowed tokens:               ${defaultRestriction.typeOfRestriction === "0" ? `${web3.utils.fromWei(defaultRestriction.allowedTokens)} ${tokenSymbol}` : `${fromWeiPercentage(defaultRestriction.allowedTokens)}%`}`);
@@ -1545,28 +1545,33 @@ async function volumeRestrictionTM() {
     console.log(`     End time:                     ${moment.unix(defaultRestriction.endTime).format('MMMM Do YYYY, HH:mm:ss')} `);
   }
 
-  let options = [
-    'Show restrictios',
+  let addressesAndRestrictions = await currentTransferManager.methods.getRestrictedData().call();
+  console.log(`- Individual restrictions:       ${addressesAndRestrictions.allAddresses.length}`);
+
+  let options = [];
+  if (addressesAndRestrictions[0].length > 0) {
+    options.push('Show restrictios');
+  }
+  options.push(
     'Change exempt wallet',
     'Change default restrictions',
     'Change individual restrictions',
     'Explore account',
     'Operate with multiple restrictions'
-  ];
+  );
 
   let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
   let optionSelected = index !== -1 ? options[index] : 'RETURN';
   console.log('Selected:', optionSelected, '\n');
   switch (optionSelected) {
     case 'Show restrictios':
-      let addressesAndRestrictions = await currentTransferManager.methods.getRestrictedAddresses().call();
       showRestrictionTable(
-        addressesAndRestrictions[0],
-        addressesAndRestrictions[1],
-        addressesAndRestrictions[5],
-        addressesAndRestrictions[3],
-        addressesAndRestrictions[2],
-        addressesAndRestrictions[4],
+        addressesAndRestrictions.allAddresses,
+        addressesAndRestrictions.allowedTokens,
+        addressesAndRestrictions.typeOfRestriction,
+        addressesAndRestrictions.rollingPeriodInDays,
+        addressesAndRestrictions.startTime,
+        addressesAndRestrictions.endTime,
       );
       break;
     case 'Change exempt wallet':
@@ -1745,7 +1750,7 @@ async function changeIndividualRestrictions() {
     console.log(`     Rolling period:               ${currentDailyRestriction.rollingPeriodInDays} days`);
     console.log(`     End time:                     ${moment.unix(currentDailyRestriction.endTime).format('MMMM Do YYYY, HH:mm:ss')} `);
   }
-  console.log(`- Other restriction: ${hasRestriction ? '' : 'None'} `);
+  console.log(`- Other restriction:    ${hasRestriction ? '' : 'None'} `);
   if (hasRestriction) {
     console.log(`     Type:                         ${RESTRICTION_TYPES[currentRestriction.typeOfRestriction]}`);
     console.log(`     Allowed tokens:               ${currentRestriction.typeOfRestriction === "0" ? `${web3.utils.fromWei(currentRestriction.allowedTokens)} ${tokenSymbol}` : `${fromWeiPercentage(currentRestriction.allowedTokens)}%`}`);
@@ -2164,7 +2169,7 @@ function inputRestrictionData(isDaily) {
   }
   restriction.startTime = readlineSync.questionInt(`Enter the time (Unix Epoch time) at which restriction get into effect (now = 0): `, { defaultInput: 0 });
   let oneMonthFromNow = Math.floor(Date.now() / 1000) + gbl.constants.DURATION.days(30);
-  restriction.endTime = readlineSync.question(`Enter the time (Unix Epoch time) when the purchase lockup period ends and the investor can freely purchase tokens from others (1 week from now = ${oneMonthFromNow}): `, {
+  restriction.endTime = readlineSync.question(`Enter the time (Unix Epoch time) when the purchase lockup period ends and the investor can freely purchase tokens from others (1 month from now = ${oneMonthFromNow}): `, {
     limit: function (input) {
       return input > restriction.startTime + gbl.constants.DURATION.days(restriction.rollingPeriodInDays);
     },

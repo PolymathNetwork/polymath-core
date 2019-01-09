@@ -2296,7 +2296,7 @@ async function selectToken() {
     case 'Enter token symbol manually':
       result = readlineSync.question('Enter the token symbol: ');
       break;
-    case 'Exit':
+    case 'EXIT':
       process.exit();
       break;
     default:

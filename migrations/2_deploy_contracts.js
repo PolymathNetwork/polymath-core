@@ -26,6 +26,7 @@ const STFactory = artifacts.require('./tokens/STFactory.sol')
 const DevPolyToken = artifacts.require('./helpers/PolyTokenFaucet.sol')
 const MockOracle = artifacts.require('./MockOracle.sol')
 const TokenLib = artifacts.require('./TokenLib.sol');
+const VolumeRestrictionLib = artifacts.require('./VolumeRestrictionLib.sol');
 const SecurityToken = artifacts.require('./tokens/SecurityToken.sol')
 
 let BigNumber = require('bignumber.js');
@@ -140,7 +141,11 @@ module.exports = function (deployer, network, accounts) {
     // Deploy libraries
     return deployer.deploy(TokenLib, { from: PolymathAccount });
   }).then(() => {
+    return deployer.deploy(VolumeRestrictionLib, { from: PolymathAccount });
+  }).then(() => {
+
     // Link libraries
+    deployer.link(VolumeRestrictionLib, VolumeRestrictionTMLogic);
     deployer.link(TokenLib, SecurityToken);
     deployer.link(TokenLib, STFactory);
     // A) Deploy the ModuleRegistry Contract (It contains the list of verified ModuleFactory)

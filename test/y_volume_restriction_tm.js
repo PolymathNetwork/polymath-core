@@ -1514,6 +1514,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
         it("Should add the token holder in the exemption list", async() => {
             await I_VolumeRestrictionTM.changeExemptWalletList(account_investor4, true, {from: token_owner});
+            console.log(await I_VolumeRestrictionTM.getExemptAddress.call());
             let beforeBal = await I_SecurityToken.balanceOf.call(account_investor4);
             await I_SecurityToken.transfer(account_investor3, web3.utils.toWei("3"), {from: account_investor4});
             let afterBal = await I_SecurityToken.balanceOf.call(account_investor4);

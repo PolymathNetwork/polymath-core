@@ -1,5 +1,7 @@
 pragma solidity ^0.4.24;
 
+import "../../libraries/VolumeRestrictionLib.sol";
+
 /**
  * @title Storage layout for VolumeRestrictionTM
  */
@@ -27,15 +29,6 @@ contract VolumeRestrictionTMStorage {
         uint256 dailyLastTradedDayTime;
     }
 
-    struct RestrictedHolder {
-        // 1 represent true & 0 for false
-        uint8 seen;
-        // Type of period will be enum index of TypeOfPeriod enum
-        uint8 typeOfPeriod;
-        // Index of the array where the holder address lives
-        uint128 index;
-    }
-
     // Global restriction that applies to all token holders
     VolumeRestriction public defaultRestriction;
     // Daily global restriction that applies to all token holders (Total ST traded daily is restricted)
@@ -52,7 +45,10 @@ contract VolumeRestrictionTMStorage {
     mapping(address => BucketDetails) internal defaultUserToBucket;
     // List of wallets that are exempted from all the restrictions applied by the this contract
     mapping(address => bool) public exemptList;
-    mapping(address => RestrictedHolder) internal restrictedHolders;
-    address[] public restrictedAddresses;
+    // Restricted data (refernce from the VolumeRestrictionLib library )
+    VolumeRestrictionLib.RestrictedData holderData;
+    // Holde exempt index
+    mapping(address => uint256) exemptIndex;
+    address[] public exemptAddresses;
     
 }

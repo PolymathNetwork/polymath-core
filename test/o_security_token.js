@@ -171,7 +171,7 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            
+
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
             // Verify the successful generation of the security token
             assert.equal(tx.logs[2].args._ticker, symbol, "SecurityToken doesn't get deployed");
@@ -395,54 +395,54 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(log.logs[0].args._newDetails, "new token details");
         });
 
-        // it("Should successfully remove the general transfer manager module from the securityToken -- fails msg.sender should be Owner", async () => {
-        //     await catchRevert(I_SecurityToken.removeModule(I_GeneralTransferManager.address, { from: account_delegate }));
-        // });
+        it("Should successfully remove the general transfer manager module from the securityToken -- fails msg.sender should be Owner", async () => {
+            await catchRevert(I_SecurityToken.removeModule(I_GeneralTransferManager.address, { from: account_delegate }));
+        });
 
-        // it("Should fail to remove the module - module not archived", async () => {
-        //     await catchRevert(I_SecurityToken.removeModule(I_GeneralTransferManager.address, { from: account_temp }));
-        // });
+        it("Should fail to remove the module - module not archived", async () => {
+            await catchRevert(I_SecurityToken.removeModule(I_GeneralTransferManager.address, { from: account_temp }));
+        });
 
-        // it("Should fail to remove the module - incorrect address", async () => {
-        //     await catchRevert(I_SecurityToken.removeModule(address_zero, { from: token_owner }));
-        // });
+        it("Should fail to remove the module - incorrect address", async () => {
+            await catchRevert(I_SecurityToken.removeModule(address_zero, { from: token_owner }));
+        });
 
-        // it("Should successfully remove the general transfer manager module from the securityToken", async () => {
-        //     let key = await takeSnapshot();
-        //     await I_SecurityToken.archiveModule(I_GeneralTransferManager.address, { from: token_owner });
-        //     let tx = await I_SecurityToken.removeModule(I_GeneralTransferManager.address, { from: token_owner });
-        //     assert.equal(tx.logs[0].args._types[0], transferManagerKey);
-        //     assert.equal(tx.logs[0].args._module, I_GeneralTransferManager.address);
-        //     await I_SecurityToken.mint(account_investor1, new BN(web3.utils.toWei("500")), { from: token_owner });
-        //     await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("200")), { from: account_investor1 });
-        //     assert.equal((await I_SecurityToken.balanceOf(account_investor2)).div(new BN(10).pow(new BN(18))).toNumber(), 200);
-        //     await revertToSnapshot(key);
-        // });
+        it("Should successfully remove the general transfer manager module from the securityToken", async () => {
+            let key = await takeSnapshot();
+            await I_SecurityToken.archiveModule(I_GeneralTransferManager.address, { from: token_owner });
+            let tx = await I_SecurityToken.removeModule(I_GeneralTransferManager.address, { from: token_owner });
+            assert.equal(tx.logs[0].args._types[0], transferManagerKey);
+            assert.equal(tx.logs[0].args._module, I_GeneralTransferManager.address);
+            await I_SecurityToken.mint(account_investor1, new BN(web3.utils.toWei("500")), { from: token_owner });
+            await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("200")), { from: account_investor1 });
+            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).div(new BN(10).pow(new BN(18))).toNumber(), 200);
+            await revertToSnapshot(key);
+        });
 
-        // it("Should successfully remove the module from the middle of the names mapping", async () => {
-        //     let snap_Id = await takeSnapshot();
-        //     let D_GPM, D_GPM_1, D_GPM_2;
-        //     let FactoryInstances;
-        //     let GPMAddress = new Array();
+        it("Should successfully remove the module from the middle of the names mapping", async () => {
+            let snap_Id = await takeSnapshot();
+            let D_GPM, D_GPM_1, D_GPM_2;
+            let FactoryInstances;
+            let GPMAddress = new Array();
 
-        //     [D_GPM] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
-        //     [D_GPM_1] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
-        //     [D_GPM_2] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
-        //     FactoryInstances = [D_GPM, D_GPM_1, D_GPM_2];
-        //     // Adding module in the ST
-        //     for (let i = 0; i < FactoryInstances.length; i++) {
-        //         let tx = await I_SecurityToken.addModule(FactoryInstances[i].address, "0x0", new BN(0), new BN(0), { from: token_owner });
-        //         assert.equal(tx.logs[2].args._types[0], permissionManagerKey, "fail in adding the GPM");
-        //         GPMAddress.push(tx.logs[2].args._module);
-        //     }
-        //     // Archive the one of the module
-        //     await I_SecurityToken.archiveModule(GPMAddress[0], { from: token_owner });
-        //     // Remove the module
-        //     let tx = await I_SecurityToken.removeModule(GPMAddress[0], { from: token_owner });
-        //     assert.equal(tx.logs[0].args._types[0], permissionManagerKey);
-        //     assert.equal(tx.logs[0].args._module, GPMAddress[0]);
-        //     await revertToSnapshot(snap_Id);
-        // });
+            [D_GPM] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
+            [D_GPM_1] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
+            [D_GPM_2] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
+            FactoryInstances = [D_GPM, D_GPM_1, D_GPM_2];
+            // Adding module in the ST
+            for (let i = 0; i < FactoryInstances.length; i++) {
+                let tx = await I_SecurityToken.addModule(FactoryInstances[i].address, "0x0", new BN(0), new BN(0), { from: token_owner });
+                assert.equal(tx.logs[2].args._types[0], permissionManagerKey, "fail in adding the GPM");
+                GPMAddress.push(tx.logs[2].args._module);
+            }
+            // Archive the one of the module
+            await I_SecurityToken.archiveModule(GPMAddress[0], { from: token_owner });
+            // Remove the module
+            let tx = await I_SecurityToken.removeModule(GPMAddress[0], { from: token_owner });
+            assert.equal(tx.logs[0].args._types[0], permissionManagerKey);
+            assert.equal(tx.logs[0].args._module, GPMAddress[0]);
+            await revertToSnapshot(snap_Id);
+        });
 
         it("Should successfully archive the module first and fail during achiving the module again", async () => {
             let key = await takeSnapshot();

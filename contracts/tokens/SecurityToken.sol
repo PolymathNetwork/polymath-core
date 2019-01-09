@@ -292,46 +292,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     * @param _module address of module to unarchive
     */
     function removeModule(address _module) external onlyOwner {
-        // require(modulesToData[_module].isArchived, "Not archived");
-        // require(modulesToData[_module].module != address(0), "Module missing");
-        // /*solium-disable-next-line security/no-block-members*/
-        // emit ModuleRemoved(modulesToData[_module].moduleTypes, _module, now);
-        // // Remove from module type list
-        // uint8[] memory moduleTypes = modulesToData[_module].moduleTypes;
-        // for (uint256 i = 0; i < moduleTypes.length; i++) {
-        //     _removeModuleWithIndex(moduleTypes[i], modulesToData[_module].moduleIndexes[i]);
-        //     /* modulesToData[_module].moduleType[moduleTypes[i]] = false; */
-        // }
-        // // Remove from module names list
-        // uint256 index = modulesToData[_module].nameIndex;
-        // bytes32 name = modulesToData[_module].name;
-        // uint256 length = names[name].length;
-        // names[name][index] = names[name][length - 1];
-        // names[name].length = length - 1;
-        // if ((length - 1) != index) {
-        //     modulesToData[names[name][index]].nameIndex = index;
-        // }
-        // // Remove from modulesToData
-        // delete modulesToData[_module];
-    }
-
-    /**
-    * @notice Internal - Removes a module attached to the SecurityToken by index
-    */
-    function _removeModuleWithIndex(uint8 _type, uint256 _index) internal {
-        uint256 length = modules[_type].length;
-        modules[_type][_index] = modules[_type][length - 1];
-        modules[_type].length = length - 1;
-
-        if ((length - 1) != _index) {
-            //Need to find index of _type in moduleTypes of module we are moving
-            uint8[] memory newTypes = modulesToData[modules[_type][_index]].moduleTypes;
-            for (uint256 i = 0; i < newTypes.length; i++) {
-                if (newTypes[i] == _type) {
-                    modulesToData[modules[_type][_index]].moduleIndexes[i] = _index;
-                }
-            }
-        }
+        TokenLib.removeModule(_module, modules, modulesToData, names);
     }
 
     /**
@@ -385,17 +346,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     * @param _increase true if budget has to be increased, false if decrease
     */
     function changeModuleBudget(address _module, uint256 _change, bool _increase) external onlyOwner {
-        require(modulesToData[_module].module != address(0), "Module missing");
-        uint256 currentAllowance = IPoly(polyToken).allowance(address(this), _module);
-        uint256 newAllowance;
-        if (_increase) {
-            require(IPoly(polyToken).increaseApproval(_module, _change), "IncreaseApproval fail");
-            newAllowance = currentAllowance.add(_change);
-        } else {
-            require(IPoly(polyToken).decreaseApproval(_module, _change), "Insufficient allowance");
-            newAllowance = currentAllowance.sub(_change);
-        }
-        emit ModuleBudgetChanged(modulesToData[_module].moduleTypes, _module, currentAllowance, newAllowance);
+        TokenLib.changeModuleBudget(_module, _change, _increase, polyToken, modulesToData);
     }
 
     /**

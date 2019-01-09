@@ -1537,7 +1537,7 @@ async function volumeRestrictionTM() {
     console.log(`     Rolling period:               ${globalDailyRestriction.rollingPeriodInDays} days`);
     console.log(`     End time:                     ${moment.unix(globalDailyRestriction.endTime).format('MMMM Do YYYY, HH:mm:ss')} `);
   }
-  console.log(`- Default custom restriction:           ${hasGlobalCustomRestriction ? '' : 'None'}`);
+  console.log(`- Default custom restriction:    ${hasGlobalCustomRestriction ? '' : 'None'}`);
   if (hasGlobalCustomRestriction) {
     console.log(`     Type:                         ${RESTRICTION_TYPES[globalCustomRestriction.typeOfRestriction]}`);
     console.log(`     Allowed tokens:               ${globalCustomRestriction.typeOfRestriction === "0" ? `${web3.utils.fromWei(globalCustomRestriction.allowedTokens)} ${tokenSymbol}` : `${fromWeiPercentage(globalCustomRestriction.allowedTokens)}%`}`);
@@ -1565,7 +1565,7 @@ async function volumeRestrictionTM() {
   let optionSelected = index !== -1 ? options[index] : 'RETURN';
   console.log('Selected:', optionSelected, '\n');
   switch (optionSelected) {
-    case 'Show restrictios':
+    case 'Show restrictions':
       showRestrictionTable(
         addressesAndRestrictions.allAddresses,
         addressesAndRestrictions.allowedTokens,
@@ -1695,28 +1695,28 @@ async function changeDefaultRestrictions(hasGlobalDailyRestriction, hasGlobalCus
       break;
     case 'Add global custom restriction':
       let globalCustomRestrictoToAdd = inputRestrictionData(false);
-      let globalCustomRestrictionAction = currentTransferManager.methods.addDefaultRestriction(
+      let addGlobalCustomRestrictionAction = currentTransferManager.methods.addDefaultRestriction(
         globalCustomRestrictoToAdd.allowedTokens,
         globalCustomRestrictoToAdd.startTime,
         globalCustomRestrictoToAdd.rollingPeriodInDays,
         globalCustomRestrictoToAdd.endTime,
         globalCustomRestrictoToAdd.restrictionType
       );
-      let globalCustomRestrictionReceipt = await common.sendTransaction(globalCustomRestrictionAction);
-      let globalCustomRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, globalCustomRestrictionReceipt.logs, 'AddDefaultRestriction');
+      let addGlobalCustomRestrictionReceipt = await common.sendTransaction(addGlobalCustomRestrictionAction);
+      let addGlobalCustomRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addGlobalCustomRestrictionReceipt.logs, 'AddDefaultRestriction');
       console.log(chalk.green(`Global custom restriction has been added successfully!`));
       break;
     case 'Modify global custom restriction':
       let globalCustomRestrictoToModify = inputRestrictionData(false);
-      let globalCustomRestrictionAction = currentTransferManager.methods.modifyDefaultRestriction(
+      let modifiyGlobalCustomRestrictionAction = currentTransferManager.methods.modifyDefaultRestriction(
         globalCustomRestrictoToModify.allowedTokens,
         globalCustomRestrictoToModify.startTime,
         globalCustomRestrictoToModify.rollingPeriodInDays,
         globalCustomRestrictoToModify.endTime,
         globalCustomRestrictoToModify.restrictionType
       );
-      let globalCustomRestrictionReceipt = await common.sendTransaction(globalCustomRestrictionAction);
-      let globalCustomRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, globalCustomRestrictionReceipt.logs, 'ModifyDefaultRestriction');
+      let modifyGlobalCustomRestrictionReceipt = await common.sendTransaction(modifiyGlobalCustomRestrictionAction);
+      let modifyGlobalCustomRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, modifyGlobalCustomRestrictionReceipt.logs, 'ModifyDefaultRestriction');
       console.log(chalk.green(`Global custom restriction has been modified successfully!`));
       break;
     case 'Remove global custom restriction':
@@ -1743,7 +1743,7 @@ async function changeIndividualRestrictions() {
 
   console.log(`*** Current individual restrictions for ${holder} ***`, '\n');
 
-  console.log(`- Daily restriction:    ${hasDailyRestriction ? '' : 'None'}`);
+  console.log(`- Daily restriction:       ${hasDailyRestriction ? '' : 'None'}`);
   if (hasDailyRestriction) {
     console.log(`     Type:                         ${RESTRICTION_TYPES[currentDailyRestriction.typeOfRestriction]}`);
     console.log(`     Allowed tokens:               ${currentDailyRestriction.typeOfRestriction === "0" ? `${web3.utils.fromWei(currentDailyRestriction.allowedTokens)} ${tokenSymbol}` : `${fromWeiPercentage(currentDailyRestriction.allowedTokens)}%`}`);
@@ -1751,7 +1751,7 @@ async function changeIndividualRestrictions() {
     console.log(`     Rolling period:               ${currentDailyRestriction.rollingPeriodInDays} days`);
     console.log(`     End time:                     ${moment.unix(currentDailyRestriction.endTime).format('MMMM Do YYYY, HH:mm:ss')} `);
   }
-  console.log(`- Other restriction:    ${hasCustomRestriction ? '' : 'None'} `);
+  console.log(`- Custom restriction:      ${hasCustomRestriction ? '' : 'None'} `);
   if (hasCustomRestriction) {
     console.log(`     Type:                         ${RESTRICTION_TYPES[currentCustomRestriction.typeOfRestriction]}`);
     console.log(`     Allowed tokens:               ${currentCustomRestriction.typeOfRestriction === "0" ? `${web3.utils.fromWei(currentCustomRestriction.allowedTokens)} ${tokenSymbol}` : `${fromWeiPercentage(currentCustomRestriction.allowedTokens)}%`}`);
@@ -2159,9 +2159,9 @@ function inputRestrictionData(isDaily) {
   let restriction = {};
   restriction.restrictionType = readlineSync.keyInSelect(RESTRICTION_TYPES, 'How do you want to set the allowance? ', { cancel: false });
   if (restriction.restrictionType == RESTRICTION_TYPES.indexOf('Fixed')) {
-    restriction.allowedTokens = web3.utils.toWei(readlineSync.questionInt(`Enter the maximum amount of tokens allowed to be traded every ${isDaily ? 'day' : 'rolling period'}: `).toString());
+    restriction.allowedTokens = web3.utils.toWei(readlineSync.question(`Enter the maximum amount of tokens allowed to be traded every ${isDaily ? 'day' : 'rolling period'}: `).toString());
   } else {
-    restriction.allowedTokens = toWeiPercentage(readlineSync.questionInt(`Enter the maximum percentage of total supply allowed to be traded every ${isDaily ? 'day' : 'rolling period'}: `).toString());
+    restriction.allowedTokens = toWeiPercentage(readlineSync.question(`Enter the maximum percentage of total supply allowed to be traded every ${isDaily ? 'day' : 'rolling period'}: `).toString());
   }
   if (isDaily) {
     restriction.rollingPeriodInDays = 1;
@@ -2197,11 +2197,11 @@ function signData(tmAddress, investorAddress, fromTime, toTime, expiryTime, rest
 */
 
 function toWeiPercentage(number) {
-  return new web3.utils.BN(web3.utils.toWei(number)).divn(100);
+  return web3.utils.toWei((parseFloat(number) / 100).toString());
 }
 
 function fromWeiPercentage(number) {
-  return web3.utils.fromWei(new web3.utils.BN(number).muln(100));
+  return web3.utils.fromWei(new web3.utils.BN(number).muln(100)).toString();
 }
 
 async function getAllModulesByType(type) {

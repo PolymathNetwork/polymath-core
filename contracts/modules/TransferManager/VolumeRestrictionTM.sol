@@ -1181,7 +1181,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
      * @return uint8 List of the type of restriction to validate the value of the `allowedTokens` 
      * of the restriction corresponds to restricted address
      */
-    function getRestrictedAddresses() external view returns(
+    function getRestrictedData() external view returns(
         address[] memory allAddresses,
         uint256[] memory allowedTokens,
         uint256[] memory startTime,
@@ -1229,6 +1229,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         uint256 index
     ) 
         internal
+        pure
     {
         allowedTokens[index] = restriction.allowedTokens;
         startTime[index] = restriction.startTime;

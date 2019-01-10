@@ -2,4 +2,4 @@
 
 rm -rf flat
 
-TRAVIS_PULL_REQUEST=true scripts/test.sh
+COVERAGE=true scripts/test.sh

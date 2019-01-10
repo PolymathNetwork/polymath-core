@@ -17,7 +17,6 @@ const SecurityToken = artifacts.require('./SecurityToken.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
 const CountTransferManager = artifacts.require("./CountTransferManager");
-const VolumeRestrictionTransferManager = artifacts.require('./LockupVolumeRestrictionTM');
 const PercentageTransferManager = artifacts.require('./PercentageTransferManager');
 const ManualApprovalTransferManager = artifacts.require('./ManualApprovalTransferManager');
 
@@ -70,11 +69,6 @@ contract('GeneralPermissionManager', accounts => {
     let I_PolymathRegistry;
     let I_CountTransferManagerFactory;
     let I_CountTransferManager;
-    let I_SingleTradeVolumeRestrictionManagerFactory;
-    let I_SingleTradeVolumeRestrictionManager;
-    let I_SingleTradeVolumeRestrictionPercentageManager;
-    let P_SingleTradeVolumeRestrictionManager;
-    let P_SingleTradeVolumeRestrictionManagerFactory;
     let I_ManualApprovalTransferManagerFactory;
     let I_ManualApprovalTransferManager;
 
@@ -553,6 +547,7 @@ contract('GeneralPermissionManager', accounts => {
                         account_investor4,
                         web3.utils.toWei("2", "ether"),
                         latestTime() + duration.days(1),
+                        "ABC",
                         { from: accounts[j] }
                     );
                     
@@ -574,6 +569,7 @@ contract('GeneralPermissionManager', accounts => {
                             account_investor4,
                             web3.utils.toWei("2", "ether"),
                             latestTime() + duration.days(1),
+                            "ABC",
                             { from: accounts[j] }
                         )
                     );
@@ -583,6 +579,7 @@ contract('GeneralPermissionManager', accounts => {
                         account_investor4,
                         web3.utils.toWei("2", "ether"),
                         latestTime() + duration.days(1),
+                        "ABC",
                         { from: token_owner }
                     );
 
@@ -597,73 +594,7 @@ contract('GeneralPermissionManager', accounts => {
 
                 await revertToSnapshot(snapId);
             };
-
-
         });
-
-        it("should pass fuzz test for addManualBlocking and revokeManualBlocking with perm TRANSFER_APPROVAL", async () => {
-            console.log("1");
-            await I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, latestTime() + duration.days(1), {
-                from: token_owner
-            });
-            console.log("2");
-            await I_ManualApprovalTransferManager.revokeManualBlocking(account_investor1, account_investor2, { from: token_owner });
-            console.log("3");
-
-            // fuzz test loop over total times of testRepeat, inside each loop, we use a variable j to randomly choose an account out of the 10 default accounts
-            for (var i = 2; i < testRepeat; i++) {
-
-                let snapId = await takeSnapshot();
-         
-                var j = Math.floor(Math.random() * 10);
-                if (j === 1 || j === 0) { j = 2 }; // exclude account 1 & 0 because they might come with default perms
-                
-                // add account as a Delegate if it is not
-                if (await I_GeneralPermissionManager.checkDelegate(accounts[j]) !== true) {
-                    await I_GeneralPermissionManager.addDelegate(accounts[j], _details, { from: token_owner });
-                }
-
-                // target permission should alaways be false for each test before assigning
-                if (await I_GeneralPermissionManager.checkPermission(accounts[j], I_ManualApprovalTransferManager.address, 'TRANSFER_APPROVAL') === true) {
-                    await I_GeneralPermissionManager.changePermission(accounts[j], I_ManualApprovalTransferManager.address, 'TRANSFER_APPROVAL', false, { from: token_owner });
-                }
-
-                // assign a random perm
-                let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
-                await I_GeneralPermissionManager.changePermission(accounts[j], I_ManualApprovalTransferManager.address, randomPerms, true, { from: token_owner });  
-            
-                if (randomPerms === "TRANSFER_APPROVAL") {
-                    console.log("Test number " + i + " with account " + j + " and perm TRANSFER_APPROVAL " + " should pass");
-                    await I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, latestTime() + duration.days(1), {
-                        from: accounts[j]
-                    });
-                    
-                    console.log("2");
-                    await I_ManualApprovalTransferManager.revokeManualBlocking(account_investor1, account_investor2, { from: accounts[j] });
-
-                    console.log("Test number " + i + " with account " + j + " and perm TRANSFER_APPROVAL passed as expected");
-                } else {
-                    console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " should failed");
-                    await catchRevert(
-                        I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, latestTime() + duration.days(1), {
-                        from: accounts[j]
-                    })
-                    );
-
-                    await  I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, latestTime() + duration.days(1), {
-                        from: token_owner
-                    });
-
-                    await catchRevert(
-                        I_ManualApprovalTransferManager.revokeManualBlocking(account_investor1, account_investor2, { from: accounts[j] })
-                    );
-
-                    console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " failed as expected");
-                }
-
-                await revertToSnapshot(snapId);
-            };
-        }); 
     });
 
 });

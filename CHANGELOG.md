@@ -5,11 +5,14 @@ All notable changes to this project will be documented in this file.
 
 [__2.1.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-09-18__
 
-## CappedSTO 2.0.1
+
+## CappedSTO 2.1.0
 * `rate` is now accepted as multiplied by 10^18 to allow settting higher price than 1ETH/POLY per token.
 * Indivisble tokens are now supported. When trying to buy partial tokens, allowed full units of tokens will be purchased and remaining funds will be returned.
 
 ## USDTieredSTO 2.1.0
+* Added `stableCoinsRaised` function that returns amount of individual stable coin raised when address of that stable coin is passed.
+* Added support for multiple stable coins in USDTSTO.
 * Added `buyTokensView` and `getTokensMintedByTier` to USDTSTO.
 * Added `getSTODetails` to USDTSTO.
 * Added an Array of Tiers that will hold data about every tier in USDTSTO.
@@ -18,6 +21,7 @@ All notable changes to this project will be documented in this file.
 * Removed individual mappings for tier data removed in UDSTSTO.
 * Removed the old Proxy deployment method of USDTieredSTO and adopt the new inherited proxy deployment approach.
 * Bump the version to `2.1.0`
+* Added `getAccreditedData` to return accredited & non-accredited investor data
 
 ## GeneralTransferManager
 * `getInvestors`, `getAllInvestorsData`, `getInvestorsData` added to GTM to allow easy data queries.
@@ -28,13 +32,24 @@ All notable changes to this project will be documented in this file.
 * Changed the version of `GeneralTransferManagerFactory` from `1.0.0` to `2.1.0`.
 
 ## Manual Approval TransferManager
-* Removed `0x0` check for the `_from` address to `ManualApprovalTransferManager`. This allows for the Issuer/Transfer Agent to approve a one-off mint of tokens that otherwise would not be possible. 
+* Removed `0x0` check for the `_from` address to `ManualApprovalTransferManager`. This allows for the Issuer/Transfer Agent to approve a one-off mint of tokens that otherwise would not be possible.
 * Changed the version of `ManualApprovalTransferManagerFactory` from `1.0.0` to `2.1.0`.   
 * Deployed 2.0.1 `ManualApprovalTransferManagerFactory` to address 0x6af2afad53cb334e62b90ddbdcf3a086f654c298
+* Add `getActiveApprovalsToUser()` function to access all the active approvals for a user whether user is in the `from` or in `to`.  
+* Add `getApprovalDetails()` to get the details of the approval corresponds to `_from` and `_to` address.
+* Add feature to modify the details of the active approval using `modifyApproval()` & `modifyApprovalMulti()`.
+* Add `addManualApprovalMulti()` and `revokeManualApprovalMulti()` batch function for adding and revoking the manual approval respectively.
 
 ## Dividends
 * Changed the version of `ERC20DividendCheckpointFactory` & `EtherDividendCheckpointFactory` from `1.0.0` to `2.1.0`.
 * Applied proxy pattern to Dividends modules
+
+## Experimental modules
+* Remove the `SingleTradeVolumeRestrictionTMFactory.sol` and its corresponding module `SingleTradeVolumeRestrictionTM.sol`.
+
+## Added
+* Add new module called `VolumeRestrictionTM.sol` under the TransferManager modules list. It will be used to restrict the token
+volume traded in a given rolling period.
 
 ## Changed
 * `getAllModulesAndPermsFromTypes()` does not take securityToken address as a parameter anymore.
@@ -83,7 +98,7 @@ All notable changes to this project will be documented in this file.
 * Removed investors list pruning
 * Remove `swarmHash` from the `registerTicker(), addCustomTicker(), generateSecurityToken(), addCustomSecurityToken()` functions of TickerRegistry.sol and SecurityTokenRegistry.sol. #230  
 * Remove `Log` prefix from all the event present in the ecosystem.    
-* Removed `addTagByModuleType` & `removeTagsByModuleType` from MR. 
+* Removed `addTagByModuleType` & `removeTagsByModuleType` from MR.
 
 ======
 

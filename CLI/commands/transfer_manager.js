@@ -1556,10 +1556,15 @@ async function volumeRestrictionTM() {
 
   let addressesAndRestrictions = await currentTransferManager.methods.getRestrictedData().call();
   console.log(`- Individual restrictions:       ${addressesAndRestrictions.allAddresses.length}`);
+  let exemptedAddresses = await currentTransferManager.methods.getExemptAddress().call();
+  console.log(`- Exempted addresses:            ${exemptedAddresses.length}`);
 
   let options = [];
-  if (addressesAndRestrictions[0].length > 0) {
+  if (addressesAndRestrictions.allAddresses.length > 0) {
     options.push('Show restrictions');
+  }
+  if (exemptedAddresses.length > 0) {
+    options.push('Show exempted addresses');
   }
   options.push(
     'Change exempt wallet',
@@ -1582,6 +1587,9 @@ async function volumeRestrictionTM() {
         addressesAndRestrictions.startTime,
         addressesAndRestrictions.endTime,
       );
+      break;
+    case 'Show exempted addresses':
+      showExemptedAddresses(exemptedAddresses);
       break;
     case 'Change exempt wallet':
       await changeExemptWallet();
@@ -1618,6 +1626,11 @@ function showRestrictionTable(investorArray, amountArray, typeArray, rollingPeri
   }
   console.log();
   console.log(table(dataTable));
+}
+
+function showExemptedAddresses(addresses) {
+  console.log("*********** Exepmpted addresses ***********");
+  addresses.map(i => console.log(i));
 }
 
 async function changeExemptWallet() {

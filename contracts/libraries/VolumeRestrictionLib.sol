@@ -76,7 +76,7 @@ library VolumeRestrictionLib {
         data.restrictedHolders[_holder] = RestrictedHolder(uint8(1), _type, index);
     }
 
-    function _getTypeOfPeriod(uint8 _currentTypeOfPeriod, uint8 _callFrom, uint256 _endTime) internal view returns(uint8) {
+    function _getTypeOfPeriod(uint8 _currentTypeOfPeriod, uint8 _callFrom, uint256 _endTime) internal pure returns(uint8) {
         if (_currentTypeOfPeriod != _callFrom && _endTime != uint256(0))
             return uint8(TypeOfPeriod.Both);
         else

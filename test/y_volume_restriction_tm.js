@@ -1521,6 +1521,56 @@ contract('VolumeRestrictionTransferManager', accounts => {
             let diff = beforeBal.minus(afterBal);
             assert.equal(web3.utils.fromWei((diff.toNumber()).toString()), 3);
         });
+
+        it("Should add multiple token holders to exemption list and check the getter value", async() => {
+            let holders = [account_investor1, account_investor3, account_investor2, account_delegate2];
+            let change = [true, true, true, true];
+            for (let i = 0; i < holders.length; i++) {
+                await I_VolumeRestrictionTM.changeExemptWalletList(holders[i], change[i], {from: token_owner});
+            }
+            let data = await I_VolumeRestrictionTM.getExemptAddress.call();
+            assert.equal(data.length, 5);
+            assert.equal(data[0], account_investor4);
+            assert.equal(data[1], account_investor1);
+            assert.equal(data[2], account_investor3);
+            assert.equal(data[3], account_investor2);
+            assert.equal(data[4], account_delegate2);
+        });
+
+        it("Should unexempt a particular address", async() => {
+            await I_VolumeRestrictionTM.changeExemptWalletList(account_investor1, false, {from: token_owner});
+            let data = await I_VolumeRestrictionTM.getExemptAddress.call();
+            assert.equal(data.length, 4);
+            assert.equal(data[0], account_investor4);
+            assert.equal(data[1], account_delegate2);
+            assert.equal(data[2], account_investor3);
+            assert.equal(data[3], account_investor2);
+        });
+
+        it("Should fail to unexempt the same address again", async() => {
+            await catchRevert(
+                I_VolumeRestrictionTM.changeExemptWalletList(account_investor1, false, {from: token_owner})
+            );
+        });
+
+        it("Should delete the last element of the exemption list", async() => {
+            await I_VolumeRestrictionTM.changeExemptWalletList(account_investor2, false, {from: token_owner});
+            let data = await I_VolumeRestrictionTM.getExemptAddress.call();
+            assert.equal(data.length, 3);
+            assert.equal(data[0], account_investor4);
+            assert.equal(data[1], account_delegate2);
+            assert.equal(data[2], account_investor3);
+        });
+
+        it("Should delete multiple investor from the exemption list", async() => {
+            let holders = [account_delegate2, account_investor4, account_investor3];
+            let change = [false, false, false];
+            for (let i = 0; i < holders.length; i++) {
+                await I_VolumeRestrictionTM.changeExemptWalletList(holders[i], change[i], {from: token_owner});
+            }
+            let data = await I_VolumeRestrictionTM.getExemptAddress.call();
+            assert.equal(data.length, 0);
+        });
     });
 
     describe("Test for modify functions", async() => {

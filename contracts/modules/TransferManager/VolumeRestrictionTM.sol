@@ -143,8 +143,8 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
             exemptIndex[_wallet] = exemptAddresses.length;
             exemptList[_wallet] = true;
         } else {
-            exemptAddresses[exemptIndex[_wallet]] = exemptAddresses[exemptAddresses.length -1];
-            exemptIndex[exemptAddresses[exemptIndex[_wallet]]] = exemptIndex[_wallet];
+            exemptAddresses[exemptIndex[_wallet] - 1] = exemptAddresses[exemptAddresses.length -1];
+            exemptIndex[exemptAddresses[exemptIndex[_wallet] -1 ]] = exemptIndex[_wallet];
             delete exemptList[_wallet];
             exemptAddresses.length --;
         }

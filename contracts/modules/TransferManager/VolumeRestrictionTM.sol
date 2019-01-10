@@ -112,7 +112,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
      */
     function verifyTransfer(address _from, address /*_to */, uint256 _amount, bytes /*_data*/, bool _isTransfer) public returns (Result) {
         // If `_from` is present in the exemptionList or it is `0x0` address then it will not follow the vol restriction
-        if (!paused && _from != address(0) && !exemptList[_from]) {
+        if (!paused && _from != address(0) && exemptIndex[_from] == 0) {
             // Function must only be called by the associated security token if _isTransfer == true
             require(msg.sender == securityToken || !_isTransfer);
             // Checking the individual restriction if the `_from` comes in the individual category
@@ -137,15 +137,14 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
      */
     function changeExemptWalletList(address _wallet, bool _change) public withPerm(ADMIN) {
         require(_wallet != address(0));
-        require(exemptList[_wallet] != _change);
+        require((exemptIndex[_wallet] == 0) == _change);
         if (_change) {
             exemptAddresses.push(_wallet);
             exemptIndex[_wallet] = exemptAddresses.length;
-            exemptList[_wallet] = true;
         } else {
-            exemptAddresses[exemptIndex[_wallet] - 1] = exemptAddresses[exemptAddresses.length -1];
-            exemptIndex[exemptAddresses[exemptIndex[_wallet] -1 ]] = exemptIndex[_wallet];
-            delete exemptList[_wallet];
+            exemptAddresses[exemptIndex[_wallet] - 1] = exemptAddresses[exemptAddresses.length - 1];
+            exemptIndex[exemptAddresses[exemptIndex[_wallet] - 1]] = exemptIndex[_wallet];
+            delete exemptIndex[_wallet];
             exemptAddresses.length --;
         }
         emit ChangedExemptWalletList(_wallet, _change);
@@ -200,7 +199,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
             individualRestriction[_holder].endTime < now,
             "Not Allowed"
         );
-        require(_holder != address(0) && !exemptList[_holder], "Invalid address");
+        require(_holder != address(0) && exemptIndex[_holder] == 0, "Invalid address");
         _checkInputParams(_allowedTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType, now);
 
         if (individualRestriction[_holder].endTime != 0) {
@@ -1129,7 +1128,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
     function getExemptAddress() external view returns(address[]) {
         return exemptAddresses;
     }
-    
+
     /**
      * @notice Provide the restriction details of all the restricted addresses
      * @return address List of the restricted addresses
@@ -1137,7 +1136,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
      * @return uint256 List of the start time of the restriction corresponds to restricted address
      * @return uint256 List of the rolling period in days for a restriction corresponds to restricted address.
      * @return uint256 List of the end time of the restriction corresponds to restricted address.
-     * @return uint8 List of the type of restriction to validate the value of the `allowedTokens` 
+     * @return uint8 List of the type of restriction to validate the value of the `allowedTokens`
      * of the restriction corresponds to restricted address
      */
     function getRestrictedData() external view returns(
@@ -1186,7 +1185,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         uint256[] memory endTime,
         uint8[] memory typeOfRestriction,
         uint256 index
-    ) 
+    )
         internal
         pure
     {

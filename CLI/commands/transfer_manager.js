@@ -193,8 +193,8 @@ async function forcedTransfers() {
         },
         limitMessage: `Amount must be less or equal than ${fromBalance} ${tokenSymbol}`,
       });
-      let data = readlineSync.question('Enter the data to indicate validation: ');
-      let log = readlineSync.question('Enter the data attached to the transfer by controller to emit in event: ');
+      let data = '';//readlineSync.question('Enter the data to indicate validation: ');
+      let log = readlineSync.question('Enter a message to attach to the transfer (i.e. "Private key lost"): ');
       let forceTransferAction = securityToken.methods.forceTransfer(from, to, web3.utils.toWei(amount), web3.utils.asciiToHex(data), web3.utils.asciiToHex(log));
       let forceTransferReceipt = await common.sendTransaction(forceTransferAction, { factor: 1.5 });
       let forceTransferEvent = common.getEventFromLogs(securityToken._jsonInterface, forceTransferReceipt.logs, 'ForceTransfer');

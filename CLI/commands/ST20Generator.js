@@ -32,7 +32,9 @@ async function executeApp(_ticker, _transferOwnership, _name, _details, _divisib
       await step_transfer_ticker_ownership(_transferOwnership);
       await step_token_deploy(_name, _details, _divisible);
     }
-    await tokenManager.executeApp(tokenSymbol);
+    if (typeof _divisible === 'undefined') {
+      await tokenManager.executeApp(tokenSymbol);
+    }
   } catch (err) {
     console.log(err);
     return;

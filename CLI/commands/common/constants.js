@@ -29,7 +29,7 @@ module.exports = Object.freeze({
     FUND_RAISE_TYPES: {
         ETH: 0,
         POLY: 1,
-        DAI: 2
+        STABLE: 2
     },
     DEFAULT_BATCH_SIZE: 75,
     ADDRESS_ZERO: '0x0000000000000000000000000000000000000000'

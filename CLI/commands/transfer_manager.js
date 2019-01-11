@@ -23,9 +23,9 @@ const REVOKE_MANUAL_APPROVAL_DATA_CSV = `${__dirname}/../data/Transfer/MATM/revo
 const ADD_DAILY_RESTRICTIONS_DATA_CSV = `${__dirname}/../data/Transfer/VRTM/add_daily_restriction_data.csv`;
 const MODIFY_DAILY_RESTRICTIONS_DATA_CSV = `${__dirname}/../data/Transfer/VRTM/modify_daily_restriction_data.csv`;
 const REMOVE_DAILY_RESTRICTIONS_DATA_CSV = `${__dirname}/../data/Transfer/VRTM/remove_daily_restriction_data.csv`;
-const ADD_RESTRICTIONS_DATA_CSV = `${__dirname}/../data/Transfer/VRTM/add_restriction_data.csv`;
-const MODIFY_RESTRICTIONS_DATA_CSV = `${__dirname}/../data/Transfer/VRTM/modify_restriction_data.csv`;
-const REMOVE_RESTRICTIONS_DATA_CSV = `${__dirname}/../data/Transfer/VRTM/remove_restriction_data.csv`;
+const ADD_CUSTOM_RESTRICTIONS_DATA_CSV = `${__dirname}/../data/Transfer/VRTM/add_custom_restriction_data.csv`;
+const MODIFY_CUSTOM_RESTRICTIONS_DATA_CSV = `${__dirname}/../data/Transfer/VRTM/modify_custom_restriction_data.csv`;
+const REMOVE_CUSTOM_RESTRICTIONS_DATA_CSV = `${__dirname}/../data/Transfer/VRTM/remove_custom_restriction_data.csv`;
 const ADD_LOCKUP_DATA_CSV = `${__dirname}/../data/Transfer/LockupTM/add_lockup_data.csv`;
 const MODIFY_LOCKUP_DATA_CSV = `${__dirname}/../data/Transfer/LockupTM/modify_lockup_data.csv`;
 const DELETE_LOCKUP_DATA_CSV = `${__dirname}/../data/Transfer/LockupTM/delete_lockup_data.csv`;
@@ -1481,6 +1481,23 @@ async function addInvestorsToBlacklistsInBatch() {
   }
 }
 
+function makeBatchRequest(calls) {
+  let batch = new web3.BatchRequest();
+
+  let promises = calls.map(call => {
+    return new Promise((res, rej) => {
+      let req = call.request({ from: Issuer.address }, (err, data) => {
+        if (err) rej(err);
+        else res(data)
+      });
+      batch.add(req)
+    })
+  })
+  batch.execute()
+
+  return Promise.all(promises)
+}
+
 async function removeInvestorsFromBlacklistsInBatch() {
   let csvFilePath = readlineSync.question(`Enter the path for csv data file (${REMOVE_INVESTOR_BLACKLIST_DATA_CSV}): `, {
     defaultInput: REMOVE_INVESTOR_BLACKLIST_DATA_CSV
@@ -1515,45 +1532,70 @@ async function removeInvestorsFromBlacklistsInBatch() {
 async function volumeRestrictionTM() {
   console.log('\n', chalk.blue(`Volume Restriction Transfer Manager at ${currentTransferManager.options.address}`, '\n'));
 
-  let defaultDailyRestriction = await currentTransferManager.methods.defaultDailyRestriction().call();
-  let hasDefaultDailyRestriction = parseInt(defaultDailyRestriction.startTime) !== 0;
-  let defaultRestriction = await currentTransferManager.methods.defaultRestriction().call();
-  let hasDefaultRestriction = parseInt(defaultRestriction.startTime) !== 0;
+  let globalDailyRestriction = await currentTransferManager.methods.defaultDailyRestriction().call();
+  let hasGlobalDailyRestriction = parseInt(globalDailyRestriction.startTime) !== 0;
+  let globalCustomRestriction = await currentTransferManager.methods.defaultRestriction().call();
+  let hasGlobalCustomRestriction = parseInt(globalCustomRestriction.startTime) !== 0;
 
-  console.log(`- Default daily restriction:     ${hasDefaultDailyRestriction ? '' : 'None'}`);
-  if (hasDefaultDailyRestriction) {
-    console.log(`     Type:                         ${RESTRICTION_TYPES[defaultDailyRestriction.typeOfRestriction]}`);
-    console.log(`     Allowed tokens:               ${defaultDailyRestriction.typeOfRestriction === "0" ? `${web3.utils.fromWei(defaultDailyRestriction.allowedTokens)} ${tokenSymbol}` : `${fromWeiPercentage(defaultDailyRestriction.allowedTokens)}%`}`);
-    console.log(`     Start time:                   ${moment.unix(defaultDailyRestriction.startTime).format('MMMM Do YYYY, HH:mm:ss')}`);
-    console.log(`     Rolling period:               ${defaultDailyRestriction.rollingPeriodInDays} days`);
-    console.log(`     End time:                     ${moment.unix(defaultDailyRestriction.endTime).format('MMMM Do YYYY, HH:mm:ss')} `);
+  console.log(`- Default daily restriction:     ${hasGlobalDailyRestriction ? '' : 'None'}`);
+  if (hasGlobalDailyRestriction) {
+    console.log(`     Type:                         ${RESTRICTION_TYPES[globalDailyRestriction.typeOfRestriction]}`);
+    console.log(`     Allowed tokens:               ${globalDailyRestriction.typeOfRestriction === "0" ? `${web3.utils.fromWei(globalDailyRestriction.allowedTokens)} ${tokenSymbol}` : `${fromWeiPercentage(globalDailyRestriction.allowedTokens)}%`}`);
+    console.log(`     Start time:                   ${moment.unix(globalDailyRestriction.startTime).format('MMMM Do YYYY, HH:mm:ss')}`);
+    console.log(`     Rolling period:               ${globalDailyRestriction.rollingPeriodInDays} days`);
+    console.log(`     End time:                     ${moment.unix(globalDailyRestriction.endTime).format('MMMM Do YYYY, HH:mm:ss')} `);
   }
-  console.log(`- Default restriction:           ${hasDefaultRestriction ? '' : 'None'} `);
-  if (hasDefaultRestriction) {
-    console.log(`     Type:                         ${RESTRICTION_TYPES[defaultRestriction.typeOfRestriction]}`);
-    console.log(`     Allowed tokens:               ${defaultRestriction.typeOfRestriction === "0" ? `${web3.utils.fromWei(defaultRestriction.allowedTokens)} ${tokenSymbol}` : `${fromWeiPercentage(defaultRestriction.allowedTokens)}%`}`);
-    console.log(`     Start time:                   ${moment.unix(defaultRestriction.startTime).format('MMMM Do YYYY, HH:mm:ss')}`);
-    console.log(`     Rolling period:               ${defaultRestriction.rollingPeriodInDays} days`);
-    console.log(`     End time:                     ${moment.unix(defaultRestriction.endTime).format('MMMM Do YYYY, HH:mm:ss')} `);
+  console.log(`- Default custom restriction:    ${hasGlobalCustomRestriction ? '' : 'None'}`);
+  if (hasGlobalCustomRestriction) {
+    console.log(`     Type:                         ${RESTRICTION_TYPES[globalCustomRestriction.typeOfRestriction]}`);
+    console.log(`     Allowed tokens:               ${globalCustomRestriction.typeOfRestriction === "0" ? `${web3.utils.fromWei(globalCustomRestriction.allowedTokens)} ${tokenSymbol}` : `${fromWeiPercentage(globalCustomRestriction.allowedTokens)}%`}`);
+    console.log(`     Start time:                   ${moment.unix(globalCustomRestriction.startTime).format('MMMM Do YYYY, HH:mm:ss')}`);
+    console.log(`     Rolling period:               ${globalCustomRestriction.rollingPeriodInDays} days`);
+    console.log(`     End time:                     ${moment.unix(globalCustomRestriction.endTime).format('MMMM Do YYYY, HH:mm:ss')} `);
   }
 
-  let options = [
+  let addressesAndRestrictions = await currentTransferManager.methods.getRestrictedData().call();
+  console.log(`- Individual restrictions:       ${addressesAndRestrictions.allAddresses.length}`);
+  let exemptedAddresses = await currentTransferManager.methods.getExemptAddress().call();
+  console.log(`- Exempted addresses:            ${exemptedAddresses.length}`);
+
+  let options = [];
+  if (addressesAndRestrictions.allAddresses.length > 0) {
+    options.push('Show restrictions');
+  }
+  if (exemptedAddresses.length > 0) {
+    options.push('Show exempted addresses');
+  }
+  options.push(
     'Change exempt wallet',
     'Change default restrictions',
     'Change individual restrictions',
     'Explore account',
     'Operate with multiple restrictions'
-  ];
+  );
 
   let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
   let optionSelected = index !== -1 ? options[index] : 'RETURN';
   console.log('Selected:', optionSelected, '\n');
   switch (optionSelected) {
+    case 'Show restrictions':
+      showRestrictionTable(
+        addressesAndRestrictions.allAddresses,
+        addressesAndRestrictions.allowedTokens,
+        addressesAndRestrictions.typeOfRestriction,
+        addressesAndRestrictions.rollingPeriodInDays,
+        addressesAndRestrictions.startTime,
+        addressesAndRestrictions.endTime,
+      );
+      break;
+    case 'Show exempted addresses':
+      showExemptedAddresses(exemptedAddresses);
+      break;
     case 'Change exempt wallet':
       await changeExemptWallet();
       break;
     case 'Change default restrictions':
-      await changeDefaultRestrictions(hasDefaultDailyRestriction, hasDefaultRestriction);
+      await changeDefaultRestrictions(hasGlobalDailyRestriction, hasGlobalCustomRestriction);
       break;
     case 'Change individual restrictions':
       await changeIndividualRestrictions();
@@ -1569,6 +1611,26 @@ async function volumeRestrictionTM() {
   }
 
   await volumeRestrictionTM();
+}
+
+function showRestrictionTable(investorArray, amountArray, typeArray, rollingPeriodArray, startTimeArray, endTimeTimeArray) {
+  let dataTable = [['Investor', 'Maximum transfer (# or %)', 'Rolling period (days)', 'Start date', 'End date']];
+  for (let i = 0; i < investorArray.length; i++) {
+    dataTable.push([
+      investorArray[i],
+      typeArray[i] === "0" ? `${web3.utils.fromWei(amountArray[i])} ${tokenSymbol}` : `${fromWeiPercentage(amountArray[i])}%`,
+      rollingPeriodArray[i],
+      moment.unix(startTimeArray[i]).format('MM/DD/YYYY HH:mm'),
+      moment.unix(endTimeTimeArray[i]).format('MM/DD/YYYY HH:mm')
+    ]);
+  }
+  console.log();
+  console.log(table(dataTable));
+}
+
+function showExemptedAddresses(addresses) {
+  console.log("*********** Exepmpted addresses ***********");
+  addresses.map(i => console.log(i));
 }
 
 async function changeExemptWallet() {
@@ -1604,85 +1666,85 @@ async function changeExemptWallet() {
   console.log(chalk.green(`${changeExemptWalletEvent._wallet} has been ${changeExemptWalletEvent._change ? `added to` : `removed from`} exempt wallets successfully!`));
 }
 
-async function changeDefaultRestrictions(hasDefaultDailyRestriction, hasDefaultRestriction) {
+async function changeDefaultRestrictions(hasGlobalDailyRestriction, hasGlobalCustomRestriction) {
   let options = [];
-  if (!hasDefaultDailyRestriction) {
-    options.push('Add default daily restriction');
+  if (!hasGlobalDailyRestriction) {
+    options.push('Add global daily restriction');
   } else {
-    options.push('Modify default daily restriction', 'Remove default daily restriction');
+    options.push('Modify global daily restriction', 'Remove global daily restriction');
   }
 
-  if (!hasDefaultRestriction) {
-    options.push('Add default restriction');
+  if (!hasGlobalCustomRestriction) {
+    options.push('Add global custom restriction');
   } else {
-    options.push('Modify default restriction', 'Remove default restriction');
+    options.push('Modify global custom restriction', 'Remove global custom restriction');
   }
 
   let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
   let optionSelected = index !== -1 ? options[index] : 'RETURN';
   console.log('Selected:', optionSelected, '\n');
   switch (optionSelected) {
-    case 'Add default daily restriction':
-      let defaultDailyRestrictoToAdd = inputRestrictionData(true);
-      let addDefaultDailyRestrictionAction = currentTransferManager.methods.addDefaultDailyRestriction(
-        defaultDailyRestrictoToAdd.allowedTokens,
-        defaultDailyRestrictoToAdd.startTime,
-        defaultDailyRestrictoToAdd.endTime,
-        defaultDailyRestrictoToAdd.restrictionType
+    case 'Add global daily restriction':
+      let globalDailyRestrictoToAdd = inputRestrictionData(true);
+      let addGlobalDailyRestrictionAction = currentTransferManager.methods.addDefaultDailyRestriction(
+        globalDailyRestrictoToAdd.allowedTokens,
+        globalDailyRestrictoToAdd.startTime,
+        globalDailyRestrictoToAdd.endTime,
+        globalDailyRestrictoToAdd.restrictionType
       );
-      let addDefaultDailyRestrictionReceipt = await common.sendTransaction(addDefaultDailyRestrictionAction);
-      let addDefaultDailyRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addDefaultDailyRestrictionReceipt.logs, 'AddDefaultDailyRestriction');
-      console.log(chalk.green(`Daily default restriction has been added successfully!`));
+      let addGlobalDailyRestrictionReceipt = await common.sendTransaction(addGlobalDailyRestrictionAction);
+      let addGlobalDailyRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addGlobalDailyRestrictionReceipt.logs, 'AddDefaultDailyRestriction');
+      console.log(chalk.green(`Global daily restriction has been added successfully!`));
       break;
-    case 'Modify default daily restriction':
-      let defaultDailyRestrictoToModify = inputRestrictionData(true);
-      let modifyDefaultDailyRestrictionAction = currentTransferManager.methods.modifyDefaultDailyRestriction(
-        defaultDailyRestrictoToModify.allowedTokens,
-        defaultDailyRestrictoToModify.startTime,
-        defaultDailyRestrictoToModify.endTime,
-        defaultDailyRestrictoToModify.restrictionType
+    case 'Modify global daily restriction':
+      let globalDailyRestrictoToModify = inputRestrictionData(true);
+      let modifyGlobalDailyRestrictionAction = currentTransferManager.methods.modifyDefaultDailyRestriction(
+        globalDailyRestrictoToModify.allowedTokens,
+        globalDailyRestrictoToModify.startTime,
+        globalDailyRestrictoToModify.endTime,
+        globalDailyRestrictoToModify.restrictionType
       );
-      let modifyDefaultDailyRestrictionReceipt = await common.sendTransaction(modifyDefaultDailyRestrictionAction);
-      let modifyDefaultDailyRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, modifyDefaultDailyRestrictionReceipt.logs, 'ModifyDefaultDailyRestriction');
-      console.log(chalk.green(`Daily default restriction has been modified successfully!`));
+      let modifyGlobalDailyRestrictionReceipt = await common.sendTransaction(modifyGlobalDailyRestrictionAction);
+      let modifyGlobalDailyRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, modifyGlobalDailyRestrictionReceipt.logs, 'ModifyDefaultDailyRestriction');
+      console.log(chalk.green(`Global daily restriction has been modified successfully!`));
       break;
-    case 'Remove default daily restriction':
-      let removeDefaultDailyRestrictionAction = currentTransferManager.methods.removeDefaultDailyRestriction();
-      let removeDefaultDailyRestrictionReceipt = await common.sendTransaction(removeDefaultDailyRestrictionAction);
-      let removeDefaultDailyRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, removeDefaultDailyRestrictionReceipt.logs, 'DefaultDailyRestrictionRemoved');
-      console.log(chalk.green(`Daily default restriction has been removed successfully!`));
+    case 'Remove global daily restriction':
+      let removeGlobalDailyRestrictionAction = currentTransferManager.methods.removeDefaultDailyRestriction();
+      let removeGlobalDailyRestrictionReceipt = await common.sendTransaction(removeGlobalDailyRestrictionAction);
+      let removeGlobalDailyRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, removeGlobalDailyRestrictionReceipt.logs, 'DefaultDailyRestrictionRemoved');
+      console.log(chalk.green(`Global daily restriction has been removed successfully!`));
       break;
-    case 'Add default restriction':
-      let defaultRestrictoToAdd = inputRestrictionData(false);
-      let addDefaultRestrictionAction = currentTransferManager.methods.addDefaultRestriction(
-        defaultRestrictoToAdd.allowedTokens,
-        defaultRestrictoToAdd.startTime,
-        defaultRestrictoToAdd.rollingPeriodInDays,
-        defaultRestrictoToAdd.endTime,
-        defaultRestrictoToAdd.restrictionType
+    case 'Add global custom restriction':
+      let globalCustomRestrictoToAdd = inputRestrictionData(false);
+      let addGlobalCustomRestrictionAction = currentTransferManager.methods.addDefaultRestriction(
+        globalCustomRestrictoToAdd.allowedTokens,
+        globalCustomRestrictoToAdd.startTime,
+        globalCustomRestrictoToAdd.rollingPeriodInDays,
+        globalCustomRestrictoToAdd.endTime,
+        globalCustomRestrictoToAdd.restrictionType
       );
-      let addDefaultRestrictionReceipt = await common.sendTransaction(addDefaultRestrictionAction);
-      let addDefaultRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addDefaultRestrictionReceipt.logs, 'AddDefaultRestriction');
-      console.log(chalk.green(`Default restriction has been added successfully!`));
+      let addGlobalCustomRestrictionReceipt = await common.sendTransaction(addGlobalCustomRestrictionAction);
+      let addGlobalCustomRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addGlobalCustomRestrictionReceipt.logs, 'AddDefaultRestriction');
+      console.log(chalk.green(`Global custom restriction has been added successfully!`));
       break;
-    case 'Modify default restriction':
-      let defaultRestrictoToModify = inputRestrictionData(false);
-      let modifyDefaultRestrictionAction = currentTransferManager.methods.modifyDefaultRestriction(
-        defaultRestrictoToModify.allowedTokens,
-        defaultRestrictoToModify.startTime,
-        defaultRestrictoToModify.rollingPeriodInDays,
-        defaultRestrictoToModify.endTime,
-        defaultRestrictoToModify.restrictionType
+    case 'Modify global custom restriction':
+      let globalCustomRestrictoToModify = inputRestrictionData(false);
+      let modifiyGlobalCustomRestrictionAction = currentTransferManager.methods.modifyDefaultRestriction(
+        globalCustomRestrictoToModify.allowedTokens,
+        globalCustomRestrictoToModify.startTime,
+        globalCustomRestrictoToModify.rollingPeriodInDays,
+        globalCustomRestrictoToModify.endTime,
+        globalCustomRestrictoToModify.restrictionType
       );
-      let modifyDefaultRestrictionReceipt = await common.sendTransaction(modifyDefaultRestrictionAction);
-      let modifyDefaultRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, modifyDefaultRestrictionReceipt.logs, 'ModifyDefaultRestriction');
-      console.log(chalk.green(`Default restriction has been modified successfully!`));
+      let modifyGlobalCustomRestrictionReceipt = await common.sendTransaction(modifiyGlobalCustomRestrictionAction);
+      let modifyGlobalCustomRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, modifyGlobalCustomRestrictionReceipt.logs, 'ModifyDefaultRestriction');
+      console.log(chalk.green(`Global custom restriction has been modified successfully!`));
       break;
-    case 'Remove default restriction':
-      let removeDefaultRestrictionAction = currentTransferManager.methods.removeDefaultRestriction();
-      let removeDefaultRestrictionReceipt = await common.sendTransaction(removeDefaultRestrictionAction);
-      let removeDefaultRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, removeDefaultRestrictionReceipt.logs, 'DefaultRestrictionRemoved');
-      console.log(chalk.green(`Default restriction has been removed successfully!`));
+    case 'Remove global custom restriction':
+      let removeGlobalCustomRestrictionAction = currentTransferManager.methods.removeDefaultRestriction();
+      let removeGlobalCustomRestrictionReceipt = await common.sendTransaction(removeGlobalCustomRestrictionAction);
+      let removeGlobalCustomRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, removeGlobalCustomRestrictionReceipt.logs, 'DefaultRestrictionRemoved');
+      console.log(chalk.green(`Global custom restriction has been removed successfully!`));
       break;
   }
 }
@@ -1697,12 +1759,12 @@ async function changeIndividualRestrictions() {
 
   let currentDailyRestriction = await currentTransferManager.methods.individualDailyRestriction(holder).call();
   let hasDailyRestriction = parseInt(currentDailyRestriction.startTime) !== 0;
-  let currentRestriction = await currentTransferManager.methods.individualRestriction(holder).call();
-  let hasRestriction = parseInt(currentRestriction.startTime) !== 0;
+  let currentCustomRestriction = await currentTransferManager.methods.individualRestriction(holder).call();
+  let hasCustomRestriction = parseInt(currentCustomRestriction.startTime) !== 0;
 
   console.log(`*** Current individual restrictions for ${holder} ***`, '\n');
 
-  console.log(`- Daily restriction:    ${hasDailyRestriction ? '' : 'None'}`);
+  console.log(`- Daily restriction:       ${hasDailyRestriction ? '' : 'None'}`);
   if (hasDailyRestriction) {
     console.log(`     Type:                         ${RESTRICTION_TYPES[currentDailyRestriction.typeOfRestriction]}`);
     console.log(`     Allowed tokens:               ${currentDailyRestriction.typeOfRestriction === "0" ? `${web3.utils.fromWei(currentDailyRestriction.allowedTokens)} ${tokenSymbol}` : `${fromWeiPercentage(currentDailyRestriction.allowedTokens)}%`}`);
@@ -1710,13 +1772,13 @@ async function changeIndividualRestrictions() {
     console.log(`     Rolling period:               ${currentDailyRestriction.rollingPeriodInDays} days`);
     console.log(`     End time:                     ${moment.unix(currentDailyRestriction.endTime).format('MMMM Do YYYY, HH:mm:ss')} `);
   }
-  console.log(`- Other restriction: ${hasRestriction ? '' : 'None'} `);
-  if (hasRestriction) {
-    console.log(`     Type:                         ${RESTRICTION_TYPES[currentRestriction.typeOfRestriction]}`);
-    console.log(`     Allowed tokens:               ${currentRestriction.typeOfRestriction === "0" ? `${web3.utils.fromWei(currentRestriction.allowedTokens)} ${tokenSymbol}` : `${fromWeiPercentage(currentRestriction.allowedTokens)}%`}`);
-    console.log(`     Start time:                   ${moment.unix(currentRestriction.startTime).format('MMMM Do YYYY, HH:mm:ss')}`);
-    console.log(`     Rolling period:               ${currentRestriction.rollingPeriodInDays} days`);
-    console.log(`     End time:                     ${moment.unix(currentRestriction.endTime).format('MMMM Do YYYY, HH:mm:ss')} `);
+  console.log(`- Custom restriction:      ${hasCustomRestriction ? '' : 'None'} `);
+  if (hasCustomRestriction) {
+    console.log(`     Type:                         ${RESTRICTION_TYPES[currentCustomRestriction.typeOfRestriction]}`);
+    console.log(`     Allowed tokens:               ${currentCustomRestriction.typeOfRestriction === "0" ? `${web3.utils.fromWei(currentCustomRestriction.allowedTokens)} ${tokenSymbol}` : `${fromWeiPercentage(currentCustomRestriction.allowedTokens)}%`}`);
+    console.log(`     Start time:                   ${moment.unix(currentCustomRestriction.startTime).format('MMMM Do YYYY, HH:mm:ss')}`);
+    console.log(`     Rolling period:               ${currentCustomRestriction.rollingPeriodInDays} days`);
+    console.log(`     End time:                     ${moment.unix(currentCustomRestriction.endTime).format('MMMM Do YYYY, HH:mm:ss')} `);
   }
 
   let options = [];
@@ -1726,10 +1788,10 @@ async function changeIndividualRestrictions() {
     options.push('Modify individual daily restriction', 'Remove individual daily restriction');
   }
 
-  if (!hasRestriction) {
-    options.push('Add individual restriction');
+  if (!hasCustomRestriction) {
+    options.push('Add individual custom restriction');
   } else {
-    options.push('Modify individual restriction', 'Remove individual restriction');
+    options.push('Modify individual custom restriction', 'Remove individual custom restriction');
   }
 
   let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
@@ -1737,26 +1799,26 @@ async function changeIndividualRestrictions() {
   console.log('Selected:', optionSelected, '\n');
   switch (optionSelected) {
     case 'Add individual daily restriction':
-      let dailyRestrictoToAdd = inputRestrictionData(true);
+      let dailyRestrictonToAdd = inputRestrictionData(true);
       let addDailyRestrictionAction = currentTransferManager.methods.addIndividualDailyRestriction(
         holder,
-        dailyRestrictoToAdd.allowedTokens,
-        dailyRestrictoToAdd.startTime,
-        dailyRestrictoToAdd.endTime,
-        dailyRestrictoToAdd.restrictionType
+        dailyRestrictonToAdd.allowedTokens,
+        dailyRestrictonToAdd.startTime,
+        dailyRestrictonToAdd.endTime,
+        dailyRestrictonToAdd.restrictionType
       );
       let addDailyRestrictionReceipt = await common.sendTransaction(addDailyRestrictionAction);
       let addDailyRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addDailyRestrictionReceipt.logs, 'AddIndividualDailyRestriction');
       console.log(chalk.green(`Daily restriction for ${addDailyRestrictionEvent._holder} has been added successfully!`));
       break;
     case 'Modify individual daily restriction':
-      let dailyRestrictoToModify = inputRestrictionData(true);
+      let dailyRestrictonToModify = inputRestrictionData(true);
       let modifyDailyRestrictionAction = currentTransferManager.methods.modifyIndividualDailyRestriction(
         holder,
-        dailyRestrictoToModify.allowedTokens,
-        dailyRestrictoToModify.startTime,
-        dailyRestrictoToModify.endTime,
-        dailyRestrictoToModify.restrictionType
+        dailyRestrictonToModify.allowedTokens,
+        dailyRestrictonToModify.startTime,
+        dailyRestrictonToModify.endTime,
+        dailyRestrictonToModify.restrictionType
       );
       let modifyDailyRestrictionReceipt = await common.sendTransaction(modifyDailyRestrictionAction);
       let modifyDailyRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, modifyDailyRestrictionReceipt.logs, 'ModifyIndividualDailyRestriction');
@@ -1768,39 +1830,39 @@ async function changeIndividualRestrictions() {
       let removeDailyRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, removeDailyRestrictionReceipt.logs, 'IndividualDailyRestrictionRemoved');
       console.log(chalk.green(`Daily restriction for ${removeDailyRestrictionEvent._holder} has been removed successfully!`));
       break;
-    case 'Add individual restriction':
-      let restrictoToAdd = inputRestrictionData(false);
-      let addRestrictionAction = currentTransferManager.methods.addIndividualRestriction(
+    case 'Add individual custom restriction':
+      let restrictonToAdd = inputRestrictionData(false);
+      let addCustomRestrictionAction = currentTransferManager.methods.addIndividualRestriction(
         holder,
-        restrictoToAdd.allowedTokens,
-        restrictoToAdd.startTime,
-        restrictoToAdd.rollingPeriodInDays,
-        restrictoToAdd.endTime,
-        restrictoToAdd.restrictionType
+        restrictonToAdd.allowedTokens,
+        restrictonToAdd.startTime,
+        restrictonToAdd.rollingPeriodInDays,
+        restrictonToAdd.endTime,
+        restrictonToAdd.restrictionType
       );
-      let addRestrictionReceipt = await common.sendTransaction(addRestrictionAction);
-      let addRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addRestrictionReceipt.logs, 'AddIndividualRestriction');
-      console.log(chalk.green(`Restriction for ${addRestrictionEvent._holder} has been added successfully!`));
+      let addCustomRestrictionReceipt = await common.sendTransaction(addCustomRestrictionAction);
+      let addCustomRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, addCustomRestrictionReceipt.logs, 'AddIndividualRestriction');
+      console.log(chalk.green(`Custom restriction for ${addCustomRestrictionEvent._holder} has been added successfully!`));
       break;
-    case 'Modify individual restriction':
-      let restrictoToModify = inputRestrictionData(false);
-      let modifyRestrictionAction = currentTransferManager.methods.modifyIndividualRestriction(
+    case 'Modify individual custom restriction':
+      let restrictonToModify = inputRestrictionData(false);
+      let modifyCustomRestrictionAction = currentTransferManager.methods.modifyIndividualRestriction(
         holder,
-        restrictoToModify.allowedTokens,
-        restrictoToModify.startTime,
-        restrictoToModify.rollingPeriodInDays,
-        restrictoToModify.endTime,
-        restrictoToModify.restrictionType
+        restrictonToModify.allowedTokens,
+        restrictonToModify.startTime,
+        restrictonToModify.rollingPeriodInDays,
+        restrictonToModify.endTime,
+        restrictonToModify.restrictionType
       );
-      let modifyRestrictionReceipt = await common.sendTransaction(modifyRestrictionAction);
-      let modifyRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, modifyRestrictionReceipt.logs, 'ModifyIndividualRestriction');
-      console.log(chalk.green(`Restriction for ${modifyRestrictionEvent._holder} has been modified successfully!`));
+      let modifyCustomRestrictionReceipt = await common.sendTransaction(modifyCustomRestrictionAction);
+      let modifyCustomRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, modifyCustomRestrictionReceipt.logs, 'ModifyIndividualRestriction');
+      console.log(chalk.green(`Custom restriction for ${modifyCustomRestrictionEvent._holder} has been modified successfully!`));
       break;
-    case 'Remove individual restriction':
-      let removeRestrictionAction = currentTransferManager.methods.removeIndividualRestriction(holder);
-      let removeRestrictionReceipt = await common.sendTransaction(removeRestrictionAction);
-      let removeRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, removeRestrictionReceipt.logs, 'IndividualRestrictionRemoved');
-      console.log(chalk.green(`Restriction for ${removeRestrictionEvent._holder} has been removed successfully!`));
+    case 'Remove individual custom restriction':
+      let removeCustomRestrictionAction = currentTransferManager.methods.removeIndividualRestriction(holder);
+      let removeCustomRestrictionReceipt = await common.sendTransaction(removeCustomRestrictionAction);
+      let removeCustomRestrictionEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, removeCustomRestrictionReceipt.logs, 'IndividualRestrictionRemoved');
+      console.log(chalk.green(`Custom restriction for ${removeCustomRestrictionEvent._holder} has been removed successfully!`));
       break;
     case 'RETURN':
       return;
@@ -1815,54 +1877,54 @@ async function exploreAccount() {
     limitMessage: "Must be a valid address"
   });
 
-  let appliyngdDailyRestriction = null;
-  let applyingOtherRestriction = null;
+  let appliyngDailyRestriction = null;
+  let applyingCustomRestriction = null;
   let hasIndividualRestrictions = false;
   let isExempted = await currentTransferManager.methods.exemptList(account).call();
   if (!isExempted) {
-    let indiviaulDailyRestriction = await currentTransferManager.methods.individualDailyRestriction(account).call();
-    if (parseInt(indiviaulDailyRestriction.endTime) !== 0) {
-      appliyngdDailyRestriction = indiviaulDailyRestriction;
+    let individuallDailyRestriction = await currentTransferManager.methods.individualDailyRestriction(account).call();
+    if (parseInt(individuallDailyRestriction.endTime) !== 0) {
+      appliyngDailyRestriction = individuallDailyRestriction;
     }
-    let otherRestriction = await currentTransferManager.methods.individualRestriction(account).call();
-    if (parseInt(otherRestriction.endTime) !== 0) {
-      applyingOtherRestriction = otherRestriction;
+    let customRestriction = await currentTransferManager.methods.individualRestriction(account).call();
+    if (parseInt(customRestriction.endTime) !== 0) {
+      applyingCustomRestriction = customRestriction;
     }
 
-    hasIndividualRestrictions = applyingOtherRestriction || appliyngdDailyRestriction;
+    hasIndividualRestrictions = applyingCustomRestriction || appliyngDailyRestriction;
 
     if (!hasIndividualRestrictions) {
-      let defaultDailyRestriction = await currentTransferManager.methods.defaultDailyRestriction().call();
-      if (parseInt(defaultDailyRestriction.endTime) !== 0) {
-        appliyngdDailyRestriction = defaultDailyRestriction;
+      let globalDailyRestriction = await currentTransferManager.methods.defaultDailyRestriction().call();
+      if (parseInt(globalDailyRestriction.endTime) !== 0) {
+        appliyngDailyRestriction = globalDailyRestriction;
       }
-      let defaultOtherRestriction = await currentTransferManager.methods.defaultRestriction().call();
-      if (parseInt(defaultOtherRestriction.endTime) === 0) {
-        applyingOtherRestriction = defaultOtherRestriction;
+      let globalCustomRestriction = await currentTransferManager.methods.defaultRestriction().call();
+      if (parseInt(globalCustomRestriction.endTime) === 0) {
+        applyingCustomRestriction = globalCustomRestriction;
       }
     }
   }
 
   console.log(`*** Applying restrictions for ${account} ***`, '\n');
 
-  console.log(`- Daily restriction:       ${appliyngdDailyRestriction ? (!hasIndividualRestrictions ? 'default' : '') : 'None'}`);
-  if (appliyngdDailyRestriction) {
-    console.log(`     Type:                 ${RESTRICTION_TYPES[appliyngdDailyRestriction.typeOfRestriction]}`);
-    console.log(`     Allowed tokens:       ${appliyngdDailyRestriction.typeOfRestriction === "0" ? `${web3.utils.fromWei(appliyngdDailyRestriction.allowedTokens)} ${tokenSymbol}` : `${fromWeiPercentage(appliyngdDailyRestriction.allowedTokens)}%`}`);
-    console.log(`     Start time:           ${moment.unix(appliyngdDailyRestriction.startTime).format('MMMM Do YYYY, HH:mm:ss')}`);
-    console.log(`     Rolling period:       ${appliyngdDailyRestriction.rollingPeriodInDays} days`);
-    console.log(`     End time:             ${moment.unix(appliyngdDailyRestriction.endTime).format('MMMM Do YYYY, HH:mm:ss')} `);
+  console.log(`- Daily restriction:       ${appliyngDailyRestriction ? (!hasIndividualRestrictions ? 'global' : '') : 'None'}`);
+  if (appliyngDailyRestriction) {
+    console.log(`     Type:                 ${RESTRICTION_TYPES[appliyngDailyRestriction.typeOfRestriction]}`);
+    console.log(`     Allowed tokens:       ${appliyngDailyRestriction.typeOfRestriction === "0" ? `${web3.utils.fromWei(appliyngDailyRestriction.allowedTokens)} ${tokenSymbol}` : `${fromWeiPercentage(appliyngDailyRestriction.allowedTokens)}%`}`);
+    console.log(`     Start time:           ${moment.unix(appliyngDailyRestriction.startTime).format('MMMM Do YYYY, HH:mm:ss')}`);
+    console.log(`     Rolling period:       ${appliyngDailyRestriction.rollingPeriodInDays} days`);
+    console.log(`     End time:             ${moment.unix(appliyngDailyRestriction.endTime).format('MMMM Do YYYY, HH:mm:ss')} `);
   }
-  console.log(`- Other restriction:       ${applyingOtherRestriction ? (!hasIndividualRestrictions ? 'default' : '') : 'None'} `);
-  if (applyingOtherRestriction) {
-    console.log(`     Type:                 ${RESTRICTION_TYPES[applyingOtherRestriction.typeOfRestriction]}`);
-    console.log(`     Allowed tokens:       ${applyingOtherRestriction.typeOfRestriction === "0" ? `${web3.utils.fromWei(applyingOtherRestriction.allowedTokens)} ${tokenSymbol}` : `${fromWeiPercentage(applyingOtherRestriction.allowedTokens)}%`}`);
-    console.log(`     Start time:           ${moment.unix(applyingOtherRestriction.startTime).format('MMMM Do YYYY, HH:mm:ss')}`);
-    console.log(`     Rolling period:       ${applyingOtherRestriction.rollingPeriodInDays} days`);
-    console.log(`     End time:             ${moment.unix(applyingOtherRestriction.endTime).format('MMMM Do YYYY, HH:mm:ss')} `);
+  console.log(`- Other restriction:       ${applyingCustomRestriction ? (!hasIndividualRestrictions ? 'global' : '') : 'None'} `);
+  if (applyingCustomRestriction) {
+    console.log(`     Type:                 ${RESTRICTION_TYPES[applyingCustomRestriction.typeOfRestriction]}`);
+    console.log(`     Allowed tokens:       ${applyingCustomRestriction.typeOfRestriction === "0" ? `${web3.utils.fromWei(applyingCustomRestriction.allowedTokens)} ${tokenSymbol}` : `${fromWeiPercentage(applyingCustomRestriction.allowedTokens)}%`}`);
+    console.log(`     Start time:           ${moment.unix(applyingCustomRestriction.startTime).format('MMMM Do YYYY, HH:mm:ss')}`);
+    console.log(`     Rolling period:       ${applyingCustomRestriction.rollingPeriodInDays} days`);
+    console.log(`     End time:             ${moment.unix(applyingCustomRestriction.endTime).format('MMMM Do YYYY, HH:mm:ss')} `);
   }
 
-  if (applyingOtherRestriction || appliyngdDailyRestriction) {
+  if (applyingCustomRestriction || appliyngDailyRestriction) {
     let bucketDetails;
     if (hasIndividualRestrictions) {
       bucketDetails = await currentTransferManager.methods.getIndividualBucketDetailsToUser(account).call();
@@ -1905,13 +1967,13 @@ async function operateWithMultipleRestrictions() {
       await removeDailyRestrictionsInBatch();
       break;
     case 'Add multiple individual restrictions':
-      await addRestrictionsInBatch();
+      await addCustomRestrictionsInBatch();
       break;
     case 'Modify multiple individual restrictions':
-      await modifyRestrictionsInBatch();
+      await modifyCustomRestrictionsInBatch();
       break;
     case 'Remove multiple individual restrictions':
-      await removeRestrictionsInBatch();
+      await removeCustomRestrictionsInBatch();
       break;
   }
 }
@@ -2014,9 +2076,9 @@ async function removeDailyRestrictionsInBatch() {
   }
 }
 
-async function addRestrictionsInBatch() {
-  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${ADD_RESTRICTIONS_DATA_CSV}): `, {
-    defaultInput: ADD_RESTRICTIONS_DATA_CSV
+async function addCustomRestrictionsInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${ADD_CUSTOM_RESTRICTIONS_DATA_CSV}): `, {
+    defaultInput: ADD_CUSTOM_RESTRICTIONS_DATA_CSV
   });
   let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
     limit: function (input) {
@@ -2040,19 +2102,19 @@ async function addRestrictionsInBatch() {
   let batches = common.splitIntoBatches(validData, batchSize);
   let [holderArray, allowanceArray, startTimeArray, rollingPeriodArray, endTimeArray, restrictionTypeArray] = common.transposeBatches(batches);
   for (let batch = 0; batch < batches.length; batch++) {
-    console.log(`Batch ${batch + 1} - Attempting to add restrictions to the following accounts: \n\n`, holderArray[batch], '\n');
+    console.log(`Batch ${batch + 1} - Attempting to add custom restrictions to the following accounts: \n\n`, holderArray[batch], '\n');
     allowanceArray[batch] = allowanceArray[batch].map(n => web3.utils.toWei(n.toString()));
     restrictionTypeArray[batch] = restrictionTypeArray[batch].map(n => RESTRICTION_TYPES.indexOf(n));
     let action = currentTransferManager.methods.addIndividualRestrictionMulti(holderArray[batch], allowanceArray[batch], startTimeArray[batch], rollingPeriodArray[batch], endTimeArray[batch], restrictionTypeArray[batch]);
     let receipt = await common.sendTransaction(action);
-    console.log(chalk.green('Add multiple restrictions transaction was successful.'));
+    console.log(chalk.green('Add multiple custom restrictions transaction was successful.'));
     console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
   }
 }
 
-async function modifyRestrictionsInBatch() {
-  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${MODIFY_RESTRICTIONS_DATA_CSV}): `, {
-    defaultInput: MODIFY_RESTRICTIONS_DATA_CSV
+async function modifyCustomRestrictionsInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${MODIFY_CUSTOM_RESTRICTIONS_DATA_CSV}): `, {
+    defaultInput: MODIFY_CUSTOM_RESTRICTIONS_DATA_CSV
   });
   let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
     limit: function (input) {
@@ -2076,19 +2138,19 @@ async function modifyRestrictionsInBatch() {
   let batches = common.splitIntoBatches(validData, batchSize);
   let [holderArray, allowanceArray, startTimeArray, rollingPeriodArray, endTimeArray, restrictionTypeArray] = common.transposeBatches(batches);
   for (let batch = 0; batch < batches.length; batch++) {
-    console.log(`Batch ${batch + 1} - Attempting to modify restrictions to the following accounts: \n\n`, holderArray[batch], '\n');
+    console.log(`Batch ${batch + 1} - Attempting to modify custom restrictions to the following accounts: \n\n`, holderArray[batch], '\n');
     allowanceArray[batch] = allowanceArray[batch].map(n => web3.utils.toWei(n.toString()));
     restrictionTypeArray[batch] = restrictionTypeArray[batch].map(n => RESTRICTION_TYPES.indexOf(n));
     let action = currentTransferManager.methods.modifyIndividualRestrictionMulti(holderArray[batch], allowanceArray[batch], startTimeArray[batch], rollingPeriodArray[batch], endTimeArray[batch], restrictionTypeArray[batch]);
     let receipt = await common.sendTransaction(action);
-    console.log(chalk.green('Modify multiple restrictions transaction was successful.'));
+    console.log(chalk.green('Modify multiple custom restrictions transaction was successful.'));
     console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
   }
 }
 
-async function removeRestrictionsInBatch() {
-  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${REMOVE_RESTRICTIONS_DATA_CSV}): `, {
-    defaultInput: REMOVE_RESTRICTIONS_DATA_CSV
+async function removeCustomRestrictionsInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${REMOVE_CUSTOM_RESTRICTIONS_DATA_CSV}): `, {
+    defaultInput: REMOVE_CUSTOM_RESTRICTIONS_DATA_CSV
   });
   let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
     limit: function (input) {
@@ -2106,10 +2168,10 @@ async function removeRestrictionsInBatch() {
   let batches = common.splitIntoBatches(validData, batchSize);
   let [holderArray] = common.transposeBatches(batches);
   for (let batch = 0; batch < batches.length; batch++) {
-    console.log(`Batch ${batch + 1} - Attempting to remove restrictions to the following accounts: \n\n`, holderArray[batch], '\n');
+    console.log(`Batch ${batch + 1} - Attempting to remove custom restrictions to the following accounts: \n\n`, holderArray[batch], '\n');
     let action = currentTransferManager.methods.removeIndividualRestrictionMulti(holderArray[batch]);
     let receipt = await common.sendTransaction(action);
-    console.log(chalk.green('Remove multiple restrictions transaction was successful.'));
+    console.log(chalk.green('Remove multiple custom restrictions transaction was successful.'));
     console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
   }
 }
@@ -2118,9 +2180,9 @@ function inputRestrictionData(isDaily) {
   let restriction = {};
   restriction.restrictionType = readlineSync.keyInSelect(RESTRICTION_TYPES, 'How do you want to set the allowance? ', { cancel: false });
   if (restriction.restrictionType == RESTRICTION_TYPES.indexOf('Fixed')) {
-    restriction.allowedTokens = web3.utils.toWei(readlineSync.questionInt(`Enter the maximum amount of tokens allowed to be traded every ${isDaily ? 'day' : 'rolling period'}: `).toString());
+    restriction.allowedTokens = web3.utils.toWei(readlineSync.question(`Enter the maximum amount of tokens allowed to be traded every ${isDaily ? 'day' : 'rolling period'}: `).toString());
   } else {
-    restriction.allowedTokens = toWeiPercentage(readlineSync.questionInt(`Enter the maximum percentage of total supply allowed to be traded every ${isDaily ? 'day' : 'rolling period'}: `).toString());
+    restriction.allowedTokens = toWeiPercentage(readlineSync.question(`Enter the maximum percentage of total supply allowed to be traded every ${isDaily ? 'day' : 'rolling period'}: `).toString());
   }
   if (isDaily) {
     restriction.rollingPeriodInDays = 1;
@@ -2129,7 +2191,7 @@ function inputRestrictionData(isDaily) {
   }
   restriction.startTime = readlineSync.questionInt(`Enter the time (Unix Epoch time) at which restriction get into effect (now = 0): `, { defaultInput: 0 });
   let oneMonthFromNow = Math.floor(Date.now() / 1000) + gbl.constants.DURATION.days(30);
-  restriction.endTime = readlineSync.question(`Enter the time (Unix Epoch time) when the purchase lockup period ends and the investor can freely purchase tokens from others (1 week from now = ${oneMonthFromNow}): `, {
+  restriction.endTime = readlineSync.question(`Enter the time (Unix Epoch time) when the purchase lockup period ends and the investor can freely purchase tokens from others (1 month from now = ${oneMonthFromNow}): `, {
     limit: function (input) {
       return input > restriction.startTime + gbl.constants.DURATION.days(restriction.rollingPeriodInDays);
     },
@@ -2551,11 +2613,11 @@ function signData(tmAddress, investorAddress, fromTime, toTime, expiryTime, rest
 */
 
 function toWeiPercentage(number) {
-  return new web3.utils.BN(web3.utils.toWei(number)).divn(100);
+  return web3.utils.toWei((parseFloat(number) / 100).toString());
 }
 
 function fromWeiPercentage(number) {
-  return web3.utils.fromWei(new web3.utils.BN(number).muln(100));
+  return web3.utils.fromWei(new web3.utils.BN(number).muln(100)).toString();
 }
 
 async function getAllModulesByType(type) {

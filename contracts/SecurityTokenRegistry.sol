@@ -201,7 +201,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     }
 
     function _updateFromRegistry() internal {
-        address polymathRegistry = getAddress(POLYMATHREGISTRY);
+        address polymathRegistry = getAddressValue(POLYMATHREGISTRY);
         set(POLYTOKEN, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"));
     }
 
@@ -215,7 +215,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     }
 
     function _implementation() internal view returns(address) {
-        return getAddress(Encoder.getKey("STRGetter"));
+        return getAddressValue(Encoder.getKey("STRGetter"));
     }
 
     /////////////////////////////
@@ -234,7 +234,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         require(_owner != address(0), "Owner should not be 0x");
         require(bytes(_ticker).length > 0 && bytes(_ticker).length <= 10, "Ticker length range (0,10]");
         // Attempt to charge the reg fee if it is > 0 POLY
-        uint256 tickerFee = getUint(TICKERREGFEE);
+        uint256 tickerFee = getUintValue(TICKERREGFEE);
         if (tickerFee > 0)
             require(IERC20(getAddressValue(POLYTOKEN)).transferFrom(msg.sender, address(this), tickerFee), "Insufficent allowance");
         string memory ticker = Util.upper(_ticker);
@@ -245,7 +245,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
             _deleteTickerOwnership(previousOwner, ticker);
         }
         /*solium-disable-next-line security/no-block-members*/
-        _addTicker(_owner, ticker, _tokenName, now, now.add(getUint(EXPIRYLIMIT)), false, false, tickerFee);
+        _addTicker(_owner, ticker, _tokenName, now, now.add(getUintValue(EXPIRYLIMIT)), false, false, tickerFee);
     }
 
     /**
@@ -260,7 +260,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         bool _status,
         bool _fromAdmin,
         uint256 _fee
-    ) 
+    )
         internal
     {
         _setTickerOwnership(_owner, _ticker);
@@ -285,7 +285,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         uint256 _registrationDate,
         uint256 _expiryDate,
         bool _status
-    ) 
+    )
         external
         onlyOwner
     {
@@ -307,7 +307,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         uint256 _registrationDate,
         uint256 _expiryDate,
         bool _status
-    ) 
+    )
         internal
     {
         address currentOwner = _tickerOwner(_ticker);
@@ -389,7 +389,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         uint256 _expiryDate,
         string memory _tokenName,
         bool _status
-    )   
+    )
         internal
     {
         bytes32 key = Encoder.getKey("registeredTickers_owner", _ticker);
@@ -454,7 +454,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @notice Returns the list of tickers owned by the selected address
      * @param _owner is the address which owns the list of tickers
      */
-    function getTickersByOwner(address _owner) external view returns(bytes32[]) {
+    function getTickersByOwner(address _owner) external view returns(bytes32[] memory) {
         uint counter = 0;
         // accessing the data structure userTotickers[_owner].length
         bytes32[] memory tickers = getArrayBytes32(Encoder.getKey("userToTickers", _owner));
@@ -467,8 +467,8 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         }
         bytes32[] memory tempList = new bytes32[](counter);
         counter = 0;
-        for (i = 0; i < tickers.length; i++) {
-            ticker = Util.bytes32ToString(tickers[i]);
+        for (uint i = 0; i < tickers.length; i++) {
+            bytes32 ticker = Util.bytes32ToString(tickers[i]);
             /*solium-disable-next-line security/no-block-members*/
             if (getUintValue(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now || _tickerStatus(ticker)) {
                 tempList[counter] = tickers[i];
@@ -483,7 +483,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @param _owner is the address which owns the list of tickers
      * @dev Intention is that this is called off-chain so block gas limit is not relevant
      */
-    function getTokensByOwner(address _owner) external view returns(address[]) {
+    function getTokensByOwner(address _owner) external view returns(address[] memory) {
         // Loop over all active users, then all associated tickers of those users
         // This ensures we find tokens, even if their owner has been modified
         address[] memory activeUsers = getArrayAddress(Encoder.getKey("activeUsers"));
@@ -529,7 +529,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @return string
      * @return bool
      */
-    function getTickerDetails(string _ticker) external view returns (address, uint256, uint256, string, bool) {
+    function getTickerDetails(string calldata _ticker) external view returns (address, uint256, uint256, string memory, bool) {
         string memory ticker = Util.upper(_ticker);
         bool tickerStatus = _tickerStatus(ticker);
         uint256 expiryDate = getUintValue(Encoder.getKey("registeredTickers_expiryDate", ticker));
@@ -563,9 +563,9 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         string calldata _ticker,
         string calldata _tokenDetails,
         bool _divisible
-    ) 
-        external 
-        whenNotPausedOrOwner 
+    )
+        external
+        whenNotPausedOrOwner
     {
         require(bytes(_name).length > 0 && bytes(_ticker).length > 0, "Ticker length > 0");
         string memory ticker = Util.upper(_ticker);
@@ -576,11 +576,11 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         /*solium-disable-next-line security/no-block-members*/
         require(getUintValue(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now, "Ticker gets expired");
 
-        uint256 launchFee = getUint(STLAUNCHFEE);
+        uint256 launchFee = getUintValue(STLAUNCHFEE);
         if (launchFee > 0)
             require(IERC20(getAddressValue(POLYTOKEN)).transferFrom(msg.sender, address(this), launchFee), "Insufficient allowance");
 
-        address newSecurityTokenAddress = ISTFactory(getAddress(Encoder.getKey("protocolVersionST", getUint(Encoder.getKey("latestVersion"))))).deployToken(
+        address newSecurityTokenAddress = ISTFactory(getAddressValue(Encoder.getKey("protocolVersionST", getUintValue(Encoder.getKey("latestVersion"))))).deployToken(
             _name,
             ticker,
             18,
@@ -613,9 +613,9 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         address _securityToken,
         string calldata _tokenDetails,
         uint256 _deployedAt
-    ) 
-        external 
-        onlyOwner 
+    )
+        external
+        onlyOwner
     {
         require(bytes(_name).length > 0 && bytes(_ticker).length > 0, "String length > 0");
         require(bytes(_ticker).length <= 10, "Ticker length range (0,10]");
@@ -627,12 +627,12 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         if (registrationTime == 0) {
             /*solium-disable-next-line security/no-block-members*/
             registrationTime = now;
-            expiryTime = registrationTime.add(getUint(EXPIRYLIMIT));
+            expiryTime = registrationTime.add(getUintValue(EXPIRYLIMIT));
         }
         set(Encoder.getKey("tickerToSecurityToken", ticker), _securityToken);
         _modifyTicker(_owner, ticker, _name, registrationTime, expiryTime, true);
         _storeSecurityTokenData(_securityToken, ticker, _tokenDetails, _deployedAt);
-        emit NewSecurityToken(ticker, _name, _securityToken, _owner, _deployedAt, msg.sender, true, getUint(STLAUNCHFEE));
+        emit NewSecurityToken(ticker, _name, _securityToken, _owner, _deployedAt, msg.sender, true, getUintValue(STLAUNCHFEE));
     }
 
     /**
@@ -663,7 +663,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @param _ticker is the ticker of the security token
      * @return address
      */
-    function getSecurityTokenAddress(string _ticker) external view returns (address) {
+    function getSecurityTokenAddress(string calldata _ticker) external view returns (address) {
         string memory ticker = Util.upper(_ticker);
         return getAddressValue(Encoder.getKey("tickerToSecurityToken", ticker));
     }
@@ -676,7 +676,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @return string is the details of the security token.
      * @return uint256 is the timestamp at which security Token was deployed.
      */
-    function getSecurityTokenData(address _securityToken) external view returns (string, address, string, uint256) {
+    function getSecurityTokenData(address _securityToken) external view returns (string memory, address, string memory, uint256) {
         return (
             getStringValue(Encoder.getKey("securityTokens_ticker", _securityToken)),
             IOwnable(_securityToken).owner(),
@@ -774,7 +774,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         _version[2] = _patch;
         uint24 _packedVersion = VersionUtils.pack(_major, _minor, _patch);
         require(
-            VersionUtils.isValidVersion(VersionUtils.unpack(uint24(getUint(Encoder.getKey("latestVersion")))), _version),
+            VersionUtils.isValidVersion(VersionUtils.unpack(uint24(getUintValue(Encoder.getKey("latestVersion")))), _version),
             "In-valid version"
         );
         set(Encoder.getKey("latestVersion"), uint256(_packedVersion));
@@ -791,7 +791,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     /**
      * @notice Gets Protocol version
      */
-    function getProtocolVersion() public view returns(uint8[]) {
+    function getProtocolVersion() public view returns(uint8[] memory) {
         return VersionUtils.unpack(uint24(getUintValue(Encoder.getKey("latestVersion"))));
     }
 

@@ -165,7 +165,7 @@ contract EternalStorage {
         return bytes32ArrayStorage[_key];
     }
 
-    function getArrayUint(bytes32 _key) public view returns(uint[]) {
+    function getArrayUint(bytes32 _key) public view returns(uint[] memory) {
         return uintArrayStorage[_key];
     }
 

@@ -1,9 +1,9 @@
 pragma solidity ^0.4.24;
 
 import "./ITransferManager.sol";
-import "../../storage/VolumeRestrictionTMStorage.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "../../libraries/BokkyPooBahsDateTimeLibrary.sol";
+import "../../libraries/VolumeRestrictionLib.sol";
 
 contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
 

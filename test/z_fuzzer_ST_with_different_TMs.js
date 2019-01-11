@@ -111,6 +111,8 @@ contract('GeneralPermissionManager', accounts => {
         { factory: 'I_PercentageTransferManagerFactory', module: 'PercentageTransferManager'},
     ];
 
+    console.log(`test --> ${factoriesAndModules[1].module}`);
+
     let totalModules = factoriesAndModules.length;
     let bytesSTO;
 
@@ -232,6 +234,10 @@ contract('GeneralPermissionManager', accounts => {
             let balance = await I_SecurityToken.balanceOf(account_investor1);
             console.log(`minted ${balance} tokens to account_investor1`);
             assert.equal(balance.dividedBy(new BigNumber(10).pow(18)).toNumber(), 100);
+
+            // console.log("4");
+            // await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), { from: token_owner, gas: 2500000 });
+            // console.log("5");
         });
 
         it("Should successfully attach the General permission manager factory with the security token -- failed because Token is not paid", async () => {
@@ -290,8 +296,8 @@ contract('GeneralPermissionManager', accounts => {
                 let random = factoriesAndModules[Math.floor(Math.random() * Math.floor(totalModules))];
                 let randomFactory = eval(random.factory);
                 let randomModule = eval(random.module);
-                console.log("choosen factory "+ random.factory);
-                console.log("choosen module "+ random.module);
+                console.log(`choosen factory ${random.factory}`);
+                console.log(`choosen module ${random.module}`);
 
                 //calculate the data needed for different modules
                 if (random.module == 'CountTransferManager' ||  random.module == 'ManualApprovalTransferManager' || random.module == 'VolumeRestrictionTransferManager' ){
@@ -319,22 +325,13 @@ contract('GeneralPermissionManager', accounts => {
             
                 // attach it to the ST
                 let tx = await I_SecurityToken.addModule(randomFactory.address, bytesSTO, 0, 0, { from: token_owner });
-                console.log("1.3");
                 let randomModuleInstance = randomModule.at(tx.logs[2].args._module);
-                console.log("successfully attached module " + random.Factory);
+                console.log(`successfully attached module ${random.module}`);
                 
-                await I_SecurityToken.transfer(account_investor2, 10, { from: account_investor1, gas: 2500000 });
-      
-                // // remove it from the ST
-                // tx = await I_SecurityToken.archiveModule(randomModuleInstance.address, { from: token_owner });
-                // console.log("1.4");
-                // tx = await I_SecurityToken.removeModule(randomModuleInstance.address, { from: token_owner });
-                // console.log("successfully removed module " + randomModuleInstance.address);
+                await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), { from: account_investor1, gas: 2500000 });
+                console.log(`successfully transferred funds`);
+                
             }
-
-
-
         })
     });
-
 });

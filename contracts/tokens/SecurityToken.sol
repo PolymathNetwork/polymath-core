@@ -531,7 +531,7 @@ contract SecurityToken is StandardToken, DetailedERC20, ReentrancyGuard, Registr
      * @return bool success
      */
     function transferWithData(address _to, uint256 _value, bytes _data) public returns (bool success) {
-        require(_updateTransfer(msg.sender, _to, _value, _data), "Transfer invalid");
+        // require(_updateTransfer(msg.sender, _to, _value, _data), "Transfer invalid");
         require(super.transfer(_to, _value));
         return true;
     }

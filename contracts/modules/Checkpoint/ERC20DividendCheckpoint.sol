@@ -23,11 +23,11 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
         uint256 _dividendIndex,
         bytes32 indexed _name
     );
-    event ERC20DividendClaimed(address indexed _payee, uint256 _dividendIndex, address indexed _token, uint256 _amount, uint256 _withheld);
-    event ERC20DividendReclaimed(address indexed _claimer, uint256 _dividendIndex, address indexed _token, uint256 _claimedAmount);
+    event ERC20DividendClaimed(address indexed _payee, uint256 indexed _dividendIndex, address indexed _token, uint256 _amount, uint256 _withheld);
+    event ERC20DividendReclaimed(address indexed _claimer, uint256 indexed _dividendIndex, address indexed _token, uint256 _claimedAmount);
     event ERC20DividendWithholdingWithdrawn(
         address indexed _claimer,
-        uint256 _dividendIndex,
+        uint256 indexed _dividendIndex,
         address indexed _token,
         uint256 _withheldAmount
     );
@@ -239,8 +239,10 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
         uint256 claimAfterWithheld = claim.sub(withheld);
         if (claimAfterWithheld > 0) {
             require(IERC20(dividendTokens[_dividendIndex]).transfer(_payee, claimAfterWithheld), "transfer failed");
-            _dividend.dividendWithheld = _dividend.dividendWithheld.add(withheld);
-            investorWithheld[_payee] = investorWithheld[_payee].add(withheld);
+            if (withheld > 0) {
+                _dividend.totalWithheld = _dividend.totalWithheld.add(withheld);
+                _dividend.withheld[_payee] = withheld;
+            }
             emit ERC20DividendClaimed(_payee, _dividendIndex, dividendTokens[_dividendIndex], claim, withheld);
         }
     }
@@ -269,8 +271,8 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
     function withdrawWithholding(uint256 _dividendIndex) external withPerm(MANAGE) {
         require(_dividendIndex < dividends.length, "Invalid dividend");
         Dividend storage dividend = dividends[_dividendIndex];
-        uint256 remainingWithheld = dividend.dividendWithheld.sub(dividend.dividendWithheldReclaimed);
-        dividend.dividendWithheldReclaimed = dividend.dividendWithheld;
+        uint256 remainingWithheld = dividend.totalWithheld.sub(dividend.totalWithheldWithdrawn);
+        dividend.totalWithheldWithdrawn = dividend.totalWithheld;
         address owner = IOwnable(securityToken).owner();
         require(IERC20(dividendTokens[_dividendIndex]).transfer(owner, remainingWithheld), "transfer failed");
         emit ERC20DividendWithholdingWithdrawn(owner, _dividendIndex, dividendTokens[_dividendIndex], remainingWithheld);

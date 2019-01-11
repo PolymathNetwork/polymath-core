@@ -160,7 +160,7 @@ contract("GeneralTransferManager", async (accounts) => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            
+
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
@@ -437,6 +437,90 @@ contract("GeneralTransferManager", async (accounts) => {
             });
             await I_GeneralTransferManager.changeDefaults(0, new BN(0), { from: token_owner });
         });
+    });
+
+    describe("Buy tokens using on-chain whitelist and defaults", async () => {
+        // let snap_id;
+
+        it("Should Buy the tokens", async () => {
+            // Add the Investor in to the whitelist
+            // snap_id = await takeSnapshot();
+            let tx = await I_GeneralTransferManager.modifyWhitelist(
+                account_investor1,
+                0,
+                0,
+                latestTime() + duration.days(20),
+                true,
+                {
+                    from: account_issuer,
+                    gas: 6000000
+                }
+            );
+
+            assert.equal(
+                tx.logs[0].args._investor.toLowerCase(),
+                account_investor1.toLowerCase(),
+                "Failed in adding the investor in whitelist"
+            );
+
+            tx = await I_GeneralTransferManager.modifyWhitelist(
+                account_investor2,
+                latestTime(),
+                latestTime(),
+                latestTime() + duration.days(20),
+                true,
+                {
+                    from: account_issuer,
+                    gas: 6000000
+                }
+            );
+
+            assert.equal(
+                tx.logs[0].args._investor.toLowerCase(),
+                account_investor2.toLowerCase(),
+                "Failed in adding the investor in whitelist"
+            );
+
+            // Jump time
+            await increaseTime(5000);
+
+            // Can transfer tokens
+            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), {from: account_investor1});
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), web3.utils.toWei("1", "ether"));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), web3.utils.toWei("1", "ether"));
+        });
+
+        it("Add a from default and check transfers are disabled then enabled in the future", async () => {
+            let tx = await I_GeneralTransferManager.changeDefaults(latestTime() + duration.days(5), 0, {from: token_owner});
+            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), {from: account_investor2});
+            await catchRevert(I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), {from: account_investor1}));
+            await increaseTime(duration.days(5));
+            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), {from: account_investor1});
+        });
+
+        it("Add a to default and check transfers are disabled then enabled in the future", async () => {
+            let tx = await I_GeneralTransferManager.changeDefaults(0, latestTime() + duration.days(5), {from: token_owner});
+            await catchRevert(I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), {from: account_investor2}));
+            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), {from: account_investor1});
+            await increaseTime(duration.days(5));
+            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("2", "ether"), {from: account_investor2});
+            // revert changes
+            await I_GeneralTransferManager.modifyWhitelist(
+                account_investor2,
+                0,
+                0,
+                0,
+                false,
+                {
+                    from: account_issuer,
+                    gas: 6000000
+                }
+            );
+            await I_GeneralTransferManager.changeDefaults(0, 0, {from: token_owner});
+        });
+
+
+
     });
 
     describe("Buy tokens using off-chain whitelist", async () => {
@@ -941,3 +1025,6 @@ function range1(i) {
 function rangeB(i) {
     return i ? rangeB(i - 1).concat(0) : [];
 }
+
+function range1(i) {return i?range1(i-1).concat(i):[]}
+function rangeB(i) {return i?rangeB(i-1).concat(0):[]}

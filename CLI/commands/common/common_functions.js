@@ -3,7 +3,7 @@ const Tx = require('ethereumjs-tx');
 const permissionsList = require('./permissions_list');
 const abis = require('../helpers/contract_abis');
 
-async function connect(abi, address) {
+function connect(abi, address) {
   contractRegistry = new web3.eth.Contract(abi, address);
   contractRegistry.setProvider(web3.currentProvider);
   return contractRegistry
@@ -15,7 +15,7 @@ async function checkPermission(contractName, functionName, contractRegistry) {
     return true
   } else {
     let stAddress = await contractRegistry.methods.securityToken().call();
-    let securityToken = await connect(abis.securityToken(), stAddress);
+    let securityToken = connect(abis.securityToken(), stAddress);
     let stOwner = await securityToken.methods.owner().call();
     if (stOwner == Issuer.address) {
       return true
@@ -49,7 +49,7 @@ async function getGasLimit(options, action) {
 
 async function checkPermissions(action) {
   let contractRegistry = await connect(action._parent.options.jsonInterface, action._parent._address);
-  //NOTE this is a condition to verify if the transaction comes from a module or not. 
+  //NOTE this is a condition to verify if the transaction comes from a module or not.
   if (contractRegistry.methods.hasOwnProperty('factory')) {
     let moduleAddress = await contractRegistry.methods.factory().call();
     let moduleRegistry = await connect(abis.moduleFactory(), moduleAddress);
@@ -152,6 +152,9 @@ module.exports = {
     let eventJsonInterface = jsonInterface.find(o => o.name === eventName && o.type === 'event');
     let filteredLogs = logs.filter(l => l.topics.includes(eventJsonInterface.signature));
     return filteredLogs.map(l => web3.eth.abi.decodeLog(eventJsonInterface.inputs, l.data, l.topics.slice(1)));
+  },
+  connect: function (abi, address) {
+    return connect(abi, address)
   },
   splitIntoBatches: function (data, batchSize) {
     let allBatches = [];

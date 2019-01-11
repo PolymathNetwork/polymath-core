@@ -134,7 +134,7 @@ contract("ModuleRegistryProxy", async (accounts) => {
                 { from: account_polymath }
             );
 
-            I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(0, new BN(0), new BN(0), I_GeneralTransferManagerLogic.address, {
+            I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(0, new BN(0), new BN(0), I_GeneralTransferManagerLogic.address, I_GeneralTransferManagerLogic.address, {
                 from: account_polymath
             });
 
@@ -158,11 +158,11 @@ contract("ModuleRegistryProxy", async (accounts) => {
 
         it("Verify the initialize data", async () => {
             assert.equal(
-                await I_MRProxied.getAddressValues.call(web3.utils.soliditySha3("owner")),
+                await I_MRProxied.getAddressValue.call(web3.utils.soliditySha3("owner")),
                 account_polymath,
                 "Should equal to right address"
             );
-            assert.equal(await I_MRProxied.getAddressValues.call(web3.utils.soliditySha3("polymathRegistry")), I_PolymathRegistry.address);
+            assert.equal(await I_MRProxied.getAddressValue.call(web3.utils.soliditySha3("polymathRegistry")), I_PolymathRegistry.address);
         });
     });
 

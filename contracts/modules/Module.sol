@@ -16,8 +16,9 @@ contract Module is IModule, ModuleStorage {
      * @notice Constructor
      * @param _securityToken Address of the security token
      */
-    constructor(address _securityToken, address _polyToken) public ModuleStorage(_securityToken, _polyToken) {
-
+    constructor (address _securityToken, address _polyAddress) public
+    ModuleStorage(_securityToken, _polyAddress)
+    {
     }
 
     //Allows owner, factory or permissioned delegate

@@ -491,6 +491,11 @@ module.exports = function(deployer, network, accounts) {
     ERC20DividendCheckpointLogic:         ${ERC20DividendCheckpointLogic.address}
     EtherDividendCheckpointFactory:       ${EtherDividendCheckpointFactory.address}
     ERC20DividendCheckpointFactory:       ${ERC20DividendCheckpointFactory.address}
+    BlacklistTransferManagerFactory:      ${BlacklistTransferManagerFactory.address}
+    VolumeRestrictionTMFactory:           ${VolumeRestrictionTMFactory.address}
+    VolumeRestrictionTMLogic:             ${VolumeRestrictionTMLogic.address}
+    VestingEscrowWalletFactory:           ${VestingEscrowWalletFactory.address}
+    VestingEscrowWalletLogic:             ${VestingEscrowWalletLogic.address}
     ---------------------------------------------------------------------------------
     `);
             console.log("\n");

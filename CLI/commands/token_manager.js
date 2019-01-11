@@ -388,7 +388,7 @@ async function multiMint(_csvFilePath, _batchSize) {
   for (let batch = 0; batch < batches.length; batch++) {
     console.log(`Batch ${batch + 1} - Attempting to mint tokens to accounts: \n\n`, investorArray[batch], '\n');
     amountArray[batch] = amountArray[batch].map(a => web3.utils.toWei(a.toString()));
-    let action = await securityToken.methods.mintMulti(investorArray[batch], amountArray[batch]);
+    let action = securityToken.methods.mintMulti(investorArray[batch], amountArray[batch]);
     let receipt = await common.sendTransaction(action);
     console.log(chalk.green('Multi mint transaction was successful.'));
     console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);

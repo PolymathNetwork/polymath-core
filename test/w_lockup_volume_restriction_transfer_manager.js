@@ -132,7 +132,7 @@ contract("LockupVolumeRestrictionTransferManager", async (accounts) => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            
+
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
@@ -359,7 +359,6 @@ contract("LockupVolumeRestrictionTransferManager", async (accounts) => {
         it("Should prevent the creation of a lockup with bad parameters where the amount to be released per period is too granular for the token", async () => {
             // balance should be 9000000000000000000 here (9 eth)
             let balance = await I_SecurityToken.balanceOf(account_investor2);
-
             // create a lockup for their entire balance
             // over 16 seconds total, with 4 periods of 4 seconds each.
             // this will generate an exception because 9000000000000000000 / 4 = 2250000000000000000 but the token granularity is 1000000000000000000

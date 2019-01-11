@@ -42,7 +42,7 @@ contract LockupVolumeRestrictionTMFactory is ModuleFactory {
         address polyToken = _takeFee();
         LockupVolumeRestrictionTM lockupVolumeRestrictionTransferManager = new LockupVolumeRestrictionTM(msg.sender, polyToken);
         /*solium-disable-next-line security/no-block-members*/
-        emit GenerateModuleFromFactory(address(lockupVolumeRestrictionTransferManager), getName(), address(this), msg.sender, now);
+        emit GenerateModuleFromFactory(address(lockupVolumeRestrictionTransferManager), getName(), address(this), msg.sender, setupCost, now);
         return address(lockupVolumeRestrictionTransferManager);
     }
 

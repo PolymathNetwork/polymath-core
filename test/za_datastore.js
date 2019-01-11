@@ -117,9 +117,5 @@ contract("Data store", async (accounts) => {
         it("Should fetch bool array correctly", async () => {
             
         });
-
-        it("Should fetch multiple data types in a single call correctly", async () => {
-            
-        });
     });
 });

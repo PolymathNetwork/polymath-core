@@ -734,7 +734,16 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         return false;
     }
 
-    function _checkAndBurn(address _from, uint256 _value, bytes _data) internal returns(bool) {
+    /**
+     * @notice Checks if an address is a module of certain type
+     * @param _module Address to check
+     * @param _type type to check against
+     */
+    function isModule(address _module, uint8 _type) public view returns(bool) {
+        return _isModule(_module, _type);
+    }
+
+    function _checkAndBurn(address _from, uint256 _value, bytes memory _data) internal returns(bool) {
         bool verified = _updateTransfer(_from, address(0), _value, _data);
         _adjustTotalSupplyCheckpoints();
         _burn(_from, _value);

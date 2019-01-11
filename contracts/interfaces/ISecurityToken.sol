@@ -22,6 +22,13 @@ interface ISecurityToken {
     function verifyTransfer(address _from, address _to, uint256 _value) external returns (bool success);
 
     /**
+     * @notice Checks if an address is a module of certain type
+     * @param _module Address to check
+     * @param _type type to check against
+     */
+    function isModule(address _module, uint8 _type) external view returns(bool);
+
+    /**
      * @notice Mints new tokens and assigns them to the target _investor.
      * Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
      * @param _investor Address the tokens will be minted to

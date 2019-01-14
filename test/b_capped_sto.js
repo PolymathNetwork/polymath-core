@@ -287,8 +287,8 @@ contract("CappedSTO", async (accounts) => {
         it("Should verify the configuration of the STO", async () => {
             assert.equal(await I_CappedSTO_Array_ETH[0].startTime(), startTime_ETH1, "1STO Configuration doesn't set as expected");
             assert.equal(await I_CappedSTO_Array_ETH[0].endTime(), endTime_ETH1, "2STO Configuration doesn't set as expected");
-            assert.equal((await I_CappedSTO_Array_ETH[0].cap()).toString(), cap.toString(), "3STO Configuration doesn't set as expected");
-            assert.equal((await I_CappedSTO_Array_ETH[0].rate()).toString()).toNumber(), rate.toString(), "4STO Configuration doesn't set as expected");
+            assert.equal(await I_CappedSTO_Array_ETH[0].cap().toString(), cap.toString(), "3STO Configuration doesn't set as expected");
+            assert.equal(await I_CappedSTO_Array_ETH[0].rate().toString(), rate.toString(), "4STO Configuration doesn't set as expected");
             assert.equal(
                 await I_CappedSTO_Array_ETH[0].fundRaiseTypes.call(E_fundRaiseType),
                 true,

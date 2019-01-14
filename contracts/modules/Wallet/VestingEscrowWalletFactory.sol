@@ -13,9 +13,8 @@ contract VestingEscrowWalletFactory is ModuleFactory {
     address public logicContract;
     /**
      * @notice Constructor
-     * @param _polyAddress Address of the polytoken
      */
-    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _logicContract) public
+    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _logicContract) public
     ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
     {
         require(_logicContract != address(0), "Invalid address");

@@ -11,6 +11,9 @@ const STFactory = artifacts.require("./STFactory.sol");
 const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManagerFactory = artifacts.require("./GeneralTransferManagerFactory.sol");
 const GeneralPermissionManagerFactory = artifacts.require("./GeneralPermissionManagerFactory.sol");
+const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager.sol");
+const DataStoreLogic = artifacts.require('./DataStore.sol');
+const DataStoreFactory = artifacts.require('./DataStoreFactory.sol');
 
 const Web3 = require("web3");
 const BigNumber = require("bignumber.js");
@@ -139,7 +142,9 @@ contract("ModuleRegistryProxy", accounts => {
             await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
 
             // Step 3: Deploy the STFactory contract
-            I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, { from: account_polymath });
+            let I_DataStoreLogic = await DataStoreLogic.new({ from: account_polymath });
+            let I_DataStoreFactory = await DataStoreFactory.new(I_DataStoreLogic.address, { from: account_polymath });
+            I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, I_DataStoreFactory.address, { from: account_polymath });
 
             assert.notEqual(
                 I_STFactory.address.valueOf(),

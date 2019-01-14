@@ -1,9 +1,10 @@
 pragma solidity ^0.5.0;
 
-import "./interfaces/ISecurityToken.sol";
-import "./interfaces/IOwnable.sol";
+import "../interfaces/ISecurityToken.sol";
+import "../interfaces/IOwnable.sol";
+import "./DataStoreStorage.sol";
 
-contract DataStore {
+contract DataStore is DataStoreStorage {
     ISecurityToken public associatedToken;
 
     mapping (bytes32 => uint256) internal uintData;

@@ -337,7 +337,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             let data = await I_ERC20DividendCheckpoint.getDividendsData();
             assert.equal(data[1][0].toNumber(), maturity, "maturity match");
             assert.equal(data[2][0].toNumber(), expiry, "expiry match");
-            assert.equal(data[3][0].toNumber(), web3.utils.toWei("1.5", "ether"), "amount match");
+            assert.equal(data[3][0].toNumber(), new BN(web3.utils.toWei("1.5", "ether")), "amount match");
             assert.equal(data[4][0].toNumber(), 0, "claimed match");
             assert.equal(data[5][0], dividendName, "dividendName match");
         });

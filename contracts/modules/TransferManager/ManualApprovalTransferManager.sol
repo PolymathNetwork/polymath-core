@@ -126,11 +126,11 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
     * @param _descriptions is the description array for these manual approvals
     */
     function addManualApprovalMulti(
-        address[] _from,
-        address[] _to,
-        uint256[] _allowances,
-        uint256[] _expiryTimes,
-        bytes32[] _descriptions
+        address[] calldata _from,
+        address[] calldata _to,
+        uint256[] calldata _allowances,
+        uint256[] calldata _expiryTimes,
+        bytes32[] calldata _descriptions
     )
         external
         withPerm(TRANSFER_APPROVAL)
@@ -222,12 +222,12 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
      * or any value when there is no change in allowances
      */
     function modifyManualApprovalMulti(
-        address[] _from,
-        address[] _to,
-        uint256[] _expiryTimes,
-        uint256[] _changedAllowances,
-        bytes32[] _descriptions,
-        uint8[] _changes
+        address[] memory _from,
+        address[] memory _to,
+        uint256[] memory _expiryTimes,
+        uint256[] memory _changedAllowances,
+        bytes32[] memory _descriptions,
+        uint8[] memory _changes
     )
         public
         withPerm(TRANSFER_APPROVAL)
@@ -267,7 +267,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
     * @param _from is the address array from which transfers are approved
     * @param _to is the address array to which transfers are approved
     */
-    function revokeManualApprovalMulti(address[] _from, address[] _to) external withPerm(TRANSFER_APPROVAL) {
+    function revokeManualApprovalMulti(address[] calldata _from, address[] calldata _to) external withPerm(TRANSFER_APPROVAL) {
         require(_from.length == _to.length, "Input array length mismatch");
         for(uint256 i = 0; i < _from.length; i++){
             _revokeManualApproval(_from[i], _to[i]);
@@ -275,11 +275,11 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
     }
 
     function _checkInputLengthArray(
-        address[] _from,
-        address[] _to,
-        uint256[] _expiryTimes,
-        uint256[] _allowances,
-        bytes32[] _descriptions
+        address[] memory _from,
+        address[] memory _to,
+        uint256[] memory _expiryTimes,
+        uint256[] memory _allowances,
+        bytes32[] memory _descriptions
     )
         internal
         pure
@@ -302,7 +302,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
      * @return uint256[] expiry times provided to the approvals
      * @return bytes32[] descriptions provided to the approvals
      */
-    function getActiveApprovalsToUser(address _user) external view returns(address[], address[], uint256[], uint256[], bytes32[]) {
+    function getActiveApprovalsToUser(address _user) external view returns(address[] memory, address[] memory, uint256[] memory, uint256[] memory, bytes32[] memory) {
         uint256 counter = 0;
         for (uint256 i = 0; i < approvals.length; i++) {
             if ((approvals[i].from == _user || approvals[i].to == _user)
@@ -317,7 +317,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
         bytes32[] memory description = new bytes32[](counter);
 
         counter = 0;
-        for (i = 0; i < approvals.length; i++) {
+        for (uint256 i = 0; i < approvals.length; i++) {
             if ((approvals[i].from == _user || approvals[i].to == _user)
                 && approvals[i].expiryTime >= now) {
 
@@ -370,7 +370,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
      * @return uint256[] expiry times provided to the approvals
      * @return bytes32[] descriptions provided to the approvals
      */
-    function getAllApprovals() external view returns(address[], address[], uint256[], uint256[], bytes32[]) {
+    function getAllApprovals() external view returns(address[] memory, address[] memory, uint256[] memory, uint256[] memory, bytes32[] memory) {
         address[] memory from = new address[](approvals.length);
         address[] memory to = new address[](approvals.length);
         uint256[] memory allowance = new uint256[](approvals.length);

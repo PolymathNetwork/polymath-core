@@ -9,7 +9,7 @@ import "../../libraries/Util.sol";
  * @title Factory for deploying VestingEscrowWallet module
  */
 contract VestingEscrowWalletFactory is ModuleFactory {
-    
+
     address public logicContract;
     /**
      * @notice Constructor
@@ -33,10 +33,8 @@ contract VestingEscrowWalletFactory is ModuleFactory {
      * _data Data used for the intialization of the module factory variables
      * @return address Contract address of the Module
      */
-    function deploy(bytes _data) external returns(address) {
-        if (setupCost > 0) {
-            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom due to insufficent Allowance provided");
-        }
+    function deploy(bytes calldata _data) external returns(address) {
+        address polyToken = _takeFee();
         VestingEscrowWalletProxy vestingEscrowWallet = new VestingEscrowWalletProxy(msg.sender, address(polyToken), logicContract);
         //Checks that _data is valid (not calling anything it shouldn't)
         require(Util.getSig(_data) == IBoot(vestingEscrowWallet).getInitFunction(), "Invalid data");
@@ -50,7 +48,7 @@ contract VestingEscrowWalletFactory is ModuleFactory {
     /**
      * @notice Type of the Module factory
      */
-    function getTypes() external view returns(uint8[]) {
+    function getTypes() external view returns(uint8[] memory)  {
         uint8[] memory res = new uint8[](1);
         res[0] = 6;
         return res;
@@ -59,7 +57,7 @@ contract VestingEscrowWalletFactory is ModuleFactory {
     /**
      * @notice Returns the instructions associated with the module
      */
-    function getInstructions() external view returns(string) {
+    function getInstructions() external view returns(string memory) {
         /*solium-disable-next-line max-len*/
         return "Issuer can deposit tokens to the contract and create the vesting schedule for the given address (Affiliate/Employee). These address can withdraw tokens according to there vesting schedule.";
     }
@@ -67,7 +65,7 @@ contract VestingEscrowWalletFactory is ModuleFactory {
     /**
      * @notice Get the tags related to the module factory
      */
-    function getTags() external view returns(bytes32[]) {
+    function getTags() external view returns(bytes32[] memory) {
         bytes32[] memory availableTags = new bytes32[](2);
         availableTags[0] = "Vested";
         availableTags[1] = "Escrow Wallet";

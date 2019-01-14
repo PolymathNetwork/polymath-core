@@ -7,7 +7,7 @@ import "../ModuleFactory.sol";
  * @title Factory for deploying VolumeRestrictionTM module
  */
 contract VolumeRestrictionTMFactory is ModuleFactory {
-    
+
     address public logicContract;
 
     /**
@@ -16,7 +16,7 @@ contract VolumeRestrictionTMFactory is ModuleFactory {
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _logicContract) public
     ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
-    {   
+    {
         require(_logicContract != address(0), "Invalid address");
         version = "1.0.0";
         name = "VolumeRestrictionTM";
@@ -32,9 +32,8 @@ contract VolumeRestrictionTMFactory is ModuleFactory {
      * @notice Used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
-    function deploy(bytes /* _data */) external returns(address) {
-        if (setupCost > 0)
-            require(polyToken.transferFrom(msg.sender, owner, setupCost), "Insufficent Allowance");
+    function deploy(bytes calldata /* _data */) external returns(address) {
+        address polyToken = _takeFee();
         address volumeRestrictionTransferManager = new VolumeRestrictionTMProxy(msg.sender, address(polyToken), logicContract);
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(volumeRestrictionTransferManager, getName(), address(this), msg.sender, setupCost, now);
@@ -45,7 +44,7 @@ contract VolumeRestrictionTMFactory is ModuleFactory {
     /**
      * @notice Type of the Module factory
      */
-    function getTypes() external view returns(uint8[]) {
+    function getTypes() external view returns(uint8[] memory) {
         uint8[] memory res = new uint8[](1);
         res[0] = 2;
         return res;
@@ -54,7 +53,7 @@ contract VolumeRestrictionTMFactory is ModuleFactory {
     /**
      * @notice Returns the instructions associated with the module
      */
-    function getInstructions() external view returns(string) {
+    function getInstructions() external view returns(string memory) {
         /*solium-disable-next-line max-len*/
         return "Module used to restrict the volume of tokens traded by the token holders";
     }
@@ -62,7 +61,7 @@ contract VolumeRestrictionTMFactory is ModuleFactory {
     /**
      * @notice Get the tags related to the module factory
      */
-    function getTags() public view returns(bytes32[]) {
+    function getTags() public view returns(bytes32[] memory) {
         bytes32[] memory availableTags = new bytes32[](5);
         availableTags[0] = "Maximum Volume";
         availableTags[1] = "Transfer Restriction";

@@ -136,7 +136,7 @@ contract("CountTransferManager", async (accounts) => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            
+
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
             // Verify the successful generation of the security token
             assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
@@ -352,108 +352,6 @@ contract("CountTransferManager", async (accounts) => {
             let perm = await I_CountTransferManager.getPermissions.call();
             assert.equal(perm.length, 1);
         });
-        describe("Test cases for adding and removing acc holder at the same time", async () => {	
-            it("deploy a new token & auto attach modules", async () => {	
-                	
-                //register ticker and deploy token	
-                await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });	
-                let tx = await I_STRProxied.registerTicker(token_owner, symbol2, contact, { from: token_owner });	
-                 await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });	
-                let _blockNo = latestBlock();	
-                let tx2 = await I_STRProxied.generateSecurityToken(name, symbol2, tokenDetails, false, { from: token_owner });	
-           	
-                I_SecurityToken2 = SecurityToken.at(tx2.logs[1].args._securityTokenAddress);	
-                 let moduleData = (await I_SecurityToken2.getModulesByType(2))[0];	
-                I_GeneralTransferManager2 = GeneralTransferManager.at(moduleData);	
-            });	
-             it("add 3 holders to the token", async () => {	
-                                await I_GeneralTransferManager2.modifyWhitelist(	
-                    account_investor1,	
-                    latestTime(),	
-                    latestTime(),	
-                    latestTime() + duration.days(10),	
-                    true,	
-                    {	
-                        from: account_issuer,	
-                        gas: 500000	
-                    }	
-                );	
-                 await I_GeneralTransferManager2.modifyWhitelist(	
-                    account_investor2,	
-                    latestTime(),	
-                    latestTime(),	
-                    latestTime() + duration.days(10),	
-                    true,	
-                    {	
-                        from: account_issuer,	
-                        gas: 500000	
-                    }	
-                );	
-                 await I_GeneralTransferManager2.modifyWhitelist(	
-                    account_investor3,	
-                    latestTime(),	
-                    latestTime(),	
-                    latestTime() + duration.days(10),	
-                    true,	
-                    {	
-                        from: account_issuer,	
-                        gas: 500000	
-                    }	
-                );	
-         	
-                await I_GeneralTransferManager2.modifyWhitelist(	
-                    account_investor4,	
-                    latestTime(),	
-                    latestTime(),	
-                    latestTime() + duration.days(10),	
-                    true,	
-                    {	
-                        from: account_issuer,	
-                        gas: 500000	
-                    }	
-                );	
-              	
-                // Jump time	
-                await increaseTime(5000);	
-                 // Add 3 holders to the token	
-                await I_SecurityToken2.mint(account_investor1, web3.utils.toWei("1", "ether"), { from: token_owner });	
-                await I_SecurityToken2.mint(account_investor2, web3.utils.toWei("1", "ether"), { from: token_owner });	
-                await I_SecurityToken2.mint(account_investor3, web3.utils.toWei("1", "ether"), { from: token_owner });	
-                assert.equal((await I_SecurityToken2.balanceOf(account_investor1)).toNumber(), web3.utils.toWei("1", "ether"));	
-            });	
-             it("Should intialize the auto attached modules", async () => {	
-                let moduleData = (await I_SecurityToken2.getModulesByType(2))[0];	
-                I_GeneralTransferManager2 = GeneralTransferManager.at(moduleData);	
-            });	
-             it("Should successfully attach the CountTransferManager factory with the security token", async () => {	
-                await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);	
-                await catchRevert(	
-                    I_SecurityToken2.addModule(P_CountTransferManagerFactory.address, bytesSTO, web3.utils.toWei("500", "ether"), 0, {	
-                        from: token_owner	
-                    })	
-                );	
-            });	
-             it("Should successfully attach the CountTransferManager with the security token and set max holder to 2", async () => {	
-                const tx = await I_SecurityToken2.addModule(I_CountTransferManagerFactory.address, bytesSTO, 0, 0, { from: token_owner });	
-                assert.equal(tx.logs[2].args._types[0].toNumber(), transferManagerKey, "CountTransferManager doesn't get deployed");	
-                assert.equal(	
-                    web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),	
-                    "CountTransferManager",	
-                    "CountTransferManager module was not added"	
-                );	
-                I_CountTransferManager2 = CountTransferManager.at(tx.logs[2].args._module);	
-                await I_CountTransferManager2.changeHolderCount(2, {from: token_owner});	
-                console.log('current max holder number is '+ await I_CountTransferManager2.maxHolderCount({from: token_owner}));	
-            });	
-             it("Should allow add a new token holder while transfer all the tokens at one go", async () => {	
-                let amount = (await I_SecurityToken2.balanceOf(account_investor2)).toNumber();	
-                let investorCount =  await  I_SecurityToken2.getInvestorCount({from: account_investor2 });	
-                console.log("current investor count is " + investorCount);	
-                await I_SecurityToken2.transfer(account_investor4, amount, { from: account_investor2 });	
-                assert((await I_SecurityToken2.balanceOf(account_investor4)).toNumber(), amount, {from: account_investor2 });	
-                assert(await I_SecurityToken2.getInvestorCount({from: account_investor2 }), investorCount);	
-            });	
-        });	
 
         describe("Test cases for adding and removing acc holder at the same time", async () => {
             it("deploy a new token & auto attach modules", async () => {
@@ -462,7 +360,7 @@ contract("CountTransferManager", async (accounts) => {
                 let tx = await I_STRProxied.registerTicker(token_owner, symbol2, contact, { from: token_owner });
 
                 await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-                
+
                 let tx2 = await I_STRProxied.generateSecurityToken(name, symbol2, tokenDetails, false, { from: token_owner });
 
                 I_SecurityToken2 = await SecurityToken.at(tx2.logs[2].args._securityTokenAddress);

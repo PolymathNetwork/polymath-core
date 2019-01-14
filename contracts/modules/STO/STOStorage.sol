@@ -5,9 +5,8 @@ pragma solidity ^0.5.0;
  */
 
 contract STOStorage {
-
-    mapping (uint8 => bool) public fundRaiseTypes;
-    mapping (uint8 => uint256) public fundsRaised;
+    mapping(uint8 => bool) public fundRaiseTypes;
+    mapping(uint8 => uint256) public fundsRaised;
 
     // Start time of the STO
     uint256 public startTime;

@@ -19,14 +19,12 @@ contract TrackedRedemption is IBurn, Module {
      * @notice Constructor
      * @param _securityToken Address of the security token
      */
-    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
-
-    }
+    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {}
 
     /**
      * @notice This function returns the signature of configure function
      */
-    function getInitFunction() public pure returns(bytes4) {
+    function getInitFunction() public pure returns (bytes4) {
         return bytes4(0);
     }
 
@@ -44,7 +42,7 @@ contract TrackedRedemption is IBurn, Module {
     /**
      * @notice Returns the permissions flag that are associated with CountTransferManager
      */
-    function getPermissions() public view returns(bytes32[] memory) {
+    function getPermissions() public view returns (bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](0);
         return allPermissions;
     }

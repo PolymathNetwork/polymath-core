@@ -14,16 +14,10 @@ contract MockBurnFactory is TrackedRedemptionFactory {
     * @param _usageCost Usage cost of the module
     * @param _subscriptionCost Subscription cost of the module
     */
-    constructor(
-        uint256 _setupCost,
-        uint256 _usageCost,
-        uint256 _subscriptionCost
-    ) 
-        public 
-        TrackedRedemptionFactory(_setupCost, _usageCost, _subscriptionCost) 
-    {
-
-    }
+    constructor(uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost)
+        public
+        TrackedRedemptionFactory(_setupCost, _usageCost, _subscriptionCost)
+    {}
 
     /**
      * @notice Used to launch the Module with the help of factory
@@ -31,10 +25,7 @@ contract MockBurnFactory is TrackedRedemptionFactory {
      */
     function deploy(
         bytes calldata /*_data*/
-    ) 
-        external 
-        returns(address) 
-    {
+    ) external returns (address) {
         address polyToken = _takeFee();
         //Check valid bytes - can only call module init function
         MockRedemptionManager mockRedemptionManager = new MockRedemptionManager(msg.sender, polyToken);

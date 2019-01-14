@@ -10,45 +10,24 @@ import "./ManualApprovalTransferManagerStorage.sol";
 contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, TransferManager {
     using SafeMath for uint256;
 
-    event AddManualApproval(
-        address indexed _from,
-        address indexed _to,
-        uint256 _allowance,
-        uint256 _expiryTime,
-        address indexed _addedBy
-    );
+    event AddManualApproval(address indexed _from, address indexed _to, uint256 _allowance, uint256 _expiryTime, address indexed _addedBy);
 
-    event AddManualBlocking(
-        address indexed _from,
-        address indexed _to,
-        uint256 _expiryTime,
-        address indexed _addedBy
-    );
+    event AddManualBlocking(address indexed _from, address indexed _to, uint256 _expiryTime, address indexed _addedBy);
 
-    event RevokeManualApproval(
-        address indexed _from,
-        address indexed _to,
-        address indexed _addedBy
-    );
+    event RevokeManualApproval(address indexed _from, address indexed _to, address indexed _addedBy);
 
-    event RevokeManualBlocking(
-        address indexed _from,
-        address indexed _to,
-        address indexed _addedBy
-    );
+    event RevokeManualBlocking(address indexed _from, address indexed _to, address indexed _addedBy);
 
     /**
      * @notice Constructor
      * @param _securityToken Address of the security token
      */
-    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
-
-    }
+    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {}
 
     /**
      * @notice This function returns the signature of configure function
      */
-    function getInitFunction() public pure returns(bytes4) {
+    function getInitFunction() public pure returns (bytes4) {
         return bytes4(0);
     }
 
@@ -64,10 +43,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
         uint256 _amount,
         bytes calldata, /* _data */
         bool _isTransfer
-    ) 
-        external 
-        returns(Result) 
-    {
+    ) external returns (Result) {
         // function must only be called by the associated security token if _isTransfer == true
         require(_isTransfer == false || msg.sender == securityToken, "Sender is not the owner");
         // manual blocking takes precidence over manual approval
@@ -143,7 +119,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
     /**
      * @notice Returns the permissions flag that are associated with ManualApproval transfer manager
      */
-    function getPermissions() public view returns(bytes32[] memory) {
+    function getPermissions() public view returns (bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](1);
         allPermissions[0] = TRANSFER_APPROVAL;
         return allPermissions;

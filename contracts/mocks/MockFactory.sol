@@ -16,21 +16,15 @@ contract MockFactory is DummySTOFactory {
      * @param _subscriptionCost Subscription cost of the module
      * @param _logicContract Contract address that contains the logic related to `description`
      */
-    constructor(
-        uint256 _setupCost,
-        uint256 _usageCost,
-        uint256 _subscriptionCost,
-        address _logicContract
-    ) 
-        public 
-        DummySTOFactory(_setupCost, _usageCost, _subscriptionCost, _logicContract) 
-    {
-    }
+    constructor(uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _logicContract)
+        public
+        DummySTOFactory(_setupCost, _usageCost, _subscriptionCost, _logicContract)
+    {}
 
     /**
      * @notice Type of the Module factory
      */
-    function getTypes() external view returns(uint8[] memory) {
+    function getTypes() external view returns (uint8[] memory) {
         if (!switchTypes) {
             uint8[] memory types = new uint8[](0);
             return types;

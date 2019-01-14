@@ -23,7 +23,5 @@ interface ISTFactory {
         address _issuer,
         bool _divisible,
         address _polymathRegistry
-    ) 
-    external 
-    returns(address);
+    ) external returns (address);
 }

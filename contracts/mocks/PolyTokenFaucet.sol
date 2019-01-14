@@ -28,7 +28,7 @@ contract PolyTokenFaucet {
     }
 
     /* Token faucet - Not part of the ERC20 standard */
-    function getTokens(uint256 _amount, address _recipient) public returns(bool) {
+    function getTokens(uint256 _amount, address _recipient) public returns (bool) {
         require(_amount <= 1000000 * uint256(10) ** decimals, "Amount should not exceed 1 million");
         require(_recipient != address(0), "Recipient address can not be empty");
         balances[_recipient] = balances[_recipient].add(_amount);
@@ -43,7 +43,7 @@ contract PolyTokenFaucet {
      * @param _value The amount of token to be transferred
      * @return Whether the transfer was successful or not
      */
-    function transfer(address _to, uint256 _value) public returns(bool) {
+    function transfer(address _to, uint256 _value) public returns (bool) {
         balances[msg.sender] = balances[msg.sender].sub(_value);
         balances[_to] = balances[_to].add(_value);
         emit Transfer(msg.sender, _to, _value);
@@ -57,7 +57,7 @@ contract PolyTokenFaucet {
      * @param _value The amount of token to be transferred
      * @return Whether the transfer was successful or not
      */
-    function transferFrom(address _from, address _to, uint256 _value) public returns(bool) {
+    function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
         require(_to != address(0), "Invalid address");
         require(_value <= balances[_from], "Insufficient tokens transferable");
         require(_value <= allowed[_from][msg.sender], "Insufficient tokens allowable");
@@ -74,7 +74,7 @@ contract PolyTokenFaucet {
      * @param _owner The address from which the balance will be retrieved
      * @return The balance
      */
-    function balanceOf(address _owner) public view returns(uint256 balance) {
+    function balanceOf(address _owner) public view returns (uint256 balance) {
         return balances[_owner];
     }
 
@@ -84,7 +84,7 @@ contract PolyTokenFaucet {
      * @param _value The amount of tokens to be approved for transfer
      * @return Whether the approval was successful or not
      */
-    function approve(address _spender, uint256 _value) public returns(bool) {
+    function approve(address _spender, uint256 _value) public returns (bool) {
         allowed[msg.sender][_spender] = _value;
         emit Approval(msg.sender, _spender, _value);
         return true;
@@ -95,11 +95,11 @@ contract PolyTokenFaucet {
      * @param _spender The address of the account able to transfer the tokens
      * @return Amount of remaining tokens allowed to be spent
      */
-    function allowance(address _owner, address _spender) public view returns(uint256 remaining) {
+    function allowance(address _owner, address _spender) public view returns (uint256 remaining) {
         return allowed[_owner][_spender];
     }
 
-    function totalSupply() public view returns(uint256) {
+    function totalSupply() public view returns (uint256) {
         return totalSupply_;
     }
 
@@ -112,7 +112,7 @@ contract PolyTokenFaucet {
      * @param _spender The address which will spend the funds.
      * @param _addedValue The amount of tokens to increase the allowance by.
      */
-    function increaseApproval(address _spender, uint _addedValue) public returns(bool) {
+    function increaseApproval(address _spender, uint _addedValue) public returns (bool) {
         allowed[msg.sender][_spender] = (allowed[msg.sender][_spender].add(_addedValue));
         emit Approval(msg.sender, _spender, allowed[msg.sender][_spender]);
         return true;
@@ -128,7 +128,7 @@ contract PolyTokenFaucet {
     * @param _spender The address which will spend the funds.
     * @param _subtractedValue The amount of tokens to decrease the allowance by.
     */
-    function decreaseApproval(address _spender, uint _subtractedValue) public returns(bool) {
+    function decreaseApproval(address _spender, uint _subtractedValue) public returns (bool) {
         uint oldValue = allowed[msg.sender][_spender];
         if (_subtractedValue > oldValue) {
             allowed[msg.sender][_spender] = 0;

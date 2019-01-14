@@ -9,7 +9,7 @@ contract Proxy {
     * @dev Tells the address of the implementation where every call will be delegated.
     * @return address of the implementation to which it will be delegated
     */
-    function _implementation() internal view returns(address);
+    function _implementation() internal view returns (address);
 
     /**
     * @dev Fallback function.
@@ -36,9 +36,13 @@ contract Proxy {
             // Copy the returned data.
             returndatacopy(0, 0, returndatasize)
             switch result
-            // delegatecall returns 0 on error.
-            case 0 { revert(0, returndatasize) }
-            default { return(0, returndatasize) }
+                // delegatecall returns 0 on error.
+                case 0 {
+                    revert(0, returndatasize)
+                }
+                default {
+                    return(0, returndatasize)
+                }
         }
     }
 

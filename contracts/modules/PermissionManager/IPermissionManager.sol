@@ -11,7 +11,7 @@ interface IPermissionManager {
     * @param _perm Permission flag
     * @return bool
     */
-    function checkPermission(address _delegate, address _module, bytes32 _perm) external view returns(bool);
+    function checkPermission(address _delegate, address _module, bytes32 _perm) external view returns (bool);
 
     /**
     * @notice Used to add a delegate
@@ -31,7 +31,7 @@ interface IPermissionManager {
     * @param _potentialDelegate the address of potential delegate
     * @return bool
     */
-    function checkDelegate(address _potentialDelegate) external view returns(bool);
+    function checkDelegate(address _potentialDelegate) external view returns (bool);
 
     /**
     * @notice Used to provide/change the permission to the delegate corresponds to the module contract
@@ -51,12 +51,8 @@ interface IPermissionManager {
     * @param _valids Bool array consist the flag to switch on/off the permission
     * @return nothing
     */
-    function changePermissionMulti(
-        address _delegate,
-        address[] calldata _modules,
-        bytes32[] calldata _perms,
-        bool[] calldata _valids
-    ) external;
+    function changePermissionMulti(address _delegate, address[] calldata _modules, bytes32[] calldata _perms, bool[] calldata _valids)
+        external;
 
     /**
     * @notice Used to return all delegates with a given permission and module
@@ -64,7 +60,7 @@ interface IPermissionManager {
     * @param _perm Permission flag
     * @return address[]
     */
-    function getAllDelegatesWithPerm(address _module, bytes32 _perm) external view returns(address[] memory);
+    function getAllDelegatesWithPerm(address _module, bytes32 _perm) external view returns (address[] memory);
 
     /**
     * @notice Used to return all permission of a single or multiple module
@@ -74,21 +70,21 @@ interface IPermissionManager {
     * @return address[] the address array of Modules this delegate has permission
     * @return bytes32[] the permission array of the corresponding Modules
     */
-    function getAllModulesAndPermsFromTypes(address _delegate, uint8[] calldata _types) external view returns(
-        address[] memory,
-        bytes32[] memory
-    );
+    function getAllModulesAndPermsFromTypes(address _delegate, uint8[] calldata _types)
+        external
+        view
+        returns (address[] memory, bytes32[] memory);
 
     /**
     * @notice Used to get the Permission flag related the `this` contract
     * @return Array of permission flags
     */
-    function getPermissions() external view returns(bytes32[] memory);
+    function getPermissions() external view returns (bytes32[] memory);
 
     /**
     * @notice Used to get all delegates
     * @return address[]
     */
-    function getAllDelegates() external view returns(address[] memory);
+    function getAllDelegates() external view returns (address[] memory);
 
 }

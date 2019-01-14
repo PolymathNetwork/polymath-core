@@ -18,27 +18,27 @@ interface IModuleFactory {
     event ChangeSTVersionBound(string _boundType, uint8 _major, uint8 _minor, uint8 _patch);
 
     //Should create an instance of the Module, or throw
-    function deploy(bytes calldata _data) external returns(address);
+    function deploy(bytes calldata _data) external returns (address);
 
     /**
      * @notice Type of the Module factory
      */
-    function getTypes() external view returns(uint8[] memory);
+    function getTypes() external view returns (uint8[] memory);
 
     /**
      * @notice Get the name of the Module
      */
-    function getName() external view returns(bytes32);
+    function getName() external view returns (bytes32);
 
     /**
      * @notice Returns the instructions associated with the module
      */
-    function getInstructions() external view returns(string memory);
+    function getInstructions() external view returns (string memory);
 
     /**
      * @notice Get the tags related to the module factory
      */
-    function getTags() external view returns(bytes32[] memory);
+    function getTags() external view returns (bytes32[] memory);
 
     /**
      * @notice Used to change the setup fee
@@ -68,18 +68,18 @@ interface IModuleFactory {
     /**
      * @notice Get the setup cost of the module
      */
-    function getSetupCost() external view returns(uint256);
+    function getSetupCost() external view returns (uint256);
 
     /**
      * @notice Used to get the lower bound
      * @return Lower bound
      */
-    function getLowerSTVersionBounds() external view returns(uint8[] memory);
+    function getLowerSTVersionBounds() external view returns (uint8[] memory);
 
     /**
      * @notice Used to get the upper bound
      * @return Upper bound
      */
-    function getUpperSTVersionBounds() external view returns(uint8[] memory);
+    function getUpperSTVersionBounds() external view returns (uint8[] memory);
 
 }

@@ -43,21 +43,21 @@ contract MakerDAOOracle is IOracle, Ownable {
     /**
     * @notice Returns address of oracle currency (0x0 for ETH)
     */
-    function getCurrencyAddress() external view returns(address) {
+    function getCurrencyAddress() external view returns (address) {
         return currencyAddress;
     }
 
     /**
     * @notice Returns symbol of oracle currency (0x0 for ETH)
     */
-    function getCurrencySymbol() external view returns(bytes32) {
+    function getCurrencySymbol() external view returns (bytes32) {
         return currencySymbol;
     }
 
     /**
     * @notice Returns denomination of price
     */
-    function getCurrencyDenominated() external view returns(bytes32) {
+    function getCurrencyDenominated() external view returns (bytes32) {
         // All MakerDAO oracles are denominated in USD
         return bytes32("USD");
     }
@@ -65,7 +65,7 @@ contract MakerDAOOracle is IOracle, Ownable {
     /**
     * @notice Returns price - should throw if not valid
     */
-    function getPrice() external view returns(uint256) {
+    function getPrice() external view returns (uint256) {
         if (manualOverride) {
             return manualPrice;
         }

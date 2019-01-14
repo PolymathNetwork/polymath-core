@@ -39,7 +39,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
     * @notice Init function i.e generalise function to maintain the structure of the module contract
     * @return bytes4
     */
-    function getInitFunction() public pure returns(bytes4) {
+    function getInitFunction() public pure returns (bytes4) {
         return bytes4(0);
     }
 
@@ -47,7 +47,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @notice Return the default excluded addresses
      * @return List of excluded addresses
      */
-    function getDefaultExcluded() external view returns(address[] memory) {
+    function getDefaultExcluded() external view returns (address[] memory) {
         return excluded;
     }
 
@@ -55,7 +55,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @notice Creates a checkpoint on the security token
      * @return Checkpoint ID
      */
-    function createCheckpoint() public withPerm(CHECKPOINT) returns(uint256) {
+    function createCheckpoint() public withPerm(CHECKPOINT) returns (uint256) {
         return ISecurityToken(securityToken).createCheckpoint();
     }
 
@@ -110,13 +110,10 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @param _dividendIndex Dividend to push
      * @param _payees Addresses to which to push the dividend
      */
-    function pushDividendPaymentToAddresses(
-        uint256 _dividendIndex,
-        address payable[] memory _payees
-    ) 
-        public 
-        withPerm(DISTRIBUTE) 
-        validDividendIndex(_dividendIndex) 
+    function pushDividendPaymentToAddresses(uint256 _dividendIndex, address payable[] memory _payees)
+        public
+        withPerm(DISTRIBUTE)
+        validDividendIndex(_dividendIndex)
     {
         Dividend storage dividend = dividends[_dividendIndex];
         for (uint256 i = 0; i < _payees.length; i++) {
@@ -132,13 +129,10 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @param _start Index in investor list at which to start pushing dividends
      * @param _iterations Number of addresses to push dividends for
      */
-    function pushDividendPayment(
-        uint256 _dividendIndex,
-        uint256 _start,
-        uint256 _iterations
-    ) public 
-      withPerm(DISTRIBUTE) 
-      validDividendIndex(_dividendIndex) 
+    function pushDividendPayment(uint256 _dividendIndex, uint256 _start, uint256 _iterations)
+        public
+        withPerm(DISTRIBUTE)
+        validDividendIndex(_dividendIndex)
     {
         Dividend storage dividend = dividends[_dividendIndex];
         address[] memory investors = ISecurityToken(securityToken).getInvestors();
@@ -182,7 +176,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @param _payee Affected investor address
      * @return claim, withheld amounts
      */
-    function calculateDividend(uint256 _dividendIndex, address _payee) public view returns(uint256, uint256) {
+    function calculateDividend(uint256 _dividendIndex, address _payee) public view returns (uint256, uint256) {
         require(_dividendIndex < dividends.length, "Invalid dividend");
         Dividend storage dividend = dividends[_dividendIndex];
         if (dividend.claimed[_payee] || dividend.dividendExcluded[_payee]) {
@@ -199,7 +193,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @param _checkpointId Checkpoint id to query
      * @return uint256[]
      */
-    function getDividendIndex(uint256 _checkpointId) public view returns(uint256[] memory) {
+    function getDividendIndex(uint256 _checkpointId) public view returns (uint256[] memory) {
         uint256 counter = 0;
         for (uint256 i = 0; i < dividends.length; i++) {
             if (dividends[i].checkpointId == _checkpointId) {
@@ -228,7 +222,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @notice Return the permissions flag that are associated with this module
      * @return bytes32 array
      */
-    function getPermissions() public view returns(bytes32[] memory) {
+    function getPermissions() public view returns (bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](2);
         allPermissions[0] = DISTRIBUTE;
         allPermissions[1] = MANAGE;

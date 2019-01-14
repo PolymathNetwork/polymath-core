@@ -29,8 +29,7 @@ interface ISecurityTokenRegistry {
         address _securityToken,
         string calldata _tokenDetails,
         uint256 _deployedAt
-    ) 
-    external;
+    ) external;
 
     /**
      * @notice Registers the token ticker for its particular owner
@@ -58,7 +57,7 @@ interface ISecurityTokenRegistry {
     * @param _securityToken Address of the Scurity token
     * @return bool
     */
-    function isSecurityToken(address _securityToken) external view returns(bool);
+    function isSecurityToken(address _securityToken) external view returns (bool);
 
     /**
     * @dev Allows the current owner to transfer control of the contract to a newOwner.
@@ -71,7 +70,7 @@ interface ISecurityTokenRegistry {
      * @param _ticker Symbol of the Scurity token
      * @return address
      */
-    function getSecurityTokenAddress(string calldata _ticker) external view returns(address);
+    function getSecurityTokenAddress(string calldata _ticker) external view returns (address);
 
     /**
      * @notice Get security token data by its address
@@ -81,36 +80,36 @@ interface ISecurityTokenRegistry {
      * @return string Details of the Token.
      * @return uint256 Timestamp at which Security Token get launched on Polymath platform.
      */
-    function getSecurityTokenData(address _securityToken) external view returns(string memory, address, string memory, uint256);
+    function getSecurityTokenData(address _securityToken) external view returns (string memory, address, string memory, uint256);
 
     /**
      * @notice Get the current STFactory Address
      */
-    function getSTFactoryAddress() external view returns(address);
+    function getSTFactoryAddress() external view returns (address);
 
     /**
      * @notice Get Protocol version
      */
-    function getProtocolVersion() external view returns(uint8[] memory);
+    function getProtocolVersion() external view returns (uint8[] memory);
 
     /**
      * @notice Used to get the ticker list as per the owner
      * @param _owner Address which owns the list of tickers
      */
-    function getTickersByOwner(address _owner) external view returns(bytes32[] memory);
+    function getTickersByOwner(address _owner) external view returns (bytes32[] memory);
 
     /**
      * @notice Returns the list of tokens owned by the selected address
      * @param _owner is the address which owns the list of tickers
      * @dev Intention is that this is called off-chain so block gas limit is not relevant
      */
-    function getTokensByOwner(address _owner) external view returns(address[] memory);
+    function getTokensByOwner(address _owner) external view returns (address[] memory);
 
     /**
      * @notice Returns the list of all tokens
      * @dev Intention is that this is called off-chain so block gas limit is not relevant
      */
-    function getTokens() external view returns(address[] memory);
+    function getTokens() external view returns (address[] memory);
 
     /**
      * @notice Returns the owner and timestamp for a given ticker
@@ -121,7 +120,7 @@ interface ISecurityTokenRegistry {
      * @return string
      * @return bool
      */
-    function getTickerDetails(string calldata _ticker) external view returns(address, uint256, uint256, string memory, bool);
+    function getTickerDetails(string calldata _ticker) external view returns (address, uint256, uint256, string memory, bool);
 
     /**
      * @notice Modifies the ticker details. Only polymath account has the ability
@@ -140,8 +139,7 @@ interface ISecurityTokenRegistry {
         uint256 _registrationDate,
         uint256 _expiryDate,
         bool _status
-    ) 
-    external;
+    ) external;
 
     /**
      * @notice Removes the ticker details and associated ownership & security token mapping
@@ -178,30 +176,30 @@ interface ISecurityTokenRegistry {
      * @notice Gets the security token launch fee
      * @return Fee amount
      */
-    function getSecurityTokenLaunchFee() external view returns(uint256);
+    function getSecurityTokenLaunchFee() external view returns (uint256);
 
     /**
      * @notice Gets the ticker registration fee
      * @return Fee amount
      */
-    function getTickerRegistrationFee() external view returns(uint256);
+    function getTickerRegistrationFee() external view returns (uint256);
 
     /**
      * @notice Gets the expiry limit
      * @return Expiry limit
      */
-    function getExpiryLimit() external view returns(uint256);
+    function getExpiryLimit() external view returns (uint256);
 
     /**
      * @notice Checks whether the registry is paused or not
      * @return bool
      */
-    function isPaused() external view returns(bool);
+    function isPaused() external view returns (bool);
 
     /**
      * @notice Gets the owner of the contract
      * @return address owner
      */
-    function owner() external view returns(address);
+    function owner() external view returns (address);
 
 }

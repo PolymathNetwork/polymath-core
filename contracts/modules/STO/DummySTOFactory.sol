@@ -9,7 +9,6 @@ import "../../interfaces/IBoot.sol";
  * @title Factory for deploying DummySTO module
  */
 contract DummySTOFactory is ModuleFactory {
-
     address public logicContract;
 
     /**
@@ -19,14 +18,9 @@ contract DummySTOFactory is ModuleFactory {
      * @param _subscriptionCost Subscription cost of the module
      * @param _logicContract Contract address that contains the logic related to `description`
      */
-    constructor(
-        uint256 _setupCost,
-        uint256 _usageCost,
-        uint256 _subscriptionCost,
-        address _logicContract
-    ) 
-        public 
-        ModuleFactory(_setupCost, _usageCost, _subscriptionCost) 
+    constructor(uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _logicContract)
+        public
+        ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
     {
         version = "1.0.0";
         name = "DummySTO";
@@ -42,7 +36,7 @@ contract DummySTOFactory is ModuleFactory {
      * @param _data Data used for the intialization of the module factory variables
      * @return address Contract address of the Module
      */
-    function deploy(bytes calldata _data) external returns(address) {
+    function deploy(bytes calldata _data) external returns (address) {
         address polyToken = _takeFee();
         //Check valid bytes - can only call module init function
         address dummySTO = address(new DummySTOProxy(msg.sender, polyToken, logicContract));
@@ -60,7 +54,7 @@ contract DummySTOFactory is ModuleFactory {
     /**
      * @notice Type of the Module factory
      */
-    function getTypes() external view returns(uint8[] memory) {
+    function getTypes() external view returns (uint8[] memory) {
         uint8[] memory res = new uint8[](1);
         res[0] = 3;
         return res;
@@ -69,14 +63,14 @@ contract DummySTOFactory is ModuleFactory {
     /**
      * @notice Returns the instructions associated with the module
      */
-    function getInstructions() external view returns(string memory) {
+    function getInstructions() external view returns (string memory) {
         return "Dummy STO - you can mint tokens at will";
     }
 
     /**
      * @notice Get the tags related to the module factory
      */
-    function getTags() external view returns(bytes32[] memory) {
+    function getTags() external view returns (bytes32[] memory) {
         bytes32[] memory availableTags = new bytes32[](4);
         availableTags[0] = "Dummy";
         availableTags[1] = "Non-refundable";

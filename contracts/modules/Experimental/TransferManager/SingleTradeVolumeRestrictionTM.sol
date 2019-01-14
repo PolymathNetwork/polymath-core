@@ -46,9 +46,7 @@ contract SingleTradeVolumeRestrictionTM is TransferManager {
      * @notice Constructor
      * @param _securityToken Address of the security token
     */
-    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
-
-    }
+    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {}
 
     /** @notice Used to verify the transfer transaction and prevent an account from sending more tokens than allowed in a single transfer
      * @param _from Address of the sender
@@ -56,14 +54,11 @@ contract SingleTradeVolumeRestrictionTM is TransferManager {
      */
     function verifyTransfer(
         address _from,
-        address /* _to */,
+        address, /* _to */
         uint256 _amount,
-        bytes calldata /* _data */,
+        bytes calldata, /* _data */
         bool /* _isTransfer */
-    ) 
-        external 
-        returns(Result) 
-    {
+    ) external returns (Result) {
         bool validTransfer;
 
         if (exemptWallets[_from] || paused) return Result.NA;
@@ -96,13 +91,9 @@ contract SingleTradeVolumeRestrictionTM is TransferManager {
     * @param _isTransferLimitInPercentage true if the transfer limit is in percentage else false
     * @param _globalTransferLimitInPercentageOrToken transfer limit per single transaction.
     */
-    function configure(
-        bool _isTransferLimitInPercentage,
-        uint256 _globalTransferLimitInPercentageOrToken,
-        bool _allowPrimaryIssuance
-    ) 
-        public 
-        onlyFactory 
+    function configure(bool _isTransferLimitInPercentage, uint256 _globalTransferLimitInPercentageOrToken, bool _allowPrimaryIssuance)
+        public
+        onlyFactory
     {
         isTransferLimitInPercentage = _isTransferLimitInPercentage;
         if (isTransferLimitInPercentage) {
@@ -287,10 +278,10 @@ contract SingleTradeVolumeRestrictionTM is TransferManager {
     * The percentage has to be multipled by 10 ** 16. Eg: 20% would be 20 * 10 ** 16
     * @dev The manager has to be configured to use percentage as limit
     */
-    function setTransferLimitInPercentageMulti(
-        address[] memory _wallets,
-        uint[] memory _transferLimitsInPercentage
-    ) public withPerm(ADMIN) {
+    function setTransferLimitInPercentageMulti(address[] memory _wallets, uint[] memory _transferLimitsInPercentage)
+        public
+        withPerm(ADMIN)
+    {
         require(_wallets.length > 0, "Wallets cannot be empty");
         require(_wallets.length == _transferLimitsInPercentage.length, "Wallets don't match to percentage limits");
         for (uint256 i = 0; i < _wallets.length; i++) {
@@ -323,14 +314,14 @@ contract SingleTradeVolumeRestrictionTM is TransferManager {
     /**
     * @notice This function returns the signature of configure function
     */
-    function getInitFunction() public pure returns(bytes4) {
+    function getInitFunction() public pure returns (bytes4) {
         return bytes4(keccak256("configure(bool,uint256,bool)"));
     }
 
     /**
     * @notice Returns the permissions flag that are associated with SingleTradeVolumeRestrictionManager
     */
-    function getPermissions() public view returns(bytes32[] memory) {
+    function getPermissions() public view returns (bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](1);
         allPermissions[0] = ADMIN;
         return allPermissions;

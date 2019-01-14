@@ -33,14 +33,12 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
      * @notice Constructor
      * @param _securityToken Address of the security token
      */
-    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
-
-    }
+    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {}
 
     /**
      * @notice This function returns the signature of configure function
      */
-    function getInitFunction() public pure returns(bytes4) {
+    function getInitFunction() public pure returns (bytes4) {
         return bytes4(0);
     }
 
@@ -89,10 +87,7 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
         uint256, /* _amount */
         bytes calldata, /* _data */
         bool _isTransfer
-    ) 
-        external 
-        returns(Result) 
-    {
+    ) external returns (Result) {
         require(_isTransfer == false || msg.sender == securityToken, "Sender is not owner");
         if (paused || !_isTransfer) {
             return Result.NA;
@@ -105,15 +100,11 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
      * @notice gets schedule details
      * @param _name name of the schedule
      */
-    function getSchedule(bytes32 _name) external view returns(
-        bytes32,
-        uint256,
-        uint256,
-        uint256,
-        uint256[] memory,
-        uint256[] memory,
-        uint256[] memory
-    ){
+    function getSchedule(bytes32 _name)
+        external
+        view
+        returns (bytes32, uint256, uint256, uint256, uint256[] memory, uint256[] memory, uint256[] memory)
+    {
         return (schedules[_name].name, schedules[_name].startTime, schedules[_name].nextTime, schedules[_name].interval, schedules[_name].checkpointIds, schedules[_name].timestamps, schedules[_name].periods);
     }
 
@@ -154,7 +145,7 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
     /**
      * @notice Return the permissions flag that are associated with CountTransferManager
      */
-    function getPermissions() external view returns(bytes32[] memory) {
+    function getPermissions() external view returns (bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](0);
         return allPermissions;
     }

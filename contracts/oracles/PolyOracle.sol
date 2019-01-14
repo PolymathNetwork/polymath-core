@@ -189,7 +189,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     * @return latest POLYUSD price
     * @return timestamp of latest price update
     */
-    function getPriceAndTime() public view returns(uint256, uint256) {
+    function getPriceAndTime() public view returns (uint256, uint256) {
         return (POLYUSD, latestUpdate);
     }
 
@@ -244,28 +244,28 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     /**
     * @notice Returns address of oracle currency (0x0 for ETH)
     */
-    function getCurrencyAddress() external view returns(address) {
+    function getCurrencyAddress() external view returns (address) {
         return 0x9992eC3cF6A55b00978cdDF2b27BC6882d88D1eC;
     }
 
     /**
     * @notice Returns symbol of oracle currency (0x0 for ETH)
     */
-    function getCurrencySymbol() external view returns(bytes32) {
+    function getCurrencySymbol() external view returns (bytes32) {
         return bytes32("POLY");
     }
 
     /**
     * @notice Returns denomination of price
     */
-    function getCurrencyDenominated() external view returns(bytes32) {
+    function getCurrencyDenominated() external view returns (bytes32) {
         return bytes32("USD");
     }
 
     /**
     * @notice Returns price - should throw if not valid
     */
-    function getPrice() external view returns(uint256) {
+    function getPrice() external view returns (uint256) {
         /*solium-disable-next-line security/no-block-members*/
         require(latestUpdate >= now - staleTime, "Invalid price");
         return POLYUSD;

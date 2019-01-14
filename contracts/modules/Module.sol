@@ -16,9 +16,7 @@ contract Module is IModule, ModuleStorage {
      * @notice Constructor
      * @param _securityToken Address of the security token
      */
-    constructor(address _securityToken, address _polyToken) public ModuleStorage(_securityToken, _polyToken) {
-
-    }
+    constructor(address _securityToken, address _polyToken) public ModuleStorage(_securityToken, _polyToken) {}
 
     //Allows owner, factory or permissioned delegate
     modifier withPerm(bytes32 _perm) {
@@ -54,7 +52,7 @@ contract Module is IModule, ModuleStorage {
     /**
      * @notice used to withdraw the fee by the factory owner
      */
-    function takeFee(uint256 _amount) public withPerm(FEE_ADMIN) returns(bool) {
+    function takeFee(uint256 _amount) public withPerm(FEE_ADMIN) returns (bool) {
         require(polyToken.transferFrom(securityToken, Ownable(factory).owner(), _amount), "Unable to take fee");
         return true;
     }

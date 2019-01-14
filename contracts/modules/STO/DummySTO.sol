@@ -8,16 +8,13 @@ import "./DummySTOStorage.sol";
  * @title STO module for sample implementation of a different crowdsale module
  */
 contract DummySTO is DummySTOStorage, STO {
-
     event GenerateTokens(address _investor, uint256 _amount);
 
     /**
      * @notice Constructor
      * @param _securityToken Address of the security token
      */
-    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
-
-    }
+    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {}
 
     /**
      * @notice Function used to intialize the differnet variables
@@ -36,7 +33,7 @@ contract DummySTO is DummySTOStorage, STO {
     /**
      * @notice This function returns the signature of configure function
      */
-    function getInitFunction() public pure returns(bytes4) {
+    function getInitFunction() public pure returns (bytes4) {
         return bytes4(keccak256("configure(uint256,uint256,uint256,string)"));
     }
 
@@ -60,21 +57,21 @@ contract DummySTO is DummySTOStorage, STO {
     /**
      * @notice Returns the total no. of investors
      */
-    function getNumberInvestors() public view returns(uint256) {
+    function getNumberInvestors() public view returns (uint256) {
         return investorCount;
     }
 
     /**
      * @notice Returns the total no. of investors
      */
-    function getTokensSold() external view returns(uint256) {
+    function getTokensSold() external view returns (uint256) {
         return 0;
     }
 
     /**
      * @notice Returns the permissions flag that are associated with STO
      */
-    function getPermissions() public view returns(bytes32[] memory) {
+    function getPermissions() public view returns (bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](1);
         allPermissions[0] = ADMIN;
         return allPermissions;

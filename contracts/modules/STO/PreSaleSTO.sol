@@ -17,9 +17,7 @@ contract PreSaleSTO is PreSaleSTOStorage, STO {
      * @notice Constructor
      * @param _securityToken Address of the security token
      */
-    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
-
-    }
+    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {}
 
     /**
      * @notice Function used to initialize the different variables
@@ -33,28 +31,28 @@ contract PreSaleSTO is PreSaleSTOStorage, STO {
     /**
      * @notice This function returns the signature of the configure function
      */
-    function getInitFunction() public pure returns(bytes4) {
+    function getInitFunction() public pure returns (bytes4) {
         return bytes4(keccak256("configure(uint256)"));
     }
 
     /**
      * @notice Returns the total no. of investors
      */
-    function getNumberInvestors() public view returns(uint256) {
+    function getNumberInvestors() public view returns (uint256) {
         return investorCount;
     }
 
     /**
      * @notice Returns the total no. of tokens sold
      */
-    function getTokensSold() external view returns(uint256) {
+    function getTokensSold() external view returns (uint256) {
         return totalTokensSold;
     }
 
     /**
      * @notice Returns the permissions flag that are associated with STO
      */
-    function getPermissions() public view returns(bytes32[] memory) {
+    function getPermissions() public view returns (bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](1);
         allPermissions[0] = PRE_SALE_ADMIN;
         return allPermissions;
@@ -67,14 +65,9 @@ contract PreSaleSTO is PreSaleSTOStorage, STO {
      * @param _etherContributed How much ETH was contributed
      * @param _polyContributed How much POLY was contributed
      */
-    function allocateTokens(
-        address _investor,
-        uint256 _amount,
-        uint256 _etherContributed,
-        uint256 _polyContributed
-    ) 
-        public 
-        withPerm(PRE_SALE_ADMIN) 
+    function allocateTokens(address _investor, uint256 _amount, uint256 _etherContributed, uint256 _polyContributed)
+        public
+        withPerm(PRE_SALE_ADMIN)
     {
         /*solium-disable-next-line security/no-block-members*/
         require(now <= endTime, "Already passed Endtime");
@@ -102,10 +95,7 @@ contract PreSaleSTO is PreSaleSTOStorage, STO {
         uint256[] memory _amounts,
         uint256[] memory _etherContributed,
         uint256[] memory _polyContributed
-    ) 
-        public 
-        withPerm(PRE_SALE_ADMIN) 
-    {
+    ) public withPerm(PRE_SALE_ADMIN) {
         require(_investors.length == _amounts.length, "Mis-match in length of the arrays");
         require(_etherContributed.length == _polyContributed.length, "Mis-match in length of the arrays");
         require(_etherContributed.length == _investors.length, "Mis-match in length of the arrays");

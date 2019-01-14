@@ -15,21 +15,15 @@ contract MockWrongTypeFactory is MockBurnFactory {
     * @param _usageCost Usage cost of the module
     * @param _subscriptionCost Subscription cost of the module
     */
-    constructor(
-        uint256 _setupCost,
-        uint256 _usageCost,
-        uint256 _subscriptionCost
-    ) 
-        public 
-        MockBurnFactory(_setupCost, _usageCost, _subscriptionCost) 
-    {
-
-    }
+    constructor(uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost)
+        public
+        MockBurnFactory(_setupCost, _usageCost, _subscriptionCost)
+    {}
 
     /**
      * @notice Type of the Module factory
      */
-    function getTypes() external view returns(uint8[] memory) {
+    function getTypes() external view returns (uint8[] memory) {
         uint8[] memory types = new uint8[](1);
         types[0] = 4;
         return types;

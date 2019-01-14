@@ -52,9 +52,7 @@ contract LockupVolumeRestrictionTM is TransferManager {
      * @notice Constructor
      * @param _securityToken Address of the security token
      */
-    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
-
-    }
+    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {}
 
     /** @notice Used to verify the transfer transaction and prevent locked up tokens from being transferred
      * @param _from Address of the sender
@@ -67,10 +65,7 @@ contract LockupVolumeRestrictionTM is TransferManager {
         uint256 _amount,
         bytes calldata, /* _data */
         bool _isTransfer
-    ) 
-        external 
-        returns(Result) 
-    {
+    ) external returns (Result) {
         // only attempt to verify the transfer if the token is unpaused, this isn't a mint txn, and there exists a lockup for this user
         if (!paused && _from != address(0) && lockUps[_from].length != 0) {
             // check if this transfer is valid
@@ -87,15 +82,9 @@ contract LockupVolumeRestrictionTM is TransferManager {
      * @param _startTime When this lockup starts (seconds)
      * @param _totalAmount Total amount of locked up tokens
      */
-    function addLockUp(
-        address _userAddress,
-        uint _lockUpPeriodSeconds,
-        uint _releaseFrequencySeconds,
-        uint _startTime,
-        uint _totalAmount
-    ) 
-        public 
-        withPerm(ADMIN) 
+    function addLockUp(address _userAddress, uint _lockUpPeriodSeconds, uint _releaseFrequencySeconds, uint _startTime, uint _totalAmount)
+        public
+        withPerm(ADMIN)
     {
         uint256 startTime = _startTime;
         _checkLockUpParams(_lockUpPeriodSeconds, _releaseFrequencySeconds, _totalAmount);
@@ -132,10 +121,7 @@ contract LockupVolumeRestrictionTM is TransferManager {
         uint[] calldata _releaseFrequenciesSeconds,
         uint[] calldata _startTimes,
         uint[] calldata _totalAmounts
-    ) 
-        external 
-        withPerm(ADMIN) 
-    {
+    ) external withPerm(ADMIN) {
         require(
             _userAddresses.length == _lockUpPeriodsSeconds.length && _userAddresses.length == _releaseFrequenciesSeconds.length && _userAddresses.length == _startTimes.length && _userAddresses.length == _totalAmounts.length, /*solium-disable-line operator-whitespace*/ /*solium-disable-line operator-whitespace*/
             "Input array length mismatch"
@@ -191,10 +177,7 @@ contract LockupVolumeRestrictionTM is TransferManager {
         uint _releaseFrequencySeconds,
         uint _startTime,
         uint _totalAmount
-    ) 
-        public 
-        withPerm(ADMIN) 
-    {
+    ) public withPerm(ADMIN) {
         require(_lockUpIndex < lockUps[_userAddress].length, "Array out of bounds exception");
 
         uint256 startTime = _startTime;
@@ -222,7 +205,7 @@ contract LockupVolumeRestrictionTM is TransferManager {
      * @notice Get the length of the lockups array for a specific user address
      * @param _userAddress Address of the user whose tokens should be locked up
      */
-    function getLockUpsLength(address _userAddress) public view returns(uint) {
+    function getLockUpsLength(address _userAddress) public view returns (uint) {
         return lockUps[_userAddress].length;
     }
 
@@ -231,13 +214,11 @@ contract LockupVolumeRestrictionTM is TransferManager {
      * @param _userAddress Address of the user whose tokens should be locked up
      * @param _lockUpIndex The index of the LockUp to edit for the given userAddress
      */
-    function getLockUp(address _userAddress, uint _lockUpIndex) public view returns(
-        uint lockUpPeriodSeconds,
-        uint releaseFrequencySeconds,
-        uint startTime,
-        uint totalAmount,
-        uint alreadyWithdrawn
-    ) {
+    function getLockUp(address _userAddress, uint _lockUpIndex)
+        public
+        view
+        returns (uint lockUpPeriodSeconds, uint releaseFrequencySeconds, uint startTime, uint totalAmount, uint alreadyWithdrawn)
+    {
         require(_lockUpIndex < lockUps[_userAddress].length, "Array out of bounds exception");
         LockUp storage userLockUp = lockUps[_userAddress][_lockUpIndex];
         return (userLockUp.lockUpPeriodSeconds, userLockUp.releaseFrequencySeconds, userLockUp.startTime, userLockUp.totalAmount, userLockUp.alreadyWithdrawn);
@@ -247,7 +228,7 @@ contract LockupVolumeRestrictionTM is TransferManager {
      * @notice Takes a userAddress as input, and returns a uint that represents the number of tokens allowed to be withdrawn right now
      * @param userAddress Address of the user whose lock ups should be checked
      */
-    function _checkIfValidTransfer(address userAddress, uint amount, bool isTransfer) internal returns(Result) {
+    function _checkIfValidTransfer(address userAddress, uint amount, bool isTransfer) internal returns (Result) {
         // get lock up array for this user
         LockUp[] storage userLockUps = lockUps[userAddress];
 
@@ -327,15 +308,10 @@ contract LockupVolumeRestrictionTM is TransferManager {
         return _checkIfUnlockedTokenTransferIsPossible(userAddress, amount, tokenSums[1], tokenSums[2]);
     }
 
-    function _checkIfUnlockedTokenTransferIsPossible(
-        address userAddress,
-        uint amount,
-        uint totalSum,
-        uint alreadyWithdrawnSum
-    ) 
-        internal 
-        view 
-        returns(Result) 
+    function _checkIfUnlockedTokenTransferIsPossible(address userAddress, uint amount, uint totalSum, uint alreadyWithdrawnSum)
+        internal
+        view
+        returns (Result)
     {
         // the amount the user wants to withdraw is greater than their allowed amounts according to the lockups.  however, if the user has like, 10 tokens, but only 4 are locked up, we should let the transfer go through for those 6 that aren't locked up
         uint currentUserBalance = ISecurityToken(securityToken).balanceOf(userAddress);
@@ -388,14 +364,14 @@ contract LockupVolumeRestrictionTM is TransferManager {
     /**
      * @notice This function returns the signature of configure function
      */
-    function getInitFunction() public pure returns(bytes4) {
+    function getInitFunction() public pure returns (bytes4) {
         return bytes4(0);
     }
 
     /**
      * @notice Returns the permissions flag that are associated with Percentage transfer Manager
      */
-    function getPermissions() public view returns(bytes32[] memory) {
+    function getPermissions() public view returns (bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](1);
         allPermissions[0] = ADMIN;
         return allPermissions;

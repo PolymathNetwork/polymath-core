@@ -23,9 +23,7 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
 
     event SetAllowBeneficialInvestments(bool _allowed);
 
-    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
-
-    }
+    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {}
 
     //////////////////////////////////
     /**
@@ -51,10 +49,7 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
         uint256 _rate,
         FundRaiseType[] memory _fundRaiseTypes,
         address payable _fundsReceiver
-    ) 
-        public 
-        onlyFactory 
-    {
+    ) public onlyFactory {
         require(endTime == 0, "Already configured");
         require(_rate > 0, "Rate of token should be greater than 0");
         require(_fundsReceiver != address(0), "Zero address is not permitted");
@@ -73,7 +68,7 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
     /**
      * @notice This function returns the signature of configure function
      */
-    function getInitFunction() public pure returns(bytes4) {
+    function getInitFunction() public pure returns (bytes4) {
         return bytes4(keccak256("configure(uint256,uint256,uint256,uint256,uint8[],address)"));
     }
 
@@ -123,7 +118,7 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
     * @notice Checks whether the cap has been reached.
     * @return bool Whether the cap was reached
     */
-    function capReached() public view returns(bool) {
+    function capReached() public view returns (bool) {
         return totalTokensSold >= cap;
     }
 
@@ -137,7 +132,7 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
     /**
      * @notice Return the permissions flag that are associated with STO
      */
-    function getPermissions() public view returns(bytes32[] memory) {
+    function getPermissions() public view returns (bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](0);
         return allPermissions;
     }
@@ -153,7 +148,7 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
      * @return Amount of tokens get sold.
      * @return Boolean value to justify whether the fund raise type is POLY or not, i.e true for POLY.
      */
-    function getSTODetails() public view returns(uint256, uint256, uint256, uint256, uint256, uint256, uint256, bool) {
+    function getSTODetails() public view returns (uint256, uint256, uint256, uint256, uint256, uint256, uint256, bool) {
         return (startTime, endTime, cap, rate, (fundRaiseTypes[uint8(FundRaiseType.POLY)]) ? fundsRaised[uint8(
             FundRaiseType.POLY
         )] : fundsRaised[uint8(FundRaiseType.ETH)], investorCount, totalTokensSold, (fundRaiseTypes[uint8(FundRaiseType.POLY)]));
@@ -167,7 +162,7 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
       * @param _beneficiary Address performing the token purchase
       * @param _investedAmount Value in wei involved in the purchase
     */
-    function _processTx(address _beneficiary, uint256 _investedAmount) internal returns(uint256 refund) {
+    function _processTx(address _beneficiary, uint256 _investedAmount) internal returns (uint256 refund) {
         _preValidatePurchase(_beneficiary, _investedAmount);
         // calculate token amount to be created
         uint256 tokens;
@@ -256,7 +251,7 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
     * @return Number of tokens that can be purchased with the specified _investedAmount
     * @return Remaining amount that should be refunded to the investor
     */
-    function _getTokenAmount(uint256 _investedAmount) internal view returns(uint256 _tokens, uint256 _refund) {
+    function _getTokenAmount(uint256 _investedAmount) internal view returns (uint256 _tokens, uint256 _refund) {
         _tokens = _investedAmount.mul(rate);
         _tokens = _tokens.div(uint256(10) ** 18);
         uint256 granularity = ISecurityToken(securityToken).granularity();

@@ -9,7 +9,6 @@ import "../../interfaces/IBoot.sol";
  * @title Factory for deploying PercentageTransferManager module
  */
 contract PercentageTransferManagerFactory is ModuleFactory {
-
     address public logicContract;
 
     /**
@@ -19,14 +18,9 @@ contract PercentageTransferManagerFactory is ModuleFactory {
      * @param _subscriptionCost Subscription cost of the module
      * @param _logicContract Contract address that contains the logic related to `description`
      */
-    constructor(
-        uint256 _setupCost,
-        uint256 _usageCost,
-        uint256 _subscriptionCost,
-        address _logicContract
-    ) 
-        public 
-        ModuleFactory(_setupCost, _usageCost, _subscriptionCost) 
+    constructor(uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _logicContract)
+        public
+        ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
     {
         require(_logicContract != address(0), "Invalid address");
         version = "1.0.0";
@@ -43,7 +37,7 @@ contract PercentageTransferManagerFactory is ModuleFactory {
      * @param _data Data used for the intialization of the module factory variables
      * @return address Contract address of the Module
      */
-    function deploy(bytes calldata _data) external returns(address) {
+    function deploy(bytes calldata _data) external returns (address) {
         address polyToken = _takeFee();
         address percentageTransferManager = address(new PercentageTransferManagerProxy(msg.sender, polyToken, logicContract));
         require(Util.getSig(_data) == IBoot(percentageTransferManager).getInitFunction(), "Provided data is not valid");
@@ -61,7 +55,7 @@ contract PercentageTransferManagerFactory is ModuleFactory {
      * @notice Type of the Module factory
      * @return uint8
      */
-    function getTypes() external view returns(uint8[] memory) {
+    function getTypes() external view returns (uint8[] memory) {
         uint8[] memory res = new uint8[](1);
         res[0] = 2;
         return res;
@@ -70,14 +64,14 @@ contract PercentageTransferManagerFactory is ModuleFactory {
     /**
      * @notice Returns the instructions associated with the module
      */
-    function getInstructions() external view returns(string memory) {
+    function getInstructions() external view returns (string memory) {
         return "Allows an issuer to restrict the total number of non-zero token holders";
     }
 
     /**
      * @notice Get the tags related to the module factory
      */
-    function getTags() external view returns(bytes32[] memory) {
+    function getTags() external view returns (bytes32[] memory) {
         bytes32[] memory availableTags = new bytes32[](2);
         availableTags[0] = "Percentage";
         availableTags[1] = "Transfer Restriction";

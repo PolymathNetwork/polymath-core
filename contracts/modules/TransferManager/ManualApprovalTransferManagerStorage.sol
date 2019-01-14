@@ -4,7 +4,6 @@ pragma solidity ^0.5.0;
  * @title Contract used to store layout for the ManualApprovalTransferManager storage
  */
 contract ManualApprovalTransferManagerStorage {
-
     //Address from which issuances come
     address public issuanceAddress = address(0);
 
@@ -25,9 +24,9 @@ contract ManualApprovalTransferManagerStorage {
     }
 
     //Store mappings of address => address with ManualApprovals
-    mapping (address => mapping (address => ManualApproval)) public manualApprovals;
+    mapping(address => mapping(address => ManualApproval)) public manualApprovals;
 
     //Store mappings of address => address with ManualBlockings
-    mapping (address => mapping (address => ManualBlocking)) public manualBlockings;
+    mapping(address => mapping(address => ManualBlocking)) public manualBlockings;
 
 }

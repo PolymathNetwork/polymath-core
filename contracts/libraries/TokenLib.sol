@@ -77,9 +77,7 @@ library TokenLib {
         mapping(uint8 => address[]) storage _modules,
         mapping(address => ModuleData) storage _modulesToData,
         mapping(bytes32 => address[]) storage _names
-    )
-        public
-    {
+    ) public {
         require(_modulesToData[_module].isArchived, "Not archived");
         require(_modulesToData[_module].module != address(0), "Module missing");
         /*solium-disable-next-line security/no-block-members*/
@@ -111,9 +109,7 @@ library TokenLib {
         uint256 _index,
         mapping(uint8 => address[]) storage _modules,
         mapping(address => ModuleData) storage _modulesToData
-    )
-        internal
-    {
+    ) internal {
         uint256 length = _modules[_type].length;
         _modules[_type][_index] = _modules[_type][length - 1];
         _modules[_type].length = length - 1;
@@ -141,9 +137,7 @@ library TokenLib {
         bool _increase,
         address _polyToken,
         mapping(address => ModuleData) storage _modulesToData
-    )
-        public
-    {
+    ) public {
         require(_modulesToData[_module].module != address(0), "Module missing");
         uint256 currentAllowance = IPoly(_polyToken).allowance(address(this), _module);
         uint256 newAllowance;
@@ -167,7 +161,7 @@ library TokenLib {
      * @param _perm is the permissions data
      * @return success
      */
-    function checkPermission(address[] storage _modules, address _delegate, address _module, bytes32 _perm) public view returns(bool) {
+    function checkPermission(address[] storage _modules, address _delegate, address _module, bytes32 _perm) public view returns (bool) {
         if (_modules.length == 0) {
             return false;
         }
@@ -188,7 +182,7 @@ library TokenLib {
      * @param _currentValue is the Current value of checkpoint
      * @return uint256
      */
-    function getValueAt(Checkpoint[] storage _checkpoints, uint256 _checkpointId, uint256 _currentValue) public view returns(uint256) {
+    function getValueAt(Checkpoint[] storage _checkpoints, uint256 _checkpointId, uint256 _currentValue) public view returns (uint256) {
         //Checkpoint id 0 is when the token is first created - everyone has a zero balance
         if (_checkpointId == 0) {
             return 0;
@@ -256,9 +250,7 @@ library TokenLib {
         uint256 _value,
         uint256 _balanceTo,
         uint256 _balanceFrom
-    ) 
-        public 
-    {
+    ) public {
         if ((_value == 0) || (_from == _to)) {
             return;
         }

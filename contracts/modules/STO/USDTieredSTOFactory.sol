@@ -17,14 +17,9 @@ contract USDTieredSTOFactory is ModuleFactory {
      * @param _usageCost Usage cost of the module
      * @param _subscriptionCost Subscription cost of the module
      */
-    constructor(
-        uint256 _setupCost,
-        uint256 _usageCost,
-        uint256 _subscriptionCost,
-        address _logicContract
-    ) 
-        public 
-        ModuleFactory(_setupCost, _usageCost, _subscriptionCost) 
+    constructor(uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _logicContract)
+        public
+        ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
     {
         require(_logicContract != address(0), "0x address is not allowed");
         logicContract = _logicContract;
@@ -41,7 +36,7 @@ contract USDTieredSTOFactory is ModuleFactory {
      * @notice Used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
-    function deploy(bytes calldata _data) external returns(address) {
+    function deploy(bytes calldata _data) external returns (address) {
         address polyToken = _takeFee();
         address usdTieredSTO = address(new USDTieredSTOProxy(msg.sender, polyToken, logicContract));
         //Checks that _data is valid (not calling anything it shouldn't)
@@ -58,7 +53,7 @@ contract USDTieredSTOFactory is ModuleFactory {
     /**
      * @notice Type of the Module factory
      */
-    function getTypes() external view returns(uint8[] memory) {
+    function getTypes() external view returns (uint8[] memory) {
         uint8[] memory res = new uint8[](1);
         res[0] = 3;
         return res;
@@ -67,14 +62,14 @@ contract USDTieredSTOFactory is ModuleFactory {
     /**
      * @notice Returns the instructions associated with the module
      */
-    function getInstructions() external view returns(string memory) {
+    function getInstructions() external view returns (string memory) {
         return "Initialises a USD tiered STO.";
     }
 
     /**
      * @notice Get the tags related to the module factory
      */
-    function getTags() external view returns(bytes32[] memory) {
+    function getTags() external view returns (bytes32[] memory) {
         bytes32[] memory availableTags = new bytes32[](4);
         availableTags[0] = "USD";
         availableTags[1] = "Tiered";

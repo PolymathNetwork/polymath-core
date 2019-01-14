@@ -137,7 +137,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @notice Used to get the lower bound
      * @return lower bound
      */
-    function getLowerSTVersionBounds() external view returns(uint8[] memory) {
+    function getLowerSTVersionBounds() external view returns (uint8[] memory) {
         return VersionUtils.unpack(compatibleSTVersionRange["lowerBound"]);
     }
 
@@ -145,25 +145,25 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @notice Used to get the upper bound
      * @return upper bound
      */
-    function getUpperSTVersionBounds() external view returns(uint8[] memory) {
+    function getUpperSTVersionBounds() external view returns (uint8[] memory) {
         return VersionUtils.unpack(compatibleSTVersionRange["upperBound"]);
     }
 
     /**
      * @notice Get the setup cost of the module
      */
-    function getSetupCost() external view returns(uint256) {
+    function getSetupCost() external view returns (uint256) {
         return setupCost;
     }
 
     /**
     * @notice Get the name of the Module
     */
-    function getName() public view returns(bytes32) {
+    function getName() public view returns (bytes32) {
         return name;
     }
 
-    function _takeFee() internal returns(address) {
+    function _takeFee() internal returns (address) {
         address polyToken = RegistryUpdater(msg.sender).polyToken();
         require(polyToken != address(0), "Invalid POLY token");
         if (setupCost > 0) {

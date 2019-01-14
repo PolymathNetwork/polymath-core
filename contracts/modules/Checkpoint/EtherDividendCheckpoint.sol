@@ -29,9 +29,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
      * @notice Constructor
      * @param _securityToken Address of the security token
      */
-    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
-
-    }
+    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {}
 
     /**
      * @notice Creates a dividend and checkpoint for the dividend, using global list of excluded addresses
@@ -50,15 +48,10 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
      * @param _checkpointId Id of the checkpoint from which to issue dividend
      * @param _name Name/title for identification
      */
-    function createDividendWithCheckpoint(
-        uint256 _maturity,
-        uint256 _expiry,
-        uint256 _checkpointId,
-        bytes32 _name
-    ) 
-        external 
-        payable 
-        withPerm(MANAGE) 
+    function createDividendWithCheckpoint(uint256 _maturity, uint256 _expiry, uint256 _checkpointId, bytes32 _name)
+        external
+        payable
+        withPerm(MANAGE)
     {
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, _checkpointId, excluded, _name);
     }
@@ -70,15 +63,10 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
      * @param _excluded List of addresses to exclude
      * @param _name Name/title for identification
      */
-    function createDividendWithExclusions(
-        uint256 _maturity,
-        uint256 _expiry,
-        address[] memory _excluded,
-        bytes32 _name
-    ) 
-        public 
-        payable 
-        withPerm(MANAGE) 
+    function createDividendWithExclusions(uint256 _maturity, uint256 _expiry, address[] memory _excluded, bytes32 _name)
+        public
+        payable
+        withPerm(MANAGE)
     {
         uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, checkpointId, _excluded, _name);
@@ -98,11 +86,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         uint256 _checkpointId,
         address[] memory _excluded,
         bytes32 _name
-    ) 
-        public 
-        payable 
-        withPerm(MANAGE) 
-    {
+    ) public payable withPerm(MANAGE) {
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, _checkpointId, _excluded, _name);
     }
 
@@ -120,9 +104,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         uint256 _checkpointId,
         address[] memory _excluded,
         bytes32 _name
-    ) 
-        internal 
-    {
+    ) internal {
         require(_excluded.length <= EXCLUDED_ADDRESS_LIMIT, "Too many addresses excluded");
         require(_expiry > _maturity, "Expiry is before maturity");
         /*solium-disable-next-line security/no-block-members*/

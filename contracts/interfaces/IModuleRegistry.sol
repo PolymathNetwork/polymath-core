@@ -35,7 +35,7 @@ interface IModuleRegistry {
      * @param _factoryAddress address of the Module Factory
      * @return address array which has the list of securityToken's uses that module factory
      */
-    function getReputationByFactory(address _factoryAddress) external view returns(address[] memory);
+    function getReputationByFactory(address _factoryAddress) external view returns (address[] memory);
 
     /**
      * @notice Returns all the tags related to the a module type which are valid for the given token
@@ -44,7 +44,7 @@ interface IModuleRegistry {
      * @return list of tags
      * @return corresponding list of module factories
      */
-    function getTagsByTypeAndToken(uint8 _moduleType, address _securityToken) external view returns(bytes32[] memory, address[] memory);
+    function getTagsByTypeAndToken(uint8 _moduleType, address _securityToken) external view returns (bytes32[] memory, address[] memory);
 
     /**
      * @notice Returns all the tags related to the a module type which are valid for the given token
@@ -52,14 +52,14 @@ interface IModuleRegistry {
      * @return list of tags
      * @return corresponding list of module factories
      */
-    function getTagsByType(uint8 _moduleType) external view returns(bytes32[] memory, address[] memory);
+    function getTagsByType(uint8 _moduleType) external view returns (bytes32[] memory, address[] memory);
 
     /**
      * @notice Returns the list of addresses of Module Factory of a particular type
      * @param _moduleType Type of Module
      * @return address array that contains the list of addresses of module factory contracts.
      */
-    function getModulesByType(uint8 _moduleType) external view returns(address[] memory);
+    function getModulesByType(uint8 _moduleType) external view returns (address[] memory);
 
     /**
      * @notice Returns the list of available Module factory addresses of a particular type for a given token.
@@ -67,7 +67,7 @@ interface IModuleRegistry {
      * @param _securityToken is the address of SecurityToken
      * @return address array that contains the list of available addresses of module factory contracts.
      */
-    function getModulesByTypeAndToken(uint8 _moduleType, address _securityToken) external view returns(address[] memory);
+    function getModulesByTypeAndToken(uint8 _moduleType, address _securityToken) external view returns (address[] memory);
 
     /**
      * @notice Use to get the latest contract address of the regstries
@@ -78,12 +78,12 @@ interface IModuleRegistry {
      * @notice Get the owner of the contract
      * @return address owner
      */
-    function owner() external view returns(address);
+    function owner() external view returns (address);
 
     /**
      * @notice Check whether the contract operations is paused or not
      * @return bool 
      */
-    function isPaused() external view returns(bool);
+    function isPaused() external view returns (bool);
 
 }

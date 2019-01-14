@@ -16,7 +16,6 @@ import "./proxy/Proxy.sol";
  * @title Registry contract for issuers to register their tickers and security tokens
  */
 contract SecurityTokenRegistry is EternalStorage, Proxy {
-
     /**
      * @notice state variables
 
@@ -171,11 +170,8 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         uint256 _tickerRegFee,
         address _owner,
         address _getterContract
-    )
-        external
-        payable
-    {
-        require(!getBool(INITIALIZE),"already initialized");
+    ) external payable {
+        require(!getBool(INITIALIZE), "already initialized");
         require(
             _STFactory != address(0) && _owner != address(0) && _polymathRegistry != address(0) && _getterContract != address(0),
             "Invalid address"
@@ -214,7 +210,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         set(STRGETTER, _getterContract);
     }
 
-    function _implementation() internal view returns(address) {
+    function _implementation() internal view returns (address) {
         return getAddress(Encoder.getKey("STRGetter"));
     }
 
@@ -235,8 +231,10 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         require(bytes(_ticker).length > 0 && bytes(_ticker).length <= 10, "Ticker length range (0,10]");
         // Attempt to charge the reg fee if it is > 0 POLY
         uint256 tickerFee = getUint(TICKERREGFEE);
-        if (tickerFee > 0)
-            require(IERC20(getAddress(POLYTOKEN)).transferFrom(msg.sender, address(this), tickerFee), "Insufficent allowance");
+        if (tickerFee > 0) require(
+            IERC20(getAddress(POLYTOKEN)).transferFrom(msg.sender, address(this), tickerFee),
+            "Insufficent allowance"
+        );
         string memory ticker = Util.upper(_ticker);
         require(_tickerAvailable(ticker), "Ticker is reserved");
         // Check whether ticker was previously registered (and expired)
@@ -260,9 +258,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         bool _status,
         bool _fromAdmin,
         uint256 _fee
-    ) 
-        internal
-    {
+    ) internal {
         _setTickerOwnership(_owner, _ticker);
         _storeTickerDetails(_ticker, _owner, _registrationDate, _expiryDate, _tokenName, _status);
         emit RegisterTicker(_owner, _ticker, _tokenName, _registrationDate, _expiryDate, _fromAdmin, _fee);
@@ -285,10 +281,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         uint256 _registrationDate,
         uint256 _expiryDate,
         bool _status
-    ) 
-        external
-        onlyOwner
-    {
+    ) external onlyOwner {
         require(bytes(_ticker).length > 0 && bytes(_ticker).length <= 10, "Ticker length range (0,10]");
         require(_expiryDate != 0 && _registrationDate != 0, "Dates should not be 0");
         require(_registrationDate <= _expiryDate, "Registration date should < expiry date");
@@ -307,9 +300,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         uint256 _registrationDate,
         uint256 _expiryDate,
         bool _status
-    ) 
-        internal
-    {
+    ) internal {
         address currentOwner = _tickerOwner(_ticker);
         if (currentOwner != address(0)) {
             _deleteTickerOwnership(currentOwner, _ticker);
@@ -324,7 +315,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         _addTicker(_owner, _ticker, _tokenName, _registrationDate, _expiryDate, _status, true, uint256(0));
     }
 
-    function _tickerOwner(string memory _ticker) internal view returns(address) {
+    function _tickerOwner(string memory _ticker) internal view returns (address) {
         return getAddress(Encoder.getKey("registeredTickers_owner", _ticker));
     }
 
@@ -348,7 +339,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @param _ticker is the token ticker
      * @return bool
      */
-    function _tickerAvailable(string memory _ticker) internal view returns(bool) {
+    function _tickerAvailable(string memory _ticker) internal view returns (bool) {
         if (_tickerOwner(_ticker) != address(0)) {
             /*solium-disable-next-line security/no-block-members*/
             if ((now > getUint(Encoder.getKey("registeredTickers_expiryDate", _ticker))) && !_tickerStatus(_ticker)) {
@@ -358,7 +349,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         return true;
     }
 
-    function _tickerStatus(string memory _ticker) internal view returns(bool) {
+    function _tickerStatus(string memory _ticker) internal view returns (bool) {
         return getBool(Encoder.getKey("registeredTickers_status", _ticker));
     }
 
@@ -389,9 +380,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         uint256 _expiryDate,
         string memory _tokenName,
         bool _status
-    )   
-        internal
-    {
+    ) internal {
         bytes32 key = Encoder.getKey("registeredTickers_owner", _ticker);
         if (getAddress(key) != _owner) set(key, _owner);
         key = Encoder.getKey("registeredTickers_registrationDate", _ticker);
@@ -461,14 +450,9 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @param _tokenDetails is the off-chain details of the token
      * @param _divisible is whether or not the token is divisible
      */
-    function generateSecurityToken(
-        string calldata _name,
-        string calldata _ticker,
-        string calldata _tokenDetails,
-        bool _divisible
-    ) 
-        external 
-        whenNotPausedOrOwner 
+    function generateSecurityToken(string calldata _name, string calldata _ticker, string calldata _tokenDetails, bool _divisible)
+        external
+        whenNotPausedOrOwner
     {
         require(bytes(_name).length > 0 && bytes(_ticker).length > 0, "Ticker length > 0");
         string memory ticker = Util.upper(_ticker);
@@ -480,18 +464,14 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         require(getUint(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now, "Ticker gets expired");
 
         uint256 launchFee = getUint(STLAUNCHFEE);
-        if (launchFee > 0)
-            require(IERC20(getAddress(POLYTOKEN)).transferFrom(msg.sender, address(this), launchFee), "Insufficient allowance");
-
-        address newSecurityTokenAddress = ISTFactory(getAddress(Encoder.getKey("protocolVersionST", getUint(Encoder.getKey("latestVersion"))))).deployToken(
-            _name,
-            ticker,
-            18,
-            _tokenDetails,
-            msg.sender,
-            _divisible,
-            getAddress(POLYMATHREGISTRY)
+        if (launchFee > 0) require(
+            IERC20(getAddress(POLYTOKEN)).transferFrom(msg.sender, address(this), launchFee),
+            "Insufficient allowance"
         );
+
+        address newSecurityTokenAddress = ISTFactory(
+            getAddress(Encoder.getKey("protocolVersionST", getUint(Encoder.getKey("latestVersion"))))
+        ).deployToken(_name, ticker, 18, _tokenDetails, msg.sender, _divisible, getAddress(POLYMATHREGISTRY));
 
         /*solium-disable-next-line security/no-block-members*/
         _storeSecurityTokenData(newSecurityTokenAddress, ticker, _tokenDetails, now);
@@ -516,10 +496,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         address _securityToken,
         string calldata _tokenDetails,
         uint256 _deployedAt
-    ) 
-        external 
-        onlyOwner 
-    {
+    ) external onlyOwner {
         require(bytes(_name).length > 0 && bytes(_ticker).length > 0, "String length > 0");
         require(bytes(_ticker).length <= 10, "Ticker length range (0,10]");
         require(_deployedAt != 0 && _owner != address(0), "0 value params not allowed");
@@ -541,12 +518,9 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     /**
      * @notice Internal - Stores the security token details
      */
-    function _storeSecurityTokenData(
-        address _securityToken,
-        string memory _ticker,
-        string memory _tokenDetails,
-        uint256 _deployedAt
-    ) internal {
+    function _storeSecurityTokenData(address _securityToken, string memory _ticker, string memory _tokenDetails, uint256 _deployedAt)
+        internal
+    {
         set(Encoder.getKey("securityTokens_ticker", _securityToken), _ticker);
         set(Encoder.getKey("securityTokens_tokenDetails", _securityToken), _tokenDetails);
         set(Encoder.getKey("securityTokens_deployedAt", _securityToken), _deployedAt);
@@ -557,7 +531,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     * @param _securityToken is the address of the security token
     * @return bool
     */
-    function isSecurityToken(address _securityToken) external view returns(bool) {
+    function isSecurityToken(address _securityToken) external view returns (bool) {
         return (keccak256(bytes(getString(Encoder.getKey("securityTokens_ticker", _securityToken)))) != keccak256(""));
     }
 
@@ -670,7 +644,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @notice Check whether the registry is paused or not
      * @return bool
      */
-    function isPaused() public view returns(bool) {
+    function isPaused() public view returns (bool) {
         return getBool(PAUSED);
     }
 
@@ -678,7 +652,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @notice Gets the owner of the contract
      * @return address owner
      */
-    function owner() public view returns(address) {
+    function owner() public view returns (address) {
         return getAddress(OWNER);
     }
 

@@ -8,22 +8,19 @@ import "./GeneralPermissionManagerStorage.sol";
  * @title Permission Manager module for core permissioning functionality
  */
 contract GeneralPermissionManager is GeneralPermissionManagerStorage, IPermissionManager, Module {
-
     /// Event emitted after any permission get changed for the delegate
     event ChangePermission(address indexed _delegate, address _module, bytes32 _perm, bool _valid, uint256 _timestamp);
     /// Used to notify when delegate is added in permission manager contract
     event AddDelegate(address indexed _delegate, bytes32 _details, uint256 _timestamp);
 
     /// @notice constructor
-    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
-
-    }
+    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {}
 
     /**
      * @notice Init function i.e generalise function to maintain the structure of the module contract
      * @return bytes4
      */
-    function getInitFunction() public pure returns(bytes4) {
+    function getInitFunction() public pure returns (bytes4) {
         return bytes4(0);
     }
 
@@ -34,7 +31,7 @@ contract GeneralPermissionManager is GeneralPermissionManagerStorage, IPermissio
      * @param _perm Permission flag
      * @return bool
      */
-    function checkPermission(address _delegate, address _module, bytes32 _perm) external view returns(bool) {
+    function checkPermission(address _delegate, address _module, bytes32 _perm) external view returns (bool) {
         if (delegateDetails[_delegate] != bytes32(0)) {
             return perms[_module][_delegate][_perm];
         } else return false;
@@ -75,7 +72,7 @@ contract GeneralPermissionManager is GeneralPermissionManagerStorage, IPermissio
      * @param _potentialDelegate the address of potential delegate
      * @return bool
      */
-    function checkDelegate(address _potentialDelegate) external view returns(bool) {
+    function checkDelegate(address _potentialDelegate) external view returns (bool) {
         require(_potentialDelegate != address(0), "Invalid address");
 
         if (delegateDetails[_potentialDelegate] != bytes32(0)) {
@@ -104,14 +101,9 @@ contract GeneralPermissionManager is GeneralPermissionManagerStorage, IPermissio
      * @param _valids Bool array consist the flag to switch on/off the permission
      * @return nothing
      */
-    function changePermissionMulti(
-        address _delegate,
-        address[] calldata _modules,
-        bytes32[] calldata _perms,
-        bool[] calldata _valids
-    ) 
-        external 
-        withPerm(CHANGE_PERMISSION) 
+    function changePermissionMulti(address _delegate, address[] calldata _modules, bytes32[] calldata _perms, bool[] calldata _valids)
+        external
+        withPerm(CHANGE_PERMISSION)
     {
         require(_delegate != address(0), "invalid address");
         require(_modules.length > 0, "0 length is not allowed");
@@ -128,7 +120,7 @@ contract GeneralPermissionManager is GeneralPermissionManagerStorage, IPermissio
      * @param _perm Permission flag
      * @return address[]
      */
-    function getAllDelegatesWithPerm(address _module, bytes32 _perm) external view returns(address[] memory) {
+    function getAllDelegatesWithPerm(address _module, bytes32 _perm) external view returns (address[] memory) {
         uint256 counter = 0;
         uint256 i = 0;
         for (i = 0; i < allDelegates.length; i++) {
@@ -155,10 +147,11 @@ contract GeneralPermissionManager is GeneralPermissionManagerStorage, IPermissio
      * @return address[] the address array of Modules this delegate has permission
      * @return bytes32[] the permission array of the corresponding Modules
      */
-    function getAllModulesAndPermsFromTypes(address _delegate, uint8[] calldata _types) external view returns(
-        address[] memory,
-        bytes32[] memory
-    ) {
+    function getAllModulesAndPermsFromTypes(address _delegate, uint8[] calldata _types)
+        external
+        view
+        returns (address[] memory, bytes32[] memory)
+    {
         uint256 counter = 0;
         // loop through _types and get their modules from securityToken->getModulesByType
         for (uint256 i = 0; i < _types.length; i++) {
@@ -214,7 +207,7 @@ contract GeneralPermissionManager is GeneralPermissionManagerStorage, IPermissio
      * @notice Used to get all delegates
      * @return address[]
      */
-    function getAllDelegates() external view returns(address[] memory) {
+    function getAllDelegates() external view returns (address[] memory) {
         return allDelegates;
     }
 
@@ -222,7 +215,7 @@ contract GeneralPermissionManager is GeneralPermissionManagerStorage, IPermissio
     * @notice Returns the Permission flag related the `this` contract
     * @return Array of permission flags
     */
-    function getPermissions() public view returns(bytes32[] memory) {
+    function getPermissions() public view returns (bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](1);
         allPermissions[0] = CHANGE_PERMISSION;
         return allPermissions;

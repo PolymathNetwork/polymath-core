@@ -1,7 +1,7 @@
 pragma solidity ^0.5.0;
 
 import "./OwnedProxy.sol";
-import "../DataStore/DataStoreStorage.sol";
+import "../datastore/DataStoreStorage.sol";
 
 /**
  * @title DataStoreProxy Proxy

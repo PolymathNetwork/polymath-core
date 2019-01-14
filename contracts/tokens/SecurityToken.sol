@@ -46,6 +46,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     uint8 constant MINT_KEY = 3;
     uint8 constant CHECKPOINT_KEY = 4;
     uint8 constant BURN_KEY = 5;
+    uint8 constant DATA_KEY = 10;
 
     uint256 public granularity;
 
@@ -63,6 +64,8 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
 
     // Address whitelisted by issuer as controller
     address public controller;
+
+    address public dataStore;
 
     // Records added modules - module list should be order agnostic!
     mapping (uint8 => address[]) modules;
@@ -211,20 +214,24 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         updateFromRegistry();
         tokenDetails = _tokenDetails;
         granularity = _granularity;
-        securityTokenVersion = SemanticVersion(2,0,0);
+        securityTokenVersion = SemanticVersion(2, 0, 0);
     }
 
-    // /**
-    //  * @notice Attachs a module to the SecurityToken
-    //  * @dev  E.G.: On deployment (through the STR) ST gets a TransferManager module attached to it
-    //  * @dev to control restrictions on transfers.
-    //  * @param _moduleFactory is the address of the module factory to be added
-    //  * @param _data is data packed into bytes used to further configure the module (See STO usage)
-    //  * @param _maxCost max amount of POLY willing to pay to the module.
-    //  * @param _budget max amount of ongoing POLY willing to assign to the module.
-    //  * @param _label custom module label.
-    //  */
+    function setDataStore(address _dataStore) public {
+        require(_dataStore != address(0), "Invalid address");
+        dataStore = _dataStore;
+    }
 
+     /**
+      * @notice Attachs a module to the SecurityToken
+      * @dev  E.G.: On deployment (through the STR) ST gets a TransferManager module attached to it
+      * @dev to control restrictions on transfers.
+      * @param _moduleFactory is the address of the module factory to be added
+      * @param _data is data packed into bytes used to further configure the module (See STO usage)
+      * @param _maxCost max amount of POLY willing to pay to the module.
+      * @param _budget max amount of ongoing POLY willing to assign to the module.
+      * @param _label custom module label.
+      */
     function addModuleWithLabel(
         address _moduleFactory,
         bytes _data,

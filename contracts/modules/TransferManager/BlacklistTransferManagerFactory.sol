@@ -17,7 +17,7 @@ contract BlacklistTransferManagerFactory is ModuleFactory {
      * @param _subscriptionCost Subscription cost of the module
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-    ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+    ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
     {
         version = "2.1.0";
         name = "BlacklistTransferManager";
@@ -33,10 +33,10 @@ contract BlacklistTransferManagerFactory is ModuleFactory {
      */
     function deploy(bytes calldata /* _data */) external returns(address) {
         address polyToken = _takeFee();
-        address blacklistTransferManager = new BlacklistTransferManager(msg.sender, address(polyToken));
+        address blacklistTransferManager = address(new BlacklistTransferManager(msg.sender, address(polyToken)));
         /*solium-disable-next-line security/no-block-members*/
-        emit GenerateModuleFromFactory(address(blacklistTransferManager), getName(), address(this), msg.sender, setupCost, now);
-        return address(blacklistTransferManager);
+        emit GenerateModuleFromFactory(blacklistTransferManager, getName(), address(this), msg.sender, setupCost, now);
+        return blacklistTransferManager;
     }
 
     /**

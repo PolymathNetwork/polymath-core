@@ -468,7 +468,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         bytes32[] memory tempList = new bytes32[](counter);
         counter = 0;
         for (uint i = 0; i < tickers.length; i++) {
-            bytes32 ticker = Util.bytes32ToString(tickers[i]);
+            string memory ticker = Util.bytes32ToString(tickers[i]);
             /*solium-disable-next-line security/no-block-members*/
             if (getUintValue(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now || _tickerStatus(ticker)) {
                 tempList[counter] = tickers[i];

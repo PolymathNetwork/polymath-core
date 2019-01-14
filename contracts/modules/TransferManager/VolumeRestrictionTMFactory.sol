@@ -15,7 +15,7 @@ contract VolumeRestrictionTMFactory is ModuleFactory {
      * @param _polyAddress Address of the polytoken
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _logicContract) public
-    ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+    ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
     {
         require(_logicContract != address(0), "Invalid address");
         version = "1.0.0";
@@ -34,7 +34,7 @@ contract VolumeRestrictionTMFactory is ModuleFactory {
      */
     function deploy(bytes calldata /* _data */) external returns(address) {
         address polyToken = _takeFee();
-        address volumeRestrictionTransferManager = new VolumeRestrictionTMProxy(msg.sender, address(polyToken), logicContract);
+        address volumeRestrictionTransferManager = address(new VolumeRestrictionTMProxy(msg.sender, address(polyToken), logicContract));
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(volumeRestrictionTransferManager, getName(), address(this), msg.sender, setupCost, now);
         return volumeRestrictionTransferManager;

@@ -16,7 +16,7 @@ contract VestingEscrowWalletFactory is ModuleFactory {
      * @param _polyAddress Address of the polytoken
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _logicContract) public
-    ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+    ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
     {
         require(_logicContract != address(0), "Invalid address");
         version = "1.0.0";
@@ -35,14 +35,16 @@ contract VestingEscrowWalletFactory is ModuleFactory {
      */
     function deploy(bytes calldata _data) external returns(address) {
         address polyToken = _takeFee();
-        VestingEscrowWalletProxy vestingEscrowWallet = new VestingEscrowWalletProxy(msg.sender, address(polyToken), logicContract);
+        address vestingEscrowWallet = address(new VestingEscrowWalletProxy(msg.sender, address(polyToken), logicContract));
         //Checks that _data is valid (not calling anything it shouldn't)
         require(Util.getSig(_data) == IBoot(vestingEscrowWallet).getInitFunction(), "Invalid data");
+        bool success;
         /*solium-disable-next-line security/no-low-level-calls*/
-        require(address(vestingEscrowWallet).call(_data), "Unsuccessfull call");
+        (success, ) = vestingEscrowWallet.call(_data);
+        require(success, "Unsuccessfull call");
         /*solium-disable-next-line security/no-block-members*/
-        emit GenerateModuleFromFactory(address(vestingEscrowWallet), getName(), address(this), msg.sender, setupCost, now);
-        return address(vestingEscrowWallet);
+        emit GenerateModuleFromFactory(vestingEscrowWallet, getName(), address(this), msg.sender, setupCost, now);
+        return vestingEscrowWallet;
     }
 
     /**

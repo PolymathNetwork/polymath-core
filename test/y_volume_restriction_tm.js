@@ -543,7 +543,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await I_VolumeRestrictionTM.addIndividualRestrictionMulti(
                     [account_investor2, account_delegate3, account_investor4],
                     [web3.utils.toWei("12"), web3.utils.toWei("10"), web3.utils.toWei("15")],
-                    [latestTime() + duration.seconds(2), latestTime() + duration.seconds(2), latestTime() + duration.seconds(2)],
+                    [0, 0, 0],
                     [3, 4, 5],
                     [latestTime() + duration.days(5), latestTime() + duration.days(6), latestTime() + duration.days(7)],
                     [0,0,0],

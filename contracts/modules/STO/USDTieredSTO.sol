@@ -7,7 +7,7 @@ import "../../RegistryUpdater.sol";
 import "../../libraries/DecimalMath.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
-import "./USDTieredSTOStorage.sol";
+import "../../storage/USDTieredSTOStorage.sol";
 
 /**
  * @title STO module for standard capped crowdsale

@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "../modules/TransferManager/GeneralTransferManagerStorage.sol";
+import "../storage/GeneralTransferManagerStorage.sol";
 import "./OwnedProxy.sol";
 import "../Pausable.sol";
 import "../modules/ModuleStorage.sol";

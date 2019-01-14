@@ -30,7 +30,7 @@ library VolumeRestrictionLib {
         );
     }
 
-    function _deleteHolderFromList(VolumeRestrictionTMStorage.RestrictedData storage data, address _holder, uint8 _typeOfPeriod) public {
+    function deleteHolderFromList(VolumeRestrictionTMStorage.RestrictedData storage data, address _holder, uint8 _typeOfPeriod) public {
         // Deleting the holder if holder's type of Period is `Both` type otherwise
         // it will assign the given type `_typeOfPeriod` to the _holder typeOfPeriod
         // `_typeOfPeriod` it always be contrary to the removing restriction
@@ -51,7 +51,7 @@ library VolumeRestrictionLib {
         }
     }
 
-    function _addRestrictionData(VolumeRestrictionTMStorage.RestrictedData storage data, address _holder, uint8 _callFrom, uint256 _endTime) public {
+    function addRestrictionData(VolumeRestrictionTMStorage.RestrictedData storage data, address _holder, uint8 _callFrom, uint256 _endTime) public {
         uint128 index = data.restrictedHolders[_holder].index;
         if (data.restrictedHolders[_holder].seen == 0) {
             data.restrictedAddresses.push(_holder);

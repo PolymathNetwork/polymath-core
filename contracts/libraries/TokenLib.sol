@@ -3,6 +3,8 @@ pragma solidity ^0.5.0;
 import "../modules/PermissionManager/IPermissionManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "../interfaces/IPoly.sol";
+import "../interfaces/TransferManagerEnums.sol";
+import "../interfaces/ITransferManager.sol";
 
 library TokenLib {
     using SafeMath for uint256;
@@ -276,6 +278,60 @@ library TokenLib {
             _investorData.investorListed[_to] = true;
         }
 
+    }
+
+    /**
+     * @notice Validate transfer with TransferManager module if it exists
+     * @dev TransferManager module has a key of 2
+     * @param from sender of transfer
+     * @param to receiver of transfer
+     * @param value value of transfer
+     * @param data data to indicate validation
+     * @param modules Array of addresses for transfer managers
+     * @param modulesToData Mapping of the modules details
+     * @param transfersFrozen whether the transfer are frozen or not.
+     * @return bool
+     */
+    function verifyTransfer(
+        address[] storage modules,
+        mapping(address => ModuleData) storage modulesToData,
+        address from,
+        address to,
+        uint256 value,
+        bytes memory data,
+        bool transfersFrozen
+    ) 
+        public 
+        view
+        returns(bool, byte) 
+    {   
+        if (!transfersFrozen) {
+            bool isInvalid = false;
+            bool isValid = false;
+            bool isForceValid = false;
+            // Use the local variables to avoid the stack too deep error
+            transfersFrozen = false; // bool unarchived = false;
+            byte reasonCode;
+            for (uint256 i = 0; i < modules.length; i++) {
+                if (!modulesToData[modules[i]].isArchived) {
+                    transfersFrozen = true;
+                    (TransferManagerEnums.Result valid, byte reason) = ITransferManager(modules[i]).verifyTransfer(from, to, value, data);
+                    if (valid == TransferManagerEnums.Result.INVALID) {
+                        isInvalid = true;
+                        reasonCode = reason;
+                    } else if (valid == TransferManagerEnums.Result.VALID) {
+                        isValid = true;
+                    } else if (valid == TransferManagerEnums.Result.FORCE_VALID) {
+                        isForceValid = true;
+                    }
+                }
+            }
+            // If no unarchived modules, return true by default
+            // Use the local variables to avoid the stack too deep error
+            isValid = transfersFrozen ? (isForceValid ? true : (isInvalid ? false : isValid)) : true;
+            return (isValid, isValid ? byte(0x51): reasonCode);
+        }
+        return (false, 0x54);
     }
 
 }

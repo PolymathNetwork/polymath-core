@@ -62,7 +62,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
         address _from,
         address _to,
         uint256 _amount,
-        bytes calldata, /* _data */
+        bytes calldata _data, 
         bool _isTransfer
     ) 
         external 
@@ -70,22 +70,43 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
     {
         // function must only be called by the associated security token if _isTransfer == true
         require(_isTransfer == false || msg.sender == securityToken, "Sender is not the owner");
+        (Result success, byte esc) = verifyTransfer(_from, _to, _amount, _data);
+        if (_isTransfer && esc == 0xA1) {
+            manualApprovals[_from][_to].allowance = manualApprovals[_from][_to].allowance.sub(_amount);
+        }
+        return (success);
+    }
+
+    /** 
+     * @notice Used to verify the transfer transaction and allow a manually approved transqaction to bypass other restrictions
+     * @param _from Address of the sender
+     * @param _to Address of the receiver
+     * @param _amount The amount of tokens to transfer
+     */
+    function verifyTransfer(
+        address _from,
+        address _to,
+        uint256 _amount,
+        bytes memory /* _data */
+    ) 
+        public
+        view 
+        returns(Result, byte) 
+    {
         // manual blocking takes precidence over manual approval
         if (!paused) {
             /*solium-disable-next-line security/no-block-members*/
             if (manualBlockings[_from][_to].expiryTime >= now) {
-                return Result.INVALID;
+                return (Result.INVALID, 0xA3);
             }
             /*solium-disable-next-line security/no-block-members*/
             if ((manualApprovals[_from][_to].expiryTime >= now) && (manualApprovals[_from][_to].allowance >= _amount)) {
-                if (_isTransfer) {
-                    manualApprovals[_from][_to].allowance = manualApprovals[_from][_to].allowance.sub(_amount);
-                }
-                return Result.VALID;
+                return (Result.VALID, 0xA1);
             }
         }
-        return Result.NA;
+        return (Result.NA, 0xA0);
     }
+
 
     /**
     * @notice Adds a pair of addresses to manual approvals

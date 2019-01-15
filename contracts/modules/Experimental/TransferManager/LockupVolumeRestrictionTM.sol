@@ -76,7 +76,23 @@ contract LockupVolumeRestrictionTM is TransferManager {
             // check if this transfer is valid
             return _checkIfValidTransfer(_from, _amount, _isTransfer);
         }
-        return Result.NA;
+        return (Result.NA);
+    }
+    ///////////////////////// Not a valid function. It will change once dev-2.1.0 will be merged to dev-3.0.0////////////////////////
+    /** 
+     * @notice Used to verify the transfer transaction and prevent locked up tokens from being transferred
+     */
+    function verifyTransfer(
+        address /*_from*/,
+        address /* _to*/,
+        uint256 /*_amount*/,
+        bytes memory /* _data */
+    ) 
+        public
+        view 
+        returns(Result, byte) 
+    {
+        return (Result.NA, 0xA0);
     }
 
     /**
@@ -298,7 +314,7 @@ contract LockupVolumeRestrictionTM is TransferManager {
             // transfer is valid and will succeed.
             if (!isTransfer) {
                 // if this isn't a real transfer, don't subtract the withdrawn amounts from the lockups.  it's a "read only" txn
-                return Result.VALID;
+                return (Result.VALID);
             }
 
             // we are going to write the withdrawn balances back to the lockups, so make sure that the person calling this function is the securityToken itself, since its public
@@ -321,7 +337,7 @@ contract LockupVolumeRestrictionTM is TransferManager {
                 }
 
             }
-            return Result.VALID;
+            return (Result.VALID);
         }
 
         return _checkIfUnlockedTokenTransferIsPossible(userAddress, amount, tokenSums[1], tokenSums[2]);
@@ -342,9 +358,9 @@ contract LockupVolumeRestrictionTM is TransferManager {
         uint stillLockedAmount = totalSum.sub(alreadyWithdrawnSum);
         if (currentUserBalance >= stillLockedAmount && amount <= currentUserBalance.sub(stillLockedAmount)) {
             // the user has more tokens in their balance than are actually locked up.  they should be allowed to withdraw the difference
-            return Result.VALID;
+            return (Result.VALID);
         }
-        return Result.INVALID;
+        return (Result.INVALID);
     }
 
     /**

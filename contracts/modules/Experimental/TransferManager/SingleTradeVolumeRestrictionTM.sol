@@ -56,20 +56,40 @@ contract SingleTradeVolumeRestrictionTM is TransferManager {
      */
     function verifyTransfer(
         address _from,
-        address /* _to */,
+        address _to,
         uint256 _amount,
-        bytes calldata /* _data */,
+        bytes calldata _data,
         bool /* _isTransfer */
     ) 
         external 
         returns(Result) 
     {
+        (Result success,) = verifyTransfer(_from, _to, _amount, _data);
+        return success;
+    }
+
+    ///////////////////////// Not a valid function. It will change once dev-2.1.0 will be merged to dev-3.0.0////////////////////////
+
+    /** @notice Used to verify the transfer transaction and prevent an account from sending more tokens than allowed in a single transfer
+     * @param _from Address of the sender
+     * @param _amount The amount of tokens to transfer
+     */
+    function verifyTransfer(
+        address _from,
+        address /* _to */,
+        uint256 _amount,
+        bytes memory /* _data */
+    ) 
+        public
+        view 
+        returns(Result, byte) 
+    {
         bool validTransfer;
 
-        if (exemptWallets[_from] || paused) return Result.NA;
+        if (exemptWallets[_from] || paused) return (Result.NA, 0xA0);
 
         if (_from == address(0) && allowPrimaryIssuance) {
-            return Result.NA;
+            return (Result.NA, 0xA0);
         }
 
         if (isTransferLimitInPercentage) {
@@ -87,8 +107,8 @@ contract SingleTradeVolumeRestrictionTM is TransferManager {
                 validTransfer = _amount <= globalTransferLimitInTokens;
             }
         }
-        if (validTransfer) return Result.NA;
-        return Result.INVALID;
+        if (validTransfer) return (Result.NA, 0xA0);
+        return (Result.INVALID, 0xA5);
     }
 
     /**

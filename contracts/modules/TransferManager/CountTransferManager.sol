@@ -27,24 +27,45 @@ contract CountTransferManager is CountTransferManagerStorage, TransferManager {
         address _from,
         address _to,
         uint256 _amount,
-        bytes calldata /* _data */,
+        bytes calldata _data,
         bool /* _isTransfer */
     ) 
         external 
         returns(Result) 
     {
+        (Result success,) = verifyTransfer(_from, _to, _amount, _data);
+        return success;
+    }
+
+    /** 
+     * @notice Used to verify the transfer transaction and prevent a transfer if it passes the allowed amount of token holders
+     * @param _from Address of the sender
+     * @param _to Address of the receiver
+     * @param _amount Amount to send
+     */
+    function verifyTransfer(
+        address _from,
+        address _to,
+        uint256 _amount,
+        bytes memory /* _data */
+    ) 
+        public
+        view 
+        returns(Result, byte) 
+    {
         if (!paused) {
             if (maxHolderCount < ISecurityToken(securityToken).getInvestorCount()) {
                 // Allow transfers to existing maxHolders
                 if (ISecurityToken(securityToken).balanceOf(_to) != 0 || ISecurityToken(securityToken).balanceOf(_from) == _amount) {
-                    return Result.NA;
+                    return (Result.NA, 0xA0);
                 }
-                return Result.INVALID;
+                return (Result.INVALID, 0xA2);
             }
-            return Result.NA;
+            return (Result.NA, 0xA0);
         }
-        return Result.NA;
+        return (Result.NA, 0xA0);
     }
+
 
     /**
      * @notice Used to initialize the variables of the contract

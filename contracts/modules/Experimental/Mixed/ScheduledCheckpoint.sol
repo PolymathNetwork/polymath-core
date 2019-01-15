@@ -95,10 +95,27 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
     {
         require(_isTransfer == false || msg.sender == securityToken, "Sender is not owner");
         if (paused || !_isTransfer) {
-            return Result.NA;
+            return (Result.NA);
         }
         _updateAll();
-        return Result.NA;
+        return (Result.NA);
+    }
+
+    /**
+     * @notice Used to create checkpoints that correctly reflect balances
+     * @return always returns Result.NA
+     */
+    function verifyTransfer(
+        address, /* _from */
+        address, /* _to */
+        uint256, /* _amount */
+        bytes memory /* _data */
+    ) 
+        public
+        view 
+        returns(Result, byte) 
+    {
+        return (Result.NA, 0xA0);
     }
 
     /**

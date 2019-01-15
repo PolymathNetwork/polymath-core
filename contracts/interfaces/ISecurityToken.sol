@@ -18,23 +18,82 @@ interface ISecurityToken {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 
     /**
-     * @notice Validates a transfer with a TransferManager module if it exists
-     * @dev TransferManager module has a key of 2
-     * @param _from Sender of transfer
-     * @param _to Receiver of transfer
-     * @param _value Value of transfer
-     * @return bool
+     * @notice Transfers of securities may fail for a number of reasons. So this function will used to understand the
+     * cause of failure by getting the byte value. Which will be the ESC that follows the EIP 1066. ESC can be mapped 
+     * with a reson string to understand the failure cause, table of Ethereum status code will always reside off-chain
+     * @param _to address The address which you want to transfer to
+     * @param _value uint256 the amount of tokens to be transferred
+     * @param _data The `bytes _data` allows arbitrary data to be submitted alongside the transfer.
+     * @return bool It signifies whether the transaction will be executed or not.
+     * @return byte Ethereum status code (ESC)
+     * @return bytes32 Application specific reason code 
      */
-    function verifyTransfer(address _from, address _to, uint256 _value, bytes calldata _data) external returns(bool success);
+    function canTransfer(address _to, uint256 _value, bytes calldata _data) external view returns (bool, byte, bytes32);
 
     /**
-     * @notice Mints new tokens and assigns them to the target _investor.
-     * Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
-     * @param _investor Address the tokens will be minted to
-     * @param _value is the amount of tokens that will be minted to the investor
-     * @return success
+     * @notice Transfers of securities may fail for a number of reasons. So this function will used to understand the
+     * cause of failure by getting the byte value. Which will be the ESC that follows the EIP 1066. ESC can be mapped 
+     * with a reson string to understand the failure cause, table of Ethereum status code will always reside off-chain
+     * @param _from address The address which you want to send tokens from
+     * @param _to address The address which you want to transfer to
+     * @param _value uint256 the amount of tokens to be transferred
+     * @param _data The `bytes _data` allows arbitrary data to be submitted alongside the transfer.
+     * @return bool It signifies whether the transaction will be executed or not.
+     * @return byte Ethereum status code (ESC)
+     * @return bytes32 Application specific reason code 
      */
-    function mint(address _investor, uint256 _value) external returns(bool success);
+    function canTransferFrom(address _from, address _to, uint256 _value, bytes calldata _data) external view returns (bool, byte, bytes32);
+
+    /**
+     * @notice Used to attach a new document to the contract, or update the URI or hash of an existing attached document
+     * @dev Can only be executed by the owner of the contract.
+     * @param _name Name of the document. It should be unique always
+     * @param _uri Off-chain uri of the document from where it is accessible to investors/advisors to read.
+     * @param _documentHash hash (of the contents) of the document.
+     */
+    function setDocument(bytes32 _name, string calldata _uri, bytes32 _documentHash) external;
+
+    /**
+     * @notice Used to remove an existing document from the contract by giving the name of the document.
+     * @dev Can only be executed by the owner of the contract.
+     * @param _name Name of the document. It should be unique always
+     */
+    function removeDocument(bytes32 _name) external;
+
+    /**
+     * @notice Used to return the details of a document with a known name (`bytes32`).
+     * @param _name Name of the document
+     * @return string The URI associated with the document.
+     * @return bytes32 The hash (of the contents) of the document.
+     * @return uint256 the timestamp at which the document was last modified.
+     */
+    function getDocument(bytes32 _name) external view returns (string memory, bytes32, uint256);
+
+    /**
+     * @notice Used to retrieve a full list of documents attached to the smart contract.
+     * @return bytes32 List of all documents names present in the contract.
+     */
+    function getAllDocuments() external view returns (bytes32[] memory);
+
+    /**
+     * @notice In order to provide transparency over whether `controllerTransfer` / `controllerRedeem` are useable
+     * or not `isControllable` function will be used.
+     * @dev If `isControllable` returns `false` then it always return `false` and
+     * `controllerTransfer` / `controllerRedeem` will always revert.
+     * @return bool `true` when controller address is non-zero otherwise return `false`.
+     */
+    function isControllable() external view returns (bool);
+
+    /**
+     * @notice This function must be called to increase the total supply (Corresponds to mint function of ERC20).
+     * @dev It only be called by the token issuer or the operator defined by the issuer. ERC1594 doesn't have
+     * have the any logic related to operator but its superset ERC1400 have the operator logic and this function
+     * is allowed to call by the operator.
+     * @param _tokenHolder The account that will receive the created tokens (account should be whitelisted or KYCed).
+     * @param _value The amount of tokens need to be issued
+     * @param _data The `bytes _data` allows arbitrary data to be submitted alongside the transfer.
+     */
+    function issue(address _tokenHolder, uint256 _value, bytes memory _data) external;
 
     /**
      * @notice Mints new tokens and assigns them to the target _investor.
@@ -46,19 +105,24 @@ interface ISecurityToken {
     function mintWithData(address _investor, uint256 _value, bytes calldata _data) external returns(bool success);
 
     /**
-     * @notice Used to burn the securityToken on behalf of someone else
-     * @param _from Address for whom to burn tokens
-     * @param _value No. of tokens to be burned
-     * @param _data Data to indicate validation
+     * @notice This function redeem an amount of the token of a msg.sender. For doing so msg.sender may incentivize
+     * using different ways that could be implemented with in the `redeem` function definition. But those implementations
+     * are out of the scope of the ERC1594. 
+     * @param _value The amount of tokens need to be redeemed
+     * @param _data The `bytes _data` it can be used in the token contract to authenticate the redemption.
      */
-    function burnFromWithData(address _from, uint256 _value, bytes calldata _data) external;
+    function redeem(uint256 _value, bytes calldata _data) external;
 
     /**
-     * @notice Used to burn the securityToken
-     * @param _value No. of tokens to be burned
-     * @param _data Data to indicate validation
+     * @notice This function redeem an amount of the token of a msg.sender. For doing so msg.sender may incentivize
+     * using different ways that could be implemented with in the `redeem` function definition. But those implementations
+     * are out of the scope of the ERC1594. 
+     * @dev It is analogy to `transferFrom`
+     * @param _tokenHolder The account whose tokens gets redeemed.
+     * @param _value The amount of tokens need to be redeemed
+     * @param _data The `bytes _data` it can be used in the token contract to authenticate the redemption.
      */
-    function burnWithData(uint256 _value, bytes calldata _data) external;
+    function redeemFrom(address _tokenHolder, uint256 _value, bytes calldata _data) external;
 
     event Minted(address indexed _to, uint256 _value);
     event Burnt(address indexed _burner, uint256 _value);
@@ -195,16 +259,7 @@ interface ISecurityToken {
     /**
      * @notice Ends token minting period permanently
      */
-    function freezeMinting() external;
-
-    /**
-     * @notice Mints new tokens and assigns them to the target investors.
-     * Can only be called by the STO attached to the token or by the Issuer (Security Token contract owner)
-     * @param _investors A list of addresses to whom the minted tokens will be delivered
-     * @param _values A list of the amount of tokens to mint to corresponding addresses from _investor[] list
-     * @return Success
-     */
-    function mintMulti(address[] calldata _investors, uint256[] calldata _values) external returns(bool success);
+    function freezeIssuance() external;
 
      /**
       * @notice Attachs a module to the SecurityToken
@@ -263,23 +318,33 @@ interface ISecurityToken {
     function setController(address _controller) external;
 
     /**
-     * @notice Used by a controller to execute a forced transfer
-     * @param _from address from which to take tokens
-     * @param _to address where to send tokens
-     * @param _value amount of tokens to transfer
-     * @param _data data to indicate validation
-     * @param _log data attached to the transfer by controller to emit in event
+     * @notice This function allows an authorised address to transfer tokens between any two token holders.
+     * The transfer must still respect the balances of the token holders (so the transfer must be for at most
+     * `balanceOf(_from)` tokens) and potentially also need to respect other transfer restrictions.
+     * @dev This function can only be executed by the `controller` address.
+     * @param _from Address The address which you want to send tokens from
+     * @param _to Address The address which you want to transfer to
+     * @param _value uint256 the amount of tokens to be transferred
+     * @param _data data to validate the transfer. (It is not used in this reference implementation
+     * because use of `_data` parameter is implementation specific).
+     * @param _operatorData data attached to the transfer by controller to emit in event. (It is more like a reason string 
+     * for calling this function (aka force transfer) which provides the transparency on-chain). 
      */
-    function forceTransfer(address _from, address _to, uint256 _value, bytes calldata _data, bytes calldata _log) external;
+    function controllerTransfer(address _from, address _to, uint256 _value, bytes calldata _data, bytes calldata _operatorData) external
 
     /**
-     * @notice Used by a controller to execute a foced burn
-     * @param _from address from which to take tokens
-     * @param _value amount of tokens to transfer
-     * @param _data data to indicate validation
-     * @param _log data attached to the transfer by controller to emit in event
+     * @notice This function allows an authorised address to redeem tokens for any token holder.
+     * The redemption must still respect the balances of the token holder (so the redemption must be for at most
+     * `balanceOf(_tokenHolder)` tokens) and potentially also need to respect other transfer restrictions.
+     * @dev This function can only be executed by the `controller` address.
+     * @param _tokenHolder The account whose tokens will be redeemed.
+     * @param _value uint256 the amount of tokens need to be redeemed.
+     * @param _data data to validate the transfer. (It is not used in this reference implementation
+     * because use of `_data` parameter is implementation specific).
+     * @param _operatorData data attached to the transfer by controller to emit in event. (It is more like a reason string 
+     * for calling this function (aka force transfer) which provides the transparency on-chain). 
      */
-    function forceBurn(address _from, uint256 _value, bytes calldata _data, bytes calldata _log) external;
+    function controllerRedeem(address _tokenHolder, uint256 _value, bytes calldata _data, bytes calldata _operatorData) external;
 
     /**
      * @notice Used by the issuer to permanently disable controller functionality
@@ -304,7 +369,7 @@ interface ISecurityToken {
       * @param _data data to indicate validation
       * @return bool success
       */
-    function transferWithData(address _to, uint256 _value, bytes calldata _data) external returns(bool success);
+    function transferWithData(address _to, uint256 _value, bytes calldata _data) external;
 
     /**
       * @notice Overloaded version of the transferFrom function
@@ -314,11 +379,20 @@ interface ISecurityToken {
       * @param _data data to indicate validation
       * @return bool success
       */
-    function transferFromWithData(address _from, address _to, uint256 _value, bytes calldata _data) external returns(bool);
+    function transferFromWithData(address _from, address _to, uint256 _value, bytes calldata _data) external;
 
     /**
       * @notice Provides the granularity of the token
       * @return uint256
       */
     function granularity() external view returns(uint256);
+
+    /**
+     * @notice A security token issuer can specify that issuance has finished for the token
+     * (i.e. no new tokens can be minted or issued).
+     * @dev If a token returns FALSE for `isIssuable()` then it MUST always return FALSE in the future.
+     * If a token returns FALSE for `isIssuable()` then it MUST never allow additional tokens to be issued.
+     * @return bool `true` signifies the minting is allowed. While `false` denotes the end of minting
+     */
+    function isIssuable() external view returns (bool)
 }

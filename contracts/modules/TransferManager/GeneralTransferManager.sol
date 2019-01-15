@@ -141,44 +141,74 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     function verifyTransfer(
         address _from,
         address _to,
-        uint256, /*_amount*/
-        bytes calldata, /* _data */
+        uint256 _amount,
+        bytes calldata _data,
         bool /* _isTransfer */
     ) external returns(Result) {
+       (Result success,) = verifyTransfer(_from, _to, _amount, _data);
+       return success;
+    }
+
+    /**
+     * @notice Default implementation of verifyTransfer used by SecurityToken
+     * If the transfer request comes from the STO, it only checks that the investor is in the whitelist
+     * If the transfer request comes from a token holder, it checks that:
+     * a) Both are on the whitelist
+     * b) Seller's sale lockup period is over
+     * c) Buyer's purchase lockup is over
+     * @param _from Address of the sender
+     * @param _to Address of the receiver
+    */
+    function verifyTransfer(
+        address _from,
+        address _to,
+        uint256, /*_amount*/
+        bytes memory /* _data */
+    ) 
+        public
+        view
+        returns(Result, byte)
+    {
+        Result success;
         if (!paused) {
             if (allowAllTransfers) {
                 //All transfers allowed, regardless of whitelist
-                return Result.VALID;
+                return (Result.VALID, 0xA1);
             }
             if (allowAllBurnTransfers && (_to == address(0))) {
-                return Result.VALID;
+                return (Result.VALID, 0xA1);
             }
             if (allowAllWhitelistTransfers) {
                 //Anyone on the whitelist can transfer, regardless of time
-                return (_onWhitelist(_to) && _onWhitelist(_from)) ? Result.VALID : Result.NA;
+                success = (_onWhitelist(_to) && _onWhitelist(_from)) ? Result.VALID : Result.NA;
+                return (success, success == Result.VALID ? byte(0xA1) : byte(0xA0));
             }
 
             (uint64 adjustedFromTime, uint64 adjustedToTime) = _adjustTimes(whitelist[_from].fromTime, whitelist[_to].toTime);
             if (_from == issuanceAddress) {
                 // Possible STO transaction, but investor not allowed to purchased from STO
                 if ((whitelist[_to].canBuyFromSTO == 0) && _isSTOAttached()) {
-                    return Result.NA;
+                    return (Result.NA, 0xA0);
                 }
                 // if allowAllWhitelistIssuances is true, so time stamp ignored
                 if (allowAllWhitelistIssuances) {
-                    return _onWhitelist(_to) ? Result.VALID : Result.NA;
+                    success = _onWhitelist(_to) ? Result.VALID : Result.NA;
+                    return (success, success == Result.VALID ? byte(0xA1) : byte(0xA0));
                 } else {
-                    return (_onWhitelist(_to) && (adjustedToTime <= uint64(now))) ? Result.VALID : Result.NA;
+                    success = (_onWhitelist(_to) && (adjustedToTime <= uint64(now))) ? Result.VALID : Result.NA;
+                    return (success, success == Result.VALID ? byte(0xA1) : byte(0xA0));
                 }
             }
 
             //Anyone on the whitelist can transfer provided the blocknumber is large enough
             /*solium-disable-next-line security/no-block-members*/
-            return ((_onWhitelist(_from) && (adjustedFromTime <= uint64(now))) && (_onWhitelist(_to) && 
+            success = ((_onWhitelist(_from) && (adjustedFromTime <= uint64(now))) && (_onWhitelist(_to) && 
                 (adjustedToTime <= uint64(now)))) ? Result.VALID : Result.NA; /*solium-disable-line security/no-block-members*/
+            return (success, success == Result.VALID ? byte(0xA1) : byte(0xA0));
         }
-        return Result.NA;
+        return (Result.NA, 0xA0);
     }
+
 
     /**
     * @notice Adds or removes addresses from the whitelist.

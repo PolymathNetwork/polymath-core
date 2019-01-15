@@ -25,7 +25,10 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
      * @notice Constructor
      * @param _securityToken Address of the security token
      */
-    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
+    constructor(address _securityToken, address _polyToken)
+    public
+    Module(_securityToken, _polyToken)
+    {
 
     }
 
@@ -38,27 +41,47 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
         address _from,
         address _to,
         uint256 _amount,
-        bytes calldata, /* _data */
+        bytes calldata _data,
         bool /* _isTransfer */
     ) 
         external 
         returns(Result) 
     {
+        (Result success,) = verifyTransfer(_from, _to, _amount, _data);
+        return success;
+    }
+
+    /** 
+     * @notice Used to verify the transfer transaction and prevent a given account to end up with more tokens than allowed
+     * @param _from Address of the sender
+     * @param _to Address of the receiver
+     * @param _amount The amount of tokens to transfer
+     */
+    function verifyTransfer(
+        address _from,
+        address _to,
+        uint256 _amount,
+        bytes memory /*_data*/
+    ) 
+        public
+        view 
+        returns(Result, byte) 
+    {
         if (!paused) {
             if (_from == address(0) && allowPrimaryIssuance) {
-                return Result.NA;
+                return (Result.NA, 0xA0);
             }
             // If an address is on the whitelist, it is allowed to hold more than maxHolderPercentage of the tokens.
             if (whitelist[_to]) {
-                return Result.NA;
+                return (Result.NA, 0xA0);
             }
             uint256 newBalance = ISecurityToken(securityToken).balanceOf(_to).add(_amount);
             if (newBalance.mul(uint256(10) ** 18).div(ISecurityToken(securityToken).totalSupply()) > maxHolderPercentage) {
-                return Result.INVALID;
+                return (Result.INVALID, 0xA4);
             }
-            return Result.NA;
+            return (Result.NA, 0xA0);
         }
-        return Result.NA;
+        return (Result.NA, 0xA0);
     }
 
     /**

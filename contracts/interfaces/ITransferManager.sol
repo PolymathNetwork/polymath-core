@@ -13,4 +13,8 @@ interface ITransferManager {
         TransferManagerEnums.Result
     );
 
+    function verifyTransfer(address _from, address _to, uint256 _amount, bytes calldata _data) external view returns(
+        TransferManagerEnums.Result, byte
+    );
+
 }

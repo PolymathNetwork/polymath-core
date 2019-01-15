@@ -1,52 +1,48 @@
 pragma solidity ^0.5.0;
 
-// Copied from OpenZeppelin and modified to be friendlier
-
 /**
  * @title KindMath
- * @dev Math operations with safety checks that throw on error
+ * @notice ref. https://github.com/OpenZeppelin/openzeppelin-solidity/blob/master/contracts/math/SafeMath.sol
+ * @dev Math operations with safety checks that returns boolean
  */
 library KindMath {
+
     /**
-    * @dev Multiplies two numbers, throws on overflow.
-    */
-    function mul(uint256 a, uint256 b) internal pure returns(uint256 c) {
+     * @dev Multiplies two numbers, return false on overflow.
+     */
+    function checkMul(uint256 a, uint256 b) internal pure returns (bool) {
         // Gas optimization: this is cheaper than requireing 'a' not being zero, but the
         // benefit is lost if 'b' is also tested.
         // See: https://github.com/OpenZeppelin/openzeppelin-solidity/pull/522
         if (a == 0) {
-            return 0;
+            return true;
         }
 
-        c = a * b;
-        require(c / a == b, "mul overflow");
-        return c;
+        uint256 c = a * b;
+        if (c / a == b)
+            return true;
+        else 
+            return false;
     }
 
     /**
-    * @dev Integer division of two numbers, truncating the quotient.
+    * @dev Subtracts two numbers, return false on overflow (i.e. if subtrahend is greater than minuend).
     */
-    function div(uint256 a, uint256 b) internal pure returns(uint256) {
-        // require(b > 0); // Solidity automatically throws when dividing by 0
-        // uint256 c = a / b;
-        // require(a == b * c + a % b); // There is no case in which this doesn't hold
-        return a / b;
+    function checkSub(uint256 a, uint256 b) internal pure returns (bool) {
+        if (b <= a)
+            return true;
+        else
+            return false;
     }
 
     /**
-    * @dev Subtracts two numbers, throws on overflow (i.e. if subtrahend is greater than minuend).
+    * @dev Adds two numbers, return false on overflow.
     */
-    function sub(uint256 a, uint256 b) internal pure returns(uint256) {
-        require(b <= a, "sub overflow");
-        return a - b;
-    }
-
-    /**
-    * @dev Adds two numbers, throws on overflow.
-    */
-    function add(uint256 a, uint256 b) internal pure returns(uint256 c) {
-        c = a + b;
-        require(c >= a, "add overflow");
-        return c;
+    function checkAdd(uint256 a, uint256 b) internal pure returns (bool) {
+        uint256 c = a + b;
+        if (c < a)
+            return false;
+        else
+            return true;
     }
 }

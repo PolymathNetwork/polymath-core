@@ -124,8 +124,9 @@ interface ISecurityToken {
      */
     function redeemFrom(address _tokenHolder, uint256 _value, bytes calldata _data) external;
 
-    event Minted(address indexed _to, uint256 _value);
-    event Burnt(address indexed _burner, uint256 _value);
+    // Issuance / Redemption Events
+    event Issued(address indexed _operator, address indexed _to, uint256 _value, bytes _data);
+    event Redeemed(address indexed _operator, address indexed _from, uint256 _value, bytes _data);
 
     /**
      * @notice Validate permissions with PermissionManager if it exists, If no Permission return false
@@ -330,7 +331,7 @@ interface ISecurityToken {
      * @param _operatorData data attached to the transfer by controller to emit in event. (It is more like a reason string 
      * for calling this function (aka force transfer) which provides the transparency on-chain). 
      */
-    function controllerTransfer(address _from, address _to, uint256 _value, bytes calldata _data, bytes calldata _operatorData) external
+    function controllerTransfer(address _from, address _to, uint256 _value, bytes calldata _data, bytes calldata _operatorData) external;
 
     /**
      * @notice This function allows an authorised address to redeem tokens for any token holder.
@@ -394,5 +395,5 @@ interface ISecurityToken {
      * If a token returns FALSE for `isIssuable()` then it MUST never allow additional tokens to be issued.
      * @return bool `true` signifies the minting is allowed. While `false` denotes the end of minting
      */
-    function isIssuable() external view returns (bool)
+    function isIssuable() external view returns (bool);
 }

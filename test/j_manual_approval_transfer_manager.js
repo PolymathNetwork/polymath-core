@@ -151,7 +151,7 @@ contract("ManualApprovalTransferManager", async (accounts) => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            
+
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
@@ -338,6 +338,7 @@ contract("ManualApprovalTransferManager", async (accounts) => {
                     address_zero,
                     new BN(web3.utils.toWei("2", "ether")),
                     currentTime.add(new BN(duration.days(1))),
+                    web3.utils.toHex("DESCRIPTION"),
                     { from: token_owner }
                 )
             );
@@ -350,6 +351,7 @@ contract("ManualApprovalTransferManager", async (accounts) => {
                     account_investor4,
                     new BN(web3.utils.toWei("2", "ether")),
                     99999,
+                    web3.utils.toHex("DESCRIPTION"),
                     { from: token_owner }
                 )
             );
@@ -361,6 +363,7 @@ contract("ManualApprovalTransferManager", async (accounts) => {
                 account_investor4,
                 new BN(web3.utils.toWei("2", "ether")),
                 currentTime.add(new BN(duration.days(1))),
+                web3.utils.toHex("DESCRIPTION"),
                 { from: token_owner }
             );
         });
@@ -371,6 +374,7 @@ contract("ManualApprovalTransferManager", async (accounts) => {
                 account_investor5,
                 new BN(web3.utils.toWei("2", "ether")),
                 currentTime.add(new BN(duration.days(1))),
+                web3.utils.toHex("DESCRIPTION"),
                 { from: token_owner }
             );
         });
@@ -382,6 +386,7 @@ contract("ManualApprovalTransferManager", async (accounts) => {
                     account_investor4,
                     new BN(web3.utils.toWei("2", "ether")),
                     currentTime.add(new BN(duration.days(5))),
+                    web3.utils.toHex("DESCRIPTION"),
                     { from: token_owner }
                 )
             );
@@ -403,6 +408,7 @@ contract("ManualApprovalTransferManager", async (accounts) => {
                 account_investor4,
                 new BN(web3.utils.toWei("2", "ether")),
                 currentTime.add(new BN(duration.days(1))),
+                web3.utils.toHex("DESCRIPTION"),
                 { from: token_owner }
             );
         });

@@ -852,25 +852,63 @@ contract("ERC20DividendCheckpoint", accounts => {
 
         it("Issuer reclaims withholding tax", async () => {
             let info = await I_ERC20DividendCheckpoint.getDividendProgress.call(3);
-            console.log(info);
+
+            console.log("Address:");
+            console.log(info[0][0]);
+            console.log(info[0][1]);
+            console.log(info[0][2]);
+            console.log(info[0][3]);
+
+            console.log("Claimed:");
+            console.log(info[1][0]);
+            console.log(info[1][1]);
+            console.log(info[1][2]);
+            console.log(info[1][3]);
+
+            console.log("Excluded:");
+            console.log(info[2][0]);
+            console.log(info[2][1]);
+            console.log(info[2][2]);
+            console.log(info[2][3]);
+
+            console.log("Withheld:");
+            console.log(info[3][0].toNumber());
+            console.log(info[3][1].toNumber());
+            console.log(info[3][2].toNumber());
+            console.log(info[3][3].toNumber());
+
+            console.log("Claimed:");
+            console.log(info[4][0].toNumber());
+            console.log(info[4][1].toNumber());
+            console.log(info[4][2].toNumber());
+            console.log(info[4][3].toNumber());
+
+            console.log("Balance:");
+            console.log(info[5][0].toNumber());
+            console.log(info[5][1].toNumber());
+            console.log(info[5][2].toNumber());
+            console.log(info[5][3].toNumber());
+
             assert.equal(info[0][0], account_investor1, "account match");
             assert.equal(info[0][1], account_investor2, "account match");
             assert.equal(info[0][2], account_temp, "account match");
             assert.equal(info[0][3], account_investor3, "account match");
+
             assert.equal(info[3][0].toNumber(), 0, "withheld match");
             assert.equal(info[3][1].toNumber(), web3.utils.toWei("0.2", "ether"), "withheld match");
             assert.equal(info[3][2].toNumber(), web3.utils.toWei("0.2", "ether"), "withheld match");
             assert.equal(info[3][3].toNumber(), 0, "withheld match");
 
-            assert.equal(info[4][0].toNumber(), (await I_SecurityToken.balanceOfAt(account_investor1, 4)).toNumber(), "balance match");
-            assert.equal(info[4][1].toNumber(), (await I_SecurityToken.balanceOfAt(account_investor2, 4)).toNumber(), "balance match");
-            assert.equal(info[4][2].toNumber(), (await I_SecurityToken.balanceOfAt(account_temp, 4)).toNumber(), "balance match");
-            assert.equal(info[4][3].toNumber(), (await I_SecurityToken.balanceOfAt(account_investor3, 4)).toNumber(), "balance match");
+            assert.equal(info[4][0].toNumber(), 0, "excluded");
+            assert.equal(info[4][1].toNumber(), web3.utils.toWei("1.8", "ether"), "claim match");
+            assert.equal(info[4][2].toNumber(), web3.utils.toWei("0.8", "ether"), "claim match");
+            assert.equal(info[4][3].toNumber(), web3.utils.toWei("7", "ether"), "claim match");
 
-            assert.equal(info[5][0].toNumber(), 0, "excluded");
-            assert.equal(info[5][1].toNumber(), web3.utils.toWei("2", "ether"), "claim match");
-            assert.equal(info[5][2].toNumber(), web3.utils.toWei("1", "ether"), "claim match");
-            assert.equal(info[5][3].toNumber(), web3.utils.toWei("7", "ether"), "claim match");
+            assert.equal(info[5][0].toNumber(), (await I_SecurityToken.balanceOfAt(account_investor1, 4)).toNumber(), "balance match");
+            assert.equal(info[5][1].toNumber(), (await I_SecurityToken.balanceOfAt(account_investor2, 4)).toNumber(), "balance match");
+            assert.equal(info[5][2].toNumber(), (await I_SecurityToken.balanceOfAt(account_temp, 4)).toNumber(), "balance match");
+            assert.equal(info[5][3].toNumber(), (await I_SecurityToken.balanceOfAt(account_investor3, 4)).toNumber(), "balance match");
+
 
             let issuerBalance = new BigNumber(await I_PolyToken.balanceOf(wallet));
             await I_ERC20DividendCheckpoint.withdrawWithholding(3, { from: token_owner, gasPrice: 0 });

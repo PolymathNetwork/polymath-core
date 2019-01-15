@@ -311,17 +311,17 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @return address[] list of investors
      * @return bool[] whether investor has claimed
      * @return bool[] whether investor is excluded
-     * @return uint256[] amount of withheld tax
+     * @return uint256[] amount of withheld tax (estimate if not claimed)
+     * @return uint256[] amount of claim (estimate if not claimeed)
      * @return uint256[] investor balance
-     * @return uint256[] amount to be claimed including withheld tax
      */
     function getDividendProgress(uint256 _dividendIndex) external view returns (
         address[] memory investors,
         bool[] memory resultClaimed,
         bool[] memory resultExcluded,
         uint256[] memory resultWithheld,
-        uint256[] memory resultBalance,
-        uint256[] memory resultAmount)
+        uint256[] memory resultAmount,
+        uint256[] memory resultBalance)
     {
         require(_dividendIndex < dividends.length, "Invalid dividend");
         //Get list of Investors
@@ -331,15 +331,21 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
         resultClaimed = new bool[](investors.length);
         resultExcluded = new bool[](investors.length);
         resultWithheld = new uint256[](investors.length);
-        resultBalance = new uint256[](investors.length);
         resultAmount = new uint256[](investors.length);
+        resultBalance = new uint256[](investors.length);
         for (uint256 i; i < investors.length; i++) {
             resultClaimed[i] = dividend.claimed[investors[i]];
             resultExcluded[i] = dividend.dividendExcluded[investors[i]];
             resultBalance[i] = ISecurityToken(securityToken).balanceOfAt(investors[i], dividend.checkpointId);
             if (!resultExcluded[i]) {
-                resultWithheld[i] = dividend.withheld[investors[i]];
-                resultAmount[i] = resultBalance[i].mul(dividend.amount).div(dividend.totalSupply);
+                if (resultClaimed[i]) {
+                    resultWithheld[i] = dividend.withheld[investors[i]];
+                    resultAmount[i] = resultBalance[i].mul(dividend.amount).div(dividend.totalSupply).sub(resultWithheld[i]);
+                } else {
+                    (uint256 claim, uint256 withheld) = calculateDividend(_dividendIndex, investors[i]);
+                    resultWithheld[i] = withheld;
+                    resultAmount[i] = claim.sub(withheld);
+                }
             }
         }
     }

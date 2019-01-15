@@ -223,24 +223,6 @@ library TokenLib {
     }
 
     /**
-     * @notice Stores the changes to the checkpoint objects
-     * @param _checkpoints is the affected checkpoint object array
-     * @param _newValue is the new value that needs to be stored
-     */
-    function adjustCheckpoints(TokenLib.Checkpoint[] storage _checkpoints, uint256 _newValue, uint256 _currentCheckpointId) public {
-        //No checkpoints set yet
-        if (_currentCheckpointId == 0) {
-            return;
-        }
-        //No new checkpoints since last update
-        if ((_checkpoints.length > 0) && (_checkpoints[_checkpoints.length - 1].checkpointId == _currentCheckpointId)) {
-            return;
-        }
-        //New checkpoint, so record balance
-        _checkpoints.push(TokenLib.Checkpoint({checkpointId: _currentCheckpointId, value: _newValue}));
-    }
-
-    /**
     * @notice Keeps track of the number of non-zero token holders
     * @param _investorData Date releated to investor metrics
     * @param _from Sender of transfer

@@ -459,13 +459,6 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     }
 
     /**
-     * @notice Internal - adjusts totalSupply at checkpoint after minting or burning tokens
-     */
-    function _adjustTotalSupplyCheckpoints() internal {
-        TokenLib.adjustCheckpoints(checkpointTotalSupply, totalSupply(), currentCheckpointId);
-    }
-
-    /**
      * @notice Internal - adjusts token holder balance at checkpoint after a token transfer
      * @param _investor address of the token holder affected
      */
@@ -732,7 +725,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         /*solium-disable-next-line security/no-block-members*/
         checkpointTimes.push(now);
         /*solium-disable-next-line security/no-block-members*/
-        _adjustTotalSupplyCheckpoints();
+        checkpointTotalSupply.push(TokenLib.Checkpoint({checkpointId: currentCheckpointId, value: totalSupply()}));
         emit CheckpointCreated(currentCheckpointId, now);
         return currentCheckpointId;
     }

@@ -492,16 +492,17 @@ contract("GeneralTransferManager", async (accounts) => {
 
         it("Add a from default and check transfers are disabled then enabled in the future", async () => {
             currentTime = new BN(await latestTime());
-            let tx = await I_GeneralTransferManager.changeDefaults(currentTime.add(new BN(duration.days(5))), 0, {from: token_owner});
-            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), {from: account_investor2});
+            let tx = await I_GeneralTransferManager.changeDefaults(new BN(currentTime.add(new BN(duration.days(5)))), new BN(0), {from: token_owner});
+            await I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1", "ether")), {from: account_investor2});
             await catchRevert(I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), {from: account_investor1}));
             await increaseTime(duration.days(5));
             await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), {from: account_investor1});
         });
 
         it("Add a to default and check transfers are disabled then enabled in the future", async () => {
-            let tx = await I_GeneralTransferManager.changeDefaults(0, currentTime.add(new BN(duration.days(5))), {from: token_owner});
-            await catchRevert(I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), {from: account_investor2}));
+            currentTime = new BN(await latestTime());
+            let tx = await I_GeneralTransferManager.changeDefaults(new BN(0), currentTime.add(new BN(duration.days(5))), {from: token_owner});
+            await catchRevert(I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1", "ether")), {from: account_investor2}));
             await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), {from: account_investor1});
             await increaseTime(duration.days(5));
             await I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("2", "ether")), {from: account_investor2});

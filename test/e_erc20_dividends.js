@@ -878,6 +878,16 @@ contract("ERC20DividendCheckpoint", accounts => {
             assert.equal(issuerBalanceAfter.sub(issuerBalance).toNumber(), web3.utils.toWei("0.4", "ether"));
         });
 
+        it("Issuer changes wallet address", async () => {
+            await catchRevert(I_ERC20DividendCheckpoint.changeWallet(token_owner, { from: wallet }));
+            await I_ERC20DividendCheckpoint.changeWallet(token_owner, {from: token_owner});
+            let newWallet = await I_ERC20DividendCheckpoint.wallet.call();
+            assert.equal(newWallet, token_owner, "Wallets match");
+            await I_ERC20DividendCheckpoint.changeWallet(wallet, {from: token_owner});
+            newWallet = await I_ERC20DividendCheckpoint.wallet.call();
+            assert.equal(newWallet, wallet, "Wallets match");
+        });
+
         it("Issuer unable to reclaim dividend (expiry not passed)", async () => {
             await catchRevert(I_ERC20DividendCheckpoint.reclaimDividend(3, { from: token_owner }));
         });

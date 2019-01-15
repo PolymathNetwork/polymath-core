@@ -292,7 +292,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
             let polymathRegistry = await I_STRProxied.getAddressValue.call(web3.utils.soliditySha3("polymathRegistry"));
             assert.equal(polymathRegistry, I_PolymathRegistry.address, "Should be the address of the polymath registry");
 
-            let getterContract = await I_STRProxied.getAddressValues.call(web3.utils.soliditySha3("STRGetter"));
+            let getterContract = await I_STRProxied.getAddressValue.call(web3.utils.soliditySha3("STRGetter"));
             assert.equal(getterContract, I_STRGetter.address, "Should be the address of the getter contract");
 
             let owner = await I_STRProxied.getAddressValue.call(web3.utils.soliditySha3("owner"));
@@ -974,7 +974,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
             let tx = await I_STRProxied.generateSecurityToken("Polymath", "POLY", tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
-            assert.equal(tx.logs[1].args._ticker, "POLY", "SecurityToken doesn't get deployed");
+            assert.equal(tx.logs[2].args._ticker, "POLY", "SecurityToken doesn't get deployed");
         });
     });
 
@@ -988,7 +988,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should change the polytoken address -- failed because of 0x address", async () => {
             catchRevert(
-                I_STRProxied.updatePolyTokenAddress("0x0000000000000000000000000000000000000000000", { from: account_polymath }),
+                I_STRProxied.updatePolyTokenAddress(address_zero, { from: account_polymath }),
                 "tx revert -> failed because 0x address"
             );
         });
@@ -998,7 +998,6 @@ contract("SecurityTokenRegistry", async (accounts) => {
             await I_STRProxied.updatePolyTokenAddress(dummy_token, { from: account_polymath });
             assert.equal(await I_STRProxied.getAddressValue.call(web3.utils.soliditySha3("polyToken")), dummy_token);
             await revertToSnapshot(_id);
-            assert.equal(tx.logs[2].args._ticker, "POLY", "SecurityToken doesn't get deployed");
         });
     });
 

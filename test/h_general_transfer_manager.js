@@ -372,7 +372,7 @@ contract("GeneralTransferManager", async (accounts) => {
         });
     });
 
-    describe("Buy tokens using on-chain whitelist and defaults", async () => {
+    describe("Buy tokens using on-chain whitelist and defaults 1", async () => {
         // let snap_id;
 
         it("Should Buy the tokens", async () => {
@@ -416,7 +416,7 @@ contract("GeneralTransferManager", async (accounts) => {
             assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
         });
 
-        it("Add a from default and check transfers are disabled then enabled in the future", async () => {
+        it("Add a from default and check transfers are disabled then enabled in the future 1", async () => {
             let tx = await I_GeneralTransferManager.changeDefaults(currentTime.add(new BN(duration.days(12))), new BN(0), { from: token_owner });
             await I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: account_investor2 });
             await catchRevert(I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 }));
@@ -424,7 +424,7 @@ contract("GeneralTransferManager", async (accounts) => {
             await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 });
         });
 
-        it("Add a to default and check transfers are disabled then enabled in the future", async () => {
+        it("Add a to default and check transfers are disabled then enabled in the future 2", async () => {
             let tx = await I_GeneralTransferManager.changeDefaults(0, currentTime.add(new BN(duration.days(16))), { from: token_owner });
             await catchRevert(I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: account_investor2 }));
             await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 });
@@ -439,7 +439,7 @@ contract("GeneralTransferManager", async (accounts) => {
         });
     });
 
-    describe("Buy tokens using on-chain whitelist and defaults", async () => {
+    describe("Buy tokens using on-chain whitelist and defaults 2", async () => {
         // let snap_id;
 
         it("Should Buy the tokens", async () => {
@@ -449,7 +449,7 @@ contract("GeneralTransferManager", async (accounts) => {
                 account_investor1,
                 0,
                 0,
-                latestTime() + duration.days(20),
+                currentTime.add(new BN(duration.days(20))),
                 true,
                 {
                     from: account_issuer,
@@ -465,9 +465,9 @@ contract("GeneralTransferManager", async (accounts) => {
 
             tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor2,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(20),
+                currentTime,
+                currentTime,
+                currentTime.add(new BN(duration.days(20))),
                 true,
                 {
                     from: account_issuer,
@@ -486,24 +486,25 @@ contract("GeneralTransferManager", async (accounts) => {
 
             // Can transfer tokens
             await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), {from: account_investor1});
-            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), web3.utils.toWei("1", "ether"));
-            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), web3.utils.toWei("1", "ether"));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), web3.utils.toWei("1", "ether"));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), web3.utils.toWei("1", "ether"));
         });
 
         it("Add a from default and check transfers are disabled then enabled in the future", async () => {
-            let tx = await I_GeneralTransferManager.changeDefaults(latestTime() + duration.days(5), 0, {from: token_owner});
+            currentTime = new BN(await latestTime());
+            let tx = await I_GeneralTransferManager.changeDefaults(currentTime.add(new BN(duration.days(5))), 0, {from: token_owner});
             await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), {from: account_investor2});
-            await catchRevert(I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), {from: account_investor1}));
+            await catchRevert(I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), {from: account_investor1}));
             await increaseTime(duration.days(5));
-            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), {from: account_investor1});
+            await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), {from: account_investor1});
         });
 
         it("Add a to default and check transfers are disabled then enabled in the future", async () => {
-            let tx = await I_GeneralTransferManager.changeDefaults(0, latestTime() + duration.days(5), {from: token_owner});
+            let tx = await I_GeneralTransferManager.changeDefaults(0, currentTime.add(new BN(duration.days(5))), {from: token_owner});
             await catchRevert(I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), {from: account_investor2}));
-            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), {from: account_investor1});
+            await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), {from: account_investor1});
             await increaseTime(duration.days(5));
-            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("2", "ether"), {from: account_investor2});
+            await I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("2", "ether")), {from: account_investor2});
             // revert changes
             await I_GeneralTransferManager.modifyWhitelist(
                 account_investor2,

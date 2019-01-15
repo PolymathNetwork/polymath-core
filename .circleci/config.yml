@@ -1,0 +1,96 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: maxsam4/solidity-kit
+    steps:
+      - checkout
+      - restore_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+      - run: yarn install
+      - run: node --version
+      - run: truffle version
+      - run: truffle compile
+      - save_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+          paths:
+            - node_modules
+  test:
+    docker:
+      - image: maxsam4/solidity-kit
+    parallelism: 2
+    steps:
+      - checkout
+      - restore_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+      - run: yarn install
+      - run: node --version
+      - run: truffle version
+      - run: npm run test
+      - save_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+          paths:
+            - node_modules
+      - store_test_results:
+          path: test-results
+      - store_artifacts:
+          path: ./test-results/mocha/results.xml
+  coverage:
+    docker:
+      - image: maxsam4/solidity-kit
+    steps:
+      - checkout
+      - restore_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+      - run: yarn install
+      - run: node --version
+      - run: truffle version
+      - run: 
+          command: npm run coverage
+          no_output_timeout: 1h
+      - save_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+          paths:
+            - node_modules
+      - store_artifacts:
+          path: ./coverage/lcov.info
+  docs:
+    docker:
+      - image: maxsam4/solidity-kit
+    steps:
+      - checkout
+      - restore_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+      - run: yarn install
+      - run: node --version
+      - run: truffle version
+      - run: npm run docs
+      - save_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+          paths:
+            - node_modules
+workflows:
+  version: 2
+  commit:
+    jobs:
+      - coverage
+  daily-builds:
+    triggers:
+      - schedule:
+          cron: "0 0 * * *"
+          filters:
+            branches:
+              only:
+                - master
+                - dev-2.1.0
+                - dev-2.2.0
+                - dev-3.0.0
+    jobs:
+      - coverage
+  docs:
+    jobs:
+      - docs:
+          filters:
+            branches:
+              only:
+                - master

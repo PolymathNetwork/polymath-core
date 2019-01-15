@@ -31,6 +31,7 @@ const STRGetter = artifacts.require('./STRGetter.sol');
 const DataStoreLogic = artifacts.require('./DataStore.sol');
 const DataStoreFactory = artifacts.require('./DataStoreFactory.sol');
 
+
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
 const nullAddress = "0x0000000000000000000000000000000000000000";
@@ -42,97 +43,125 @@ let UsdToken;
 let ETHOracle;
 let POLYOracle;
 
-const Web3 = require('web3')
+module.exports = function(deployer, network, accounts) {
+    // Ethereum account address hold by the Polymath (Act as the main account which have ownable permissions)
+    let PolymathAccount;
+    let moduleRegistry;
+    let polymathRegistry;
+    let web3;
+    if (network === "development") {
+        web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+        PolymathAccount = accounts[0];
+        PolyToken = DevPolyToken.address; // Development network polytoken address
+        deployer.deploy(DevPolyToken, { from: PolymathAccount }).then(() => {
+            DevPolyToken.deployed().then(mockedUSDToken => {
+                UsdToken = mockedUSDToken.address;
+            });
+        });
+        deployer
+            .deploy(
+                MockOracle,
+                PolyToken,
+                web3.utils.fromAscii("POLY"),
+                web3.utils.fromAscii("USD"),
+                new BN(5).mul(new BN(10).pow(new BN(17))),
+                { from: PolymathAccount }
+            )
+            .then(() => {
+                MockOracle.deployed().then(mockedOracle => {
+                    POLYOracle = mockedOracle.address;
+                });
+            });
+        deployer
+            .deploy(
+                MockOracle,
+                nullAddress,
+                web3.utils.fromAscii("ETH"),
+                web3.utils.fromAscii("USD"),
+                new BN(500).mul(new BN(10).pow(new BN(18))),
+                { from: PolymathAccount }
+            )
+            .then(() => {
+                MockOracle.deployed().then(mockedOracle => {
+                    ETHOracle = mockedOracle.address;
+                });
+            });
+    } else if (network === "kovan") {
+        web3 = new Web3(new Web3.providers.HttpProvider("https://kovan.infura.io/g5xfoQ0jFSE9S5LwM1Ei"));
+        PolymathAccount = accounts[0];
+        PolyToken = "0xb347b9f5b56b431b2cf4e1d90a5995f7519ca792"; // PolyToken Kovan Faucet Address
+        POLYOracle = "0x461d98EF2A0c7Ac1416EF065840fF5d4C946206C"; // Poly Oracle Kovan Address
+        ETHOracle = "0xCE5551FC9d43E9D2CC255139169FC889352405C8"; // ETH Oracle Kovan Address
+    } else if (network === "mainnet") {
+        web3 = new Web3(new Web3.providers.HttpProvider("https://mainnet.infura.io/g5xfoQ0jFSE9S5LwM1Ei"));
+        PolymathAccount = accounts[0];
+        PolyToken = "0x9992eC3cF6A55b00978cdDF2b27BC6882d88D1eC"; // Mainnet PolyToken Address
+        POLYOracle = "0x52cb4616E191Ff664B0bff247469ce7b74579D1B"; // Poly Oracle Mainnet Address
+        ETHOracle = "0x60055e9a93aae267da5a052e95846fa9469c0e7a"; // ETH Oracle Mainnet Address
+    }
+    if (network === "coverage") {
+        web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+        PolymathAccount = accounts[0];
+        PolyToken = DevPolyToken.address; // Development network polytoken address
+        deployer
+            .deploy(MockOracle, PolyToken, web3.utils.fromAscii("POLY"), web3.utils.fromAscii("USD"), new BN(0.5).mul(new BN(10).pow(new BN(18))), { from: PolymathAccount })
+            .then(() => {
+                MockOracle.deployed().then(mockedOracle => {
+                    POLYOracle = mockedOracle.address;
+                });
+            });
+        deployer.deploy(MockOracle, nullAddress, web3.utils.fromAscii("ETH"), web3.utils.fromAscii("USD"), new BN(500).mul(new BN(10).pow(new BN(18))), { from: PolymathAccount }).then(() => {
+            MockOracle.deployed().then(mockedOracle => {
+                ETHOracle = mockedOracle.address;
+            });
+        });
+    }
 
-module.exports = function (deployer, network, accounts) {
-  // Ethereum account address hold by the Polymath (Act as the main account which have ownable permissions)
-  let PolymathAccount;
-  let moduleRegistry;
-  let polymathRegistry;
-  let web3
-  if (network === 'development') {
-    web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'))
-    PolymathAccount = accounts[0]
-    PolyToken = DevPolyToken.address // Development network polytoken address
-    deployer.deploy(DevPolyToken, {from: PolymathAccount}).then(() => {
-      DevPolyToken.deployed().then((mockedUSDToken) => {
-        UsdToken = mockedUSDToken.address;
-      });
-    });
-    deployer.deploy(MockOracle, PolyToken, "POLY", "USD", new BigNumber(0.5).times(new BigNumber(10).pow(18)), {from: PolymathAccount}).then(() => {
-      MockOracle.deployed().then((mockedOracle) => {
-        POLYOracle = mockedOracle.address;
-      });
-    });
-    deployer.deploy(MockOracle, 0, "ETH", "USD", new BigNumber(500).times(new BigNumber(10).pow(18)), {from: PolymathAccount}).then(() => {
-      MockOracle.deployed().then((mockedOracle) => {
-        ETHOracle = mockedOracle.address;
-      });
-    });
+    const functionSignatureProxy = {
+        name: "initialize",
+        type: "function",
+        inputs: [
+            {
+                type: "address",
+                name: "_polymathRegistry"
+            },
+            {
+                type: "address",
+                name: "_STFactory"
+            },
+            {
+                type: "uint256",
+                name: "_stLaunchFee"
+            },
+            {
+                type: "uint256",
+                name: "_tickerRegFee"
+            },
+            {
+                type: "address",
+                name: "_owner"
+            },
+            {
+                type: 'address',
+                name: '_getterContract'
+            }
+        ]
+    };
 
-  } else if (network === 'kovan') {
-    web3 = new Web3(new Web3.providers.HttpProvider('https://kovan.infura.io/g5xfoQ0jFSE9S5LwM1Ei'))
-    PolymathAccount = accounts[0]
-    PolyToken = '0xb347b9f5b56b431b2cf4e1d90a5995f7519ca792' // PolyToken Kovan Faucet Address
-    POLYOracle = '0x461d98EF2A0c7Ac1416EF065840fF5d4C946206C' // Poly Oracle Kovan Address
-    ETHOracle = '0xCE5551FC9d43E9D2CC255139169FC889352405C8' // ETH Oracle Kovan Address
-  } else if (network === 'mainnet') {
-    web3 = new Web3(new Web3.providers.HttpProvider('https://mainnet.infura.io/g5xfoQ0jFSE9S5LwM1Ei'))
-    PolymathAccount = accounts[0]
-    PolyToken = '0x9992eC3cF6A55b00978cdDF2b27BC6882d88D1eC' // Mainnet PolyToken Address
-    POLYOracle = '0x52cb4616E191Ff664B0bff247469ce7b74579D1B' // Poly Oracle Mainnet Address
-    ETHOracle = '0x60055e9a93aae267da5a052e95846fa9469c0e7a' // ETH Oracle Mainnet Address
-  } if (network === 'coverage') {
-    web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'))
-    PolymathAccount = accounts[0]
-    PolyToken = DevPolyToken.address // Development network polytoken address
-    deployer.deploy(MockOracle, PolyToken, "POLY", "USD", new BigNumber(0.5).times(new BigNumber(10).pow(18)), {from: PolymathAccount}).then(() => {
-      MockOracle.deployed().then((mockedOracle) => {
-        POLYOracle = mockedOracle.address;
-      });
-    });
-    deployer.deploy(MockOracle, 0, "ETH", "USD", new BigNumber(500).times(new BigNumber(10).pow(18)), {from: PolymathAccount}).then(() => {
-      MockOracle.deployed().then((mockedOracle) => {
-        ETHOracle = mockedOracle.address;
-      });
-    });
-  }
-
-  const functionSignatureProxy = {
-    name: 'initialize',
-    type: 'function',
-    inputs: [{
-        type:'address',
-        name: '_polymathRegistry'
-    },{
-        type: 'address',
-        name: '_STFactory'
-    },{
-        type: 'uint256',
-        name: '_stLaunchFee'
-    },{
-        type: 'uint256',
-        name: '_tickerRegFee'
-    },{
-        type: 'address',
-        name: '_polyToken'
-    },{
-        type: 'address',
-        name: '_owner'
-    }]
-  };
-
-  const functionSignatureProxyMR = {
-    name: 'initialize',
-    type: 'function',
-    inputs: [{
-        type:'address',
-        name: '_polymathRegistry'
-    },{
-        type: 'address',
-        name: '_owner'
-    }]
-  };
+    const functionSignatureProxyMR = {
+        name: "initialize",
+        type: "function",
+        inputs: [
+            {
+                type: "address",
+                name: "_polymathRegistry"
+            },
+            {
+                type: "address",
+                name: "_owner"
+            }
+        ]
+    };
 
     // POLYMATH NETWORK Configuration :: DO THIS ONLY ONCE
     // A) Deploy the PolymathRegistry contract
@@ -446,26 +475,35 @@ module.exports = function (deployer, network, accounts) {
     SecurityTokenRegistry (Proxy):        ${SecurityTokenRegistryProxy.address}
     ModuleRegistry (Proxy):               ${ModuleRegistryProxy.address}
     FeatureRegistry:                      ${FeatureRegistry.address}
+    STRGetter:                            ${STRGetter.address}
 
     ETHOracle:                            ${ETHOracle}
     POLYOracle:                           ${POLYOracle}
 
     STFactory:                            ${STFactory.address}
+    GeneralTransferManagerLogic:          ${GeneralTransferManagerLogic.address}
     GeneralTransferManagerFactory:        ${GeneralTransferManagerFactory.address}
+    GeneralPermissionManagerLogic:        ${GeneralPermissionManagerLogic.address}
     GeneralPermissionManagerFactory:      ${GeneralPermissionManagerFactory.address}
 
+    CappedSTOLogic:                       ${CappedSTOLogic.address}
     CappedSTOFactory:                     ${CappedSTOFactory.address}
+    USDTieredSTOLogic:                    ${USDTieredSTOLogic.address}
     USDTieredSTOFactory:                  ${USDTieredSTOFactory.address}
-    USDTieredSTOProxyFactory:             ${USDTieredSTOProxyFactory.address}
 
+    CountTransferManagerLogic:            ${CountTransferManagerLogic.address}
     CountTransferManagerFactory:          ${CountTransferManagerFactory.address}
+    PercentageTransferManagerLogic:       ${PercentageTransferManagerLogic.address}
     PercentageTransferManagerFactory:     ${PercentageTransferManagerFactory.address}
+    ManualApprovalTransferManagerLogic:   ${ManualApprovalTransferManagerLogic.address}
     ManualApprovalTransferManagerFactory: ${ManualApprovalTransferManagerFactory.address}
+    EtherDividendCheckpointLogic:         ${EtherDividendCheckpointLogic.address}
+    ERC20DividendCheckpointLogic:         ${ERC20DividendCheckpointLogic.address}
     EtherDividendCheckpointFactory:       ${EtherDividendCheckpointFactory.address}
     ERC20DividendCheckpointFactory:       ${ERC20DividendCheckpointFactory.address}
     ---------------------------------------------------------------------------------
     `);
-    console.log('\n');
-    // -------- END OF POLYMATH NETWORK Configuration -------//
-  });
-}
+            console.log("\n");
+            // -------- END OF POLYMATH NETWORK Configuration -------//
+        });
+};

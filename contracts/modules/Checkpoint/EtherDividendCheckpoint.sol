@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "./DividendCheckpoint.sol";
 import "../../interfaces/IOwnable.sol";
@@ -8,6 +8,7 @@ import "../../interfaces/IOwnable.sol";
  */
 contract EtherDividendCheckpoint is DividendCheckpoint {
     using SafeMath for uint256;
+
     event EtherDividendDeposited(
         address indexed _depositor,
         uint256 _checkpointId,
@@ -27,11 +28,9 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
     /**
      * @notice Constructor
      * @param _securityToken Address of the security token
-     * @param _polyAddress Address of the polytoken
      */
-    constructor (address _securityToken, address _polyAddress) public
-    Module(_securityToken, _polyAddress)
-    {
+    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
+
     }
 
     /**
@@ -57,9 +56,9 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         uint256 _checkpointId,
         bytes32 _name
     ) 
-        external
-        payable
-        withPerm(MANAGE)
+        external 
+        payable 
+        withPerm(MANAGE) 
     {
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, _checkpointId, excluded, _name);
     }
@@ -74,12 +73,12 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
     function createDividendWithExclusions(
         uint256 _maturity,
         uint256 _expiry,
-        address[] _excluded,
+        address[] memory _excluded,
         bytes32 _name
     ) 
-        public
-        payable
-        withPerm(MANAGE)
+        public 
+        payable 
+        withPerm(MANAGE) 
     {
         uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, checkpointId, _excluded, _name);
@@ -94,15 +93,15 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
      * @param _name Name/title for identification
      */
     function createDividendWithCheckpointAndExclusions(
-        uint256 _maturity, 
-        uint256 _expiry, 
-        uint256 _checkpointId, 
-        address[] _excluded, 
+        uint256 _maturity,
+        uint256 _expiry,
+        uint256 _checkpointId,
+        address[] memory _excluded,
         bytes32 _name
-    )
-        public
-        payable
-        withPerm(MANAGE)
+    ) 
+        public 
+        payable 
+        withPerm(MANAGE) 
     {
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, _checkpointId, _excluded, _name);
     }
@@ -116,13 +115,13 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
      * @param _name Name/title for identification
      */
     function _createDividendWithCheckpointAndExclusions(
-        uint256 _maturity, 
-        uint256 _expiry, 
-        uint256 _checkpointId, 
-        address[] _excluded, 
+        uint256 _maturity,
+        uint256 _expiry,
+        uint256 _checkpointId,
+        address[] memory _excluded,
         bytes32 _name
     ) 
-        internal
+        internal 
     {
         require(_excluded.length <= EXCLUDED_ADDRESS_LIMIT, "Too many addresses excluded");
         require(_expiry > _maturity, "Expiry is before maturity");
@@ -135,23 +134,23 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         uint256 currentSupply = ISecurityToken(securityToken).totalSupplyAt(_checkpointId);
         uint256 excludedSupply = 0;
         dividends.push(
-          Dividend(
-            _checkpointId,
-            now, /*solium-disable-line security/no-block-members*/
-            _maturity,
-            _expiry,
-            msg.value,
-            0,
-            0,
-            false,
-            0,
-            0,
-            _name
-          )
+            Dividend(
+                _checkpointId,
+                now, /*solium-disable-line security/no-block-members*/
+                _maturity,
+                _expiry,
+                msg.value,
+                0,
+                0,
+                false,
+                0,
+                0,
+                _name
+            )
         );
 
         for (uint256 j = 0; j < _excluded.length; j++) {
-            require (_excluded[j] != address(0), "Invalid address");
+            require(_excluded[j] != address(0), "Invalid address");
             require(!dividends[dividendIndex].dividendExcluded[_excluded[j]], "duped exclude address");
             excludedSupply = excludedSupply.add(ISecurityToken(securityToken).balanceOfAt(_excluded[j], _checkpointId));
             dividends[dividendIndex].dividendExcluded[_excluded[j]] = true;
@@ -167,9 +166,9 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
      * @param _dividend storage with previously issued dividends
      * @param _dividendIndex Dividend to pay
      */
-    function _payDividend(address _payee, Dividend storage _dividend, uint256 _dividendIndex) internal {
+    function _payDividend(address payable _payee, Dividend storage _dividend, uint256 _dividendIndex) internal {
         (uint256 claim, uint256 withheld) = calculateDividend(_dividendIndex, _payee);
-        _dividend.claimed[_payee] = true;      
+        _dividend.claimed[_payee] = true;
         uint256 claimAfterWithheld = claim.sub(withheld);
         if (claimAfterWithheld > 0) {
             /*solium-disable-next-line security/no-send*/
@@ -197,7 +196,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         Dividend storage dividend = dividends[_dividendIndex];
         dividend.reclaimed = true;
         uint256 remainingAmount = dividend.amount.sub(dividend.claimedAmount);
-        address owner = IOwnable(securityToken).owner();
+        address payable owner = address(uint160(IOwnable(securityToken).owner()));
         owner.transfer(remainingAmount);
         emit EtherDividendReclaimed(owner, _dividendIndex, remainingAmount);
     }
@@ -211,7 +210,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         Dividend storage dividend = dividends[_dividendIndex];
         uint256 remainingWithheld = dividend.dividendWithheld.sub(dividend.dividendWithheldReclaimed);
         dividend.dividendWithheldReclaimed = dividend.dividendWithheld;
-        address owner = IOwnable(securityToken).owner();
+        address payable owner = address(uint160(IOwnable(securityToken).owner()));
         owner.transfer(remainingWithheld);
         emit EtherDividendWithholdingWithdrawn(owner, _dividendIndex, remainingWithheld);
     }

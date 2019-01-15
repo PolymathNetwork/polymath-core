@@ -1,6 +1,7 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
-import "../../interfaces/IUSDTieredSTOProxy.sol";
+import "../../interfaces/IBoot.sol";
+import "../../proxy/USDTieredSTOProxy.sol";
 import "../ModuleFactory.sol";
 import "../../libraries/Util.sol";
 
@@ -8,19 +9,26 @@ import "../../libraries/Util.sol";
  * @title Factory for deploying CappedSTO module
  */
 contract USDTieredSTOFactory is ModuleFactory {
-
-    address public USDTieredSTOProxyAddress;
+    address public logicContract;
 
     /**
      * @notice Constructor
-     * @param _polyAddress Address of the polytoken
+     * @param _setupCost Setup cost of the module
+     * @param _usageCost Usage cost of the module
+     * @param _subscriptionCost Subscription cost of the module
      */
-    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _proxyFactoryAddress) public
-    ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+    constructor(
+        uint256 _setupCost,
+        uint256 _usageCost,
+        uint256 _subscriptionCost,
+        address _logicContract
+    ) 
+        public 
+        ModuleFactory(_setupCost, _usageCost, _subscriptionCost) 
     {
-        require(_proxyFactoryAddress != address(0), "0x address is not allowed");
-        USDTieredSTOProxyAddress = _proxyFactoryAddress;
-        version = "1.0.0";
+        require(_logicContract != address(0), "0x address is not allowed");
+        logicContract = _logicContract;
+        version = "2.1.0";
         name = "USDTieredSTO";
         title = "USD Tiered STO";
         /*solium-disable-next-line max-len*/
@@ -29,20 +37,19 @@ contract USDTieredSTOFactory is ModuleFactory {
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
 
-     /**
+    /**
      * @notice Used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
-    function deploy(bytes _data) external returns(address) {
-        if(setupCost > 0)
-            require(polyToken.transferFrom(msg.sender, owner(), setupCost), "Sufficent Allowance is not provided");
-        require(USDTieredSTOProxyAddress != address(0), "Proxy contract should be pre-set");
-        //Check valid bytes - can only call module init function
-        address usdTieredSTO = IUSDTieredSTOProxy(USDTieredSTOProxyAddress).deploySTO(msg.sender, address(polyToken), address(this));
+    function deploy(bytes calldata _data) external returns(address) {
+        address polyToken = _takeFee();
+        address usdTieredSTO = address(new USDTieredSTOProxy(msg.sender, polyToken, logicContract));
         //Checks that _data is valid (not calling anything it shouldn't)
-        require(Util.getSig(_data) == IUSDTieredSTOProxy(USDTieredSTOProxyAddress).getInitFunction(usdTieredSTO), "Invalid data");
+        require(Util.getSig(_data) == IBoot(usdTieredSTO).getInitFunction(), "Invalid data");
+        bool success;
         /*solium-disable-next-line security/no-low-level-calls*/
-        require(address(usdTieredSTO).call(_data), "Unsuccessfull call");
+        (success, ) = usdTieredSTO.call(_data);
+        require(success, "Unsuccessfull call");
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(usdTieredSTO, getName(), address(this), msg.sender, setupCost, now);
         return address(usdTieredSTO);
@@ -51,7 +58,7 @@ contract USDTieredSTOFactory is ModuleFactory {
     /**
      * @notice Type of the Module factory
      */
-    function getTypes() external view returns(uint8[]) {
+    function getTypes() external view returns(uint8[] memory) {
         uint8[] memory res = new uint8[](1);
         res[0] = 3;
         return res;
@@ -60,14 +67,14 @@ contract USDTieredSTOFactory is ModuleFactory {
     /**
      * @notice Returns the instructions associated with the module
      */
-    function getInstructions() external view returns(string) {
+    function getInstructions() external view returns(string memory) {
         return "Initialises a USD tiered STO.";
     }
 
     /**
      * @notice Get the tags related to the module factory
      */
-    function getTags() external view returns(bytes32[]) {
+    function getTags() external view returns(bytes32[] memory) {
         bytes32[] memory availableTags = new bytes32[](4);
         availableTags[0] = "USD";
         availableTags[1] = "Tiered";

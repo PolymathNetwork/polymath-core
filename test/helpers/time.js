@@ -2,38 +2,71 @@
 // aren’t included within the original RPC specification.
 // See https://github.com/ethereumjs/testrpc#implemented-methods
 
-function increaseTime(duration) {
-    const id = Date.now();
+// async function increaseTime(duration) {
+//     //let currentTime = (await web3.eth.getBlock('latest')).timestamp
+//     await sendIncreaseTime(duration);
+//     return advanceBlock();
+// }
 
-    return new Promise((resolve, reject) => {
-        web3.currentProvider.sendAsync(
-            {
-                jsonrpc: "2.0",
-                method: "evm_increaseTime",
-                params: [duration],
-                id: id
-            },
-            err1 => {
-                if (err1) return reject(err1);
+// async function sendIncreaseTime(duration) {
+//     return new Promise(() => 
+//         web3.currentProvider.send({
+//             jsonrpc: '2.0',
+//             method: 'evm_increaseTime',
+//             params: [duration],
+//         })
+//     );
+// }
 
-                web3.currentProvider.sendAsync(
-                    {
-                        jsonrpc: "2.0",
-                        method: "evm_mine",
-                        id: id + 1
-                    },
-                    (err2, res) => {
-                        return err2 ? reject(err2) : resolve(res);
-                    }
-                );
-            }
-        );
-    });
+// async function advanceBlock() {
+//     return new Promise(() => 
+//         web3.currentProvider.send({
+//             jsonrpc: '2.0',
+//             method: 'evm_mine',
+//         })
+//     );
+// }
+
+const pify = require('pify');
+
+function advanceBlock() {
+  return pify(web3.currentProvider.send)({
+    jsonrpc: '2.0',
+    method: 'evm_mine',
+  });
+}
+
+// Increases ganache time by the passed duration in seconds
+async function increaseTime(duration) {
+  await pify(web3.currentProvider.send)({
+    jsonrpc: '2.0',
+    method: 'evm_increaseTime',
+    params: [duration],
+  });
+  await advanceBlock();
+}
+
+async function jumpToTime(timestamp) {
+  const id = Date.now();
+
+  return new Promise((resolve, reject) => {
+    web3.currentProvider.send(
+      {
+        jsonrpc: "2.0",
+        method: "evm_mine",
+        params: [timestamp],
+        id: id
+      },
+      (err, res) => {
+        return err ? reject(err) : resolve(res);
+      }
+    );
+  });
 }
 
 export default function takeSnapshot() {
     return new Promise((resolve, reject) => {
-        web3.currentProvider.sendAsync(
+        web3.currentProvider.send(
             {
                 jsonrpc: "2.0",
                 method: "evm_snapshot",
@@ -51,9 +84,9 @@ export default function takeSnapshot() {
     });
 }
 
-function revertToSnapshot(snapShotId) {
+async function revertToSnapshot(snapShotId) {
     return new Promise((resolve, reject) => {
-        web3.currentProvider.sendAsync(
+        web3.currentProvider.send(
             {
                 jsonrpc: "2.0",
                 method: "evm_revert",

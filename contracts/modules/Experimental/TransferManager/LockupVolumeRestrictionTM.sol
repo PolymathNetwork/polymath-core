@@ -1,11 +1,9 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
-import "./../../TransferManager/ITransferManager.sol";
+import "./../../TransferManager/TransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
-
-contract LockupVolumeRestrictionTM is ITransferManager {
-
+contract LockupVolumeRestrictionTM is TransferManager {
     using SafeMath for uint256;
 
     // permission definition
@@ -21,7 +19,7 @@ contract LockupVolumeRestrictionTM is ITransferManager {
     }
 
     // maps user addresses to an array of lockups for that user
-    mapping (address => LockUp[]) internal lockUps;
+    mapping(address => LockUp[]) internal lockUps;
 
     event AddNewLockUp(
         address indexed userAddress,
@@ -53,21 +51,26 @@ contract LockupVolumeRestrictionTM is ITransferManager {
     /**
      * @notice Constructor
      * @param _securityToken Address of the security token
-     * @param _polyAddress Address of the polytoken
      */
-    constructor (address _securityToken, address _polyAddress)
-    public
-    Module(_securityToken, _polyAddress)
-    {
-    }
+    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
 
+    }
 
     /** @notice Used to verify the transfer transaction and prevent locked up tokens from being transferred
      * @param _from Address of the sender
      * @param _amount The amount of tokens to transfer
      * @param _isTransfer Whether or not this is an actual transfer or just a test to see if the tokens would be transferrable
      */
-    function verifyTransfer(address  _from, address /* _to*/, uint256  _amount, bytes /* _data */, bool  _isTransfer) public returns(Result) {
+    function verifyTransfer(
+        address _from,
+        address, /* _to*/
+        uint256 _amount,
+        bytes calldata, /* _data */
+        bool _isTransfer
+    ) 
+        external 
+        returns(Result) 
+    {
         // only attempt to verify the transfer if the token is unpaused, this isn't a mint txn, and there exists a lockup for this user
         if (!paused && _from != address(0) && lockUps[_from].length != 0) {
             // check if this transfer is valid
@@ -90,7 +93,10 @@ contract LockupVolumeRestrictionTM is ITransferManager {
         uint _releaseFrequencySeconds,
         uint _startTime,
         uint _totalAmount
-        ) public withPerm(ADMIN) {
+    ) 
+        public 
+        withPerm(ADMIN) 
+    {
         uint256 startTime = _startTime;
         _checkLockUpParams(_lockUpPeriodSeconds, _releaseFrequencySeconds, _totalAmount);
 
@@ -121,17 +127,17 @@ contract LockupVolumeRestrictionTM is ITransferManager {
      * @param _totalAmounts Array of total amount of locked up tokens
      */
     function addLockUpMulti(
-        address[] _userAddresses,
-        uint[] _lockUpPeriodsSeconds,
-        uint[] _releaseFrequenciesSeconds,
-        uint[] _startTimes,
-        uint[] _totalAmounts
-        ) external withPerm(ADMIN) {
+        address[] calldata _userAddresses,
+        uint[] calldata _lockUpPeriodsSeconds,
+        uint[] calldata _releaseFrequenciesSeconds,
+        uint[] calldata _startTimes,
+        uint[] calldata _totalAmounts
+    ) 
+        external 
+        withPerm(ADMIN) 
+    {
         require(
-            _userAddresses.length == _lockUpPeriodsSeconds.length && /*solium-disable-line operator-whitespace*/
-            _userAddresses.length == _releaseFrequenciesSeconds.length && /*solium-disable-line operator-whitespace*/
-            _userAddresses.length == _startTimes.length && 
-            _userAddresses.length == _totalAmounts.length,
+            _userAddresses.length == _lockUpPeriodsSeconds.length && _userAddresses.length == _releaseFrequenciesSeconds.length && _userAddresses.length == _startTimes.length && _userAddresses.length == _totalAmounts.length, /*solium-disable-line operator-whitespace*/ /*solium-disable-line operator-whitespace*/
             "Input array length mismatch"
         );
 
@@ -185,7 +191,10 @@ contract LockupVolumeRestrictionTM is ITransferManager {
         uint _releaseFrequencySeconds,
         uint _startTime,
         uint _totalAmount
-        ) public withPerm(ADMIN) {
+    ) 
+        public 
+        withPerm(ADMIN) 
+    {
         require(_lockUpIndex < lockUps[_userAddress].length, "Array out of bounds exception");
 
         uint256 startTime = _startTime;
@@ -206,21 +215,14 @@ contract LockupVolumeRestrictionTM is ITransferManager {
             lockUps[_userAddress][_lockUpIndex].alreadyWithdrawn
         );
 
-        emit ModifyLockUp(
-            _userAddress,
-            _lockUpPeriodSeconds,
-            _releaseFrequencySeconds,
-            startTime,
-            _totalAmount,
-            _lockUpIndex
-        );
+        emit ModifyLockUp(_userAddress, _lockUpPeriodSeconds, _releaseFrequencySeconds, startTime, _totalAmount, _lockUpIndex);
     }
 
     /**
      * @notice Get the length of the lockups array for a specific user address
      * @param _userAddress Address of the user whose tokens should be locked up
      */
-    function getLockUpsLength(address _userAddress) public view returns (uint) {
+    function getLockUpsLength(address _userAddress) public view returns(uint) {
         return lockUps[_userAddress].length;
     }
 
@@ -229,43 +231,30 @@ contract LockupVolumeRestrictionTM is ITransferManager {
      * @param _userAddress Address of the user whose tokens should be locked up
      * @param _lockUpIndex The index of the LockUp to edit for the given userAddress
      */
-    function getLockUp(
-        address _userAddress,
-        uint _lockUpIndex)
-        public view returns (
+    function getLockUp(address _userAddress, uint _lockUpIndex) public view returns(
         uint lockUpPeriodSeconds,
         uint releaseFrequencySeconds,
         uint startTime,
         uint totalAmount,
         uint alreadyWithdrawn
-        ) {
+    ) {
         require(_lockUpIndex < lockUps[_userAddress].length, "Array out of bounds exception");
         LockUp storage userLockUp = lockUps[_userAddress][_lockUpIndex];
-        return (
-            userLockUp.lockUpPeriodSeconds,
-            userLockUp.releaseFrequencySeconds,
-            userLockUp.startTime,
-            userLockUp.totalAmount,
-            userLockUp.alreadyWithdrawn
-        );
+        return (userLockUp.lockUpPeriodSeconds, userLockUp.releaseFrequencySeconds, userLockUp.startTime, userLockUp.totalAmount, userLockUp.alreadyWithdrawn);
     }
 
     /**
      * @notice Takes a userAddress as input, and returns a uint that represents the number of tokens allowed to be withdrawn right now
      * @param userAddress Address of the user whose lock ups should be checked
      */
-    function _checkIfValidTransfer(address userAddress, uint amount, bool isTransfer) internal returns (Result) {
+    function _checkIfValidTransfer(address userAddress, uint amount, bool isTransfer) internal returns(Result) {
         // get lock up array for this user
         LockUp[] storage userLockUps = lockUps[userAddress];
 
         // maps the index of userLockUps to the amount allowed in this transfer
         uint[] memory allowedAmountPerLockup = new uint[](userLockUps.length);
 
-        uint[3] memory tokenSums = [
-            uint256(0), // allowed amount right now
-            uint256(0), // total locked up, ever
-            uint256(0) // already withdrawn, ever
-        ];
+        uint[3] memory tokenSums = [uint256(0), uint256(0), uint256(0)]; // allowed amount right now // total locked up, ever // already withdrawn, ever
 
         // loop over the user's lock ups
         for (uint i = 0; i < userLockUps.length; i++) {
@@ -316,8 +305,8 @@ contract LockupVolumeRestrictionTM is ITransferManager {
             require(msg.sender == securityToken, "Sender is not securityToken");
 
             // subtract amounts so they are now known to be withdrawen
-            for (i = 0; i < userLockUps.length; i++) {
-                aLockUp = userLockUps[i];
+            for (uint256 i = 0; i < userLockUps.length; i++) {
+                LockUp storage aLockUp = userLockUps[i];
 
                 // tokenSums[0] is allowed sum
                 if (allowedAmountPerLockup[i] >= tokenSums[0]) {
@@ -343,7 +332,11 @@ contract LockupVolumeRestrictionTM is ITransferManager {
         uint amount,
         uint totalSum,
         uint alreadyWithdrawnSum
-        ) internal view returns (Result) {
+    ) 
+        internal 
+        view 
+        returns(Result) 
+    {
         // the amount the user wants to withdraw is greater than their allowed amounts according to the lockups.  however, if the user has like, 10 tokens, but only 4 are locked up, we should let the transfer go through for those 6 that aren't locked up
         uint currentUserBalance = ISecurityToken(securityToken).balanceOf(userAddress);
         uint stillLockedAmount = totalSum.sub(alreadyWithdrawnSum);
@@ -353,7 +346,6 @@ contract LockupVolumeRestrictionTM is ITransferManager {
         }
         return Result.INVALID;
     }
-
 
     /**
      * @notice Parameter checking function for creating or editing a lockup.  This function will cause an exception if any of the parameters are bad.
@@ -396,14 +388,14 @@ contract LockupVolumeRestrictionTM is ITransferManager {
     /**
      * @notice This function returns the signature of configure function
      */
-    function getInitFunction() public pure returns (bytes4) {
+    function getInitFunction() public pure returns(bytes4) {
         return bytes4(0);
     }
 
     /**
      * @notice Returns the permissions flag that are associated with Percentage transfer Manager
      */
-    function getPermissions() public view returns(bytes32[]) {
+    function getPermissions() public view returns(bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](1);
         allPermissions[0] = ADMIN;
         return allPermissions;

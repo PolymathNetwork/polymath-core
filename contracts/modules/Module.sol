@@ -1,59 +1,52 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
+import "../RegistryUpdater.sol";
 import "../interfaces/IModule.sol";
 import "../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
+import "./ModuleStorage.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 /**
  * @title Interface that any module contract should implement
  * @notice Contract is abstract
  */
-contract Module is IModule {
-
-    address public factory;
-
-    address public securityToken;
-
-    bytes32 public constant FEE_ADMIN = "FEE_ADMIN";
-
-    IERC20 public polyToken;
-
+contract Module is IModule, ModuleStorage {
     /**
      * @notice Constructor
      * @param _securityToken Address of the security token
-     * @param _polyAddress Address of the polytoken
      */
-    constructor (address _securityToken, address _polyAddress) public {
-        securityToken = _securityToken;
-        factory = msg.sender;
-        polyToken = IERC20(_polyAddress);
+    constructor(address _securityToken, address _polyToken) public ModuleStorage(_securityToken, _polyToken) {
+
     }
 
     //Allows owner, factory or permissioned delegate
     modifier withPerm(bytes32 _perm) {
         bool isOwner = msg.sender == Ownable(securityToken).owner();
         bool isFactory = msg.sender == factory;
-        require(isOwner||isFactory||ISecurityToken(securityToken).checkPermission(msg.sender, address(this), _perm), "Permission check failed");
+        require(
+            isOwner || isFactory || ISecurityToken(securityToken).checkPermission(msg.sender, address(this), _perm),
+            "Permission check failed"
+        );
         _;
     }
 
-    modifier onlyOwner {
+    modifier onlyOwner() {
         require(msg.sender == Ownable(securityToken).owner(), "Sender is not owner");
         _;
     }
 
-    modifier onlyFactory {
+    modifier onlyFactory() {
         require(msg.sender == factory, "Sender is not factory");
         _;
     }
 
-    modifier onlyFactoryOwner {
+    modifier onlyFactoryOwner() {
         require(msg.sender == Ownable(factory).owner(), "Sender is not factory owner");
         _;
     }
 
-    modifier onlyFactoryOrOwner {
+    modifier onlyFactoryOrOwner() {
         require((msg.sender == Ownable(securityToken).owner()) || (msg.sender == factory), "Sender is not factory or owner");
         _;
     }

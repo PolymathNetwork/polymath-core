@@ -1,16 +1,16 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
-import "./../../TransferManager/ITransferManager.sol";
+import "./../../TransferManager/TransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
  * @title Transfer Manager for limiting volume of tokens in a single trade
  */
 
-contract SingleTradeVolumeRestrictionTM is ITransferManager {
+contract SingleTradeVolumeRestrictionTM is TransferManager {
     using SafeMath for uint256;
 
-    bytes32 constant public ADMIN = "ADMIN";
+    bytes32 public constant ADMIN = "ADMIN";
 
     bool public isTransferLimitInPercentage;
 
@@ -45,11 +45,8 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
     /**
      * @notice Constructor
      * @param _securityToken Address of the security token
-     * @param _polyAddress Address of the polytoken
     */
-    constructor(address _securityToken, address _polyAddress) public
-    Module(_securityToken, _polyAddress)
-    {
+    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
 
     }
 
@@ -61,11 +58,11 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
         address _from,
         address /* _to */,
         uint256 _amount,
-        bytes /* _data */,
+        bytes calldata /* _data */,
         bool /* _isTransfer */
-    )
-        public
-        returns(Result)
+    ) 
+        external 
+        returns(Result) 
     {
         bool validTransfer;
 
@@ -76,12 +73,14 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
         }
 
         if (isTransferLimitInPercentage) {
-            if(specialTransferLimitsInPercentages[_from] > 0) {
-                validTransfer = (_amount.mul(10**18).div(ISecurityToken(securityToken).totalSupply())) <= specialTransferLimitsInPercentages[_from];
+            if (specialTransferLimitsInPercentages[_from] > 0) {
+                validTransfer = (_amount.mul(10 ** 18).div(
+                    ISecurityToken(securityToken).totalSupply()
+                )) <= specialTransferLimitsInPercentages[_from];
             } else {
-                validTransfer = (_amount.mul(10**18).div(ISecurityToken(securityToken).totalSupply())) <= globalTransferLimitInPercentage;
+                validTransfer = (_amount.mul(10 ** 18).div(ISecurityToken(securityToken).totalSupply())) <= globalTransferLimitInPercentage;
             }
-        } else  {
+        } else {
             if (specialTransferLimitsInTokens[_from] > 0) {
                 validTransfer = _amount <= specialTransferLimitsInTokens[_from];
             } else {
@@ -101,7 +100,10 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
         bool _isTransferLimitInPercentage,
         uint256 _globalTransferLimitInPercentageOrToken,
         bool _allowPrimaryIssuance
-        ) public onlyFactory {
+    ) 
+        public 
+        onlyFactory 
+    {
         isTransferLimitInPercentage = _isTransferLimitInPercentage;
         if (isTransferLimitInPercentage) {
             changeGlobalLimitInPercentage(_globalTransferLimitInPercentageOrToken);
@@ -166,7 +168,10 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
     */
     function changeGlobalLimitInPercentage(uint256 _newGlobalTransferLimitInPercentage) public withPerm(ADMIN) {
         require(isTransferLimitInPercentage, "Transfer limit not set in Percentage");
-        require(_newGlobalTransferLimitInPercentage > 0 && _newGlobalTransferLimitInPercentage <= 100 * 10 ** 16, "Limit not within [0,100]");
+        require(
+            _newGlobalTransferLimitInPercentage > 0 && _newGlobalTransferLimitInPercentage <= 100 * 10 ** 16,
+            "Limit not within [0,100]"
+        );
         emit GlobalTransferLimitInPercentageSet(_newGlobalTransferLimitInPercentage, globalTransferLimitInPercentage);
         globalTransferLimitInPercentage = _newGlobalTransferLimitInPercentage;
 
@@ -196,7 +201,7 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
     * @notice Adds an array of exempt wallet
     * @param _wallets array of exempt wallet addresses
     */
-    function addExemptWalletMulti(address[] _wallets) public withPerm(ADMIN) {
+    function addExemptWalletMulti(address[] memory _wallets) public withPerm(ADMIN) {
         require(_wallets.length > 0, "Wallets cannot be empty");
         for (uint256 i = 0; i < _wallets.length; i++) {
             addExemptWallet(_wallets[i]);
@@ -207,7 +212,7 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
     * @notice Removes an array of exempt wallet
     * @param _wallets array of exempt wallet addresses
     */
-    function removeExemptWalletMulti(address[] _wallets) public withPerm(ADMIN) {
+    function removeExemptWalletMulti(address[] memory _wallets) public withPerm(ADMIN) {
         require(_wallets.length > 0, "Wallets cannot be empty");
         for (uint256 i = 0; i < _wallets.length; i++) {
             removeExemptWallet(_wallets[i]);
@@ -241,7 +246,6 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
         emit TransferLimitInPercentageSet(_wallet, _transferLimitInPercentage);
     }
 
-
     /**
     * @notice Removes transfer limit set in percentage for a wallet
     * @param _wallet wallet address
@@ -268,10 +272,10 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
     * @param _transferLimits array of transfer limits for each wallet in tokens
     * @dev The manager has to be configured to use tokens as limit
     */
-    function setTransferLimitInTokensMulti(address[] _wallets, uint[] _transferLimits) public withPerm(ADMIN) {
+    function setTransferLimitInTokensMulti(address[] memory _wallets, uint[] memory _transferLimits) public withPerm(ADMIN) {
         require(_wallets.length > 0, "Wallets cannot be empty");
         require(_wallets.length == _transferLimits.length, "Wallets don't match to transfer limits");
-        for (uint256 i = 0; i < _wallets.length; i++ ) {
+        for (uint256 i = 0; i < _wallets.length; i++) {
             setTransferLimitInTokens(_wallets[i], _transferLimits[i]);
         }
     }
@@ -283,7 +287,10 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
     * The percentage has to be multipled by 10 ** 16. Eg: 20% would be 20 * 10 ** 16
     * @dev The manager has to be configured to use percentage as limit
     */
-    function setTransferLimitInPercentageMulti(address[] _wallets, uint[] _transferLimitsInPercentage) public withPerm(ADMIN) {
+    function setTransferLimitInPercentageMulti(
+        address[] memory _wallets,
+        uint[] memory _transferLimitsInPercentage
+    ) public withPerm(ADMIN) {
         require(_wallets.length > 0, "Wallets cannot be empty");
         require(_wallets.length == _transferLimitsInPercentage.length, "Wallets don't match to percentage limits");
         for (uint256 i = 0; i < _wallets.length; i++) {
@@ -295,7 +302,7 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
     * @notice Removes transfer limits set in tokens for an array of wallet
     * @param _wallets array of wallet addresses
     */
-    function removeTransferLimitInTokensMulti(address[] _wallets) public withPerm(ADMIN) {
+    function removeTransferLimitInTokensMulti(address[] memory _wallets) public withPerm(ADMIN) {
         require(_wallets.length > 0, "Wallets cannot be empty");
         for (uint i = 0; i < _wallets.length; i++) {
             removeTransferLimitInTokens(_wallets[i]);
@@ -306,7 +313,7 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
     * @notice Removes transfer limits set in percentage for an array of wallet
     * @param _wallets array of wallet addresses
     */
-    function removeTransferLimitInPercentageMulti(address[] _wallets) public withPerm(ADMIN) {
+    function removeTransferLimitInPercentageMulti(address[] memory _wallets) public withPerm(ADMIN) {
         require(_wallets.length > 0, "Wallets cannot be empty");
         for (uint i = 0; i < _wallets.length; i++) {
             removeTransferLimitInPercentage(_wallets[i]);
@@ -316,14 +323,14 @@ contract SingleTradeVolumeRestrictionTM is ITransferManager {
     /**
     * @notice This function returns the signature of configure function
     */
-    function getInitFunction() public pure returns (bytes4) {
+    function getInitFunction() public pure returns(bytes4) {
         return bytes4(keccak256("configure(bool,uint256,bool)"));
     }
 
     /**
     * @notice Returns the permissions flag that are associated with SingleTradeVolumeRestrictionManager
     */
-    function getPermissions() public view returns(bytes32[]) {
+    function getPermissions() public view returns(bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](1);
         allPermissions[0] = ADMIN;
         return allPermissions;

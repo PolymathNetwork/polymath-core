@@ -5,9 +5,10 @@
  * the function may fail. If this happens investors can pull their dividends, or the Issuer
  * can use pushDividendPaymentToAddresses to provide an explict address list in batches
  */
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "./ICheckpoint.sol";
+import "./DividendCheckpointStorage.sol";
 import "../Module.sol";
 import "../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
@@ -17,42 +18,8 @@ import "openzeppelin-solidity/contracts/math/Math.sol";
  * @title Checkpoint module for issuing ether dividends
  * @dev abstract contract
  */
-contract DividendCheckpoint is ICheckpoint, Module {
+contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
     using SafeMath for uint256;
-
-    uint256 public EXCLUDED_ADDRESS_LIMIT = 50;
-    bytes32 public constant DISTRIBUTE = "DISTRIBUTE";
-    bytes32 public constant MANAGE = "MANAGE";
-    bytes32 public constant CHECKPOINT = "CHECKPOINT";
-
-    struct Dividend {
-        uint256 checkpointId;
-        uint256 created; // Time at which the dividend was created
-        uint256 maturity; // Time after which dividend can be claimed - set to 0 to bypass
-        uint256 expiry;  // Time until which dividend can be claimed - after this time any remaining amount can be withdrawn by issuer -
-                         // set to very high value to bypass
-        uint256 amount; // Dividend amount in WEI
-        uint256 claimedAmount; // Amount of dividend claimed so far
-        uint256 totalSupply; // Total supply at the associated checkpoint (avoids recalculating this)
-        bool reclaimed;  // True if expiry has passed and issuer has reclaimed remaining dividend
-        uint256 dividendWithheld;
-        uint256 dividendWithheldReclaimed;
-        mapping (address => bool) claimed; // List of addresses which have claimed dividend
-        mapping (address => bool) dividendExcluded; // List of addresses which cannot claim dividends
-        bytes32 name; // Name/title - used for identification
-    }
-
-    // List of all dividends
-    Dividend[] public dividends;
-
-    // List of addresses which cannot claim dividends
-    address[] public excluded;
-
-    // Mapping from address to withholding tax as a percentage * 10**16
-    mapping (address => uint256) public withholdingTax;
-
-    // Total amount of ETH withheld per investor
-    mapping (address => uint256) public investorWithheld;
 
     event SetDefaultExcludedAddresses(address[] _excluded, uint256 _timestamp);
     event SetWithholding(address[] _investors, uint256[] _withholding, uint256 _timestamp);
@@ -72,7 +39,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
     * @notice Init function i.e generalise function to maintain the structure of the module contract
     * @return bytes4
     */
-    function getInitFunction() public pure returns (bytes4) {
+    function getInitFunction() public pure returns(bytes4) {
         return bytes4(0);
     }
 
@@ -80,7 +47,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
      * @notice Return the default excluded addresses
      * @return List of excluded addresses
      */
-    function getDefaultExcluded() external view returns (address[]) {
+    function getDefaultExcluded() external view returns(address[] memory) {
         return excluded;
     }
 
@@ -88,7 +55,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
      * @notice Creates a checkpoint on the security token
      * @return Checkpoint ID
      */
-    function createCheckpoint() public withPerm(CHECKPOINT) returns (uint256) {
+    function createCheckpoint() public withPerm(CHECKPOINT) returns(uint256) {
         return ISecurityToken(securityToken).createCheckpoint();
     }
 
@@ -96,12 +63,12 @@ contract DividendCheckpoint is ICheckpoint, Module {
      * @notice Function to clear and set list of excluded addresses used for future dividends
      * @param _excluded Addresses of investors
      */
-    function setDefaultExcluded(address[] _excluded) public withPerm(MANAGE) {
+    function setDefaultExcluded(address[] memory _excluded) public withPerm(MANAGE) {
         require(_excluded.length <= EXCLUDED_ADDRESS_LIMIT, "Too many excluded addresses");
         for (uint256 j = 0; j < _excluded.length; j++) {
-            require (_excluded[j] != address(0), "Invalid address");
+            require(_excluded[j] != address(0), "Invalid address");
             for (uint256 i = j + 1; i < _excluded.length; i++) {
-                require (_excluded[j] != _excluded[i], "Duplicate exclude address");
+                require(_excluded[j] != _excluded[i], "Duplicate exclude address");
             }
         }
         excluded = _excluded;
@@ -114,12 +81,12 @@ contract DividendCheckpoint is ICheckpoint, Module {
      * @param _investors Addresses of investors
      * @param _withholding Withholding tax for individual investors (multiplied by 10**16)
      */
-    function setWithholding(address[] _investors, uint256[] _withholding) public withPerm(MANAGE) {
+    function setWithholding(address[] memory _investors, uint256[] memory _withholding) public withPerm(MANAGE) {
         require(_investors.length == _withholding.length, "Mismatched input lengths");
         /*solium-disable-next-line security/no-block-members*/
         emit SetWithholding(_investors, _withholding, now);
         for (uint256 i = 0; i < _investors.length; i++) {
-            require(_withholding[i] <= 10**18, "Incorrect withholding tax");
+            require(_withholding[i] <= 10 ** 18, "Incorrect withholding tax");
             withholdingTax[_investors[i]] = _withholding[i];
         }
     }
@@ -129,8 +96,8 @@ contract DividendCheckpoint is ICheckpoint, Module {
      * @param _investors Addresses of investor
      * @param _withholding Withholding tax for all investors (multiplied by 10**16)
      */
-    function setWithholdingFixed(address[] _investors, uint256 _withholding) public withPerm(MANAGE) {
-        require(_withholding <= 10**18, "Incorrect withholding tax");
+    function setWithholdingFixed(address[] memory _investors, uint256 _withholding) public withPerm(MANAGE) {
+        require(_withholding <= 10 ** 18, "Incorrect withholding tax");
         /*solium-disable-next-line security/no-block-members*/
         emit SetWithholdingFixed(_investors, _withholding, now);
         for (uint256 i = 0; i < _investors.length; i++) {
@@ -145,11 +112,11 @@ contract DividendCheckpoint is ICheckpoint, Module {
      */
     function pushDividendPaymentToAddresses(
         uint256 _dividendIndex,
-        address[] _payees
-    )
-        public
-        withPerm(DISTRIBUTE)
-        validDividendIndex(_dividendIndex)
+        address payable[] memory _payees
+    ) 
+        public 
+        withPerm(DISTRIBUTE) 
+        validDividendIndex(_dividendIndex) 
     {
         Dividend storage dividend = dividends[_dividendIndex];
         for (uint256 i = 0; i < _payees.length; i++) {
@@ -169,16 +136,15 @@ contract DividendCheckpoint is ICheckpoint, Module {
         uint256 _dividendIndex,
         uint256 _start,
         uint256 _iterations
-    )
-        public
-        withPerm(DISTRIBUTE)
-        validDividendIndex(_dividendIndex)
+    ) public 
+      withPerm(DISTRIBUTE) 
+      validDividendIndex(_dividendIndex) 
     {
         Dividend storage dividend = dividends[_dividendIndex];
         address[] memory investors = ISecurityToken(securityToken).getInvestors();
         uint256 numberInvestors = Math.min(investors.length, _start.add(_iterations));
         for (uint256 i = _start; i < numberInvestors; i++) {
-            address payee = investors[i];
+            address payable payee = address(uint160(investors[i]));
             if ((!dividend.claimed[payee]) && (!dividend.dividendExcluded[payee])) {
                 _payDividend(payee, dividend, _dividendIndex);
             }
@@ -189,8 +155,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
      * @notice Investors can pull their own dividends
      * @param _dividendIndex Dividend to pull
      */
-    function pullDividendPayment(uint256 _dividendIndex) public validDividendIndex(_dividendIndex)
-    {
+    function pullDividendPayment(uint256 _dividendIndex) public validDividendIndex(_dividendIndex) {
         Dividend storage dividend = dividends[_dividendIndex];
         require(!dividend.claimed[msg.sender], "Dividend already claimed");
         require(!dividend.dividendExcluded[msg.sender], "msg.sender excluded from Dividend");
@@ -203,7 +168,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
      * @param _dividend Storage with previously issued dividends
      * @param _dividendIndex Dividend to pay
      */
-    function _payDividend(address _payee, Dividend storage _dividend, uint256 _dividendIndex) internal;
+    function _payDividend(address payable _payee, Dividend storage _dividend, uint256 _dividendIndex) internal;
 
     /**
      * @notice Issuer can reclaim remaining unclaimed dividend amounts, for expired dividends
@@ -225,7 +190,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
         }
         uint256 balance = ISecurityToken(securityToken).balanceOfAt(_payee, dividend.checkpointId);
         uint256 claim = balance.mul(dividend.amount).div(dividend.totalSupply);
-        uint256 withheld = claim.mul(withholdingTax[_payee]).div(uint256(10**18));
+        uint256 withheld = claim.mul(withholdingTax[_payee]).div(uint256(10 ** 18));
         return (claim, withheld);
     }
 
@@ -234,9 +199,9 @@ contract DividendCheckpoint is ICheckpoint, Module {
      * @param _checkpointId Checkpoint id to query
      * @return uint256[]
      */
-    function getDividendIndex(uint256 _checkpointId) public view returns(uint256[]) {
+    function getDividendIndex(uint256 _checkpointId) public view returns(uint256[] memory) {
         uint256 counter = 0;
-        for(uint256 i = 0; i < dividends.length; i++) {
+        for (uint256 i = 0; i < dividends.length; i++) {
             if (dividends[i].checkpointId == _checkpointId) {
                 counter++;
             }
@@ -244,7 +209,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
 
         uint256[] memory index = new uint256[](counter);
         counter = 0;
-        for(uint256 j = 0; j < dividends.length; j++) {
+        for (uint256 j = 0; j < dividends.length; j++) {
             if (dividends[j].checkpointId == _checkpointId) {
                 index[counter] = j;
                 counter++;
@@ -263,7 +228,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
      * @notice Return the permissions flag that are associated with this module
      * @return bytes32 array
      */
-    function getPermissions() public view returns(bytes32[]) {
+    function getPermissions() public view returns(bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](2);
         allPermissions[0] = DISTRIBUTE;
         allPermissions[1] = MANAGE;

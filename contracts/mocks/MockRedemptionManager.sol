@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "../modules/Experimental/Burn/TrackedRedemption.sol";
 
@@ -6,19 +6,16 @@ import "../modules/Experimental/Burn/TrackedRedemption.sol";
  * @title Burn module for burning tokens and keeping track of burnt amounts
  */
 contract MockRedemptionManager is TrackedRedemption {
-
-    mapping (address => uint256) tokenToRedeem;
+    mapping(address => uint256) tokenToRedeem;
 
     event RedeemedTokenByOwner(address _investor, address _byWhoom, uint256 _value, uint256 _timestamp);
 
     /**
      * @notice Constructor
      * @param _securityToken Address of the security token
-     * @param _polyAddress Address of the polytoken
      */
-    constructor (address _securityToken, address _polyAddress) public
-    TrackedRedemption(_securityToken, _polyAddress)
-    {
+    constructor(address _securityToken, address _polyToken) public TrackedRedemption(_securityToken, _polyToken) {
+
     }
 
     /**

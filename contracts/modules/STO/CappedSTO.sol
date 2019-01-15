@@ -1,24 +1,16 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
-import "./ISTO.sol";
+import "./STO.sol";
 import "../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "./CappedSTOStorage.sol";
 
 /**
  * @title STO module for standard capped crowdsale
  */
-contract CappedSTO is ISTO, ReentrancyGuard {
+contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
     using SafeMath for uint256;
-
-    // Determine whether users can invest on behalf of a beneficiary
-    bool public allowBeneficialInvestments = false;
-    // How many token units a buyer gets per wei / base unit of POLY
-    uint256 public rate;
-    //How many tokens this STO will be allowed to sell to investors
-    uint256 public cap;
-
-    mapping (address => uint256) public investors;
 
     /**
     * Event for token purchase logging
@@ -31,16 +23,15 @@ contract CappedSTO is ISTO, ReentrancyGuard {
 
     event SetAllowBeneficialInvestments(bool _allowed);
 
-    constructor (address _securityToken, address _polyAddress) public
-    Module(_securityToken, _polyAddress)
-    {
+    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
+
     }
 
     //////////////////////////////////
     /**
     * @notice fallback function ***DO NOT OVERRIDE***
     */
-    function () external payable {
+    function() external payable {
         buyTokens(msg.sender);
     }
 
@@ -48,8 +39,8 @@ contract CappedSTO is ISTO, ReentrancyGuard {
      * @notice Function used to intialize the contract variables
      * @param _startTime Unix timestamp at which offering get started
      * @param _endTime Unix timestamp at which offering get ended
-     * @param _cap Maximum No. of tokens for sale
-     * @param _rate Token units a buyer gets per wei / base unit of POLY
+     * @param _cap Maximum No. of token base units for sale
+     * @param _rate Token units a buyer gets multiplied by 10^18 per wei / base unit of POLY
      * @param _fundRaiseTypes Type of currency used to collect the funds
      * @param _fundsReceiver Ethereum account address to hold the funds
      */
@@ -58,12 +49,13 @@ contract CappedSTO is ISTO, ReentrancyGuard {
         uint256 _endTime,
         uint256 _cap,
         uint256 _rate,
-        FundRaiseType[] _fundRaiseTypes,
-        address _fundsReceiver
-    )
-    public
-    onlyFactory
+        FundRaiseType[] memory _fundRaiseTypes,
+        address payable _fundsReceiver
+    ) 
+        public 
+        onlyFactory 
     {
+        require(endTime == 0, "Already configured");
         require(_rate > 0, "Rate of token should be greater than 0");
         require(_fundsReceiver != address(0), "Zero address is not permitted");
         /*solium-disable-next-line security/no-block-members*/
@@ -81,7 +73,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
     /**
      * @notice This function returns the signature of configure function
      */
-    function getInitFunction() public pure returns (bytes4) {
+    function getInitFunction() public pure returns(bytes4) {
         return bytes4(keccak256("configure(uint256,uint256,uint256,uint256,uint8[],address)"));
     }
 
@@ -108,9 +100,10 @@ contract CappedSTO is ISTO, ReentrancyGuard {
         require(fundRaiseTypes[uint8(FundRaiseType.ETH)], "Mode of investment is not ETH");
 
         uint256 weiAmount = msg.value;
-        _processTx(_beneficiary, weiAmount);
+        uint256 refund = _processTx(_beneficiary, weiAmount);
+        weiAmount = weiAmount.sub(refund);
 
-        _forwardFunds();
+        _forwardFunds(refund);
         _postValidatePurchase(_beneficiary, weiAmount);
     }
 
@@ -118,33 +111,33 @@ contract CappedSTO is ISTO, ReentrancyGuard {
       * @notice low level token purchase
       * @param _investedPOLY Amount of POLY invested
       */
-    function buyTokensWithPoly(uint256 _investedPOLY) public nonReentrant{
+    function buyTokensWithPoly(uint256 _investedPOLY) public nonReentrant {
         require(!paused, "Should not be paused");
         require(fundRaiseTypes[uint8(FundRaiseType.POLY)], "Mode of investment is not POLY");
-        _processTx(msg.sender, _investedPOLY);
-        _forwardPoly(msg.sender, wallet, _investedPOLY);
-        _postValidatePurchase(msg.sender, _investedPOLY);
+        uint256 refund = _processTx(msg.sender, _investedPOLY);
+        _forwardPoly(msg.sender, wallet, _investedPOLY.sub(refund));
+        _postValidatePurchase(msg.sender, _investedPOLY.sub(refund));
     }
 
     /**
     * @notice Checks whether the cap has been reached.
     * @return bool Whether the cap was reached
     */
-    function capReached() public view returns (bool) {
+    function capReached() public view returns(bool) {
         return totalTokensSold >= cap;
     }
 
     /**
      * @notice Return the total no. of tokens sold
      */
-    function getTokensSold() public view returns (uint256) {
+    function getTokensSold() external view returns (uint256) {
         return totalTokensSold;
     }
 
     /**
      * @notice Return the permissions flag that are associated with STO
      */
-    function getPermissions() public view returns(bytes32[]) {
+    function getPermissions() public view returns(bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](0);
         return allPermissions;
     }
@@ -153,23 +146,17 @@ contract CappedSTO is ISTO, ReentrancyGuard {
      * @notice Return the STO details
      * @return Unixtimestamp at which offering gets start.
      * @return Unixtimestamp at which offering ends.
-     * @return Number of tokens this STO will be allowed to sell to investors.
+     * @return Number of token base units this STO will be allowed to sell to investors.
+     * @return Token units a buyer gets(multiplied by 10^18) per wei / base unit of POLY
      * @return Amount of funds raised
      * @return Number of individual investors this STO have.
-     * @return Amount of tokens get sold. 
+     * @return Amount of tokens get sold.
      * @return Boolean value to justify whether the fund raise type is POLY or not, i.e true for POLY.
      */
     function getSTODetails() public view returns(uint256, uint256, uint256, uint256, uint256, uint256, uint256, bool) {
-        return (
-            startTime,
-            endTime,
-            cap,
-            rate,
-            (fundRaiseTypes[uint8(FundRaiseType.POLY)]) ? fundsRaised[uint8(FundRaiseType.POLY)]: fundsRaised[uint8(FundRaiseType.ETH)],
-            investorCount,
-            totalTokensSold,
-            (fundRaiseTypes[uint8(FundRaiseType.POLY)])
-        );
+        return (startTime, endTime, cap, rate, (fundRaiseTypes[uint8(FundRaiseType.POLY)]) ? fundsRaised[uint8(
+            FundRaiseType.POLY
+        )] : fundsRaised[uint8(FundRaiseType.ETH)], investorCount, totalTokensSold, (fundRaiseTypes[uint8(FundRaiseType.POLY)]));
     }
 
     // -----------------------------------------
@@ -180,11 +167,12 @@ contract CappedSTO is ISTO, ReentrancyGuard {
       * @param _beneficiary Address performing the token purchase
       * @param _investedAmount Value in wei involved in the purchase
     */
-    function _processTx(address _beneficiary, uint256 _investedAmount) internal {
-
+    function _processTx(address _beneficiary, uint256 _investedAmount) internal returns(uint256 refund) {
         _preValidatePurchase(_beneficiary, _investedAmount);
         // calculate token amount to be created
-        uint256 tokens = _getTokenAmount(_investedAmount);
+        uint256 tokens;
+        (tokens, refund) = _getTokenAmount(_investedAmount);
+        _investedAmount = _investedAmount.sub(refund);
 
         // update state
         if (fundRaiseTypes[uint8(FundRaiseType.POLY)]) {
@@ -209,7 +197,9 @@ contract CappedSTO is ISTO, ReentrancyGuard {
     function _preValidatePurchase(address _beneficiary, uint256 _investedAmount) internal view {
         require(_beneficiary != address(0), "Beneficiary address should not be 0x");
         require(_investedAmount != 0, "Amount invested should not be equal to 0");
-        require(totalTokensSold.add(_getTokenAmount(_investedAmount)) <= cap, "Investment more than cap is not allowed");
+        uint256 tokens;
+        (tokens, ) = _getTokenAmount(_investedAmount);
+        require(totalTokensSold.add(tokens) <= cap, "Investment more than cap is not allowed");
         /*solium-disable-next-line security/no-block-members*/
         require(now >= startTime && now <= endTime, "Offering is closed/Not yet started");
     }
@@ -218,8 +208,11 @@ contract CappedSTO is ISTO, ReentrancyGuard {
     * @notice Validation of an executed purchase.
       Observe state and use revert statements to undo rollback when valid conditions are not met.
     */
-    function _postValidatePurchase(address /*_beneficiary*/, uint256 /*_investedAmount*/) internal pure {
-      // optional override
+    function _postValidatePurchase(
+        address, /*_beneficiary*/
+        uint256 /*_investedAmount*/
+    ) internal pure {
+        // optional override
     }
 
     /**
@@ -250,24 +243,34 @@ contract CappedSTO is ISTO, ReentrancyGuard {
     * @notice Overrides for extensions that require an internal state to check for validity
       (current user contributions, etc.)
     */
-    function _updatePurchasingState(address /*_beneficiary*/, uint256 /*_investedAmount*/) internal pure {
-      // optional override
+    function _updatePurchasingState(
+        address, /*_beneficiary*/
+        uint256 _investedAmount
+    ) internal pure {
+        _investedAmount = 0; //yolo
     }
 
     /**
     * @notice Overrides to extend the way in which ether is converted to tokens.
     * @param _investedAmount Value in wei to be converted into tokens
     * @return Number of tokens that can be purchased with the specified _investedAmount
+    * @return Remaining amount that should be refunded to the investor
     */
-    function _getTokenAmount(uint256 _investedAmount) internal view returns (uint256) {
-        return _investedAmount.mul(rate);
+    function _getTokenAmount(uint256 _investedAmount) internal view returns(uint256 _tokens, uint256 _refund) {
+        _tokens = _investedAmount.mul(rate);
+        _tokens = _tokens.div(uint256(10) ** 18);
+        uint256 granularity = ISecurityToken(securityToken).granularity();
+        _tokens = _tokens.div(granularity);
+        _tokens = _tokens.mul(granularity);
+        _refund = _investedAmount.sub((_tokens.mul(uint256(10) ** 18)).div(rate));
     }
 
     /**
     * @notice Determines how ETH is stored/forwarded on purchases.
     */
-    function _forwardFunds() internal {
-        wallet.transfer(msg.value);
+    function _forwardFunds(uint256 _refund) internal {
+        wallet.transfer(msg.value.sub(_refund));
+        msg.sender.transfer(_refund);
     }
 
     /**

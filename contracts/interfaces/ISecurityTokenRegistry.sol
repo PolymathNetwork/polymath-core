@@ -1,18 +1,17 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 /**
  * @title Interface for the Polymath Security Token Registry contract
  */
 interface ISecurityTokenRegistry {
-
-   /**
+    /**
      * @notice Creates a new Security Token and saves it to the registry
      * @param _name Name of the token
      * @param _ticker Ticker ticker of the security token
      * @param _tokenDetails Off-chain details of the token
      * @param _divisible Whether the token is divisible or not
      */
-    function generateSecurityToken(string _name, string _ticker, string _tokenDetails, bool _divisible) external;
+    function generateSecurityToken(string calldata _name, string calldata _ticker, string calldata _tokenDetails, bool _divisible) external;
 
     /**
      * @notice Adds a new custom Security Token and saves it to the registry. (Token should follow the ISecurityToken interface)
@@ -24,14 +23,14 @@ interface ISecurityTokenRegistry {
      * @param _deployedAt Timestamp at which security token comes deployed on the ethereum blockchain
      */
     function modifySecurityToken(
-        string _name,
-        string _ticker,
+        string calldata _name,
+        string calldata _ticker,
         address _owner,
         address _securityToken,
-        string _tokenDetails,
+        string calldata _tokenDetails,
         uint256 _deployedAt
-    )
-        external;
+    ) 
+    external;
 
     /**
      * @notice Registers the token ticker for its particular owner
@@ -41,7 +40,7 @@ interface ISecurityTokenRegistry {
      * @param _ticker Token ticker
      * @param _tokenName Name of the token
      */
-    function registerTicker(address _owner, string _ticker, string _tokenName) external;
+    function registerTicker(address _owner, string calldata _ticker, string calldata _tokenName) external;
 
     /**
     * @notice Changes the protocol version and the SecurityToken contract
@@ -59,7 +58,7 @@ interface ISecurityTokenRegistry {
     * @param _securityToken Address of the Scurity token
     * @return bool
     */
-    function isSecurityToken(address _securityToken) external view returns (bool);
+    function isSecurityToken(address _securityToken) external view returns(bool);
 
     /**
     * @dev Allows the current owner to transfer control of the contract to a newOwner.
@@ -72,9 +71,9 @@ interface ISecurityTokenRegistry {
      * @param _ticker Symbol of the Scurity token
      * @return address
      */
-    function getSecurityTokenAddress(string _ticker) external view returns (address);
+    function getSecurityTokenAddress(string calldata _ticker) external view returns(address);
 
-     /**
+    /**
      * @notice Get security token data by its address
      * @param _securityToken Address of the Scurity token.
      * @return string Symbol of the Security Token.
@@ -82,7 +81,7 @@ interface ISecurityTokenRegistry {
      * @return string Details of the Token.
      * @return uint256 Timestamp at which Security Token get launched on Polymath platform.
      */
-    function getSecurityTokenData(address _securityToken) external view returns (string, address, string, uint256);
+    function getSecurityTokenData(address _securityToken) external view returns(string memory, address, string memory, uint256);
 
     /**
      * @notice Get the current STFactory Address
@@ -92,20 +91,26 @@ interface ISecurityTokenRegistry {
     /**
      * @notice Get Protocol version
      */
-    function getProtocolVersion() external view returns(uint8[]);
+    function getProtocolVersion() external view returns(uint8[] memory);
 
     /**
      * @notice Used to get the ticker list as per the owner
      * @param _owner Address which owns the list of tickers
      */
-    function getTickersByOwner(address _owner) external view returns(bytes32[]);
+    function getTickersByOwner(address _owner) external view returns(bytes32[] memory);
 
     /**
      * @notice Returns the list of tokens owned by the selected address
      * @param _owner is the address which owns the list of tickers
      * @dev Intention is that this is called off-chain so block gas limit is not relevant
      */
-    function getTokensByOwner(address _owner) external view returns(address[]);
+    function getTokensByOwner(address _owner) external view returns(address[] memory);
+
+    /**
+     * @notice Returns the list of all tokens
+     * @dev Intention is that this is called off-chain so block gas limit is not relevant
+     */
+    function getTokens() external view returns(address[] memory);
 
     /**
      * @notice Returns the owner and timestamp for a given ticker
@@ -116,7 +121,7 @@ interface ISecurityTokenRegistry {
      * @return string
      * @return bool
      */
-    function getTickerDetails(string _ticker) external view returns (address, uint256, uint256, string, bool);
+    function getTickerDetails(string calldata _ticker) external view returns(address, uint256, uint256, string memory, bool);
 
     /**
      * @notice Modifies the ticker details. Only polymath account has the ability
@@ -130,26 +135,26 @@ interface ISecurityTokenRegistry {
      */
     function modifyTicker(
         address _owner,
-        string _ticker,
-        string _tokenName,
+        string calldata _ticker,
+        string calldata _tokenName,
         uint256 _registrationDate,
         uint256 _expiryDate,
         bool _status
-    )
-        external;
+    ) 
+    external;
 
-     /**
+    /**
      * @notice Removes the ticker details and associated ownership & security token mapping
      * @param _ticker Token ticker
      */
-    function removeTicker(string _ticker) external;
+    function removeTicker(string calldata _ticker) external;
 
     /**
      * @notice Transfers the ownership of the ticker
      * @dev _newOwner Address whom ownership to transfer
      * @dev _ticker Ticker
      */
-    function transferTickerOwnership(address _newOwner, string _ticker) external;
+    function transferTickerOwnership(address _newOwner, string calldata _ticker) external;
 
     /**
      * @notice Changes the expiry time for the token ticker
@@ -161,19 +166,13 @@ interface ISecurityTokenRegistry {
     * @notice Sets the ticker registration fee in POLY tokens
     * @param _tickerRegFee Registration fee in POLY tokens (base 18 decimals)
     */
-   function changeTickerRegistrationFee(uint256 _tickerRegFee) external;
+    function changeTickerRegistrationFee(uint256 _tickerRegFee) external;
 
-   /**
+    /**
     * @notice Sets the ticker registration fee in POLY tokens
     * @param _stLaunchFee Registration fee in POLY tokens (base 18 decimals)
     */
-   function changeSecurityLaunchFee(uint256 _stLaunchFee) external;
-
-    /**
-     * @notice Change the PolyToken address
-     * @param _newAddress Address of the polytoken
-     */
-    function updatePolyTokenAddress(address _newAddress) external;
+    function changeSecurityLaunchFee(uint256 _stLaunchFee) external;
 
     /**
      * @notice Gets the security token launch fee

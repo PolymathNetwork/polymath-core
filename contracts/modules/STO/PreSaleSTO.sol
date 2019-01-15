@@ -1,29 +1,24 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
-import "./ISTO.sol";
+import "./STO.sol";
 import "../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "./PreSaleSTOStorage.sol";
 
 /**
  * @title STO module for private presales
  */
-contract PreSaleSTO is ISTO {
+contract PreSaleSTO is PreSaleSTOStorage, STO {
     using SafeMath for uint256;
 
-    bytes32 public constant PRE_SALE_ADMIN = "PRE_SALE_ADMIN";
-
     event TokensAllocated(address _investor, uint256 _amount);
-
-    mapping (address => uint256) public investors;
 
     /**
      * @notice Constructor
      * @param _securityToken Address of the security token
-     * @param _polyAddress Address of the polytoken
      */
-    constructor (address _securityToken, address _polyAddress) public
-    Module(_securityToken, _polyAddress)
-    {
+    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
+
     }
 
     /**
@@ -38,28 +33,28 @@ contract PreSaleSTO is ISTO {
     /**
      * @notice This function returns the signature of the configure function
      */
-    function getInitFunction() public pure returns (bytes4) {
+    function getInitFunction() public pure returns(bytes4) {
         return bytes4(keccak256("configure(uint256)"));
     }
 
     /**
      * @notice Returns the total no. of investors
      */
-    function getNumberInvestors() public view returns (uint256) {
+    function getNumberInvestors() public view returns(uint256) {
         return investorCount;
     }
 
     /**
      * @notice Returns the total no. of tokens sold
      */
-    function getTokensSold() public view returns (uint256) {
+    function getTokensSold() external view returns(uint256) {
         return totalTokensSold;
     }
 
     /**
      * @notice Returns the permissions flag that are associated with STO
      */
-    function getPermissions() public view returns(bytes32[]) {
+    function getPermissions() public view returns(bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](1);
         allPermissions[0] = PRE_SALE_ADMIN;
         return allPermissions;
@@ -77,9 +72,9 @@ contract PreSaleSTO is ISTO {
         uint256 _amount,
         uint256 _etherContributed,
         uint256 _polyContributed
-    )
-        public
-        withPerm(PRE_SALE_ADMIN)
+    ) 
+        public 
+        withPerm(PRE_SALE_ADMIN) 
     {
         /*solium-disable-next-line security/no-block-members*/
         require(now <= endTime, "Already passed Endtime");
@@ -103,13 +98,13 @@ contract PreSaleSTO is ISTO {
      * @param _polyContributed Array of amount of POLY contributed by each investor
      */
     function allocateTokensMulti(
-        address[] _investors,
-        uint256[] _amounts,
-        uint256[] _etherContributed,
-        uint256[] _polyContributed
-    )
-        public
-        withPerm(PRE_SALE_ADMIN)
+        address[] memory _investors,
+        uint256[] memory _amounts,
+        uint256[] memory _etherContributed,
+        uint256[] memory _polyContributed
+    ) 
+        public 
+        withPerm(PRE_SALE_ADMIN) 
     {
         require(_investors.length == _amounts.length, "Mis-match in length of the arrays");
         require(_etherContributed.length == _polyContributed.length, "Mis-match in length of the arrays");

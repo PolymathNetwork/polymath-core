@@ -1,15 +1,69 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# v3.0.0
+
+[__3.0.0__]
+
+## Changed
+* Changed the first three params in Security Token `event ModuleAdded()` to be indexed for search. Params are `unit8[] types`, `bytes32 _name` and `address _moduleFactory`
+
 # v3.0.0 - Release Candidate
 
 [__3.0.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __10-11-18__
 
-## SecurityToken
-* Added new function `addModuleWithLabel()` which takes an extra param `_label` that used for giving the customize label to the module for display purpose. #428   
-* Fixed `addModule` function to be backwards compatible and call the new `addModuleWithLabel` function with an empty label.  
+## Added
+* Added new function `addModuleWithLabel()` which takes an extra param `_label` that used for giving the customize label to the module for display purpose. #428
+* Introduce new contract `STRGetter.sol`. It only contains the getter functions of the STR.
+
+## Fixed
+* Fixed `addModule` function to be backwards compatible and call the new `addModuleWithLabel` function with an empty label.
 * Fixed event `ModuleAdded` to also emit `_label`.    
-* Fixed function `getModule` to also return the respective module label.   
+* Fixed function `getModule` to also return the respective module label.
+* Replaced `updatePolyTokenAddress()` function with `updateFromRegistry()` in `SecurityTokenRegistry`.  
+* Migrate all the getters of `SecurityTokenRegsitry.sol` to `STRGetter.sol` contract.
+
+## Removed
+* Removed `_polyAddress` parameter from constructors of all modules and module factories.
+* Removed `_polyToken` parameter from `initialize` function in `SecurityTokenRegistry`.
+
+# v2.1.0 - Release Candidate    
+
+[__2.1.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-09-18__
+
+## CappedSTO 2.0.1
+* `rate` is now accepted as multiplied by 10^18 to allow settting higher price than 1ETH/POLY per token.
+* Indivisble tokens are now supported. When trying to buy partial tokens, allowed full units of tokens will be purchased and remaining funds will be returned.
+
+## USDTieredSTO 2.1.0
+* Added `buyTokensView` and `getTokensMintedByTier` to USDTSTO.
+* Added `getSTODetails` to USDTSTO.
+* Added an Array of Tiers that will hold data about every tier in USDTSTO.
+* Added `buyWithETHRateLimited`, `buyWithPOLYRateLimited` and `buyWithUSDRateLimited` to USDTSTO.
+* Added `getTokensSoldByTier` to return sold (not minted during finalisation) tokens in each tier to USDTSTO.
+* Removed individual mappings for tier data removed in UDSTSTO.
+* Removed the old Proxy deployment method of USDTieredSTO and adopt the new inherited proxy deployment approach.
+* Bump the version to `2.1.0`
+
+## GeneralTransferManager
+* `getInvestors`, `getAllInvestorsData`, `getInvestorsData` added to GTM to allow easy data queries.
+* `modifyDefaults(uint64 _defaultFromTime, uint64 _defaultToTime)` added which sets a default timestamp used when `fromTime` or `toTime` are 0
+* Add `address[] public investors` to record a list of all addresses that have been added to the whitelist (`getInvestors`).
+* General Transfer Manager: Fix for when `allowAllWhitelistIssuances` is FALSE
+* General Transfer Manager: Make GTM a Proxy based implementation to reduce deployment gas costs
+* Changed the version of `GeneralTransferManagerFactory` from `1.0.0` to `2.1.0`.
+
+## Manual Approval TransferManager
+* Removed `0x0` check for the `_from` address to `ManualApprovalTransferManager`. This allows for the Issuer/Transfer Agent to approve a one-off mint of tokens that otherwise would not be possible.
+* Changed the version of `ManualApprovalTransferManagerFactory` from `1.0.0` to `2.1.0`.   
+* Deployed 2.0.1 `ManualApprovalTransferManagerFactory` to address 0x6af2afad53cb334e62b90ddbdcf3a086f654c298
+
+## Dividends
+* Changed the version of `ERC20DividendCheckpointFactory` & `EtherDividendCheckpointFactory` from `1.0.0` to `2.1.0`.
+* Applied proxy pattern to Dividends modules
+
+## Changed
+* `getAllModulesAndPermsFromTypes()` does not take securityToken address as a parameter anymore.
 
 # v1.5.0 - Release Candidate
 
@@ -41,17 +95,16 @@ All notable changes to this project will be documented in this file.
 * Add `getReputationOfFactory()` & `getModuleListOfType()` functions to get the array type data from the ModuleRegistry contract.   
 * Add `_setupCost` in `LogGenerateModuleFromFactory` event.   
 * Add new function `getAllModulesByName()`, To get the list of modules having the same name. #198.  
-* Add new function `modifyTickerDetails()`, To modify the details of undeployed ticker. #230 
-  
+* Add new function `modifyTickerDetails()`, To modify the details of undeployed ticker. #230
+
 
 
 ## Fixed
-* `getAllModulesAndPermsFromTypes()` does not take securityToken address as a parameter anymore.
 * 0x0 and duplicate address in exclusions are no longer allowed in dividend modules.
 * All permissions are denied if no permission manager is active.
 * Generalize the STO varaible names and added them in `ISTO.sol` to use the common standard in all STOs.
 * Generalize the event when any new token get registered with the polymath ecosystem. `LogNewSecurityToken` should emit _ticker, _name, _securityTokenAddress, _owner, _addedAt, _registrant respectively. #230  
-* Change the function name of `withdraPoly` to `withdrawERC20` and make the function generalize to extract tokens from the ST contract. parmeters are contract address and the value need to extract from the securityToken.          
+* Change the function name of `withdraPoly` to `withdrawERC20` and make the function generalize to extract tokens from the ST contract. parmeters are contract address and the value need to extract from the securityToken.     
 
 ## Removed
 * Removed investors list pruning
@@ -61,7 +114,7 @@ All notable changes to this project will be documented in this file.
 
 ======
 
-# v1.4.1 - Release Candidate
+# v1.4.1
 
 [__1.4.1__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-08-18__
 
@@ -85,7 +138,7 @@ All notable changes to this project will be documented in this file.
 * Fix #238: make beneficial investments optionally supported (default to not
 allowed)
 
-# v1.4.0 - Release candidate
+# v1.4.0
 
 [__1.4.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-08-18__
 

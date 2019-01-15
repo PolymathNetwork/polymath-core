@@ -1,52 +1,32 @@
 /**
- * DISCLAIMER: Under certain conditions, the limit could be bypassed if a large token holder 
- * redeems a huge portion of their tokens. It will cause the total supply to drop 
- * which can result in some other token holders having a percentage of tokens 
+ * DISCLAIMER: Under certain conditions, the limit could be bypassed if a large token holder
+ * redeems a huge portion of their tokens. It will cause the total supply to drop
+ * which can result in some other token holders having a percentage of tokens
  * higher than the intended limit.
  */
 
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
-import "./ITransferManager.sol";
+import "./TransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "./PercentageTransferManagerStorage.sol";
 
 /**
  * @title Transfer Manager module for limiting percentage of token supply a single address can hold
  */
-contract PercentageTransferManager is ITransferManager {
+contract PercentageTransferManager is PercentageTransferManagerStorage, TransferManager {
     using SafeMath for uint256;
 
-    // Permission key for modifying the whitelist
-    bytes32 public constant WHITELIST = "WHITELIST";
-    bytes32 public constant ADMIN = "ADMIN";
-
-    // Maximum percentage that any holder can have, multiplied by 10**16 - e.g. 20% is 20 * 10**16
-    uint256 public maxHolderPercentage;
-
-    // Ignore transactions which are part of the primary issuance
-    bool public allowPrimaryIssuance = true;
-
-    // Addresses on this list are always able to send / receive tokens
-    mapping (address => bool) public whitelist;
-
     event ModifyHolderPercentage(uint256 _oldHolderPercentage, uint256 _newHolderPercentage);
-    event ModifyWhitelist(
-        address _investor,
-        uint256 _dateAdded,
-        address _addedBy,
-        bool    _valid
-    );
+    event ModifyWhitelist(address _investor, uint256 _dateAdded, address _addedBy, bool _valid);
     event SetAllowPrimaryIssuance(bool _allowPrimaryIssuance, uint256 _timestamp);
 
     /**
      * @notice Constructor
      * @param _securityToken Address of the security token
-     * @param _polyAddress Address of the polytoken
      */
-    constructor (address _securityToken, address _polyAddress)
-    public
-    Module(_securityToken, _polyAddress)
-    {
+    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
+
     }
 
     /** @notice Used to verify the transfer transaction and prevent a given account to end up with more tokens than allowed
@@ -54,7 +34,16 @@ contract PercentageTransferManager is ITransferManager {
      * @param _to Address of the receiver
      * @param _amount The amount of tokens to transfer
      */
-    function verifyTransfer(address _from, address _to, uint256 _amount, bytes /* _data */, bool /* _isTransfer */) public returns(Result) {
+    function verifyTransfer(
+        address _from,
+        address _to,
+        uint256 _amount,
+        bytes calldata, /* _data */
+        bool /* _isTransfer */
+    ) 
+        external 
+        returns(Result) 
+    {
         if (!paused) {
             if (_from == address(0) && allowPrimaryIssuance) {
                 return Result.NA;
@@ -64,7 +53,7 @@ contract PercentageTransferManager is ITransferManager {
                 return Result.NA;
             }
             uint256 newBalance = ISecurityToken(securityToken).balanceOf(_to).add(_amount);
-            if (newBalance.mul(uint256(10)**18).div(ISecurityToken(securityToken).totalSupply()) > maxHolderPercentage) {
+            if (newBalance.mul(uint256(10) ** 18).div(ISecurityToken(securityToken).totalSupply()) > maxHolderPercentage) {
                 return Result.INVALID;
             }
             return Result.NA;
@@ -84,7 +73,7 @@ contract PercentageTransferManager is ITransferManager {
     /**
      * @notice This function returns the signature of configure function
      */
-    function getInitFunction() public pure returns (bytes4) {
+    function getInitFunction() public pure returns(bytes4) {
         return bytes4(keccak256("configure(uint256,bool)"));
     }
 
@@ -113,7 +102,7 @@ contract PercentageTransferManager is ITransferManager {
     * @param _investors Array of the addresses to whitelist
     * @param _valids Array of boolean value to decide whether or not the address it to be added or removed from the whitelist
     */
-    function modifyWhitelistMulti(address[] _investors, bool[] _valids) public withPerm(WHITELIST) {
+    function modifyWhitelistMulti(address[] memory _investors, bool[] memory _valids) public withPerm(WHITELIST) {
         require(_investors.length == _valids.length, "Input array length mis-match");
         for (uint i = 0; i < _investors.length; i++) {
             modifyWhitelist(_investors[i], _valids[i]);
@@ -134,7 +123,7 @@ contract PercentageTransferManager is ITransferManager {
     /**
      * @notice Return the permissions flag that are associated with Percentage transfer Manager
      */
-    function getPermissions() public view returns(bytes32[]) {
+    function getPermissions() public view returns(bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](2);
         allPermissions[0] = WHITELIST;
         allPermissions[1] = ADMIN;

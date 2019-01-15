@@ -1,0 +1,14 @@
+# type -> 'CappedSTO' for cappedSTO, 'USDTieredSTO' for USDTieredSTO
+type: 'CappedSTO'
+# cap -> Maximum No. of tokens for sale.
+cap: 1000000
+# startTime -> Unix timestamp at which offering get started. '' for CLI default (one minute from now)
+startTime: ''
+# endTime -> Unix timestamp at which offering get ended. '' for CLI default (one month from now)
+endTime: ''
+# wallet -> Ethereum account address to hold the funds
+wallet: '0x0a519b4b6501f92e8f516230b97aca83257b0c01'
+# raiseType -> Type of currency used to collect the funds. [0] for ETH, [1] for POLY
+raiseType: [0]
+# rate -> Token units a buyer gets per unit of selected raise type.
+rate: 1000

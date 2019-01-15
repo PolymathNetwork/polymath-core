@@ -9,12 +9,13 @@ const SecurityTokenRegistryMock = artifacts.require("./SecurityTokenRegistryMock
 const OwnedUpgradeabilityProxy = artifacts.require("./OwnedUpgradeabilityProxy.sol");
 const STFactory = artifacts.require("./STFactory.sol");
 const SecurityToken = artifacts.require("./SecurityToken.sol");
+const STRGetter = artifacts.require("./STRGetter.sol");
 
 const Web3 = require("web3");
-const BigNumber = require("bignumber.js");
+let BN = Web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
-contract("SecurityTokenRegistryProxy", accounts => {
+contract("SecurityTokenRegistryProxy", async (accounts) => {
     let I_SecurityTokenRegistry;
     let I_SecurityTokenRegistryProxy;
     let I_GeneralTransferManagerFactory;
@@ -28,6 +29,8 @@ contract("SecurityTokenRegistryProxy", accounts => {
     let I_SecurityToken;
     let I_ModuleRegistry;
     let I_FeatureRegistry;
+    let I_STRGetter;
+    let I_Getter;
 
     let account_polymath;
     let account_temp;
@@ -35,7 +38,7 @@ contract("SecurityTokenRegistryProxy", accounts => {
     let account_polymath_new;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = web3.utils.toWei("250");
+    const initRegFee = new BN(web3.utils.toWei("250"));
     const version = "1.0.0";
     const message = "Transaction Should Fail!";
 
@@ -46,6 +49,9 @@ contract("SecurityTokenRegistryProxy", accounts => {
     const decimals = 18;
 
     const transferManagerKey = 2;
+    
+    const address_zero = "0x0000000000000000000000000000000000000000";
+    const one_address = "0x0000000000000000000000000000000000000001";
     const STRProxyParameters = ["address", "address", "uint256", "uint256", "address", "address"];
 
     async function readStorage(contractAddress, slot) {
@@ -72,14 +78,15 @@ contract("SecurityTokenRegistryProxy", accounts => {
             I_STFactory,
             I_SecurityTokenRegistry,
             I_SecurityTokenRegistryProxy,
-            I_STRProxied
+            I_STRProxied,
+            I_STRGetter
         ] = instances;
 
         I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({ from: account_polymath });
 
         await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistryProxy.address, { from: account_polymath });
         await I_MRProxied.updateFromRegistry({ from: account_polymath });
-       
+
         // Printing all the contract addresses
         console.log(`
          --------------------- Polymath Network Smart Contracts: ---------------------
@@ -100,19 +107,20 @@ contract("SecurityTokenRegistryProxy", accounts => {
         // __upgradeabilityOwner -- index 13
 
         it("Should attach the implementation and version", async () => {
+            I_STRGetter = await STRGetter.new({from: account_polymath});
             let bytesProxy = encodeProxyCall(STRProxyParameters, [
                 I_PolymathRegistry.address,
                 I_STFactory.address,
                 initRegFee,
                 initRegFee,
-                I_PolyToken.address,
-                account_polymath
+                account_polymath,
+                I_STRGetter.address
             ]);
             await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {
                 from: account_polymath
             });
-            let c = OwnedUpgradeabilityProxy.at(I_SecurityTokenRegistryProxy.address);
-            assert.equal(await readStorage(c.address, 12), I_SecurityTokenRegistry.address);
+            let c = await OwnedUpgradeabilityProxy.at(I_SecurityTokenRegistryProxy.address);
+            assert.equal(await readStorage(c.address, 12), I_SecurityTokenRegistry.address.toLowerCase());
             assert.equal(
                 web3.utils
                     .toAscii(await readStorage(c.address, 11))
@@ -121,6 +129,7 @@ contract("SecurityTokenRegistryProxy", accounts => {
                 "1.0.0"
             );
             I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
+            I_STRGetter = await STRGetter.at(I_SecurityTokenRegistryProxy.address);
         });
 
         it("Verify the initialize data", async () => {
@@ -130,7 +139,7 @@ contract("SecurityTokenRegistryProxy", accounts => {
                 "Should equal to 60 days"
             );
             assert.equal(
-                (await I_STRProxied.getUintValues.call(web3.utils.soliditySha3("tickerRegFee"))).toNumber(),
+                await I_STRProxied.getUintValues.call(web3.utils.soliditySha3("tickerRegFee")),
                 web3.utils.toWei("250")
             );
         });
@@ -138,7 +147,7 @@ contract("SecurityTokenRegistryProxy", accounts => {
 
     describe("Feed some data in storage", async () => {
         it("Register the ticker", async () => {
-            await I_PolyToken.getTokens(web3.utils.toWei("1000"), token_owner);
+            await I_PolyToken.getTokens(new BN(web3.utils.toWei("1000")), token_owner);
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
             let tx = await I_STRProxied.registerTicker(token_owner, symbol, name, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner, "Owner should be the same as registered with the ticker");
@@ -147,15 +156,15 @@ contract("SecurityTokenRegistryProxy", accounts => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let _blockNo = latestBlock();
+            
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[2].args._ticker, symbol, "SecurityToken doesn't get deployed");
 
-            I_SecurityToken = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+            I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
-            const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({ from: _blockNo }), 1);
+            const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTransferManager module get added successfully or not
             assert.equal(log.args._types[0].toNumber(), transferManagerKey);
@@ -175,7 +184,7 @@ contract("SecurityTokenRegistryProxy", accounts => {
 
         it("Should upgrade the version and implementation address -- Implemenation address should not be 0x", async () => {
             await catchRevert(
-                I_SecurityTokenRegistryProxy.upgradeTo("1.1.0", "0x00000000000000000000000000000000000000", { from: account_polymath })
+                I_SecurityTokenRegistryProxy.upgradeTo("1.1.0", address_zero, { from: account_polymath })
             );
         });
 
@@ -195,7 +204,7 @@ contract("SecurityTokenRegistryProxy", accounts => {
 
         it("Should upgrade the version and the implementation address successfully", async () => {
             await I_SecurityTokenRegistryProxy.upgradeTo("1.1.0", I_SecurityTokenRegistryMock.address, { from: account_polymath });
-            let c = OwnedUpgradeabilityProxy.at(I_SecurityTokenRegistryProxy.address);
+            let c = await OwnedUpgradeabilityProxy.at(I_SecurityTokenRegistryProxy.address);
             assert.equal(
                 web3.utils
                     .toAscii(await readStorage(c.address, 11))
@@ -204,15 +213,17 @@ contract("SecurityTokenRegistryProxy", accounts => {
                 "1.1.0",
                 "Version mis-match"
             );
-            assert.equal(await readStorage(c.address, 12), I_SecurityTokenRegistryMock.address, "Implemnted address is not matched");
+            assert.equal(await readStorage(c.address, 12), I_SecurityTokenRegistryMock.address.toLowerCase(), "Implemnted address is not matched");
             I_STRProxied = await SecurityTokenRegistryMock.at(I_SecurityTokenRegistryProxy.address);
+            I_Getter = await STRGetter.at(I_SecurityTokenRegistryProxy.address);
         });
     });
 
     describe("Execute functionality of the implementation contract on the earlier storage", async () => {
         it("Should get the previous data", async () => {
-            let _tokenAddress = await I_STRProxied.getSecurityTokenAddress.call(symbol);
-            let _data = await I_STRProxied.getSecurityTokenData.call(_tokenAddress);
+
+            let _tokenAddress = await I_Getter.getSecurityTokenAddress.call(symbol);
+            let _data = await I_Getter.getSecurityTokenData.call(_tokenAddress);
             assert.equal(_data[0], symbol, "Symbol should match with registered symbol");
             assert.equal(_data[1], token_owner, "Owner should be the deployer of token");
             assert.equal(_data[2], tokenDetails, "Token details should matched with deployed ticker");
@@ -220,7 +231,7 @@ contract("SecurityTokenRegistryProxy", accounts => {
 
         it("Should alter the old storage", async () => {
             await I_STRProxied.changeTheDeployedAddress(symbol, account_temp, { from: account_polymath });
-            let _tokenAddress = await I_STRProxied.getSecurityTokenAddress.call(symbol);
+            let _tokenAddress = await I_Getter.getSecurityTokenAddress.call(symbol);
             assert.equal(_tokenAddress, account_temp, "Should match with the changed address");
         });
     });
@@ -232,7 +243,7 @@ contract("SecurityTokenRegistryProxy", accounts => {
 
         it("Should change the ownership of the contract -- new address should not be 0x", async () => {
             await catchRevert(
-                I_SecurityTokenRegistryProxy.transferProxyOwnership("0x00000000000000000000000000000000000000", { from: account_polymath })
+                I_SecurityTokenRegistryProxy.transferProxyOwnership(address_zero, { from: account_polymath })
             );
         });
 
@@ -245,7 +256,7 @@ contract("SecurityTokenRegistryProxy", accounts => {
         it("Should change the implementation contract and version by the new owner", async () => {
             I_SecurityTokenRegistry = await SecurityTokenRegistry.new({ from: account_polymath });
             await I_SecurityTokenRegistryProxy.upgradeTo("1.2.0", I_SecurityTokenRegistry.address, { from: account_polymath_new });
-            let c = OwnedUpgradeabilityProxy.at(I_SecurityTokenRegistryProxy.address);
+            let c = await OwnedUpgradeabilityProxy.at(I_SecurityTokenRegistryProxy.address);
             assert.equal(
                 web3.utils
                     .toAscii(await readStorage(c.address, 11))
@@ -254,16 +265,19 @@ contract("SecurityTokenRegistryProxy", accounts => {
                 "1.2.0",
                 "Version mis-match"
             );
-            assert.equal(await readStorage(c.address, 12), I_SecurityTokenRegistry.address, "Implemnted address is not matched");
+            assert.equal(await readStorage(c.address, 12), I_SecurityTokenRegistry.address.toLowerCase(), "Implemnted address is not matched");
             I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
         });
 
-        it("Should get the version", async() => {
+        it("Should get the version", async () => {
             assert.equal(await I_SecurityTokenRegistryProxy.version.call({ from: account_polymath_new }), "1.2.0");
         });
 
-        it("Should get the implementation address", async() => {
-            assert.equal(await I_SecurityTokenRegistryProxy.implementation.call({ from: account_polymath_new }), I_SecurityTokenRegistry.address);
-        })
+        it("Should get the implementation address", async () => {
+            assert.equal(
+                await I_SecurityTokenRegistryProxy.implementation.call({ from: account_polymath_new }),
+                I_SecurityTokenRegistry.address
+            );
+        });
     });
 });

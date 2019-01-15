@@ -1,41 +1,29 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.0;
 
 import "./IPermissionManager.sol";
 import "../Module.sol";
+import "./GeneralPermissionManagerStorage.sol";
 
 /**
  * @title Permission Manager module for core permissioning functionality
  */
-contract GeneralPermissionManager is IPermissionManager, Module {
-
-    // Mapping used to hold the permissions on the modules provided to delegate, module add => delegate add => permission bytes32 => bool 
-    mapping (address => mapping (address => mapping (bytes32 => bool))) public perms;
-    // Mapping hold the delagate details
-    mapping (address => bytes32) public delegateDetails;
-    // Array to track all delegates
-    address[] public allDelegates;
-
-
-    // Permission flag
-    bytes32 public constant CHANGE_PERMISSION = "CHANGE_PERMISSION";
+contract GeneralPermissionManager is GeneralPermissionManagerStorage, IPermissionManager, Module {
 
     /// Event emitted after any permission get changed for the delegate
     event ChangePermission(address indexed _delegate, address _module, bytes32 _perm, bool _valid, uint256 _timestamp);
     /// Used to notify when delegate is added in permission manager contract
     event AddDelegate(address indexed _delegate, bytes32 _details, uint256 _timestamp);
 
-
     /// @notice constructor
-    constructor (address _securityToken, address _polyAddress) public
-    Module(_securityToken, _polyAddress)
-    {
+    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
+
     }
 
     /**
      * @notice Init function i.e generalise function to maintain the structure of the module contract
      * @return bytes4
      */
-    function getInitFunction() public pure returns (bytes4) {
+    function getInitFunction() public pure returns(bytes4) {
         return bytes4(0);
     }
 
@@ -49,8 +37,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
     function checkPermission(address _delegate, address _module, bytes32 _perm) external view returns(bool) {
         if (delegateDetails[_delegate] != bytes32(0)) {
             return perms[_module][_delegate][_perm];
-        } else
-            return false;
+        } else return false;
     }
 
     /**
@@ -93,8 +80,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
 
         if (delegateDetails[_potentialDelegate] != bytes32(0)) {
             return true;
-        } else
-            return false;
+        } else return false;
     }
 
     /**
@@ -105,15 +91,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
      * @param _valid Bool flag use to switch on/off the permission
      * @return bool
      */
-    function changePermission(
-        address _delegate,
-        address _module,
-        bytes32 _perm,
-        bool _valid
-    )
-    public
-    withPerm(CHANGE_PERMISSION)
-    {
+    function changePermission(address _delegate, address _module, bytes32 _perm, bool _valid) public withPerm(CHANGE_PERMISSION) {
         require(_delegate != address(0), "invalid address");
         _changePermission(_delegate, _module, _perm, _valid);
     }
@@ -128,18 +106,18 @@ contract GeneralPermissionManager is IPermissionManager, Module {
      */
     function changePermissionMulti(
         address _delegate,
-        address[] _modules,
-        bytes32[] _perms,
-        bool[] _valids
-    )
-    external
-    withPerm(CHANGE_PERMISSION)
+        address[] calldata _modules,
+        bytes32[] calldata _perms,
+        bool[] calldata _valids
+    ) 
+        external 
+        withPerm(CHANGE_PERMISSION) 
     {
         require(_delegate != address(0), "invalid address");
         require(_modules.length > 0, "0 length is not allowed");
         require(_modules.length == _perms.length, "Array length mismatch");
         require(_valids.length == _perms.length, "Array length mismatch");
-        for(uint256 i = 0; i < _perms.length; i++) {
+        for (uint256 i = 0; i < _perms.length; i++) {
             _changePermission(_delegate, _modules[i], _perms[i], _valids[i]);
         }
     }
@@ -150,7 +128,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
      * @param _perm Permission flag
      * @return address[]
      */
-    function getAllDelegatesWithPerm(address _module, bytes32 _perm) external view returns(address[]) {
+    function getAllDelegatesWithPerm(address _module, bytes32 _perm) external view returns(address[] memory) {
         uint256 counter = 0;
         uint256 i = 0;
         for (i = 0; i < allDelegates.length; i++) {
@@ -161,7 +139,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
         address[] memory allDelegatesWithPerm = new address[](counter);
         counter = 0;
         for (i = 0; i < allDelegates.length; i++) {
-            if (perms[_module][allDelegates[i]][_perm]){
+            if (perms[_module][allDelegates[i]][_perm]) {
                 allDelegatesWithPerm[counter] = allDelegates[i];
                 counter++;
             }
@@ -177,18 +155,21 @@ contract GeneralPermissionManager is IPermissionManager, Module {
      * @return address[] the address array of Modules this delegate has permission
      * @return bytes32[] the permission array of the corresponding Modules
      */
-    function getAllModulesAndPermsFromTypes(address _delegate, uint8[] _types) external view returns(address[], bytes32[]) {
+    function getAllModulesAndPermsFromTypes(address _delegate, uint8[] calldata _types) external view returns(
+        address[] memory,
+        bytes32[] memory
+    ) {
         uint256 counter = 0;
         // loop through _types and get their modules from securityToken->getModulesByType
         for (uint256 i = 0; i < _types.length; i++) {
             address[] memory _currentTypeModules = ISecurityToken(securityToken).getModulesByType(_types[i]);
             // loop through each modules to get their perms from IModule->getPermissions
-            for (uint256 j = 0; j < _currentTypeModules.length; j++){
+            for (uint256 j = 0; j < _currentTypeModules.length; j++) {
                 bytes32[] memory _allModulePerms = IModule(_currentTypeModules[j]).getPermissions();
                 // loop through each perm, if it is true, push results into arrays
                 for (uint256 k = 0; k < _allModulePerms.length; k++) {
                     if (perms[_currentTypeModules[j]][_delegate][_allModulePerms[k]]) {
-                        counter ++;
+                        counter++;
                     }
                 }
             }
@@ -198,11 +179,11 @@ contract GeneralPermissionManager is IPermissionManager, Module {
         bytes32[] memory _allPerms = new bytes32[](counter);
         counter = 0;
 
-        for (i = 0; i < _types.length; i++){
-            _currentTypeModules = ISecurityToken(securityToken).getModulesByType(_types[i]);
-            for (j = 0; j < _currentTypeModules.length; j++) {
-                _allModulePerms = IModule(_currentTypeModules[j]).getPermissions();
-                for (k = 0; k < _allModulePerms.length; k++) {
+        for (uint256 i = 0; i < _types.length; i++) {
+            address[] memory _currentTypeModules = ISecurityToken(securityToken).getModulesByType(_types[i]);
+            for (uint256 j = 0; j < _currentTypeModules.length; j++) {
+                bytes32[] memory _allModulePerms = IModule(_currentTypeModules[j]).getPermissions();
+                for (uint256 k = 0; k < _allModulePerms.length; k++) {
                     if (perms[_currentTypeModules[j]][_delegate][_allModulePerms[k]]) {
                         _allModules[counter] = _currentTypeModules[j];
                         _allPerms[counter] = _allModulePerms[k];
@@ -212,7 +193,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
             }
         }
 
-        return(_allModules, _allPerms);
+        return (_allModules, _allPerms);
     }
 
     /**
@@ -223,14 +204,7 @@ contract GeneralPermissionManager is IPermissionManager, Module {
      * @param _valid Bool flag use to switch on/off the permission
      * @return bool
      */
-    function _changePermission(
-        address _delegate,
-        address _module,
-        bytes32 _perm,
-        bool _valid
-    )
-     internal
-    {
+    function _changePermission(address _delegate, address _module, bytes32 _perm, bool _valid) internal {
         perms[_module][_delegate][_perm] = _valid;
         /*solium-disable-next-line security/no-block-members*/
         emit ChangePermission(_delegate, _module, _perm, _valid, now);
@@ -240,15 +214,15 @@ contract GeneralPermissionManager is IPermissionManager, Module {
      * @notice Used to get all delegates
      * @return address[]
      */
-    function getAllDelegates() external view returns(address[]) {
+    function getAllDelegates() external view returns(address[] memory) {
         return allDelegates;
     }
-    
+
     /**
     * @notice Returns the Permission flag related the `this` contract
     * @return Array of permission flags
     */
-    function getPermissions() public view returns(bytes32[]) {
+    function getPermissions() public view returns(bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](1);
         allPermissions[0] = CHANGE_PERMISSION;
         return allPermissions;

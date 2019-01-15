@@ -7,10 +7,10 @@ const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 
 const Web3 = require("web3");
-const BigNumber = require("bignumber.js");
+let BN = Web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
-contract("Checkpoints", accounts => {
+contract("Checkpoints", async function(accounts) {
     // Accounts Variable declaration
     let account_polymath;
     let account_issuer;
@@ -20,12 +20,12 @@ contract("Checkpoints", accounts => {
     let account_investor3;
     let account_investor4;
 
-    // investor Details
-    let fromTime = latestTime();
-    let toTime = latestTime();
-    let expiryTime = toTime + duration.days(15);
-
     let message = "Transaction Should Fail!";
+
+    // investor Details
+    let fromTime;
+    let toTime;
+    let expiryTime;
 
     // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;
@@ -44,6 +44,7 @@ contract("Checkpoints", accounts => {
     let I_SecurityToken;
     let I_PolyToken;
     let I_PolymathRegistry;
+    let I_STRGetter;
 
     // SecurityToken Details
     const name = "Team";
@@ -58,9 +59,12 @@ contract("Checkpoints", accounts => {
     const stoKey = 3;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = web3.utils.toWei("250");
+    const initRegFee = new BN(web3.utils.toWei("250"));
 
     before(async () => {
+        fromTime = await latestTime();
+        toTime = await latestTime();
+        expiryTime = toTime + duration.days(15);
         // Accounts setup
         account_polymath = accounts[0];
         account_issuer = accounts[1];
@@ -86,7 +90,8 @@ contract("Checkpoints", accounts => {
             I_STFactory,
             I_SecurityTokenRegistry,
             I_SecurityTokenRegistryProxy,
-            I_STRProxied
+            I_STRProxied,
+            I_STRGetter
         ] = instances;
 
         // Printing all the contract addresses
@@ -115,15 +120,14 @@ contract("Checkpoints", accounts => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let _blockNo = latestBlock();
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
-            I_SecurityToken = SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+            I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
-            const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({ from: _blockNo }), 1);
+            const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTransferManager module get added successfully or not
             assert.equal(log.args._types[0].toNumber(), 2);
@@ -136,26 +140,25 @@ contract("Checkpoints", accounts => {
 
         it("Should intialize the auto attached modules", async () => {
             let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
-            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
+            I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
     });
 
     describe("Buy tokens using on-chain whitelist", async () => {
         it("Should Buy the tokens", async () => {
             // Add the Investor in to the whitelist
-
+            let ltime = new BN(await latestTime());
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor1,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(10),
+                ltime,
+                ltime,
+                ltime.add(new BN(duration.days(10))),
                 false,
                 {
                     from: account_issuer,
                     gas: 6000000
                 }
             );
-
             assert.equal(
                 tx.logs[0].args._investor.toLowerCase(),
                 account_investor1.toLowerCase(),
@@ -163,19 +166,19 @@ contract("Checkpoints", accounts => {
             );
 
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor1, web3.utils.toWei("10", "ether"), { from: token_owner });
+            await I_SecurityToken.mint(account_investor1, new BN(web3.utils.toWei("10", "ether")), { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), web3.utils.toWei("10", "ether"));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), new BN(web3.utils.toWei("10", "ether")).toString());
         });
 
         it("Should Buy some more tokens", async () => {
             // Add the Investor in to the whitelist
-
+            let ltime = new BN(await latestTime());
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor2,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(10),
+                ltime,
+                ltime,
+                ltime.add(new BN(duration.days(10))),
                 false,
                 {
                     from: account_issuer,
@@ -190,17 +193,18 @@ contract("Checkpoints", accounts => {
             );
 
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor2, web3.utils.toWei("10", "ether"), { from: token_owner });
+            await I_SecurityToken.mint(account_investor2, new BN(web3.utils.toWei("10", "ether")), { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toNumber(), web3.utils.toWei("10", "ether"));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toString(), new BN(web3.utils.toWei("10", "ether")).toString());
         });
 
         it("Add a new token holder", async () => {
+            let ltime = new BN(await latestTime());
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor3,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(10),
+                ltime,
+                ltime,
+                ltime.add(new BN(duration.days(10))),
                 false,
                 {
                     from: account_issuer,
@@ -216,9 +220,9 @@ contract("Checkpoints", accounts => {
 
             // Add the Investor in to the whitelist
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor3, web3.utils.toWei("10", "ether"), { from: token_owner });
+            await I_SecurityToken.mint(account_investor3, new BN(web3.utils.toWei("10", "ether")), { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor3)).toNumber(), web3.utils.toWei("10", "ether"));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor3)).toString(), new BN(web3.utils.toWei("10", "ether")).toString());
         });
 
         it("Fuzz test balance checkpoints", async () => {
@@ -226,10 +230,10 @@ contract("Checkpoints", accounts => {
             let cps = [];
             let ts = [];
             for (let j = 0; j < 10; j++) {
-                let balance1 = new BigNumber(await I_SecurityToken.balanceOf(account_investor1));
-                let balance2 = new BigNumber(await I_SecurityToken.balanceOf(account_investor2));
-                let balance3 = new BigNumber(await I_SecurityToken.balanceOf(account_investor3));
-                let totalSupply = new BigNumber(await I_SecurityToken.totalSupply());
+                let balance1 = new BN(await I_SecurityToken.balanceOf(account_investor1));
+                let balance2 = new BN(await I_SecurityToken.balanceOf(account_investor2));
+                let balance3 = new BN(await I_SecurityToken.balanceOf(account_investor3));
+                let totalSupply = new BN(await I_SecurityToken.totalSupply());
                 cps.push([balance1, balance2, balance3]);
                 ts.push(totalSupply);
                 console.log(
@@ -264,21 +268,19 @@ contract("Checkpoints", accounts => {
                     } else {
                         receiver = account_investor3;
                     }
-                    let m = Math.random();
-                    let amount = new BigNumber(await I_SecurityToken.balanceOf(sender))
-                        .mul(Math.random().toFixed(10))
-                        .toFixed(0);
-                    if (m > 0.8) {
+                    let m = Math.floor(Math.random() * 10) + 1;
+                    let amount;
+                    if (m > 8) {
                         console.log("Sending full balance");
-                        amount = new BigNumber(await I_SecurityToken.balanceOf(sender));
+                        amount = new BN(await I_SecurityToken.balanceOf(sender));
+                    } else {
+                        amount = new BN(await I_SecurityToken.balanceOf(sender)).mul(new BN(m)).div(new BN(10));
                     }
                     console.log("Sender: " + sender + " Receiver: " + receiver + " Amount: " + JSON.stringify(amount));
                     await I_SecurityToken.transfer(receiver, amount, { from: sender });
                 }
                 if (Math.random() > 0.5) {
-                    let n = new BigNumber(Math.random().toFixed(10))
-                        .mul(10 ** 17)
-                        .toFixed(0);
+                    let n = new BN(Math.random().toFixed(10)).mul(new BN(10).pow(new BN(17)));
                     let p = Math.random() * 3;
                     let r = Math.random() * 3;
                     let minter;
@@ -293,7 +295,7 @@ contract("Checkpoints", accounts => {
                     await I_SecurityToken.mint(minter, n, { from: token_owner });
                 }
                 if (Math.random() > 0.5) {
-                    let n = new BigNumber(Math.random().toFixed(10)).mul(10 ** 17);
+                    let n = new BN(Math.random().toFixed(10)).mul(new BN(10).pow(new BN(17)));
                     let p = Math.random() * 3;
                     let r = Math.random() * 3;
                     let burner;
@@ -304,20 +306,19 @@ contract("Checkpoints", accounts => {
                     } else {
                         burner = account_investor3;
                     }
-                    let burnerBalance = new BigNumber(await I_SecurityToken.balanceOf(burner));
-                    if (n.gt(burnerBalance.div(2))) {
-                        n = burnerBalance.div(2);
+                    let burnerBalance = new BN(await I_SecurityToken.balanceOf(burner));
+                    if (n.gt(burnerBalance.div(new BN(2)))) {
+                        n = burnerBalance.div(new BN(2));
                     }
-                    n = n.toFixed(0);
                     console.log("Burning: " + n.toString() + " from: " + burner);
-                    await I_SecurityToken.forceBurn(burner, n, "", "", { from: token_owner });
+                    await I_SecurityToken.forceBurn(burner, n, "0x0", "0x0", { from: token_owner });
                 }
                 console.log("Checking Interim...");
                 for (let k = 0; k < cps.length; k++) {
-                    let balance1 = new BigNumber(await I_SecurityToken.balanceOfAt(account_investor1, k + 1));
-                    let balance2 = new BigNumber(await I_SecurityToken.balanceOfAt(account_investor2, k + 1));
-                    let balance3 = new BigNumber(await I_SecurityToken.balanceOfAt(account_investor3, k + 1));
-                    let totalSupply = new BigNumber(await I_SecurityToken.totalSupplyAt(k + 1));
+                    let balance1 = new BN(await I_SecurityToken.balanceOfAt(account_investor1, k + 1));
+                    let balance2 = new BN(await I_SecurityToken.balanceOfAt(account_investor2, k + 1));
+                    let balance3 = new BN(await I_SecurityToken.balanceOfAt(account_investor3, k + 1));
+                    let totalSupply = new BN(await I_SecurityToken.totalSupplyAt(k + 1));
                     let balances = [balance1, balance2, balance3];
                     console.log("Checking TotalSupply: " + totalSupply + " is " + ts[k] + " at checkpoint: " + (k + 1));
                     assert.isTrue(totalSupply.eq(ts[k]));
@@ -330,10 +331,10 @@ contract("Checkpoints", accounts => {
             }
             console.log("Checking...");
             for (let k = 0; k < cps.length; k++) {
-                let balance1 = new BigNumber(await I_SecurityToken.balanceOfAt(account_investor1, k + 1));
-                let balance2 = new BigNumber(await I_SecurityToken.balanceOfAt(account_investor2, k + 1));
-                let balance3 = new BigNumber(await I_SecurityToken.balanceOfAt(account_investor3, k + 1));
-                let totalSupply = new BigNumber(await I_SecurityToken.totalSupplyAt(k + 1));
+                let balance1 = new BN(await I_SecurityToken.balanceOfAt(account_investor1, k + 1));
+                let balance2 = new BN(await I_SecurityToken.balanceOfAt(account_investor2, k + 1));
+                let balance3 = new BN(await I_SecurityToken.balanceOfAt(account_investor3, k + 1));
+                let totalSupply = new BN(await I_SecurityToken.totalSupplyAt(k + 1));
                 let balances = [balance1, balance2, balance3];
                 console.log("Checking TotalSupply: " + totalSupply + " is " + ts[k] + " at checkpoint: " + (k + 1));
                 assert.isTrue(totalSupply.eq(ts[k]));

@@ -76,8 +76,8 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     // Map each investor to a series of checkpoints
     mapping(address => TokenLib.Checkpoint[]) checkpointBalances;
 
-    // List of checkpoints that relate to total supply
-    TokenLib.Checkpoint[] checkpointTotalSupply;
+    // Mapping of checkpoints that relate to total supply
+    mapping (uint256 => uint256) checkpointTotalSupply;
 
     // Times at which each checkpoint was created
     uint256[] checkpointTimes;
@@ -725,7 +725,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         /*solium-disable-next-line security/no-block-members*/
         checkpointTimes.push(now);
         /*solium-disable-next-line security/no-block-members*/
-        checkpointTotalSupply.push(TokenLib.Checkpoint({checkpointId: currentCheckpointId, value: totalSupply()}));
+        checkpointTotalSupply[currentCheckpointId] = totalSupply();
         emit CheckpointCreated(currentCheckpointId, now);
         return currentCheckpointId;
     }
@@ -745,7 +745,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      */
     function totalSupplyAt(uint256 _checkpointId) external view returns(uint256) {
         require(_checkpointId <= currentCheckpointId);
-        return TokenLib.getValueAt(checkpointTotalSupply, _checkpointId, totalSupply());
+        return checkpointTotalSupply[_checkpointId];
     }
 
     /**

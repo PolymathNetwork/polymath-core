@@ -129,12 +129,12 @@ contract("ModuleRegistryProxy", async (accounts) => {
             // STEP 4: Deploy the GeneralTransferManagerFactory
 
             let I_GeneralTransferManagerLogic = await GeneralTransferManagerLogic.new(
-                "0x0000000000000000000000000000000000000000",
-                "0x0000000000000000000000000000000000000000",
+                address_zero,
+                address_zero,
                 { from: account_polymath }
             );
 
-            I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(0, new BN(0), new BN(0), I_GeneralTransferManagerLogic.address, I_GeneralTransferManagerLogic.address, {
+            I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(new BN(0), new BN(0), new BN(0), I_GeneralTransferManagerLogic.address, {
                 from: account_polymath
             });
 

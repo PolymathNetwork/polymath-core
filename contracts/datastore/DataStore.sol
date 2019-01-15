@@ -167,4 +167,20 @@ contract DataStore is DataStoreStorage {
     function getBoolArrayLength(bytes32 _key) external view returns(uint256) {
         return boolArrayData[_key].length;
     }
+
+    function getUintArrayElement(bytes32 _key, uint256 _index) external view returns(uint256) {
+        return uintArrayData[_key][_index];
+    }
+
+    function getBytes32ArrayElement(bytes32 _key, uint256 _index) external view returns(bytes32) {
+        return bytes32ArrayData[_key][_index];
+    }
+
+    function getAddressArrayElement(bytes32 _key, uint256 _index) external view returns(address) {
+        return addressArrayData[_key][_index];
+    }
+
+    function getBoolArrayElement(bytes32 _key, uint256 _index) external view returns(bool) {
+        return boolArrayData[_key][_index];
+    }
 }

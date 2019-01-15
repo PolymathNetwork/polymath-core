@@ -123,14 +123,16 @@ async function configExistingModules(dividendModules) {
 async function dividendsManager() {
   console.log(chalk.blue(`Dividends module at ${currentDividendsModule.options.address}`), '\n');
 
+  let wallet = await currentDividendsModule.methods.wallet().call();
   let currentDividends = await getDividends();
   let defaultExcluded = await currentDividendsModule.methods.getDefaultExcluded().call();
   let currentCheckpointId = await securityToken.methods.currentCheckpointId().call();
 
+  console.log(`- Wallet:                  ${wallet}`);
   console.log(`- Current dividends:       ${currentDividends.length}`);
   console.log(`- Default exclusions:      ${defaultExcluded.length}`);
 
-  let options = ['Create checkpoint'];
+  let options = ['Change wallet', 'Create checkpoint'];
   if (currentCheckpointId > 0) {
     options.push('Explore checkpoint');
   }
@@ -150,6 +152,9 @@ async function dividendsManager() {
   let selected = index != -1 ? options[index] : 'RETURN';
   console.log('Selected:', selected, '\n');
   switch (selected) {
+    case 'Change wallet':
+      await changeWallet();
+      break;
     case 'Create checkpoint':
       await createCheckpointFromDividendModule();
       break;
@@ -178,6 +183,19 @@ async function dividendsManager() {
   }
 
   await dividendsManager();
+}
+
+async function changeWallet() {
+  let newWallet = readlineSync.question('Enter the new account address to receive reclaimed dividends and tax: ', {
+    limit: function (input) {
+      return web3.utils.isAddress(input);
+    },
+    limitMessage: "Must be a valid address",
+  });
+  let action = currentDividendsModule.methods.changeWallet(newWallet);
+  let receipt = await common.sendTransaction(action);
+  let event = common.getEventFromLogs(currentDividendsModule._jsonInterface, receipt.logs, 'SetWallet');
+  console.log(chalk.green(`The wallet has been changed successfully!`));
 }
 
 async function createCheckpointFromDividendModule() {
@@ -561,7 +579,14 @@ async function addDividendsModule() {
 
   let index = readlineSync.keyInSelect(options, 'Which dividends module do you want to add? ', { cancel: 'Return' });
   if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]} module? `)) {
-    let bytes = web3.utils.fromAscii('', 16);
+    let wallet = readlineSync.question('Enter the account address to receive reclaimed dividends and tax: ', {
+      limit: function (input) {
+        return web3.utils.isAddress(input);
+      },
+      limitMessage: "Must be a valid address",
+    });
+    let configureFunction = abis.erc20DividendCheckpoint().find(o => o.name === 'configure' && o.type === 'function');
+    let bytes = web3.eth.abi.encodeFunctionCall(configureFunction, [wallet]);
 
     let selectedDividendFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, gbl.constants.MODULES_TYPES.DIVIDENDS, options[index]);
     let addModuleAction = securityToken.methods.addModule(selectedDividendFactoryAddress, bytes, 0, 0);

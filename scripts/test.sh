@@ -93,7 +93,7 @@ if [ "$COVERAGE" = true ]; then
   curl -o node_modules/solidity-parser-sc/build/parser.js https://raw.githubusercontent.com/maxsam4/solidity-parser/solidity-0.5/build/parser.js
   node_modules/.bin/solidity-coverage
   if [ "$CIRCLECI" = true ]; then
-    cat coverage/lcov.info | node_modules/.bin/coveralls
+    cat coverage/lcov.info | node_modules/.bin/coveralls || echo 'Failed to report coverage to Coveralls'
   fi
 else
   if [ "$CIRCLECI" = true ]; then # using mocha junit reporter for parallelism in CircleCI 

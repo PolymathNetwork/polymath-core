@@ -648,7 +648,6 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         returns(bool success) 
     {
         require(_updateTransfer(address(0), _investor, _value, _data), "Transfer invalid");
-        _adjustTotalSupplyCheckpoints();
         _mint(_investor, _value);
         emit Minted(_investor, _value);
         return true;
@@ -692,7 +691,6 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
 
     function _checkAndBurn(address _from, uint256 _value, bytes memory _data) internal returns(bool) {
         bool verified = _updateTransfer(_from, address(0), _value, _data);
-        _adjustTotalSupplyCheckpoints();
         _burn(_from, _value);
         emit Burnt(_from, _value);
         return verified;
@@ -709,7 +707,6 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
 
     function _checkAndBurnFrom(address _from, uint256 _value, bytes memory _data) internal returns(bool) {
         bool verified = _updateTransfer(_from, address(0), _value, _data);
-        _adjustTotalSupplyCheckpoints();
         _burnFrom(_from, _value);
         emit Burnt(_from, _value);
         return verified;
@@ -735,6 +732,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         /*solium-disable-next-line security/no-block-members*/
         checkpointTimes.push(now);
         /*solium-disable-next-line security/no-block-members*/
+        _adjustTotalSupplyCheckpoints();
         emit CheckpointCreated(currentCheckpointId, now);
         return currentCheckpointId;
     }

@@ -372,7 +372,7 @@ contract("GeneralTransferManager", async (accounts) => {
         });
     });
 
-    describe("Buy tokens using on-chain whitelist and defaults 1", async () => {
+    describe("Buy tokens using on-chain whitelist and defaults", async () => {
         // let snap_id;
 
         it("Should Buy the tokens", async () => {
@@ -416,7 +416,7 @@ contract("GeneralTransferManager", async (accounts) => {
             assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
         });
 
-        it("Add a from default and check transfers are disabled then enabled in the future 1", async () => {
+        it("Add a from default and check transfers are disabled then enabled in the future", async () => {
             let tx = await I_GeneralTransferManager.changeDefaults(currentTime.add(new BN(duration.days(12))), new BN(0), { from: token_owner });
             await I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: account_investor2 });
             await catchRevert(I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 }));
@@ -424,7 +424,7 @@ contract("GeneralTransferManager", async (accounts) => {
             await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 });
         });
 
-        it("Add a to default and check transfers are disabled then enabled in the future 2", async () => {
+        it("Add a to default and check transfers are disabled then enabled in the future", async () => {
             let tx = await I_GeneralTransferManager.changeDefaults(0, currentTime.add(new BN(duration.days(16))), { from: token_owner });
             await catchRevert(I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: account_investor2 }));
             await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 });
@@ -437,92 +437,6 @@ contract("GeneralTransferManager", async (accounts) => {
             });
             await I_GeneralTransferManager.changeDefaults(0, new BN(0), { from: token_owner });
         });
-    });
-
-    describe("Buy tokens using on-chain whitelist and defaults 2", async () => {
-        // let snap_id;
-
-        it("Should Buy the tokens", async () => {
-            // Add the Investor in to the whitelist
-            // snap_id = await takeSnapshot();
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
-                account_investor1,
-                0,
-                0,
-                currentTime.add(new BN(duration.days(20))),
-                true,
-                {
-                    from: account_issuer,
-                    gas: 6000000
-                }
-            );
-
-            assert.equal(
-                tx.logs[0].args._investor.toLowerCase(),
-                account_investor1.toLowerCase(),
-                "Failed in adding the investor in whitelist"
-            );
-
-            tx = await I_GeneralTransferManager.modifyWhitelist(
-                account_investor2,
-                currentTime,
-                currentTime,
-                currentTime.add(new BN(duration.days(20))),
-                true,
-                {
-                    from: account_issuer,
-                    gas: 6000000
-                }
-            );
-
-            assert.equal(
-                tx.logs[0].args._investor.toLowerCase(),
-                account_investor2.toLowerCase(),
-                "Failed in adding the investor in whitelist"
-            );
-
-            // Jump time
-            await increaseTime(5000);
-
-            // Can transfer tokens
-            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), {from: account_investor1});
-            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), web3.utils.toWei("1", "ether"));
-            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), web3.utils.toWei("1", "ether"));
-        });
-
-        it("Add a from default and check transfers are disabled then enabled in the future", async () => {
-            currentTime = new BN(await latestTime());
-            let tx = await I_GeneralTransferManager.changeDefaults(new BN(currentTime.add(new BN(duration.days(5)))), new BN(0), {from: token_owner});
-            await I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1", "ether")), {from: account_investor2});
-            await catchRevert(I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), {from: account_investor1}));
-            await increaseTime(duration.days(5));
-            await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), {from: account_investor1});
-        });
-
-        it("Add a to default and check transfers are disabled then enabled in the future", async () => {
-            currentTime = new BN(await latestTime());
-            let tx = await I_GeneralTransferManager.changeDefaults(new BN(0), currentTime.add(new BN(duration.days(5))), {from: token_owner});
-            await catchRevert(I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1", "ether")), {from: account_investor2}));
-            await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), {from: account_investor1});
-            await increaseTime(duration.days(5));
-            await I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("2", "ether")), {from: account_investor2});
-            // revert changes
-            await I_GeneralTransferManager.modifyWhitelist(
-                account_investor2,
-                0,
-                0,
-                0,
-                false,
-                {
-                    from: account_issuer,
-                    gas: 6000000
-                }
-            );
-            await I_GeneralTransferManager.changeDefaults(0, 0, {from: token_owner});
-        });
-
-
-
     });
 
     describe("Buy tokens using off-chain whitelist", async () => {

@@ -17,6 +17,8 @@ interface ISecurityToken {
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
 
+    function dataStore() external view returns (address);
+
     /**
      * @notice Validates a transfer with a TransferManager module if it exists
      * @dev TransferManager module has a key of 2

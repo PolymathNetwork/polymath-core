@@ -64,6 +64,54 @@ contract DataStore is DataStoreStorage {
         boolArrayData[_key] = _data;
     }
 
+    function insertData(bytes32 _key, uint256 _data) external onlyDataModuleWithValidKey(_key) {
+        uintArrayData[_key].push(_data);
+    }
+
+    function insertData(bytes32 _key, bytes32 _data) external onlyDataModuleWithValidKey(_key) {
+        bytes32ArrayData[_key].push(_data);
+    }
+
+    function insertData(bytes32 _key, address _data) external onlyDataModuleWithValidKey(_key) {
+        addressArrayData[_key].push(_data);
+    }
+
+    function insertData(bytes32 _key, bool _data) external onlyDataModuleWithValidKey(_key) {
+        boolArrayData[_key].push(_data);
+    }
+
+    function deleteUint(bytes32 _key, uint256 _index) external onlyDataModuleWithValidKey(_key) {
+        require(uintArrayData[_key].length > _index, "Invalid Index"); //Also prevents undeflow
+        if(uintArrayData[_key].length - 1 != _index) {
+            uintArrayData[_key][_index] = uintArrayData[_key][uintArrayData[_key].length - 1];
+        }
+        uintArrayData[_key].length--;
+    }
+
+    function deleteBytes32(bytes32 _key, uint256 _index) external onlyDataModuleWithValidKey(_key) {
+        require(bytes32ArrayData[_key].length > _index, "Invalid Index"); //Also prevents undeflow
+        if(bytes32ArrayData[_key].length - 1 != _index) {
+            bytes32ArrayData[_key][_index] = bytes32ArrayData[_key][uintArrayData[_key].length - 1];
+        }
+        bytes32ArrayData[_key].length--;
+    }
+
+    function deleteAddress(bytes32 _key, uint256 _index) external onlyDataModuleWithValidKey(_key) {
+        require(addressArrayData[_key].length > _index, "Invalid Index"); //Also prevents undeflow
+        if(addressArrayData[_key].length - 1 != _index) {
+            addressArrayData[_key][_index] = addressArrayData[_key][uintArrayData[_key].length - 1];
+        }
+        addressArrayData[_key].length--;
+    }
+
+    function deleteBool(bytes32 _key, uint256 _index) external onlyDataModuleWithValidKey(_key) {
+        require(boolArrayData[_key].length > _index, "Invalid Index"); //Also prevents undeflow
+        if(boolArrayData[_key].length - 1 != _index) {
+            boolArrayData[_key][_index] = boolArrayData[_key][uintArrayData[_key].length - 1];
+        }
+        boolArrayData[_key].length--;
+    }
+
     function getUint(bytes32 _key) external view returns(uint256) {
         return uintData[_key];
     }
@@ -102,5 +150,21 @@ contract DataStore is DataStoreStorage {
 
     function getBoolArray(bytes32 _key) external view returns(bool[] memory) {
         return boolArrayData[_key];
+    }
+
+    function getUintArrayLength(bytes32 _key) external view returns(uint256) {
+        return uintArrayData[_key].length;
+    }
+
+    function getBytes32ArrayLength(bytes32 _key) external view returns(uint256) {
+        return bytes32ArrayData[_key].length;
+    }
+
+    function getAddressArrayLength(bytes32 _key) external view returns(uint256) {
+        return addressArrayData[_key].length;
+    }
+
+    function getBoolArrayLength(bytes32 _key) external view returns(uint256) {
+        return boolArrayData[_key].length;
     }
 }

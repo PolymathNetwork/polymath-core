@@ -24,6 +24,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
     event SetDefaultExcludedAddresses(address[] _excluded, uint256 _timestamp);
     event SetWithholding(address[] _investors, uint256[] _withholding, uint256 _timestamp);
     event SetWithholdingFixed(address[] _investors, uint256 _withholding, uint256 _timestamp);
+    event SetWallet(address indexed _oldWallet, address indexed _newWallet, uint256 _timestamp);
 
     modifier validDividendIndex(uint256 _dividendIndex) {
         require(_dividendIndex < dividends.length, "Invalid dividend");
@@ -36,11 +37,35 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
     }
 
     /**
+     * @notice Function used to intialize the contract variables
+     * @param _wallet Ethereum account address to receive reclaimed dividends and tax
+     */
+    function configure(
+        address _wallet
+    ) public onlyFactory {
+        _setWallet(_wallet);
+    }
+
+    /**
     * @notice Init function i.e generalise function to maintain the structure of the module contract
     * @return bytes4
     */
     function getInitFunction() public pure returns (bytes4) {
-        return bytes4(0);
+        return this.configure.selector;
+    }
+
+    /**
+     * @notice Function used to change wallet address
+     * @param _wallet Ethereum account address to receive reclaimed dividends and tax
+     */
+    function changeWallet(address _wallet) external onlyOwner {
+        _setWallet(_wallet);
+    }
+
+    function _setWallet(address _wallet) internal {
+        require(_wallet != address(0));
+        emit SetWallet(wallet, _wallet, now);
+        wallet = _wallet;
     }
 
     /**

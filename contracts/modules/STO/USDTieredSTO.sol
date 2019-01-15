@@ -199,8 +199,6 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
         address _reserveWallet,
         address[] _usdTokens
     ) external onlyOwner {
-        /*solium-disable-next-line security/no-block-members*/
-        // require(now < startTime, "STO already started");
         _modifyAddresses(_wallet, _reserveWallet, _usdTokens);
     }
 

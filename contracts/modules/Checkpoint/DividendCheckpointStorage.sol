@@ -5,6 +5,9 @@ pragma solidity ^0.5.0;
  * @dev abstract contract
  */
 contract DividendCheckpointStorage {
+
+    // Address to which reclaimed dividends and withholding tax is sent
+    address payable public wallet;
     uint256 public EXCLUDED_ADDRESS_LIMIT = 150;
     bytes32 public constant DISTRIBUTE = "DISTRIBUTE";
     bytes32 public constant MANAGE = "MANAGE";

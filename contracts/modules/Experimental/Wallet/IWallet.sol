@@ -1,7 +1,7 @@
 pragma solidity ^0.5.0;
 
-import "../../Pausable.sol";
-import "../Module.sol";
+import "../../../Pausable.sol";
+import "../../Module.sol";
 
 /**
  * @title Interface to be implemented by all Wallet modules

@@ -7,7 +7,7 @@ import "../../RegistryUpdater.sol";
 import "../../libraries/DecimalMath.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
-import "./USDTieredSTOStorage.sol";
+import "../../storage/USDTieredSTOStorage.sol";
 
 /**
  * @title STO module for standard capped crowdsale
@@ -108,9 +108,9 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
         address payable _wallet,
         address _reserveWallet,
         address _usdToken
-    ) 
-        public 
-        onlyFactory 
+    )
+        public
+        onlyFactory
     {
         oracleKeys[bytes32("ETH")][bytes32("USD")] = ETH_ORACLE;
         oracleKeys[bytes32("POLY")][bytes32("USD")] = POLY_ORACLE;
@@ -156,9 +156,9 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
         uint256[] calldata _ratePerTierDiscountPoly,
         uint256[] calldata _tokensPerTierTotal,
         uint256[] calldata _tokensPerTierDiscountPoly
-    ) 
-        external 
-        onlyOwner 
+    )
+        external
+        onlyOwner
     {
         /*solium-disable-next-line security/no-block-members*/
         require(now < startTime, "STO already started");
@@ -199,8 +199,8 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
         uint256[] memory _ratePerTierDiscountPoly,
         uint256[] memory _tokensPerTierTotal,
         uint256[] memory _tokensPerTierDiscountPoly
-    ) 
-        internal 
+    )
+        internal
     {
         require(_tokensPerTierTotal.length > 0, "No tiers provided");
         require(
@@ -393,11 +393,11 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
         uint256 _investmentValue,
         uint256 _rate,
         FundRaiseType _fundRaiseType
-    ) 
-        internal 
-        nonReentrant 
-        whenNotPaused 
-        returns(uint256 spentUSD, uint256 spentValue) 
+    )
+        internal
+        nonReentrant
+        whenNotPaused
+        returns(uint256 spentUSD, uint256 spentValue)
     {
         if (!allowBeneficialInvestments) {
             require(_beneficiary == msg.sender, "Beneficiary != funder");
@@ -468,13 +468,13 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
     }
 
     function _buyTokensChecks(
-        address _beneficiary, 
-        uint256 _investmentValue, 
+        address _beneficiary,
+        uint256 _investmentValue,
         uint256 investedUSD
-    ) 
-        internal 
-        view 
-        returns(uint256 netInvestedUSD) 
+    )
+        internal
+        view
+        returns(uint256 netInvestedUSD)
     {
         require(isOpen(), "STO not open");
         require(_investmentValue > 0, "No funds were sent");
@@ -582,9 +582,9 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
         uint256 _tierRemaining,
         uint256 _investedUSD,
         uint256 _tier
-    ) 
-        internal 
-        returns(uint256 spentUSD, uint256 purchasedTokens, bool gotoNextTier) 
+    )
+        internal
+        returns(uint256 spentUSD, uint256 purchasedTokens, bool gotoNextTier)
     {
         (spentUSD, purchasedTokens, gotoNextTier) = _purchaseTierAmount(_tierPrice, _tierRemaining, _investedUSD);
         if (purchasedTokens > 0) {
@@ -594,13 +594,13 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
     }
 
     function _purchaseTierAmount(
-        uint256 _tierPrice, 
-        uint256 _tierRemaining, 
+        uint256 _tierPrice,
+        uint256 _tierRemaining,
         uint256 _investedUSD
-    ) 
-        internal 
-        view 
-        returns(uint256 spentUSD,uint256 purchasedTokens,bool gotoNextTier) 
+    )
+        internal
+        view
+        returns(uint256 spentUSD,uint256 purchasedTokens,bool gotoNextTier)
     {
         uint256 maximumTokens = DecimalMath.div(_investedUSD, _tierPrice);
         uint256 granularity = ISecurityToken(securityToken).granularity();
@@ -793,7 +793,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
         uint256,
         uint256,
         bool[] memory
-    ) 
+    )
     {
         uint256[] memory cap = new uint256[](tiers.length);
         uint256[] memory rate = new uint256[](tiers.length);

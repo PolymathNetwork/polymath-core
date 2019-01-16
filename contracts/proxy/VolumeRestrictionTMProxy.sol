@@ -1,6 +1,6 @@
 pragma solidity ^0.5.0;
 
-import "../modules/TransferManager/VolumeRestrictionTMStorage.sol";
+import "../storage/VolumeRestrictionTMStorage.sol";
 import "./OwnedProxy.sol";
 import "../Pausable.sol";
 import "../modules/ModuleStorage.sol";

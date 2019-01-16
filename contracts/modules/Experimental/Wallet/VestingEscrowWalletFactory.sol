@@ -1,9 +1,9 @@
 pragma solidity ^0.5.0;
 
-import "../../proxy/VestingEscrowWalletProxy.sol";
-import "../../interfaces/IBoot.sol";
-import "../ModuleFactory.sol";
-import "../../libraries/Util.sol";
+import "../../../proxy/VestingEscrowWalletProxy.sol";
+import "../../../interfaces/IBoot.sol";
+import "../../ModuleFactory.sol";
+import "../../../libraries/Util.sol";
 
 /**
  * @title Factory for deploying VestingEscrowWallet module

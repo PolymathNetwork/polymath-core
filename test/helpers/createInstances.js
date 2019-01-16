@@ -30,7 +30,7 @@ const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager.s
 const GeneralPermissionManagerFactory = artifacts.require("./GeneralPermissionManagerFactory.sol");
 const CountTransferManager = artifacts.require("./CountTransferManager.sol");
 const CountTransferManagerFactory = artifacts.require("./CountTransferManagerFactory.sol");
-const VolumeRestrictionTransferManagerFactory = artifacts.require("./LockupVolumeRestrictionTMFactory");
+const LockUpTransferManagerFactory = artifacts.require("./LockUpTransferManagerFactory");
 const PreSaleSTOFactory = artifacts.require("./PreSaleSTOFactory.sol");
 const PreSaleSTO = artifacts.require("./PreSaleSTO.sol");
 const PolyToken = artifacts.require("./PolyToken.sol");
@@ -350,7 +350,7 @@ export async function deployLockupVolumeRTMAndVerified(accountPolymath, MRProxyI
     assert.notEqual(
         I_VolumeRestrictionTransferManagerFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",
-        "VolumeRestrictionTransferManagerFactory contract was not deployed"
+        "LockUpTransferManagerFactory contract was not deployed"
     );
 
     await registerAndVerifyByMR(I_VolumeRestrictionTransferManagerFactory.address, accountPolymath, MRProxyInstance);

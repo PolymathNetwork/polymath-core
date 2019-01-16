@@ -1,7 +1,7 @@
 pragma solidity ^0.5.0;
 
 import "./TransferManager.sol";
-import "./GeneralTransferManagerStorage.sol";
+import "../../storage/GeneralTransferManagerStorage.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
@@ -174,7 +174,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
 
             //Anyone on the whitelist can transfer provided the blocknumber is large enough
             /*solium-disable-next-line security/no-block-members*/
-            return ((_onWhitelist(_from) && (adjustedFromTime <= uint64(now))) && (_onWhitelist(_to) && 
+            return ((_onWhitelist(_from) && (adjustedFromTime <= uint64(now))) && (_onWhitelist(_to) &&
                 (adjustedToTime <= uint64(now)))) ? Result.VALID : Result.NA; /*solium-disable-line security/no-block-members*/
         }
         return Result.NA;
@@ -194,9 +194,9 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         uint256 _toTime,
         uint256 _expiryTime,
         bool _canBuyFromSTO
-    ) 
-        public 
-        withPerm(WHITELIST) 
+    )
+        public
+        withPerm(WHITELIST)
     {
         _modifyWhitelist(_investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
     }
@@ -272,8 +272,8 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         uint8 _v,
         bytes32 _r,
         bytes32 _s
-    ) 
-        public 
+    )
+        public
     {
         /*solium-disable-next-line security/no-block-members*/
         require(_validFrom <= now, "ValidFrom is too early");

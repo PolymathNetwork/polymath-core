@@ -1,8 +1,8 @@
 pragma solidity ^0.5.0;
 
 import "./BlacklistTransferManager.sol";
-import "../ModuleFactory.sol";
-import "../../libraries/Util.sol";
+import "../../ModuleFactory.sol";
+import "../../../libraries/Util.sol";
 
 /**
  * @title Factory for deploying BlacklistManager module

@@ -24,6 +24,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
     event SetDefaultExcludedAddresses(address[] _excluded, uint256 _timestamp);
     event SetWithholding(address[] _investors, uint256[] _withholding, uint256 _timestamp);
     event SetWithholdingFixed(address[] _investors, uint256 _withholding, uint256 _timestamp);
+    event SetWallet(address indexed _oldWallet, address indexed _newWallet, uint256 _timestamp);
 
     modifier validDividendIndex(uint256 _dividendIndex) {
         require(_dividendIndex < dividends.length, "Invalid dividend");
@@ -36,11 +37,35 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
     }
 
     /**
+     * @notice Function used to intialize the contract variables
+     * @param _wallet Ethereum account address to receive reclaimed dividends and tax
+     */
+    function configure(
+        address payable _wallet
+    ) public onlyFactory {
+        _setWallet(_wallet);
+    }
+
+    /**
     * @notice Init function i.e generalise function to maintain the structure of the module contract
     * @return bytes4
     */
     function getInitFunction() public pure returns(bytes4) {
-        return bytes4(0);
+        return this.configure.selector;
+    }
+
+    /**
+     * @notice Function used to change wallet address
+     * @param _wallet Ethereum account address to receive reclaimed dividends and tax
+     */
+    function changeWallet(address payable _wallet) external onlyOwner {
+        _setWallet(_wallet);
+    }
+
+    function _setWallet(address payable _wallet) internal {
+        require(_wallet != address(0));
+        emit SetWallet(wallet, _wallet, now);
+        wallet = _wallet;
     }
 
     /**
@@ -113,10 +138,10 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
     function pushDividendPaymentToAddresses(
         uint256 _dividendIndex,
         address payable[] memory _payees
-    ) 
-        public 
-        withPerm(DISTRIBUTE) 
-        validDividendIndex(_dividendIndex) 
+    )
+        public
+        withPerm(DISTRIBUTE)
+        validDividendIndex(_dividendIndex)
     {
         Dividend storage dividend = dividends[_dividendIndex];
         for (uint256 i = 0; i < _payees.length; i++) {
@@ -136,9 +161,9 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
         uint256 _dividendIndex,
         uint256 _start,
         uint256 _iterations
-    ) public 
-      withPerm(DISTRIBUTE) 
-      validDividendIndex(_dividendIndex) 
+    ) public
+      withPerm(DISTRIBUTE)
+      validDividendIndex(_dividendIndex)
     {
         Dividend storage dividend = dividends[_dividendIndex];
         uint256 checkpointId = dividend.checkpointId;
@@ -284,17 +309,17 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @return address[] list of investors
      * @return bool[] whether investor has claimed
      * @return bool[] whether investor is excluded
-     * @return uint256[] amount of withheld tax
+     * @return uint256[] amount of withheld tax (estimate if not claimed)
+     * @return uint256[] amount of claim (estimate if not claimeed)
      * @return uint256[] investor balance
-     * @return uint256[] amount to be claimed including withheld tax
      */
     function getDividendProgress(uint256 _dividendIndex) external view returns (
         address[] memory investors,
         bool[] memory resultClaimed,
         bool[] memory resultExcluded,
         uint256[] memory resultWithheld,
-        uint256[] memory resultBalance,
-        uint256[] memory resultAmount)
+        uint256[] memory resultAmount,
+        uint256[] memory resultBalance)
     {
         require(_dividendIndex < dividends.length, "Invalid dividend");
         //Get list of Investors
@@ -304,15 +329,21 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
         resultClaimed = new bool[](investors.length);
         resultExcluded = new bool[](investors.length);
         resultWithheld = new uint256[](investors.length);
-        resultBalance = new uint256[](investors.length);
         resultAmount = new uint256[](investors.length);
+        resultBalance = new uint256[](investors.length);
         for (uint256 i; i < investors.length; i++) {
             resultClaimed[i] = dividend.claimed[investors[i]];
             resultExcluded[i] = dividend.dividendExcluded[investors[i]];
             resultBalance[i] = ISecurityToken(securityToken).balanceOfAt(investors[i], dividend.checkpointId);
             if (!resultExcluded[i]) {
+                if (resultClaimed[i]) {
                 resultWithheld[i] = dividend.withheld[investors[i]];
-                resultAmount[i] = resultBalance[i].mul(dividend.amount).div(dividend.totalSupply);
+                    resultAmount[i] = resultBalance[i].mul(dividend.amount).div(dividend.totalSupply).sub(resultWithheld[i]);
+                } else {
+                    (uint256 claim, uint256 withheld) = calculateDividend(_dividendIndex, investors[i]);
+                    resultWithheld[i] = withheld;
+                    resultAmount[i] = claim.sub(withheld);
+                }
             }
         }
     }

@@ -1,9 +1,7 @@
 pragma solidity ^0.5.0;
 
+import "../../TransferManager/TransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "../../interfaces/ITransferManager.sol";
-import "../Module.sol";
-import "./TransferManager.sol";
 
 /**
  * @title Transfer Manager module to automate blacklist and restrict transfers

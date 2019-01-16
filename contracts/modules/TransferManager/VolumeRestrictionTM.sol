@@ -973,7 +973,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
     {
         uint256 _allowedAmount = 0;
         if (_restriction.typeOfRestriction == RestrictionType.Percentage) {
-            _allowedAmount = (_restriction.allowedTokens.mul(ISecurityToken(securityToken).totalSupply())) / uint256(10) ** 18;
+            _allowedAmount = (_restriction.allowedTokens.mul(IERC20(securityToken).totalSupply())) / uint256(10) ** 18;
         } else {
             _allowedAmount = _restriction.allowedTokens;
         }

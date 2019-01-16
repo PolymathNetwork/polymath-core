@@ -1,8 +1,7 @@
 pragma solidity ^0.5.0;
 
-import "../RegistryUpdater.sol";
 import "../interfaces/IModule.sol";
-import "../interfaces/ISecurityToken.sol";
+import "../interfaces/ICheckPermission.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "./ModuleStorage.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
@@ -26,7 +25,7 @@ contract Module is IModule, ModuleStorage {
         bool isOwner = msg.sender == Ownable(securityToken).owner();
         bool isFactory = msg.sender == factory;
         require(
-            isOwner || isFactory || ISecurityToken(securityToken).checkPermission(msg.sender, address(this), _perm),
+            isOwner || isFactory || ICheckPermission(securityToken).checkPermission(msg.sender, address(this), _perm),
             "Permission check failed"
         );
         _;

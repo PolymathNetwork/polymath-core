@@ -3,6 +3,7 @@ pragma solidity ^0.5.0;
 import "./TransferManager.sol";
 import "../../storage/GeneralTransferManagerStorage.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "../../interfaces/ISecurityToken.sol";
 
 /**
  * @title Transfer Manager module for core transfer validation functionality

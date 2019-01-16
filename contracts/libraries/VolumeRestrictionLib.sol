@@ -1,8 +1,6 @@
 pragma solidity ^0.5.0;
 
-import "./BokkyPooBahsDateTimeLibrary.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "../interfaces/ISecurityToken.sol";
 import "../storage/VolumeRestrictionTMStorage.sol";
 
 library VolumeRestrictionLib {

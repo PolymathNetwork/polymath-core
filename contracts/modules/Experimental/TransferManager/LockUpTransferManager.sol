@@ -421,7 +421,7 @@ contract LockUpTransferManager is TransferManager {
     function _checkIfValidTransfer(address _userAddress, uint256 _amount) internal view returns (Result) {
         uint256 totalRemainingLockedAmount = getLockedTokenToUser(_userAddress);
         // Present balance of the user
-        uint256 currentBalance = ISecurityToken(securityToken).balanceOf(_userAddress);
+        uint256 currentBalance = IERC20(securityToken).balanceOf(_userAddress);
         if ((currentBalance.sub(_amount)) >= totalRemainingLockedAmount) {
             return Result.NA;
         }

@@ -2,6 +2,7 @@ pragma solidity ^0.5.0;
 
 import "./TransferManager.sol";
 import "./CountTransferManagerStorage.sol";
+import "../../interfaces/ISecurityToken.sol";
 
 /**
  * @title Transfer Manager for limiting maximum number of token holders
@@ -29,9 +30,9 @@ contract CountTransferManager is CountTransferManagerStorage, TransferManager {
         uint256 _amount,
         bytes calldata /* _data */,
         bool /* _isTransfer */
-    ) 
-        external 
-        returns(Result) 
+    )
+        external
+        returns(Result)
     {
         if (!paused) {
             if (maxHolderCount < ISecurityToken(securityToken).getInvestorCount()) {

@@ -457,58 +457,6 @@ contract("ManualApprovalTransferManager", async (accounts) => {
             await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 });
         });
 
-        it("Should fail to add a manual block because invalid _to address", async () => {
-            await catchRevert(
-                I_ManualApprovalTransferManager.addManualBlocking(account_investor1, address_zero, currentTime.add(new BN(duration.days(1))), {
-                    from: token_owner
-                })
-            );
-        });
-
-        it("Should fail to add a manual block because invalid expiry time", async () => {
-            await catchRevert(
-                I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, 99999, { from: token_owner })
-            );
-        });
-
-        it("Add a manual block for a 2nd investor", async () => {
-            await I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, currentTime.add(new BN(duration.days(1))), {
-                from: token_owner
-            });
-        });
-
-        it("Should fail to add a manual block because blocking already exist", async () => {
-            await catchRevert(
-                I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, currentTime.add(new BN(duration.days(5))), {
-                    from: token_owner
-                })
-            );
-        });
-
-        it("Check manual block causes failure", async () => {
-            await catchRevert(I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 }));
-        });
-
-        it("Should fail to revoke manual block because invalid _to address", async () => {
-            await catchRevert(I_ManualApprovalTransferManager.revokeManualBlocking(account_investor1, address_zero, { from: token_owner }));
-        });
-
-        it("Revoke manual block and check transfer works", async () => {
-            await I_ManualApprovalTransferManager.revokeManualBlocking(account_investor1, account_investor2, { from: token_owner });
-            await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 });
-            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toString(), new BN(web3.utils.toWei("2", "ether")).toString());
-        });
-
-        it("Check manual block ignored after expiry", async () => {
-            await I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, currentTime.add(new BN(duration.days(1))), {
-                from: token_owner
-            });
-
-            await catchRevert(I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 }));
-            await increaseTime(1 + 24 * 60 * 60);
-            await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 });
-        });
-
         it("Should successfully attach the CountTransferManager with the security token (count of 1)", async () => {
             let bytesCountTM = web3.eth.abi.encodeFunctionCall(
                 {
@@ -549,13 +497,13 @@ contract("ManualApprovalTransferManager", async (accounts) => {
             let name = web3.utils.toUtf8(await I_ManualApprovalTransferManagerFactory.getName.call());
             assert.equal(name, "ManualApprovalTransferManager", "Wrong Module added");
             let desc = await I_ManualApprovalTransferManagerFactory.description.call();
-            assert.equal(desc, "Manage transfers using single approvals / blocking", "Wrong Module added");
+            assert.equal(desc, "Manage transfers using single approvals", "Wrong Module added");
             let title = await I_ManualApprovalTransferManagerFactory.title.call();
             assert.equal(title, "Manual Approval Transfer Manager", "Wrong Module added");
             let inst = await I_ManualApprovalTransferManagerFactory.getInstructions.call();
             assert.equal(
                 inst,
-                "Allows an issuer to set manual approvals or blocks for specific pairs of addresses and amounts. Init function takes no parameters.",
+                "Allows an issuer to set manual approvals for specific pairs of addresses and amounts. Init function takes no parameters.",
                 "Wrong Module added"
             );
             assert.equal(await I_ManualApprovalTransferManagerFactory.version.call(), "2.0.1");

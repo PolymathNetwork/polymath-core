@@ -1,6 +1,5 @@
 pragma solidity ^0.5.0;
 
-import "../../storage/VolumeRestrictionTMStorage.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "../../libraries/BokkyPooBahsDateTimeLibrary.sol";
 import "../../libraries/VolumeRestrictionLib.sol";

@@ -503,7 +503,7 @@ export async function deployRedemptionAndVerifyed(accountPolymath, MRProxyInstan
     return Promise.all(new Array(I_TrackedRedemptionFactory));
 }
 
-export async function deployVestingEscrowWalletAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+export async function deployVestingEscrowWalletAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
     I_VestingEscrowWalletLogic = await VestingEscrowWallet.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
     I_VestingEscrowWalletFactory = await VestingEscrowWalletFactory.new(setupCost, 0, 0, I_VestingEscrowWalletLogic.address, { from: accountPolymath });
 

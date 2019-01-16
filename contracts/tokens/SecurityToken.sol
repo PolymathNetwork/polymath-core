@@ -76,8 +76,8 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     // Map each investor to a series of checkpoints
     mapping(address => TokenLib.Checkpoint[]) checkpointBalances;
 
-    // List of checkpoints that relate to total supply
-    TokenLib.Checkpoint[] checkpointTotalSupply;
+    // Mapping of checkpoints that relate to total supply
+    mapping (uint256 => uint256) checkpointTotalSupply;
 
     // Times at which each checkpoint was created
     uint256[] checkpointTimes;
@@ -459,13 +459,6 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     }
 
     /**
-     * @notice Internal - adjusts totalSupply at checkpoint after minting or burning tokens
-     */
-    function _adjustTotalSupplyCheckpoints() internal {
-        TokenLib.adjustCheckpoints(checkpointTotalSupply, totalSupply(), currentCheckpointId);
-    }
-
-    /**
      * @notice Internal - adjusts token holder balance at checkpoint after a token transfer
      * @param _investor address of the token holder affected
      */
@@ -648,7 +641,6 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         returns(bool success) 
     {
         require(_updateTransfer(address(0), _investor, _value, _data), "Transfer invalid");
-        _adjustTotalSupplyCheckpoints();
         _mint(_investor, _value);
         emit Minted(_investor, _value);
         return true;
@@ -692,7 +684,6 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
 
     function _checkAndBurn(address _from, uint256 _value, bytes memory _data) internal returns(bool) {
         bool verified = _updateTransfer(_from, address(0), _value, _data);
-        _adjustTotalSupplyCheckpoints();
         _burn(_from, _value);
         emit Burnt(_from, _value);
         return verified;
@@ -709,7 +700,6 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
 
     function _checkAndBurnFrom(address _from, uint256 _value, bytes memory _data) internal returns(bool) {
         bool verified = _updateTransfer(_from, address(0), _value, _data);
-        _adjustTotalSupplyCheckpoints();
         _burnFrom(_from, _value);
         emit Burnt(_from, _value);
         return verified;
@@ -735,6 +725,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         /*solium-disable-next-line security/no-block-members*/
         checkpointTimes.push(now);
         /*solium-disable-next-line security/no-block-members*/
+        checkpointTotalSupply[currentCheckpointId] = totalSupply();
         emit CheckpointCreated(currentCheckpointId, now);
         return currentCheckpointId;
     }
@@ -754,7 +745,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      */
     function totalSupplyAt(uint256 _checkpointId) external view returns(uint256) {
         require(_checkpointId <= currentCheckpointId);
-        return TokenLib.getValueAt(checkpointTotalSupply, _checkpointId, totalSupply());
+        return checkpointTotalSupply[_checkpointId];
     }
 
     /**

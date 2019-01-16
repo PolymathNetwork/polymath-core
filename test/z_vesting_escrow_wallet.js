@@ -11,7 +11,7 @@ const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager")
 const VestingEscrowWallet = artifacts.require('./VestingEscrowWallet.sol');
 
 const Web3 = require('web3');
-const BigNumber = require('bignumber.js');
+const BN = Web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));// Hardcoded development port
 
 contract('VestingEscrowWallet', accounts => {
@@ -65,7 +65,7 @@ contract('VestingEscrowWallet', accounts => {
     const stoKey = 3;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = web3.utils.toWei("250");
+    const initRegFee = new BN(web3.utils.toWei("250"));
 
     before(async () => {
         // Accounts setup
@@ -136,23 +136,19 @@ contract('VestingEscrowWallet', accounts => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let _blockNo = latestBlock();
+
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
-            assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
+            assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
-            I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
+            I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
-            const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({from: _blockNo}), 1);
+            const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTransferManager module get added successfully or not
             assert.equal(log.args._types[0].toNumber(), 2);
-            assert.equal(
-                web3.utils.toAscii(log.args._name)
-                    .replace(/\u0000/g, ''),
-                "GeneralTransferManager"
-            );
+            assert.equal(web3.utils.toAscii(log.args._name).replace(/\u0000/g, ""), "GeneralTransferManager");
         });
 
         it("Should intialize the auto attached modules", async () => {
@@ -162,14 +158,14 @@ contract('VestingEscrowWallet', accounts => {
         });
 
         it("Should successfully attach the General permission manager factory with the security token", async () => {
-            const tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x", 0, 0, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x", new BN(0), new BN(0), { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), delegateManagerKey, "General Permission Manager doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
                 "GeneralPermissionManager",
                 "GeneralPermissionManagerFactory module was not added"
             );
-            I_GeneralPermissionManager = GeneralPermissionManager.at(tx.logs[2].args._module);
+            I_GeneralPermissionManager = await GeneralPermissionManager.at(tx.logs[2].args._module);
         });
 
         it("Should successfully attach the VestingEscrowWallet with the security token", async () => {

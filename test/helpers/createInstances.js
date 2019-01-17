@@ -275,7 +275,7 @@ export async function deployGTMAndVerifyed(accountPolymath, MRProxyInstance, set
     return Promise.all(new Array(I_GeneralTransferManagerFactory));
 }
 
-export async function deployVRTMAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+export async function deployVRTMAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
     I_VolumeRestrictionTMLogic = await VolumeRestrictionTM.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
 
     I_VolumeRestrictionTMFactory = await VolumeRestrictionTMFactory.new(setupCost, 0, 0, I_VolumeRestrictionTMLogic.address, { from: accountPolymath });

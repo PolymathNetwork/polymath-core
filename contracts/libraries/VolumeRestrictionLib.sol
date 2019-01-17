@@ -66,7 +66,7 @@ library VolumeRestrictionLib {
             return _callFrom;
     }
 
-    function getRestrictedData(
+    function getRestrictionData(
         VolumeRestrictionTMStorage.RestrictedData storage _holderData,
         VolumeRestrictionTMStorage.IndividualRestrictions storage _individualRestrictions
     ) public view returns(

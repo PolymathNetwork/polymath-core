@@ -180,7 +180,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         _checkInputParams(_allowedTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType, now);
 
         if (individualRestrictions.individualRestriction[_holder].endTime != 0) {
-            _removeIndividualRestriction(_holder);
+            removeIndividualRestriction(_holder);
         }
         individualRestrictions.individualRestriction[_holder] = VolumeRestriction(
             _allowedTokens,
@@ -269,7 +269,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         );
         _checkInputParams(_allowedTokens, _startTime, 1, _endTime, _restrictionType, now);
         if (individualRestrictions.individualDailyRestriction[_holder].endTime != 0) {
-            _removeIndividualDailyRestriction(_holder);
+            removeIndividualDailyRestriction(_holder);
         }
         individualRestrictions.individualDailyRestriction[_holder] = VolumeRestriction(
             _allowedTokens,
@@ -475,12 +475,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
      * @notice use to remove the individual restriction for a given address
      * @param _holder Address of the user
      */
-    function removeIndividualRestriction(address _holder) external withPerm(ADMIN) {
-        _removeIndividualRestriction(_holder);
-    }
-
-    /// @notice Internal function to facilitate the removal of individual restriction
-    function _removeIndividualRestriction(address _holder) internal {
+    function removeIndividualRestriction(address _holder) public withPerm(ADMIN) {
         require(_holder != address(0));
         require(individualRestrictions.individualRestriction[_holder].endTime != 0);
         individualRestrictions.individualRestriction[_holder] = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
@@ -495,9 +490,9 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
      * @notice use to remove the individual restriction for a given address
      * @param _holders Array of address of the user
      */
-    function removeIndividualRestrictionMulti(address[] calldata _holders) external withPerm(ADMIN) {
+    function removeIndividualRestrictionMulti(address[] calldata _holders) external {
         for (uint256 i = 0; i < _holders.length; i++) {
-            _removeIndividualRestriction(_holders[i]);
+            removeIndividualRestriction(_holders[i]);
         }
     }
 
@@ -505,12 +500,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
      * @notice use to remove the individual daily restriction for a given address
      * @param _holder Address of the user
      */
-    function removeIndividualDailyRestriction(address _holder) external withPerm(ADMIN) {
-        _removeIndividualDailyRestriction(_holder);
-    }
-
-    /// @notice Internal function to facilitate the removal of individual daily restriction
-    function _removeIndividualDailyRestriction(address _holder) internal {
+    function removeIndividualDailyRestriction(address _holder) public withPerm(ADMIN) {
         require(_holder != address(0));
         require(individualRestrictions.individualDailyRestriction[_holder].endTime != 0);
         individualRestrictions.individualDailyRestriction[_holder] = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
@@ -523,9 +513,9 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
      * @notice use to remove the individual daily restriction for a given address
      * @param _holders Array of address of the user
      */
-    function removeIndividualDailyRestrictionMulti(address[] calldata _holders) external withPerm(ADMIN) {
+    function removeIndividualDailyRestrictionMulti(address[] calldata _holders) external {
         for (uint256 i = 0; i < _holders.length; i++) {
-            _removeIndividualDailyRestriction(_holders[i]);
+            removeIndividualDailyRestriction(_holders[i]);
         }
     }
 
@@ -564,29 +554,8 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         uint256 _endTime,
         uint256 _restrictionType
     )
-        external
+        public
         withPerm(ADMIN)
-    {
-        _modifyIndividualRestriction(
-            _holder,
-            _allowedTokens,
-            _startTime,
-            _rollingPeriodInDays,
-            _endTime,
-            _restrictionType
-        );
-    }
-
-    /// @notice Internal function to facilitate the modification of individual restriction
-    function _modifyIndividualRestriction(
-        address _holder,
-        uint256 _allowedTokens,
-        uint256 _startTime,
-        uint256 _rollingPeriodInDays,
-        uint256 _endTime,
-        uint256 _restrictionType
-    )
-        internal
     {
         if (_startTime == 0) {
             _startTime = now;
@@ -607,7 +576,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
             _rollingPeriodInDays,
             _endTime,
             _restrictionType
-        );
+      );
     }
 
     /**
@@ -627,34 +596,14 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         uint256 _endTime,
         uint256 _restrictionType
     )
-        external
+        public
         withPerm(ADMIN)
-    {
-        _modifyIndividualDailyRestriction(
-            _holder,
-            _allowedTokens,
-            _startTime,
-            _endTime,
-            _restrictionType
-        );
-    }
-
-    /// @notice Internal function to facilitate the modification of individual daily restriction
-    function _modifyIndividualDailyRestriction(
-        address _holder,
-        uint256 _allowedTokens,
-        uint256 _startTime,
-        uint256 _endTime,
-        uint256 _restrictionType
-    )
-        internal
     {
         if (_startTime == 0) {
             _startTime = now;
         }
-        _checkInputParams(_allowedTokens, _startTime, 1, _endTime, _restrictionType,
-          (individualRestrictions.individualDailyRestriction[_holder].startTime <= now ? individualRestrictions.individualDailyRestriction[_holder].startTime : now)
-        );
+        uint checkTime = (individualRestrictions.individualDailyRestriction[_holder].startTime <= now ? individualRestrictions.individualDailyRestriction[_holder].startTime : now);
+        _checkInputParams(_allowedTokens, _startTime, 1, _endTime, _restrictionType, checkTime);
         individualRestrictions.individualDailyRestriction[_holder] = VolumeRestriction(
             _allowedTokens,
             _startTime,
@@ -688,12 +637,11 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         uint256[] memory _restrictionTypes
     )
         public
-        withPerm(ADMIN)
     {
         //NB - we duplicate _startTimes below to allow function reuse
         VolumeRestrictionLib._checkLengthOfArray(_holders, _allowedTokens, _startTimes, _startTimes, _endTimes, _restrictionTypes);
         for (uint256 i = 0; i < _holders.length; i++) {
-            _modifyIndividualDailyRestriction(
+            modifyIndividualDailyRestriction(
                 _holders[i],
                 _allowedTokens[i],
                 _startTimes[i],
@@ -721,11 +669,10 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         uint256[] memory _restrictionTypes
     )
         public
-        withPerm(ADMIN)
     {
         VolumeRestrictionLib._checkLengthOfArray(_holders, _allowedTokens, _startTimes, _rollingPeriodInDays, _endTimes, _restrictionTypes);
         for (uint256 i = 0; i < _holders.length; i++) {
-            _modifyIndividualRestriction(
+            modifyIndividualRestriction(
                 _holders[i],
                 _allowedTokens[i],
                 _startTimes[i],
@@ -881,7 +828,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         BucketDetails memory bucketDetails = bucketData.userToBucket[_from];
         VolumeRestriction memory dailyRestriction = individualRestrictions.individualDailyRestriction[_from];
         VolumeRestriction memory restriction = individualRestrictions.individualRestriction[_from];
-        uint256 daysCovered = individualRestrictions.individualRestriction[_from].rollingPeriodInDays;
+        uint256 daysCovered = restriction.rollingPeriodInDays;
         uint256 fromTimestamp = 0;
         uint256 sumOfLastPeriod = 0;
         uint256 dailyTime = 0;
@@ -1165,6 +1112,32 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         return exemptions.exemptAddresses;
     }
 
+    function getIndividualRestrictions(address _investor) external view returns(uint256, uint256, uint256, uint256, RestrictionType) {
+        return _volumeRestrictionSplay(individualRestrictions.individualRestriction[_investor]);
+    }
+
+    function getIndividualDailyRestrictions(address _investor) external view returns(uint256, uint256, uint256, uint256, RestrictionType) {
+        return _volumeRestrictionSplay(individualRestrictions.individualDailyRestriction[_investor]);
+    }
+
+    function getDefaultRestrictions() external view returns(uint256, uint256, uint256, uint256, RestrictionType) {
+        return _volumeRestrictionSplay(globalRestrictions.defaultRestriction);
+    }
+
+    function getDefaultDailyRestrictions() external view returns(uint256, uint256, uint256, uint256, RestrictionType) {
+        return _volumeRestrictionSplay(globalRestrictions.defaultDailyRestriction);
+    }
+
+    function _volumeRestrictionSplay(VolumeRestriction memory _volumeRestriction) internal pure returns(uint256, uint256, uint256, uint256, RestrictionType) {
+        return (
+            _volumeRestriction.allowedTokens,
+            _volumeRestriction.startTime,
+            _volumeRestriction.rollingPeriodInDays,
+            _volumeRestriction.endTime,
+            _volumeRestriction.typeOfRestriction
+        );
+    }
+
     /**
      * @notice Provide the restriction details of all the restricted addresses
      * @return address List of the restricted addresses
@@ -1175,7 +1148,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
      * @return uint8 List of the type of restriction to validate the value of the `allowedTokens`
      * of the restriction corresponds to restricted address
      */
-    function getRestrictedData() external view returns(
+    function getRestrictionData() external view returns(
         address[] memory allAddresses,
         uint256[] memory allowedTokens,
         uint256[] memory startTime,
@@ -1211,7 +1184,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
             }
             counter ++;
         } */
-        return VolumeRestrictionLib.getRestrictedData(holderData, individualRestrictions);
+        return VolumeRestrictionLib.getRestrictionData(holderData, individualRestrictions);
     }
 
 

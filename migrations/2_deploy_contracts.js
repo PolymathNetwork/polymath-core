@@ -302,7 +302,7 @@ module.exports = function(deployer, network, accounts) {
         .then(() => {
             // D) Deploy the VolumeRestrictionTMFactory Contract (Factory used to generate the VolumeRestrictionTM contract use
             // to provide the functionality of restricting the token volume)
-            return deployer.deploy(VolumeRestrictionTMFactory, PolyToken, 0, 0, 0, VolumeRestrictionTMLogic.address, { from: PolymathAccount });
+            return deployer.deploy(VolumeRestrictionTMFactory, new BN(0), new BN(0), new BN(0), VolumeRestrictionTMLogic.address, { from: PolymathAccount });
         })
         .then(() => {
             // D) Deploy the ManualApprovalTransferManagerFactory Contract (Factory used to generate the ManualApprovalTransferManager contract use

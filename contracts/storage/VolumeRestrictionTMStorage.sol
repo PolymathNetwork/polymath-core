@@ -45,10 +45,15 @@ contract VolumeRestrictionTMStorage {
     VolumeRestriction public defaultRestriction;
     // Daily global restriction that applies to all token holders (Total ST traded daily is restricted)
     VolumeRestriction public defaultDailyRestriction;
-    // Restriction stored corresponds to a particular token holder
-    mapping(address => VolumeRestriction) public individualRestriction;
-    // Daily restriction stored corresponds to a particular token holder
-    mapping(address => VolumeRestriction) public individualDailyRestriction;
+
+    struct Restrictions {
+        // Restriction stored corresponds to a particular token holder
+        mapping(address => VolumeRestriction) individualRestriction;
+        // Daily restriction stored corresponds to a particular token holder
+        mapping(address => VolumeRestriction) individualDailyRestriction;
+    }
+
+    Restrictions restrictions;
     // Storing _from => day's timestamp => total amount transact in a day --individual
     mapping(address => mapping(uint256 => uint256)) internal bucket;
     // Storing the information that used to validate the transaction

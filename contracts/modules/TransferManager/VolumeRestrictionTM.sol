@@ -200,48 +200,6 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         );
     }
 
-    /// @notice Internal function to facilitate the addition of individual restriction
-    /* function _addIndividualRestriction(
-        address _holder,
-        uint256 _allowedTokens,
-        uint256 _startTime,
-        uint256 _rollingPeriodInDays,
-        uint256 _endTime,
-        uint256 _restrictionType
-    )
-        internal
-    {
-        require(
-            individualRestrictions.individualRestriction[_holder].endTime < now,
-            "Not Allowed"
-        );
-        if (_startTime == 0) {
-            _startTime = now;
-        }
-        require(_holder != address(0) && exemptions.exemptIndex[_holder] == 0, "Invalid address");
-        _checkInputParams(_allowedTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType, now);
-
-        if (individualRestrictions.individualRestriction[_holder].endTime != 0) {
-            _removeIndividualRestriction(_holder);
-        }
-        individualRestrictions.individualRestriction[_holder] = VolumeRestriction(
-            _allowedTokens,
-            _startTime,
-            _rollingPeriodInDays,
-            _endTime,
-            RestrictionType(_restrictionType)
-        );
-        VolumeRestrictionLib.addRestrictionData(holderData, _holder, uint8(TypeOfPeriod.MultipleDays), individualRestrictions.individualRestriction[_holder].endTime);
-        emit AddIndividualRestriction(
-            _holder,
-            _allowedTokens,
-            _startTime,
-            _rollingPeriodInDays,
-            _endTime,
-            _restrictionType
-        );
-    } */
-
     /**
      * @notice Use to add the new individual daily restriction for all token holder
      * @param _holder Address of the token holder, whom restriction will be implied
@@ -288,42 +246,6 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
             _restrictionType
       );
     }
-
-    /// @notice Internal function to facilitate the addition of individual daily restriction
-    /* function _addIndividualDailyRestriction(
-        address _holder,
-        uint256 _allowedTokens,
-        uint256 _startTime,
-        uint256 _endTime,
-        uint256 _restrictionType
-    )
-        internal
-    {
-        if (_startTime == 0) {
-            _startTime = now;
-        }
-        require(
-            individualRestrictions.individualDailyRestriction[_holder].endTime < now,
-            "Not Allowed"
-        );
-        _checkInputParams(_allowedTokens, _startTime, 1, _endTime, _restrictionType, now);
-        individualRestrictions.individualDailyRestriction[_holder] = VolumeRestriction(
-            _allowedTokens,
-            _startTime,
-            1,
-            _endTime,
-            RestrictionType(_restrictionType)
-        );
-        VolumeRestrictionLib.addRestrictionData(holderData, _holder, uint8(TypeOfPeriod.OneDay), individualRestrictions.individualRestriction[_holder].endTime);
-        emit AddIndividualDailyRestriction(
-            _holder,
-            _allowedTokens,
-            _startTime,
-            1,
-            _endTime,
-            _restrictionType
-        );
-    } */
 
     /**
      * @notice Use to add the new individual daily restriction for multiple token holders
@@ -1156,34 +1078,6 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         uint256[] memory endTime,
         uint8[] memory typeOfRestriction
     ) {
-        /* uint256 counter = 0;
-        uint256 i = 0;
-        for (i = 0; i < holderData.restrictedAddresses.length; i++) {
-            counter = counter + (holderData.restrictedHolders[holderData.restrictedAddresses[i]].typeOfPeriod == uint8(2) ? 2 : 1);
-        }
-        allAddresses = new address[](counter);
-        allowedTokens = new uint256[](counter);
-        startTime = new uint256[](counter);
-        rollingPeriodInDays = new uint256[](counter);
-        endTime = new uint256[](counter);
-        typeOfRestriction = new uint8[](counter);
-        counter = 0;
-        for (i = 0; i < holderData.restrictedAddresses.length; i++) {
-            allAddresses[counter] =  holderData.restrictedAddresses[i];
-            if (holderData.restrictedHolders[holderData.restrictedAddresses[i]].typeOfPeriod == uint8(TypeOfPeriod.MultipleDays)) {
-                _setValues(individualRestrictions.individualRestriction[holderData.restrictedAddresses[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
-            }
-            else if (holderData.restrictedHolders[holderData.restrictedAddresses[i]].typeOfPeriod == uint8(TypeOfPeriod.OneDay)) {
-                _setValues(individualRestrictions.individualDailyRestriction[holderData.restrictedAddresses[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
-            }
-            else if (holderData.restrictedHolders[holderData.restrictedAddresses[i]].typeOfPeriod == uint8(TypeOfPeriod.Both)) {
-                _setValues(individualRestrictions.individualRestriction[holderData.restrictedAddresses[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
-                counter = counter + 1;
-                allAddresses[counter] =  holderData.restrictedAddresses[i];
-                _setValues(individualRestrictions.individualDailyRestriction[holderData.restrictedAddresses[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
-            }
-            counter ++;
-        } */
         return VolumeRestrictionLib.getRestrictionData(holderData, individualRestrictions);
     }
 

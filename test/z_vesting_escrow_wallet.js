@@ -129,10 +129,6 @@ contract('VestingEscrowWallet', accounts => {
         `);
     });
 
-    beforeEach(async () => {
-        currentTime = new BN(await latestTime());
-    });
-
     describe("Generate the SecurityToken", async() => {
 
         it("Should register the ticker before the generation of the security token", async () => {
@@ -196,8 +192,6 @@ contract('VestingEscrowWallet', accounts => {
         });
 
         it("Should Buy the tokens for token_owner", async() => {
-            console.log("I_GeneralTransferManager=" + I_GeneralTransferManager);
-
             // Add the Investor in to the whitelist
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 token_owner,
@@ -518,68 +512,65 @@ contract('VestingEscrowWallet', accounts => {
     });
 
     describe("Adding, modifying and revoking vesting schedule", async () => {
-        currentTime = new BN(await latestTime());
         let template_2_01 = web3.utils.toHex("template-2-01");
-        let startTime = currentTime.add(new BN(durationUtil.days(1)));
-
 
         let schedules = [
             {
                 templateName: web3.utils.toHex("template-2-01"),
                 numberOfTokens: 100000,
-                duration: durationUtil.years(4),
-                frequency: durationUtil.years(1),
-                startTime: currentTime.add(new BN(durationUtil.days(1)))
+                duration: new BN(durationUtil.years(4)),
+                frequency: new BN(durationUtil.years(1)),
+                // startTime: currentTime.add(new BN(durationUtil.days(1)))
             },
             {
                 templateName: web3.utils.toHex("template-2-02"),
                 numberOfTokens: 30000,
-                duration: durationUtil.weeks(6),
-                frequency: durationUtil.weeks(1),
-                startTime: currentTime.add(new BN(durationUtil.days(2)))
+                duration: new BN(durationUtil.weeks(6)),
+                frequency: new BN(durationUtil.weeks(1)),
+                // startTime: currentTime.add(new BN(durationUtil.days(2)))
             },
             {
                 templateName: web3.utils.toHex("template-2-03"),
                 numberOfTokens: 2000,
-                duration: durationUtil.days(10),
-                frequency: durationUtil.days(2),
-                startTime: currentTime.add(new BN(durationUtil.days(3)))
+                duration: new BN(durationUtil.days(10)),
+                frequency: new BN(durationUtil.days(2)),
+                // startTime: currentTime.add(new BN(durationUtil.days(3)))
             }
         ];
 
         it("Should fail to add vesting schedule to the beneficiary address -- fail because address in invalid", async () => {
             await catchRevert(
-                I_VestingEscrowWallet.addSchedule(address_zero, template_2_01, 100000, 4, 1, startTime, {from: wallet_admin})
+                I_VestingEscrowWallet.addSchedule(address_zero, template_2_01, 100000, 4, 1, currentTime.add(new BN(durationUtil.days(1))), {from: wallet_admin})
             );
         });
 
         it("Should fail to add vesting schedule to the beneficiary address -- fail because start date in the past", async () => {
             await catchRevert(
-                I_VestingEscrowWallet.addSchedule(account_beneficiary1, template_2_01, 100000, 4, 1, startTime, {from: wallet_admin})
+                I_VestingEscrowWallet.addSchedule(account_beneficiary1, template_2_01, 100000, 4, 1, currentTime.add(new BN(durationUtil.days(1))), {from: wallet_admin})
             );
         });
 
         it("Should fail to add vesting schedule to the beneficiary address -- fail because number of tokens is 0", async () => {
             await catchRevert(
-                I_VestingEscrowWallet.addSchedule(account_beneficiary1, template_2_01, 0, 4, 1, startTime, {from: wallet_admin})
+                I_VestingEscrowWallet.addSchedule(account_beneficiary1, template_2_01, 0, 4, 1, currentTime.add(new BN(durationUtil.days(1))), {from: wallet_admin})
             );
         });
 
         it("Should fail to add vesting schedule to the beneficiary address -- fail because duration can't be divided entirely by frequency", async () => {
             await catchRevert(
-                I_VestingEscrowWallet.addSchedule(account_beneficiary1, template_2_01, 100000, 4, 3, startTime, {from: wallet_admin})
+                I_VestingEscrowWallet.addSchedule(account_beneficiary1, template_2_01, 100000, 4, 3, currentTime.add(new BN(durationUtil.days(1))), {from: wallet_admin})
             );
         });
 
         it("Should fail to add vesting schedule to the beneficiary address -- fail because number of tokens can't be divided entirely by period count", async () => {
             await catchRevert(
-                I_VestingEscrowWallet.addSchedule(account_beneficiary1, template_2_01, 5, 4, 1, startTime, {from: wallet_admin})
+                I_VestingEscrowWallet.addSchedule(account_beneficiary1, template_2_01, 5, 4, 1, currentTime.add(new BN(durationUtil.days(1))), {from: wallet_admin})
             );
         });
 
         it("Should fail to get vesting schedule -- fail because address is invalid", async () => {
             await catchRevert(
-                I_VestingEscrowWallet.getSchedule(0, template_2_01)
+                I_VestingEscrowWallet.getSchedule(address_zero, template_2_01)
             );
         });
 
@@ -592,16 +583,17 @@ contract('VestingEscrowWallet', accounts => {
 
         it("Should fail to get count of vesting schedule -- fail because address is invalid", async () => {
             await catchRevert(
-                I_VestingEscrowWallet.getScheduleCount(0)
+                I_VestingEscrowWallet.getScheduleCount(address_zero)
             );
         });
 
         it("Should not be able to add schedule -- fail because of permissions check", async () => {
+            currentTime = new BN(await latestTime());
             let templateName = schedules[0].templateName;
             let numberOfTokens = schedules[0].numberOfTokens;
             let duration = schedules[0].duration;
             let frequency = schedules[0].frequency;
-            let startTime = schedules[0].startTime;
+            let startTime = currentTime.add(new BN(durationUtil.days(1)));
             await I_SecurityToken.approve(I_VestingEscrowWallet.address, numberOfTokens, {from: token_owner});
             await I_VestingEscrowWallet.depositTokens(numberOfTokens, {from: token_owner});
             await catchRevert(
@@ -612,11 +604,12 @@ contract('VestingEscrowWallet', accounts => {
         });
 
         it("Should add vesting schedule to the beneficiary address", async () => {
+            currentTime = new BN(await latestTime());
             let templateName = schedules[0].templateName;
             let numberOfTokens = schedules[0].numberOfTokens;
             let duration = schedules[0].duration;
             let frequency = schedules[0].frequency;
-            let startTime = schedules[0].startTime;
+            let startTime = currentTime.add(new BN(durationUtil.days(1)));
             await I_SecurityToken.approve(I_VestingEscrowWallet.address, numberOfTokens, {from: token_owner});
             await I_VestingEscrowWallet.depositTokens(numberOfTokens, {from: token_owner});
             const tx = await I_VestingEscrowWallet.addSchedule(account_beneficiary1, templateName, numberOfTokens, duration, frequency, startTime, {from: wallet_admin});
@@ -631,15 +624,16 @@ contract('VestingEscrowWallet', accounts => {
             checkSchedule(schedule, numberOfTokens, duration, frequency, startTime, CREATED);
 
             let templates = await I_VestingEscrowWallet.getTemplateNames.call(account_beneficiary1);
-            assert.equal(web3.utils.hexToUtf8(templates[0]), templateName);
+            assert.equal(web3.utils.hexToUtf8(templates[0]), web3.utils.hexToUtf8(templateName));
         });
 
         it("Should add vesting schedule without depositing to the beneficiary address", async () => {
+            currentTime = new BN(await latestTime());
             let templateName = web3.utils.toHex("template-2-01-2");
             let numberOfTokens = schedules[0].numberOfTokens;
             let duration = schedules[0].duration;
             let frequency = schedules[0].frequency;
-            let startTime = schedules[0].startTime;
+            let startTime = currentTime.add(new BN(durationUtil.days(1)));
             await I_SecurityToken.approve(I_VestingEscrowWallet.address, numberOfTokens, {from: token_owner});
             const tx = await I_VestingEscrowWallet.addSchedule(account_beneficiary1, templateName, numberOfTokens, duration, frequency, startTime, {from: token_owner});
 
@@ -660,8 +654,9 @@ contract('VestingEscrowWallet', accounts => {
         });
 
         it("Should fail to modify vesting schedule -- fail because schedule not found", async () => {
+            currentTime = new BN(await latestTime());
             let templateName = web3.utils.toHex("template-2-03");
-            let startTime = schedules[0].startTime;
+            let startTime = currentTime.add(new BN(durationUtil.days(1)));
             await catchRevert(
                 I_VestingEscrowWallet.modifySchedule(account_beneficiary1, templateName, startTime, {from: wallet_admin})
             );
@@ -674,11 +669,12 @@ contract('VestingEscrowWallet', accounts => {
         });
 
         it("Should modify vesting schedule for the beneficiary's address", async () => {
+            currentTime = new BN(await latestTime());
             let templateName = web3.utils.toHex("template-2-01");
             let numberOfTokens = schedules[0].numberOfTokens;
             let duration = schedules[0].duration;
             let frequency = schedules[0].frequency;
-            let startTime = schedules[1].startTime;
+            let startTime = currentTime.add(new BN(durationUtil.days(2)));
             const tx = await I_VestingEscrowWallet.modifySchedule(account_beneficiary1, templateName, startTime, {from: wallet_admin});
 
             checkScheduleLog(tx.logs[0], account_beneficiary1, templateName, startTime);
@@ -686,24 +682,24 @@ contract('VestingEscrowWallet', accounts => {
             let scheduleCount = await I_VestingEscrowWallet.getScheduleCount.call(account_beneficiary1);
             assert.equal(scheduleCount.toString(), 1);
 
-            let schedule = await I_VestingEscrowWallet.getSchedule.call(account_beneficiary1, "template-2-01");
+            let schedule = await I_VestingEscrowWallet.getSchedule.call(account_beneficiary1, templateName);
             checkSchedule(schedule, numberOfTokens, duration, frequency, startTime, CREATED);
         });
 
         it("Should not be able to revoke schedule -- fail because of permissions check", async () => {
             await catchRevert(
-                I_VestingEscrowWallet.revokeSchedule(account_beneficiary1, "template-2-01", {from: account_beneficiary1})
+                I_VestingEscrowWallet.revokeSchedule(account_beneficiary1, web3.utils.toHex("template-2-01"), {from: account_beneficiary1})
             );
         });
 
         it("Should revoke vesting schedule from the beneficiary address", async () => {
-            let templateName = "template-2-01";
+            let templateName = web3.utils.toHex("template-2-01");
             const tx = await I_VestingEscrowWallet.revokeSchedule(account_beneficiary1, templateName, {from: wallet_admin});
             let unassignedTokens = await I_VestingEscrowWallet.unassignedTokens.call();
             await I_VestingEscrowWallet.sendToTreasury(unassignedTokens, {from: wallet_admin});
 
             assert.equal(tx.logs[0].args._beneficiary, account_beneficiary1);
-            assert.equal(web3.utils.hexToUtf8(tx.logs[0].args._templateName), templateName);
+            assert.equal(web3.utils.hexToUtf8(tx.logs[0].args._templateName), web3.utils.hexToUtf8(templateName));
 
             let scheduleCount = await I_VestingEscrowWallet.getScheduleCount.call(account_beneficiary1);
             assert.equal(scheduleCount, 0);
@@ -713,23 +709,29 @@ contract('VestingEscrowWallet', accounts => {
 
         it("Should fail to revoke vesting schedule -- fail because address is invalid", async () => {
             await catchRevert(
-                I_VestingEscrowWallet.revokeSchedule(0, "template-2-01", {from: wallet_admin})
+                I_VestingEscrowWallet.revokeSchedule(address_zero, web3.utils.toHex("template-2-01"), {from: wallet_admin})
             );
         });
 
         it("Should fail to revoke vesting schedule -- fail because schedule not found", async () => {
             await catchRevert(
-                I_VestingEscrowWallet.revokeSchedule(account_beneficiary1, "template-2-02", {from: wallet_admin})
+                I_VestingEscrowWallet.revokeSchedule(account_beneficiary1, web3.utils.toHex("template-2-02"), {from: wallet_admin})
             );
         });
 
         it("Should fail to revoke vesting schedules -- fail because address is invalid", async () => {
             await catchRevert(
-                I_VestingEscrowWallet.revokeAllSchedules(0, {from: wallet_admin})
+                I_VestingEscrowWallet.revokeAllSchedules(address_zero, {from: wallet_admin})
             );
         });
 
         it("Should add 3 vesting schedules to the beneficiary address", async () => {
+            currentTime = new BN(await latestTime());
+            let startTimes = [
+                currentTime.add(new BN(durationUtil.days(1))),
+                currentTime.add(new BN(durationUtil.days(2))),
+                currentTime.add(new BN(durationUtil.days(3)))
+            ];
             let totalNumberOfTokens = getTotalNumberOfTokens(schedules);
             await I_SecurityToken.approve(I_VestingEscrowWallet.address, totalNumberOfTokens, {from: token_owner});
             await I_VestingEscrowWallet.depositTokens(totalNumberOfTokens, {from: token_owner});
@@ -738,7 +740,7 @@ contract('VestingEscrowWallet', accounts => {
                 let numberOfTokens = schedules[i].numberOfTokens;
                 let duration = schedules[i].duration;
                 let frequency = schedules[i].frequency;
-                let startTime = schedules[i].startTime;
+                let startTime = startTimes[i];
                 const tx = await I_VestingEscrowWallet.addSchedule(account_beneficiary2, templateName, numberOfTokens, duration, frequency, startTime, {from: wallet_admin});
 
                 checkTemplateLog(tx.logs[0], templateName, numberOfTokens, duration, frequency);
@@ -849,29 +851,27 @@ contract('VestingEscrowWallet', accounts => {
     });
 
     describe("Adding, using and removing templates", async () => {
-        currentTime = new BN(await latestTime());
-
         let schedules = [
             {
                 templateName: web3.utils.toHex("template-4-01"),
                 numberOfTokens: 100000,
                 duration: new BN(durationUtil.years(4)),
                 frequency: new BN(durationUtil.years(1)),
-                startTime: currentTime.add(new BN(durationUtil.days(1)))
+                // startTime: currentTime.add(new BN(durationUtil.days(1)))
             },
             {
                 templateName: web3.utils.toHex("template-4-02"),
                 numberOfTokens: 30000,
                 duration: new BN(durationUtil.weeks(6)),
                 frequency: new BN(durationUtil.weeks(1)),
-                startTime: currentTime.add(new BN(durationUtil.days(2)))
+                // startTime: currentTime.add(new BN(durationUtil.days(2)))
             },
             {
                 templateName: web3.utils.toHex("template-4-03"),
                 numberOfTokens: 2000,
                 duration: new BN(durationUtil.days(10)),
                 frequency: new BN(durationUtil.days(2)),
-                startTime: currentTime.add(new BN(durationUtil.days(3)))
+                // startTime: currentTime.add(new BN(durationUtil.days(3)))
             }
         ];
 
@@ -1004,6 +1004,7 @@ contract('VestingEscrowWallet', accounts => {
         let templateNames = [web3.utils.toHex("template-5-01"), web3.utils.toHex("template-5-02"), web3.utils.toHex("template-5-03")];
 
         it("Should not be able to add schedules to the beneficiaries -- fail because of permissions check", async () => {
+            currentTime = new BN(await latestTime());
             let startTime = currentTime.add(new BN(100));
             let startTimes = [startTime, startTime, startTime];
             await catchRevert(
@@ -1040,8 +1041,8 @@ contract('VestingEscrowWallet', accounts => {
             for (let i = 0; i < beneficiaries.length; i++) {
                 let templateName = templateNames[i];
                 let beneficiary = beneficiaries[i];
-                checkTemplateLog(tx.logs[i*  2], web3.utils.toAscii(templateName), numberOfTokens[i], durations[i], frequencies[i]);
-                checkScheduleLog(tx.logs[i * 2 + 1], beneficiary, web3.utils.toAscii(templateName), startTimes[i]);
+                checkTemplateLog(tx.logs[i*  2], templateName, numberOfTokens[i], durations[i], frequencies[i]);
+                checkScheduleLog(tx.logs[i * 2 + 1], beneficiary, templateName, startTimes[i]);
 
                 let scheduleCount = await I_VestingEscrowWallet.getScheduleCount.call(beneficiary);
                 assert.equal(scheduleCount, 1);
@@ -1070,14 +1071,14 @@ contract('VestingEscrowWallet', accounts => {
         });
 
         it("Should modify vesting schedule for 3 beneficiary's addresses", async () => {
-            let numberOfTokens = [15000, 15000, 15000];
+            let numberOfTokens = [new BN(15000), new BN(15000), new BN(15000)];
             let durations = [new BN(durationUtil.seconds(50)), new BN(durationUtil.seconds(50)), new BN(durationUtil.seconds(50))];
             let frequencies = [new BN(durationUtil.seconds(10)), new BN(durationUtil.seconds(10)), new BN(durationUtil.seconds(10))];
             let timeShift = new BN(durationUtil.seconds(100));
             let startTimes = [currentTime.add(timeShift), currentTime.add(timeShift), currentTime.add(timeShift)];
 
             const tx = await I_VestingEscrowWallet.modifyScheduleMulti(beneficiaries, templateNames, startTimes, {from: wallet_admin});
-            await increaseTime(timeShift.add(frequencies[0]));
+            await increaseTime(110);
 
             for (let i = 0; i < beneficiaries.length; i++) {
                 let log = tx.logs[i];
@@ -1143,6 +1144,7 @@ contract('VestingEscrowWallet', accounts => {
         });
 
         it("Should add schedules from template for 3 beneficiaries", async () => {
+            currentTime = new BN(await latestTime());
             let templateName = web3.utils.toHex("template-6-01");
             let numberOfTokens = 18000;
             let duration = durationUtil.weeks(3);
@@ -1155,7 +1157,7 @@ contract('VestingEscrowWallet', accounts => {
             for (let i = 0; i < beneficiaries.length; i++) {
                 let log = tx.logs[i];
                 let beneficiary = beneficiaries[i];
-                checkScheduleLog(log, beneficiary, templateName, startTimes[i]);
+                checkScheduleLog(log, beneficiary, web3.utils.hexToUtf8(templateName), startTimes[i]);
 
                 let schedule = await I_VestingEscrowWallet.getSchedule.call(beneficiary, templateName);
                 checkSchedule(schedule, numberOfTokens, duration, frequency, startTimes[i], CREATED);
@@ -1189,7 +1191,7 @@ contract('VestingEscrowWallet', accounts => {
 });
 
 function checkTemplateLog(log, templateName, numberOfTokens, duration, frequency) {
-    assert.equal(web3.utils.hexToUtf8(log.args._name), templateName);
+    assert.equal(web3.utils.hexToUtf8(log.args._name), web3.utils.hexToUtf8(templateName));
     assert.equal(log.args._numberOfTokens.toString(), numberOfTokens);
     assert.equal(log.args._duration.toString(), duration);
     assert.equal(log.args._frequency.toString(), frequency);
@@ -1197,7 +1199,7 @@ function checkTemplateLog(log, templateName, numberOfTokens, duration, frequency
 
 function checkScheduleLog(log, beneficiary, templateName, startTime) {
     assert.equal(log.args._beneficiary, beneficiary);
-    assert.equal(web3.utils.hexToUtf8(log.args._templateName), templateName);
+    assert.equal(web3.utils.hexToUtf8(log.args._templateName), web3.utils.hexToUtf8(templateName));
     assert.equal(log.args._startTime.toString(), startTime);
 }
 

@@ -66,4 +66,65 @@ library VolumeRestrictionLib {
             return _callFrom;
     }
 
+    function getRestrictedData(
+        VolumeRestrictionTMStorage.RestrictedData storage _holderData,
+        VolumeRestrictionTMStorage.IndividualRestrictions storage _individualRestrictions
+    ) public view returns(
+        address[] memory allAddresses,
+        uint256[] memory allowedTokens,
+        uint256[] memory startTime,
+        uint256[] memory rollingPeriodInDays,
+        uint256[] memory endTime,
+        uint8[] memory typeOfRestriction
+    )
+    {
+        uint256 counter = 0;
+        uint256 i = 0;
+        for (i = 0; i < _holderData.restrictedAddresses.length; i++) {
+            counter = counter + (_holderData.restrictedHolders[_holderData.restrictedAddresses[i]].typeOfPeriod == uint8(2) ? 2 : 1);
+        }
+        allAddresses = new address[](counter);
+        allowedTokens = new uint256[](counter);
+        startTime = new uint256[](counter);
+        rollingPeriodInDays = new uint256[](counter);
+        endTime = new uint256[](counter);
+        typeOfRestriction = new uint8[](counter);
+        counter = 0;
+        for (i = 0; i < _holderData.restrictedAddresses.length; i++) {
+            allAddresses[counter] =  _holderData.restrictedAddresses[i];
+            if (_holderData.restrictedHolders[_holderData.restrictedAddresses[i]].typeOfPeriod == uint8(VolumeRestrictionTMStorage.TypeOfPeriod.MultipleDays)) {
+                _setValues(_individualRestrictions.individualRestriction[_holderData.restrictedAddresses[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
+            }
+            else if (_holderData.restrictedHolders[_holderData.restrictedAddresses[i]].typeOfPeriod == uint8(VolumeRestrictionTMStorage.TypeOfPeriod.OneDay)) {
+                _setValues(_individualRestrictions.individualDailyRestriction[_holderData.restrictedAddresses[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
+            }
+            else if (_holderData.restrictedHolders[_holderData.restrictedAddresses[i]].typeOfPeriod == uint8(VolumeRestrictionTMStorage.TypeOfPeriod.Both)) {
+                _setValues(_individualRestrictions.individualRestriction[_holderData.restrictedAddresses[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
+                counter++;
+                allAddresses[counter] =  _holderData.restrictedAddresses[i];
+                _setValues(_individualRestrictions.individualDailyRestriction[_holderData.restrictedAddresses[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
+            }
+            counter++;
+        }
+    }
+
+    function _setValues(
+        VolumeRestrictionTMStorage.VolumeRestriction memory restriction,
+        uint256[] memory allowedTokens,
+        uint256[] memory startTime,
+        uint256[] memory rollingPeriodInDays,
+        uint256[] memory endTime,
+        uint8[] memory typeOfRestriction,
+        uint256 index
+    )
+        internal
+        pure
+    {
+        allowedTokens[index] = restriction.allowedTokens;
+        startTime[index] = restriction.startTime;
+        rollingPeriodInDays[index] = restriction.rollingPeriodInDays;
+        endTime[index] = restriction.endTime;
+        typeOfRestriction[index] = uint8(restriction.typeOfRestriction);
+    }
+
 }

@@ -190,14 +190,15 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
     )
         internal
     {
-
-        if (_startTime == 0) {
-            _startTime = now;
-        }
+//individualRestrictions, exemptions,
+//_checkInputParams, _removeIndividualRestriction
         require(
             individualRestrictions.individualRestriction[_holder].endTime < now,
             "Not Allowed"
         );
+        if (_startTime == 0) {
+            _startTime = now;
+        }
         require(_holder != address(0) && exemptions.exemptIndex[_holder] == 0, "Invalid address");
         _checkInputParams(_allowedTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType, now);
 
@@ -1145,7 +1146,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         uint256[] memory endTime,
         uint8[] memory typeOfRestriction
     ) {
-        uint256 counter = 0;
+        /* uint256 counter = 0;
         uint256 i = 0;
         for (i = 0; i < holderData.restrictedAddresses.length; i++) {
             counter = counter + (holderData.restrictedHolders[holderData.restrictedAddresses[i]].typeOfPeriod == uint8(2) ? 2 : 1);
@@ -1172,27 +1173,11 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
                 _setValues(individualRestrictions.individualDailyRestriction[holderData.restrictedAddresses[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
             }
             counter ++;
-        }
+        } */
+        return VolumeRestrictionLib.getRestrictedData(holderData, individualRestrictions);
     }
 
-    function _setValues(
-        VolumeRestriction memory restriction,
-        uint256[] memory allowedTokens,
-        uint256[] memory startTime,
-        uint256[] memory rollingPeriodInDays,
-        uint256[] memory endTime,
-        uint8[] memory typeOfRestriction,
-        uint256 index
-    )
-        internal
-        pure
-    {
-        allowedTokens[index] = restriction.allowedTokens;
-        startTime[index] = restriction.startTime;
-        rollingPeriodInDays[index] = restriction.rollingPeriodInDays;
-        endTime[index] = restriction.endTime;
-        typeOfRestriction[index] = uint8(restriction.typeOfRestriction);
-    }
+
 
     /**
      * @notice Returns the permissions flag that are associated with Percentage transfer Manager

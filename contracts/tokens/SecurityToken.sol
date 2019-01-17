@@ -1,10 +1,11 @@
 pragma solidity ^0.5.0;
 
-import "./ERC20.sol";
-import "../RegistryUpdater.sol";
+import "../proxy/Proxy.sol";
+import "../PolymathRegistry.sol";
 import "../libraries/KindMath.sol";
-import "../libraries/TokenLib.sol";
 import "../interfaces/IModule.sol";
+import "./SecurityTokenStorage.sol";
+import "../libraries/TokenLib.sol";
 import "../interfaces/IModuleFactory.sol";
 import "../interfaces/token/IERC1594.sol";
 import "../interfaces/token/IERC1643.sol";
@@ -12,6 +13,9 @@ import "../interfaces/token/IERC1644.sol";
 import "../interfaces/IModuleRegistry.sol";
 import "../interfaces/IFeatureRegistry.sol";
 import "../interfaces/ITransferManager.sol";
+import "openzeppelin-solidity/contracts/utils/Address.sol";
+import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
 
@@ -25,86 +29,9 @@ import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
  * @notice - ST does not inherit from ISecurityToken due to:
  * @notice - https://github.com/ethereum/solidity/issues/4847
  */
-contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater, IERC1594, IERC1643, IERC1644 {
+contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, SecurityTokenStorage, IERC1594, IERC1643, IERC1644, Proxy {
     
     using SafeMath for uint256;
-
-    TokenLib.InvestorDataStorage investorData;
-
-    uint8 constant PERMISSION_KEY = 1;
-    uint8 constant TRANSFER_KEY = 2;
-    uint8 constant MINT_KEY = 3;
-    uint8 constant CHECKPOINT_KEY = 4;
-    uint8 constant BURN_KEY = 5;
-
-    uint256 public granularity;
-
-    // Used to permanently halt controller actions
-    bool public controllerDisabled;
-
-    // Used to temporarily halt all transactions
-    bool public transfersFrozen;
-
-    // Value of current checkpoint
-    uint256 public currentCheckpointId;
-
-    // Records added modules - module list should be order agnostic!
-    mapping(uint8 => address[]) modules;
-
-    // Records information about the module
-    mapping(address => TokenLib.ModuleData) modulesToData;
-
-    // Records added module names - module list should be order agnostic!
-    mapping(bytes32 => address[]) names;
-
-    // Map each investor to a series of checkpoints
-    mapping(address => TokenLib.Checkpoint[]) checkpointBalances;
-
-    // List of checkpoints that relate to total supply
-    TokenLib.Checkpoint[] checkpointTotalSupply;
-
-    // Times at which each checkpoint was created
-    uint256[] checkpointTimes;
-
-    //////////////////////////
-    /// Document datastructure
-    //////////////////////////
-
-    struct Document {
-        bytes32 docHash; // Hash of the document
-        uint256 lastModified; // Timestamp at which document details was last modified
-        string uri; // URI of the document that exist off-chain
-    }
-
-    // Used to hold the semantic version data
-    struct SemanticVersion {
-        uint8 major;
-        uint8 minor;
-        uint8 patch;
-    }
-
-    SemanticVersion securityTokenVersion;
-
-    // off-chain data
-    string public tokenDetails;
-
-    // mapping to store the documents details in the document
-    mapping(bytes32 => Document) internal _documents;
-    // mapping to store the document name indexes
-    mapping(bytes32 => uint256) internal _docIndexes;
-    // Array use to store all the document name present in the contracts
-    bytes32[] _docNames;
-    
-    
-    // Variable which tells whether issuance is ON or OFF forever
-    // Implementers need to implement one more function to reset the value of `issuance` variable
-    // to false. That function is not a part of the standard (EIP-1594) as it is depend on the various factors
-    // issuer, followed compliance rules etc. So issuers have the choice how they want to close the issuance. 
-    bool internal issuance = true;
-
-    // Address of the controller which is a delegated entity
-    // set by the issuer/owner of the token
-    address public controller;
 
     // Emit when transfers are frozen or unfrozen
     event FreezeTransfers(bool _status, uint256 _timestamp);
@@ -195,6 +122,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @param _granularity granular level of the token
      * @param _tokenDetails Details of the token that are stored off-chain
      * @param _polymathRegistry Contract address of the polymath registry
+     * @param _delegate Contract address of the delegate
      */
     constructor(
         string memory _name,
@@ -202,14 +130,18 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         uint8 _decimals,
         uint256 _granularity,
         string memory _tokenDetails,
-        address _polymathRegistry
+        address _polymathRegistry,
+        address _delegate
     ) 
         public
         ERC20Detailed(_name, _symbol, _decimals)
-        RegistryUpdater(_polymathRegistry) 
     {
+        require(_polymathRegistry != address(0), "Invalid address");
+        require(_delegate != address(0), "Invalid address");
+        polymathRegistry = _polymathRegistry;
         //When it is created, the owner is the STR
         updateFromRegistry();
+        delegate = _delegate;
         tokenDetails = _tokenDetails;
         granularity = _granularity;
         securityTokenVersion = SemanticVersion(2, 0, 0);
@@ -257,7 +189,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
             moduleIndexes[i] = modules[moduleTypes[i]].length;
             modules[moduleTypes[i]].push(module);
         }
-        modulesToData[module] = TokenLib.ModuleData(
+        modulesToData[module] = ModuleData(
             moduleName,
             module,
             _moduleFactory,
@@ -302,38 +234,6 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     */
     function removeModule(address _module) external onlyOwner {
         TokenLib.removeModule(_module, modules, modulesToData, names);
-    }
-
-    /**
-     * @notice Returns the data associated to a module
-     * @param _module address of the module
-     * @return bytes32 name
-     * @return address module address
-     * @return address module factory address
-     * @return bool module archived
-     * @return uint8 array of module types
-     * @return bytes32 module label
-     */
-    function getModule(address _module) external view returns(bytes32, address, address, bool, uint8[] memory, bytes32) {
-        return (modulesToData[_module].name, modulesToData[_module].module, modulesToData[_module].moduleFactory, modulesToData[_module].isArchived, modulesToData[_module].moduleTypes, modulesToData[_module].label);
-    }
-
-    /**
-     * @notice Returns a list of modules that match the provided name
-     * @param _name name of the module
-     * @return address[] list of modules with this name
-     */
-    function getModulesByName(bytes32 _name) external view returns(address[] memory) {
-        return names[_name];
-    }
-
-    /**
-     * @notice Returns a list of modules that match the provided module type
-     * @param _type type of the module
-     * @return address[] list of modules with this type
-     */
-    function getModulesByType(uint8 _type) external view returns(address[] memory) {
-        return modules[_type];
     }
 
     /**
@@ -385,66 +285,6 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     */
     function _adjustInvestorCount(address _from, address _to, uint256 _value) internal {
         TokenLib.adjustInvestorCount(investorData, _from, _to, _value, balanceOf(_to), balanceOf(_from));
-    }
-
-    /**
-     * @notice returns an array of investors
-     * NB - this length may differ from investorCount as it contains all investors that ever held tokens
-     * @return list of addresses
-     */
-    function getInvestors() external view returns(address[] memory) {
-        return investorData.investors;
-    }
-
-    /**
-     * @notice returns an array of investors at a given checkpoint
-     * NB - this length may differ from investorCount as it contains all investors that ever held tokens
-     * @param _checkpointId Checkpoint id at which investor list is to be populated
-     * @return list of investors
-     */
-    function getInvestorsAt(uint256 _checkpointId) external view returns(address[] memory) {
-        uint256 count = 0;
-        uint256 i;
-        for (i = 0; i < investorData.investors.length; i++) {
-            if (balanceOfAt(investorData.investors[i], _checkpointId) > 0) {
-                count++;
-            }
-        }
-        address[] memory investors = new address[](count);
-        count = 0;
-        for (i = 0; i < investorData.investors.length; i++) {
-            if (balanceOfAt(investorData.investors[i], _checkpointId) > 0) {
-                investors[count] = investorData.investors[i];
-                count++;
-            }
-        }
-        return investors;
-    }
-
-    /**
-     * @notice generates subset of investors
-     * NB - can be used in batches if investor list is large
-     * @param _start Position of investor to start iteration from
-     * @param _end Position of investor to stop iteration at
-     * @return list of investors
-     */
-    function iterateInvestors(uint256 _start, uint256 _end) external view returns(address[] memory) {
-        require(_end <= investorData.investors.length, "Invalid end");
-        address[] memory investors = new address[](_end.sub(_start));
-        uint256 index = 0;
-        for (uint256 i = _start; i < _end; i++) {
-            investors[index] = investorData.investors[i];
-            index++;
-        }
-        return investors;
-    }
-
-    /**
-     * @notice Returns the investor count
-     * @return Investor count
-     */
-    function getInvestorCount() external view returns(uint256) {
-        return investorData.investorCount;
     }
 
     /**
@@ -711,27 +551,6 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     }
 
     /**
-     * @notice Validate permissions with PermissionManager if it exists, If no Permission return false
-     * @dev Note that IModule withPerm will allow ST owner all permissions anyway
-     * @dev this allows individual modules to override this logic if needed (to not allow ST owner all permissions)
-     * @param _delegate address of delegate
-     * @param _module address of PermissionManager module
-     * @param _perm the permissions
-     * @return success
-     */
-    function checkPermission(address _delegate, address _module, bytes32 _perm) public view returns(bool) {
-        for (uint256 i = 0; i < modules[PERMISSION_KEY].length; i++) {
-            if (!modulesToData[modules[PERMISSION_KEY][i]].isArchived) return TokenLib.checkPermission(
-                modules[PERMISSION_KEY],
-                _delegate,
-                _module,
-                _perm
-            );
-        }
-        return false;
-    }
-
-    /**
      * @notice Creates a checkpoint that can be used to query historical balances / totalSuppy
      * @return uint256
      */
@@ -743,34 +562,6 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         /*solium-disable-next-line security/no-block-members*/
         emit CheckpointCreated(currentCheckpointId, now);
         return currentCheckpointId;
-    }
-
-    /**
-     * @notice Gets list of times that checkpoints were created
-     * @return List of checkpoint times
-     */
-    function getCheckpointTimes() external view returns(uint256[] memory) {
-        return checkpointTimes;
-    }
-
-    /**
-     * @notice Queries totalSupply as of a defined checkpoint
-     * @param _checkpointId Checkpoint ID to query
-     * @return uint256
-     */
-    function totalSupplyAt(uint256 _checkpointId) external view returns(uint256) {
-        require(_checkpointId <= currentCheckpointId);
-        return TokenLib.getValueAt(checkpointTotalSupply, _checkpointId, totalSupply());
-    }
-
-    /**
-     * @notice Queries balances as of a defined checkpoint
-     * @param _investor Investor to query balance for
-     * @param _checkpointId Checkpoint ID to query as of
-     */
-    function balanceOfAt(address _investor, uint256 _checkpointId) public view returns(uint256) {
-        require(_checkpointId <= currentCheckpointId);
-        return TokenLib.getValueAt(checkpointBalances[_investor], _checkpointId, balanceOf(_investor));
     }
 
     /**
@@ -827,7 +618,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      */
     function canTransferFrom(address _from, address _to, uint256 _value, bytes calldata _data) external view returns (bool, byte, bytes32) {
         (bool success, byte reasonCode, bytes32 appCode) = _canTransfer(_from, _to, _value, _data);
-        if (success && _value > _allowed[_from][msg.sender]) {
+        if (success && _value > allowance(_from, msg.sender)) {
             return (false, 0x53, bytes32(0));
         } else 
             return (success, reasonCode, appCode); 
@@ -844,13 +635,13 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         if (!success)
             return (false, 0x50, bytes32(reasonCode));
 
-        else if (_balances[_from] < _value)
+        else if (balanceOf(_from) < _value)
             return (false, 0x52, bytes32(0));
 
         else if (_to == address(0))
             return (false, 0x57, bytes32(0));
 
-        else if (!KindMath.checkAdd(_balances[_to], _value))
+        else if (!KindMath.checkAdd(balanceOf(_to), _value))
             return (false, 0x50, bytes32(0));
         return (true, 0x51, bytes32(0));
     }
@@ -888,29 +679,6 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         _docNames.length--;
         emit DocumentRemoved(_name, _documents[_name].uri, _documents[_name].docHash);
         delete _documents[_name];
-    }
-
-    /**
-     * @notice Used to return the details of a document with a known name (`bytes32`).
-     * @param _name Name of the document
-     * @return string The URI associated with the document.
-     * @return bytes32 The hash (of the contents) of the document.
-     * @return uint256 the timestamp at which the document was last modified.
-     */
-    function getDocument(bytes32 _name) external view returns (string memory, bytes32, uint256) {
-        return (
-            _documents[_name].uri,
-            _documents[_name].docHash,
-            _documents[_name].lastModified
-        );
-    }
-
-    /**
-     * @notice Used to retrieve a full list of documents attached to the smart contract.
-     * @return bytes32 List of all documents names present in the contract.
-     */
-    function getAllDocuments() external view returns (bytes32[] memory) {
-        return _docNames;
     }
 
     /**
@@ -969,15 +737,15 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         emit ControllerRedemption(msg.sender, _tokenHolder, _value, _data, _operatorData);
     }
 
-    /**
-     * @notice Returns the version of the SecurityToken
-     */
-    function getVersion() external view returns(uint8[] memory) {
-        uint8[] memory _version = new uint8[](3);
-        _version[0] = securityTokenVersion.major;
-        _version[1] = securityTokenVersion.minor;
-        _version[2] = securityTokenVersion.patch;
-        return _version;
+    function _implementation() internal view returns(address) {
+        return delegate;
+    }
+
+    function updateFromRegistry() public onlyOwner {
+        moduleRegistry = PolymathRegistry(polymathRegistry).getAddress("ModuleRegistry");
+        securityTokenRegistry = PolymathRegistry(polymathRegistry).getAddress("SecurityTokenRegistry");
+        featureRegistry = PolymathRegistry(polymathRegistry).getAddress("FeatureRegistry");
+        polyToken = PolymathRegistry(polymathRegistry).getAddress("PolyToken");
     }
 
 }

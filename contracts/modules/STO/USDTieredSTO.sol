@@ -259,7 +259,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
                 tiers[i].mintedTotal = tiers[i].tokenTotal;
             }
         }
-        require(ISecurityToken(securityToken).mint(reserveWallet, tempReturned), "Error in minting");
+        ISecurityToken(securityToken).issue(reserveWallet, tempReturned, "");
         emit ReserveTokenMint(msg.sender, reserveWallet, tempReturned, currentTier);
         finalAmountReturned = tempReturned;
         totalTokensSold = tempSold;
@@ -588,7 +588,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
     {
         (spentUSD, purchasedTokens, gotoNextTier) = _purchaseTierAmount(_tierPrice, _tierRemaining, _investedUSD);
         if (purchasedTokens > 0) {
-            require(ISecurityToken(securityToken).mint(_beneficiary, purchasedTokens), "Error in minting");
+            ISecurityToken(securityToken).issue(_beneficiary, purchasedTokens, "");
             emit TokenPurchase(msg.sender, _beneficiary, purchasedTokens, spentUSD, _tierPrice, _tier);
         }
     }

@@ -1,40 +1,15 @@
 pragma solidity ^0.5.0;
 
-import "../modules/PermissionManager/IPermissionManager.sol";
-import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "../interfaces/IPoly.sol";
-import "../interfaces/TransferManagerEnums.sol";
+import "../tokens/SecurityTokenStorage.sol";
 import "../interfaces/ITransferManager.sol";
+import "../interfaces/TransferManagerEnums.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "../modules/PermissionManager/IPermissionManager.sol";
 
 library TokenLib {
+
     using SafeMath for uint256;
-
-    // Struct for module data
-    struct ModuleData {
-        bytes32 name;
-        address module;
-        address moduleFactory;
-        bool isArchived;
-        uint8[] moduleTypes;
-        uint256[] moduleIndexes;
-        uint256 nameIndex;
-        bytes32 label;
-    }
-
-    // Structures to maintain checkpoints of balances for governance / dividends
-    struct Checkpoint {
-        uint256 checkpointId;
-        uint256 value;
-    }
-
-    struct InvestorDataStorage {
-        // List of investors who have ever held a non-zero token balance
-        mapping(address => bool) investorListed;
-        // List of token holders
-        address[] investors;
-        // Total number of non-zero token holders
-        uint256 investorCount;
-    }
 
     // Emit when Module is archived from the SecurityToken
     event ModuleArchived(uint8[] _types, address _module, uint256 _timestamp);
@@ -50,7 +25,7 @@ library TokenLib {
     * @param _moduleData Storage data
     * @param _module Address of module to archive
     */
-    function archiveModule(ModuleData storage _moduleData, address _module) public {
+    function archiveModule(SecurityTokenStorage.ModuleData storage _moduleData, address _module) public {
         require(!_moduleData.isArchived, "Module archived");
         require(_moduleData.module != address(0), "Module missing");
         /*solium-disable-next-line security/no-block-members*/
@@ -63,7 +38,7 @@ library TokenLib {
     * @param _moduleData Storage data
     * @param _module Address of module to unarchive
     */
-    function unarchiveModule(ModuleData storage _moduleData, address _module) public {
+    function unarchiveModule(SecurityTokenStorage.ModuleData storage _moduleData, address _module) public {
         require(_moduleData.isArchived, "Module unarchived");
         /*solium-disable-next-line security/no-block-members*/
         emit ModuleUnarchived(_moduleData.moduleTypes, _module, now);
@@ -77,7 +52,7 @@ library TokenLib {
     function removeModule(
         address _module,
         mapping(uint8 => address[]) storage _modules,
-        mapping(address => ModuleData) storage _modulesToData,
+        mapping(address => SecurityTokenStorage.ModuleData) storage _modulesToData,
         mapping(bytes32 => address[]) storage _names
     )
         public
@@ -112,7 +87,7 @@ library TokenLib {
         uint8 _type,
         uint256 _index,
         mapping(uint8 => address[]) storage _modules,
-        mapping(address => ModuleData) storage _modulesToData
+        mapping(address => SecurityTokenStorage.ModuleData) storage _modulesToData
     )
         internal
     {
@@ -142,7 +117,7 @@ library TokenLib {
         uint256 _change,
         bool _increase,
         address _polyToken,
-        mapping(address => ModuleData) storage _modulesToData
+        mapping(address => SecurityTokenStorage.ModuleData) storage _modulesToData
     )
         public
     {
@@ -190,7 +165,7 @@ library TokenLib {
      * @param _currentValue is the Current value of checkpoint
      * @return uint256
      */
-    function getValueAt(Checkpoint[] storage _checkpoints, uint256 _checkpointId, uint256 _currentValue) public view returns(uint256) {
+    function getValueAt(SecurityTokenStorage.Checkpoint[] storage _checkpoints, uint256 _checkpointId, uint256 _currentValue) public view returns(uint256) {
         //Checkpoint id 0 is when the token is first created - everyone has a zero balance
         if (_checkpointId == 0) {
             return 0;
@@ -229,7 +204,7 @@ library TokenLib {
      * @param _checkpoints is the affected checkpoint object array
      * @param _newValue is the new value that needs to be stored
      */
-    function adjustCheckpoints(TokenLib.Checkpoint[] storage _checkpoints, uint256 _newValue, uint256 _currentCheckpointId) public {
+    function adjustCheckpoints(SecurityTokenStorage.Checkpoint[] storage _checkpoints, uint256 _newValue, uint256 _currentCheckpointId) public {
         //No checkpoints set yet
         if (_currentCheckpointId == 0) {
             return;
@@ -239,7 +214,7 @@ library TokenLib {
             return;
         }
         //New checkpoint, so record balance
-        _checkpoints.push(TokenLib.Checkpoint({checkpointId: _currentCheckpointId, value: _newValue}));
+        _checkpoints.push(SecurityTokenStorage.Checkpoint({checkpointId: _currentCheckpointId, value: _newValue}));
     }
 
     /**
@@ -252,7 +227,7 @@ library TokenLib {
     * @param _balanceFrom Balance of the _from address
     */
     function adjustInvestorCount(
-        InvestorDataStorage storage _investorData,
+        SecurityTokenStorage.InvestorDataStorage storage _investorData,
         address _from,
         address _to,
         uint256 _value,
@@ -294,7 +269,7 @@ library TokenLib {
      */
     function verifyTransfer(
         address[] storage modules,
-        mapping(address => ModuleData) storage modulesToData,
+        mapping(address => SecurityTokenStorage.ModuleData) storage modulesToData,
         address from,
         address to,
         uint256 value,

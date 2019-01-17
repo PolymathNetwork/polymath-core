@@ -8,9 +8,11 @@ import "../interfaces/ISTFactory.sol";
  */
 contract STFactory is ISTFactory {
     address public transferManagerFactory;
+    address public stDelegate;
 
-    constructor(address _transferManagerFactory) public {
+    constructor(address _transferManagerFactory, address _stDelegate) public {
         transferManagerFactory = _transferManagerFactory;
+        stDelegate = _stDelegate;
     }
 
     /**
@@ -35,7 +37,8 @@ contract STFactory is ISTFactory {
             _decimals,
             _divisible ? 1 : uint256(10) ** _decimals,
             _tokenDetails,
-            _polymathRegistry
+            _polymathRegistry,
+            stDelegate
         );
         newSecurityToken.addModule(transferManagerFactory, "", 0, 0);
         newSecurityToken.transferOwnership(_issuer);

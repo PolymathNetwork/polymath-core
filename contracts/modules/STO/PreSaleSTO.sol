@@ -79,7 +79,7 @@ contract PreSaleSTO is PreSaleSTOStorage, STO {
         /*solium-disable-next-line security/no-block-members*/
         require(now <= endTime, "Already passed Endtime");
         require(_amount > 0, "No. of tokens provided should be greater the zero");
-        ISecurityToken(securityToken).mint(_investor, _amount);
+        ISecurityToken(securityToken).issue(_investor, _amount, "");
         if (investors[_investor] == uint256(0)) {
             investorCount = investorCount.add(1);
         }

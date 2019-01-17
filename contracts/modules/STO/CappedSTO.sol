@@ -222,7 +222,7 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
     * @param _tokenAmount Number of tokens to be emitted
     */
     function _deliverTokens(address _beneficiary, uint256 _tokenAmount) internal {
-        require(ISecurityToken(securityToken).mint(_beneficiary, _tokenAmount), "Error in minting the tokens");
+        ISecurityToken(securityToken).issue(_beneficiary, _tokenAmount, "");
     }
 
     /**

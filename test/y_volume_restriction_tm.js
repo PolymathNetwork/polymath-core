@@ -118,10 +118,10 @@ contract('VolumeRestrictionTransferManager', accounts => {
     }
 
     before(async() => {
-        currentTime = new BN(await currentTime);
+        currentTime = new BN(await latestTime());
         fromTime = currentTime;
         toTime = currentTime;
-        expiryTime = toTime.add(duration.days(15));
+        expiryTime = toTime.add(new BN(duration.days(15)));
         // Accounts setup
         account_polymath = accounts[0];
         account_issuer = accounts[1];
@@ -203,7 +203,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
         it("Should intialize the auto attached modules", async () => {
             let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
-            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
+            I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
     });
 
@@ -215,7 +215,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 web3.utils.toUtf8(tx.logs[2].args._name),
                 "VolumeRestrictionTM",
                 "VolumeRestrictionTMFactory doesn not added");
-            I_VolumeRestrictionTM = VolumeRestrictionTM.at(tx.logs[2].args._module);
+            I_VolumeRestrictionTM = await VolumeRestrictionTM.at(tx.logs[2].args._module);
         });
 
         it("Transfer some tokens to different account", async() => {
@@ -224,7 +224,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     [account_investor1, account_investor2, account_investor3],
                     [currentTime, currentTime, currentTime],
                     [currentTime, currentTime, currentTime],
-                    [currentTime.add(duration.days(60)), currentTime.add(duration.days(60)), currentTime,add(duration.days(60))],
+                    [currentTime.add(new BN(duration.days(60))), currentTime.add(new BN(duration.days(60))), currentTime.add(new BN(duration.days(60)))],
                     [true, true, true],
                     {
                         from: token_owner
@@ -254,15 +254,15 @@ contract('VolumeRestrictionTransferManager', accounts => {
     })
 
     describe("Test for the addIndividualRestriction", async() => {
-
         it("Should add the restriction -- failed because of bad owner", async() => {
+            currentTime = new BN(await latestTime());
             await catchRevert(
                 I_VolumeRestrictionTM.addIndividualRestriction(
                     account_investor1,
                     new BN(web3.utils.toWei("12")),
-                    currentTime.add(duration.seconds(2)),
+                    currentTime.add(new BN(duration.seconds(2))),
                     3,
-                    currentTime.add(duration.days(10)),
+                    currentTime.add(new BN(duration.days(10))),
                     0,
                     {
                         from: account_polymath
@@ -276,9 +276,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 I_VolumeRestrictionTM.addIndividualRestriction(
                     account_investor1,
                     new BN(web3.utils.toWei("12")),
-                    currentTime.add(duration.seconds(2)),
+                    currentTime.add(new BN(duration.seconds(2))),
                     3,
-                    currentTime.add(duration.days(10)),
+                    currentTime.add(new BN(duration.days(10))),
                     3,
                     {
                         from: token_owner
@@ -292,9 +292,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 I_VolumeRestrictionTM.addIndividualRestriction(
                     account_investor1,
                     0,
-                    currentTime.add(duration.seconds(2)),
+                    currentTime.add(new BN(duration.seconds(2))),
                     3,
-                    currentTime.add(duration.days(10)),
+                    currentTime.add(new BN(duration.days(10))),
                     0,
                     {
                         from: token_owner
@@ -308,9 +308,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 I_VolumeRestrictionTM.addIndividualRestriction(
                     account_investor1,
                     0,
-                    currentTime,add(duration.seconds(2)),
+                    currentTime.add(new BN(duration.seconds(2))),
                     3,
-                    currentTime.add(duration.days(10)),
+                    currentTime.add(new BN(duration.days(10))),
                     1,
                     {
                         from: token_owner
@@ -324,9 +324,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 I_VolumeRestrictionTM.addIndividualRestriction(
                     account_investor1,
                     new BN(web3.utils.toWei("10")),
-                    currentTime.add(duration.seconds(2)),
+                    currentTime.add(new BN(duration.seconds(2))),
                     3,
-                    currentTime.add(duration.days(10)),
+                    currentTime.add(new BN(duration.days(10))),
                     1,
                     {
                         from: token_owner
@@ -340,9 +340,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 I_VolumeRestrictionTM.addIndividualRestriction(
                     account_investor1,
                     new BN(web3.utils.toWei("10")),
-                    currentTime.sub(duration.seconds(5)),
+                    currentTime.sub(new BN(duration.seconds(5))),
                     3,
-                    currentTime.add(duration.days(10)),
+                    currentTime.add(new BN(duration.days(10))),
                     0,
                     {
                         from: token_owner
@@ -356,9 +356,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 I_VolumeRestrictionTM.addIndividualRestriction(
                     account_investor1,
                     new BN(web3.utils.toWei("10")),
-                    currentTime.add(duration.days(2)),
+                    currentTime.add(new BN(duration.days(2))),
                     3,
-                    currentTime.add(duration.days(1)),
+                    currentTime.add(new BN(duration.days(1))),
                     0,
                     {
                         from: token_owner
@@ -372,9 +372,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 I_VolumeRestrictionTM.addIndividualRestriction(
                     account_investor1,
                     new BN(web3.utils.toWei("10")),
-                    currentTime.add(duration.days(2)),
+                    currentTime.add(new BN(duration.days(2))),
                     0,
-                    currentTime.add(duration.days(10)),
+                    currentTime.add(new BN(duration.days(10))),
                     0,
                     {
                         from: token_owner
@@ -388,9 +388,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 I_VolumeRestrictionTM.addIndividualRestriction(
                     account_investor1,
                     new BN(web3.utils.toWei("10")),
-                    currentTime.add(duration.days(2)),
+                    currentTime.add(new BN(duration.days(2))),
                     366,
-                    currentTime.add(duration.days(10)),
+                    currentTime.add(new BN(duration.days(10))),
                     0,
                     {
                         from: token_owner
@@ -404,9 +404,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 I_VolumeRestrictionTM.addIndividualRestriction(
                     account_investor1,
                     new BN(web3.utils.toWei("10")),
-                    currentTime.add(duration.days(2)),
+                    currentTime.add(new BN(duration.days(2))),
                     3,
-                    currentTime.add(duration.days(3)),
+                    currentTime.add(new BN(duration.days(3))),
                     0,
                     {
                         from: token_owner
@@ -419,9 +419,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
             let tx = await I_VolumeRestrictionTM.addIndividualRestriction(
                     account_investor1,
                     new BN(web3.utils.toWei("12")),
-                    currentTime.add(duration.seconds(2)),
+                    currentTime.add(new BN(duration.seconds(2))),
                     3,
-                    currentTime.add(duration.days(5)),
+                    currentTime.add(new BN(duration.days(5))),
                     0,
                     {
                         from: token_owner
@@ -439,9 +439,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 I_VolumeRestrictionTM.addIndividualRestrictionMulti(
                     [account_investor2, account_delegate3, account_investor4],
                     [new BN(web3.utils.toWei("12")), new BN(web3.utils.toWei("10")), new BN(web3.utils.toWei("15"))],
-                    [currentTime.add(duration.seconds(2)), currentTime.add(duration.seconds(2)), currentTime.add(duration.seconds(2))],
+                    [currentTime.add(new BN(duration.seconds(2))), currentTime.add(new BN(duration.seconds(2))), currentTime.add(new BN(duration.seconds(2)))],
                     [3,4,5],
-                    [currentTime.add(duration.days(5)), currentTime.add(duration.days(6)), currentTime.add(duration.days(7))],
+                    [currentTime.add(new BN(duration.days(5))), currentTime.add(new BN(duration.days(6))), currentTime.add(new BN(duration.days(7)))],
                     [0,0,0],
                     {
                         from: account_polymath
@@ -455,9 +455,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 I_VolumeRestrictionTM.addIndividualRestrictionMulti(
                     [account_investor2, account_delegate3],
                     [new BN(web3.utils.toWei("12")), new BN(web3.utils.toWei("10")), new BN(web3.utils.toWei("15"))],
-                    [currentTime.add(duration.seconds(2)), currentTime.add(duration.seconds(2)), currentTime.add(duration.seconds(2))],
+                    [currentTime.add(new BN(duration.seconds(2))), currentTime.add(new BN(duration.seconds(2))), currentTime.add(new BN(duration.seconds(2)))],
                     [3,4,5],
-                    [currentTime.add(duration.days(5)), currentTime.add(duration.days(6)), currentTime.add(duration.days(7))],
+                    [currentTime.add(new BN(duration.days(5))), currentTime.add(new BN(duration.days(6))), currentTime.add(new BN(duration.days(7)))],
                     [0,0,0],
                     {
                         from: token_owner
@@ -471,9 +471,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 I_VolumeRestrictionTM.addIndividualRestrictionMulti(
                     [account_investor2, account_delegate3, account_investor4],
                     [new BN(web3.utils.toWei("12")), new BN(web3.utils.toWei("10"))],
-                    [currentTime.add(duration.seconds(2)), currentTime.add(duration.seconds(2)), currentTime.add(duration.seconds(2))],
+                    [currentTime.add(new BN(duration.seconds(2))), currentTime.add(new BN(duration.seconds(2))), currentTime.add(new BN(duration.seconds(2)))],
                     [3,4,5],
-                    [currentTime.add(duration.days(5)), currentTime.add(duration.days(6)), currentTime.add(duration.days(7))],
+                    [currentTime.add(new BN(duration.days(5))), currentTime.add(new BN(duration.days(6))), currentTime.add(new BN(duration.days(7)))],
                     [0,0,0],
                     {
                         from: account_polymath
@@ -487,9 +487,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 I_VolumeRestrictionTM.addIndividualRestrictionMulti(
                     [account_investor2, account_delegate3, account_investor4],
                     [new BN(web3.utils.toWei("12")), new BN(web3.utils.toWei("10")), new BN(web3.utils.toWei("15"))],
-                    [currentTime.add(duration.seconds(2)), currentTime.add(duration.seconds(2))],
+                    [currentTime.add(new BN(duration.seconds(2))), currentTime.add(new BN(duration.seconds(2)))],
                     [3,4,5],
-                    [currentTime.add(duration.days(5)), currentTime.add(duration.days(6)), currentTime.add(duration.days(7))],
+                    [currentTime.add(new BN(duration.days(5))), currentTime.add(new BN(duration.days(6))), currentTime.add(new BN(duration.days(7)))],
                     [0,0,0],
                     {
                         from: token_owner
@@ -503,9 +503,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 I_VolumeRestrictionTM.addIndividualRestrictionMulti(
                     [account_investor2, account_delegate3, account_investor4],
                     [new BN(web3.utils.toWei("12")), new BN(web3.utils.toWei("10")), new BN(web3.utils.toWei("15"))],
-                    [currentTime.add(duration.seconds(2)), currentTime.add(duration.seconds(2)), currentTime.add(duration.seconds(2))],
+                    [currentTime.add(new BN(duration.seconds(2))), currentTime.add(new BN(duration.seconds(2))), currentTime.add(new BN(duration.seconds(2)))],
                     [3],
-                    [currentTime.add(duration.days(5)), currentTime.add(duration.days(6)), currentTime.add(duration.days(7))],
+                    [currentTime.add(new BN(duration.days(5))), currentTime.add(new BN(duration.days(6))), currentTime.add(new BN(duration.days(7)))],
                     [0,0,0],
                     {
                         from: token_owner
@@ -519,9 +519,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 I_VolumeRestrictionTM.addIndividualRestrictionMulti(
                     [account_investor2, account_delegate3, account_investor4],
                     [new BN(web3.utils.toWei("12")), new BN(web3.utils.toWei("10")), new BN(web3.utils.toWei("15"))],
-                    [currentTime.add(duration.seconds(2)), currentTime.add(duration.seconds(2)), currentTime.add(duration.seconds(2))],
+                    [currentTime.add(new BN(duration.seconds(2))), currentTime.add(new BN(duration.seconds(2))), currentTime.add(new BN(duration.seconds(2)))],
                     [3, 4, 5],
-                    [currentTime.add(duration.days(5))],
+                    [currentTime.add(new BN(duration.days(5)))],
                     [0,0,0],
                     {
                         from: token_owner
@@ -535,9 +535,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 I_VolumeRestrictionTM.addIndividualRestrictionMulti(
                     [account_investor2, account_delegate3, account_investor4],
                     [new BN(web3.utils.toWei("12")), new BN(web3.utils.toWei("10")), new BN(web3.utils.toWei("15"))],
-                    [currentTime.add(duration.seconds(2)), currentTime.add(duration.seconds(2)), currentTime.add(duration.seconds(2))],
+                    [currentTime.add(new BN(duration.seconds(2))), currentTime.add(new BN(duration.seconds(2))), currentTime.add(new BN(duration.seconds(2)))],
                     [3, 4, 5],
-                    [currentTime.add(duration.days(5)), currentTime.add(duration.days(6)), currentTime.add(duration.days(7))],
+                    [currentTime.add(new BN(duration.days(5))), currentTime.add(new BN(duration.days(6))), currentTime.add(new BN(duration.days(7)))],
                     [],
                     {
                         from: token_owner
@@ -552,7 +552,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     [new BN(web3.utils.toWei("12")), new BN(web3.utils.toWei("10")), new BN(web3.utils.toWei("15"))],
                     [0, 0, 0],
                     [3, 4, 5],
-                    [currentTime.add(duration.days(5)), currentTime.add(duration.days(6)), currentTime.add(duration.days(7))],
+                    [currentTime.add(new BN(duration.days(5))), currentTime.add(new BN(duration.days(6))), currentTime.add(new BN(duration.days(7)))],
                     [0,0,0],
                     {
                         from: token_owner
@@ -570,7 +570,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Should remove the restriction multi -- failed because of address is 0", async() => {
             await catchRevert(
                 I_VolumeRestrictionTM.removeIndividualRestrictionMulti(
-                    [0, account_delegate3, account_investor4],
+                    [address_zero, account_delegate3, account_investor4],
                     {
                         from: token_owner
                     }
@@ -608,16 +608,16 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should add the restriction succesfully after the expiry of previous one for investor 1", async() => {
-            await increaseTime(duration.days(5.1));
+            await increaseTime(new BN(duration.days(5.1)));
 
             console.log(
                 `Estimated gas for addIndividualRestriction:
                 ${await I_VolumeRestrictionTM.addIndividualRestriction.estimateGas(
                     account_investor1,
                     new BN(web3.utils.toWei("12")),
-                    currentTime.add(duration.seconds(2)),
+                    currentTime.add(new BN(duration.seconds(2))),
                     3,
-                    currentTime.add(duration.days(6)),
+                    currentTime.add(new BN(duration.days(6))),
                     0,
                     {
                         from: token_owner
@@ -628,9 +628,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
             let tx = await I_VolumeRestrictionTM.addIndividualRestriction(
                     account_investor1,
                     new BN(web3.utils.toWei("12")),
-                    currentTime.add(duration.seconds(2)),
+                    currentTime.add(new BN(duration.seconds(2))),
                     3,
-                    currentTime.add(duration.days(6)),
+                    currentTime.add(new BN(duration.days(6))),
                     0,
                     {
                         from: token_owner
@@ -646,7 +646,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should not successfully transact the tokens -- failed because volume is above the limit", async() => {
-            await increaseTime(duration.seconds(10));
+            await increaseTime(new BN(duration.seconds(10)));
             await catchRevert(
                 I_SecurityToken.transfer(account_investor3, new BN(web3.utils.toWei("13")), { from: account_investor1})
             );
@@ -687,8 +687,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 I_VolumeRestrictionTM.addIndividualDailyRestriction(
                     account_investor3,
                     new BN(web3.utils.toWei("6")),
-                    currentTime.add(duration.seconds(1)),
-                    currentTime.add(duration.days(4)),
+                    currentTime.add(new BN(duration.seconds(1))),
+                    currentTime.add(new BN(duration.days(4))),
                     0,
                     {
                         from: account_investor1
@@ -702,8 +702,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 I_VolumeRestrictionTM.addIndividualDailyRestriction(
                     account_investor3,
                     new BN(web3.utils.toWei("6")),
-                    currentTime.add(duration.seconds(1)),
-                    currentTime.add(duration.days(4)),
+                    currentTime.add(new BN(duration.seconds(1))),
+                    currentTime.add(new BN(duration.days(4))),
                     1,
                     {
                         from: token_owner
@@ -717,8 +717,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 I_VolumeRestrictionTM.addIndividualDailyRestriction(
                     account_investor3,
                     0,
-                    currentTime.add(duration.seconds(1)),
-                    currentTime.add(duration.days(4)),
+                    currentTime.add(new BN(duration.seconds(1))),
+                    currentTime.add(new BN(duration.days(4))),
                     0,
                     {
                         from: token_owner
@@ -732,8 +732,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 I_VolumeRestrictionTM.addIndividualDailyRestriction(
                     account_investor3,
                     new BN(web3.utils.toWei("6")),
-                    currentTime.add(duration.days(5)),
-                    currentTime.add(duration.days(4)),
+                    currentTime.add(new BN(duration.days(5))),
+                    currentTime.add(new BN(duration.days(4))),
                     0,
                     {
                         from: token_owner
@@ -746,8 +746,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
             let tx = await I_VolumeRestrictionTM.addIndividualDailyRestriction(
                         account_investor3,
                         new BN(web3.utils.toWei("6")),
-                        currentTime.add(duration.seconds(1)),
-                        currentTime.add(duration.days(4)),
+                        currentTime.add(new BN(duration.seconds(1))),
+                        currentTime.add(new BN(duration.days(4))),
                         0,
                         {
                             from: token_owner
@@ -783,7 +783,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             let data = await I_VolumeRestrictionTM.getIndividualBucketDetailsToUser.call(account_investor3);
             await print(data, account_investor3);
 
-            await increaseTime(duration.minutes(15));
+            await increaseTime(new BN(duration.minutes(15)));
 
             console.log(`
                 Gas Estimation for the Individual daily tx - ${await I_SecurityToken.transfer.estimateGas(account_investor2, new BN(web3.utils.toWei("4")), {from: account_investor3})}
@@ -807,7 +807,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
         it("Should try to send after the one day completion", async() => {
             // increase the EVM time by one day
-            await increaseTime(duration.days(1));
+            await increaseTime(new BN(duration.days(1)));
 
             let startTime = (await I_VolumeRestrictionTM.individualDailyRestriction.call(account_investor3))[1].toString();
             console.log(`
@@ -817,7 +817,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             let data = await I_VolumeRestrictionTM.getIndividualBucketDetailsToUser.call(account_investor3);
             await print(data, account_investor3);
 
-            assert.equal(data[3].toString(), startTime + duration.days(1));
+            assert.equal(data[3].toString(), startTime.add(new BN(duration.days(1))));
             assert.equal((await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[3]))
             .dividedBy(new BN(10).pow(18)).toString(), 2);
         });
@@ -827,7 +827,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 account_investor1,
                 new BN(5).times(new BN(10).pow(16)),
                 0,
-                currentTime.add(duration.days(4)),
+                currentTime.add(new BN(duration.days(4))),
                 1,
                 {
                     from: token_owner
@@ -876,7 +876,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             .dividedBy(new BN(10).pow(18)).toString();
 
             // Verify the storage changes
-            assert.equal(data[0].toString(), startTime + duration.days(data[2].toString()));
+            assert.equal(data[0].toString(), startTime.add(new BN(duration.days(data[2].toString()))));
             assert.equal(data[1].dividedBy(new BN(10).pow(18)).toString(), await calculateSum(rollingPeriod, tempArray));
             assert.equal(data[2].toString(), 1);
             assert.equal(data[3].toString(),
@@ -895,9 +895,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
             let tx = await I_VolumeRestrictionTM.addIndividualRestriction(
                 account_investor3,
                 new BN(15.36).times(new BN(10).pow(16)), // 15.36 tokens as totalsupply is 1000
-                currentTime.add(duration.seconds(2)),
+                currentTime.add(new BN(duration.seconds(2))),
                 6,
-                currentTime.add(duration.days(15)),
+                currentTime.add(new BN(duration.days(15))),
                 1,
                 {
                     from: token_owner
@@ -940,10 +940,10 @@ contract('VolumeRestrictionTransferManager', accounts => {
             .dividedBy(new BN(10).pow(18)).toString();
 
             // Verify the storage changes
-            assert.equal(data[0].toString(), startTime + duration.days(data[2].toString()));
+            assert.equal(data[0].toString(), startTime.add(new BN(duration.days(data[2].toString()))));
             assert.equal(data[1].dividedBy(new BN(10).pow(18)).toString(), 4);
             assert.equal(data[2].toString(), 0);
-            assert.equal(data[3].toString(), startTimeDaily + duration.days(1));
+            assert.equal(data[3].toString(), startTimeDaily.add(new BN(duration.days(1))));
             assert.equal(amt, 4);
 
         });
@@ -984,7 +984,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             .dividedBy(new BN(10).pow(18)).toString();
 
             // Verify the storage changes
-            assert.equal(data[0].toString(), startTime + duration.days(data[2].toString()));
+            assert.equal(data[0].toString(), startTime.add(new BN(duration.days(data[2].toString()))));
             assert.equal(data[1].dividedBy(new BN(10).pow(18)).toString(), 8);
             assert.equal(data[2].toString(), 0);
             assert.equal(data[3].toString(), 0);
@@ -996,8 +996,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
             let tx = await I_VolumeRestrictionTM.addIndividualDailyRestriction(
                 account_investor3,
                 new BN(web3.utils.toWei("2")),
-                currentTime.add(duration.days(1)),
-                currentTime.add(duration.days(4)),
+                currentTime.add(new BN(duration.days(1))),
+                currentTime.add(new BN(duration.days(4))),
                 0,
                 {
                     from: token_owner
@@ -1020,7 +1020,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             let rollingPeriod = (await I_VolumeRestrictionTM.individualRestriction.call(account_investor3))[2].toString();
             let startTime = (await I_VolumeRestrictionTM.individualRestriction.call(account_investor3))[1].toString();
             // Increase the time by one day
-            await increaseTime(duration.days(1.1));
+            await increaseTime(new BN(duration.days(1.1)));
 
             //sell tokens upto the limit
             await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("2")), {from: account_investor3});
@@ -1034,7 +1034,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             .dividedBy(new BN(10).pow(18)).toString();
 
             // Verify the storage changes
-            assert.equal(data[0].toString(), startTime + duration.days(data[2].toString()));
+            assert.equal(data[0].toString(), startTime.add(new BN(duration.days(data[2].toString()))));
             assert.equal(data[1].dividedBy(new BN(10).pow(18)).toString(), await calculateSum(rollingPeriod, tempArray3));
             assert.equal(data[2].toString(), 1);
             assert.equal(data[3].toString(), dataRestriction[1].toString());
@@ -1052,7 +1052,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     account_investor3,
                     new BN(web3.utils.toWei('3')),
                     currentTime,
-                    currentTime.add(duration.days(5)),
+                    currentTime.add(new BN(duration.days(5))),
                     0,
                     {
                         from: account_polymath
@@ -1066,7 +1066,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     account_investor3,
                     new BN(web3.utils.toWei('3')),
                     0,
-                    currentTime.add(duration.days(5)),
+                    currentTime.add(new BN(duration.days(5))),
                     0,
                     {
                         from: token_owner
@@ -1100,7 +1100,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             .dividedBy(new BN(10).pow(18)).toString();
 
             // Verify the storage changes
-            assert.equal(data[0].toString(), startTime + duration.days(data[2].toString()));
+            assert.equal(data[0].toString(), startTime.add(new BN(duration.days(data[2].toString()))));
             assert.equal(data[1].dividedBy(new BN(10).pow(18)).toString(), await calculateSum(rollingPeriod, tempArray3));
             assert.equal(data[2].toString(), 1);
             assert.equal(data[3].toString(), startTimedaily);
@@ -1112,7 +1112,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             let startTimedaily = (await I_VolumeRestrictionTM.individualDailyRestriction.call(account_investor3))[1].toString();
             let rollingPeriod = (await I_VolumeRestrictionTM.individualRestriction.call(account_investor3))[2].toString();
 
-            await increaseTime(duration.days(1));
+            await increaseTime(new BN(duration.days(1)));
             //sell tokens upto the limit
             await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("2.36")), {from: account_investor3});
             tempArray3.push(2.36);
@@ -1125,10 +1125,10 @@ contract('VolumeRestrictionTransferManager', accounts => {
             .dividedBy(new BN(10).pow(18)).toString();
 
             // Verify the storage changes
-            assert.equal(data[0].toString(), startTime + duration.days(data[2].toString()));
+            assert.equal(data[0].toString(), startTime.add(new BN(duration.days(data[2].toString()))));
             assert.equal(data[1].dividedBy(new BN(10).pow(18)).toString(), await calculateSum(rollingPeriod, tempArray3));
             assert.equal(data[2].toString(), 2);
-            assert.equal(data[3].toString(), startTimedaily + duration.days(1));
+            assert.equal(data[3].toString(), startTimedaily.add(new BN(duration.days(1))));
             assert.equal(amt, 2.36);
         });
 
@@ -1157,15 +1157,15 @@ contract('VolumeRestrictionTransferManager', accounts => {
             .dividedBy(new BN(10).pow(18)).toString();
 
             // Verify the storage changes
-            assert.equal(data[0].toString(), startTime + duration.days(data[2].toString()));
+            assert.equal(data[0].toString(), startTime.add(new BN(duration.days(data[2].toString()))));
             assert.equal(data[1].dividedBy(new BN(10).pow(18)).toString(), await calculateSum(rollingPeriod, tempArray3));
             assert.equal(data[2].toString(), 2);
-            assert.equal(data[3].toString(), startTimedaily + duration.days(1));
+            assert.equal(data[3].toString(), startTimedaily.add(new BN(duration.days(1))));
             assert.equal(amt, 2.86);
         });
 
         it("Should fail to transact tokens more than the allowed in the second rolling period", async() => {
-            await increaseTime(duration.days(4));
+            await increaseTime(new BN(duration.days(4)));
             let i
             for (i = 0; i < 3; i++) {
                 tempArray3.push(0);
@@ -1196,15 +1196,15 @@ contract('VolumeRestrictionTransferManager', accounts => {
             .dividedBy(new BN(10).pow(18)).toString();
 
             // Verify the storage changes
-            assert.equal(data[0].toString(), startTime + duration.days(data[2].toString()));
+            assert.equal(data[0].toString(), startTime.add(new BN(duration.days(data[2].toString()))));
             assert.equal(data[1].dividedBy(new BN(10).pow(18)).toString(), await calculateSum(rollingPeriod, tempArray3));
             assert.equal(data[2].toString(), 6);
-            assert.equal(data[3].toString(), startTimedaily + duration.days(1));
+            assert.equal(data[3].toString(), startTimedaily.add(new BN(duration.days(1))));
             assert.equal(amt, allowedAmount);
         });
 
         it("Should sell more tokens on the net day of rolling period", async() => {
-            await increaseTime(duration.days(3));
+            await increaseTime(new BN(duration.days(3)));
 
             let startTime = (await I_VolumeRestrictionTM.individualRestriction.call(account_investor3))[1].toString();
             let startTimedaily = (await I_VolumeRestrictionTM.individualDailyRestriction.call(account_investor3))[1].toString();
@@ -1225,15 +1225,15 @@ contract('VolumeRestrictionTransferManager', accounts => {
             .dividedBy(new BN(10).pow(18)).toString();
 
             // Verify the storage changes
-            assert.equal(data[0].toString(), startTime + duration.days(data[2].toString()));
+            assert.equal(data[0].toString(), startTime.add(new BN(duration.days(data[2].toString()))));
             assert.equal(data[1].dividedBy(new BN(10).pow(18)).toString(), await calculateSum(rollingPeriod, tempArray3));
             assert.equal(data[2].toString(), 9);
-            assert.equal(data[3].toString(), startTimedaily + duration.days(1));
+            assert.equal(data[3].toString(), startTimedaily.add(new BN(duration.days(1))));
             assert.equal(amt, 7);
         })
 
         it("Should transfer after the 5 days", async() => {
-            await increaseTime(duration.days(4.5));
+            await increaseTime(new BN(duration.days(4.5)));
 
             for (let i = 0; i <3; i++) {
                 tempArray3.push(0);
@@ -1256,16 +1256,16 @@ contract('VolumeRestrictionTransferManager', accounts => {
             .dividedBy(new BN(10).pow(18)).toString();
 
             // Verify the storage changes
-            assert.equal(data[0].toString(), startTime + duration.days(data[2].toString()));
+            assert.equal(data[0].toString(), startTime.add(new BN(duration.days(data[2].toString()))));
             assert.equal(data[1].dividedBy(new BN(10).pow(18)).toString(), await calculateSum(rollingPeriod, tempArray3));
             assert.equal(data[2].toString(), 13);
-            assert.equal(data[3].toString(), startTimedaily + duration.days(1));
+            assert.equal(data[3].toString(), startTimedaily.add(new BN(duration.days(1))));
             assert.equal(amt, 8);
         });
 
         it("Should freely transfer the tokens after one day (completion of individual restriction)", async() => {
             // increase one time
-            await increaseTime(duration.days(2));
+            await increaseTime(new BN(duration.days(2)));
             await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("17")), {from: account_investor3});
         });
     });
@@ -1277,7 +1277,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 account_investor4,
                 currentTime,
                 currentTime,
-                currentTime.add(duration.days(30)),
+                currentTime.add(new BN(duration.days(30))),
                 true,
                 {
                     from: token_owner
@@ -1293,7 +1293,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await I_VolumeRestrictionTM.addDefaultDailyRestriction(
                 new BN(2.75).times(new BN(10).pow(16)),
                 0,
-                currentTime.add(duration.days(3)),
+                currentTime.add(new BN(duration.days(3))),
                 1,
                 {
                     from: token_owner
@@ -1338,7 +1338,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should transfer the tokens freely after ending the default daily restriction", async() => {
-            await increaseTime(duration.days(3) + 10);
+            await increaseTime(new BN(duration.days(3)) + 10);
             //sell tokens upto the limit
             let tx = await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("5")), {from: account_investor4});
             assert.equal((tx.logs[0].args.value).toString(), new BN(web3.utils.toWei("5")));
@@ -1351,7 +1351,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 new BN(web3.utils.toWei("10")),
                 0,
                 5,
-                currentTime.add(duration.days(10)),
+                currentTime.add(new BN(duration.days(10))),
                 0,
                 {
                     from: token_owner
@@ -1390,14 +1390,14 @@ contract('VolumeRestrictionTransferManager', accounts => {
             .dividedBy(new BN(10).pow(18)).toString();
 
             // Verify the storage changes
-            assert.equal(data[0].toString(), startTime + duration.days(data[2].toString()));
+            assert.equal(data[0].toString(), startTime.add(new BN(duration.days(data[2].toString()))));
             assert.equal(data[1].dividedBy(new BN(10).pow(18)).toString(), await calculateSum(rollingPeriod, tempArray3));
             assert.equal(data[2].toString(), 0);
             assert.equal(data[3].toString(), 0);
             assert.equal(amt, 5);
 
             // Transfer tokens on another day
-            await increaseTime(duration.days(1));
+            await increaseTime(new BN(duration.days(1)));
             //sell tokens upto the limit
             await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("3")), {from: account_investor3});
             tempArray3.push(3);
@@ -1410,7 +1410,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             .dividedBy(new BN(10).pow(18)).toString();
 
             // Verify the storage changes
-            assert.equal(data[0].toString(), startTime + duration.days(data[2].toString()));
+            assert.equal(data[0].toString(), startTime.add(new BN(duration.days(data[2].toString()))));
             assert.equal(data[1].dividedBy(new BN(10).pow(18)).toString(), await calculateSum(rollingPeriod, tempArray3));
             assert.equal(data[2].toString(), 1);
             assert.equal(data[3].toString(), 0);
@@ -1424,7 +1424,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should able to transfer tokens in the next rolling period", async() => {
-            await increaseTime(duration.days(4.1));
+            await increaseTime(new BN(duration.days(4.1)));
             console.log(`*** Diff days: ${(currentTime - ((await I_VolumeRestrictionTM.getDefaultBucketDetailsToUser.call(account_investor3))[0]).toString()) / 86400}`)
             for (let i = 0; i < 3; i++) {
                 tempArray3.push(0);
@@ -1446,7 +1446,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             .dividedBy(new BN(10).pow(18)).toString();
 
             // Verify the storage changes
-            assert.equal(data[0].toString(), startTime + duration.days(data[2].toString()));
+            assert.equal(data[0].toString(), startTime.add(new BN(duration.days(data[2].toString()))));
             assert.equal(data[1].dividedBy(new BN(10).pow(18)).toString(), await calculateSum(rollingPeriod, tempArray3));
             assert.equal(data[2].toString(), 5);
             assert.equal(data[3].toString(), 0);
@@ -1462,7 +1462,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await I_VolumeRestrictionTM.addDefaultDailyRestriction(
                 new BN(web3.utils.toWei("2")),
                 0,
-                currentTime.add(duration.days(3)),
+                currentTime.add(new BN(duration.days(3))),
                 0,
                 {
                     from: token_owner
@@ -1487,7 +1487,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should able to transfer tokens within the limit of (daily default + default) restriction", async() => {
-            await increaseTime(duration.days(1));
+            await increaseTime(new BN(duration.days(1)));
             let startTime = (await I_VolumeRestrictionTM.defaultRestriction.call())[1].toString();
             let startTimedaily = (await I_VolumeRestrictionTM.defaultDailyRestriction.call())[1].toString();
             let rollingPeriod = (await I_VolumeRestrictionTM.defaultRestriction.call())[2].toString();
@@ -1503,10 +1503,10 @@ contract('VolumeRestrictionTransferManager', accounts => {
             .dividedBy(new BN(10).pow(18)).toString();
 
             // Verify the storage changes
-            assert.equal(data[0].toString(), startTime + duration.days(data[2].toString()));
+            assert.equal(data[0].toString(), startTime.add(new BN(duration.days(data[2].toString()))));
             assert.equal(data[1].dividedBy(new BN(10).pow(18)).toString(), await calculateSum(rollingPeriod, tempArray3));
             assert.equal(data[2].toString(), 6);
-            assert.equal(data[3].toString(), startTimedaily + duration.days(1));
+            assert.equal(data[3].toString(), startTimedaily.add(new BN(duration.days(1))));
             assert.equal(amt, 2);
         });
     })
@@ -1586,9 +1586,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await I_VolumeRestrictionTM.addIndividualRestrictionMulti(
                 [account_investor3, account_delegate3],
                 [new BN(web3.utils.toWei("15")), new BN(12.78).times(new BN(10).pow(16))],
-                [currentTime.add(duration.days(1)), currentTime.add(duration.days(2))],
+                [currentTime.add(new BN(duration.days(1))), currentTime.add(new BN(duration.days(2)))],
                 [15, 20],
-                [currentTime.add(duration.days(40)), currentTime.add(duration.days(60))],
+                [currentTime.add(new BN(duration.days(40))), currentTime.add(new BN(duration.days(60)))],
                 [0,1],
                 {
                     from: token_owner
@@ -1612,9 +1612,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await I_VolumeRestrictionTM.modifyIndividualRestrictionMulti(
                 [account_investor3, account_delegate3],
                 [new BN(12.78).times(new BN(10).pow(16)), new BN(web3.utils.toWei("15"))],
-                [currentTime.add(duration.days(1)), currentTime.add(duration.days(2))],
+                [currentTime.add(new BN(duration.days(1))), currentTime.add(new BN(duration.days(2)))],
                 [20, 15],
-                [currentTime.add(duration.days(40)), currentTime.add(duration.days(60))],
+                [currentTime.add(new BN(duration.days(40))), currentTime.add(new BN(duration.days(60)))],
                 [1,0],
                 {
                     from: token_owner

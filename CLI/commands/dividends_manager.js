@@ -123,14 +123,16 @@ async function configExistingModules(dividendModules) {
 async function dividendsManager() {
   console.log(chalk.blue(`Dividends module at ${currentDividendsModule.options.address}`), '\n');
 
+  let wallet = await currentDividendsModule.methods.wallet().call();
   let currentDividends = await getDividends();
   let defaultExcluded = await currentDividendsModule.methods.getDefaultExcluded().call();
   let currentCheckpointId = await securityToken.methods.currentCheckpointId().call();
 
+  console.log(`- Wallet:                  ${wallet}`);
   console.log(`- Current dividends:       ${currentDividends.length}`);
   console.log(`- Default exclusions:      ${defaultExcluded.length}`);
 
-  let options = ['Create checkpoint'];
+  let options = ['Change wallet', 'Create checkpoint'];
   if (currentCheckpointId > 0) {
     options.push('Explore checkpoint');
   }
@@ -150,6 +152,9 @@ async function dividendsManager() {
   let selected = index != -1 ? options[index] : 'RETURN';
   console.log('Selected:', selected, '\n');
   switch (selected) {
+    case 'Change wallet':
+      await changeWallet();
+      break;
     case 'Create checkpoint':
       await createCheckpointFromDividendModule();
       break;
@@ -178,6 +183,19 @@ async function dividendsManager() {
   }
 
   await dividendsManager();
+}
+
+async function changeWallet() {
+  let newWallet = readlineSync.question('Enter the new account address to receive reclaimed dividends and tax: ', {
+    limit: function (input) {
+      return web3.utils.isAddress(input);
+    },
+    limitMessage: "Must be a valid address",
+  });
+  let action = currentDividendsModule.methods.changeWallet(newWallet);
+  let receipt = await common.sendTransaction(action);
+  let event = common.getEventFromLogs(currentDividendsModule._jsonInterface, receipt.logs, 'SetWallet');
+  console.log(chalk.green(`The wallet has been changed successfully!`));
 }
 
 async function createCheckpointFromDividendModule() {
@@ -230,8 +248,19 @@ async function manageExistingDividend(dividendIndex) {
   let claimedArray = progress[1];
   let excludedArray = progress[2];
   let withheldArray = progress[3];
-  let balanceArray = progress[4];
-  let amountArray = progress[5];
+  let amountArray = progress[4];
+  let balanceArray = progress[5];
+
+  // function for adding two numbers. Easy!
+  const add = (a, b) => {
+    const bnA = new web3.utils.BN(a);
+    const bnB = new web3.utils.BN(b);
+    return bnA.add(bnB).toString();
+  };
+  // use reduce to sum our array
+  let taxesToWithHeld = withheldArray.reduce(add, 0);
+  let claimedInvestors = claimedArray.filter(c => c).length;
+  let excludedInvestors = excludedArray.filter(e => e).length;
 
   console.log(`- Name:                  ${web3.utils.hexToUtf8(dividend.name)}`);
   console.log(`- Created:               ${moment.unix(dividend.created).format('MMMM Do YYYY, HH:mm:ss')}`);
@@ -240,11 +269,13 @@ async function manageExistingDividend(dividendIndex) {
   console.log(`- At checkpoint:         ${dividend.checkpointId}`);
   console.log(`- Amount:                ${web3.utils.fromWei(dividend.amount)} ${dividendTokenSymbol}`);
   console.log(`- Claimed amount:        ${web3.utils.fromWei(dividend.claimedAmount)} ${dividendTokenSymbol}`);
-  console.log(`- Withheld:              ${web3.utils.fromWei(dividend.totalWithheld)} ${dividendTokenSymbol}`);
-  console.log(`- Withheld claimed:      ${web3.utils.fromWei(dividend.totalWithheldWithdrawn)} ${dividendTokenSymbol}`);
+  console.log(`- Taxes:`);
+  console.log(`    To withhold:         ${web3.utils.fromWei(taxesToWithHeld)} ${dividendTokenSymbol}`);
+  console.log(`    Withheld to-date:    ${web3.utils.fromWei(dividend.totalWithheld)} ${dividendTokenSymbol}`);
+  console.log(`    Withdrawn to-date:   ${web3.utils.fromWei(dividend.totalWithheldWithdrawn)} ${dividendTokenSymbol}`);
   console.log(`- Total investors:       ${investorArray.length}`);
-  console.log(`   Have already claimed: ${claimedArray.filter(c => c).length}`);
-  console.log(`   Excluded:             ${excludedArray.filter(e => e).length} `);
+  console.log(`   Have already claimed: ${claimedInvestors} (${investorArray.length - excludedInvestors !== 0 ? claimedInvestors / (investorArray.length - excludedInvestors) * 100 : 0}%)`);
+  console.log(`   Excluded:             ${excludedInvestors} `);
   // ------------------
 
 
@@ -454,10 +485,10 @@ function showReport(_name, _tokenSymbol, _amount, _witthheld, _claimed, _investo
     let investor = _investorArray[i];
     let excluded = _excludedArray[i];
     let withdrawn = _claimedArray[i] ? 'YES' : 'NO';
-    let amount = !excluded ? web3.utils.fromWei(_amountArray[i]) : 0;
-    let withheld = (!excluded && _claimedArray[i]) ? web3.utils.fromWei(_withheldArray[i]) : 'NA';
-    let withheldPercentage = (!excluded && _claimedArray[i]) ? (withheld !== '0' ? parseFloat(withheld) / parseFloat(amount) * 100 : 0) : 'NA';
-    let received = (!excluded && _claimedArray[i]) ? web3.utils.fromWei(web3.utils.toBN(_amountArray[i]).sub(web3.utils.toBN(_withheldArray[i]))) : 0;
+    let amount = !excluded ? web3.utils.fromWei(web3.utils.toBN(_amountArray[i]).add(web3.utils.toBN(_withheldArray[i]))) : 0;
+    let withheld = !excluded ? web3.utils.fromWei(_withheldArray[i]) : 'NA';
+    let withheldPercentage = (!excluded) ? (withheld !== '0' ? parseFloat(withheld) / parseFloat(amount) * 100 : 0) : 'NA';
+    let received = !excluded ? web3.utils.fromWei(_amountArray[i]) : 0;
     dataTable.push([
       investor,
       amount,
@@ -476,6 +507,8 @@ function showReport(_name, _tokenSymbol, _amount, _witthheld, _claimed, _investo
   console.log(`- Total amount of investors: ${_investorArray.length} `);
   console.log();
   console.log(table(dataTable));
+  console.log();
+  console.log(chalk.yellow(`NOTE: If investor has not claimed the dividend yet, TAX and AMOUNT are calculated with the current values set and they might change.`));
   console.log(chalk.yellow(`-----------------------------------------------------------------------------------------------------------------------------------------------------------`));
   console.log();
 }
@@ -561,7 +594,14 @@ async function addDividendsModule() {
 
   let index = readlineSync.keyInSelect(options, 'Which dividends module do you want to add? ', { cancel: 'Return' });
   if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]} module? `)) {
-    let bytes = web3.utils.fromAscii('', 16);
+    let wallet = readlineSync.question('Enter the account address to receive reclaimed dividends and tax: ', {
+      limit: function (input) {
+        return web3.utils.isAddress(input);
+      },
+      limitMessage: "Must be a valid address",
+    });
+    let configureFunction = abis.erc20DividendCheckpoint().find(o => o.name === 'configure' && o.type === 'function');
+    let bytes = web3.eth.abi.encodeFunctionCall(configureFunction, [wallet]);
 
     let selectedDividendFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, gbl.constants.MODULES_TYPES.DIVIDENDS, options[index]);
     let addModuleAction = securityToken.methods.addModule(selectedDividendFactoryAddress, bytes, 0, 0);
@@ -655,11 +695,11 @@ async function selectDividend(dividends) {
   let result = null;
   let options = dividends.map(function (d) {
     return `${d.name}
-    Amount: ${ web3.utils.fromWei(d.amount)} ${dividendsType}
-    Status: ${ isExpiredDividend(d) ? 'Expired' : hasRemaining(d) ? 'In progress' : 'Completed'}
-    Token: ${ d.tokenSymbol}
-    Created: ${ moment.unix(d.created).format('MMMM Do YYYY, HH:mm:ss')}
-    Expiry: ${ moment.unix(d.expiry).format('MMMM Do YYYY, HH:mm:ss')} `
+    Amount: ${web3.utils.fromWei(d.amount)} ${d.tokenSymbol}
+    Status: ${isExpiredDividend(d) ? 'Expired' : hasRemaining(d) ? 'In progress' : 'Completed'}
+    Token: ${d.tokenSymbol}
+    Created: ${moment.unix(d.created).format('MMMM Do YYYY, HH:mm:ss')}
+    Expiry: ${moment.unix(d.expiry).format('MMMM Do YYYY, HH:mm:ss')} `
   });
 
   let index = readlineSync.keyInSelect(options, 'Select a dividend:', { cancel: 'RETURN' });

@@ -1,9 +1,9 @@
 pragma solidity ^0.4.24;
 
 import "./ITransferManager.sol";
-import "./VolumeRestrictionTMStorage.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "../../libraries/BokkyPooBahsDateTimeLibrary.sol";
+import "../../libraries/VolumeRestrictionLib.sol";
 
 contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
 
@@ -212,7 +212,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
             _endTime,
             RestrictionType(_restrictionType)
         );
-        VolumeRestrictionLib._addRestrictionData(holderData, _holder, uint8(TypeOfPeriod.MultipleDays), individualRestriction[_holder].endTime);
+        VolumeRestrictionLib.addRestrictionData(holderData, _holder, uint8(TypeOfPeriod.MultipleDays), individualRestriction[_holder].endTime);
         emit AddIndividualRestriction(
             _holder,
             _allowedTokens,
@@ -275,7 +275,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
             _endTime,
             RestrictionType(_restrictionType)
         );
-        VolumeRestrictionLib._addRestrictionData(holderData, _holder, uint8(TypeOfPeriod.OneDay), individualRestriction[_holder].endTime);
+        VolumeRestrictionLib.addRestrictionData(holderData, _holder, uint8(TypeOfPeriod.OneDay), individualRestriction[_holder].endTime);
         emit AddIndividualDailyRestriction(
             _holder,
             _allowedTokens,
@@ -447,7 +447,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         require(_holder != address(0));
         require(individualRestriction[_holder].endTime != 0);
         individualRestriction[_holder] = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
-        VolumeRestrictionLib._deleteHolderFromList(holderData, _holder, uint8(TypeOfPeriod.OneDay));
+        VolumeRestrictionLib.deleteHolderFromList(holderData, _holder, uint8(TypeOfPeriod.OneDay));
         userToBucket[_holder].lastTradedDayTime = 0;
         userToBucket[_holder].sumOfLastPeriod = 0;
         userToBucket[_holder].daysCovered = 0;
@@ -477,7 +477,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         require(_holder != address(0));
         require(individualDailyRestriction[_holder].endTime != 0);
         individualDailyRestriction[_holder] = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
-        VolumeRestrictionLib._deleteHolderFromList(holderData, _holder, uint8(TypeOfPeriod.MultipleDays));
+        VolumeRestrictionLib.deleteHolderFromList(holderData, _holder, uint8(TypeOfPeriod.MultipleDays));
         userToBucket[_holder].dailyLastTradedDayTime = 0;
         emit IndividualDailyRestrictionRemoved(_holder);
     }

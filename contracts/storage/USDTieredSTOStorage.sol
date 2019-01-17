@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "../../interfaces/IERC20.sol";
+import "../interfaces/IERC20.sol";
 
 /**
  * @title Contract used to store layout for the USDTieredSTO storage

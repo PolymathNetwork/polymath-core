@@ -1,7 +1,5 @@
 pragma solidity ^0.4.24;
 
-import "../../libraries/VolumeRestrictionLib.sol";
-
 /**
  * @title Storage layout for VolumeRestrictionTM
  */
@@ -10,6 +8,20 @@ contract VolumeRestrictionTMStorage {
     enum RestrictionType { Fixed, Percentage }
 
     enum TypeOfPeriod { MultipleDays, OneDay, Both }
+
+    struct RestrictedHolder {
+        // 1 represent true & 0 for false
+        uint8 seen;
+        // Type of period will be enum index of TypeOfPeriod enum
+        uint8 typeOfPeriod;
+        // Index of the array where the holder address lives
+        uint128 index;
+    }
+
+    struct RestrictedData {
+        mapping(address => RestrictedHolder) restrictedHolders;
+        address[] restrictedAddresses;
+    }
 
     struct VolumeRestriction {
         // If typeOfRestriction is `Percentage` then allowedTokens will be in
@@ -43,11 +55,9 @@ contract VolumeRestrictionTMStorage {
     mapping(address => BucketDetails) internal userToBucket;
     // Storing the information related to default restriction
     mapping(address => BucketDetails) internal defaultUserToBucket;
-    // List of wallets that are exempted from all the restrictions applied by the this contract
-    /* mapping(address => bool) public exemptList; */
     // Restricted data (refernce from the VolumeRestrictionLib library )
-    VolumeRestrictionLib.RestrictedData holderData;
-    // Holde exempt index
+    RestrictedData holderData;
+    // Hold exempt index
     mapping(address => uint256) exemptIndex;
     address[] public exemptAddresses;
 

@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "../modules/STO/USDTieredSTOStorage.sol";
+import "../storage/USDTieredSTOStorage.sol";
 import "./OwnedProxy.sol";
 import "../Pausable.sol";
 import "openzeppelin-solidity/contracts/ReentrancyGuard.sol";

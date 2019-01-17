@@ -111,17 +111,17 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
      */
     function verifyTransfer(address _from, address /*_to */, uint256 _amount, bytes memory /*_data*/, bool _isTransfer) public returns (Result) {
         // If `_from` is present in the exemptionList or it is `0x0` address then it will not follow the vol restriction
-        if (!paused && _from != address(0) && exemptIndex[_from] == 0) {
+        if (!paused && _from != address(0) && exemptions.exemptIndex[_from] == 0) {
             // Function must only be called by the associated security token if _isTransfer == true
             require(msg.sender == securityToken || !_isTransfer);
             // Checking the individual restriction if the `_from` comes in the individual category
-            if ((restrictions.individualRestriction[_from].endTime >= now && restrictions.individualRestriction[_from].startTime <= now)
-                || (restrictions.individualDailyRestriction[_from].endTime >= now && restrictions.individualDailyRestriction[_from].startTime <= now)) {
+            if ((individualRestrictions.individualRestriction[_from].endTime >= now && individualRestrictions.individualRestriction[_from].startTime <= now)
+                || (individualRestrictions.individualDailyRestriction[_from].endTime >= now && individualRestrictions.individualDailyRestriction[_from].startTime <= now)) {
 
                 return _individualRestrictionCheck(_from, _amount, _isTransfer);
                 // If the `_from` doesn't fall under the individual category. It will processed with in the global category automatically
-            } else if ((defaultRestriction.endTime >= now && defaultRestriction.startTime <= now)
-                || (defaultDailyRestriction.endTime >= now && defaultDailyRestriction.startTime <= now)) {
+            } else if ((globalRestrictions.defaultRestriction.endTime >= now && globalRestrictions.defaultRestriction.startTime <= now)
+                || (globalRestrictions.defaultDailyRestriction.endTime >= now && globalRestrictions.defaultDailyRestriction.startTime <= now)) {
 
                 return _defaultRestrictionCheck(_from, _amount, _isTransfer);
             }
@@ -136,15 +136,15 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
      */
     function changeExemptWalletList(address _wallet, bool _change) public withPerm(ADMIN) {
         require(_wallet != address(0));
-        require((exemptIndex[_wallet] == 0) == _change);
+        require((exemptions.exemptIndex[_wallet] == 0) == _change);
         if (_change) {
-            exemptAddresses.push(_wallet);
-            exemptIndex[_wallet] = exemptAddresses.length;
+            exemptions.exemptAddresses.push(_wallet);
+            exemptions.exemptIndex[_wallet] = exemptions.exemptAddresses.length;
         } else {
-            exemptAddresses[exemptIndex[_wallet] - 1] = exemptAddresses[exemptAddresses.length - 1];
-            exemptIndex[exemptAddresses[exemptIndex[_wallet] - 1]] = exemptIndex[_wallet];
-            delete exemptIndex[_wallet];
-            exemptAddresses.length --;
+            exemptions.exemptAddresses[exemptions.exemptIndex[_wallet] - 1] = exemptions.exemptAddresses[exemptions.exemptAddresses.length - 1];
+            exemptions.exemptIndex[exemptions.exemptAddresses[exemptions.exemptIndex[_wallet] - 1]] = exemptions.exemptIndex[_wallet];
+            delete exemptions.exemptIndex[_wallet];
+            exemptions.exemptAddresses.length --;
         }
         emit ChangedExemptWalletList(_wallet, _change);
     }
@@ -195,23 +195,23 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
             _startTime = now;
         }
         require(
-            restrictions.individualRestriction[_holder].endTime < now,
+            individualRestrictions.individualRestriction[_holder].endTime < now,
             "Not Allowed"
         );
-        require(_holder != address(0) && exemptIndex[_holder] == 0, "Invalid address");
+        require(_holder != address(0) && exemptions.exemptIndex[_holder] == 0, "Invalid address");
         _checkInputParams(_allowedTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType, now);
 
-        if (restrictions.individualRestriction[_holder].endTime != 0) {
+        if (individualRestrictions.individualRestriction[_holder].endTime != 0) {
             _removeIndividualRestriction(_holder);
         }
-        restrictions.individualRestriction[_holder] = VolumeRestriction(
+        individualRestrictions.individualRestriction[_holder] = VolumeRestriction(
             _allowedTokens,
             _startTime,
             _rollingPeriodInDays,
             _endTime,
             RestrictionType(_restrictionType)
         );
-        VolumeRestrictionLib.addRestrictionData(holderData, _holder, uint8(TypeOfPeriod.MultipleDays), restrictions.individualRestriction[_holder].endTime);
+        VolumeRestrictionLib.addRestrictionData(holderData, _holder, uint8(TypeOfPeriod.MultipleDays), individualRestrictions.individualRestriction[_holder].endTime);
         emit AddIndividualRestriction(
             _holder,
             _allowedTokens,
@@ -263,18 +263,18 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
             _startTime = now;
         }
         require(
-            restrictions.individualDailyRestriction[_holder].endTime < now,
+            individualRestrictions.individualDailyRestriction[_holder].endTime < now,
             "Not Allowed"
         );
         _checkInputParams(_allowedTokens, _startTime, 1, _endTime, _restrictionType, now);
-        restrictions.individualDailyRestriction[_holder] = VolumeRestriction(
+        individualRestrictions.individualDailyRestriction[_holder] = VolumeRestriction(
             _allowedTokens,
             _startTime,
             1,
             _endTime,
             RestrictionType(_restrictionType)
         );
-        VolumeRestrictionLib.addRestrictionData(holderData, _holder, uint8(TypeOfPeriod.OneDay), restrictions.individualRestriction[_holder].endTime);
+        VolumeRestrictionLib.addRestrictionData(holderData, _holder, uint8(TypeOfPeriod.OneDay), individualRestrictions.individualRestriction[_holder].endTime);
         emit AddIndividualDailyRestriction(
             _holder,
             _allowedTokens,
@@ -372,11 +372,11 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
             startTime = now;
         }
         require(
-            defaultRestriction.endTime < now,
+            globalRestrictions.defaultRestriction.endTime < now,
             "Not Allowed"
         );
         _checkInputParams(_allowedTokens, startTime, _rollingPeriodInDays, _endTime, _restrictionType, now);
-        defaultRestriction = VolumeRestriction(
+        globalRestrictions.defaultRestriction = VolumeRestriction(
             _allowedTokens,
             startTime,
             _rollingPeriodInDays,
@@ -413,11 +413,11 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
             startTime = now;
         }
         require(
-            defaultDailyRestriction.endTime < now,
+            globalRestrictions.defaultDailyRestriction.endTime < now,
             "Not Allowed"
         );
         _checkInputParams(_allowedTokens, startTime, 1, _endTime, _restrictionType, now);
-        defaultDailyRestriction = VolumeRestriction(
+        globalRestrictions.defaultDailyRestriction = VolumeRestriction(
             _allowedTokens,
             startTime,
             1,
@@ -444,12 +444,12 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
     /// @notice Internal function to facilitate the removal of individual restriction
     function _removeIndividualRestriction(address _holder) internal {
         require(_holder != address(0));
-        require(restrictions.individualRestriction[_holder].endTime != 0);
-        restrictions.individualRestriction[_holder] = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
+        require(individualRestrictions.individualRestriction[_holder].endTime != 0);
+        individualRestrictions.individualRestriction[_holder] = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
         VolumeRestrictionLib.deleteHolderFromList(holderData, _holder, uint8(TypeOfPeriod.OneDay));
-        userToBucket[_holder].lastTradedDayTime = 0;
-        userToBucket[_holder].sumOfLastPeriod = 0;
-        userToBucket[_holder].daysCovered = 0;
+        bucketData.userToBucket[_holder].lastTradedDayTime = 0;
+        bucketData.userToBucket[_holder].sumOfLastPeriod = 0;
+        bucketData.userToBucket[_holder].daysCovered = 0;
         emit IndividualRestrictionRemoved(_holder);
     }
 
@@ -474,10 +474,10 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
     /// @notice Internal function to facilitate the removal of individual daily restriction
     function _removeIndividualDailyRestriction(address _holder) internal {
         require(_holder != address(0));
-        require(restrictions.individualDailyRestriction[_holder].endTime != 0);
-        restrictions.individualDailyRestriction[_holder] = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
+        require(individualRestrictions.individualDailyRestriction[_holder].endTime != 0);
+        individualRestrictions.individualDailyRestriction[_holder] = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
         VolumeRestrictionLib.deleteHolderFromList(holderData, _holder, uint8(TypeOfPeriod.MultipleDays));
-        userToBucket[_holder].dailyLastTradedDayTime = 0;
+        bucketData.userToBucket[_holder].dailyLastTradedDayTime = 0;
         emit IndividualDailyRestrictionRemoved(_holder);
     }
 
@@ -495,8 +495,8 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
      * @notice Use to remove the default restriction
      */
     function removeDefaultRestriction() public withPerm(ADMIN) {
-        require(defaultRestriction.endTime != 0);
-        defaultRestriction = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
+        require(globalRestrictions.defaultRestriction.endTime != 0);
+        globalRestrictions.defaultRestriction = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
         emit DefaultRestrictionRemoved();
     }
 
@@ -504,8 +504,8 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
      * @notice Use to remove the daily default restriction
      */
     function removeDefaultDailyRestriction() external withPerm(ADMIN) {
-        require(defaultDailyRestriction.endTime != 0);
-        defaultDailyRestriction = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
+        require(globalRestrictions.defaultDailyRestriction.endTime != 0);
+        globalRestrictions.defaultDailyRestriction = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
         emit DefaultDailyRestrictionRemoved();
     }
 
@@ -553,9 +553,9 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         if (_startTime == 0) {
             _startTime = now;
         }
-        require(restrictions.individualRestriction[_holder].startTime > now, "Not Allowed");
+        require(individualRestrictions.individualRestriction[_holder].startTime > now, "Not Allowed");
         _checkInputParams(_allowedTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType, now);
-        restrictions.individualRestriction[_holder] = VolumeRestriction(
+        individualRestrictions.individualRestriction[_holder] = VolumeRestriction(
             _allowedTokens,
             _startTime,
             _rollingPeriodInDays,
@@ -615,9 +615,9 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
             _startTime = now;
         }
         _checkInputParams(_allowedTokens, _startTime, 1, _endTime, _restrictionType,
-          (restrictions.individualDailyRestriction[_holder].startTime <= now ? restrictions.individualDailyRestriction[_holder].startTime : now)
+          (individualRestrictions.individualDailyRestriction[_holder].startTime <= now ? individualRestrictions.individualDailyRestriction[_holder].startTime : now)
         );
-        restrictions.individualDailyRestriction[_holder] = VolumeRestriction(
+        individualRestrictions.individualDailyRestriction[_holder] = VolumeRestriction(
             _allowedTokens,
             _startTime,
             1,
@@ -716,13 +716,13 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         external
         withPerm(ADMIN)
     {
-        require(defaultRestriction.startTime > now, "Not Allowed");
+        require(globalRestrictions.defaultRestriction.startTime > now, "Not Allowed");
         uint256 startTime = _startTime;
         if (_startTime == 0) {
             startTime = now;
         }
         _checkInputParams(_allowedTokens, startTime, _rollingPeriodInDays, _endTime, _restrictionType, now);
-        defaultRestriction = VolumeRestriction(
+        globalRestrictions.defaultRestriction = VolumeRestriction(
             _allowedTokens,
             startTime,
             _rollingPeriodInDays,
@@ -763,9 +763,9 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         // If old startTime is already passed then new startTime should be greater than or equal to the
         // old startTime otherwise any past startTime can be allowed in compare to earlier startTime.
         _checkInputParams(_allowedTokens, startTime, 1, _endTime, _restrictionType,
-            (defaultDailyRestriction.startTime <= now ? defaultDailyRestriction.startTime : now)
+            (globalRestrictions.defaultDailyRestriction.startTime <= now ? globalRestrictions.defaultDailyRestriction.startTime : now)
         );
-        defaultDailyRestriction = VolumeRestriction(
+        globalRestrictions.defaultDailyRestriction = VolumeRestriction(
             _allowedTokens,
             startTime,
             1,
@@ -787,17 +787,17 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
     */
     function _defaultRestrictionCheck(address _from, uint256 _amount, bool _isTransfer) internal returns (Result) {
         // using the variable to avoid stack too deep error
-        BucketDetails storage bucketDetails = defaultUserToBucket[_from];
-        uint256 daysCovered = defaultRestriction.rollingPeriodInDays;
+        BucketDetails storage bucketDetails = bucketData.defaultUserToBucket[_from];
+        uint256 daysCovered = globalRestrictions.defaultRestriction.rollingPeriodInDays;
         uint256 fromTimestamp = 0;
         uint256 sumOfLastPeriod = 0;
         uint256 dailyTime = 0;
         bool allowedDefault = true;
         bool allowedDaily;
-        if (defaultRestriction.endTime >= now && defaultRestriction.startTime <= now) {
-            if (bucketDetails.lastTradedDayTime < defaultRestriction.startTime) {
+        if (globalRestrictions.defaultRestriction.endTime >= now && globalRestrictions.defaultRestriction.startTime <= now) {
+            if (bucketDetails.lastTradedDayTime < globalRestrictions.defaultRestriction.startTime) {
                 // It will execute when the txn is performed first time after the addition of individual restriction
-                fromTimestamp = defaultRestriction.startTime;
+                fromTimestamp = globalRestrictions.defaultRestriction.startTime;
             } else {
                 // Picking up the last timestamp
                 fromTimestamp = bucketDetails.lastTradedDayTime;
@@ -813,11 +813,11 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
                 bucketDetails
             );
             // validation of the transaction amount
-            if (!_checkValidAmountToTransact(sumOfLastPeriod, _amount, defaultRestriction)) {
+            if (!_checkValidAmountToTransact(sumOfLastPeriod, _amount, globalRestrictions.defaultRestriction)) {
                 allowedDefault = false;
             }
         }
-        (allowedDaily, dailyTime) = _dailyTxCheck(_from, _amount, bucketDetails.dailyLastTradedDayTime, defaultDailyRestriction);
+        (allowedDaily, dailyTime) = _dailyTxCheck(_from, _amount, bucketDetails.dailyLastTradedDayTime, globalRestrictions.defaultDailyRestriction);
 
         if (_isTransfer) {
             _updateStorage(
@@ -827,7 +827,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
                 sumOfLastPeriod,
                 daysCovered,
                 dailyTime,
-                defaultDailyRestriction.endTime,
+                globalRestrictions.defaultDailyRestriction.endTime,
                 true
             );
         }
@@ -840,10 +840,10 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
      */
     function _individualRestrictionCheck(address _from, uint256 _amount, bool _isTransfer) internal returns (Result) {
         // using the variable to avoid stack too deep error
-        BucketDetails memory bucketDetails = userToBucket[_from];
-        VolumeRestriction memory dailyRestriction = restrictions.individualDailyRestriction[_from];
-        VolumeRestriction memory restriction = restrictions.individualRestriction[_from];
-        uint256 daysCovered = restrictions.individualRestriction[_from].rollingPeriodInDays;
+        BucketDetails memory bucketDetails = bucketData.userToBucket[_from];
+        VolumeRestriction memory dailyRestriction = individualRestrictions.individualDailyRestriction[_from];
+        VolumeRestriction memory restriction = individualRestrictions.individualRestriction[_from];
+        uint256 daysCovered = individualRestrictions.individualRestriction[_from].rollingPeriodInDays;
         uint256 fromTimestamp = 0;
         uint256 sumOfLastPeriod = 0;
         uint256 dailyTime = 0;
@@ -910,7 +910,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
             else if (now.sub(dailyLastTradedDayTime) >= 1 days)
                 dailyLastTradedDayTime = dailyLastTradedDayTime.add(BokkyPooBahsDateTimeLibrary.diffDays(dailyLastTradedDayTime, now).mul(1 days));
             // Assgining total sum traded on dailyLastTradedDayTime timestamp
-            txSumOfDay = bucket[from][dailyLastTradedDayTime];
+            txSumOfDay = bucketData.bucket[from][dailyLastTradedDayTime];
             return (_checkValidAmountToTransact(txSumOfDay, amount, restriction), dailyLastTradedDayTime);
         }
         return (true, dailyLastTradedDayTime);
@@ -948,7 +948,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
                     // Loop starts from the first day covered in sumOfLastPeriod upto the day that is covered by rolling period.
                     uint256 temp = _bucketDetails.daysCovered.sub(counter.sub(_rollingPeriodInDays));
                     temp = _bucketDetails.lastTradedDayTime.sub(temp.mul(1 days));
-                    sumOfLastPeriod = sumOfLastPeriod.sub(bucket[_from][temp]);
+                    sumOfLastPeriod = sumOfLastPeriod.sub(bucketData.bucket[_from][temp]);
                 }
                 // Adding the last amount that is transacted on the `_fromTime` not actually doing it but left written to understand
                 // the alogrithm
@@ -995,11 +995,11 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
     {
 
         if (isDefault){
-            BucketDetails storage defaultUserToBucketDetails = defaultUserToBucket[_from];
+            BucketDetails storage defaultUserToBucketDetails = bucketData.defaultUserToBucket[_from];
             _updateStorageActual(_from, _amount, _lastTradedDayTime, _sumOfLastPeriod, _daysCovered, _dailyLastTradedDayTime, _endTime, defaultUserToBucketDetails);
         }
         else {
-            BucketDetails storage userToBucketDetails = userToBucket[_from];
+            BucketDetails storage userToBucketDetails = bucketData.userToBucket[_from];
             _updateStorageActual(_from, _amount, _lastTradedDayTime, _sumOfLastPeriod, _daysCovered, _dailyLastTradedDayTime, _endTime, userToBucketDetails);
         }
     }
@@ -1032,11 +1032,11 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
             if (_lastTradedDayTime !=0) {
                 details.sumOfLastPeriod = _sumOfLastPeriod.add(_amount);
                 // Increasing the total amount of the day by `_amount`
-                bucket[_from][_lastTradedDayTime] = bucket[_from][_lastTradedDayTime].add(_amount);
+                bucketData.bucket[_from][_lastTradedDayTime] = bucketData.bucket[_from][_lastTradedDayTime].add(_amount);
             }
             if ((_dailyLastTradedDayTime != _lastTradedDayTime) && _dailyLastTradedDayTime != 0 && now <= _endTime) {
                 // Increasing the total amount of the day by `_amount`
-                bucket[_from][_dailyLastTradedDayTime] = bucket[_from][_dailyLastTradedDayTime].add(_amount);
+                bucketData.bucket[_from][_dailyLastTradedDayTime] = bucketData.bucket[_from][_dailyLastTradedDayTime].add(_amount);
             }
         }
     }
@@ -1080,10 +1080,10 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
      */
     function getIndividualBucketDetailsToUser(address _user) public view returns(uint256, uint256, uint256, uint256) {
         return(
-            userToBucket[_user].lastTradedDayTime,
-            userToBucket[_user].sumOfLastPeriod,
-            userToBucket[_user].daysCovered,
-            userToBucket[_user].dailyLastTradedDayTime
+            bucketData.userToBucket[_user].lastTradedDayTime,
+            bucketData.userToBucket[_user].sumOfLastPeriod,
+            bucketData.userToBucket[_user].daysCovered,
+            bucketData.userToBucket[_user].dailyLastTradedDayTime
         );
     }
 
@@ -1097,10 +1097,10 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
      */
     function getDefaultBucketDetailsToUser(address _user) public view returns(uint256, uint256, uint256, uint256) {
         return(
-            defaultUserToBucket[_user].lastTradedDayTime,
-            defaultUserToBucket[_user].sumOfLastPeriod,
-            defaultUserToBucket[_user].daysCovered,
-            defaultUserToBucket[_user].dailyLastTradedDayTime
+            bucketData.defaultUserToBucket[_user].lastTradedDayTime,
+            bucketData.defaultUserToBucket[_user].sumOfLastPeriod,
+            bucketData.defaultUserToBucket[_user].daysCovered,
+            bucketData.defaultUserToBucket[_user].dailyLastTradedDayTime
         );
     }
 
@@ -1110,7 +1110,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
      * @param _at Timestamp
      */
     function getTotalTradedByUser(address _user, uint256 _at) external view returns(uint256) {
-        return bucket[_user][_at];
+        return bucketData.bucket[_user][_at];
     }
 
     /**
@@ -1124,7 +1124,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
      * @notice Use to return the list of exempted addresses
      */
     function getExemptAddress() external view returns(address[] memory) {
-        return exemptAddresses;
+        return exemptions.exemptAddresses;
     }
 
     /**
@@ -1160,16 +1160,16 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         for (i = 0; i < holderData.restrictedAddresses.length; i++) {
             allAddresses[counter] =  holderData.restrictedAddresses[i];
             if (holderData.restrictedHolders[holderData.restrictedAddresses[i]].typeOfPeriod == uint8(TypeOfPeriod.MultipleDays)) {
-                _setValues(restrictions.individualRestriction[holderData.restrictedAddresses[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
+                _setValues(individualRestrictions.individualRestriction[holderData.restrictedAddresses[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
             }
             else if (holderData.restrictedHolders[holderData.restrictedAddresses[i]].typeOfPeriod == uint8(TypeOfPeriod.OneDay)) {
-                _setValues(restrictions.individualDailyRestriction[holderData.restrictedAddresses[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
+                _setValues(individualRestrictions.individualDailyRestriction[holderData.restrictedAddresses[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
             }
             else if (holderData.restrictedHolders[holderData.restrictedAddresses[i]].typeOfPeriod == uint8(TypeOfPeriod.Both)) {
-                _setValues(restrictions.individualRestriction[holderData.restrictedAddresses[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
+                _setValues(individualRestrictions.individualRestriction[holderData.restrictedAddresses[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
                 counter = counter + 1;
                 allAddresses[counter] =  holderData.restrictedAddresses[i];
-                _setValues(restrictions.individualDailyRestriction[holderData.restrictedAddresses[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
+                _setValues(individualRestrictions.individualDailyRestriction[holderData.restrictedAddresses[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
             }
             counter ++;
         }

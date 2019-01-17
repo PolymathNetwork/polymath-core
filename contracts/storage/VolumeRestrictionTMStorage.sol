@@ -23,6 +23,9 @@ contract VolumeRestrictionTMStorage {
         address[] restrictedAddresses;
     }
 
+    // Restricted data (refernce from the VolumeRestrictionLib library )
+    RestrictedData holderData;
+
     struct VolumeRestriction {
         // If typeOfRestriction is `Percentage` then allowedTokens will be in
         // the % (w.r.t to totalSupply) with a multiplier of 10**16 . else it
@@ -34,6 +37,26 @@ contract VolumeRestrictionTMStorage {
         RestrictionType typeOfRestriction;
     }
 
+    struct IndividualRestrictions {
+        // Restriction stored corresponds to a particular token holder
+        mapping(address => VolumeRestriction) individualRestriction;
+        // Daily restriction stored corresponds to a particular token holder
+        mapping(address => VolumeRestriction) individualDailyRestriction;
+    }
+
+    // Individual and daily restrictions for investors
+    IndividualRestrictions individualRestrictions;
+
+    struct GlobalRestrictions {
+      // Global restriction that applies to all token holders
+      VolumeRestriction defaultRestriction;
+      // Daily global restriction that applies to all token holders (Total ST traded daily is restricted)
+      VolumeRestriction defaultDailyRestriction;
+    }
+
+    // Individual and daily restrictions for investors
+    GlobalRestrictions globalRestrictions;
+
     struct BucketDetails {
         uint256 lastTradedDayTime;
         uint256 sumOfLastPeriod;   // It is the sum of transacted amount within the last rollingPeriodDays
@@ -41,29 +64,23 @@ contract VolumeRestrictionTMStorage {
         uint256 dailyLastTradedDayTime;
     }
 
-    // Global restriction that applies to all token holders
-    VolumeRestriction public defaultRestriction;
-    // Daily global restriction that applies to all token holders (Total ST traded daily is restricted)
-    VolumeRestriction public defaultDailyRestriction;
-
-    struct Restrictions {
-        // Restriction stored corresponds to a particular token holder
-        mapping(address => VolumeRestriction) individualRestriction;
-        // Daily restriction stored corresponds to a particular token holder
-        mapping(address => VolumeRestriction) individualDailyRestriction;
+    struct BucketData {
+        // Storing _from => day's timestamp => total amount transact in a day --individual
+        mapping(address => mapping(uint256 => uint256)) bucket;
+        // Storing the information that used to validate the transaction
+        mapping(address => BucketDetails) userToBucket;
+        // Storing the information related to default restriction
+        mapping(address => BucketDetails) defaultUserToBucket;
     }
 
-    Restrictions restrictions;
-    // Storing _from => day's timestamp => total amount transact in a day --individual
-    mapping(address => mapping(uint256 => uint256)) internal bucket;
-    // Storing the information that used to validate the transaction
-    mapping(address => BucketDetails) internal userToBucket;
-    // Storing the information related to default restriction
-    mapping(address => BucketDetails) internal defaultUserToBucket;
-    // Restricted data (refernce from the VolumeRestrictionLib library )
-    RestrictedData holderData;
+    BucketData bucketData;
+
     // Hold exempt index
-    mapping(address => uint256) exemptIndex;
-    address[] public exemptAddresses;
+    struct Exemptions {
+        mapping(address => uint256) exemptIndex;
+        address[] exemptAddresses;
+    }
+
+    Exemptions exemptions;
 
 }

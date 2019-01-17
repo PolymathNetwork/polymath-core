@@ -1,10 +1,11 @@
 pragma solidity ^0.5.0;
 
-import "./STGetterStorage.sol";
+import "./OZStorage.sol";
+import "./SecurityTokenStorage.sol";
 import "../libraries/TokenLib.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
-contract STGetter is STGetterStorage {
+contract STGetter is OZStorage, SecurityTokenStorage {
 
     using SafeMath for uint256;
 

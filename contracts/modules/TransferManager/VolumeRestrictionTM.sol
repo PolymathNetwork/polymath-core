@@ -166,32 +166,9 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         uint256 _endTime,
         uint256 _restrictionType
     )
-        external
+        public
         withPerm(ADMIN)
     {
-        _addIndividualRestriction(
-            _holder,
-            _allowedTokens,
-            _startTime,
-            _rollingPeriodInDays,
-            _endTime,
-            _restrictionType
-        );
-    }
-
-    /// @notice Internal function to facilitate the addition of individual restriction
-    function _addIndividualRestriction(
-        address _holder,
-        uint256 _allowedTokens,
-        uint256 _startTime,
-        uint256 _rollingPeriodInDays,
-        uint256 _endTime,
-        uint256 _restrictionType
-    )
-        internal
-    {
-//individualRestrictions, exemptions,
-//_checkInputParams, _removeIndividualRestriction
         require(
             individualRestrictions.individualRestriction[_holder].endTime < now,
             "Not Allowed"
@@ -223,6 +200,48 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         );
     }
 
+    /// @notice Internal function to facilitate the addition of individual restriction
+    /* function _addIndividualRestriction(
+        address _holder,
+        uint256 _allowedTokens,
+        uint256 _startTime,
+        uint256 _rollingPeriodInDays,
+        uint256 _endTime,
+        uint256 _restrictionType
+    )
+        internal
+    {
+        require(
+            individualRestrictions.individualRestriction[_holder].endTime < now,
+            "Not Allowed"
+        );
+        if (_startTime == 0) {
+            _startTime = now;
+        }
+        require(_holder != address(0) && exemptions.exemptIndex[_holder] == 0, "Invalid address");
+        _checkInputParams(_allowedTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType, now);
+
+        if (individualRestrictions.individualRestriction[_holder].endTime != 0) {
+            _removeIndividualRestriction(_holder);
+        }
+        individualRestrictions.individualRestriction[_holder] = VolumeRestriction(
+            _allowedTokens,
+            _startTime,
+            _rollingPeriodInDays,
+            _endTime,
+            RestrictionType(_restrictionType)
+        );
+        VolumeRestrictionLib.addRestrictionData(holderData, _holder, uint8(TypeOfPeriod.MultipleDays), individualRestrictions.individualRestriction[_holder].endTime);
+        emit AddIndividualRestriction(
+            _holder,
+            _allowedTokens,
+            _startTime,
+            _rollingPeriodInDays,
+            _endTime,
+            _restrictionType
+        );
+    } */
+
     /**
      * @notice Use to add the new individual daily restriction for all token holder
      * @param _holder Address of the token holder, whom restriction will be implied
@@ -238,20 +257,37 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         uint256 _endTime,
         uint256 _restrictionType
     )
-        external
+        public
         withPerm(ADMIN)
     {
-        _addIndividualDailyRestriction(
+        if (_startTime == 0) {
+            _startTime = now;
+        }
+        require(
+            individualRestrictions.individualDailyRestriction[_holder].endTime < now,
+            "Not Allowed"
+        );
+        _checkInputParams(_allowedTokens, _startTime, 1, _endTime, _restrictionType, now);
+        individualRestrictions.individualDailyRestriction[_holder] = VolumeRestriction(
+            _allowedTokens,
+            _startTime,
+            1,
+            _endTime,
+            RestrictionType(_restrictionType)
+        );
+        VolumeRestrictionLib.addRestrictionData(holderData, _holder, uint8(TypeOfPeriod.OneDay), individualRestrictions.individualRestriction[_holder].endTime);
+        emit AddIndividualDailyRestriction(
             _holder,
             _allowedTokens,
             _startTime,
+            1,
             _endTime,
             _restrictionType
-        );
+      );
     }
 
     /// @notice Internal function to facilitate the addition of individual daily restriction
-    function _addIndividualDailyRestriction(
+    /* function _addIndividualDailyRestriction(
         address _holder,
         uint256 _allowedTokens,
         uint256 _startTime,
@@ -284,7 +320,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
             _endTime,
             _restrictionType
         );
-    }
+    } */
 
     /**
      * @notice Use to add the new individual daily restriction for multiple token holders
@@ -302,12 +338,11 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         uint256[] memory _restrictionTypes
     )
         public
-        withPerm(ADMIN)
     {
         //NB - we duplicate _startTimes below to allow function reuse
         VolumeRestrictionLib._checkLengthOfArray(_holders, _allowedTokens, _startTimes, _startTimes, _endTimes, _restrictionTypes);
         for (uint256 i = 0; i < _holders.length; i++) {
-            _addIndividualDailyRestriction(
+            addIndividualDailyRestriction(
                 _holders[i],
                 _allowedTokens[i],
                 _startTimes[i],
@@ -335,11 +370,10 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         uint256[] memory _restrictionTypes
     )
         public
-        withPerm(ADMIN)
     {
         VolumeRestrictionLib._checkLengthOfArray(_holders, _allowedTokens, _startTimes, _rollingPeriodInDays, _endTimes, _restrictionTypes);
         for (uint256 i = 0; i < _holders.length; i++) {
-            _addIndividualRestriction(
+            addIndividualRestriction(
                 _holders[i],
                 _allowedTokens[i],
                 _startTimes[i],

@@ -124,8 +124,9 @@ interface ISecurityToken {
      */
     function redeemFrom(address _tokenHolder, uint256 _value, bytes calldata _data) external;
 
-    event Minted(address indexed _to, uint256 _value);
-    event Burnt(address indexed _burner, uint256 _value);
+    // Issuance / Redemption Events
+    event Issued(address indexed _operator, address indexed _to, uint256 _value, bytes _data);
+    event Redeemed(address indexed _operator, address indexed _from, uint256 _value, bytes _data);
 
     /**
      * @notice Validate permissions with PermissionManager if it exists, If no Permission return false

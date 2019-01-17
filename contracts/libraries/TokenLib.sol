@@ -290,7 +290,7 @@ library TokenLib {
             for (uint256 i = 0; i < modules.length; i++) {
                 if (!modulesToData[modules[i]].isArchived) {
                     transfersFrozen = true;
-                    (TransferManagerEnums.Result valid, byte reason) = ITransferManager(modules[i]).verifyTransfer(from, to, value, data);
+                    (TransferManagerEnums.Result valid, byte reason) = ITransferManager(modules[i]).executeTransfer(from, to, value, data);
                     if (valid == TransferManagerEnums.Result.INVALID) {
                         isInvalid = true;
                         reasonCode = reason;

@@ -105,7 +105,7 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
      * @notice Used to create checkpoints that correctly reflect balances
      * @return always returns Result.NA
      */
-    function verifyTransfer(
+    function executeTransfer(
         address, /* _from */
         address, /* _to */
         uint256, /* _amount */

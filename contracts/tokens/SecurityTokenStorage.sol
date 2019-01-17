@@ -112,6 +112,6 @@ contract SecurityTokenStorage {
     address public featureRegistry;
     address public polyToken;
 
-    address internal delegate;
+    address public delegate;
 
 }

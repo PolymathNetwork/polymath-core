@@ -70,7 +70,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
     {
         // function must only be called by the associated security token if _isTransfer == true
         require(_isTransfer == false || msg.sender == securityToken, "Sender is not the owner");
-        (Result success, byte esc) = verifyTransfer(_from, _to, _amount, _data);
+        (Result success, byte esc) = executeTransfer(_from, _to, _amount, _data);
         if (_isTransfer && esc == 0xA1) {
             manualApprovals[_from][_to].allowance = manualApprovals[_from][_to].allowance.sub(_amount);
         }
@@ -83,7 +83,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
      * @param _to Address of the receiver
      * @param _amount The amount of tokens to transfer
      */
-    function verifyTransfer(
+    function executeTransfer(
         address _from,
         address _to,
         uint256 _amount,

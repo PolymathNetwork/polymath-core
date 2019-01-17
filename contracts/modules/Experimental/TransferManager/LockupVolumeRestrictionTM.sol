@@ -82,7 +82,7 @@ contract LockupVolumeRestrictionTM is TransferManager {
     /** 
      * @notice Used to verify the transfer transaction and prevent locked up tokens from being transferred
      */
-    function verifyTransfer(
+    function executeTransfer(
         address /*_from*/,
         address /* _to*/,
         uint256 /*_amount*/,

@@ -145,7 +145,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         bytes calldata _data,
         bool /* _isTransfer */
     ) external returns(Result) {
-       (Result success,) = verifyTransfer(_from, _to, _amount, _data);
+       (Result success,) = executeTransfer(_from, _to, _amount, _data);
        return success;
     }
 
@@ -159,7 +159,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
      * @param _from Address of the sender
      * @param _to Address of the receiver
     */
-    function verifyTransfer(
+    function executeTransfer(
         address _from,
         address _to,
         uint256, /*_amount*/

@@ -33,7 +33,7 @@ contract CountTransferManager is CountTransferManagerStorage, TransferManager {
         external 
         returns(Result) 
     {
-        (Result success,) = verifyTransfer(_from, _to, _amount, _data);
+        (Result success,) = executeTransfer(_from, _to, _amount, _data);
         return success;
     }
 
@@ -43,7 +43,7 @@ contract CountTransferManager is CountTransferManagerStorage, TransferManager {
      * @param _to Address of the receiver
      * @param _amount Amount to send
      */
-    function verifyTransfer(
+    function executeTransfer(
         address _from,
         address _to,
         uint256 _amount,

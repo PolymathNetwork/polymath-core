@@ -47,7 +47,7 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
         external 
         returns(Result) 
     {
-        (Result success,) = verifyTransfer(_from, _to, _amount, _data);
+        (Result success,) = executeTransfer(_from, _to, _amount, _data);
         return success;
     }
 
@@ -57,7 +57,7 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
      * @param _to Address of the receiver
      * @param _amount The amount of tokens to transfer
      */
-    function verifyTransfer(
+    function executeTransfer(
         address _from,
         address _to,
         uint256 _amount,

@@ -76,7 +76,6 @@ contract('VolumeRestrictionTransferManager', accounts => {
     // Initial fee for ticker registry and security token registry
     const initRegFee = new BN(web3.utils.toWei("250"));
 
-    let currentTime;
     const address_zero = "0x0000000000000000000000000000000000000000";
 
     async function print(data, account) {
@@ -90,6 +89,10 @@ contract('VolumeRestrictionTransferManager', accounts => {
             Individual Total Trade on daily latestTimestamp : ${(await I_VolumeRestrictionTM.getTotalTradedByUser.call(account, data[3]))
                 .dividedBy(new BN(10).pow(18)).toString()}
         `)
+    }
+
+    async function getLatestTime() {
+      return new BN(await latestTime());
     }
 
     async function printRestrictedData(data) {
@@ -118,9 +121,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
     }
 
     before(async() => {
-        currentTime = new BN(await latestTime());
-        fromTime = currentTime;
-        toTime = currentTime;
+        let newLatestTime = await getLatestTime();
+        fromTime = newLatestTime;
+        toTime = newLatestTime;
         expiryTime = toTime.add(new BN(duration.days(15)));
         // Accounts setup
         account_polymath = accounts[0];
@@ -209,7 +212,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
     describe("Attach the VRTM", async() => {
         it("Deploy the VRTM and attach with the ST", async()=> {
-            let tx = await I_SecurityToken.addModule(I_VolumeRestrictionTMFactory.address, "0x", new BN(0), new BN(0), {from: token_owner });
+            let tx = await I_SecurityToken.addModule(I_VolumeRestrictionTMFactory.address, "0x0", new BN(0), new BN(0), {from: token_owner });
             assert.equal(tx.logs[2].args._moduleFactory, I_VolumeRestrictionTMFactory.address);
             assert.equal(
                 web3.utils.toUtf8(tx.logs[2].args._name),
@@ -220,11 +223,12 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
         it("Transfer some tokens to different account", async() => {
             // Add tokens in to the whitelist
+            let newLatestTime = await getLatestTime();
             await I_GeneralTransferManager.modifyWhitelistMulti(
                     [account_investor1, account_investor2, account_investor3],
-                    [currentTime, currentTime, currentTime],
-                    [currentTime, currentTime, currentTime],
-                    [currentTime.add(new BN(duration.days(60))), currentTime.add(new BN(duration.days(60))), currentTime.add(new BN(duration.days(60)))],
+                    [newLatestTime, newLatestTime, newLatestTime],
+                    [newLatestTime, newLatestTime, newLatestTime],
+                    [newLatestTime.add(new BN(duration.days(60))), newLatestTime.add(new BN(duration.days(60))), newLatestTime.add(new BN(duration.days(60)))],
                     [true, true, true],
                     {
                         from: token_owner
@@ -255,14 +259,14 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
     describe("Test for the addIndividualRestriction", async() => {
         it("Should add the restriction -- failed because of bad owner", async() => {
-            currentTime = new BN(await latestTime());
+            let newLatestTime = await getLatestTime();
             await catchRevert(
                 I_VolumeRestrictionTM.addIndividualRestriction(
                     account_investor1,
                     new BN(web3.utils.toWei("12")),
-                    currentTime.add(new BN(duration.seconds(2))),
+                    newLatestTime.add(new BN(duration.seconds(2))),
                     3,
-                    currentTime.add(new BN(duration.days(10))),
+                    newLatestTime.add(new BN(duration.days(10))),
                     0,
                     {
                         from: account_polymath
@@ -272,13 +276,15 @@ contract('VolumeRestrictionTransferManager', accounts => {
         })
 
         it("Should add the restriction -- failed because of bad parameters i.e invalid restriction type", async() => {
+            let newLatestTime = await getLatestTime();
+
             await catchRevert(
                 I_VolumeRestrictionTM.addIndividualRestriction(
                     account_investor1,
                     new BN(web3.utils.toWei("12")),
-                    currentTime.add(new BN(duration.seconds(2))),
+                    newLatestTime.add(new BN(duration.seconds(2))),
                     3,
-                    currentTime.add(new BN(duration.days(10))),
+                    newLatestTime.add(new BN(duration.days(10))),
                     3,
                     {
                         from: token_owner
@@ -288,13 +294,14 @@ contract('VolumeRestrictionTransferManager', accounts => {
         })
 
         it("Should add the restriction -- failed because of bad parameters i.e Invalid value of allowed tokens", async() => {
+            let newLatestTime = await getLatestTime();
             await catchRevert(
                 I_VolumeRestrictionTM.addIndividualRestriction(
                     account_investor1,
                     0,
-                    currentTime.add(new BN(duration.seconds(2))),
+                    newLatestTime.add(new BN(duration.seconds(2))),
                     3,
-                    currentTime.add(new BN(duration.days(10))),
+                    newLatestTime.add(new BN(duration.days(10))),
                     0,
                     {
                         from: token_owner
@@ -304,13 +311,15 @@ contract('VolumeRestrictionTransferManager', accounts => {
         })
 
         it("Should add the restriction -- failed because of bad parameters i.e Percentage of tokens not within (0,100]", async() => {
+            let newLatestTime = await getLatestTime();
+
             await catchRevert(
                 I_VolumeRestrictionTM.addIndividualRestriction(
                     account_investor1,
                     0,
-                    currentTime.add(new BN(duration.seconds(2))),
+                    newLatestTime.add(new BN(duration.seconds(2))),
                     3,
-                    currentTime.add(new BN(duration.days(10))),
+                    newLatestTime.add(new BN(duration.days(10))),
                     1,
                     {
                         from: token_owner
@@ -320,13 +329,14 @@ contract('VolumeRestrictionTransferManager', accounts => {
         })
 
         it("Should add the restriction -- failed because of bad parameters i.e Percentage of tokens not within (0,100]", async() => {
+            let newLatestTime = await getLatestTime();
             await catchRevert(
                 I_VolumeRestrictionTM.addIndividualRestriction(
                     account_investor1,
                     new BN(web3.utils.toWei("10")),
-                    currentTime.add(new BN(duration.seconds(2))),
+                    newLatestTime.add(new BN(duration.seconds(2))),
                     3,
-                    currentTime.add(new BN(duration.days(10))),
+                    newLatestTime.add(new BN(duration.days(10))),
                     1,
                     {
                         from: token_owner
@@ -336,13 +346,14 @@ contract('VolumeRestrictionTransferManager', accounts => {
         })
 
         it("Should add the restriction -- failed because of bad parameters i.e invalid dates", async() => {
+            let newLatestTime = await getLatestTime();
             await catchRevert(
                 I_VolumeRestrictionTM.addIndividualRestriction(
                     account_investor1,
                     new BN(web3.utils.toWei("10")),
-                    currentTime.sub(new BN(duration.seconds(5))),
+                    newLatestTime.sub(new BN(duration.seconds(5))),
                     3,
-                    currentTime.add(new BN(duration.days(10))),
+                    newLatestTime.add(new BN(duration.days(10))),
                     0,
                     {
                         from: token_owner
@@ -352,13 +363,14 @@ contract('VolumeRestrictionTransferManager', accounts => {
         })
 
         it("Should add the restriction -- failed because of bad parameters i.e invalid dates", async() => {
+            let newLatestTime = await getLatestTime();
             await catchRevert(
                 I_VolumeRestrictionTM.addIndividualRestriction(
                     account_investor1,
                     new BN(web3.utils.toWei("10")),
-                    currentTime.add(new BN(duration.days(2))),
+                    newLatestTime.add(new BN(duration.days(2))),
                     3,
-                    currentTime.add(new BN(duration.days(1))),
+                    newLatestTime.add(new BN(duration.days(1))),
                     0,
                     {
                         from: token_owner
@@ -368,13 +380,14 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should add the restriction -- failed because of bad parameters i.e invalid rolling period", async() => {
+            let newLatestTime = await getLatestTime();
             await catchRevert(
                 I_VolumeRestrictionTM.addIndividualRestriction(
                     account_investor1,
                     new BN(web3.utils.toWei("10")),
-                    currentTime.add(new BN(duration.days(2))),
+                    newLatestTime.add(new BN(duration.days(2))),
                     0,
-                    currentTime.add(new BN(duration.days(10))),
+                    newLatestTime.add(new BN(duration.days(10))),
                     0,
                     {
                         from: token_owner
@@ -384,13 +397,14 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should add the restriction -- failed because of bad parameters i.e invalid rolling period", async() => {
+            let newLatestTime = await getLatestTime();
             await catchRevert(
                 I_VolumeRestrictionTM.addIndividualRestriction(
                     account_investor1,
                     new BN(web3.utils.toWei("10")),
-                    currentTime.add(new BN(duration.days(2))),
+                    newLatestTime.add(new BN(duration.days(2))),
                     366,
-                    currentTime.add(new BN(duration.days(10))),
+                    newLatestTime.add(new BN(duration.days(10))),
                     0,
                     {
                         from: token_owner
@@ -400,13 +414,14 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should add the restriction -- failed because of bad parameters i.e invalid rolling period", async() => {
+            let newLatestTime = await getLatestTime();
             await catchRevert(
                 I_VolumeRestrictionTM.addIndividualRestriction(
                     account_investor1,
                     new BN(web3.utils.toWei("10")),
-                    currentTime.add(new BN(duration.days(2))),
+                    newLatestTime.add(new BN(duration.days(2))),
                     3,
-                    currentTime.add(new BN(duration.days(3))),
+                    newLatestTime.add(new BN(duration.days(3))),
                     0,
                     {
                         from: token_owner
@@ -416,12 +431,13 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should add the restriction succesfully", async() => {
+            let newLatestTime = await getLatestTime();
             let tx = await I_VolumeRestrictionTM.addIndividualRestriction(
                     account_investor1,
                     new BN(web3.utils.toWei("12")),
-                    currentTime.add(new BN(duration.seconds(2))),
+                    newLatestTime.add(new BN(duration.seconds(2))),
                     3,
-                    currentTime.add(new BN(duration.days(5))),
+                    newLatestTime.add(new BN(duration.days(5))),
                     0,
                     {
                         from: token_owner
@@ -435,13 +451,14 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should add the restriction for multiple investor -- failed because of bad owner", async() => {
+            let newLatestTime = await getLatestTime();
             await catchRevert(
                 I_VolumeRestrictionTM.addIndividualRestrictionMulti(
                     [account_investor2, account_delegate3, account_investor4],
                     [new BN(web3.utils.toWei("12")), new BN(web3.utils.toWei("10")), new BN(web3.utils.toWei("15"))],
-                    [currentTime.add(new BN(duration.seconds(2))), currentTime.add(new BN(duration.seconds(2))), currentTime.add(new BN(duration.seconds(2)))],
+                    [newLatestTime.add(new BN(duration.seconds(2))), newLatestTime.add(new BN(duration.seconds(2))), newLatestTime.add(new BN(duration.seconds(2)))],
                     [3,4,5],
-                    [currentTime.add(new BN(duration.days(5))), currentTime.add(new BN(duration.days(6))), currentTime.add(new BN(duration.days(7)))],
+                    [newLatestTime.add(new BN(duration.days(5))), newLatestTime.add(new BN(duration.days(6))), newLatestTime.add(new BN(duration.days(7)))],
                     [0,0,0],
                     {
                         from: account_polymath
@@ -451,13 +468,14 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should add the restriction for multiple investor -- failed because of bad parameters i.e length mismatch", async() => {
+            let newLatestTime = await getLatestTime();
             await catchRevert(
                 I_VolumeRestrictionTM.addIndividualRestrictionMulti(
                     [account_investor2, account_delegate3],
                     [new BN(web3.utils.toWei("12")), new BN(web3.utils.toWei("10")), new BN(web3.utils.toWei("15"))],
-                    [currentTime.add(new BN(duration.seconds(2))), currentTime.add(new BN(duration.seconds(2))), currentTime.add(new BN(duration.seconds(2)))],
+                    [newLatestTime.add(new BN(duration.seconds(2))), newLatestTime.add(new BN(duration.seconds(2))), newLatestTime.add(new BN(duration.seconds(2)))],
                     [3,4,5],
-                    [currentTime.add(new BN(duration.days(5))), currentTime.add(new BN(duration.days(6))), currentTime.add(new BN(duration.days(7)))],
+                    [newLatestTime.add(new BN(duration.days(5))), newLatestTime.add(new BN(duration.days(6))), newLatestTime.add(new BN(duration.days(7)))],
                     [0,0,0],
                     {
                         from: token_owner
@@ -467,13 +485,14 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should add the restriction for multiple investor -- failed because of bad parameters i.e length mismatch", async() => {
+            let newLatestTime = await getLatestTime();
             await catchRevert(
                 I_VolumeRestrictionTM.addIndividualRestrictionMulti(
                     [account_investor2, account_delegate3, account_investor4],
                     [new BN(web3.utils.toWei("12")), new BN(web3.utils.toWei("10"))],
-                    [currentTime.add(new BN(duration.seconds(2))), currentTime.add(new BN(duration.seconds(2))), currentTime.add(new BN(duration.seconds(2)))],
+                    [newLatestTime.add(new BN(duration.seconds(2))), newLatestTime.add(new BN(duration.seconds(2))), newLatestTime.add(new BN(duration.seconds(2)))],
                     [3,4,5],
-                    [currentTime.add(new BN(duration.days(5))), currentTime.add(new BN(duration.days(6))), currentTime.add(new BN(duration.days(7)))],
+                    [newLatestTime.add(new BN(duration.days(5))), newLatestTime.add(new BN(duration.days(6))), newLatestTime.add(new BN(duration.days(7)))],
                     [0,0,0],
                     {
                         from: account_polymath
@@ -483,13 +502,14 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should add the restriction for multiple investor -- failed because of bad parameters i.e length mismatch", async() => {
+            let newLatestTime = await getLatestTime();
             await catchRevert(
                 I_VolumeRestrictionTM.addIndividualRestrictionMulti(
                     [account_investor2, account_delegate3, account_investor4],
                     [new BN(web3.utils.toWei("12")), new BN(web3.utils.toWei("10")), new BN(web3.utils.toWei("15"))],
-                    [currentTime.add(new BN(duration.seconds(2))), currentTime.add(new BN(duration.seconds(2)))],
+                    [newLatestTime.add(new BN(duration.seconds(2))), newLatestTime.add(new BN(duration.seconds(2)))],
                     [3,4,5],
-                    [currentTime.add(new BN(duration.days(5))), currentTime.add(new BN(duration.days(6))), currentTime.add(new BN(duration.days(7)))],
+                    [newLatestTime.add(new BN(duration.days(5))), newLatestTime.add(new BN(duration.days(6))), newLatestTime.add(new BN(duration.days(7)))],
                     [0,0,0],
                     {
                         from: token_owner
@@ -499,13 +519,14 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should add the restriction for multiple investor -- failed because of bad parameters i.e length mismatch", async() => {
+            let newLatestTime = await getLatestTime();
             await catchRevert(
                 I_VolumeRestrictionTM.addIndividualRestrictionMulti(
                     [account_investor2, account_delegate3, account_investor4],
                     [new BN(web3.utils.toWei("12")), new BN(web3.utils.toWei("10")), new BN(web3.utils.toWei("15"))],
-                    [currentTime.add(new BN(duration.seconds(2))), currentTime.add(new BN(duration.seconds(2))), currentTime.add(new BN(duration.seconds(2)))],
+                    [newLatestTime.add(new BN(duration.seconds(2))), newLatestTime.add(new BN(duration.seconds(2))), newLatestTime.add(new BN(duration.seconds(2)))],
                     [3],
-                    [currentTime.add(new BN(duration.days(5))), currentTime.add(new BN(duration.days(6))), currentTime.add(new BN(duration.days(7)))],
+                    [newLatestTime.add(new BN(duration.days(5))), newLatestTime.add(new BN(duration.days(6))), newLatestTime.add(new BN(duration.days(7)))],
                     [0,0,0],
                     {
                         from: token_owner
@@ -515,13 +536,14 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should add the restriction for multiple investor -- failed because of bad parameters i.e length mismatch", async() => {
+            let newLatestTime = await getLatestTime();
             await catchRevert(
                 I_VolumeRestrictionTM.addIndividualRestrictionMulti(
                     [account_investor2, account_delegate3, account_investor4],
                     [new BN(web3.utils.toWei("12")), new BN(web3.utils.toWei("10")), new BN(web3.utils.toWei("15"))],
-                    [currentTime.add(new BN(duration.seconds(2))), currentTime.add(new BN(duration.seconds(2))), currentTime.add(new BN(duration.seconds(2)))],
+                    [newLatestTime.add(new BN(duration.seconds(2))), newLatestTime.add(new BN(duration.seconds(2))), newLatestTime.add(new BN(duration.seconds(2)))],
                     [3, 4, 5],
-                    [currentTime.add(new BN(duration.days(5)))],
+                    [newLatestTime.add(new BN(duration.days(5)))],
                     [0,0,0],
                     {
                         from: token_owner
@@ -531,13 +553,14 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should add the restriction for multiple investor -- failed because of bad parameters i.e length mismatch", async() => {
+            let newLatestTime = await getLatestTime();
             await catchRevert(
                 I_VolumeRestrictionTM.addIndividualRestrictionMulti(
                     [account_investor2, account_delegate3, account_investor4],
                     [new BN(web3.utils.toWei("12")), new BN(web3.utils.toWei("10")), new BN(web3.utils.toWei("15"))],
-                    [currentTime.add(new BN(duration.seconds(2))), currentTime.add(new BN(duration.seconds(2))), currentTime.add(new BN(duration.seconds(2)))],
+                    [newLatestTime.add(new BN(duration.seconds(2))), newLatestTime.add(new BN(duration.seconds(2))), newLatestTime.add(new BN(duration.seconds(2)))],
                     [3, 4, 5],
-                    [currentTime.add(new BN(duration.days(5))), currentTime.add(new BN(duration.days(6))), currentTime.add(new BN(duration.days(7)))],
+                    [newLatestTime.add(new BN(duration.days(5))), newLatestTime.add(new BN(duration.days(6))), newLatestTime.add(new BN(duration.days(7)))],
                     [],
                     {
                         from: token_owner
@@ -547,12 +570,13 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should add the restriction for multiple investor successfully", async() => {
+            let newLatestTime = await getLatestTime();
             await I_VolumeRestrictionTM.addIndividualRestrictionMulti(
                     [account_investor2, account_delegate3, account_investor4],
                     [new BN(web3.utils.toWei("12")), new BN(web3.utils.toWei("10")), new BN(web3.utils.toWei("15"))],
                     [0, 0, 0],
                     [3, 4, 5],
-                    [currentTime.add(new BN(duration.days(5))), currentTime.add(new BN(duration.days(6))), currentTime.add(new BN(duration.days(7)))],
+                    [newLatestTime.add(new BN(duration.days(5))), newLatestTime.add(new BN(duration.days(6))), newLatestTime.add(new BN(duration.days(7)))],
                     [0,0,0],
                     {
                         from: token_owner
@@ -609,7 +633,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
 //xxx
         it("Should add the restriction succesfully after the expiry of previous one for investor 1", async() => {
             await increaseTime(new BN(duration.days(5.1)));
-            let newLatestTime = new BN(await latestTime());
+            let newLatestTime = await getLatestTime();
             console.log(
                 `Estimated gas for addIndividualRestriction:
                 ${await I_VolumeRestrictionTM.addIndividualRestriction.estimateGas(
@@ -624,7 +648,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     }
                 )}
                 `);
-            newLatestTime = new BN(await latestTime());
+            newLatestTime = await getLatestTime();
             let tx = await I_VolumeRestrictionTM.addIndividualRestriction(
                     account_investor1,
                     new BN(web3.utils.toWei("12")),
@@ -685,12 +709,13 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should fail to add the individual daily restriction -- Bad msg.sender", async() => {
+            let newLatestTime = await getLatestTime();
             await catchRevert(
                 I_VolumeRestrictionTM.addIndividualDailyRestriction(
                     account_investor3,
                     new BN(web3.utils.toWei("6")),
-                    currentTime.add(new BN(duration.seconds(1))),
-                    currentTime.add(new BN(duration.days(4))),
+                    newLatestTime.add(new BN(duration.seconds(1))),
+                    newLatestTime.add(new BN(duration.days(4))),
                     0,
                     {
                         from: account_investor1
@@ -700,12 +725,13 @@ contract('VolumeRestrictionTransferManager', accounts => {
         })
 
         it("Should fail to add the individual daily restriction -- Bad params value", async() => {
+            let newLatestTime = await getLatestTime();
             await catchRevert(
                 I_VolumeRestrictionTM.addIndividualDailyRestriction(
                     account_investor3,
                     new BN(web3.utils.toWei("6")),
-                    currentTime.add(new BN(duration.seconds(1))),
-                    currentTime.add(new BN(duration.days(4))),
+                    newLatestTime.add(new BN(duration.seconds(1))),
+                    newLatestTime.add(new BN(duration.days(4))),
                     1,
                     {
                         from: token_owner
@@ -715,12 +741,13 @@ contract('VolumeRestrictionTransferManager', accounts => {
         })
 
         it("Should fail to add the individual daily restriction -- Bad params value", async() => {
+            let newLatestTime = await getLatestTime();
             await catchRevert(
                 I_VolumeRestrictionTM.addIndividualDailyRestriction(
                     account_investor3,
                     0,
-                    currentTime.add(new BN(duration.seconds(1))),
-                    currentTime.add(new BN(duration.days(4))),
+                    newLatestTime.add(new BN(duration.seconds(1))),
+                    newLatestTime.add(new BN(duration.days(4))),
                     0,
                     {
                         from: token_owner
@@ -730,12 +757,13 @@ contract('VolumeRestrictionTransferManager', accounts => {
         })
 
         it("Should fail to add the individual daily restriction -- Bad params value", async() => {
+            let newLatestTime = await getLatestTime();
             await catchRevert(
                 I_VolumeRestrictionTM.addIndividualDailyRestriction(
                     account_investor3,
                     new BN(web3.utils.toWei("6")),
-                    currentTime.add(new BN(duration.days(5))),
-                    currentTime.add(new BN(duration.days(4))),
+                    newLatestTime.add(new BN(duration.days(5))),
+                    newLatestTime.add(new BN(duration.days(4))),
                     0,
                     {
                         from: token_owner
@@ -745,11 +773,12 @@ contract('VolumeRestrictionTransferManager', accounts => {
         })
 
         it("Should add the individual daily restriction for investor 3", async() => {
+            let newLatestTime = await getLatestTime();
             let tx = await I_VolumeRestrictionTM.addIndividualDailyRestriction(
                         account_investor3,
                         new BN(web3.utils.toWei("6")),
-                        currentTime.add(new BN(duration.seconds(1))),
-                        currentTime.add(new BN(duration.days(4))),
+                        newLatestTime.add(new BN(duration.seconds(1))),
+                        newLatestTime.add(new BN(duration.days(4))),
                         0,
                         {
                             from: token_owner
@@ -825,11 +854,12 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should add the daily restriction on the investor 1", async() => {
+            let newLatestTime = await getLatestTime();
             let tx = await I_VolumeRestrictionTM.addIndividualDailyRestriction(
                 account_investor1,
                 new BN(5).times(new BN(10).pow(16)),
                 0,
-                currentTime.add(new BN(duration.days(4))),
+                newLatestTime.add(new BN(duration.days(4))),
                 1,
                 {
                     from: token_owner
@@ -894,12 +924,13 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should add the individual restriction to investor 3", async() => {
+            let newLatestTime = await getLatestTime();
             let tx = await I_VolumeRestrictionTM.addIndividualRestriction(
                 account_investor3,
                 new BN(15.36).times(new BN(10).pow(16)), // 15.36 tokens as totalsupply is 1000
-                currentTime.add(new BN(duration.seconds(2))),
+                newLatestTime.add(new BN(duration.seconds(2))),
                 6,
-                currentTime.add(new BN(duration.days(15))),
+                newLatestTime.add(new BN(duration.days(15))),
                 1,
                 {
                     from: token_owner
@@ -994,12 +1025,13 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should add the new Individual daily restriction and transact the tokens", async() => {
+            let newLatestTime = await getLatestTime();
             // add new restriction
             let tx = await I_VolumeRestrictionTM.addIndividualDailyRestriction(
                 account_investor3,
                 new BN(web3.utils.toWei("2")),
-                currentTime.add(new BN(duration.days(1))),
-                currentTime.add(new BN(duration.days(4))),
+                newLatestTime.add(new BN(duration.days(1))),
+                newLatestTime.add(new BN(duration.days(4))),
                 0,
                 {
                     from: token_owner
@@ -1049,12 +1081,13 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should fail to modify the individual daily restriction -- bad owner", async() => {
+            let newLatestTime = await getLatestTime();
             await catchRevert(
                 I_VolumeRestrictionTM.modifyIndividualDailyRestriction(
                     account_investor3,
                     new BN(web3.utils.toWei('3')),
-                    currentTime,
-                    currentTime.add(new BN(duration.days(5))),
+                    newLatestTime,
+                    newLatestTime.add(new BN(duration.days(5))),
                     0,
                     {
                         from: account_polymath
@@ -1064,11 +1097,12 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should modify the individual daily restriction", async() => {
+            let newLatestTime = await getLatestTime();
             await I_VolumeRestrictionTM.modifyIndividualDailyRestriction(
                     account_investor3,
                     new BN(web3.utils.toWei('3')),
                     0,
-                    currentTime.add(new BN(duration.days(5))),
+                    newLatestTime.add(new BN(duration.days(5))),
                     0,
                     {
                         from: token_owner
@@ -1167,12 +1201,13 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should fail to transact tokens more than the allowed in the second rolling period", async() => {
+            let newLatestTime = await getLatestTime();
             await increaseTime(new BN(duration.days(4)));
             let i
             for (i = 0; i < 3; i++) {
                 tempArray3.push(0);
             }
-            console.log(`Diff Days: ${(currentTime - ((await I_VolumeRestrictionTM.getIndividualBucketDetailsToUser.call(account_investor3))[0]).toString()) / 86400}`);
+            console.log(`Diff Days: ${(newLatestTime - ((await I_VolumeRestrictionTM.getIndividualBucketDetailsToUser.call(account_investor3))[0]).toString()) / 86400}`);
             let allowedAmount = (tempArray3[0] + 1.1);
             await catchRevert(
                 I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei(allowedAmount.toString())), {from: account_investor3})
@@ -1275,11 +1310,12 @@ contract('VolumeRestrictionTransferManager', accounts => {
     describe("Test cases for the Default restrictions", async() => {
 
         it("Should add the investor 4 in the whitelist", async() => {
+            let newLatestTime = await getLatestTime();
             await I_GeneralTransferManager.modifyWhitelist(
                 account_investor4,
-                currentTime,
-                currentTime,
-                currentTime.add(new BN(duration.days(30))),
+                newLatestTime,
+                newLatestTime,
+                newLatestTime.add(new BN(duration.days(30))),
                 true,
                 {
                     from: token_owner
@@ -1292,10 +1328,11 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should add the default daily restriction successfully", async() => {
+            let newLatestTime = await getLatestTime();
             await I_VolumeRestrictionTM.addDefaultDailyRestriction(
                 new BN(2.75).times(new BN(10).pow(16)),
                 0,
-                currentTime.add(new BN(duration.days(3))),
+                newLatestTime.add(new BN(duration.days(3))),
                 1,
                 {
                     from: token_owner
@@ -1349,11 +1386,12 @@ contract('VolumeRestrictionTransferManager', accounts => {
         })
 
         it("Should successfully add the default restriction", async() => {
+            let newLatestTime = await getLatestTime();
             await I_VolumeRestrictionTM.addDefaultRestriction(
                 new BN(web3.utils.toWei("10")),
                 0,
                 5,
-                currentTime.add(new BN(duration.days(10))),
+                newLatestTime.add(new BN(duration.days(10))),
                 0,
                 {
                     from: token_owner
@@ -1426,8 +1464,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should able to transfer tokens in the next rolling period", async() => {
+            let newLatestTime = await getLatestTime();
             await increaseTime(new BN(duration.days(4.1)));
-            console.log(`*** Diff days: ${(currentTime - ((await I_VolumeRestrictionTM.getDefaultBucketDetailsToUser.call(account_investor3))[0]).toString()) / 86400}`)
+            console.log(`*** Diff days: ${(newLatestTime - ((await I_VolumeRestrictionTM.getDefaultBucketDetailsToUser.call(account_investor3))[0]).toString()) / 86400}`)
             for (let i = 0; i < 3; i++) {
                 tempArray3.push(0);
             }
@@ -1461,10 +1500,11 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should add the daily default restriction again", async() => {
+            let newLatestTime = await getLatestTime();
             await I_VolumeRestrictionTM.addDefaultDailyRestriction(
                 new BN(web3.utils.toWei("2")),
                 0,
-                currentTime.add(new BN(duration.days(3))),
+                newLatestTime.add(new BN(duration.days(3))),
                 0,
                 {
                     from: token_owner
@@ -1585,12 +1625,13 @@ contract('VolumeRestrictionTransferManager', accounts => {
     describe("Test for modify functions", async() => {
 
         it("Should add the individual restriction for multiple investor", async() => {
+            let newLatestTime = await getLatestTime();
             await I_VolumeRestrictionTM.addIndividualRestrictionMulti(
                 [account_investor3, account_delegate3],
                 [new BN(web3.utils.toWei("15")), new BN(12.78).times(new BN(10).pow(16))],
-                [currentTime.add(new BN(duration.days(1))), currentTime.add(new BN(duration.days(2)))],
+                [newLatestTime.add(new BN(duration.days(1))), newLatestTime.add(new BN(duration.days(2)))],
                 [15, 20],
-                [currentTime.add(new BN(duration.days(40))), currentTime.add(new BN(duration.days(60)))],
+                [newLatestTime.add(new BN(duration.days(40))), newLatestTime.add(new BN(duration.days(60)))],
                 [0,1],
                 {
                     from: token_owner
@@ -1611,12 +1652,13 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should modify the details before the starttime passed", async() => {
+            let newLatestTime = await getLatestTime();
             await I_VolumeRestrictionTM.modifyIndividualRestrictionMulti(
                 [account_investor3, account_delegate3],
                 [new BN(12.78).times(new BN(10).pow(16)), new BN(web3.utils.toWei("15"))],
-                [currentTime.add(new BN(duration.days(1))), currentTime.add(new BN(duration.days(2)))],
+                [newLatestTime.add(new BN(duration.days(1))), newLatestTime.add(new BN(duration.days(2)))],
                 [20, 15],
-                [currentTime.add(new BN(duration.days(40))), currentTime.add(new BN(duration.days(60)))],
+                [newLatestTime.add(new BN(duration.days(40))), newLatestTime.add(new BN(duration.days(60)))],
                 [1,0],
                 {
                     from: token_owner

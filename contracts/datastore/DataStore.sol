@@ -32,7 +32,7 @@ contract DataStore is DataStoreStorage {
         _;
     }
 
-    function setSecurityToken(address _securityToken) public {
+    function setSecurityToken(address _securityToken) public onlyOwner {
         if(address(securityToken) != address(0)) {
             require(msg.sender == IOwnable(address(securityToken)).owner(), "Unauthorized");
         }
@@ -156,30 +156,6 @@ contract DataStore is DataStoreStorage {
     function insertDataMulti(bytes32[] calldata _keys, bool[] calldata _data) external onlyAuthorized validInputLength(_keys.length, _data.length) {
         for (uint256 i = 0; i < _keys.length; i++) {
             _insertData(_keys[i], _data[i]);
-        }
-    }
-
-    function deleteUintMulti(bytes32[] calldata _keys, uint256[] calldata _indexes) external onlyAuthorized validInputLength(_keys.length, _indexes.length) {
-        for (uint256 i = 0; i < _keys.length; i++) {
-            _deleteUint(_keys[i], _indexes[i]);
-        }
-    }
-
-    function deleteBytes32Multi(bytes32[] calldata _keys, uint256[] calldata _indexes) external onlyAuthorized validInputLength(_keys.length, _indexes.length) {
-        for (uint256 i = 0; i < _keys.length; i++) {
-            _deleteBytes32(_keys[i], _indexes[i]);
-        }
-    }
-
-    function deleteAddressMulti(bytes32[] calldata _keys, uint256[] calldata _indexes) external onlyAuthorized validInputLength(_keys.length, _indexes.length) {
-        for (uint256 i = 0; i < _keys.length; i++) {
-            _deleteAddress(_keys[i], _indexes[i]);
-        }
-    }
-
-    function deleteBoolMulti(bytes32[] calldata _keys, uint256[] calldata _indexes) external onlyAuthorized validInputLength(_keys.length, _indexes.length) {
-        for (uint256 i = 0; i < _keys.length; i++) {
-            _deleteBool(_keys[i], _indexes[i]);
         }
     }
 

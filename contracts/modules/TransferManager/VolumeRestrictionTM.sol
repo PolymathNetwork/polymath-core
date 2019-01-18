@@ -268,6 +268,9 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
             "Not Allowed"
         );
         _checkInputParams(_allowedTokens, _startTime, 1, _endTime, _restrictionType, now);
+        if (individualDailyRestriction[_holder].endTime != 0) {
+            _removeIndividualDailyRestriction(_holder);
+        }
         individualDailyRestriction[_holder] = VolumeRestriction(
             _allowedTokens,
             _startTime,

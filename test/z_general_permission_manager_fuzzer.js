@@ -18,7 +18,7 @@ const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager");
 const CountTransferManager = artifacts.require("./CountTransferManager");
-const VolumeRestrictionTransferManager = artifacts.require("./LockupVolumeRestrictionTM");
+const VolumeRestrictionTransferManager = artifacts.require("./VolumeRestrictionTM");
 const PercentageTransferManager = artifacts.require("./PercentageTransferManager");
 const ManualApprovalTransferManager = artifacts.require("./ManualApprovalTransferManager");
 

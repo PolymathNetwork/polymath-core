@@ -1034,19 +1034,19 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         return exemptions.exemptAddresses;
     }
 
-    function getIndividualRestrictions(address _investor) external view returns(uint256, uint256, uint256, uint256, RestrictionType) {
+    function getIndividualRestriction(address _investor) external view returns(uint256, uint256, uint256, uint256, RestrictionType) {
         return _volumeRestrictionSplay(individualRestrictions.individualRestriction[_investor]);
     }
 
-    function getIndividualDailyRestrictions(address _investor) external view returns(uint256, uint256, uint256, uint256, RestrictionType) {
+    function getIndividualDailyRestriction(address _investor) external view returns(uint256, uint256, uint256, uint256, RestrictionType) {
         return _volumeRestrictionSplay(individualRestrictions.individualDailyRestriction[_investor]);
     }
 
-    function getDefaultRestrictions() external view returns(uint256, uint256, uint256, uint256, RestrictionType) {
+    function getDefaultRestriction() external view returns(uint256, uint256, uint256, uint256, RestrictionType) {
         return _volumeRestrictionSplay(globalRestrictions.defaultRestriction);
     }
 
-    function getDefaultDailyRestrictions() external view returns(uint256, uint256, uint256, uint256, RestrictionType) {
+    function getDefaultDailyRestriction() external view returns(uint256, uint256, uint256, uint256, RestrictionType) {
         return _volumeRestrictionSplay(globalRestrictions.defaultDailyRestriction);
     }
 

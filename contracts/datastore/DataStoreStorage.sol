@@ -3,7 +3,7 @@ pragma solidity ^0.5.0;
 import "../interfaces/ISecurityToken.sol";
 
 contract DataStoreStorage {
-    ISecurityToken public associatedToken;
+    ISecurityToken public securityToken;
 
     mapping (bytes32 => uint256) internal uintData;
     mapping (bytes32 => bytes32) internal bytes32Data;
@@ -17,4 +17,5 @@ contract DataStoreStorage {
     mapping (bytes32 => bool[]) internal boolArrayData;
 
     uint8 constant DATA_KEY = 10;
+    bytes32 public constant MANAGEDATA = "MANAGEDATA";
 }

@@ -22,7 +22,7 @@ contract DataStoreProxy is DataStoreStorage, OwnedProxy {
         require(_implementation != address(0) && _securityToken != address(0),
             "Address should not be 0x"
         );
-        associatedToken = ISecurityToken(_securityToken);
+        securityToken = ISecurityToken(_securityToken);
         __implementation = _implementation;
     }
 

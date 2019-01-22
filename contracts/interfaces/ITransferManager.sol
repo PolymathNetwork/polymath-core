@@ -17,4 +17,14 @@ interface ITransferManager {
         TransferManagerEnums.Result, byte
     );
 
+    /**
+     * @notice return the amount of locked tokens for a given user
+     */
+    function getLockedToken(address _owner) external view returns(uint256);
+
+    /**
+     * @notice return the amount of un locked tokens for a given user
+     */
+    function getUnLockedToken(address _owner) external view returns(uint256);
+
 }

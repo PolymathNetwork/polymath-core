@@ -348,6 +348,20 @@ contract SingleTradeVolumeRestrictionTM is TransferManager {
     }
 
     /**
+     * @notice return the amount of locked tokens for a given user
+     */
+    function getLockedToken(address /*_owner*/) external view returns(uint256) {
+        return 0;
+    }
+
+    /**
+     * @notice return the amount of un locked tokens for a given user
+     */
+    function getUnLockedToken(address /*_owner*/) external view returns(uint256) {
+        return 0;
+    }
+
+    /**
     * @notice Returns the permissions flag that are associated with SingleTradeVolumeRestrictionManager
     */
     function getPermissions() public view returns(bytes32[] memory) {

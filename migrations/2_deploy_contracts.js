@@ -28,6 +28,7 @@ const MockOracle = artifacts.require("./MockOracle.sol");
 const TokenLib = artifacts.require("./TokenLib.sol");
 const SecurityToken = artifacts.require("./tokens/SecurityToken.sol");
 const STRGetter = artifacts.require('./STRGetter.sol');
+const STGetter = artifacts.require('./STGetter.sol');
 
 
 const Web3 = require("web3");
@@ -180,6 +181,7 @@ module.exports = function(deployer, network, accounts) {
             // Link libraries
             deployer.link(TokenLib, SecurityToken);
             deployer.link(TokenLib, STFactory);
+            deployer.link(TokenLib, STGetter);
             // A) Deploy the ModuleRegistry Contract (It contains the list of verified ModuleFactory)
             return deployer.deploy(ModuleRegistry, { from: PolymathAccount });
         })
@@ -296,8 +298,12 @@ module.exports = function(deployer, network, accounts) {
             });
         })
         .then(() => {
+            // Deploy the STGetter contract (Logic contract that have the getters of the securityToken)
+            return deployer.deploy(STGetter, { from: PolymathAccount });
+        })
+        .then(() => {
             // H) Deploy the STVersionProxy001 Contract which contains the logic of deployment of securityToken.
-            return deployer.deploy(STFactory, GeneralTransferManagerFactory.address, { from: PolymathAccount });
+            return deployer.deploy(STFactory, GeneralTransferManagerFactory.address, STGetter.address, { from: PolymathAccount });
         })
         .then(() => {
             // K) Deploy the FeatureRegistry contract to control feature switches
@@ -455,7 +461,7 @@ module.exports = function(deployer, network, accounts) {
             return polymathRegistry.changeAddress("EthUsdOracle", ETHOracle, { from: PolymathAccount });
         })
         .then(() => {
-            return deployer.deploy(SecurityToken, "a", "a", 18, 1, "a", polymathRegistry.address, { from: PolymathAccount });
+            return deployer.deploy(SecurityToken, "a", "a", 18, 1, "a", polymathRegistry.address, STGetter.address, { from: PolymathAccount });
         })
         .then(() => {
             console.log("\n");

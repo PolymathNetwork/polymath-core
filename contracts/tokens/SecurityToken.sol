@@ -94,7 +94,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     }
 
     modifier isIssuanceAllowed() {
-        require(!issuance, "Issuance frozen");
+        require(issuance, "Issuance frozen");
         _;
     }
 
@@ -468,8 +468,8 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * @notice Permanently freeze issuance of this security token.
      * @dev It MUST NOT be possible to increase `totalSuppy` after this function is called.
      */
-    function freezeIssuance() external isIssuanceAllowed isEnabled("freezeMintingAllowed") onlyOwner {
-        issuance = true;
+    function freezeIssuance() external isIssuanceAllowed isEnabled("freezeIssuanceAllowed") onlyOwner {
+        issuance = false;
         /*solium-disable-next-line security/no-block-members*/
         emit FreezeIssuance(now);
     }
@@ -569,7 +569,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * @param _controller address of the controller
      */
     function setController(address _controller) public onlyOwner {
-        require(!controllerDisabled);
+        require(_isControllable());
         // Below condition is to restrict the owner/issuer to become the controller(In an ideal world).
         // But for non ideal case issuer could set another address which is not the owner of the token
         // but issuer holds its private key.
@@ -583,7 +583,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * @dev enabled via feature switch "disableControllerAllowed"
      */
     function disableController() external isEnabled("disableControllerAllowed") onlyOwner {
-        require(!controllerDisabled);
+        require(_isControllable());
         controllerDisabled = true;
         delete controller;
         emit DisableController(now);
@@ -715,6 +715,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * for calling this function (aka force transfer) which provides the transparency on-chain). 
      */
     function controllerTransfer(address _from, address _to, uint256 _value, bytes calldata _data, bytes calldata _operatorData) external onlyController {
+        require(_isControllable());
         _updateTransfer(_from, _to, _value, _data);
         _transfer(_from, _to, _value);
         emit ControllerTransfer(msg.sender, _from, _to, _value, _data, _operatorData);
@@ -733,6 +734,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * for calling this function (aka force transfer) which provides the transparency on-chain). 
      */
     function controllerRedeem(address _tokenHolder, uint256 _value, bytes calldata _data, bytes calldata _operatorData) external onlyController {
+        require(_isControllable());
         _checkAndBurn(_tokenHolder, _value, _data);
         emit ControllerRedemption(msg.sender, _tokenHolder, _value, _data, _operatorData);
     }

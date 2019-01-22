@@ -11,7 +11,7 @@ contract SecurityTokenStorage {
     uint256 public granularity;
 
     // Used to permanently halt controller actions
-    bool public controllerDisabled;
+    bool public controllerDisabled = false;
 
     // Used to temporarily halt all transactions
     bool public transfersFrozen;
@@ -113,5 +113,8 @@ contract SecurityTokenStorage {
     address public polyToken;
 
     address public delegate;
+
+    bytes32 constant LOCKED = "LOCKED";
+    bytes32 constant UNLOCKED = "UNLOCKED";
 
 }

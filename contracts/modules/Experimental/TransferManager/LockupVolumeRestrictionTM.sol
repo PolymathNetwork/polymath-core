@@ -402,6 +402,20 @@ contract LockupVolumeRestrictionTM is TransferManager {
     }
 
     /**
+     * @notice return the amount of locked tokens for a given user
+     */
+    function getLockedToken(address /*_owner*/) external view returns(uint256) {
+        return 0;
+    }
+
+    /**
+     * @notice return the amount of un locked tokens for a given user
+     */
+    function getUnLockedToken(address /*_owner*/) external view returns(uint256) {
+        return 0;
+    }
+
+    /**
      * @notice This function returns the signature of configure function
      */
     function getInitFunction() public pure returns(bytes4) {

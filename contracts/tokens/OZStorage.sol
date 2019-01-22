@@ -17,4 +17,12 @@ contract OZStorage {
     /// @dev counter to allow mutex lock with only one SSTORE operation
     uint256 private _guardCounter;
 
+    function totalSupply() internal view returns (uint256) {
+        return _totalSupply;
+    }
+
+    function balanceOf(address _investor) internal view returns(uint256) {
+        return _balances[_investor];
+    }
+
 }

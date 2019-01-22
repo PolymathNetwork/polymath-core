@@ -134,14 +134,6 @@ contract STGetter is OZStorage, SecurityTokenStorage {
         return TokenLib.getValueAt(checkpointTotalSupply, _checkpointId, totalSupply());
     }
 
-    function totalSupply() internal view returns (uint256) {
-        return 0;
-    }
-
-    function balanceOf(address _investor) internal view returns(uint256) {
-        return 0;
-    }
-
     /**
      * @notice generates subset of investors
      * NB - can be used in batches if investor list is large
@@ -180,6 +172,24 @@ contract STGetter is OZStorage, SecurityTokenStorage {
                     );
         }
         return false;
+    }
+
+    /// @dev get the unlocked balance according to the tms
+    function balanceOfPartition(address _owner, bytes32 _partition) external view returns(uint256) {
+        address[] memory tms = modules[TRANSFER_KEY];
+        uint8 i;
+        uint256 _amount;
+        if (_partition == LOCKED) {
+            for (i = 0; i < tms.length; i++) {
+               _amount += ITransferManager(tms[i]).getLockedToken(_owner);
+            }
+           return _amount;
+        }else if (_partition == UNLOCKED) {
+            for (i = 0; i < tms.length; i++) {
+               _amount += ITransferManager(tms[i]).getUnLockedToken(_owner);
+            }
+           return _amount;
+        }   
     }
 
     /**

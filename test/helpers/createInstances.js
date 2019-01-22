@@ -3,7 +3,6 @@ import { encodeProxyCall, encodeModuleCall } from "./encodeCall";
 const PolymathRegistry = artifacts.require("./PolymathRegistry.sol");
 const ModuleRegistry = artifacts.require("./ModuleRegistry.sol");
 const ModuleRegistryProxy = artifacts.require("./ModuleRegistryProxy.sol");
-const SecurityToken = artifacts.require("./SecurityToken.sol");
 const CappedSTOFactory = artifacts.require("./CappedSTOFactory.sol");
 const CappedSTO = artifacts.require("./CappedSTO.sol");
 const SecurityTokenRegistryProxy = artifacts.require("./SecurityTokenRegistryProxy.sol");
@@ -39,6 +38,7 @@ const DummySTO = artifacts.require("./DummySTO.sol");
 const MockBurnFactory = artifacts.require("./MockBurnFactory.sol");
 const STRGetter = artifacts.require("./STRGetter.sol");
 const MockWrongTypeFactory = artifacts.require("./MockWrongTypeFactory.sol");
+const STGetter = artifacts.require("./STGetter.sol");
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -86,6 +86,7 @@ let I_SecurityTokenRegistryProxy;
 let I_STRProxied;
 let I_MRProxied;
 let I_STRGetter;
+let I_STGetter;
 
 // Initial fee for ticker registry and security token registry
 const initRegFee = new BN(web3.utils.toWei("250"));
@@ -127,17 +128,19 @@ export async function setUpPolymathNetwork(account_polymath, token_owner) {
         I_SecurityTokenRegistry,
         I_SecurityTokenRegistryProxy,
         I_STRProxied,
-        I_STRGetter
+        I_STRGetter,
+        I_STGetter
     );
     return Promise.all(tempArray);
 }
 
-async function deployPolyRegistryAndPolyToken(account_polymath, token_owner) {
+export async function deployPolyRegistryAndPolyToken(account_polymath, token_owner) {
     // Step 0: Deploy the PolymathRegistry
     I_PolymathRegistry = await PolymathRegistry.new({ from: account_polymath });
 
     // Step 1: Deploy the token Faucet and Mint tokens for token_owner
-    I_PolyToken = await PolyTokenFaucet.new();
+    I_PolyToken = await PolyTokenFaucet.new({ from: account_polymath });
+
     await I_PolyToken.getTokens(new BN(10000).mul(new BN(10).pow(new BN(18))), token_owner);
 
     await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, { from: account_polymath });
@@ -195,11 +198,11 @@ async function deployGTM(account_polymath) {
 }
 
 async function deploySTFactory(account_polymath) {
-    I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, { from: account_polymath });
-
+    I_STGetter = await STGetter.new({from: account_polymath});
+    I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, I_STGetter.address, { from: account_polymath });
     assert.notEqual(I_STFactory.address.valueOf(), "0x0000000000000000000000000000000000000000", "STFactory contract was not deployed");
 
-    return new Array(I_STFactory);
+    return new Array(I_STFactory, I_STGetter);
 }
 
 async function deploySTR(account_polymath) {

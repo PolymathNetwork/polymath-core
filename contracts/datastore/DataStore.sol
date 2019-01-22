@@ -5,6 +5,8 @@ import "../interfaces/IOwnable.sol";
 import "./DataStoreStorage.sol";
 
 contract DataStore is DataStoreStorage {
+    //NB To modify a specific element of an array, First push a new element to the array and then delete the old element.
+    //Whenver an element is deleted from an Array, last element of that array is moved to the index of deleted element.
     //Delegate with MANAGEDATA permission can modify data.
 
     modifier onlyAuthorized() {
@@ -39,63 +41,63 @@ contract DataStore is DataStoreStorage {
         securityToken = ISecurityToken(_securityToken);
     } 
 
-    function setData(bytes32 _key, uint256 _data) external onlyAuthorized {
+    function setUint256(bytes32 _key, uint256 _data) external onlyAuthorized {
         _setData(_key, _data);
     }
 
-    function setData(bytes32 _key, bytes32 _data) external onlyAuthorized {
+    function setBytes32(bytes32 _key, bytes32 _data) external onlyAuthorized {
         _setData(_key, _data);
     }
 
-    function setData(bytes32 _key, address _data) external onlyAuthorized {
+    function setAddress(bytes32 _key, address _data) external onlyAuthorized {
         _setData(_key, _data);
     }
 
-    function setData(bytes32 _key, string calldata _data) external onlyAuthorized {
+    function setString(bytes32 _key, string calldata _data) external onlyAuthorized {
         _setData(_key, _data);
     }
 
-    function setData(bytes32 _key, bytes calldata _data) external onlyAuthorized {
+    function setBytes(bytes32 _key, bytes calldata _data) external onlyAuthorized {
         _setData(_key, _data);
     }
 
-    function setData(bytes32 _key, bool _data) external onlyAuthorized {
+    function setBool(bytes32 _key, bool _data) external onlyAuthorized {
         _setData(_key, _data);
     }
 
-    function setData(bytes32 _key, uint256[] calldata _data) external onlyAuthorized {
+    function setUint256Array(bytes32 _key, uint256[] calldata _data) external onlyAuthorized {
         _setData(_key, _data);
     }
 
-    function setData(bytes32 _key, bytes32[] calldata _data) external onlyAuthorized {
+    function setBytes32Array(bytes32 _key, bytes32[] calldata _data) external onlyAuthorized {
         _setData(_key, _data);
     }
 
-    function setData(bytes32 _key, address[] calldata _data) external onlyAuthorized {
+    function setAddressArray(bytes32 _key, address[] calldata _data) external onlyAuthorized {
         _setData(_key, _data);
     }
 
-    function setData(bytes32 _key, bool[] calldata _data) external onlyAuthorized {
+    function setBoolArray(bytes32 _key, bool[] calldata _data) external onlyAuthorized {
         _setData(_key, _data);
     }
 
-    function insertData(bytes32 _key, uint256 _data) external onlyAuthorized {
+    function insertUint256(bytes32 _key, uint256 _data) external onlyAuthorized {
         _insertData(_key, _data);
     }
 
-    function insertData(bytes32 _key, bytes32 _data) external onlyAuthorized {
+    function insertBytes32(bytes32 _key, bytes32 _data) external onlyAuthorized {
         _insertData(_key, _data);
     }
 
-    function insertData(bytes32 _key, address _data) external onlyAuthorized {
+    function insertAddress(bytes32 _key, address _data) external onlyAuthorized {
         _insertData(_key, _data);
     }
 
-    function insertData(bytes32 _key, bool _data) external onlyAuthorized {
+    function insertBool(bytes32 _key, bool _data) external onlyAuthorized {
         _insertData(_key, _data);
     }
 
-    function deleteUint(bytes32 _key, uint256 _index) external onlyAuthorized {
+    function deleteUint256(bytes32 _key, uint256 _index) external onlyAuthorized {
         _deleteUint(_key, _index);
     }
 
@@ -111,55 +113,55 @@ contract DataStore is DataStoreStorage {
         _deleteBool(_key, _index);
     }
 
-    function setDataMulti(bytes32[] calldata _keys, uint256[] calldata _data) external onlyAuthorized validInputLength(_keys.length, _data.length) {
+    function setUint256Multi(bytes32[] calldata _keys, uint256[] calldata _data) external onlyAuthorized validInputLength(_keys.length, _data.length) {
         for (uint256 i = 0; i < _keys.length; i++) {
             _setData(_keys[i], _data[i]);
         }
     }
 
-    function setDataMulti(bytes32[] calldata _keys, bytes32[] calldata _data) external onlyAuthorized validInputLength(_keys.length, _data.length) {
+    function setBytes32Multi(bytes32[] calldata _keys, bytes32[] calldata _data) external onlyAuthorized validInputLength(_keys.length, _data.length) {
         for (uint256 i = 0; i < _keys.length; i++) {
             _setData(_keys[i], _data[i]);
         }
     }
 
-    function setDataMulti(bytes32[] calldata _keys, address[] calldata _data) external onlyAuthorized validInputLength(_keys.length, _data.length) {
+    function setAddressMulti(bytes32[] calldata _keys, address[] calldata _data) external onlyAuthorized validInputLength(_keys.length, _data.length) {
         for (uint256 i = 0; i < _keys.length; i++) {
             _setData(_keys[i], _data[i]);
         }
     }
 
-    function setDataMulti(bytes32[] calldata _keys, bool[] calldata _data) external onlyAuthorized validInputLength(_keys.length, _data.length) {
+    function setBoolMulti(bytes32[] calldata _keys, bool[] calldata _data) external onlyAuthorized validInputLength(_keys.length, _data.length) {
         for (uint256 i = 0; i < _keys.length; i++) {
             _setData(_keys[i], _data[i]);
         }
     }
 
-    function insertDataMulti(bytes32[] calldata _keys, uint256[] calldata _data) external onlyAuthorized validInputLength(_keys.length, _data.length) {
+    function insertUint256Multi(bytes32[] calldata _keys, uint256[] calldata _data) external onlyAuthorized validInputLength(_keys.length, _data.length) {
         for (uint256 i = 0; i < _keys.length; i++) {
             _insertData(_keys[i], _data[i]);
         }
     }
 
-    function insertDataMulti(bytes32[] calldata _keys, bytes32[] calldata _data) external onlyAuthorized validInputLength(_keys.length, _data.length) {
+    function insertBytes32Multi(bytes32[] calldata _keys, bytes32[] calldata _data) external onlyAuthorized validInputLength(_keys.length, _data.length) {
         for (uint256 i = 0; i < _keys.length; i++) {
             _insertData(_keys[i], _data[i]);
         }
     }
 
-    function insertDataMulti(bytes32[] calldata _keys, address[] calldata _data) external onlyAuthorized validInputLength(_keys.length, _data.length) {
+    function insertAddressMulti(bytes32[] calldata _keys, address[] calldata _data) external onlyAuthorized validInputLength(_keys.length, _data.length) {
         for (uint256 i = 0; i < _keys.length; i++) {
             _insertData(_keys[i], _data[i]);
         }
     }
 
-    function insertDataMulti(bytes32[] calldata _keys, bool[] calldata _data) external onlyAuthorized validInputLength(_keys.length, _data.length) {
+    function insertBoolMulti(bytes32[] calldata _keys, bool[] calldata _data) external onlyAuthorized validInputLength(_keys.length, _data.length) {
         for (uint256 i = 0; i < _keys.length; i++) {
             _insertData(_keys[i], _data[i]);
         }
     }
 
-    function getUint(bytes32 _key) external view returns(uint256) {
+    function getUint256(bytes32 _key) external view returns(uint256) {
         return uintData[_key];
     }
 
@@ -183,7 +185,7 @@ contract DataStore is DataStoreStorage {
         return boolData[_key];
     }
 
-    function getUintArray(bytes32 _key) external view returns(uint256[] memory) {
+    function getUint256Array(bytes32 _key) external view returns(uint256[] memory) {
         return uintArrayData[_key];
     }
 
@@ -199,7 +201,7 @@ contract DataStore is DataStoreStorage {
         return boolArrayData[_key];
     }
 
-    function getUintArrayLength(bytes32 _key) external view returns(uint256) {
+    function getUint256ArrayLength(bytes32 _key) external view returns(uint256) {
         return uintArrayData[_key].length;
     }
 
@@ -215,7 +217,7 @@ contract DataStore is DataStoreStorage {
         return boolArrayData[_key].length;
     }
 
-    function getUintArrayElement(bytes32 _key, uint256 _index) external view returns(uint256) {
+    function getUint256ArrayElement(bytes32 _key, uint256 _index) external view returns(uint256) {
         return uintArrayData[_key][_index];
     }
 
@@ -298,7 +300,7 @@ contract DataStore is DataStoreStorage {
     function _deleteBytes32(bytes32 _key, uint256 _index) internal validKey(_key) {
         require(bytes32ArrayData[_key].length > _index, "Invalid Index"); //Also prevents undeflow
         if(bytes32ArrayData[_key].length - 1 != _index) {
-            bytes32ArrayData[_key][_index] = bytes32ArrayData[_key][uintArrayData[_key].length - 1];
+            bytes32ArrayData[_key][_index] = bytes32ArrayData[_key][bytes32ArrayData[_key].length - 1];
         }
         bytes32ArrayData[_key].length--;
     }
@@ -306,7 +308,7 @@ contract DataStore is DataStoreStorage {
     function _deleteAddress(bytes32 _key, uint256 _index) internal validKey(_key) {
         require(addressArrayData[_key].length > _index, "Invalid Index"); //Also prevents undeflow
         if(addressArrayData[_key].length - 1 != _index) {
-            addressArrayData[_key][_index] = addressArrayData[_key][uintArrayData[_key].length - 1];
+            addressArrayData[_key][_index] = addressArrayData[_key][addressArrayData[_key].length - 1];
         }
         addressArrayData[_key].length--;
     }
@@ -314,7 +316,7 @@ contract DataStore is DataStoreStorage {
     function _deleteBool(bytes32 _key, uint256 _index) internal validKey(_key) {
         require(boolArrayData[_key].length > _index, "Invalid Index"); //Also prevents undeflow
         if(boolArrayData[_key].length - 1 != _index) {
-            boolArrayData[_key][_index] = boolArrayData[_key][uintArrayData[_key].length - 1];
+            boolArrayData[_key][_index] = boolArrayData[_key][boolArrayData[_key].length - 1];
         }
         boolArrayData[_key].length--;
     }

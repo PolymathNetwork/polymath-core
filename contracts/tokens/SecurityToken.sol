@@ -65,6 +65,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     // Address whitelisted by issuer as controller
     address public controller;
 
+    // Address of the data store used to store shared data
     address public dataStore;
 
     // Records added modules - module list should be order agnostic!

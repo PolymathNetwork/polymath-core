@@ -43,7 +43,7 @@ contract KYCTransferManager is TransferManager {
         if (!paused) {
             bytes32 key = _getKYCKey(_to);
             DataStore dataStore = DataStore(ISecurityToken(securityToken).dataStore());
-            if (dataStore.getUint(key) > 0)
+            if (dataStore.getUint256(key) > 0)
                 return Result.VALID;
         }
         return Result.NA;
@@ -56,19 +56,19 @@ contract KYCTransferManager is TransferManager {
     function _modifyKYC(address _investor, bool _kycStatus) internal {
         DataStore dataStore = DataStore(ISecurityToken(securityToken).dataStore());
         bytes32 key = _getKYCKey(_investor);
-        uint256 kycNumber = dataStore.getUint(key); //index in address array + 1
+        uint256 kycNumber = dataStore.getUint256(key); //index in address array + 1
         uint256 kycTotal = dataStore.getAddressArrayLength(KYC_ARRAY);
         if(_kycStatus) {
             require(kycNumber == 0, "KYC exists");
-            dataStore.setData(key, kycTotal + 1);
-            dataStore.insertData(KYC_ARRAY, _investor);
+            dataStore.setUint256(key, kycTotal + 1);
+            dataStore.insertAddress(KYC_ARRAY, _investor);
         } else {
             require(kycNumber != 0, "KYC does not exist");
             address lastAddress = dataStore.getAddressArrayElement(KYC_ARRAY, kycTotal - 1);
             dataStore.deleteAddress(KYC_ARRAY, kycNumber - 1);
 
             //Corrects the index of last element as delete fucntions move last element to index.
-            dataStore.setData(_getKYCKey(lastAddress), kycNumber); 
+            dataStore.setUint256(_getKYCKey(lastAddress), kycNumber); 
         }
         //Alternatively, we can just emit an event and not maintain the KYC array on chain. 
         //I am maintaining the array to showcase how it can be done in cases where it might be needed.
@@ -91,7 +91,7 @@ contract KYCTransferManager is TransferManager {
     function checkKYC(address _investor) public view returns (bool kyc) {
         bytes32 key = _getKYCKey(_investor);
         DataStore dataStore = DataStore(ISecurityToken(securityToken).dataStore());
-        if (dataStore.getUint(key) > 0)
+        if (dataStore.getUint256(key) > 0)
             kyc = true;
     }
 

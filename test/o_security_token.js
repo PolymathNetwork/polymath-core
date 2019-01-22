@@ -1211,7 +1211,7 @@ contract("SecurityToken", async (accounts) => {
                 //key = web3.utils.padLeft(investors[i], 64);
                 key = web3.eth.abi.encodeParameter('address', investors[i])
                 console.log(key);
-                var tempKey = key.substring(2) + index.substring(2);
+                var tempKey = key + index.substring(2);
                 console.log(tempKey);
                 newKey.push(encodeUint(web3.utils.sha3(tempKey, {"encoding": "hex"})));
                 console.log(newKey[i]);

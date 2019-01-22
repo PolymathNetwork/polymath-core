@@ -1199,26 +1199,21 @@ contract("SecurityToken", async (accounts) => {
             let key;
             let newKey = new Array();
 
-            function getBN(data) {
-                return new BN(data.substring(2), 'hex');
-            }
-              
-            function getIndex(slot) {
-                return web3.utils.sha3(encodeUint(slot));
-            }
-
             function encodeUint(data) {
                 return web3.eth.abi.encodeParameter('uint256', data);
             }
 
             for (let i = 0; i < investors.length; i++) {
-                index = getBN(getIndex(0));
+                console.log('yo');
+                index = encodeUint(0);
                 //index = web3.utils.padLeft(0, 64);
                 console.log(index);
-                key = web3.utils.padLeft(investors[i], 64);
+                //key = web3.utils.padLeft(investors[i], 64);
+                key = web3.eth.abi.encodeParameter('address', investors[i])
                 console.log(key);
-                var tempKey = key + index;
-                newKey.push(web3.utils.sha3(tempKey, {"encoding": "hex"}));
+                var tempKey = key.substring(2) + index.substring(2);
+                console.log(tempKey);
+                newKey.push(encodeUint(web3.utils.sha3(tempKey, {"encoding": "hex"})));
                 console.log(newKey[i]);
                 console.log("\n");
             }

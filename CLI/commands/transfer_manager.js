@@ -2302,16 +2302,15 @@ async function manageExistingLockups(lockupName) {
   console.log(`- Currently unlocked:   ${web3.utils.fromWei(currentLockup.unlockedAmount)}  ${tokenSymbol}`);
   console.log(`- Start time:           ${moment.unix(currentLockup.startTime).format('MMMM Do YYYY, HH:mm:ss')}`);
   console.log(`- Lockup period:        ${currentLockup.lockUpPeriodSeconds} seconds`);
-  console.log(`- End time:             ${moment.unix(currentLockup.endTime).add(parseInt(currentLockup.lockUpPeriodSeconds)).format('MMMM Do YYYY, HH:mm:ss')}`);
-  console.log(`- Release frequency:    ${currentLockup.releaseFrequencySeconds} senconds`);
+  console.log(`- End time:             ${moment.unix(currentLockup.startTime).add(parseInt(currentLockup.lockUpPeriodSeconds), 'seconds').format('MMMM Do YYYY, HH:mm:ss')}`); console.log(`- Release frequency:    ${currentLockup.releaseFrequencySeconds} seconds`);
   console.log(`- Investors:            ${investors.length}`);
   // ------------------
 
   let options = [
     'Modify properties',
     'Show investors',
-    'Add this lockup to investors',
-    'Remove this lockup from investors',
+    'Add investors to this lockup',
+    'Remove investors from this lockup',
     'Delete this lockup type'
   ];
 
@@ -2325,7 +2324,7 @@ async function manageExistingLockups(lockupName) {
       let startTime = readlineSync.questionInt(`Enter the start time (Unix Epoch time) of the lockup type (a minute from now = ${minuteFromNow}): `, { defaultInput: minuteFromNow });
       let lockUpPeriodSeconds = readlineSync.questionInt(`Enter the total period (seconds) of the lockup type (ten minutes = 600): `, { defaultInput: 600 });
       let releaseFrequencySeconds = readlineSync.questionInt(`Enter how often to release a tranche of tokens in seconds (one minute = 60): `, { defaultInput: 60 });
-      let modifyLockUpTypeAction = currentTransferManager.methods.modifyLockUpType(lockupAmount, startTime, lockUpPeriodSeconds, releaseFrequencySeconds, lockupName);
+      let modifyLockUpTypeAction = currentTransferManager.methods.modifyLockUpType(web3.utils.toWei(lockupAmount.toString()), startTime, lockUpPeriodSeconds, releaseFrequencySeconds, lockupName);
       let modifyLockUpTypeReceipt = await common.sendTransaction(modifyLockUpTypeAction);
       let modifyLockUpTypeEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, modifyLockUpTypeReceipt.logs, 'ModifyLockUpType');
       console.log(chalk.green(`${web3.utils.hexToUtf8(modifyLockUpTypeEvent._lockupName)} lockup type has been modified successfully!`));

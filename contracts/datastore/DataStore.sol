@@ -2,9 +2,13 @@ pragma solidity ^0.5.0;
 
 import "../interfaces/ISecurityToken.sol";
 import "../interfaces/IOwnable.sol";
+import "../interfaces/IDataStore.sol";
 import "./DataStoreStorage.sol";
 
-contract DataStore is DataStoreStorage {
+/**
+ * @title Data store contract that stores data for all the modules in a central contract.
+ */
+contract DataStore is DataStoreStorage, IDataStore {
     //NB To modify a specific element of an array, First push a new element to the array and then delete the old element.
     //Whenver an element is deleted from an Array, last element of that array is moved to the index of deleted element.
     //Delegate with MANAGEDATA permission can modify data.
@@ -34,13 +38,22 @@ contract DataStore is DataStoreStorage {
         _;
     }
 
-    function setSecurityToken(address _securityToken) public onlyOwner {
+    /**
+     * @dev Changes security token atatched to this data store
+     * @param _securityToken address of the security token
+     */
+    function setSecurityToken(address _securityToken) external onlyOwner {
         if(address(securityToken) != address(0)) {
             require(msg.sender == IOwnable(address(securityToken)).owner(), "Unauthorized");
         }
         securityToken = ISecurityToken(_securityToken);
     } 
 
+    /**
+     * @dev Stores a uint256 data against a key
+     * @param _key Unique key to identify the data
+     * @param _data Data to be stored against the key
+     */
     function setUint256(bytes32 _key, uint256 _data) external onlyAuthorized {
         _setData(_key, _data);
     }
@@ -65,6 +78,11 @@ contract DataStore is DataStoreStorage {
         _setData(_key, _data);
     }
 
+    /**
+     * @dev Stores a uint256 array against a key
+     * @param _key Unique key to identify the array
+     * @param _data Array to be stored against the key
+     */
     function setUint256Array(bytes32 _key, uint256[] calldata _data) external onlyAuthorized {
         _setData(_key, _data);
     }
@@ -81,6 +99,11 @@ contract DataStore is DataStoreStorage {
         _setData(_key, _data);
     }
 
+    /**
+     * @dev Inserts a uint256 element to the array identified by the key
+     * @param _key Unique key to identify the array
+     * @param _data Element to push into the array
+     */
     function insertUint256(bytes32 _key, uint256 _data) external onlyAuthorized {
         _insertData(_key, _data);
     }
@@ -97,6 +120,12 @@ contract DataStore is DataStoreStorage {
         _insertData(_key, _data);
     }
 
+    /**
+     * @dev Deletes an element from the array identified by the key.
+     * When an element is deleted from an Array, last element of that array is moved to the index of deleted element.
+     * @param _key Unique key to identify the array
+     * @param _index Index of the element to delete
+     */
     function deleteUint256(bytes32 _key, uint256 _index) external onlyAuthorized {
         _deleteUint(_key, _index);
     }
@@ -113,6 +142,11 @@ contract DataStore is DataStoreStorage {
         _deleteBool(_key, _index);
     }
 
+    /**
+     * @dev Stores multiple uint256 data against respective keys
+     * @param _keys Array of keys to identify the data
+     * @param _data Array of data to be stored against the respective keys
+     */
     function setUint256Multi(bytes32[] calldata _keys, uint256[] calldata _data) external onlyAuthorized validInputLength(_keys.length, _data.length) {
         for (uint256 i = 0; i < _keys.length; i++) {
             _setData(_keys[i], _data[i]);
@@ -137,6 +171,11 @@ contract DataStore is DataStoreStorage {
         }
     }
 
+    /**
+     * @dev Inserts multiple uint256 elements to the array identified by the respective keys
+     * @param _keys Array of keys to identify the data
+     * @param _data Array of data to be inserted in arrays of the respective keys
+     */
     function insertUint256Multi(bytes32[] calldata _keys, uint256[] calldata _data) external onlyAuthorized validInputLength(_keys.length, _data.length) {
         for (uint256 i = 0; i < _keys.length; i++) {
             _insertData(_keys[i], _data[i]);

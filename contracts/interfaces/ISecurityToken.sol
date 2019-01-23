@@ -17,8 +17,6 @@ interface ISecurityToken {
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
 
-    function dataStore() external view returns (address);
-
     /**
      * @notice Validates a transfer with a TransferManager module if it exists
      * @dev TransferManager module has a key of 2
@@ -162,6 +160,18 @@ interface ISecurityToken {
      * @return Id
      */
     function currentCheckpointId() external view returns(uint256);
+
+    /**
+     * @notice Gets data store address
+     * @return data store address
+     */
+    function dataStore() external view returns (address);
+
+    /**
+    * @notice Allows owner to change data store
+    * @param _dataStore Address of the token data store
+    */
+    function changeDataStore(address _dataStore) external;
 
    /**
     * @notice Allows the owner to withdraw unspent POLY stored by them on the ST or any ERC20 token.

@@ -41,7 +41,7 @@ contract STFactory is ISTFactory {
             _polymathRegistry
         );
         newSecurityToken.addModule(transferManagerFactory, "", 0, 0);
-        newSecurityToken.setDataStore(dataStoreFactory.generateDataStore(address(newSecurityToken)));
+        newSecurityToken.changeDataStore(dataStoreFactory.generateDataStore(address(newSecurityToken)));
         newSecurityToken.transferOwnership(_issuer);
         return address(newSecurityToken);
     }

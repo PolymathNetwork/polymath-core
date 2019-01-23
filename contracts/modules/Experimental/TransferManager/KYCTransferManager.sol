@@ -1,7 +1,7 @@
 pragma solidity ^0.5.0;
 
 import "../../TransferManager/TransferManager.sol";
-import "../../../datastore/DataStore.sol";
+import "../../../interfaces/IDataStore.sol";
 import "../../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
@@ -42,7 +42,7 @@ contract KYCTransferManager is TransferManager {
     {
         if (!paused) {
             bytes32 key = _getKYCKey(_to);
-            DataStore dataStore = DataStore(ISecurityToken(securityToken).dataStore());
+            IDataStore dataStore = IDataStore(ISecurityToken(securityToken).dataStore());
             if (dataStore.getUint256(key) > 0)
                 return Result.VALID;
         }
@@ -54,7 +54,7 @@ contract KYCTransferManager is TransferManager {
     }
 
     function _modifyKYC(address _investor, bool _kycStatus) internal {
-        DataStore dataStore = DataStore(ISecurityToken(securityToken).dataStore());
+        IDataStore dataStore = IDataStore(ISecurityToken(securityToken).dataStore());
         bytes32 key = _getKYCKey(_investor);
         uint256 kycNumber = dataStore.getUint256(key); //index in address array + 1
         uint256 kycTotal = dataStore.getAddressArrayLength(KYC_ARRAY);
@@ -84,13 +84,13 @@ contract KYCTransferManager is TransferManager {
     }
 
     function getKYCAddresses() public view returns(address[] memory) {
-        DataStore dataStore = DataStore(ISecurityToken(securityToken).dataStore());
+        IDataStore dataStore = IDataStore(ISecurityToken(securityToken).dataStore());
         return dataStore.getAddressArray(KYC_ARRAY);
     }
 
     function checkKYC(address _investor) public view returns (bool kyc) {
         bytes32 key = _getKYCKey(_investor);
-        DataStore dataStore = DataStore(ISecurityToken(securityToken).dataStore());
+        IDataStore dataStore = IDataStore(ISecurityToken(securityToken).dataStore());
         if (dataStore.getUint256(key) > 0)
             kyc = true;
     }

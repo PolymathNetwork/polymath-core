@@ -46,7 +46,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     uint8 constant MINT_KEY = 3;
     uint8 constant CHECKPOINT_KEY = 4;
     uint8 constant BURN_KEY = 5;
-    uint8 constant DATA_KEY = 10;
+    uint8 constant DATA_KEY = 6;
 
     uint256 public granularity;
 
@@ -211,12 +211,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         securityTokenVersion = SemanticVersion(2, 0, 0);
     }
 
-    function setDataStore(address _dataStore) public {
-        require(_dataStore != address(0), "Invalid address");
-        dataStore = _dataStore;
-    }
-
-     /**
+    /**
       * @notice Attachs a module to the SecurityToken
       * @dev  E.G.: On deployment (through the STR) ST gets a TransferManager module attached to it
       * @dev to control restrictions on transfers.
@@ -375,6 +370,15 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         require(_granularity != 0, "Invalid granularity");
         emit GranularityChanged(granularity, _granularity);
         granularity = _granularity;
+    }
+
+    /**
+    * @notice Allows owner to change data store
+    * @param _dataStore Address of the token data store
+    */
+    function changeDataStore(address _dataStore) public onlyOwner {
+        require(_dataStore != address(0), "Invalid address");
+        dataStore = _dataStore;
     }
 
     /**

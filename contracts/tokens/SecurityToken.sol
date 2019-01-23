@@ -376,7 +376,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     * @notice Allows owner to change data store
     * @param _dataStore Address of the token data store
     */
-    function changeDataStore(address _dataStore) public onlyOwner {
+    function changeDataStore(address _dataStore) external onlyOwner {
         require(_dataStore != address(0), "Invalid address");
         dataStore = _dataStore;
     }

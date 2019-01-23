@@ -36,6 +36,7 @@ contract("Data store", async (accounts) => {
     const tokenDetails = "This is equity type of issuance";
     const contact = "team@polymath.network";
     const key = "0x41";
+    const key2 = "0x42";
     const bytes32data = "0x4200000000000000000000000000000000000000000000000000000000000000";
     const bytes32data2 = "0x4400000000000000000000000000000000000000000000000000000000000000";
 
@@ -44,6 +45,7 @@ contract("Data store", async (accounts) => {
 
     const address_zero = "0x0000000000000000000000000000000000000000";
     const address_one = "0x0000000000000000000000000000000000000001";
+    const address_two = "0x0000000000000000000000000000000000000002";
 
     before(async () => {
         account_polymath = accounts[0];
@@ -134,6 +136,7 @@ contract("Data store", async (accounts) => {
 
     describe("Should set data correctly", async () => {
         it("Should set and fetch uint256 correctly", async () => {
+            await catchRevert(I_DataStore.setUint256("0x0", 1, { from: token_owner }));
             await I_DataStore.setUint256(key, 1, { from: token_owner });
             assert.equal((await I_DataStore.getUint256(key)).toNumber(), 1, "Incorrect Data Inserted");
         });
@@ -278,6 +281,79 @@ contract("Data store", async (accounts) => {
             assert.equal(arrLen.toNumber() - 1, (await I_DataStore.getBoolArrayLength(key)).toNumber(), "Incorrect Array Length");
             assert.equal(lastElement, await I_DataStore.getBoolArrayElement(key, indexToDelete), "Incorrect array element");
         });
+
+        it("Should set and fetch multiple uint256 correctly", async () => {
+            await catchRevert(I_DataStore.setUint256Multi([key], [1,2], { from: token_owner }));
+            await I_DataStore.setUint256Multi([key, key2], [1,2], { from: token_owner });
+            assert.equal((await I_DataStore.getUint256(key)).toNumber(), 1, "Incorrect Data Inserted");
+            assert.equal((await I_DataStore.getUint256(key2)).toNumber(), 2, "Incorrect Data Inserted");
+        });
+
+        it("Should set and fetch multiple bytes32 correctly", async () => {
+            await I_DataStore.setBytes32Multi([key, key2], [bytes32data, bytes32data2], { from: token_owner });
+            assert.equal(await I_DataStore.getBytes32(key), bytes32data, "Incorrect Data Inserted");
+            assert.equal(await I_DataStore.getBytes32(key2), bytes32data2, "Incorrect Data Inserted");
+        });
+
+        it("Should set and fetch multiple address correctly", async () => {
+            await I_DataStore.setAddressMulti([key, key2], [address_one, address_two], { from: token_owner });
+            assert.equal(await I_DataStore.getAddress(key), address_one, "Incorrect Data Inserted");
+            assert.equal(await I_DataStore.getAddress(key2), address_two, "Incorrect Data Inserted");
+        });
+
+        it("Should set and fetch multiple bool correctly", async () => {
+            await I_DataStore.setBoolMulti([key, key2], [true, true], { from: token_owner });
+            assert.equal(await I_DataStore.getBool(key), true, "Incorrect Data Inserted");
+            assert.equal(await I_DataStore.getBool(key2), true, "Incorrect Data Inserted");
+        });
+
+        it("Should insert multiple uint256 into multiple Array", async () => {
+            let arrLen = await I_DataStore.getUint256ArrayLength(key);
+            let arrLen2 = await I_DataStore.getUint256ArrayLength(key2);
+            await I_DataStore.insertUint256Multi([key, key2], [10, 20], { from: token_owner });
+            let arrElement = await I_DataStore.getUint256ArrayElement(key, arrLen.toNumber());
+            let arrElement2 = await I_DataStore.getUint256ArrayElement(key2, arrLen2.toNumber());
+            assert.equal(arrLen.toNumber() + 1, (await I_DataStore.getUint256ArrayLength(key)).toNumber(), "Incorrect Array Length");
+            assert.equal(arrElement.toNumber(), 10, "Incorrect array element");
+            assert.equal(arrLen2.toNumber() + 1, (await I_DataStore.getUint256ArrayLength(key2)).toNumber(), "Incorrect Array Length");
+            assert.equal(arrElement2.toNumber(), 20, "Incorrect array element");
+        });
+
+        it("Should insert multiple bytes32 into multiple Array", async () => {
+            let arrLen = await I_DataStore.getBytes32ArrayLength(key);
+            let arrLen2 = await I_DataStore.getBytes32ArrayLength(key2);
+            await I_DataStore.insertBytes32Multi([key, key2], [bytes32data, bytes32data2], { from: token_owner });
+            let arrElement = await I_DataStore.getBytes32ArrayElement(key, arrLen.toNumber());
+            let arrElement2 = await I_DataStore.getBytes32ArrayElement(key2, arrLen2.toNumber());
+            assert.equal(arrLen.toNumber() + 1, (await I_DataStore.getBytes32ArrayLength(key)).toNumber(), "Incorrect Array Length");
+            assert.equal(arrLen2.toNumber() + 1, (await I_DataStore.getBytes32ArrayLength(key2)).toNumber(), "Incorrect Array Length");
+            assert.equal(arrElement, bytes32data, "Incorrect array element");
+            assert.equal(arrElement2, bytes32data2, "Incorrect array element");
+        });
+
+        it("Should insert multiple address into multiple Array", async () => {
+            let arrLen = await I_DataStore.getAddressArrayLength(key);
+            let arrLen2 = await I_DataStore.getAddressArrayLength(key2);
+            await I_DataStore.insertAddressMulti([key, key2], [address_one, address_two], { from: token_owner });
+            let arrElement = await I_DataStore.getAddressArrayElement(key, arrLen.toNumber());
+            let arrElement2 = await I_DataStore.getAddressArrayElement(key2, arrLen2.toNumber());
+            assert.equal(arrLen.toNumber() + 1, (await I_DataStore.getAddressArrayLength(key)).toNumber(), "Incorrect Array Length");
+            assert.equal(arrLen2.toNumber() + 1, (await I_DataStore.getAddressArrayLength(key2)).toNumber(), "Incorrect Array Length");
+            assert.equal(arrElement, address_one, "Incorrect array element");
+            assert.equal(arrElement2, address_two, "Incorrect array element");
+        });
+
+        it("Should insert multiple bool into multiple Array", async () => {
+            let arrLen = await I_DataStore.getBoolArrayLength(key);
+            let arrLen2 = await I_DataStore.getBoolArrayLength(key2);
+            await I_DataStore.insertBoolMulti([key, key2], [true, true], { from: token_owner });
+            let arrElement = await I_DataStore.getBoolArrayElement(key, arrLen.toNumber());
+            let arrElement2 = await I_DataStore.getBoolArrayElement(key2, arrLen2.toNumber());
+            assert.equal(arrLen.toNumber() + 1, (await I_DataStore.getBoolArrayLength(key)).toNumber(), "Incorrect Array Length");
+            assert.equal(arrLen2.toNumber() + 1, (await I_DataStore.getBoolArrayLength(key2)).toNumber(), "Incorrect Array Length");
+            assert.equal(arrElement, true, "Incorrect array element");
+            assert.equal(arrElement2, true, "Incorrect array element");
+        });
     });
 
     describe("Should not allow unautohrized modification to data", async () => {
@@ -355,6 +431,38 @@ contract("Data store", async (accounts) => {
 
         it("Should not allow unauthorized addresses to delete bool from Array", async () => {
             await catchRevert(I_DataStore.deleteBool(key, 0, { from: account_polymath }));
+        });
+
+        it("Should not allow unauthorized addresses to modify multiple uint256", async () => {
+            await catchRevert(I_DataStore.setUint256Multi([key, key2], [1,2], { from: account_polymath }));
+        });
+
+        it("Should not allow unauthorized addresses to modify multiple bytes32", async () => {
+            await catchRevert(I_DataStore.setBytes32Multi([key, key2], [bytes32data, bytes32data2], { from: account_polymath }));
+        });
+
+        it("Should not allow unauthorized addresses to modify multiple address", async () => {
+            await catchRevert(I_DataStore.setAddressMulti([key, key2], [address_one, address_two], { from: account_polymath }));
+        });
+
+        it("Should not allow unauthorized addresses to modify multiple bool", async () => {
+            await catchRevert(I_DataStore.setBoolMulti([key, key2], [true, true], { from: account_polymath }));
+        });
+
+        it("Should not allow unauthorized addresses to insert multiple uint256 into multiple Array", async () => {
+            await catchRevert(I_DataStore.insertUint256Multi([key, key2], [10, 20], { from: account_polymath }));
+        });
+
+        it("Should not allow unauthorized addresses to insert multiple bytes32 into multiple Array", async () => {
+            await catchRevert(I_DataStore.insertBytes32Multi([key, key2], [bytes32data, bytes32data2], { from: account_polymath }));
+        });
+
+        it("Should not allow unauthorized addresses to insert multiple address into multiple Array", async () => {
+            await catchRevert(I_DataStore.insertAddressMulti([key, key2], [address_one, address_two], { from: account_polymath }));
+        });
+
+        it("Should not allow unauthorized addresses to insert multiple bool into multiple Array", async () => {
+            await catchRevert(I_DataStore.insertBoolMulti([key, key2], [true, true], { from: account_polymath }));
         });
     });
 });

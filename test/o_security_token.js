@@ -613,7 +613,7 @@ contract("SecurityToken", async (accounts) => {
             let ds = await I_SecurityToken.dataStore();
             await I_SecurityToken.changeDataStore(one_address, { from: token_owner });
             assert.equal(one_address, await I_SecurityToken.dataStore());
-            I_SecurityToken.changeDataStore(ds, { from: token_owner });
+            await I_SecurityToken.changeDataStore(ds, { from: token_owner });
         });
 
         it("Should transfer from whitelist investor to non-whitelist investor in first tx and in 2nd tx non-whitelist to non-whitelist transfer", async () => {

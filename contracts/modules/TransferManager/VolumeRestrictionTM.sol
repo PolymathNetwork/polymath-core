@@ -101,7 +101,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
     {
 
     }
-    event Log(uint256 _time);
+
     /**
      * @notice Used to verify the transfer/transferFrom transaction and prevent tranaction
      * whose volume of tokens will voilate the maximum volume transfer restriction
@@ -114,9 +114,6 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         if (!paused && _from != address(0) && exemptions.exemptIndex[_from] == 0) {
             // Function must only be called by the associated security token if _isTransfer == true
             require(msg.sender == securityToken || !_isTransfer);
-            emit Log(now);
-            emit Log(individualRestrictions.individualRestriction[_from].endTime);
-            emit Log(individualRestrictions.individualRestriction[_from].startTime);
             // Checking the individual restriction if the `_from` comes in the individual category
             if ((individualRestrictions.individualRestriction[_from].endTime >= now && individualRestrictions.individualRestriction[_from].startTime <= now)
                 || (individualRestrictions.individualDailyRestriction[_from].endTime >= now && individualRestrictions.individualDailyRestriction[_from].startTime <= now)) {
@@ -783,7 +780,6 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
             }
         }
         (allowedDaily, dailyTime) = _dailyTxCheck(_from, _amount, bucketDetails.dailyLastTradedDayTime, dailyRestriction);
-        emit Log(0);
         if (_isTransfer) {
             _updateStorage(
                 _from,
@@ -936,16 +932,14 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
             details.dailyLastTradedDayTime = _dailyLastTradedDayTime;
         }
         if (details.daysCovered != _daysCovered) {
-                details.daysCovered = _daysCovered;
+            details.daysCovered = _daysCovered;
         }
-        emit Log(_amount);
-        emit Log(_lastTradedDayTime);
+
         if (_amount != 0) {
             if (_lastTradedDayTime !=0) {
                 details.sumOfLastPeriod = _sumOfLastPeriod.add(_amount);
                 // Increasing the total amount of the day by `_amount`
                 bucketData.bucket[_from][_lastTradedDayTime] = bucketData.bucket[_from][_lastTradedDayTime].add(_amount);
-                emit Log(bucketData.bucket[_from][_lastTradedDayTime]);
             }
             if ((_dailyLastTradedDayTime != _lastTradedDayTime) && _dailyLastTradedDayTime != 0 && now <= _endTime) {
                 // Increasing the total amount of the day by `_amount`

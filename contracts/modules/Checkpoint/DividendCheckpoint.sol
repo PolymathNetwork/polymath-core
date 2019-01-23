@@ -337,7 +337,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
             resultBalance[i] = ISecurityToken(securityToken).balanceOfAt(investors[i], dividend.checkpointId);
             if (!resultExcluded[i]) {
                 if (resultClaimed[i]) {
-                resultWithheld[i] = dividend.withheld[investors[i]];
+                    resultWithheld[i] = dividend.withheld[investors[i]];
                     resultAmount[i] = resultBalance[i].mul(dividend.amount).div(dividend.totalSupply).sub(resultWithheld[i]);
                 } else {
                     (uint256 claim, uint256 withheld) = calculateDividend(_dividendIndex, investors[i]);

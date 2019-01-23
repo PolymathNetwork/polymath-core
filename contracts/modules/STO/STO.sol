@@ -13,7 +13,7 @@ import "../../interfaces/ISTO.sol";
 contract STO is ISTO, STOStorage, Module, Pausable {
     using SafeMath for uint256;
 
-    enum FundRaiseType {ETH, POLY, DAI}
+    enum FundRaiseType {ETH, POLY, SC}
 
     // Event
     event SetFundRaiseTypes(FundRaiseType[] _fundRaiseTypes);
@@ -38,6 +38,11 @@ contract STO is ISTO, STOStorage, Module, Pausable {
     }
 
     /**
+     * @notice Returns the total no. of tokens sold
+     */
+    function getTokensSold() external view returns (uint256);
+
+    /**
      * @notice Pause (overridden function)
      */
     function pause() public onlyOwner {
@@ -58,7 +63,7 @@ contract STO is ISTO, STOStorage, Module, Pausable {
         require(_fundRaiseTypes.length > 0, "Raise type is not specified");
         fundRaiseTypes[uint8(FundRaiseType.ETH)] = false;
         fundRaiseTypes[uint8(FundRaiseType.POLY)] = false;
-        fundRaiseTypes[uint8(FundRaiseType.DAI)] = false;
+        fundRaiseTypes[uint8(FundRaiseType.SC)] = false;
         for (uint8 j = 0; j < _fundRaiseTypes.length; j++) {
             fundRaiseTypes[uint8(_fundRaiseTypes[j])] = true;
         }

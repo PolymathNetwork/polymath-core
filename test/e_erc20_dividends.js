@@ -881,34 +881,34 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             console.log(info[2][3]);
 
             console.log("Withheld:");
-            console.log(info[3][0].toNumber());
-            console.log(info[3][1].toNumber());
-            console.log(info[3][2].toNumber());
-            console.log(info[3][3].toNumber());
+            console.log(info[3][0].toString());
+            console.log(info[3][1].toString());
+            console.log(info[3][2].toString());
+            console.log(info[3][3].toString());
 
             console.log("Claimed:");
-            console.log(info[4][0].toNumber());
-            console.log(info[4][1].toNumber());
-            console.log(info[4][2].toNumber());
-            console.log(info[4][3].toNumber());
+            console.log(info[4][0].toString());
+            console.log(info[4][1].toString());
+            console.log(info[4][2].toString());
+            console.log(info[4][3].toString());
 
             console.log("Balance:");
-            console.log(info[5][0].toNumber());
-            console.log(info[5][1].toNumber());
-            console.log(info[5][2].toNumber());
-            console.log(info[5][3].toNumber());
+            console.log(info[5][0].toString());
+            console.log(info[5][1].toString());
+            console.log(info[5][2].toString());
+            console.log(info[5][3].toString());
 
             assert.equal(info[0][0], account_investor1, "account match");
             assert.equal(info[0][1], account_investor2, "account match");
             assert.equal(info[0][2], account_temp, "account match");
             assert.equal(info[0][3], account_investor3, "account match");
 
-            assert.equal(info[3][0].toNumber(), 0, "withheld match");
+            assert.equal(info[3][0].toString(), 0, "withheld match");
             assert.equal(info[3][1].toString(), new BN(web3.utils.toWei("0.2", "ether")).toString(), "withheld match");
             assert.equal(info[3][2].toString(), new BN(web3.utils.toWei("0.2", "ether")).toString(), "withheld match");
-            assert.equal(info[3][3].toNumber(), 0, "withheld match");
+            assert.equal(info[3][3].toString(), 0, "withheld match");
 
-            assert.equal(info[4][0].toNumber(), 0, "excluded");
+            assert.equal(info[4][0].toString(), 0, "excluded");
             assert.equal(info[4][1].toString(), new BN(web3.utils.toWei("1.8", "ether")).toString(), "claim match");
             assert.equal(info[4][2].toString(), new BN(web3.utils.toWei("0.8", "ether")).toString(), "claim match");
             assert.equal(info[4][3].toString(), new BN(web3.utils.toWei("7", "ether")).toString(), "claim match");

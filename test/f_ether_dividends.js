@@ -563,7 +563,9 @@ contract("EtherDividendCheckpoint", async (accounts) => {
             let addresses = [];
             addresses.push(account_temp);
             addresses.push(token_owner);
-            while (--limit > 42) addresses.push(web3.utils.toChecksumAddress('0x00000000000000000000000000000000000000' + limit));
+            let tempAdd = '0x0000000000000000000000000000000000000000';
+            while (--limit > 42) addresses.push(web3.utils.toChecksumAddress(tempAdd.substring(0, 42 - limit.toString().length) + limit));
+            // while (--limit > 42) addresses.push(web3.utils.toChecksumAddress('0x00000000000000000000000000000000000000' + limit));
             await catchRevert(
                 I_EtherDividendCheckpoint.createDividendWithCheckpointAndExclusions(maturity, expiry, 4, addresses, dividendName, {
                     from: token_owner,

@@ -1,6 +1,8 @@
 pragma solidity ^0.4.24;
 
 import "../../proxy/EtherDividendCheckpointProxy.sol";
+import "../../libraries/Util.sol";
+import "../../interfaces/IBoot.sol";
 import "../ModuleFactory.sol";
 
 /**
@@ -35,10 +37,14 @@ contract EtherDividendCheckpointFactory is ModuleFactory {
      * @notice Used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
-    function deploy(bytes /* _data */) external returns(address) {
+    function deploy(bytes _data) external returns(address) {
         if(setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Insufficent allowance or balance");
         address ethDividendCheckpoint = new EtherDividendCheckpointProxy(msg.sender, address(polyToken), logicContract);
+        //Checks that _data is valid (not calling anything it shouldn't)
+        require(Util.getSig(_data) == IBoot(ethDividendCheckpoint).getInitFunction(), "Invalid data");
+        /*solium-disable-next-line security/no-low-level-calls*/
+        require(ethDividendCheckpoint.call(_data), "Unsuccessfull call");
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(ethDividendCheckpoint, getName(), address(this), msg.sender, setupCost, now);
         return ethDividendCheckpoint;

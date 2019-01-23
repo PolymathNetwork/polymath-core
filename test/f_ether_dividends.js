@@ -4,6 +4,7 @@ import takeSnapshot, { increaseTime, revertToSnapshot } from "./helpers/time";
 import { encodeProxyCall } from "./helpers/encodeCall";
 import { catchRevert } from "./helpers/exceptions";
 import { setUpPolymathNetwork, deployEtherDividendAndVerifyed, deployGPMAndVerifyed } from "./helpers/createInstances";
+import { encodeModuleCall } from "./helpers/encodeCall";
 
 const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
@@ -19,6 +20,7 @@ contract("EtherDividendCheckpoint", accounts => {
     let account_polymath;
     let account_issuer;
     let token_owner;
+    let wallet;
     let account_investor1;
     let account_investor2;
     let account_investor3;
@@ -68,6 +70,7 @@ contract("EtherDividendCheckpoint", accounts => {
     const transferManagerKey = 2;
     const stoKey = 3;
     const checkpointKey = 4;
+    const DividendParameters = ["address"];
 
     // Initial fee for ticker registry and security token registry
     const initRegFee = web3.utils.toWei("250");
@@ -85,6 +88,7 @@ contract("EtherDividendCheckpoint", accounts => {
         account_investor4 = accounts[9];
         account_manager = accounts[5];
         account_temp = accounts[2];
+        wallet = accounts[3];
 
          // Step 1: Deploy the genral PM ecosystem
          let instances = await setUpPolymathNetwork(account_polymath, token_owner);
@@ -156,8 +160,9 @@ contract("EtherDividendCheckpoint", accounts => {
 
         it("Should successfully attach the ERC20DividendCheckpoint with the security token", async () => {
             await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
+            let bytesDividend = encodeModuleCall(DividendParameters, [wallet]);
             await catchRevert(
-                I_SecurityToken.addModule(P_EtherDividendCheckpointFactory.address, "", web3.utils.toWei("500", "ether"), 0, {
+                I_SecurityToken.addModule(P_EtherDividendCheckpointFactory.address, bytesDividend, web3.utils.toWei("500", "ether"), 0, {
                     from: token_owner
                 })
             );
@@ -166,7 +171,8 @@ contract("EtherDividendCheckpoint", accounts => {
         it("Should successfully attach the EtherDividendCheckpoint with the security token", async () => {
             let snapId = await takeSnapshot();
             await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), { from: token_owner });
-            const tx = await I_SecurityToken.addModule(P_EtherDividendCheckpointFactory.address, "", web3.utils.toWei("500", "ether"), 0, {
+            let bytesDividend = encodeModuleCall(DividendParameters, [wallet]);
+            const tx = await I_SecurityToken.addModule(P_EtherDividendCheckpointFactory.address, bytesDividend, web3.utils.toWei("500", "ether"), 0, {
                 from: token_owner
             });
             assert.equal(tx.logs[3].args._types[0].toNumber(), checkpointKey, "EtherDividendCheckpoint doesn't get deployed");
@@ -180,7 +186,8 @@ contract("EtherDividendCheckpoint", accounts => {
         });
 
         it("Should successfully attach the EtherDividendCheckpoint with the security token", async () => {
-            const tx = await I_SecurityToken.addModule(I_EtherDividendCheckpointFactory.address, "", 0, 0, { from: token_owner });
+            let bytesDividend = encodeModuleCall(DividendParameters, [wallet]);
+            const tx = await I_SecurityToken.addModule(I_EtherDividendCheckpointFactory.address, bytesDividend, 0, 0, { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), checkpointKey, "EtherDividendCheckpoint doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
@@ -343,9 +350,9 @@ contract("EtherDividendCheckpoint", accounts => {
         });
 
         it("Issuer reclaims withholding tax", async () => {
-            let issuerBalance = new BigNumber(await web3.eth.getBalance(token_owner));
+            let issuerBalance = new BigNumber(await web3.eth.getBalance(wallet));
             await I_EtherDividendCheckpoint.withdrawWithholding(0, { from: token_owner, gasPrice: 0 });
-            let issuerBalanceAfter = new BigNumber(await web3.eth.getBalance(token_owner));
+            let issuerBalanceAfter = new BigNumber(await web3.eth.getBalance(wallet));
             assert.equal(issuerBalanceAfter.sub(issuerBalance).toNumber(), web3.utils.toWei("0.2", "ether"));
         });
 
@@ -491,9 +498,9 @@ contract("EtherDividendCheckpoint", accounts => {
         });
 
         it("Issuer withdraws new withholding tax", async () => {
-            let issuerBalance = new BigNumber(await web3.eth.getBalance(token_owner));
+            let issuerBalance = new BigNumber(await web3.eth.getBalance(wallet));
             await I_EtherDividendCheckpoint.withdrawWithholding(2, { from: token_owner, gasPrice: 0 });
-            let issuerBalanceAfter = new BigNumber(await web3.eth.getBalance(token_owner));
+            let issuerBalanceAfter = new BigNumber(await web3.eth.getBalance(wallet));
             assert.equal(issuerBalanceAfter.sub(issuerBalance).toNumber(), web3.utils.toWei("0.6", "ether"));
         });
 
@@ -699,9 +706,9 @@ contract("EtherDividendCheckpoint", accounts => {
         });
 
         it("Issuer is able to reclaim dividend after expiry", async () => {
-            let tokenOwnerBalance = new BigNumber(await web3.eth.getBalance(token_owner));
+            let tokenOwnerBalance = new BigNumber(await web3.eth.getBalance(wallet));
             await I_EtherDividendCheckpoint.reclaimDividend(3, { from: token_owner, gasPrice: 0 });
-            let tokenOwnerAfter = new BigNumber(await web3.eth.getBalance(token_owner));
+            let tokenOwnerAfter = new BigNumber(await web3.eth.getBalance(wallet));
             assert.equal(tokenOwnerAfter.sub(tokenOwnerBalance).toNumber(), web3.utils.toWei("7", "ether"));
         });
 
@@ -779,11 +786,6 @@ contract("EtherDividendCheckpoint", accounts => {
         it("Should give the right dividend index", async () => {
             let index = await I_EtherDividendCheckpoint.getDividendIndex.call(8);
             assert.equal(index.length, 0);
-        });
-
-        it("Get the init data", async () => {
-            let tx = await I_EtherDividendCheckpoint.getInitFunction.call();
-            assert.equal(web3.utils.toAscii(tx).replace(/\u0000/g, ""), 0);
         });
 
         it("Should get the listed permissions", async () => {

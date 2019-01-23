@@ -7,7 +7,7 @@ import "../../RegistryUpdater.sol";
 import "../../libraries/DecimalMath.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
-import "./USDTieredSTOStorage.sol";
+import "../../storage/USDTieredSTOStorage.sol";
 
 /**
  * @title STO module for standard capped crowdsale
@@ -199,8 +199,6 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
         address _reserveWallet,
         address[] _usdTokens
     ) external onlyOwner {
-        /*solium-disable-next-line security/no-block-members*/
-        // require(now < startTime, "STO already started");
         _modifyAddresses(_wallet, _reserveWallet, _usdTokens);
     }
 

@@ -11,7 +11,7 @@ const LockUpTransferManager = artifacts.require('./LockUpTransferManager');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
 
 const Web3 = require('web3');
-const BigNumber = require('bignumber.js');
+let BN = Web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")) // Hardcoded development port
 
 contract('LockUpTransferManager', accounts => {
@@ -73,7 +73,6 @@ contract('LockUpTransferManager', accounts => {
     let temp;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = web3.utils.toWei("250");
 
     before(async() => {
         // Accounts setup
@@ -120,7 +119,6 @@ contract('LockUpTransferManager', accounts => {
         STFactory:                         ${I_STFactory.address}
         GeneralTransferManagerFactory:     ${I_GeneralTransferManagerFactory.address}
 
-        LockupVolumeRestrictionTransferManagerFactory:  
                                            ${I_LockUpTransferManagerFactory.address}
         -----------------------------------------------------------------------------
         `);
@@ -141,11 +139,8 @@ contract('LockUpTransferManager', accounts => {
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
-            assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
-            I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
 
-            const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({from: _blockNo}), 1);
 
             // Verify that GeneralTransferManager module get added successfully or not
             assert.equal(log.args._types[0].toNumber(), 2);
@@ -158,7 +153,6 @@ contract('LockUpTransferManager', accounts => {
 
         it("Should intialize the auto attached modules", async () => {
           let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
-          I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
         });
 
 
@@ -202,12 +196,8 @@ contract('LockUpTransferManager', accounts => {
 
         it("Should Buy the tokens from non-divisible", async() => {
             // Add the Investor in to the whitelist
-
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor1,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(10),
                 true,
                 {
                     from: account_issuer
@@ -219,10 +209,8 @@ contract('LockUpTransferManager', accounts => {
             await increaseTime(5000);
 
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor1, web3.utils.toWei('2', 'ether'), { from: token_owner });
 
             assert.equal(
-                (await I_SecurityToken.balanceOf(account_investor1)).toNumber(),
                 web3.utils.toWei('2', 'ether')
             );
         });
@@ -232,9 +220,6 @@ contract('LockUpTransferManager', accounts => {
 
             let tx = await I_GeneralTransferManager_div.modifyWhitelist(
                 account_investor1,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(10),
                 true,
                 {
                     from: account_issuer
@@ -259,9 +244,6 @@ contract('LockUpTransferManager', accounts => {
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor2,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(10),
                 true,
                 {
                     from: account_issuer
@@ -296,7 +278,6 @@ contract('LockUpTransferManager', accounts => {
                 "LockUpTransferManager",
                 "LockUpTransferManager module was not added"
             );
-            P_LockUpTransferManager = LockUpTransferManager.at(tx.logs[3].args._module);
             await revertToSnapshot(snapId);
         });
 
@@ -309,7 +290,6 @@ contract('LockUpTransferManager', accounts => {
                 "LockUpTransferManager",
                 "LockUpTransferManager module was not added"
             );
-            I_LockUpTransferManager = LockUpTransferManager.at(tx.logs[2].args._module);
         });
 
         it("Should successfully attach the LockUpVolumeRestrictionTMFactory with the divisible security token", async () => {
@@ -321,16 +301,12 @@ contract('LockUpTransferManager', accounts => {
                 "LockUpTransferManager",
                 "LockUpTransferManager module was not added"
             );
-            I_LockUpVolumeRestrictionTM_div = LockUpTransferManager.at(tx.logs[2].args._module);
         });
 
         it("Add a new token holder", async() => {
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(
                 account_investor3,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(10),
                 true,
                 {
                     from: account_issuer
@@ -373,11 +349,9 @@ contract('LockUpTransferManager', accounts => {
                 I_LockUpTransferManager.addNewLockUpToUser(
                     account_investor2,
                     0,
-                    latestTime() + + duration.seconds(1),
                     duration.seconds(400000),
                     duration.seconds(100000),
                     "a_lockup",
-                    { 
                         from: token_owner
                     }
                 )
@@ -391,7 +365,6 @@ contract('LockUpTransferManager', accounts => {
                 I_LockUpTransferManager.addNewLockUpToUser(
                     account_investor2,
                     web3.utils.toWei('1', 'ether'),
-                    latestTime() + duration.seconds(1),
                     duration.seconds(400000),
                     0,
                     "a_lockup",
@@ -409,7 +382,6 @@ contract('LockUpTransferManager', accounts => {
                 I_LockUpTransferManager.addNewLockUpToUser(
                     account_investor2,
                     web3.utils.toWei('1', 'ether'),
-                    latestTime() + duration.seconds(1),
                     0,
                     duration.seconds(100000),
                     "a_lockup",
@@ -424,11 +396,9 @@ contract('LockUpTransferManager', accounts => {
             await catchRevert(
                 I_LockUpTransferManager.addNewLockUpType(
                     web3.utils.toWei('12', 'ether'),
-                    latestTime() + duration.days(1),
                     60,
                     20,
                     "a_lockup",
-                    { 
                         from: account_investor1
                     }
                 )
@@ -438,11 +408,9 @@ contract('LockUpTransferManager', accounts => {
         it("Should add the new lockup type", async() => {
             let tx = await I_LockUpTransferManager.addNewLockUpType(
                     web3.utils.toWei('12', 'ether'),
-                    latestTime() + duration.days(1),
                     60,
                     20,
                     "a_lockup",
-                    { 
                         from: token_owner
                     }
             );
@@ -454,11 +422,9 @@ contract('LockUpTransferManager', accounts => {
                 I_LockUpTransferManager.addNewLockUpToUser(
                     account_investor1,
                     web3.utils.toWei('5', 'ether'),
-                    latestTime() + duration.seconds(1),
                     duration.seconds(400000),
                     duration.seconds(100000),
                     "a_lockup",
-                    { 
                         from: token_owner
                     }
                 )
@@ -470,11 +436,9 @@ contract('LockUpTransferManager', accounts => {
             let tx = await I_LockUpVolumeRestrictionTM_div.addNewLockUpToUser(
                     account_investor1,
                     web3.utils.toWei('0.5', 'ether'),
-                    latestTime() + duration.seconds(1),
                     duration.seconds(400000),
                     duration.seconds(100000),
                     "a_lockup",
-                    { 
                         from: token_owner
                     }
             );
@@ -487,11 +451,9 @@ contract('LockUpTransferManager', accounts => {
             let tx = await I_LockUpVolumeRestrictionTM_div.addNewLockUpToUser(
                     account_investor1,
                     web3.utils.toWei('64951', 'ether'),
-                    latestTime() + duration.seconds(1),
                     duration.seconds(400000),
                     duration.seconds(100000),
                     "b_lockup",
-                    { 
                         from: token_owner
                     }
             );
@@ -502,7 +464,6 @@ contract('LockUpTransferManager', accounts => {
         it("Should prevent the transfer of tokens in a lockup", async() => {
 
             let balance = await I_SecurityToken.balanceOf(account_investor2)
-            console.log("balance", balance.dividedBy(new BigNumber(1).times(new BigNumber(10).pow(18))).toNumber());
             // create a lockup for their entire balance
             // over 12 seconds total, with 3 periods of 20 seconds each.
             await I_LockUpTransferManager.addNewLockUpToUser(
@@ -593,7 +554,6 @@ contract('LockUpTransferManager', accounts => {
                 I_LockUpTransferManager.addNewLockUpToUserMulti(
                     [account_investor3],
                     [web3.utils.toWei("6", "ether"), web3.utils.toWei("3", "ether")],
-                    [latestTime() + duration.seconds(1), latestTime() + duration.seconds(21)],
                     [60, 45],
                     [20, 15],
                     ["c_lockup", "d_lockup"],
@@ -609,7 +569,6 @@ contract('LockUpTransferManager', accounts => {
                 I_LockUpTransferManager.addNewLockUpToUserMulti(
                     [account_investor3, account_investor3],
                     [],
-                    [latestTime() + duration.seconds(1), latestTime() + duration.seconds(21)],
                     [60, 45],
                     [20, 15],
                     ["c_lockup", "d_lockup"],
@@ -625,7 +584,6 @@ contract('LockUpTransferManager', accounts => {
                 I_LockUpTransferManager.addNewLockUpToUserMulti(
                     [account_investor3, account_investor3],
                     [web3.utils.toWei("6", "ether"), web3.utils.toWei("3", "ether")],
-                    [latestTime() + duration.seconds(1), latestTime() + duration.seconds(21)],
                     [60, 45, 50],
                     [20, 15],
                     ["c_lockup", "d_lockup"],
@@ -637,11 +595,9 @@ contract('LockUpTransferManager', accounts => {
         })
 
         it("Should fail to add the multiple lockups -- because array length mismatch", async() => {
-            await catchRevert( 
                 I_LockUpTransferManager.addNewLockUpToUserMulti(
                     [account_investor3, account_investor3],
                     [web3.utils.toWei("6", "ether"), web3.utils.toWei("3", "ether")],
-                    [latestTime() + duration.seconds(1), latestTime() + duration.seconds(21)],
                     [60, 45, 50],
                     [20, 15, 10],
                     ["c_lockup", "d_lockup"],
@@ -653,11 +609,9 @@ contract('LockUpTransferManager', accounts => {
         })
 
         it("Should fail to add the multiple lockups -- because array length mismatch", async() => {
-            await catchRevert( 
                 I_LockUpTransferManager.addNewLockUpToUserMulti(
                     [account_investor3, account_investor3],
                     [web3.utils.toWei("6", "ether"), web3.utils.toWei("3", "ether")],
-                    [latestTime() + duration.seconds(1), latestTime() + duration.seconds(21)],
                     [60, 45],
                     [20, 15],
                     ["c_lockup"],
@@ -672,7 +626,6 @@ contract('LockUpTransferManager', accounts => {
             await I_LockUpTransferManager.addNewLockUpToUserMulti(
                 [account_investor3, account_investor3],
                 [web3.utils.toWei("6", "ether"), web3.utils.toWei("3", "ether")],
-                [latestTime() + duration.seconds(1), latestTime() + duration.seconds(21)],
                 [60, 45],
                 [20, 15],
                 ["c_lockup", "d_lockup"],
@@ -712,9 +665,7 @@ contract('LockUpTransferManager', accounts => {
 
         it("Should transfer the tokens from both the lockup simultaneously", async() => {
             // Increase the 20 sec (+ 1 to mitigate the block time) that unlocked another 2 tokens from the lockup 1 and simultaneously unlocked 1
-            // more token from the lockup 2 
             await increaseTime(21);
-            
             await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('3'), { from: account_investor3 })
             assert.equal(
                 (await I_SecurityToken.balanceOf(account_investor3)).toNumber(),
@@ -731,7 +682,6 @@ contract('LockUpTransferManager', accounts => {
                         from: account_polymath
                     }
                 )
-            ); 
         });
 
         it("Should remove the multiple lockup -- failed because of invalid lockupname", async() => {
@@ -743,7 +693,6 @@ contract('LockUpTransferManager', accounts => {
                         from: account_polymath
                     }
                 )
-            ); 
         })
 
         it("Should remove the multiple lockup", async() => {
@@ -760,28 +709,22 @@ contract('LockUpTransferManager', accounts => {
 
         it("Should fail to modify the lockup -- because of bad owner", async() => {
             await I_SecurityToken.mint(account_investor3, web3.utils.toWei("9"), {from: token_owner});
-           
             let tx = await I_LockUpTransferManager.addNewLockUpToUser(
                 account_investor3,
                 web3.utils.toWei("9"),
-                latestTime() + duration.minutes(5),                
                 60,
                 20,
                 "z_lockup",
-                { 
                     from: token_owner
                 }
             );
-        
             await catchRevert(
                  // edit the lockup
                 I_LockUpTransferManager.modifyLockUpType(
                     web3.utils.toWei("9"),
-                    latestTime() + duration.seconds(1),                
                     60,
                     20,
                     "z_lockup",
-                    { 
                         from: account_polymath
                     }
                 )
@@ -793,11 +736,9 @@ contract('LockUpTransferManager', accounts => {
                 // edit the lockup
                I_LockUpTransferManager.modifyLockUpType(
                    web3.utils.toWei("9"),
-                   latestTime() - duration.seconds(50),                
                    60,
                    20,
                    "z_lockup",
-                   { 
                        from: token_owner
                    }
                )
@@ -809,11 +750,9 @@ contract('LockUpTransferManager', accounts => {
                 // edit the lockup
                I_LockUpTransferManager.modifyLockUpType(
                    web3.utils.toWei("9"),
-                   latestTime() + duration.seconds(50),                
                    60,
                    20,
                    "m_lockup",
-                   { 
                        from: token_owner
                    }
                )
@@ -824,11 +763,9 @@ contract('LockUpTransferManager', accounts => {
                 // edit the lockup
             await I_LockUpTransferManager.modifyLockUpType(
                    web3.utils.toWei("9"),
-                   latestTime() + duration.seconds(50),                
                    60,
                    20,
                    "z_lockup",
-                   { 
                        from: token_owner
                    }
             );
@@ -839,18 +776,15 @@ contract('LockUpTransferManager', accounts => {
             // balance here should be 12000000000000000000 (12e18 or 12 eth)
             let balance = await I_SecurityToken.balanceOf(account_investor1)
 
-            console.log("balance", balance.dividedBy(new BigNumber(1).times(new BigNumber(10).pow(18))).toNumber());
 
             // create a lockup for their entire balance
             // over 16 seconds total, with 4 periods of 4 seconds each.
             await I_LockUpTransferManager.addNewLockUpToUser(
                 account_investor1,
                 balance,
-                latestTime() + duration.minutes(5),                
                 60,
                 20,
                 "f_lockup",
-                { 
                     from: token_owner
                 }
             );
@@ -863,8 +797,6 @@ contract('LockUpTransferManager', accounts => {
             console.log(lockUp);
             // elements in lockup array are uint lockUpPeriodSeconds, uint releaseFrequencySeconds, uint startTime, uint totalAmount
             assert.equal(
-                lockUp[0].dividedBy(new BigNumber(1).times(new BigNumber(10).pow(18))).toNumber(),
-                balance.dividedBy(new BigNumber(1).times(new BigNumber(10).pow(18))).toNumber()
             );
             assert.equal(lockUp[2].toNumber(), 60);
             assert.equal(lockUp[3].toNumber(), 20);
@@ -874,11 +806,9 @@ contract('LockUpTransferManager', accounts => {
             temp = latestTime() + duration.seconds(1);
             await I_LockUpTransferManager.modifyLockUpType(
                 balance,
-                temp,                
                 60,
                 20,
                 "f_lockup",
-                { 
                     from: token_owner
                 }
             );
@@ -899,15 +829,12 @@ contract('LockUpTransferManager', accounts => {
         it("Modify the lockup during the lockup periods", async() => {
             let balance = await I_SecurityToken.balanceOf(account_investor1)
             let lockUp = await I_LockUpTransferManager.getLockUp("f_lockup");
-            console.log(lockUp[4].dividedBy(new BigNumber(1).times(new BigNumber(10).pow(18))).toNumber());
             // edit the lockup
             await I_LockUpTransferManager.modifyLockUpType(
                     balance,
-                    latestTime() + duration.days(10),                
                     90,
                     30,
                     "f_lockup",
-                    { 
                         from: token_owner
                     }
             );
@@ -925,7 +852,6 @@ contract('LockUpTransferManager', accounts => {
                 }
             );
 
-            // removing the lockup type 
             let tx = await I_LockUpTransferManager.removeLockupType("k_lockup", {from: token_owner});
             assert.equal(web3.utils.toUtf8(tx.logs[0].args._lockupName), "k_lockup");
 

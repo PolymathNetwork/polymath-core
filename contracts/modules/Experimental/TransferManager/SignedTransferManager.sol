@@ -63,7 +63,7 @@ contract SignedTransferManager is TransferManager {
     * @param _signers address array of signers
     * @param _signersStats bool array of signers stats
     */
-    function updateSigners(address[] memory _signers, bool[] memory _signersStats) external withPerm(ADMIN) {
+    function updateSigners(address[] calldata _signers, bool[] calldata _signersStats) external withPerm(ADMIN) {
         require(_signers.length == _signersStats.length, "Array length mismatch");
         IDataStore dataStore = IDataStore(ISecurityToken(securityToken).dataStore());
         for(uint256 i=0; i<_signers.length; i++) {
@@ -118,7 +118,7 @@ contract SignedTransferManager is TransferManager {
     * Signer needs to be in the signers mapping
     */
     function invalidateSignature(address _from, address _to, uint256 _amount, bytes calldata _data) external {
-        require(_checkSigner(signer), "Unauthorized Signer");
+        require(_checkSigner(msg.sender), "Unauthorized Signer");
         require(!_checkSignatureIsInvalid(_data), "Signature already invalid");
 
         bytes32 hash = keccak256(abi.encodePacked(this, _from, _to, _amount));

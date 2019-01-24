@@ -10,9 +10,8 @@ contract SignedTransferManagerFactory is ModuleFactory {
 
     /**
      * @notice Constructor
-     * @param _polyAddress Address of the polytoken
      */
-    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
+    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
     ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
     {
         version = "1.0.0";

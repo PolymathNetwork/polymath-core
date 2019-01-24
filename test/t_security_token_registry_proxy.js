@@ -10,6 +10,7 @@ const OwnedUpgradeabilityProxy = artifacts.require("./OwnedUpgradeabilityProxy.s
 const STFactory = artifacts.require("./STFactory.sol");
 const SecurityToken = artifacts.require("./SecurityToken.sol");
 const STRGetter = artifacts.require("./STRGetter.sol");
+const STGetter = artifacts.require("./STGetter.sol");
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -31,6 +32,8 @@ contract("SecurityTokenRegistryProxy", async (accounts) => {
     let I_FeatureRegistry;
     let I_STRGetter;
     let I_Getter;
+    let I_STGetter;
+    let stGetter;
 
     let account_polymath;
     let account_temp;
@@ -79,7 +82,8 @@ contract("SecurityTokenRegistryProxy", async (accounts) => {
             I_SecurityTokenRegistry,
             I_SecurityTokenRegistryProxy,
             I_STRProxied,
-            I_STRGetter
+            I_STRGetter,
+            I_STGetter
         ] = instances;
 
         I_SecurityTokenRegistryProxy = await SecurityTokenRegistryProxy.new({ from: account_polymath });

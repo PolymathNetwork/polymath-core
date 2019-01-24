@@ -11,6 +11,7 @@ const DummySTO = artifacts.require("./DummySTO.sol");
 const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager");
+const STGetter = artifacts.require("./STGetter.sol");
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -58,6 +59,8 @@ contract("GeneralTransferManager", async (accounts) => {
     let I_PolymathRegistry;
     let P_GeneralTransferManagerFactory;
     let I_STRGetter;
+    let I_STGetter;
+    let stGetter;
 
     // SecurityToken Details
     const name = "Team";
@@ -123,7 +126,8 @@ contract("GeneralTransferManager", async (accounts) => {
             I_SecurityTokenRegistry,
             I_SecurityTokenRegistryProxy,
             I_STRProxied,
-            I_STRGetter
+            I_STRGetter,
+            I_STGetter
         ] = instances;
 
         [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
@@ -167,7 +171,7 @@ contract("GeneralTransferManager", async (accounts) => {
             assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
             I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
-
+            stGetter = await STGetter.at(I_SecurityToken.address);
             const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTransferManager module get added successfully or not
@@ -176,7 +180,7 @@ contract("GeneralTransferManager", async (accounts) => {
         });
 
         it("Should intialize the auto attached modules", async () => {
-            let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
+            let moduleData = (await stGetter.getModulesByType(2))[0];
             I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
 
@@ -234,7 +238,7 @@ contract("GeneralTransferManager", async (accounts) => {
         });
 
         it("Should mint the tokens to the affiliates", async () => {
-            await I_SecurityToken.mintMulti([account_affiliates1, account_affiliates2], [new BN(100).mul(new BN(10).pow(new BN(18))), new BN(10).pow(new BN(20))], {
+            await I_SecurityToken.issueMulti([account_affiliates1, account_affiliates2], [new BN(100).mul(new BN(10).pow(new BN(18))), new BN(10).pow(new BN(20))], {
                 from: account_issuer,
                 gas: 6000000
             });

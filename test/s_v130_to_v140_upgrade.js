@@ -7,7 +7,7 @@ import { duration } from "./helpers/utils";
 import { encodeProxyCall, encodeModuleCall } from "./helpers/encodeCall";
 import { setUpPolymathNetwork, deployCappedSTOAndVerifyed, deployGPMAndVerifyed } from "./helpers/createInstances";
 
-const USDTieredSTOProxyFactory = artifacts.require("./USDTieredSTOProxyFactory.sol");
+const USDTieredSTOProxy = artifacts.require("./USDTieredSTOProxy.sol");
 const USDTieredSTOFactory = artifacts.require("./USDTieredSTOFactory.sol");
 const CappedSTOFactory = artifacts.require("./CappedSTOFactory.sol");
 const USDTieredSTO = artifacts.require("./USDTieredSTO.sol");
@@ -17,6 +17,7 @@ const ETHOracle = artifacts.require("./MakerDAOOracle.sol");
 const SecurityToken = artifacts.require("./SecurityToken.sol");
 const PolyTokenFaucet = artifacts.require("./PolyTokenFaucet.sol");
 const ManualApprovalTransferManagerFactory = artifacts.require("./ManualApprovalTransferManagerFactory.sol");
+const STGetter = artifacts.require("./STGetter.sol");
 
 contract("Upgrade from v1.3.0 to v1.4.0", async (accounts) => {
     // Accounts Variable declaration
@@ -31,7 +32,7 @@ contract("Upgrade from v1.3.0 to v1.4.0", async (accounts) => {
     let tx;
 
     // Initial fee for ticker registry and security token registry
-    const REGFEE = new BN(web3.utils.toWei("250"));
+    const REGFEE = new BN(web3.utils.toWei("500"));
     const STOSetupCost = 0;
     const address_zero = "0x0000000000000000000000000000000000000000";
     const one_address = "0x0000000000000000000000000000000000000001";
@@ -70,6 +71,8 @@ contract("Upgrade from v1.3.0 to v1.4.0", async (accounts) => {
     let I_STRProxied;
     let I_STRProxiedNew;
     let I_STRGetter;
+    let I_STGetter;
+    let stGetter;
 
     let I_SecurityTokenRegistry;
     //let I_UpgradedSecurityTokenRegistry
@@ -79,7 +82,7 @@ contract("Upgrade from v1.3.0 to v1.4.0", async (accounts) => {
     //let I_SecurityToken3;
 
     let I_USDTieredSTOFactory;
-    let I_USDTieredSTOProxyFactory;
+    let I_USDTieredSTOProxy;
     let I_USDOracle;
     let I_POLYOracle;
     let I_USDTieredSTO;
@@ -119,7 +122,8 @@ contract("Upgrade from v1.3.0 to v1.4.0", async (accounts) => {
             I_SecurityTokenRegistry,
             I_SecurityTokenRegistryProxy,
             I_STRProxied,
-            I_STRGetter
+            I_STRGetter,
+            I_STGetter
         ] = instances;
 
         // STEP 4: Deploy the GeneralDelegateManagerFactory
@@ -129,9 +133,9 @@ contract("Upgrade from v1.3.0 to v1.4.0", async (accounts) => {
         [I_CappedSTOFactory] = await deployCappedSTOAndVerifyed(POLYMATH, I_MRProxied, STOSetupCost);
 
         // Step 12: Mint tokens to ISSUERs
-        await I_PolyToken.getTokens(REGFEE * 2, ISSUER1);
-        await I_PolyToken.getTokens(REGFEE * 2, ISSUER2);
-        await I_PolyToken.getTokens(REGFEE * 2, ISSUER3);
+        await I_PolyToken.getTokens(REGFEE, ISSUER1);
+        await I_PolyToken.getTokens(REGFEE, ISSUER2);
+        await I_PolyToken.getTokens(REGFEE, ISSUER3);
 
         // Step 13: Register tokens
         // (A) :  TOK1
@@ -209,8 +213,8 @@ contract("Upgrade from v1.3.0 to v1.4.0", async (accounts) => {
     describe("USDTieredSTOFactory deploy", async () => {
         // Step 1: Deploy USDTieredSTOFactory\
         it("Should successfully deploy USDTieredSTOFactory", async () => {
-            I_USDTieredSTOProxyFactory = await USDTieredSTOProxyFactory.new();
-            I_USDTieredSTOFactory = await USDTieredSTOFactory.new(STOSetupCost, new BN(0), new BN(0), I_USDTieredSTOProxyFactory.address, {
+            I_USDTieredSTOProxy = await USDTieredSTOProxy.new();
+            I_USDTieredSTOFactory = await USDTieredSTOFactory.new(STOSetupCost, new BN(0), new BN(0), I_USDTieredSTOProxy.address, {
                 from: POLYMATH
             });
             assert.notEqual(I_USDTieredSTOFactory.address.valueOf(), address_zero, "USDTieredSTOFactory contract was not deployed");

@@ -189,7 +189,6 @@ contract("SecurityToken", async (accounts) => {
             const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTransferManager module get added successfully or not
-            console.log(log.args);
             assert.equal(log.args._types[0].toNumber(), transferManagerKey);
             assert.equal(web3.utils.toUtf8(log.args._name), "GeneralTransferManager");
         });
@@ -217,7 +216,6 @@ contract("SecurityToken", async (accounts) => {
         it("Should issue the tokens before attaching the STO", async () => {
             await I_SecurityToken.issue(account_affiliate1, new BN(100).mul(new BN(10).pow(new BN(18))), "0x0", { from: token_owner });
             let balance = await I_SecurityToken.balanceOf(account_affiliate1);
-            console.log((await stGetter.getInvestorCount.call()).toNumber());
             assert.equal(balance.div(new BN(10).pow(new BN(18))).toNumber(), 100);
         });
 
@@ -225,7 +223,6 @@ contract("SecurityToken", async (accounts) => {
             currentTime = new BN(await latestTime());
             let toTime = new BN(currentTime.add(new BN(duration.days(100))));
             let expiryTime = new BN(toTime.add(new BN(duration.days(100))));
-
             let tx = await I_GeneralTransferManager.modifyWhitelist(account_affiliate2, currentTime, toTime, expiryTime, true, {
                 from: token_owner,
                 gas: 6000000
@@ -257,7 +254,7 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(balance1.div(new BN(10).pow(new BN(18))).toNumber(), 200);
             let balance2 = await I_SecurityToken.balanceOf(account_affiliate2);
             assert.equal(balance2.div(new BN(10).pow(new BN(18))).toNumber(), 110);
-            console.log((await stGetter.getInvestorCount.call()).toNumber());
+            
         });
 
         it("Should finish the minting -- fail because feature is not activated", async () => {
@@ -270,7 +267,6 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should finish the minting -- successfully activate the feature", async () => {
             await catchRevert(I_FeatureRegistry.setFeatureStatus("freezeIssuanceAllowed", false, { from: account_polymath }));
-
             assert.equal(false, await I_FeatureRegistry.getFeatureStatus("freezeIssuanceAllowed", { from: account_temp }));
             await I_FeatureRegistry.setFeatureStatus("freezeIssuanceAllowed", true, { from: account_polymath });
             assert.equal(true, await I_FeatureRegistry.getFeatureStatus("freezeIssuanceAllowed", { from: account_temp }));
@@ -285,7 +281,6 @@ contract("SecurityToken", async (accounts) => {
         it("Should finish minting & restrict the further minting", async () => {
             let id = await takeSnapshot();
             await I_SecurityToken.freezeIssuance({ from: token_owner });
-
             await catchRevert(I_SecurityToken.issue(account_affiliate1, new BN(100).mul(new BN(10).pow(new BN(18))), "0x0", { from: token_owner, gas: 500000 }));
             await revertToSnapshot(id);
         });
@@ -294,7 +289,6 @@ contract("SecurityToken", async (accounts) => {
             startTime = await latestTime() + duration.seconds(5000);
             endTime = startTime + duration.days(30);
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
-
             await catchRevert(I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), { from: token_owner }));
         });
 
@@ -304,7 +298,6 @@ contract("SecurityToken", async (accounts) => {
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
             await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
             await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCost, { from: token_owner });
-
             await catchRevert(
                 I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, new BN(web3.utils.toWei("1000", "ether")), new BN(0), { from: token_owner })
             );
@@ -318,12 +311,10 @@ contract("SecurityToken", async (accounts) => {
 
             await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
             await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCost, { from: token_owner });
-            console.log((await stGetter.getInvestorCount.call()).toNumber());
-            console.log("0");
+            
             const tx = await I_SecurityToken.addModuleWithLabel(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), web3.utils.fromAscii("stofactory"), {
                 from: token_owner
             });
-            console.log("1");
             assert.equal(tx.logs[3].args._types[0], stoKey, "CappedSTO doesn't get deployed");
             assert.equal(web3.utils.toUtf8(tx.logs[3].args._name), "CappedSTO", "CappedSTOFactory module was not added");
             console.log("module label is .. " + web3.utils.toAscii(tx.logs[3].args._label));
@@ -349,7 +340,7 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should successfully issue tokens while STO attached", async () => {
             await I_SecurityToken.issue(account_affiliate1, new BN(100).mul(new BN(10).pow(new BN(18))), "0x0", { from: token_owner });
-            console.log((await stGetter.getInvestorCount.call()).toNumber());
+            
             let balance = await I_SecurityToken.balanceOf(account_affiliate1);
             assert.equal(balance.div(new BN(10).pow(new BN(18))).toNumber(), 300);
         });
@@ -427,7 +418,7 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(tx.logs[0].args._module, I_GeneralTransferManager.address);
             await I_SecurityToken.issue(account_investor1, new BN(web3.utils.toWei("500")), "0x0", { from: token_owner });
             await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("200")), { from: account_investor1 });
-            console.log((await stGetter.getInvestorCount.call()).toNumber());
+            
             assert.equal((await I_SecurityToken.balanceOf(account_investor2)).div(new BN(10).pow(new BN(18))).toNumber(), 200);
             await revertToSnapshot(key);
         });
@@ -596,7 +587,6 @@ contract("SecurityToken", async (accounts) => {
         it("Should activate the bool allowAllTransfer", async () => {
             ID_snap = await takeSnapshot();
             let tx = await I_GeneralTransferManager.changeAllowAllTransfers(true, { from: account_delegate });
-
             assert.isTrue(tx.logs[0].args._allowAllTransfers, "AllowTransfer variable is not successfully updated");
         });
 
@@ -698,7 +688,7 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(balance1.div(new BN(10).pow(new BN(18))).toNumber(), 500);
             let balance2 = await I_SecurityToken.balanceOf(account_affiliate2);
             assert.equal(balance2.div(new BN(10).pow(new BN(18))).toNumber(), 220);
-            console.log((await stGetter.getInvestorCount.call()).toNumber());
+            
         });
 
         it("Should provide more permissions to the delegate", async () => {
@@ -881,15 +871,10 @@ contract("SecurityToken", async (accounts) => {
             await catchRevert(I_SecurityToken.controllerRedeem(account_temp, currentBalance, "0x0", "0x0", { from: token_owner }));
         });
 
-        it.skip("Should burn the tokens", async () => {
+        it("Should burn the tokens", async () => {
             let currentInvestorCount = await stGetter.getInvestorCount.call();
             let currentBalance = await I_SecurityToken.balanceOf(account_temp);
             let investors = await stGetter.getInvestors.call();
-            for (let i = 0; i < investors.length; i++) {
-                console.log(investors[i]);
-                console.log(web3.utils.fromWei((await I_SecurityToken.balanceOf(investors[i])).toString()));
-            }
-            console.log(currentInvestorCount.toString(), web3.utils.fromWei(currentBalance.toString()));
             let tx = await I_SecurityToken.controllerRedeem(account_temp, currentBalance, "0x0", "0x0", { from: account_controller });
             // console.log(tx.logs[1].args._value.toNumber(), currentBalance.toNumber());
             assert.equal(tx.logs[1].args._value.toString(), currentBalance.toString());
@@ -898,7 +883,7 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(newInvestorCount.toNumber() + 1, currentInvestorCount.toNumber(), "Investor count drops by one");
         });
 
-        it.skip("Should use getInvestorsAt to determine balances now", async () => {
+        it("Should use getInvestorsAt to determine balances now", async () => {
             await I_SecurityToken.createCheckpoint({ from: token_owner });
             let investors = await stGetter.getInvestorsAt.call(1);
             console.log("Filtered investors:" + investors);
@@ -909,7 +894,7 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(investors.length, 3);
         });
 
-        it.skip("Should prune investor length test #2", async () => {
+        it("Should prune investor length test #2", async () => {
             let balance = await I_SecurityToken.balanceOf(account_affiliate2);
             let balance2 = await I_SecurityToken.balanceOf(account_investor1);
             await I_SecurityToken.transfer(account_affiliate1, balance, { from: account_affiliate2 });
@@ -933,7 +918,7 @@ contract("SecurityToken", async (accounts) => {
             await I_SecurityToken.transfer(account_investor1, balance2, { from: account_affiliate1 });
         });
 
-        it.skip("Should get filtered investors", async () => {
+        it("Should get filtered investors", async () => {
             let investors = await stGetter.getInvestors.call();
             console.log("All Investors: " + investors);
             let filteredInvestors = await stGetter.iterateInvestors.call(0, 1);
@@ -955,17 +940,17 @@ contract("SecurityToken", async (accounts) => {
             await catchRevert(stGetter.iterateInvestors(0, 5));
         });
 
-        it.skip("Should check the balance of investor at checkpoint", async () => {
+        it("Should check the balance of investor at checkpoint", async () => {
             await catchRevert(stGetter.balanceOfAt(account_investor1, 5));
         });
 
-        it.skip("Should check the balance of investor at checkpoint", async () => {
+        it("Should check the balance of investor at checkpoint", async () => {
             let balance = await stGetter.balanceOfAt(account_investor1, 0);
             assert.equal(balance.toNumber(), 0);
         });
     });
 
-    describe.skip("Test cases for the Mock TrackedRedeemption", async () => {
+    describe("Test cases for the Mock TrackedRedeemption", async () => {
         it("Should add the tracked redeemption module successfully", async () => {
             [I_MockRedemptionManagerFactory] = await deployMockRedemptionAndVerifyed(account_polymath, I_MRProxied, 0);
             let tx = await I_SecurityToken.addModule(I_MockRedemptionManagerFactory.address, "0x0", new BN(0), new BN(0), { from: token_owner });
@@ -1005,6 +990,7 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should fail to burn the tokens because module get archived", async () => {
             await I_SecurityToken.archiveModule(I_MockRedemptionManager.address, { from: token_owner });
+            console.log(await stGetter.getModule.call(I_MockRedemptionManager.address));
             await catchRevert(I_MockRedemptionManager.redeemTokenByOwner(new BN(web3.utils.toWei("250")), { from: account_investor1 }));
         });
 
@@ -1039,7 +1025,7 @@ contract("SecurityToken", async (accounts) => {
         });
     });
 
-    describe.skip("Withdraw Poly", async () => {
+    describe("Withdraw Poly", async () => {
         it("Should successfully withdraw the poly -- failed because of zero address of token", async () => {
             await catchRevert(
                 I_SecurityToken.withdrawERC20(address_zero, new BN(web3.utils.toWei("20000", "ether")), {
@@ -1071,7 +1057,7 @@ contract("SecurityToken", async (accounts) => {
         });
     });
 
-    describe.skip("Force Transfer", async () => {
+    describe("Force Transfer", async () => {
         it("Should fail to controllerTransfer because not approved controller", async () => {
             await catchRevert(
                 I_SecurityToken.controllerTransfer(account_investor1, account_investor2, new BN(web3.utils.toWei("10", "ether")), "0x0", web3.utils.fromAscii("reason"), {
@@ -1130,16 +1116,11 @@ contract("SecurityToken", async (accounts) => {
             );
             let eventForceTransfer = tx.logs[1];
             let eventTransfer = tx.logs[0];
-            console.log(eventForceTransfer.args);
-            console.log(eventTransfer.args);
             assert.equal(account_controller, eventForceTransfer.args._controller, "Event not emitted as expected");
             assert.equal(account_investor1, eventForceTransfer.args._from, "Event not emitted as expected");
             assert.equal(account_investor2, eventForceTransfer.args._to, "Event not emitted as expected");
             assert.equal(new BN(web3.utils.toWei("10", "ether")).toString(), eventForceTransfer.args._value.toString(), "Event not emitted as expected");
-            console.log(eventForceTransfer.args._verifyTransfer);
-            assert.equal(false, eventForceTransfer.args._verifyTransfer, "Event not emitted as expected");
-            assert.equal("reason", web3.utils.hexToUtf8(eventForceTransfer.args._data), "Event not emitted as expected");
-
+            assert.equal("reason", web3.utils.hexToUtf8(eventForceTransfer.args._operatorData), "Event not emitted as expected");
             assert.equal(account_investor1, eventTransfer.args.from, "Event not emitted as expected");
             assert.equal(account_investor2, eventTransfer.args.to, "Event not emitted as expected");
             assert.equal(new BN(web3.utils.toWei("10", "ether")).toString(), eventTransfer.args.value.toString(), "Event not emitted as expected");
@@ -1188,10 +1169,6 @@ contract("SecurityToken", async (accounts) => {
     describe("Test cases for the storage", async() => {
 
         it("Test the storage values of the ERC20 vairables", async() => {
-            for (let j = 0; j < 20; j++) {
-                console.log(await readStorage(I_SecurityToken.address, j));
-            }
-
             let investors = await stGetter.getInvestors.call();
 
             console.log("Verifying the balances of the Addresses");
@@ -1204,69 +1181,183 @@ contract("SecurityToken", async (accounts) => {
             }
 
             for (let i = 0; i < investors.length; i++) {
-                console.log('yo');
                 index = encodeUint(0);
-                //index = web3.utils.padLeft(0, 64);
-                console.log(index);
-                //key = web3.utils.padLeft(investors[i], 64);
                 key = web3.eth.abi.encodeParameter('address', investors[i])
-                console.log(key);
                 var tempKey = key + index.substring(2);
-                console.log(tempKey);
                 newKey.push(encodeUint(web3.utils.sha3(tempKey, {"encoding": "hex"})));
-                console.log(newKey[i]);
-                console.log("\n");
             }
 
-            console.log(newKey[0]);
+            assert.equal(
+                web3.utils.fromWei((await I_SecurityToken.balanceOf.call(investors[0])).toString()),
+                web3.utils.fromWei((web3.utils.toBN(await readStorage(I_SecurityToken.address, newKey[0]))).toString())
+            )
             console.log(`
                 Balances from the contract:     ${web3.utils.fromWei((await I_SecurityToken.balanceOf.call(investors[0])).toString())}
                 Balances from the storage:      ${web3.utils.fromWei((web3.utils.toBN(await readStorage(I_SecurityToken.address, newKey[0]))).toString())}
             `)
-            console.log(newKey[1]);
+
+            assert.equal(
+                web3.utils.fromWei((await I_SecurityToken.balanceOf.call(investors[1])).toString()),
+                web3.utils.fromWei((web3.utils.toBN(await readStorage(I_SecurityToken.address, newKey[1]))).toString())
+            );
             console.log(`
                 Balances from the contract:     ${web3.utils.fromWei((await I_SecurityToken.balanceOf.call(investors[1])).toString())}
                 Balances from the storage:      ${web3.utils.fromWei((web3.utils.toBN(await readStorage(I_SecurityToken.address, newKey[1]))).toString())}
             `)
-            console.log(newKey[2]);
+
+            assert.equal(
+                web3.utils.fromWei((await I_SecurityToken.balanceOf.call(investors[2])).toString()),
+                web3.utils.fromWei((web3.utils.toBN(await readStorage(I_SecurityToken.address, newKey[2]))).toString())
+            );
             console.log(`
                 Balances from the contract:     ${web3.utils.fromWei((await I_SecurityToken.balanceOf.call(investors[2])).toString())}
                 Balances from the storage:      ${web3.utils.fromWei((web3.utils.toBN(await readStorage(I_SecurityToken.address, newKey[2]))).toString())}
             `)
-            console.log(newKey[3]);
+            assert.equal(
+                web3.utils.fromWei((await I_SecurityToken.balanceOf.call(investors[3])).toString()),
+                web3.utils.fromWei((web3.utils.toBN(await readStorage(I_SecurityToken.address, newKey[3]))).toString())
+            )
             console.log(`
                 Balances from the contract:     ${web3.utils.fromWei((await I_SecurityToken.balanceOf.call(investors[3])).toString())}
                 Balances from the storage:      ${web3.utils.fromWei((web3.utils.toBN(await readStorage(I_SecurityToken.address, newKey[3]))).toString())}
             `)
-
+            assert.equal(
+                web3.utils.fromWei((await I_SecurityToken.totalSupply.call()).toString()),
+                web3.utils.fromWei((web3.utils.toBN(await readStorage(I_SecurityToken.address, 2))).toString())
+            );
             console.log(`
                 TotalSupply from contract:      ${web3.utils.fromWei((await I_SecurityToken.totalSupply.call()).toString())}
                 TotalSupply from the storage:   ${web3.utils.fromWei((web3.utils.toBN(await readStorage(I_SecurityToken.address, 2))).toString())}
             `);
-
+            assert.equal(
+                await I_SecurityToken.name.call(),
+                (web3.utils.toAscii(await readStorage(I_SecurityToken.address, 3)).replace(/\u0000/g, "")).replace(/\u0014/g, "")
+            )
             console.log(`
                 Name of the ST:                     ${await I_SecurityToken.name.call()}
                 Name of the ST from the storage:    ${web3.utils.toUtf8(await readStorage(I_SecurityToken.address, 3))}
             `);
-
+            assert.equal(
+                await I_SecurityToken.symbol.call(),
+                (web3.utils.toUtf8(await readStorage(I_SecurityToken.address, 4)).replace(/\u0000/g, "")).replace(/\u0006/g, "")
+            );
             console.log(`
                 Symbol of the ST:                     ${await I_SecurityToken.symbol.call()}
                 Symbol of the ST from the storage:    ${web3.utils.toUtf8(await readStorage(I_SecurityToken.address, 4))}
             `);
 
-            // console.log(`
-            //     Decimal of the ST:                     ${(await I_SecurityToken.decimals.call()).toString()}
-            //     Decimal of the ST from the storage:    ${(await stGetter.dec.call()).toString()}
-            // `);
-
             console.log(`
                 Address of the owner:                   ${await I_SecurityToken.owner.call()}
-                Address of the owner from the storage:  ${await readStorage(I_SecurityToken.address, 5)}
+                Address of the owner from the storage:  ${(await readStorage(I_SecurityToken.address, 5)).substring(0, 42)}
             `)
+            assert.equal(
+                await I_SecurityToken.owner.call(),
+                web3.utils.toChecksumAddress((await readStorage(I_SecurityToken.address, 5)).substring(0, 42))
+            );
+
+        });
+
+        it("Verify the storage of the STStorage", async() => {
+            // for (let j = 7; j < 35; j++) {
+            //     console.log(await readStorage(I_SecurityToken.address, j));
+            // }
 
             console.log(`
-                Guard value from the storage:          ${(web3.utils.toBN(await readStorage(I_SecurityToken.address, 7))).toString()}
+                Controller address from the contract:         ${await stGetter.controller.call()}
+                Controller address from the storage:          ${await readStorage(I_SecurityToken.address, 7)}
             `)
+
+            assert.equal(
+                (await stGetter.controller.call()).substring(0, 3),
+                await readStorage(I_SecurityToken.address, 7)
+            );
+
+            console.log(`
+                PolymathRegistry address from the contract:         ${await stGetter.polymathRegistry.call()}
+                PolymathRegistry address from the storage:          ${await readStorage(I_SecurityToken.address, 8)}
+            `)
+
+            assert.equal(
+                await stGetter.polymathRegistry.call(),
+                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 8))
+            );
+            console.log(`
+                ModuleRegistry address from the contract:         ${await stGetter.moduleRegistry.call()}
+                ModuleRegistry address from the storage:          ${await readStorage(I_SecurityToken.address, 9)}
+            `)
+
+            assert.equal(
+                await stGetter.moduleRegistry.call(),
+                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 9))
+            );
+
+            console.log(`
+                SecurityTokenRegistry address from the contract:         ${await stGetter.securityTokenRegistry.call()}
+                SecurityTokenRegistry address from the storage:          ${await readStorage(I_SecurityToken.address, 10)}
+            `)
+
+            assert.equal(
+                await stGetter.securityTokenRegistry.call(),
+                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 10))
+            );
+
+            console.log(`
+                FeatureRegistry address from the contract:         ${await stGetter.featureRegistry.call()}
+                FeatureRegistry address from the storage:          ${await readStorage(I_SecurityToken.address, 11)}
+            `)
+
+            assert.equal(
+                await stGetter.featureRegistry.call(),
+                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 11))
+            );
+
+            console.log(`
+                PolyToken address from the contract:         ${await stGetter.polyToken.call()}
+                PolyToken address from the storage:          ${await readStorage(I_SecurityToken.address, 12)}
+            `)
+
+            assert.equal(
+                await stGetter.polyToken.call(),
+                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 12))
+            );
+
+            console.log(`
+                Delegate address from the contract:         ${await stGetter.delegate.call()}
+                Delegate address from the storage:          ${await readStorage(I_SecurityToken.address, 13)}
+            `)
+
+            assert.equal(
+                await stGetter.delegate.call(),
+                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 13))
+            );
+
+            console.log(`
+                Granularity value from the contract:         ${await stGetter.granularity.call()}
+                Granularity value from the storage:          ${(web3.utils.toBN(await readStorage(I_SecurityToken.address, 14))).toString()}
+            `)
+
+            assert.equal(
+                web3.utils.fromWei(await stGetter.granularity.call()),
+                web3.utils.fromWei((web3.utils.toBN(await readStorage(I_SecurityToken.address, 14))).toString())
+            );
+
+            console.log(`
+                Current checkpoint ID from the contract:    ${await stGetter.currentCheckpointId.call()}
+                Current checkpoint ID from the storage:     ${(web3.utils.toBN(await readStorage(I_SecurityToken.address, 15))).toString()}
+            `)
+            assert.equal(
+                await stGetter.currentCheckpointId.call(),
+                (web3.utils.toBN(await readStorage(I_SecurityToken.address, 15))).toString()
+            );
+
+            console.log(`
+                TokenDetails from the contract:    ${await stGetter.tokenDetails.call()}
+                TokenDetails from the storage:     ${(web3.utils.toUtf8((await readStorage(I_SecurityToken.address, 16)).substring(0, 60)))}
+            `)
+            assert.equal(
+                await stGetter.tokenDetails.call(),
+                (web3.utils.toUtf8((await readStorage(I_SecurityToken.address, 16)).substring(0, 60))).replace(/\u0000/g, "")
+            );
 
         });
 

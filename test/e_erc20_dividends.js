@@ -8,6 +8,7 @@ const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 const ERC20DividendCheckpoint = artifacts.require("./ERC20DividendCheckpoint");
 const GeneralPermissionManager = artifacts.require("GeneralPermissionManager");
+const STGetter = artifacts.require("./STGetter.sol");
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -50,6 +51,8 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
     let I_PolyToken;
     let I_PolymathRegistry;
     let I_STRGetter;
+    let I_STGetter;
+    let stGetter;
 
     // SecurityToken Details
     const name = "Team";
@@ -104,7 +107,8 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             I_SecurityTokenRegistry,
             I_SecurityTokenRegistryProxy,
             I_STRProxied,
-            I_STRGetter
+            I_STRGetter,
+            I_STGetter
         ] = instances;
 
         [P_ERC20DividendCheckpointFactory] = await deployERC20DividendAndVerifyed(
@@ -148,7 +152,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
             I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
-
+            stGetter = await STGetter.at(I_SecurityToken.address);
             const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
             // Verify that GeneralTransferManager module get added successfully or not
             assert.equal(log.args._types[0].toNumber(), 2);
@@ -156,7 +160,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
         });
 
         it("Should intialize the auto attached modules", async () => {
-            let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
+            let moduleData = (await stGetter.getModulesByType(2))[0];
             I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
 
@@ -223,7 +227,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             await increaseTime(5000);
 
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner });
+            await I_SecurityToken.issue(account_investor1, new BN(web3.utils.toWei("1", "ether")), "0x0", { from: token_owner });
 
             assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
         });
@@ -250,7 +254,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             );
 
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor2, new BN(web3.utils.toWei("2", "ether")), { from: token_owner });
+            await I_SecurityToken.issue(account_investor2, new BN(web3.utils.toWei("2", "ether")), "0x0", { from: token_owner });
 
             assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toString(), new BN(web3.utils.toWei("2", "ether")).toString());
         });
@@ -386,7 +390,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_temp.toLowerCase(), "Failed in adding the investor in whitelist");
 
             // Mint some tokens
-            await I_SecurityToken.mint(account_temp, new BN(web3.utils.toWei("1", "ether")), { from: token_owner });
+            await I_SecurityToken.issue(account_temp, new BN(web3.utils.toWei("1", "ether")), "0x0", { from: token_owner });
 
             assert.equal((await I_SecurityToken.balanceOf(account_temp)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
         });
@@ -452,7 +456,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             );
 
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor3, new BN(web3.utils.toWei("7", "ether")), { from: token_owner });
+            await I_SecurityToken.issue(account_investor3, new BN(web3.utils.toWei("7", "ether")), "0x0", { from: token_owner });
 
             assert.equal((await I_SecurityToken.balanceOf(account_investor3)).toString(), new BN(web3.utils.toWei("7", "ether")).toString());
         });

@@ -17,6 +17,7 @@ const GeneralTransferManagerFactory = artifacts.require("./GeneralTransferManage
 const MockFactory = artifacts.require("./MockFactory.sol");
 const TestSTOFactory = artifacts.require("./TestSTOFactory.sol");
 const ReclaimTokens = artifacts.require("./ReclaimTokens.sol");
+const STGetter = artifacts.require("./STGetter.sol");
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -64,6 +65,8 @@ contract("ModuleRegistry", async (accounts) => {
     let I_PolymathRegistry;
     let I_SecurityToken2;
     let I_STRGetter;
+    let I_STGetter;
+    let stGetter;
 
     // SecurityToken Details (Launched ST on the behalf of the issuer)
     const name = "Demo Token";
@@ -123,7 +126,8 @@ contract("ModuleRegistry", async (accounts) => {
            I_SecurityTokenRegistry,
            I_SecurityTokenRegistryProxy,
            I_STRProxied,
-           I_STRGetter
+           I_STRGetter,
+           I_STGetter
        ] = instances;
 
        I_ModuleRegistryProxy = await ModuleRegistryProxy.new({from: account_polymath});

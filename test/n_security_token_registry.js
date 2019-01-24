@@ -12,6 +12,7 @@ const SecurityTokenRegistry = artifacts.require("./SecurityTokenRegistry.sol");
 const SecurityTokenRegistryMock = artifacts.require("./SecurityTokenRegistryMock.sol");
 const STFactory = artifacts.require("./STFactory.sol");
 const STRGetter = artifacts.require('./STRGetter.sol');
+const STGetter = artifacts.require("./STGetter.sol");
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -58,6 +59,8 @@ contract("SecurityTokenRegistry", async (accounts) => {
     let I_MRProxied;
     let I_STRGetter;
     let I_Getter;
+    let I_STGetter;
+    let stGetter;
 
     // SecurityToken Details (Launched ST on the behalf of the issuer)
     const name = "Demo Token";
@@ -117,7 +120,8 @@ contract("SecurityTokenRegistry", async (accounts) => {
             I_SecurityTokenRegistry,
             I_SecurityTokenRegistryProxy,
             I_STRProxied,
-            I_STRGetter
+            I_STRGetter,
+            I_STGetter
         ] = instances;
 
         // STEP 8: Deploy the CappedSTOFactory
@@ -508,7 +512,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
             assert.equal(tx.logs[2].args._ticker, symbol, "SecurityToken doesn't get deployed");
 
             I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
-
+            stGetter = await STGetter.at(I_SecurityToken.address);
             const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTrasnferManager module get added successfully or not
@@ -572,8 +576,8 @@ contract("SecurityTokenRegistry", async (accounts) => {
     describe("Generate SecurityToken v2", async () => {
         it("Should deploy the st version 2", async () => {
             // Step 7: Deploy the STFactory contract
-
-            I_STFactory002 = await STFactory.new(I_GeneralTransferManagerFactory.address, { from: account_polymath });
+            I_STGetter = await STGetter.new();
+            I_STFactory002 = await STFactory.new(I_GeneralTransferManagerFactory.address, I_STGetter.address, { from: account_polymath });
 
             assert.notEqual(
                 I_STFactory002.address.valueOf(),

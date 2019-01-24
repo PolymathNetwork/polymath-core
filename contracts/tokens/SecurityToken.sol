@@ -493,9 +493,9 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         onlyModuleOrOwner(MINT_KEY) 
     {
         // Add a function to validate the `_data` parameter
-        _mint(_tokenHolder, _value);
         require(_updateTransfer(address(0), _tokenHolder, _value, _data), "Transfer invalid");
-        _adjustTotalSupplyCheckpoints();
+         _adjustTotalSupplyCheckpoints();
+        _mint(_tokenHolder, _value);
         emit Issued(msg.sender, _tokenHolder, _value, _data);
     }
 
@@ -520,7 +520,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * @param _value The amount of tokens need to be redeemed
      * @param _data The `bytes _data` it can be used in the token contract to authenticate the redemption.
      */
-    function redeem(uint256 _value, bytes calldata _data) external {
+    function redeem(uint256 _value, bytes calldata _data) external onlyModule(BURN_KEY) {
         // Add a function to validate the `_data` parameter
         require(_checkAndBurn(msg.sender, _value, _data), "Invalid redeem");
     }
@@ -542,7 +542,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * @param _value The amount of tokens need to be redeemed
      * @param _data The `bytes _data` it can be used in the token contract to authenticate the redemption.
      */
-    function redeemFrom(address _tokenHolder, uint256 _value, bytes calldata _data) external {
+    function redeemFrom(address _tokenHolder, uint256 _value, bytes calldata _data) external onlyModule(BURN_KEY) {
         // Add a function to validate the `_data` parameter
         require(_updateTransfer(_tokenHolder, address(0), _value, _data), "Invalid redeem");
         _adjustTotalSupplyCheckpoints();

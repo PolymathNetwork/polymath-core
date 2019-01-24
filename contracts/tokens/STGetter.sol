@@ -93,7 +93,14 @@ contract STGetter is OZStorage, SecurityTokenStorage {
      * @return bytes32 module label
      */
     function getModule(address _module) external view returns(bytes32, address, address, bool, uint8[] memory, bytes32) {
-        return (modulesToData[_module].name, modulesToData[_module].module, modulesToData[_module].moduleFactory, modulesToData[_module].isArchived, modulesToData[_module].moduleTypes, modulesToData[_module].label);
+        return (
+            modulesToData[_module].name,
+            modulesToData[_module].module,
+            modulesToData[_module].moduleFactory,
+            modulesToData[_module].isArchived,
+            modulesToData[_module].moduleTypes,
+            modulesToData[_module].label
+        );
     }
 
     /**
@@ -189,7 +196,8 @@ contract STGetter is OZStorage, SecurityTokenStorage {
                _amount += ITransferManager(tms[i]).getUnLockedToken(_owner);
             }
            return _amount;
-        }   
+        }
+        return 0;   
     }
 
     /**

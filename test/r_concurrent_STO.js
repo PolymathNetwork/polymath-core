@@ -15,6 +15,7 @@ const DummySTO = artifacts.require("./DummySTO.sol");
 const PreSaleSTO = artifacts.require("./PreSaleSTO.sol");
 const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
+const STGetter = artifacts.require("./STGetter.sol");
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -45,6 +46,8 @@ contract("Concurrent STO", async (accounts) => {
     let I_PolyToken;
     let I_PolymathRegistry;
     let I_STRGetter;
+    let I_STGetter;
+    let stGetter;
 
     // STO instance declaration
     let I_CappedSTOFactory;
@@ -97,7 +100,8 @@ contract("Concurrent STO", async (accounts) => {
            I_SecurityTokenRegistry,
            I_SecurityTokenRegistryProxy,
            I_STRProxied,
-           I_STRGetter
+           I_STRGetter,
+           I_STGetter
        ] = instances;
 
         // STEP 2: Deploy the STO Factories
@@ -147,7 +151,7 @@ contract("Concurrent STO", async (accounts) => {
             assert.equal(tx.logs[2].args._ticker, symbol, "SecurityToken doesn't get deployed");
 
             I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
-
+            stGetter = await STGetter.at(I_SecurityToken.address);
             const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTransferManager module get added successfully or not
@@ -156,7 +160,7 @@ contract("Concurrent STO", async (accounts) => {
         });
 
         it("Should intialize the auto attached modules", async () => {
-            let moduleData = (await I_SecurityToken.getModulesByType(transferManagerKey))[0];
+            let moduleData = (await stGetter.getModulesByType(transferManagerKey))[0];
             I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
 

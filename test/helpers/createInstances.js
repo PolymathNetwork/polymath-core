@@ -41,6 +41,7 @@ const STRGetter = artifacts.require("./STRGetter.sol");
 const MockWrongTypeFactory = artifacts.require("./MockWrongTypeFactory.sol");
 const DataStoreLogic = artifacts.require('./DataStore.sol');
 const DataStoreFactory = artifacts.require('./DataStoreFactory.sol');
+const SignedTransferManagerFactory = artifacts.require("./SignedTransferManagerFactory");
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -88,6 +89,7 @@ let I_SecurityTokenRegistryProxy;
 let I_STRProxied;
 let I_MRProxied;
 let I_STRGetter;
+let I_SignedTransferManagerFactory;
 
 // Initial fee for ticker registry and security token registry
 const initRegFee = new BN(web3.utils.toWei("250"));
@@ -493,4 +495,16 @@ export async function deployMockWrongTypeRedemptionAndVerifyed(accountPolymath, 
 
     await registerAndVerifyByMR(I_MockWrongTypeBurnFactory.address, accountPolymath, MRProxyInstance);
     return Promise.all(new Array(I_MockWrongTypeBurnFactory));
+}
+
+export async function deploySignedTMAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+    I_SignedTransferManagerFactory = await SignedTransferManagerFactory.new(setupCost, 0, 0, { from: accountPolymath });
+    assert.notEqual(
+        I_SignedTransferManagerFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "SignedTransferManagerFactory contract was not deployed"
+    );
+
+    await registerAndVerifyByMR(I_SignedTransferManagerFactory.address, accountPolymath, MRProxyInstance);
+    return new Array(I_SignedTransferManagerFactory);
 }

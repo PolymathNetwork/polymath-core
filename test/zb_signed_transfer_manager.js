@@ -1,11 +1,11 @@
 import latestTime from "./helpers/latestTime";
 import { duration, promisifyLogWatch, latestBlock } from "./helpers/utils";
 import takeSnapshot, { increaseTime, revertToSnapshot } from "./helpers/time";
-import { signDataVerifyTransfer } from "./helpers/signData";
+import { getSignTMSig } from "./helpers/signData";
 import { pk } from "./helpers/testprivateKey";
 import { encodeProxyCall, encodeModuleCall } from "./helpers/encodeCall";
 import { catchRevert } from "./helpers/exceptions";
-import { setUpPolymathNetwork, deployGPMAndVerifyed, deployDummySTOAndVerifyed, deploySignedTMAndVerifyed} from "./helpers/createInstances";
+import { setUpPolymathNetwork, deployGPMAndVerifyed, deploySignedTMAndVerifyed} from "./helpers/createInstances";
 
 const DummySTO = artifacts.require("./DummySTO.sol");
 const SecurityToken = artifacts.require("./SecurityToken.sol");
@@ -28,13 +28,6 @@ contract("SignedTransferManager", accounts => {
     let account_investor2;
     let account_investor3;
     let account_investor4;
-
-    // investor Details
-    let fromTime = latestTime();
-    let toTime = latestTime();
-    let expiryTime = toTime + duration.days(15);
-
-    let message = "Transaction Should Fail!";
 
     // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;
@@ -72,13 +65,6 @@ contract("SignedTransferManager", accounts => {
 
     // Initial fee for ticker registry and security token registry
     const initRegFee = web3.utils.toWei("250");
-
-    // Dummy STO details
-    const startTime = latestTime() + duration.seconds(5000); // Start time will be 5000 seconds more than the latest time
-    const endTime = startTime + duration.days(80); // Add 80 days more
-    const cap = web3.utils.toWei("10", "ether");
-    const someString = "A string which is not used";
-    const STOParameters = ["uint256", "uint256", "uint256", "string"];
 
     let currentTime;
 
@@ -209,7 +195,6 @@ contract("SignedTransferManager", accounts => {
                 "SignedTransferManager",
                 "SignedTransferManager module was not added"
             );
-            console.log(tx.logs[2].args);
             I_SignedTransferManager = await SignedTransferManager.at(tx.logs[2].args._module);
         });
 
@@ -220,9 +205,9 @@ contract("SignedTransferManager", accounts => {
         it("should successfully add multiple signers to signersList", async () => {
             await I_SignedTransferManager.updateSigners([account_investor3, account_investor4, token_owner], [true, true, true], {from: token_owner});
 
-            assert.equal(await I_SignedTransferManager.signers(account_investor3), true);
-            assert.equal(await I_SignedTransferManager.signers(account_investor4), true);
-            assert.equal(await I_SignedTransferManager.signers(token_owner), true);
+            assert.equal(await I_SignedTransferManager.checkSigner(account_investor3), true);
+            assert.equal(await I_SignedTransferManager.checkSigner(account_investor4), true);
+            assert.equal(await I_SignedTransferManager.checkSigner(token_owner), true);
         });
 
         it("should fail to change signers stats without permission", async () => {
@@ -230,76 +215,67 @@ contract("SignedTransferManager", accounts => {
         });
 
 
-        it("should be able to invalid siganture if sender is the signer and is in the signer list", async () => {
-            
-            console.log("1");
+        it("should allow to invalidate siganture if sender is the signer and is in the signer list", async () => {
+            let oneeth = new BN(web3.utils.toWei("1", "ether"));
+            let signer = web3.eth.accounts.create();
+            await web3.eth.personal.importRawKey(signer.privateKey, "");
+            await web3.eth.personal.unlockAccount(signer.address, "", 6000);
+            await web3.eth.sendTransaction({ from: token_owner, to: signer.address, value: oneeth });
 
-            const sig = await signDataVerifyTransfer(
+            await I_SignedTransferManager.updateSigners([signer.address], [true], {from: token_owner});
+            
+            const sig = await getSignTMSig(
                 I_SignedTransferManager.address,
                 account_investor1,
                 account_investor2,
-                web3.utils.toWei("2", "ether"),
-                token_owner
+                oneeth,
+                signer.privateKey
             );
 
-            console.log("token owner is "+ token_owner);
-            console.log(sig);
-
-            await I_SignedTransferManager.invalidSignature(account_investor1, account_investor2, web3.utils.toWei("2", "ether"), sig, {from: token_owner});
-            console.log("sd");
+            assert.equal(await I_SignedTransferManager.checkSignatureIsInvalid(sig), false);
+            await I_SignedTransferManager.invalidateSignature(account_investor1, account_investor2, oneeth, sig, {from: signer.address});
             assert.equal(await I_SignedTransferManager.checkSignatureIsInvalid(sig), true);
         });
 
         it("should allow transfer with valid sig", async () => {
+            let signer = web3.eth.accounts.create();
+            await I_SignedTransferManager.updateSigners([signer.address], [true], {from: token_owner});
+            let oneeth = new BN(web3.utils.toWei("1", "ether"));
 
-            console.log("owner is a signer status is " + await I_SignedTransferManager.signers(token_owner, {from: token_owner}));
-
-            const sig = await signDataVerifyTransfer(
+            const sig = await getSignTMSig(
                 I_SignedTransferManager.address,
                 account_investor1,
                 account_investor2,
-                web3.utils.toWei("1", "ether"),
-                token_owner
+                oneeth,
+                signer.privateKey
             );
 
-            // let tx = await I_SignedTransferManager.verifyTransfer(account_investor1, account_investor2, web3.utils.toWei("1", "ether"), sig, false, {from: token_owner});
-            console.log("owner token balance is " + (await I_SecurityToken.balanceOf(account_investor1)).toNumber());
-            console.log("is this sig invalid?"+ await I_SignedTransferManager.checkSignatureIsInvalid(sig));
-            
-            // test call security token transfer function
-            let tx = await I_SecurityToken.transferWithData(account_investor2, web3.utils.toWei("1", "ether"), sig, {from: account_investor1});
-            console.log("3");
-            assert.equal(await I_SignedTransferManager.checkSignatureIsInvalid(sig), true);
-        });
+            let balance11 = await I_SecurityToken.balanceOf(account_investor1);
+            let balance21 = await I_SecurityToken.balanceOf(account_investor2);
 
-        it("should not allow transfer if the sig is already used", async () => {
-            const sig = await signDataVerifyTransfer(
-                 I_SignedTransferManager.address,
-                 account_investor1,
-                 account_investor2,
-                 web3.utils.toWei("1", "ether"),
-                 token_owner
-             );
- 
-             console.log("2");
- 
-             await catchRevert (I_SignedTransferManager.verifyTransfer(account_investor1, account_investor2, web3.utils.toWei("1", "ether"), sig, false, {from: token_owner}));
+            await I_SecurityToken.transferWithData(account_investor2, oneeth, sig, {from: account_investor1});
+
+            assert.equal(await I_SignedTransferManager.checkSignatureIsInvalid(sig), true);
+            assert.equal(balance11.sub(oneeth).toString(), (await I_SecurityToken.balanceOf(account_investor1)).toString());
+            assert.equal(balance21.add(oneeth).toString(), (await I_SecurityToken.balanceOf(account_investor2)).toString());
+
+            await catchRevert(I_SecurityToken.transferWithData(account_investor2, oneeth, sig, {from: account_investor1}));
         });
 
         it("should not allow transfer if the signer is not on the signer list", async () => {
-           const sig = await signDataVerifyTransfer(
+            let signer = web3.eth.accounts.create();
+            let oneeth = new BN(web3.utils.toWei("1", "ether"));
+
+            const sig = await getSignTMSig(
                 I_SignedTransferManager.address,
                 account_investor1,
                 account_investor2,
-                web3.utils.toWei("1", "ether"),
-                account_investor2
+                oneeth,
+                signer.privateKey
             );
 
-            let tx = await I_SignedTransferManager.verifyTransfer.call(account_investor1, account_investor2, web3.utils.toWei("1", "ether"), sig, false, {from: token_owner});
-            console.log("output is "+tx.toNumber());
-           
+            await catchRevert(I_SecurityToken.transferWithData(account_investor2, oneeth, sig, {from: account_investor1}));
         });
-
     });
 });
 

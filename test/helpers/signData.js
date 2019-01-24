@@ -18,6 +18,13 @@ function signData(tmAddress, investorAddress, fromTime, toTime, expiryTime, rest
     return ethUtil.ecsign(new Buffer(packedData.slice(2), "hex"), new Buffer(pk, "hex"));
 }
 
+function getSignTMSig(tmAddress, fromAddress, toAddress, amount, pk) {
+    let hash = web3.utils.soliditySha3({t: 'address', v: tmAddress}, {t: 'address', v: fromAddress}, {t: 'address', v: toAddress}, {t: 'uint256', v: new BN(amount)});
+    let sign = web3.eth.accounts.sign(hash, pk);
+    return sign.signature;
+}
+
 module.exports = {
-    signData
+    signData,
+    getSignTMSig
 };

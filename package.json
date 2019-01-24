@@ -75,7 +75,7 @@
     "request-promise": "^4.2.2",
     "truffle-contract": "^3.0.4",
     "truffle-hdwallet-provider-privkey": "0.2.0",
-    "web3": "1.0.0-beta.34"
+    "web3": "1.0.0-beta.35"
   },
   "devDependencies": {
     "@soldoc/soldoc": "^0.4.3",

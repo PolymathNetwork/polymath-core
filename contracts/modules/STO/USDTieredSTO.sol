@@ -43,7 +43,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
         uint256 _rate
     );
     event ReserveTokenMint(address indexed _owner, address indexed _wallet, uint256 _tokens, uint256 _latestTier);
-    event SetAddresses(address indexed _wallet, address indexed _reserveWallet, address[] indexed _usdTokens);
+    event SetAddresses(address indexed _wallet, address indexed _reserveWallet, address[] _usdTokens);
     event SetLimits(uint256 _nonAccreditedLimitUSD, uint256 _minimumInvestmentUSD);
     event SetTimes(uint256 _startTime, uint256 _endTime);
     event SetTiers(
@@ -183,8 +183,6 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
      * @param _usdTokens Address of usd tokens
      */
     function modifyAddresses(address payable _wallet, address _reserveWallet, address[] calldata _usdTokens) external onlyOwner {
-        /*solium-disable-next-line security/no-block-members*/
-        require(now < startTime, "STO already started");
         _modifyAddresses(_wallet, _reserveWallet, _usdTokens);
     }
 

@@ -97,6 +97,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
     let bytesSTO = encodeModuleCall(["uint256"], [holderCount]);
 
     let _details = "details holding for test";
+    let _description = "some description";
     let testRepeat = 20;
 
     // permission manager fuzz test
@@ -672,6 +673,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                         account_investor4,
                         new BN(web3.utils.toWei("2", "ether")),
                         nextTime,
+                        web3.utils.fromAscii(_details),
                         { from: accounts[j] }
                     );
 
@@ -694,6 +696,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                             account_investor4,
                             new BN(web3.utils.toWei("2", "ether")),
                             nextTime,
+                            web3.utils.fromAscii(_details),
                             { from: accounts[j] }
                         )
                     );
@@ -704,6 +707,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                         account_investor4,
                         new BN(web3.utils.toWei("2", "ether")),
                         nextTime,
+                        web3.utils.fromAscii(_details),
                         { from: token_owner }
                     );
 
@@ -711,103 +715,6 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                         I_ManualApprovalTransferManager.revokeManualApproval(account_investor1, account_investor4, {
                             from: accounts[j]
                         })
-                    );
-
-                    console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " failed as expected");
-                }
-
-                await revertToSnapshot(snapId);
-            }
-        });
-
-        it("should pass fuzz test for addManualBlocking and revokeManualBlocking with perm TRANSFER_APPROVAL", async () => {
-            console.log("1");
-            await I_ManualApprovalTransferManager.addManualBlocking(account_investor1, account_investor2, currentTime.add(new BN(duration.days(1))), {
-                from: token_owner
-            });
-            console.log("2");
-            await I_ManualApprovalTransferManager.revokeManualBlocking(account_investor1, account_investor2, { from: token_owner });
-            console.log("3");
-
-            // fuzz test loop over total times of testRepeat, inside each loop, we use a variable j to randomly choose an account out of the 10 default accounts
-            for (var i = 2; i < testRepeat; i++) {
-                let snapId = await takeSnapshot();
-
-                var j = Math.floor(Math.random() * 10);
-                if (j === 1 || j === 0) {
-                    j = 2;
-                } // exclude account 1 & 0 because they might come with default perms
-
-                // add account as a Delegate if it is not
-                if ((await I_GeneralPermissionManager.checkDelegate(accounts[j])) !== true) {
-                    await I_GeneralPermissionManager.addDelegate(accounts[j], web3.utils.fromAscii(_details), { from: token_owner });
-                }
-
-                // target permission should alaways be false for each test before assigning
-                if (
-                    (await I_GeneralPermissionManager.checkPermission(
-                        accounts[j],
-                        I_ManualApprovalTransferManager.address,
-                        web3.utils.fromAscii("TRANSFER_APPROVAL")
-                    )) === true
-                ) {
-                    await I_GeneralPermissionManager.changePermission(
-                        accounts[j],
-                        I_ManualApprovalTransferManager.address,
-                        web3.utils.fromAscii("TRANSFER_APPROVAL"),
-                        false,
-                        { from: token_owner }
-                    );
-                }
-
-                // assign a random perm
-                let randomPerms = perms[Math.floor(Math.random() * Math.floor(totalPerms))];
-                await I_GeneralPermissionManager.changePermission(accounts[j], I_ManualApprovalTransferManager.address, web3.utils.fromAscii(randomPerms), true, {
-                    from: token_owner
-                });
-
-                if (randomPerms === "TRANSFER_APPROVAL") {
-                    console.log("Test number " + i + " with account " + j + " and perm TRANSFER_APPROVAL " + " should pass");
-                    let nextTime = new BN(await latestTime()).add(new BN(duration.days(1)));
-                    await I_ManualApprovalTransferManager.addManualBlocking(
-                        account_investor1,
-                        account_investor2,
-                        nextTime,
-                        {
-                            from: accounts[j]
-                        }
-                    );
-
-                    console.log("2");
-                    await I_ManualApprovalTransferManager.revokeManualBlocking(account_investor1, account_investor2, { from: accounts[j] });
-
-                    console.log("Test number " + i + " with account " + j + " and perm TRANSFER_APPROVAL passed as expected");
-                } else {
-                    console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " should failed");
-                    let nextTime = new BN(await latestTime()).add(new BN(duration.days(1)));
-                    await catchRevert(
-                        I_ManualApprovalTransferManager.addManualBlocking(
-                            account_investor1,
-                            account_investor2,
-                            nextTime,
-                            {
-                                from: accounts[j]
-                            }
-                        )
-                    );
-
-                    nextTime = new BN(await latestTime()).add(new BN(duration.days(1)));
-                    await I_ManualApprovalTransferManager.addManualBlocking(
-                        account_investor1,
-                        account_investor2,
-                        nextTime,
-                        {
-                            from: token_owner
-                        }
-                    );
-
-                    await catchRevert(
-                        I_ManualApprovalTransferManager.revokeManualBlocking(account_investor1, account_investor2, { from: accounts[j] })
                     );
 
                     console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " failed as expected");

@@ -278,7 +278,7 @@ export async function deployGTMAndVerifyed(accountPolymath, MRProxyInstance, set
 export async function deployVRTMAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
     I_VolumeRestrictionTMLogic = await VolumeRestrictionTM.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
 
-    I_VolumeRestrictionTMFactory = await VolumeRestrictionTMFactory.new(setupCost, 0, 0, I_VolumeRestrictionTMLogic.address, { from: accountPolymath });
+    I_VolumeRestrictionTMFactory = await VolumeRestrictionTMFactory.new(setupCost, new BN(0), new BN(0), I_VolumeRestrictionTMLogic.address, { from: accountPolymath });
 
     assert.notEqual(
         I_VolumeRestrictionTMFactory.address.valueOf(),
@@ -332,7 +332,8 @@ export async function deployPercentageTMAndVerified(accountPolymath, MRProxyInst
 }
 
 export async function deployBlacklistTMAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {
-    I_BlacklistTransferManagerFactory = await BlacklistTransferManagerFactory.new(setupCost, 0, 0, { from: accountPolymath });
+
+    I_BlacklistTransferManagerFactory = await BlacklistTransferManagerFactory.new(setupCost, new BN(0), new BN(0), { from: accountPolymath });
     assert.notEqual(
         I_BlacklistTransferManagerFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",
@@ -344,7 +345,7 @@ export async function deployBlacklistTMAndVerified(accountPolymath, MRProxyInsta
 }
 
 export async function deployLockupVolumeRTMAndVerified(accountPolymath, MRProxyInstance, setupCost) {
-    I_VolumeRestrictionTransferManagerFactory = await VolumeRestrictionTransferManagerFactory.new(setupCost, new BN(0), new BN(0), {
+    I_VolumeRestrictionTransferManagerFactory = await LockUpTransferManagerFactory.new(setupCost, new BN(0), new BN(0), {
         from: accountPolymath
     });
     assert.notEqual(
@@ -505,7 +506,7 @@ export async function deployRedemptionAndVerifyed(accountPolymath, MRProxyInstan
 
 export async function deployVestingEscrowWalletAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
     I_VestingEscrowWalletLogic = await VestingEscrowWallet.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
-    I_VestingEscrowWalletFactory = await VestingEscrowWalletFactory.new(setupCost, 0, 0, I_VestingEscrowWalletLogic.address, { from: accountPolymath });
+    I_VestingEscrowWalletFactory = await VestingEscrowWalletFactory.new(setupCost, new BN(0), new BN(0), I_VestingEscrowWalletLogic.address, { from: accountPolymath });
 
     assert.notEqual(
         I_VestingEscrowWalletFactory.address.valueOf(),

@@ -919,9 +919,9 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             assert.equal(info[5][3].toString(), (await I_SecurityToken.balanceOfAt(account_investor3, new BN(4))).toString(), "balance match");
 
 
-            let issuerBalance = new BigNumber(await I_PolyToken.balanceOf(wallet));
+            let issuerBalance = new BN(await I_PolyToken.balanceOf(wallet));
             await I_ERC20DividendCheckpoint.withdrawWithholding(new BN(3), { from: token_owner, gasPrice: 0 });
-            let issuerBalanceAfter = new BigNumber(await I_PolyToken.balanceOf(wallet));
+            let issuerBalanceAfter = new BN(await I_PolyToken.balanceOf(wallet));
             assert.equal(issuerBalanceAfter.sub(issuerBalance).toString(), new BN(web3.utils.toWei("0.4", "ether")).toString());
 
         });

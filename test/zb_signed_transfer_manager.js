@@ -1,7 +1,7 @@
 import latestTime from "./helpers/latestTime";
 import { duration, promisifyLogWatch, latestBlock } from "./helpers/utils";
 import takeSnapshot, { increaseTime, revertToSnapshot } from "./helpers/time";
-import { getSignTMSig } from "./helpers/signData";
+import { getSignTMData } from "./helpers/signData";
 import { pk } from "./helpers/testprivateKey";
 import { encodeProxyCall, encodeModuleCall } from "./helpers/encodeCall";
 import { catchRevert } from "./helpers/exceptions";
@@ -224,26 +224,33 @@ contract("SignedTransferManager", accounts => {
 
             await I_SignedTransferManager.updateSigners([signer.address], [true], {from: token_owner});
             
-            const sig = await getSignTMSig(
+            let nonce = new BN(10);
+            let expiry = new BN(currentTime.add(new BN(duration.days(100))));
+            let data = await getSignTMData(
                 I_SignedTransferManager.address,
+                nonce,
+                expiry,
                 account_investor1,
                 account_investor2,
                 oneeth,
                 signer.privateKey
             );
 
-            assert.equal(await I_SignedTransferManager.checkSignatureIsInvalid(sig), false);
-            await I_SignedTransferManager.invalidateSignature(account_investor1, account_investor2, oneeth, sig, {from: signer.address});
-            assert.equal(await I_SignedTransferManager.checkSignatureIsInvalid(sig), true);
+            assert.equal(await I_SignedTransferManager.checkSignatureValidity(data), true);
+            await I_SignedTransferManager.invalidateSignature(account_investor1, account_investor2, oneeth, data, {from: signer.address});
+            assert.equal(await I_SignedTransferManager.checkSignatureValidity(data), false);
         });
 
         it("should allow transfer with valid sig", async () => {
             let signer = web3.eth.accounts.create();
             await I_SignedTransferManager.updateSigners([signer.address], [true], {from: token_owner});
             let oneeth = new BN(web3.utils.toWei("1", "ether"));
-
-            const sig = await getSignTMSig(
+            let nonce = new BN(10);
+            let expiry = new BN(currentTime.add(new BN(duration.days(100))));
+            let data = await getSignTMData(
                 I_SignedTransferManager.address,
+                nonce,
+                expiry,
                 account_investor1,
                 account_investor2,
                 oneeth,
@@ -253,28 +260,35 @@ contract("SignedTransferManager", accounts => {
             let balance11 = await I_SecurityToken.balanceOf(account_investor1);
             let balance21 = await I_SecurityToken.balanceOf(account_investor2);
 
-            await I_SecurityToken.transferWithData(account_investor2, oneeth, sig, {from: account_investor1});
+            assert.equal(await I_SignedTransferManager.checkSignatureValidity(data), true);
 
-            assert.equal(await I_SignedTransferManager.checkSignatureIsInvalid(sig), true);
+            await I_SecurityToken.transferWithData(account_investor2, oneeth, data, {from: account_investor1});
+
+            assert.equal(await I_SignedTransferManager.checkSignatureValidity(data), false);
+            await catchRevert(I_SecurityToken.transferWithData(account_investor2, oneeth, data, {from: account_investor1}));
+
             assert.equal(balance11.sub(oneeth).toString(), (await I_SecurityToken.balanceOf(account_investor1)).toString());
             assert.equal(balance21.add(oneeth).toString(), (await I_SecurityToken.balanceOf(account_investor2)).toString());
 
-            await catchRevert(I_SecurityToken.transferWithData(account_investor2, oneeth, sig, {from: account_investor1}));
+            
         });
 
         it("should not allow transfer if the signer is not on the signer list", async () => {
             let signer = web3.eth.accounts.create();
             let oneeth = new BN(web3.utils.toWei("1", "ether"));
-
-            const sig = await getSignTMSig(
+            let nonce = new BN(10);
+            let expiry = new BN(currentTime.add(new BN(duration.days(100))));
+            let data = await getSignTMData(
                 I_SignedTransferManager.address,
+                nonce,
+                expiry,
                 account_investor1,
                 account_investor2,
                 oneeth,
                 signer.privateKey
             );
 
-            await catchRevert(I_SecurityToken.transferWithData(account_investor2, oneeth, sig, {from: account_investor1}));
+            await catchRevert(I_SecurityToken.transferWithData(account_investor2, oneeth, data, {from: account_investor1}));
         });
     });
 });

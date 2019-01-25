@@ -142,7 +142,7 @@ contract SignedTransferManager is TransferManager {
         (targetAddress, nonce, expiry, signature) = abi.decode(_data, (address, uint256, uint256, bytes));
 
         require(!_checkSignatureIsInvalid(signature), "Signature already invalid");
-        require(targetAddress != address(this), "Signature not for this module");
+        require(targetAddress == address(this), "Signature not for this module");
 
         bytes32 hash = keccak256(abi.encodePacked(targetAddress, nonce, expiry, _from, _to, _amount));
         bytes32 prependedHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));

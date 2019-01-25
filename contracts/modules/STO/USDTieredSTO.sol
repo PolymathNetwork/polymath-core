@@ -607,10 +607,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
             return IOracle(_getOracle(bytes32("POLY"), bytes32("USD"))).getPrice();
         } else if (_fundRaiseType == FundRaiseType.SC) {
             return 10**18;
-        } //else { it's a view function so reverting and returning 0 rate is same for outside EVM world. 
-        // Non-view functions that call this verify the fundraisetype first.
-        //     revert("Invalid funding");
-        // }
+        }
     }
 
     /**
@@ -670,7 +667,6 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @return uint256[] array of minted tokens in each fund raise type
      */
     function getTokensMintedByTier(uint256 _tier) public view returns(uint256[] memory) {
-        //require(_tier < tiers.length, "Invalid tier"); It will revert due to array out of bounds anyway
         uint256[] memory tokensMinted = new uint256[](3);
         tokensMinted[0] = tiers[_tier].minted[uint8(FundRaiseType.ETH)];
         tokensMinted[1] = tiers[_tier].minted[uint8(FundRaiseType.POLY)];
@@ -684,7 +680,6 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @return uint256 Total number of tokens sold in the tier
      */
     function getTokensSoldByTier(uint256 _tier) public view returns (uint256) {
-        //require(_tier < tiers.length, "Invalid tier"); It will revert due to array out of bounds anyway
         uint256 tokensSold;
         tokensSold = tokensSold.add(tiers[_tier].minted[uint8(FundRaiseType.ETH)]);
         tokensSold = tokensSold.add(tiers[_tier].minted[uint8(FundRaiseType.POLY)]);
@@ -712,7 +707,6 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @notice Return the permissions flag that are associated with STO
      */
     function getPermissions() public view returns(bytes32[] memory allPermissions) {
-        //bytes32[] memory allPermissions = new bytes32[](0);
         return allPermissions;
     }
 

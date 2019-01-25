@@ -38,22 +38,17 @@ contract USDTieredSTOStorage {
 
     mapping(bytes32 => mapping(bytes32 => string)) oracleKeys;
 
-    //IERC20 public usdToken; not needed, must've been left out in merge.
-
     // Determine whether users can invest on behalf of a beneficiary
     bool public allowBeneficialInvestments;
 
     // Whether or not the STO has been finalized
     bool public isFinalized;
 
-    // Address where ETH, POLY & DAI funds are delivered
-    //address payable public wallet; Already defined in STOStorage
-
     // Address of issuer reserve wallet for unsold tokens
     address public reserveWallet;
 
     // List of stable coin addresses
-    address[] internal usdTokens; //there is a getUsdTokens getter
+    address[] internal usdTokens;
 
     // Current tier
     uint256 public currentTier;

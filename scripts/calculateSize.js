@@ -7,7 +7,7 @@ function readFiles() {
         let files = fs.readdirSync("./build/contracts/");
         return files;
     } else {
-        console.log("Directory doesn't exists");
+        console.log("Directory doesn't exist");
     }
 }
 

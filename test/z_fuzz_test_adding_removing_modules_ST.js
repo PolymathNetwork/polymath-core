@@ -4,12 +4,12 @@ import { pk }  from './helpers/testprivateKey';
 import { duration, promisifyLogWatch, latestBlock } from './helpers/utils';
 import { takeSnapshot, increaseTime, revertToSnapshot } from './helpers/time';
 import { catchRevert } from "./helpers/exceptions";
-import { setUpPolymathNetwork, 
-         deployGPMAndVerifyed, 
-         deployCountTMAndVerifyed, 
-         deployLockupVolumeRTMAndVerified, 
-         deployPercentageTMAndVerified, 
-         deployManualApprovalTMAndVerifyed 
+import { setUpPolymathNetwork,
+         deployGPMAndVerifyed,
+         deployCountTMAndVerifyed,
+         deployLockupVolumeRTMAndVerified,
+         deployPercentageTMAndVerified,
+         deployManualApprovalTMAndVerifyed
 } from "./helpers/createInstances";
 import { encodeModuleCall } from "./helpers/encodeCall";
 
@@ -26,7 +26,7 @@ const PercentageTransferManager = artifacts.require('./PercentageTransferManager
 
 
 const Web3 = require('web3');
-const BigNumber = require('bignumber.js');
+const BN = Web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")) // Hardcoded development port
 
 contract('GeneralPermissionManager', accounts => {
@@ -68,12 +68,12 @@ contract('GeneralPermissionManager', accounts => {
     let I_STRProxied;
     let I_PolyToken;
     let I_PolymathRegistry;
-  
+
 
     //Define all modules for test
     let I_CountTransferManagerFactory;
     let I_CountTransferManager;
-    
+
     let I_ManualApprovalTransferManagerFactory;
     let I_ManualApprovalTransferManager;
 
@@ -149,17 +149,17 @@ contract('GeneralPermissionManager', accounts => {
         ] = instances;
 
         // STEP 5: Deploy the GeneralDelegateManagerFactory
-        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
+        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
         // STEP 6: Deploy the GeneralDelegateManagerFactory
-        [P_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, web3.utils.toWei("500"));
+        [P_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, web3.utils.toWei("500"));
 
-        [I_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
+        [I_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, 0);
 
 	    // Deploy Modules
-        [I_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
-        [I_ManualApprovalTransferManagerFactory] = await deployManualApprovalTMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
-        [I_VolumeRestrictionTransferManagerFactory] = await deployLockupVolumeRTMAndVerified(account_polymath, I_MRProxied, I_PolyToken.address, 0);
-        [I_PercentageTransferManagerFactory] = await deployPercentageTMAndVerified(account_polymath, I_MRProxied, I_PolyToken.address, 0);
+        [I_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, 0);
+        [I_ManualApprovalTransferManagerFactory] = await deployManualApprovalTMAndVerifyed(account_polymath, I_MRProxied, 0);
+        [I_VolumeRestrictionTransferManagerFactory] = await deployLockupVolumeRTMAndVerified(account_polymath, I_MRProxied, 0);
+        [I_PercentageTransferManagerFactory] = await deployPercentageTMAndVerified(account_polymath, I_MRProxied, 0);
 
         // Printing all the contract addresses
         console.log(`
@@ -192,11 +192,11 @@ contract('GeneralPermissionManager', accounts => {
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
-            assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
+            assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
-            I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
+            I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
-            const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({ from: _blockNo }), 1);
+            const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTransferManager module get added successfully or not
             assert.equal(log.args._types[0].toNumber(), 2);
@@ -205,14 +205,14 @@ contract('GeneralPermissionManager', accounts => {
 
         it("Should intialize the auto attached modules", async () => {
             let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
-            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
+            I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
 
         it("Should successfully attach the General permission manager factory with the security token -- failed because Token is not paid", async () => {
             let errorThrown = false;
             await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
             await catchRevert(
-                I_SecurityToken.addModule(P_GeneralPermissionManagerFactory.address, "0x", web3.utils.toWei("500", "ether"), 0, { from: token_owner })
+                I_SecurityToken.addModule(P_GeneralPermissionManagerFactory.address, "0x0", web3.utils.toWei("500", "ether"), 0, { from: token_owner })
             );
         });
 
@@ -221,7 +221,7 @@ contract('GeneralPermissionManager', accounts => {
             await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), { from: token_owner });
             const tx = await I_SecurityToken.addModule(
                 P_GeneralPermissionManagerFactory.address,
-                "0x",
+                "0x0",
                 web3.utils.toWei("500", "ether"),
                 0,
                 { from: token_owner }
@@ -232,19 +232,19 @@ contract('GeneralPermissionManager', accounts => {
                 "GeneralPermissionManager",
                 "GeneralPermissionManagerFactory module was not added"
             );
-            P_GeneralPermissionManager = GeneralPermissionManager.at(tx.logs[3].args._module);
+            P_GeneralPermissionManager = await GeneralPermissionManager.at(tx.logs[3].args._module);
             await revertToSnapshot(snapId);
         });
 
         it("Should successfully attach the General permission manager factory with the security token", async () => {
-            const tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x", 0, 0, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x0", 0, 0, { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), delegateManagerKey, "General Permission Manager doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
                 "GeneralPermissionManager",
                 "GeneralPermissionManagerFactory module was not added"
             );
-            I_GeneralPermissionManager = GeneralPermissionManager.at(tx.logs[2].args._module);
+            I_GeneralPermissionManager = await GeneralPermissionManager.at(tx.logs[2].args._module);
         });
     });
 
@@ -257,7 +257,7 @@ contract('GeneralPermissionManager', accounts => {
             console.log("1");
             // fuzz test loop over total times of testRepeat
             for (var i = 0; i < testRepeat; i++) {
-                
+
                 console.log("1.2");
 
                 // choose a random module with in the totalMoudules available
@@ -273,7 +273,7 @@ contract('GeneralPermissionManager', accounts => {
                     bytesSTO = encodeModuleCall(["uint256"], [holderCount]);
                 } else if (random.module == 'PercentageTransferManager'){
                     console.log("PTM 01");
-                    const holderPercentage = 70 * 10**16;    
+                    const holderPercentage = 70 * 10**16;
                     bytesSTO = web3.eth.abi.encodeFunctionCall({
                         name: 'configure',
                         type: 'function',
@@ -290,13 +290,13 @@ contract('GeneralPermissionManager', accounts => {
                 } else {
                     console.log("no data defined for choosen module "+random.module);
                 }
-            
+
                 // attach it to the ST
                 let tx = await I_SecurityToken.addModule(randomFactory.address, bytesSTO, 0, 0, { from: token_owner });
                 console.log("1.3");
-                let randomModuleInstance = randomModule.at(tx.logs[2].args._module);
+                let randomModuleInstance = await randomModule.at(tx.logs[2].args._module);
                 console.log("successfully attached module " + randomModuleInstance.address);
-                
+
                 // remove it from the ST
                 tx = await I_SecurityToken.archiveModule(randomModuleInstance.address, { from: token_owner });
                 console.log("1.4");

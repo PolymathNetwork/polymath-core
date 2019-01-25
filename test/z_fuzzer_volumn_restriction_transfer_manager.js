@@ -11,7 +11,7 @@ const GeneralTransferManager = artifacts.require('./GeneralTransferManager.sol')
 const VolumeRestrictionTM = artifacts.require('./VolumeRestrictionTM.sol');
 
 const Web3 = require('web3');
-const BigNumber = require('bignumber.js');
+const BN = Web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")) // Hardcoded development port
 
 contract('VolumeRestrictionTransferManager', accounts => {
@@ -29,8 +29,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
     let account_delegate2;
     let account_delegate3;
     // investor Details
-    let fromTime = latestTime();
-    let toTime = latestTime();
+    let fromTime = currentTime;
+    let toTime = currentTime;
     let expiryTime = toTime + duration.days(15);
 
     let message = "Transaction Should Fail!";
@@ -68,7 +68,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
     const transferManagerKey = 2;
     const stoKey = 3;
 
-    let tempAmount = new BigNumber(0);
+    let tempAmount = new BN(0);
     let tempArray = new Array();
     let tempArray3 = new Array();
     let tempArrayGlobal = new Array();
@@ -78,14 +78,14 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
     async function print(data, account) {
         console.log(`
-            Latest timestamp: ${data[0].toNumber()}
-            SumOfLastPeriod: ${data[1].dividedBy(new BigNumber(10).pow(18)).toNumber()}
-            Days Covered: ${data[2].toNumber()}
-            Latest timestamp daily: ${data[3].toNumber()}
+            Latest timestamp: ${data[0].toString()}
+            SumOfLastPeriod: ${data[1].dividedBy(new BN(10).pow(18)).toString()}
+            Days Covered: ${data[2].toString()}
+            Latest timestamp daily: ${data[3].toString()}
             Individual Total Trade on latestTimestamp : ${(await I_VolumeRestrictionTM.getTotalTradedByUser.call(account, data[0]))
-            .dividedBy(new BigNumber(10).pow(18)).toNumber()}
+            .dividedBy(new BN(10).pow(18)).toString()}
             Individual Total Trade on daily latestTimestamp : ${(await I_VolumeRestrictionTM.getTotalTradedByUser.call(account, data[3]))
-                .dividedBy(new BigNumber(10).pow(18)).toNumber()}
+                .dividedBy(new BN(10).pow(18)).toString()}
         `)
     }
 
@@ -102,16 +102,17 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
     async function printIR(data) {
             console.log(`
-                Allowed Tokens  : ${data[0].dividedBy(new BigNumber(10).pow(18)).toNumber()}
-                StartTime       : ${data[1].toNumber()}
-                Rolling Period  : ${data[2].toNumber()} 
-                EndTime         : ${data[3].toNumber()} 
-                Restriction Type: ${data[4].toNumber() == 0 ? "Fixed" : "Percentage"}  
+                Allowed Tokens  : ${web3.utils.fromWei(data[0])}
+                StartTime       : ${data[1].toString()}
+                Rolling Period  : ${data[2].toString()}
+                EndTime         : ${data[3].toString()}
+                Restriction Type: ${data[4].toString() == 0 ? "Fixed" : "Percentage"}
             `)
     }
-
+    let currentTime;
     before(async() => {
         // Accounts setup
+        currentTime = new BN(await latestTime());
         account_polymath = accounts[0];
         account_issuer = accounts[1];
 
@@ -144,9 +145,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
         ] = instances;
 
         // STEP 5: Deploy the VolumeRestrictionTMFactory
-        [I_VolumeRestrictionTMFactory] = await deployVRTMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
+        [I_VolumeRestrictionTMFactory] = await deployVRTMAndVerifyed(account_polymath, I_MRProxied, 0);
         // STEP 6: Deploy the VolumeRestrictionTMFactory
-        [P_VolumeRestrictionTMFactory] = await deployVRTMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, web3.utils.toWei("500"));
+        [P_VolumeRestrictionTMFactory] = await deployVRTMAndVerifyed(account_polymath, I_MRProxied, web3.utils.toWei("500"));
 
         // Printing all the contract addresses
         console.log(`
@@ -175,45 +176,47 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let _blockNo = latestBlock();
+
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, true, { from: token_owner });
+            console.log(tx.logs);
 
             // Verify the successful generation of the security token
-            assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
+            assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
-            I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
+            I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 
-            const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({ from: _blockNo }), 1);
+            const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTransferManager module get added successfully or not
-            assert.equal(log.args._types[0].toNumber(), 2);
+            assert.equal(log.args._types[0].toString(), 2);
             assert.equal(web3.utils.toAscii(log.args._name).replace(/\u0000/g, ""), "GeneralTransferManager");
         });
 
         it("Should intialize the auto attached modules", async () => {
             let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
-            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
+            I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
     });
 
-    describe("Attach the VRTMaaaaa", async() => {
+    describe("Attach the VRTM", async() => {
         it("Deploy the VRTM and attach with the ST", async()=> {
-            let tx = await I_SecurityToken.addModule(I_VolumeRestrictionTMFactory.address, 0, 0, 0, {from: token_owner });
+            let tx = await I_SecurityToken.addModule(I_VolumeRestrictionTMFactory.address, "0x0", 0, 0, {from: token_owner });
             assert.equal(tx.logs[2].args._moduleFactory, I_VolumeRestrictionTMFactory.address);
             assert.equal(
                 web3.utils.toUtf8(tx.logs[2].args._name),
                 "VolumeRestrictionTM",
                 "VolumeRestrictionTMFactory doesn not added");
-            I_VolumeRestrictionTM = VolumeRestrictionTM.at(tx.logs[2].args._module);
+            I_VolumeRestrictionTM = await VolumeRestrictionTM.at(tx.logs[2].args._module);
         });
 
         it("Transfer some tokens to different account", async() => {
             // Add tokens in to the whitelist
+            currentTime = new BN(await latestTime());
             await I_GeneralTransferManager.modifyWhitelistMulti(
                     [account_investor1, account_investor2, account_investor3],
-                    [latestTime(), latestTime(), latestTime()],
-                    [latestTime(), latestTime(), latestTime()],
-                    [latestTime() + duration.days(60), latestTime() + duration.days(60), latestTime() + duration.days(60)],
+                    [currentTime, currentTime, currentTime],
+                    [currentTime, currentTime, currentTime],
+                    [currentTime.add(new BN(duration.days(60))), currentTime.add(new BN(duration.days(60))), currentTime.add(new BN(duration.days(60)))],
                     [true, true, true],
                     {
                         from: token_owner
@@ -233,58 +236,59 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
         it("Should work with multiple transaction within 1 day with Individual and daily Restrictions", async() => {
             // let snapId = await takeSnapshot();
-            
-            var testRepeat = 0; 
+
+            var testRepeat = 0;
 
             for (var i = 0; i < testRepeat; i++) {
 
                 console.log("fuzzer number " + i);
 
-                var individualRestrictTotalAmount =  Math.floor(Math.random() * 10); 
+                var individualRestrictTotalAmount =  Math.floor(Math.random() * 10);
                 if ( individualRestrictTotalAmount == 0 ) {
                     individualRestrictTotalAmount = 1;
                 }
 
-                var dailyRestrictionAmount = Math.floor(Math.random() * 10); 
+                var dailyRestrictionAmount = Math.floor(Math.random() * 10);
                 if ( dailyRestrictionAmount == 0 ) {
                     dailyRestrictionAmount = 1;
                 }
-                var rollingPeriod = 2; 
-                var sumOfLastPeriod = 0; 
+                var rollingPeriod = 2;
+                var sumOfLastPeriod = 0;
 
                 console.log("a");
-                
+                currentTime = new BN(await latestTime());
                 // 1 - add individual restriction with a random number
                 let tx = await I_VolumeRestrictionTM.addIndividualRestriction(
                     account_investor1,
                     web3.utils.toWei(individualRestrictTotalAmount.toString()),
-                    latestTime() + duration.seconds(2),
+                    currentTime.add(new BN(duration.seconds(2))),
                     rollingPeriod,
-                    latestTime() + duration.days(3),
-                    0,
-                    {
-                        from: token_owner
-                    }
-                );     
-
-               console.log("b");
-                tx = await I_VolumeRestrictionTM.addIndividualDailyRestriction(
-                    account_investor1,
-                    web3.utils.toWei(dailyRestrictionAmount.toString()),
-                    latestTime() + duration.seconds(1),
-                    latestTime() + duration.days(4),
+                    currentTime.add(new BN(duration.days(3))),
                     0,
                     {
                         from: token_owner
                     }
                 );
-                  
+                currentTime = new BN(await latestTime());
+                console.log("b");
+                tx = await I_VolumeRestrictionTM.addIndividualDailyRestriction(
+                    account_investor1,
+                    web3.utils.toWei(dailyRestrictionAmount.toString()),
+                    currentTime.add(new BN(duration.seconds(1))),
+                    currentTime.add(new BN(duration.days(4))),
+                    0,
+                    {
+                        from: token_owner
+                    }
+                );
+
                 console.log("c");
                 var txNumber = 10; // define fuzz test amount for tx within 24 hrs
-
+                currentTime = new BN(await latestTime());
                 for (var j=0; j<txNumber; j++) {
 
                     await increaseTime(duration.seconds(Math.round(20/txNumber*3600)));
+                    currentTime = new BN(await latestTime());
                     console.log("3");
 
                     // generate a random amount
@@ -323,53 +327,54 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should work with fuzz test for individual restriction and general restriction", async() => {
-            // let snapId = await takeSnapshot();         
+            // let snapId = await takeSnapshot();
             var testRepeat = 0;
 
             for (var i = 0; i < testRepeat; i++) {
 
                 console.log("fuzzer number " + i);
 
-                var individualRestrictTotalAmount =  Math.floor(Math.random() * 10); 
+                var individualRestrictTotalAmount =  Math.floor(Math.random() * 10);
                  if (individualRestrictTotalAmount == 0 ) {
                     individualRestrictTotalAmount = 1;
                 }
-                var defaultRestrictionAmount = Math.floor(Math.random() * 10); 
-                var rollingPeriod = 2; 
-                var sumOfLastPeriod = 0; 
+                var defaultRestrictionAmount = Math.floor(Math.random() * 10);
+                var rollingPeriod = 2;
+                var sumOfLastPeriod = 0;
 
                 console.log("a");
-                
+                currentTime = new BN(await latestTime());
                 // 1 - add individual restriction with a random number
                 let tx = await I_VolumeRestrictionTM.addIndividualRestriction(
                     account_investor1,
                     web3.utils.toWei(individualRestrictTotalAmount.toString()),
-                    latestTime() + duration.seconds(1),
+                    currentTime.add(new BN(duration.seconds(1))),
                     rollingPeriod,
-                    latestTime() + duration.days(3),
-                    0,
-                    {
-                        from: token_owner
-                    }
-                );     
-
-               console.log("b");
-                tx = await I_VolumeRestrictionTM.addDefaultRestriction(
-                    account_investor1,
-                    latestTime() + duration.seconds(1),
-                    rollingPeriod,
-                    latestTime() + duration.days(4),
+                    currentTime.add(new BN(duration.days(3))),
                     0,
                     {
                         from: token_owner
                     }
                 );
-                    
+                currentTime = new BN(await latestTime());
+                console.log("b");
+                tx = await I_VolumeRestrictionTM.addDefaultRestriction(
+                    account_investor1,
+                    currentTime.add(new BN(duration.seconds(1))),
+                    rollingPeriod,
+                    currentTime.add(new BN(duration.days(4))),
+                    0,
+                    {
+                        from: token_owner
+                    }
+                );
+                currentTime = new BN(await latestTime());
                 console.log("c");
-                var txNumber = 10; // define fuzz test amount for tx 
+                var txNumber = 10; // define fuzz test amount for tx
 
                 for (var j = 0; j < txNumber; j++) {
                     await increaseTime(duration.seconds(5));
+                    currentTime = new BN(await latestTime());
                     console.log("2");
 
                     // generate a random amount
@@ -405,10 +410,11 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 // remove individual restriction and it should fall to default restriction
                 await I_VolumeRestrictionTM.removeIndividualRestriction(account_investor1, {from: token_owner});
                 console.log("individual restriction now removed --> fall back to default restriction");
-                
+
                 for (var j=0; j<txNumber; j++) {
 
                     await increaseTime(duration.seconds(5));
+                    currentTime = new BN(await latestTime());
                     console.log("4");
 
                     // generate a random amount
@@ -421,12 +427,12 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     // check against daily and total restrictions to determine if the transaction should pass or not
                     if (accumulatedTxValue > defaultRestrictionAmount) {
                         console.log("tx should fail");
-                        await catchRevert( 
+                        await catchRevert(
                             I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1})
                         );
                         console.log("tx failed as expected due to over limit");
                     } else if ( accumulatedTxValue <= defaultRestrictionAmount ) {
-                        
+
                         console.log("tx should succeed");
 
                         await I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1});
@@ -475,8 +481,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     let tx = await I_VolumeRestrictionTM.addIndividualDailyRestriction(
                         account_investor1,
                         web3.utils.toWei(dailyRestrictionAmount.toString()),
-                        latestTime() + duration.seconds(startTime),
-                        latestTime() + duration.days(50),
+                        currentTime.add(new BN(duration.seconds(startTime))),
+                        currentTime.add(new BN(duration.days(50))),
                         0,
                         {
                             from: token_owner
@@ -498,15 +504,16 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 // perform multiple transactions
 
                 for (var j = 0; j < txNumber; j++) {
-                    var timeIncreaseBetweenTx = Math.floor(Math.random() * 10) * 3600; 
+                    var timeIncreaseBetweenTx = Math.floor(Math.random() * 10) * 3600;
 
                     await increaseTime(duration.seconds(timeIncreaseBetweenTx));
+                    currentTime = new BN(await latestTime());
                     accumulatedTimeIncrease = timeIncreaseBetweenTx + accumulatedTimeIncrease;
                     console.log("4");
 
                     // generate a random amount
                     var transactionAmount = Math.floor(Math.random() * 10);
-                    
+
                     // check today's limit
                     var dayNumber = Math.floor(accumulatedTimeIncrease/(24*3600)) + 1;
 
@@ -524,7 +531,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
                         console.log("tx failed as expected due to over limit");
                     } else if ((todayLimitUsed + transactionAmount) <= dailyRestrictionAmount) {
-                       
+
                         console.log("tx should succeed");
 
                         await I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1});
@@ -556,13 +563,13 @@ contract('VolumeRestrictionTransferManager', accounts => {
             for (var i = 0; i < testRepeat; i++) {
                 console.log("fuzzer number " + i);
 
-                var individualRestrictTotalAmount =  Math.floor(Math.random() * 10); 
+                var individualRestrictTotalAmount =  Math.floor(Math.random() * 10);
                  if (individualRestrictTotalAmount === 0 ) {
                     individualRestrictTotalAmount = 1;
                 }
-                var defaultRestrictionAmount = Math.floor(Math.random() * 10); 
-                var rollingPeriod = 2; 
-                var sumOfLastPeriod = 0; 
+                var defaultRestrictionAmount = Math.floor(Math.random() * 10);
+                var rollingPeriod = 2;
+                var sumOfLastPeriod = 0;
 
                 console.log("a");
 
@@ -570,9 +577,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 let tx = await I_VolumeRestrictionTM.addIndividualRestriction(
                     account_investor1,
                     web3.utils.toWei(individualRestrictTotalAmount.toString()),
-                    latestTime() + duration.seconds(1),
+                    currentTime.add(new BN(duration.seconds(1))),
                     rollingPeriod,
-                    latestTime() + duration.days(3),
+                    currentTime.add(new BN(duration.days(3))),
                     0,
                     {
                         from: token_owner
@@ -587,6 +594,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
                 for (var j = 0; j < txNumber; j++) {
                     await increaseTime(duration.seconds(5));
+                    currentTime = new BN(await latestTime());
                     console.log("2");
 
                     // generate a random amount
@@ -621,27 +629,27 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should work if IR is modified", async () => {
-            
+
             console.log(`\t\t Starting of the IR modification test case`.blue);
-            
+
             var testRepeat = 1;
 
             for (var i = 0; i < testRepeat; i++) {
                 console.log("\t\t fuzzer number " + i);
                 let precision = 100;
-                var individualRestrictionTotalAmount = Math.floor(Math.random() * (10 * precision - 1 * precision) + 1 * precision) / (1*precision); 
-                var rollingPeriod = 2; 
-                var sumOfLastPeriod = 0; 
+                var individualRestrictionTotalAmount = Math.floor(Math.random() * (10 * precision - 1 * precision) + 1 * precision) / (1*precision);
+                var rollingPeriod = 2;
+                var sumOfLastPeriod = 0;
 
                 console.log(`\t\t Add individual restriction with TotalAmount: ${individualRestrictionTotalAmount}\n`.green);
-  
+
                 // 1 - add individual restriction with a random number
                 let tx = await I_VolumeRestrictionTM.addIndividualRestriction(
                     account_investor1,
                     web3.utils.toWei(individualRestrictionTotalAmount.toString()),
-                    latestTime() + duration.days(2),
+                    currentTime.add(new BN(duration.days(2))),
                     rollingPeriod,
-                    latestTime() + duration.days(5),
+                    currentTime.add(new BN(duration.days(5))),
                     0,
                     {
                         from: token_owner
@@ -656,30 +664,34 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     console.log(`\t\t Test number: ${j}\n`);
 
                     // modify IR
-                    var newIR =  Math.floor(Math.random() * (10 * precision - 1 * precision) + 1 * precision) / (1*precision); 
+                    var newIR =  Math.floor(Math.random() * (10 * precision - 1 * precision) + 1 * precision) / (1*precision);
+                    console.log("Original Restriction");
+                    printIR(await I_VolumeRestrictionTM.getIndividualRestriction(account_investor1, {from: token_owner}));
+                    currentTime = new BN(await latestTime());
+                    console.log(`\t\t Modification of the IR with new startTime: ${currentTime + duration.days(1+j)} and new total amount: ${newIR} `.green);
 
-                    printIR(await I_VolumeRestrictionTM.individualRestriction(account_investor1, {from: token_owner}));
-                    
-                    console.log(`\t\t Modification of the IR with new startTime: ${latestTime() + duration.days(1+j)} and new total amount: ${newIR} `.green);
-                    
                     await I_VolumeRestrictionTM.modifyIndividualRestriction(
                         account_investor1,
                         web3.utils.toWei(newIR.toString()),
-                        latestTime() + duration.days(1+j),
+                        currentTime.add(new BN(duration.days(1+j))),
                         rollingPeriod,
-                        latestTime() + duration.days(5+j),
+                        currentTime.add(new BN(duration.days(5+j))),
                         0,
                         { from: token_owner }
                     );
-
+                    console.log("Modified Restriction");
+                    printIR(await I_VolumeRestrictionTM.getIndividualRestriction(account_investor1, {from: token_owner}));
                     console.log(`\t\t Successfully IR modified`);
-                    let snapId = await takeSnapshot(); 
+                    let snapId = await takeSnapshot();
                     await increaseTime(duration.days(2+j));
 
                     // generate a random amount
-                    var transactionAmount = Math.floor(Math.random() * (10 * precision - 1 * precision) + 1 * precision) / (1*precision); 
+                    var transactionAmount = Math.floor(Math.random() * (10 * precision - 1 * precision) + 1 * precision) / (1*precision);
 
                     // check against daily and total restrictions to determine if the transaction should pass or not
+                    console.log("Transaction Amount: " + transactionAmount);
+                    console.log("newIR Amount: " + newIR);
+                    console.log("currentTime: " + await latestTime());
                     if (transactionAmount > newIR) {
                         console.log("\t\t Tx should fail");
 
@@ -707,5 +719,5 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
     });
-    
+
 });

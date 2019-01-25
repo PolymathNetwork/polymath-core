@@ -201,8 +201,8 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
     {
         require(
         	_tokensPerTierTotal.length > 0 &&
-            _ratePerTier.length == _tokensPerTierTotal.length && 
-            _ratePerTierDiscountPoly.length == _tokensPerTierTotal.length && 
+            _ratePerTier.length == _tokensPerTierTotal.length &&
+            _ratePerTierDiscountPoly.length == _tokensPerTierTotal.length &&
             _tokensPerTierDiscountPoly.length == _tokensPerTierTotal.length,
             "Invalid Input"
         );
@@ -655,7 +655,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * param _fundRaiseType The fund raising currency (e.g. ETH, POLY, SC) to calculate sold tokens for
      * @return uint256 Total number of tokens sold for ETH
      */
-    function getTokensSoldFor(FundRaiseType _fundRaiseType) public view returns (uint256 tokensSold) {
+    function getTokensSoldFor(FundRaiseType _fundRaiseType) external view returns (uint256 tokensSold) {
         for (uint256 i = 0; i < tiers.length; i++) {
             tokensSold = tokensSold.add(tiers[i].minted[uint8(_fundRaiseType)]);
         }
@@ -666,7 +666,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * param _tier The tier to return minted tokens for
      * @return uint256[] array of minted tokens in each fund raise type
      */
-    function getTokensMintedByTier(uint256 _tier) public view returns(uint256[] memory) {
+    function getTokensMintedByTier(uint256 _tier) external view returns(uint256[] memory) {
         uint256[] memory tokensMinted = new uint256[](3);
         tokensMinted[0] = tiers[_tier].minted[uint8(FundRaiseType.ETH)];
         tokensMinted[1] = tiers[_tier].minted[uint8(FundRaiseType.POLY)];
@@ -679,7 +679,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * param _tier The tier to calculate sold tokens for
      * @return uint256 Total number of tokens sold in the tier
      */
-    function getTokensSoldByTier(uint256 _tier) public view returns (uint256) {
+    function getTokensSoldByTier(uint256 _tier) external view returns (uint256) {
         uint256 tokensSold;
         tokensSold = tokensSold.add(tiers[_tier].minted[uint8(FundRaiseType.ETH)]);
         tokensSold = tokensSold.add(tiers[_tier].minted[uint8(FundRaiseType.POLY)]);
@@ -691,7 +691,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @notice Return the total no. of tiers
      * @return uint256 Total number of tiers
      */
-    function getNumberOfTiers() public view returns (uint256) {
+    function getNumberOfTiers() external view returns (uint256) {
         return tiers.length;
     }
 
@@ -699,7 +699,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @notice Return the usd tokens accepted by the STO
      * @return address[] usd tokens
      */
-    function getUsdTokens() public view returns (address[] memory) {
+    function getUsdTokens() external view returns (address[] memory) {
         return usdTokens;
     }
 
@@ -722,7 +722,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @return Amount of tokens sold.
      * @return Array of bools to show if funding is allowed in ETH, POLY, SC respectively
      */
-    function getSTODetails() public view returns(uint256, uint256, uint256, uint256[] memory, uint256[] memory, uint256, uint256, uint256, bool[] memory) {
+    function getSTODetails() external view returns(uint256, uint256, uint256, uint256[] memory, uint256[] memory, uint256, uint256, uint256, bool[] memory) {
         uint256[] memory cap = new uint256[](tiers.length);
         uint256[] memory rate = new uint256[](tiers.length);
         for(uint256 i = 0; i < tiers.length; i++) {

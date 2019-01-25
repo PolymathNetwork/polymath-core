@@ -378,7 +378,7 @@ contract("USDTieredSTO", async (accounts) => {
                 _reserveWallet[stoId],
                 "Incorrect _reserveWallet in config"
             );
-            assert.equal(await I_USDTieredSTO_Array[stoId].usdTokens.call(0), _usdToken[stoId][0], "Incorrect _usdToken in config");
+            assert.equal((await I_USDTieredSTO_Array[stoId].getUsdTokens())[0], _usdToken[stoId][0], "Incorrect _usdToken in config");
             assert.equal(
                 await I_USDTieredSTO_Array[stoId].getNumberOfTiers(),
                 _tokensPerTierTotal[stoId].length,
@@ -567,7 +567,7 @@ contract("USDTieredSTO", async (accounts) => {
                 _reserveWallet[stoId],
                 "Incorrect _reserveWallet in config"
             );
-            assert.equal(await I_USDTieredSTO_Array[stoId].usdTokens.call(0), _usdToken[stoId][0], "Incorrect _usdToken in config");
+            assert.equal((await I_USDTieredSTO_Array[stoId].getUsdTokens())[0], _usdToken[stoId][0], "Incorrect _usdToken in config");
             assert.equal(
                 await I_USDTieredSTO_Array[stoId].getNumberOfTiers(),
                 _tokensPerTierTotal[stoId].length,
@@ -965,7 +965,7 @@ contract("USDTieredSTO", async (accounts) => {
                 "0x0000000000000000000003000000000000000000",
                 "STO Configuration doesn't set as expected"
             );
-            assert.equal((await I_USDTieredSTO_Array[stoId].usdTokens.call(0)), accounts[3], "STO Configuration doesn't set as expected");
+            assert.equal((await I_USDTieredSTO_Array[stoId].getUsdTokens())[0], accounts[3], "STO Configuration doesn't set as expected");
         });
 
         it("Should fail to change config after endTime", async () => {
@@ -3868,7 +3868,7 @@ contract("USDTieredSTO", async (accounts) => {
             let init_WalletETHBal = new BN(await web3.eth.getBalance(WALLET));
             let init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
-            let tokensToMint = (await I_USDTieredSTO_Array[stoId].buyWithPOLY.call(ACCREDITED1, investment_POLY))[2];
+            let tokensToMint = (await I_USDTieredSTO_Array[stoId].buyWithPOLY.call(ACCREDITED1, investment_POLY, {from: ACCREDITED1}))[2];
 
             // Buy With POLY
             let tx2 = await I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, {

@@ -38,22 +38,17 @@ contract USDTieredSTOStorage {
 
     mapping(bytes32 => mapping(bytes32 => string)) oracleKeys;
 
-    IERC20 public usdToken;
-
     // Determine whether users can invest on behalf of a beneficiary
-    bool public allowBeneficialInvestments = false;
+    bool public allowBeneficialInvestments;
 
     // Whether or not the STO has been finalized
     bool public isFinalized;
-
-    // Address where ETH, POLY & DAI funds are delivered
-    address payable public wallet;
 
     // Address of issuer reserve wallet for unsold tokens
     address public reserveWallet;
 
     // List of stable coin addresses
-    address[] public usdTokens;
+    address[] internal usdTokens;
 
     // Current tier
     uint256 public currentTier;
@@ -74,7 +69,7 @@ contract USDTieredSTOStorage {
     mapping (address => Investor) public investors;
 
     // List of active stable coin addresses
-    mapping (address => bool) public usdTokenEnabled;
+    mapping (address => bool) internal usdTokenEnabled;
 
     // List of all addresses that have been added as accredited or non-accredited without
     // the default limit

@@ -3868,7 +3868,7 @@ contract("USDTieredSTO", async (accounts) => {
             let init_WalletETHBal = new BN(await web3.eth.getBalance(WALLET));
             let init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
 
-            let tokensToMint = (await I_USDTieredSTO_Array[stoId].buyTokensView(ACCREDITED1, investment_POLY, POLY))[2];
+            let tokensToMint = (await I_USDTieredSTO_Array[stoId].buyWithPOLY.call(ACCREDITED1, investment_POLY))[2];
 
             // Buy With POLY
             let tx2 = await I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, {

@@ -351,16 +351,16 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
     }
 
     // Buy functions without rate restriction
-    function buyWithETH(address _beneficiary) external payable {
-        buyWithETHRateLimited(_beneficiary, 0);
+    function buyWithETH(address _beneficiary) external payable returns (uint256, uint256, uint256) {
+        return buyWithETHRateLimited(_beneficiary, 0);
     }
 
-    function buyWithPOLY(address _beneficiary, uint256 _investedPOLY) external {
-        buyWithPOLYRateLimited(_beneficiary, _investedPOLY, 0);
+    function buyWithPOLY(address _beneficiary, uint256 _investedPOLY) external returns (uint256, uint256, uint256) {
+        return buyWithPOLYRateLimited(_beneficiary, _investedPOLY, 0);
     }
 
-    function buyWithUSD(address _beneficiary, uint256 _investedSC, IERC20 _usdToken) external {
-        buyWithUSDRateLimited(_beneficiary, _investedSC, 0, _usdToken);
+    function buyWithUSD(address _beneficiary, uint256 _investedSC, IERC20 _usdToken) external returns (uint256, uint256, uint256) {
+        return buyWithUSDRateLimited(_beneficiary, _investedSC, 0, _usdToken);
     }
 
     /**
@@ -368,7 +368,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
       * @param _beneficiary Address where security tokens will be sent
       * @param _minTokens Minumum number of tokens to buy or else revert
       */
-    function buyWithETHRateLimited(address _beneficiary, uint256 _minTokens) public payable validETH {
+    function buyWithETHRateLimited(address _beneficiary, uint256 _minTokens) public payable validETH returns (uint256, uint256, uint256) {
         uint256 rate = getRate(FundRaiseType.ETH);
         uint256 initialMinted = getTokensMinted();
         (uint256 spentUSD, uint256 spentValue) = _buyTokens(_beneficiary, msg.value, rate, FundRaiseType.ETH);
@@ -381,6 +381,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
         // Refund excess ETH to investor wallet
         msg.sender.transfer(msg.value.sub(spentValue));
         emit FundsReceived(msg.sender, _beneficiary, spentUSD, FundRaiseType.ETH, msg.value, spentValue, rate);
+        return (spentUSD, spentValue, getTokensMinted().sub(initialMinted));
     }
 
     /**
@@ -389,8 +390,8 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
       * @param _investedPOLY Amount of POLY invested
       * @param _minTokens Minumum number of tokens to buy or else revert
       */
-    function buyWithPOLYRateLimited(address _beneficiary, uint256 _investedPOLY, uint256 _minTokens) public validPOLY {
-        _buyWithTokens(_beneficiary, _investedPOLY, FundRaiseType.POLY, _minTokens, polyToken);
+    function buyWithPOLYRateLimited(address _beneficiary, uint256 _investedPOLY, uint256 _minTokens) public validPOLY returns (uint256, uint256, uint256) {
+        return _buyWithTokens(_beneficiary, _investedPOLY, FundRaiseType.POLY, _minTokens, polyToken);
     }
 
     /**
@@ -401,12 +402,12 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
       * @param _usdToken Address of USD stable coin to buy tokens with
       */
     function buyWithUSDRateLimited(address _beneficiary, uint256 _investedSC, uint256 _minTokens, IERC20 _usdToken)
-        public validSC(address(_usdToken))
+        public validSC(address(_usdToken)) returns (uint256, uint256, uint256)
     {
-        _buyWithTokens(_beneficiary, _investedSC, FundRaiseType.SC, _minTokens, _usdToken);
+        return _buyWithTokens(_beneficiary, _investedSC, FundRaiseType.SC, _minTokens, _usdToken);
     }
 
-    function _buyWithTokens(address _beneficiary, uint256 _tokenAmount, FundRaiseType _fundRaiseType, uint256 _minTokens, IERC20 _token) internal {
+    function _buyWithTokens(address _beneficiary, uint256 _tokenAmount, FundRaiseType _fundRaiseType, uint256 _minTokens, IERC20 _token) internal returns (uint256, uint256, uint256) {
         require(_fundRaiseType == FundRaiseType.POLY || _fundRaiseType == FundRaiseType.SC, "Invalid raise type");
         uint256 initialMinted = getTokensMinted();
         uint256 rate = getRate(_fundRaiseType);
@@ -420,6 +421,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
         // Forward coins to issuer wallet
         require(_token.transferFrom(msg.sender, wallet, spentValue), "Transfer failed");
         emit FundsReceived(msg.sender, _beneficiary, spentUSD, _fundRaiseType, _tokenAmount, spentValue, rate);
+        return (spentUSD, spentValue, getTokensMinted().sub(initialMinted));
     }
 
     /**
@@ -471,45 +473,6 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
         }
 
         spentValue = DecimalMath.div(spentUSD, _rate);
-    }
-
-    /**
-      * @notice Getter function for buyer to calculate how many tokens will they get
-      * @param _beneficiary Address where security tokens are to be sent
-      * @param _investmentValue Amount of POLY, ETH or Stable coins invested
-      * @param _fundRaiseType Fund raise type (POLY, ETH, SC)
-      */
-    function buyTokensView(
-        address _beneficiary,
-        uint256 _investmentValue,
-        FundRaiseType _fundRaiseType
-    )
-        public
-        view
-        returns(uint256 spentUSD, uint256 spentValue, uint256 tokensMinted)
-    {
-        require(_fundRaiseType == FundRaiseType.POLY || _fundRaiseType == FundRaiseType.SC || _fundRaiseType == FundRaiseType.ETH, "Invalid raise type");
-        uint256 rate = getRate(_fundRaiseType);
-        uint256 originalUSD = DecimalMath.mul(rate, _investmentValue);
-        uint256 allowedUSD = _buyTokensChecks(_beneficiary, _investmentValue, originalUSD);
-
-        // Iterate over each tier and process payment
-        for (uint256 i = currentTier; i < tiers.length; i++) {
-            bool gotoNextTier;
-            uint256 tempSpentUSD;
-            uint256 tempTokensMinted;
-            // If there are tokens remaining, process investment
-            if (tiers[i].mintedTotal < tiers[i].tokenTotal) {
-                (tempSpentUSD, gotoNextTier, tempTokensMinted) = _calculateTierView(i, allowedUSD.sub(spentUSD), _fundRaiseType);
-                spentUSD = spentUSD.add(tempSpentUSD);
-                tokensMinted = tokensMinted.add(tempTokensMinted);
-                // If all funds have been spent, exit the loop
-                if (!gotoNextTier)
-                    break;
-            }
-        }
-
-        spentValue = DecimalMath.div(spentUSD, rate);
     }
 
     function _buyTokensChecks(
@@ -575,40 +538,6 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
         }
     }
 
-    function _calculateTierView(
-        uint256 _tier,
-        uint256 _investedUSD,
-        FundRaiseType _fundRaiseType
-    )
-        internal
-        view
-        returns(uint256 spentUSD, bool gotoNextTier, uint256 tokensMinted)
-    {
-        // First purchase any discounted tokens if POLY investment
-        uint256 tierSpentUSD;
-        uint256 tierPurchasedTokens;
-        Tier storage tierData = tiers[_tier];
-        // Check whether there are any remaining discounted tokens
-        if ((_fundRaiseType == FundRaiseType.POLY) && (tierData.tokensDiscountPoly > tierData.mintedDiscountPoly)) {
-            uint256 discountRemaining = tierData.tokensDiscountPoly.sub(tierData.mintedDiscountPoly);
-            uint256 totalRemaining = tierData.tokenTotal.sub(tierData.mintedTotal);
-            if (totalRemaining < discountRemaining)
-                (spentUSD, tokensMinted, gotoNextTier) = _purchaseTierAmount(tierData.rateDiscountPoly, totalRemaining, _investedUSD);
-            else
-                (spentUSD, tokensMinted, gotoNextTier) = _purchaseTierAmount(tierData.rateDiscountPoly, discountRemaining, _investedUSD);
-            _investedUSD = _investedUSD.sub(spentUSD);
-        }
-        // Now, if there is any remaining USD to be invested, purchase at non-discounted rate
-        if (_investedUSD > 0 &&
-            tierData.tokenTotal.sub(tierData.mintedTotal.add(tokensMinted)) > 0 &&
-            (_fundRaiseType != FundRaiseType.POLY || tierData.tokensDiscountPoly <= tierData.mintedDiscountPoly)
-        ) {
-            (tierSpentUSD, tierPurchasedTokens, gotoNextTier) = _purchaseTierAmount(tierData.rate, tierData.tokenTotal.sub(tierData.mintedTotal), _investedUSD);
-            spentUSD = spentUSD.add(tierSpentUSD);
-            tokensMinted = tokensMinted.add(tierPurchasedTokens);
-        }
-    }
-
     function _purchaseTier(
         address _beneficiary,
         uint256 _tierPrice,
@@ -617,22 +546,6 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
         uint256 _tier
     )
         internal
-        returns(uint256 spentUSD, uint256 purchasedTokens, bool gotoNextTier)
-    {
-        (spentUSD, purchasedTokens, gotoNextTier) = _purchaseTierAmount(_tierPrice, _tierRemaining, _investedUSD);
-        if (purchasedTokens > 0) {
-            require(ISecurityToken(securityToken).mint(_beneficiary, purchasedTokens), "Error in minting");
-            emit TokenPurchase(msg.sender, _beneficiary, purchasedTokens, spentUSD, _tierPrice, _tier);
-        }
-    }
-
-    function _purchaseTierAmount(
-        uint256 _tierPrice,
-        uint256 _tierRemaining,
-        uint256 _investedUSD
-    )
-        internal
-        view
         returns(uint256 spentUSD, uint256 purchasedTokens, bool gotoNextTier)
     {
         uint256 maximumTokens = DecimalMath.div(_investedUSD, _tierPrice);
@@ -650,6 +563,10 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
         } else {
             spentUSD = DecimalMath.mul(maximumTokens, _tierPrice);
             purchasedTokens = maximumTokens;
+        }
+        if (purchasedTokens > 0) {
+            require(ISecurityToken(securityToken).mint(_beneficiary, purchasedTokens), "Error in minting");
+            emit TokenPurchase(msg.sender, _beneficiary, purchasedTokens, spentUSD, _tierPrice, _tier);
         }
     }
 

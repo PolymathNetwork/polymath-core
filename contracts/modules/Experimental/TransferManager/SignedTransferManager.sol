@@ -50,8 +50,15 @@ contract SignedTransferManager is TransferManager {
     * @notice function to check if a signature is still valid
     * @param _data signature
     */
-    function checkSignatureIsInvalid(bytes calldata _data) external view returns(bool) {
-        return _checkSignatureIsInvalid(_data);
+    function checkSignatureValidity(bytes calldata _data) external view returns(bool) {
+        address targetAddress;
+        uint256 nonce;
+        uint256 expiry;
+        bytes memory signature;
+        (targetAddress, nonce, expiry, signature) = abi.decode(_data, (address, uint256, uint256, bytes));
+        if (targetAddress != address(this) || expiry < now || signature.length == 0 || _checkSignatureIsInvalid(signature))
+            return false;
+        return true;
     }
 
     function checkSigner(address _signer) external view returns(bool) {
@@ -88,18 +95,26 @@ contract SignedTransferManager is TransferManager {
 
             require (_isTransfer == false || msg.sender == securityToken, "Sender is not ST");
 
-            if (_data.length == 0 || _checkSignatureIsInvalid(_data)) {
+            if (_data.length == 0)
                 return Result.NA;
-            }
 
-            bytes32 hash = keccak256(abi.encodePacked(this, _from, _to, _amount));
+            address targetAddress;
+            uint256 nonce;
+            uint256 expiry;
+            bytes memory signature;
+            (targetAddress, nonce, expiry, signature) = abi.decode(_data, (address, uint256, uint256, bytes));
+
+            if (address(this) != targetAddress || signature.length == 0 || _checkSignatureIsInvalid(signature) || expiry < now)
+                return Result.NA;
+
+            bytes32 hash = keccak256(abi.encodePacked(targetAddress, nonce, expiry, _from, _to, _amount));
             bytes32 prependedHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
-            address signer = _recoverSignerAdd(prependedHash, _data);
+            address signer = _recoverSignerAdd(prependedHash, signature);
 
             if (!_checkSigner(signer)) {
                 return Result.NA;
             } else if(_isTransfer) {
-                _invalidateSignature(_data);
+                _invalidateSignature(signature);
                 return Result.VALID;
             } else {
                 return Result.VALID;
@@ -119,14 +134,22 @@ contract SignedTransferManager is TransferManager {
     */
     function invalidateSignature(address _from, address _to, uint256 _amount, bytes calldata _data) external {
         require(_checkSigner(msg.sender), "Unauthorized Signer");
-        require(!_checkSignatureIsInvalid(_data), "Signature already invalid");
+        
+        address targetAddress;
+        uint256 nonce;
+        uint256 expiry;
+        bytes memory signature;
+        (targetAddress, nonce, expiry, signature) = abi.decode(_data, (address, uint256, uint256, bytes));
 
-        bytes32 hash = keccak256(abi.encodePacked(this, _from, _to, _amount));
+        require(!_checkSignatureIsInvalid(signature), "Signature already invalid");
+        require(targetAddress != address(this), "Signature not for this module");
+
+        bytes32 hash = keccak256(abi.encodePacked(targetAddress, nonce, expiry, _from, _to, _amount));
         bytes32 prependedHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
 
-        require(_recoverSignerAdd(prependedHash, _data) == msg.sender, "Incorrect Signer");
+        require(_recoverSignerAdd(prependedHash, signature) == msg.sender, "Incorrect Signer");
 
-        _invalidateSignature(_data);
+        _invalidateSignature(signature);
     }
 
     /**

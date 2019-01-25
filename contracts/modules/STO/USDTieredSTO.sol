@@ -409,7 +409,6 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
     }
 
     function _buyWithTokens(address _beneficiary, uint256 _tokenAmount, FundRaiseType _fundRaiseType, uint256 _minTokens, IERC20 _token) internal returns (uint256, uint256, uint256) {
-        require(_fundRaiseType == FundRaiseType.POLY || _fundRaiseType == FundRaiseType.SC, "Invalid raise type");
         uint256 initialMinted = getTokensMinted();
         uint256 rate = getRate(_fundRaiseType);
         (uint256 spentUSD, uint256 spentValue) = _buyTokens(_beneficiary, _tokenAmount, rate, _fundRaiseType);

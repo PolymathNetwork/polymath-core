@@ -901,16 +901,13 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
             // get the trade amount using the timestamp
             let amt = web3.utils.fromWei(await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor1, data[0]));
-            console.log("HERE");
-            console.log((await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor1, data[0])).toString());
-            assert.equal(amt, 2.3);
-            console.log("NOTHERE");
             // Verify the storage changes
             assert.equal(data[0].toString(), new BN(startTime).add(new BN(duration.days(data[2].toString()))));
             assert.equal(web3.utils.fromWei(data[1]), await calculateSum(rollingPeriod, tempArray));
             assert.equal(data[2].toString(), 1);
             assert.equal(data[3].toString(),
              (await I_VolumeRestrictionTM.getIndividualDailyRestriction.call(account_investor1))[1].toString());
+            assert.equal(amt, 2);
         });
 
         it("Should fail to transfer by investor 1 -- because voilating the individual daily", async() => {
@@ -924,7 +921,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             let newLatestTime = await getLatestTime();
             let tx = await I_VolumeRestrictionTM.addIndividualRestriction(
                 account_investor3,
-                new BN(15.36).mul(new BN(10).pow(new BN(16))), // 15.36 tokens as totalsupply is 1000
+                new BN(1536).mul(new BN(10).pow(new BN(14))), // 15.36 tokens as totalsupply is 1000
                 newLatestTime.add(new BN(duration.seconds(2))),
                 6,
                 newLatestTime.add(new BN(duration.days(15))),
@@ -971,11 +968,10 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
             // Verify the storage changes
             assert.equal(data[0].toString(), new BN(startTime).add(new BN(duration.days(data[2].toString()))));
-            assert.equal(data[1].div(new BN(10).pow(new BN(18))).toString(), 4);
+            assert.equal(web3.utils.fromWei(data[1]), 4);
             assert.equal(data[2].toString(), 0);
             assert.equal(data[3].toString(), new BN(startTimeDaily).add(new BN(duration.days(1))));
             assert.equal(amt, 4);
-
         });
 
         it("Should fail during transferring more tokens by investor3 -- Voilating the daily Limit", async() => {
@@ -1015,7 +1011,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
             // Verify the storage changes
             assert.equal(data[0].toString(), new BN(startTime).add(new BN(duration.days(data[2].toString()))));
-            assert.equal(data[1].div(new BN(10).pow(new BN(18))).toString(), 8);
+            assert.equal(web3.utils.fromWei(data[1]), 8);
             assert.equal(data[2].toString(), 0);
             assert.equal(data[3].toString(), 0);
             assert.equal(amt, 8);
@@ -1066,7 +1062,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
             // Verify the storage changes
             assert.equal(data[0].toString(), new BN(startTime).add(new BN(duration.days(data[2].toString()))));
-            assert.equal(data[1].div(new BN(10).pow(new BN(18))).toString(), await calculateSum(rollingPeriod, tempArray3));
+            assert.equal(web3.utils.fromWei(data[1]), await calculateSum(rollingPeriod, tempArray3));
             assert.equal(data[2].toString(), 1);
             assert.equal(data[3].toString(), dataRestriction[1].toString());
             assert.equal(amt, 2);
@@ -1129,12 +1125,11 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await print(data, account_investor3);
 
             // get the trade amount using the timestamp
-            let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toString()))
-            .div(new BN(10).pow(new BN(18))).toString();
+            let amt = web3.utils.fromWei(await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toString()));
 
             // Verify the storage changes
             assert.equal(data[0].toString(), new BN(startTime).add(new BN(duration.days(data[2].toString()))));
-            assert.equal(data[1].div(new BN(10).pow(new BN(18))).toString(), await calculateSum(rollingPeriod, tempArray3));
+            assert.equal(web3.utils.fromWei(data[1]), await calculateSum(rollingPeriod, tempArray3));
             assert.equal(data[2].toString(), 1);
             assert.equal(data[3].toString(), startTimedaily);
             assert.equal(amt, 5);
@@ -1145,7 +1140,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             let startTimedaily = (await I_VolumeRestrictionTM.getIndividualDailyRestriction.call(account_investor3))[1].toString();
             let rollingPeriod = (await I_VolumeRestrictionTM.getIndividualRestriction.call(account_investor3))[2].toString();
 
-            await increaseTime(duration.days(1));
+            await increaseTime(duration.days(1.1));
             //sell tokens upto the limit
             await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("2.36")), {from: account_investor3});
             tempArray3.push(2.36);
@@ -1154,14 +1149,13 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await print(data, account_investor3);
 
             // get the trade amount using the timestamp
-            let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toString()))
-            .div(new BN(10).pow(new BN(18))).toString();
+            let amt = web3.utils.fromWei(await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toString()));
 
             // Verify the storage changes
             assert.equal(data[0].toString(), new BN(startTime).add(new BN(duration.days(data[2].toString()))));
-            assert.equal(data[1].div(new BN(10).pow(new BN(18))).toString(), await calculateSum(rollingPeriod, tempArray3));
+            assert.equal(web3.utils.fromWei(data[1]), await calculateSum(rollingPeriod, tempArray3));
             assert.equal(data[2].toString(), 2);
-            assert.equal(data[3].toString(), startTimedaily.add(new BN(duration.days(1))));
+            assert.equal(data[3].toString(), new BN(startTimedaily).add(new BN(duration.days(1))));
             assert.equal(amt, 2.36);
         });
 
@@ -1186,12 +1180,11 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await print(data, account_investor3);
 
             // get the trade amount using the timestamp
-            let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toString()))
-            .div(new BN(10).pow(new BN(18))).toString();
+            let amt = web3.utils.fromWei(await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toString()));
 
             // Verify the storage changes
             assert.equal(data[0].toString(), new BN(startTime).add(new BN(duration.days(data[2].toString()))));
-            assert.equal(data[1].div(new BN(10).pow(new BN(18))).toString(), await calculateSum(rollingPeriod, tempArray3));
+            assert.equal(web3.utils.fromWei(data[1]), await calculateSum(rollingPeriod, tempArray3));
             assert.equal(data[2].toString(), 2);
             assert.equal(data[3].toString(), new BN(startTimedaily).add(new BN(duration.days(1))));
             assert.equal(amt, 2.86);
@@ -1226,14 +1219,13 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await print(data, account_investor3);
 
             // get the trade amount using the timestamp
-            let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toString()))
-            .div(new BN(10).pow(new BN(18))).toString();
+            let amt = web3.utils.fromWei(await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toString()));
 
             // Verify the storage changes
-            assert.equal(data[0].toString(), startTime.add(new BN(duration.days(data[2].toString()))));
-            assert.equal(data[1].div(new BN(10).pow(new BN(18))).toString(), await calculateSum(rollingPeriod, tempArray3));
+            assert.equal(data[0].toString(), new BN(startTime).add(new BN(duration.days(data[2].toString()))));
+            assert.equal(web3.utils.fromWei(data[1]), await calculateSum(rollingPeriod, tempArray3));
             assert.equal(data[2].toString(), 6);
-            assert.equal(data[3].toString(), startTimedaily.add(new BN(duration.days(1))));
+            assert.equal(data[3].toString(), new BN(startTimedaily).add(new BN(duration.days(1))).toString());
             assert.equal(amt, allowedAmount);
         });
 
@@ -1255,12 +1247,11 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await print(data, account_investor3);
 
             // get the trade amount using the timestamp
-            let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toString()))
-            .div(new BN(10).pow(new BN(18))).toString();
+            let amt = web3.utils.fromWei(await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toString()));
 
             // Verify the storage changes
             assert.equal(data[0].toString(), new BN(startTime).add(new BN(duration.days(data[2].toString()))));
-            assert.equal(data[1].div(new BN(10).pow(new BN(18))).toString(), await calculateSum(rollingPeriod, tempArray3));
+            assert.equal(web3.utils.fromWei(data[1]), await calculateSum(rollingPeriod, tempArray3));
             assert.equal(data[2].toString(), 9);
             assert.equal(data[3].toString(), new BN(startTimedaily).add(new BN(duration.days(1))));
             assert.equal(amt, 7);
@@ -1286,12 +1277,11 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await print(data, account_investor3);
 
             // get the trade amount using the timestamp
-            let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toString()))
-            .div(new BN(10).pow(new BN(18))).toString();
+            let amt = web3.utils.fromWei(await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toString()));
 
             // Verify the storage changes
             assert.equal(data[0].toString(), new BN(startTime).add(new BN(duration.days(data[2].toString()))));
-            assert.equal(data[1].div(new BN(10).pow(new BN(18))).toString(), await calculateSum(rollingPeriod, tempArray3));
+            assert.equal(web3.utils.fromWei(data[1]), await calculateSum(rollingPeriod, tempArray3));
             assert.equal(data[2].toString(), 13);
             assert.equal(data[3].toString(), new BN(startTimedaily).add(new BN(duration.days(1))));
             assert.equal(amt, 8);
@@ -1327,7 +1317,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Should add the default daily restriction successfully", async() => {
             let newLatestTime = await getLatestTime();
             await I_VolumeRestrictionTM.addDefaultDailyRestriction(
-                new BN(2.75).mul(new BN(10).pow(new BN(16))),
+                new BN(275).mul(new BN(10).pow(new BN(14))),
                 0,
                 newLatestTime.add(new BN(duration.days(3))),
                 1,
@@ -1362,8 +1352,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await print(data, account_investor3);
 
             // get the trade amount using the timestamp
-            let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor4, data[3].toString()))
-            .div(new BN(10).pow(new BN(18))).toString();
+            let amt = web3.utils.fromWei(await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor4, data[3].toString()));
 
             // Verify the storage changes
             assert.equal(data[0].toString(), 0);
@@ -1423,12 +1412,11 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await print(data, account_investor3);
 
             // get the trade amount using the timestamp
-            let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toString()))
-            .div(new BN(10).pow(new BN(18))).toString();
+            let amt = web3.utils.fromWei(await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toString()));
 
             // Verify the storage changes
             assert.equal(data[0].toString(), new BN(startTime).add(new BN(duration.days(data[2].toString()))));
-            assert.equal(data[1].div(new BN(10).pow(new BN(18))).toString(), await calculateSum(rollingPeriod, tempArray3));
+            assert.equal(web3.utils.fromWei(data[1]), await calculateSum(rollingPeriod, tempArray3));
             assert.equal(data[2].toString(), 0);
             assert.equal(data[3].toString(), 0);
             assert.equal(amt, 5);
@@ -1443,12 +1431,11 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await print(data, account_investor3);
 
             // get the trade amount using the timestamp
-            amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toString()))
-            .div(new BN(10).pow(new BN(18))).toString();
+            amt = web3.utils.fromWei(await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toString()));
 
             // Verify the storage changes
-            assert.equal(data[0].toString(), startTime.add(new BN(duration.days(data[2].toString()))));
-            assert.equal(data[1].div(new BN(10).pow(new BN(18))).toString(), await calculateSum(rollingPeriod, tempArray3));
+            assert.equal(data[0].toString(), new BN(startTime).add(new BN(duration.days(data[2].toString()))));
+            assert.equal(web3.utils.fromWei(data[1]), await calculateSum(rollingPeriod, tempArray3));
             assert.equal(data[2].toString(), 1);
             assert.equal(data[3].toString(), 0);
             assert.equal(amt, 3);
@@ -1480,12 +1467,11 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await print(data, account_investor3);
 
             // get the trade amount using the timestamp
-            let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toString()))
-            .div(new BN(10).pow(new BN(18))).toString();
+            let amt = web3.utils.fromWei(await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toString()));
 
             // Verify the storage changes
-            assert.equal(data[0].toString(), startTime.add(new BN(duration.days(data[2].toString()))));
-            assert.equal(data[1].div(new BN(10).pow(new BN(18))).toString(), await calculateSum(rollingPeriod, tempArray3));
+            assert.equal(data[0].toString(), new BN(startTime).add(new BN(duration.days(data[2].toString()))));
+            assert.equal(web3.utils.fromWei(data[1]), await calculateSum(rollingPeriod, tempArray3));
             assert.equal(data[2].toString(), 5);
             assert.equal(data[3].toString(), 0);
             assert.equal(amt, 7);
@@ -1538,12 +1524,11 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await print(data, account_investor3);
 
             // get the trade amount using the timestamp
-            let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toString()))
-            .div(new BN(10).pow(new BN(18))).toString();
+            let amt = web3.utils.fromWei(await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_investor3, data[0].toString()));
 
             // Verify the storage changes
             assert.equal(data[0].toString(), new BN(startTime).add(new BN(duration.days(data[2].toString()))));
-            assert.equal(data[1].div(new BN(10).pow(new BN(18))).toString(), await calculateSum(rollingPeriod, tempArray3));
+            assert.equal(web3.utils.fromWei(data[1]), await calculateSum(rollingPeriod, tempArray3));
             assert.equal(data[2].toString(), 6);
             assert.equal(data[3].toString(), new BN(startTimedaily).add(new BN(duration.days(1))));
             assert.equal(amt, 2);
@@ -1625,7 +1610,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             let newLatestTime = await getLatestTime();
             await I_VolumeRestrictionTM.addIndividualRestrictionMulti(
                 [account_investor3, account_delegate3],
-                [new BN(web3.utils.toWei("15")), new BN(12.78).mul(new BN(10).pow(new BN(16)))],
+                [new BN(web3.utils.toWei("15")), new BN(1278).mul(new BN(10).pow(new BN(14)))],
                 [newLatestTime.add(new BN(duration.days(1))), newLatestTime.add(new BN(duration.days(2)))],
                 [15, 20],
                 [newLatestTime.add(new BN(duration.days(40))), newLatestTime.add(new BN(duration.days(60)))],
@@ -1638,8 +1623,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
             let indi1 = await I_VolumeRestrictionTM.getIndividualRestriction.call(account_investor3);
             let indi2 = await I_VolumeRestrictionTM.getIndividualRestriction.call(account_delegate3);
 
-            assert.equal(indi1[0].div(new BN(10).pow(new BN(18))), 15);
-            assert.equal(indi2[0].div(new BN(10).pow(new BN(14))), 1278);
+            assert.equal(indi1[0].div(new BN(10).pow(new BN(18))).toString(), 15);
+            assert.equal(indi2[0].div(new BN(10).pow(new BN(14))).toString(), 1278);
 
             assert.equal(indi1[2].toString(), 15);
             assert.equal(indi2[2].toString(), 20);
@@ -1652,7 +1637,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             let newLatestTime = await getLatestTime();
             await I_VolumeRestrictionTM.modifyIndividualRestrictionMulti(
                 [account_investor3, account_delegate3],
-                [new BN(12.78).mul(new BN(10).pow(new BN(16))), new BN(web3.utils.toWei("15"))],
+                [new BN(1278).mul(new BN(10).pow(new BN(14))), new BN(web3.utils.toWei("15"))],
                 [newLatestTime.add(new BN(duration.days(1))), newLatestTime.add(new BN(duration.days(2)))],
                 [20, 15],
                 [newLatestTime.add(new BN(duration.days(40))), newLatestTime.add(new BN(duration.days(60)))],
@@ -1665,8 +1650,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
             let indi1 = await I_VolumeRestrictionTM.getIndividualRestriction.call(account_investor3);
             let indi2 = await I_VolumeRestrictionTM.getIndividualRestriction.call(account_delegate3);
 
-            assert.equal(indi2[0].div(new BN(10).pow(new BN(18))), 15);
-            assert.equal(indi1[0].div(new BN(10).pow(new BN(14))), 1278);
+            assert.equal(indi2[0].div(new BN(10).pow(new BN(18))).toString(), 15);
+            assert.equal(indi1[0].div(new BN(10).pow(new BN(14))).toString(), 1278);
 
             assert.equal(indi2[2].toString(), 15);
             assert.equal(indi1[2].toString(), 20);

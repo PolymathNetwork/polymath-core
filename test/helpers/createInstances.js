@@ -331,7 +331,7 @@ export async function deployPercentageTMAndVerified(accountPolymath, MRProxyInst
     return Promise.all(new Array(I_PercentageTransferManagerFactory));
 }
 
-export async function deployBlacklistTMAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+export async function deployBlacklistTMAndVerified(accountPolymath, MRProxyInstance, setupCost) {
 
     I_BlacklistTransferManagerFactory = await BlacklistTransferManagerFactory.new(setupCost, new BN(0), new BN(0), { from: accountPolymath });
     assert.notEqual(

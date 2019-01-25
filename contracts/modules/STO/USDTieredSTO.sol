@@ -6,17 +6,16 @@ import "../../interfaces/IOracle.sol";
 import "../../RegistryUpdater.sol";
 import "../../libraries/DecimalMath.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "../../storage/USDTieredSTOStorage.sol";
 
 /**
  * @title STO module for standard capped crowdsale
  */
-contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
+contract USDTieredSTO is USDTieredSTOStorage, STO {
     using SafeMath for uint256;
 
-    string public constant POLY_ORACLE = "PolyUsdOracle";
-    string public constant ETH_ORACLE = "EthUsdOracle";
+    string internal constant POLY_ORACLE = "PolyUsdOracle";
+    string internal constant ETH_ORACLE = "EthUsdOracle";
 
     ////////////
     // Events //
@@ -200,10 +199,12 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
     )
         internal
     {
-        require(_tokensPerTierTotal.length > 0, "No tiers provided");
         require(
-            _ratePerTier.length == _tokensPerTierTotal.length && _ratePerTierDiscountPoly.length == _tokensPerTierTotal.length && _tokensPerTierDiscountPoly.length == _tokensPerTierTotal.length,
-            "Tier data length mismatch"
+        	_tokensPerTierTotal.length > 0 &&
+            _ratePerTier.length == _tokensPerTierTotal.length && 
+            _ratePerTierDiscountPoly.length == _tokensPerTierTotal.length && 
+            _tokensPerTierDiscountPoly.length == _tokensPerTierTotal.length,
+            "Invalid Input"
         );
         delete tiers;
         for (uint256 i = 0; i < _ratePerTier.length; i++) {
@@ -253,7 +254,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
      * @notice Reserve address must be whitelisted to successfully finalize
      */
     function finalize() public onlyOwner {
-        require(!isFinalized, "STO is already finalized");
+        require(!isFinalized, "STO already finalized");
         isFinalized = true;
         uint256 tempReturned;
         uint256 tempSold;
@@ -266,7 +267,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
                 tiers[i].mintedTotal = tiers[i].tokenTotal;
             }
         }
-        require(ISecurityToken(securityToken).mint(reserveWallet, tempReturned), "Error in minting");
+        require(ISecurityToken(securityToken).mint(reserveWallet, tempReturned), "Minting Failed");
         emit ReserveTokenMint(msg.sender, reserveWallet, tempReturned, currentTier);
         finalAmountReturned = tempReturned;
         totalTokensSold = tempSold;
@@ -437,7 +438,6 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
         FundRaiseType _fundRaiseType
     )
         internal
-        nonReentrant
         whenNotPaused
         returns(uint256 spentUSD, uint256 spentValue)
     {
@@ -485,10 +485,10 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
         returns(uint256 netInvestedUSD)
     {
         require(isOpen(), "STO not open");
-        require(_investmentValue > 0, "No funds were sent");
+        require(_investmentValue > 0, "No funds sent");
 
         // Check for minimum investment
-        require(investedUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestmentUSD, "Total investment < minimumInvestmentUSD");
+        require(investedUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestmentUSD, "Investment < min");
         netInvestedUSD = investedUSD;
         // Check for non-accredited cap
         if (investors[_beneficiary].accredited == uint8(0)) {
@@ -565,7 +565,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
             purchasedTokens = maximumTokens;
         }
         if (purchasedTokens > 0) {
-            require(ISecurityToken(securityToken).mint(_beneficiary, purchasedTokens), "Error in minting");
+            require(ISecurityToken(securityToken).mint(_beneficiary, purchasedTokens), "Mint failed");
             emit TokenPurchase(msg.sender, _beneficiary, purchasedTokens, spentUSD, _tierPrice, _tier);
         }
     }
@@ -579,15 +579,8 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
      * @return bool Whether the STO is accepting investments
      */
     function isOpen() public view returns(bool) {
-        if (isFinalized)
-            return false;
-        /*solium-disable-next-line security/no-block-members*/
-        if (now < startTime)
-            return false;
-        /*solium-disable-next-line security/no-block-members*/
-        if (now >= endTime)
-            return false;
-        if (capReached())
+    	/*solium-disable-next-line security/no-block-members*/
+        if (isFinalized || now < startTime || now >= endTime || capReached())
             return false;
         return true;
     }
@@ -613,10 +606,11 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
         } else if (_fundRaiseType == FundRaiseType.POLY) {
             return IOracle(_getOracle(bytes32("POLY"), bytes32("USD"))).getPrice();
         } else if (_fundRaiseType == FundRaiseType.SC) {
-            return 1 * 10**18;
-        } else {
-            revert("Incorrect funding");
-        }
+            return 10**18;
+        } //else { it's a view function so reverting and returning 0 rate is same for outside EVM world. 
+        // Non-view functions that call this verify the fundraisetype first.
+        //     revert("Invalid funding");
+        // }
     }
 
     /**
@@ -626,8 +620,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
      * @return uint256 Value in USD
      */
     function convertToUSD(FundRaiseType _fundRaiseType, uint256 _amount) public view returns(uint256) {
-        uint256 rate = getRate(_fundRaiseType);
-        return DecimalMath.mul(_amount, rate);
+        return DecimalMath.mul(_amount, getRate(_fundRaiseType));
     }
 
     /**
@@ -637,8 +630,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
      * @return uint256 Value in ETH or POLY
      */
     function convertFromUSD(FundRaiseType _fundRaiseType, uint256 _amount) public view returns(uint256) {
-        uint256 rate = getRate(_fundRaiseType);
-        return DecimalMath.div(_amount, rate);
+        return DecimalMath.div(_amount, getRate(_fundRaiseType));
     }
 
     /**
@@ -648,20 +640,17 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
     function getTokensSold() public view returns (uint256) {
         if (isFinalized)
             return totalTokensSold;
-        else
-            return getTokensMinted();
+        return getTokensMinted();
     }
 
     /**
      * @notice Return the total no. of tokens minted
      * @return uint256 Total number of tokens minted
      */
-    function getTokensMinted() public view returns (uint256) {
-        uint256 tokensMinted;
+    function getTokensMinted() public view returns (uint256 tokensMinted) {
         for (uint256 i = 0; i < tiers.length; i++) {
             tokensMinted = tokensMinted.add(tiers[i].mintedTotal);
         }
-        return tokensMinted;
     }
 
     /**
@@ -669,12 +658,10 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
      * param _fundRaiseType The fund raising currency (e.g. ETH, POLY, SC) to calculate sold tokens for
      * @return uint256 Total number of tokens sold for ETH
      */
-    function getTokensSoldFor(FundRaiseType _fundRaiseType) public view returns (uint256) {
-        uint256 tokensSold;
+    function getTokensSoldFor(FundRaiseType _fundRaiseType) public view returns (uint256 tokensSold) {
         for (uint256 i = 0; i < tiers.length; i++) {
             tokensSold = tokensSold.add(tiers[i].minted[uint8(_fundRaiseType)]);
         }
-        return tokensSold;
     }
 
     /**
@@ -683,7 +670,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
      * @return uint256[] array of minted tokens in each fund raise type
      */
     function getTokensMintedByTier(uint256 _tier) public view returns(uint256[] memory) {
-        require(_tier < tiers.length, "Invalid tier");
+        //require(_tier < tiers.length, "Invalid tier"); It will revert due to array out of bounds anyway
         uint256[] memory tokensMinted = new uint256[](3);
         tokensMinted[0] = tiers[_tier].minted[uint8(FundRaiseType.ETH)];
         tokensMinted[1] = tiers[_tier].minted[uint8(FundRaiseType.POLY)];
@@ -697,7 +684,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
      * @return uint256 Total number of tokens sold in the tier
      */
     function getTokensSoldByTier(uint256 _tier) public view returns (uint256) {
-        require(_tier < tiers.length, "Incorrect tier");
+        //require(_tier < tiers.length, "Invalid tier"); It will revert due to array out of bounds anyway
         uint256 tokensSold;
         tokensSold = tokensSold.add(tiers[_tier].minted[uint8(FundRaiseType.ETH)]);
         tokensSold = tokensSold.add(tiers[_tier].minted[uint8(FundRaiseType.POLY)]);
@@ -724,8 +711,8 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
     /**
      * @notice Return the permissions flag that are associated with STO
      */
-    function getPermissions() public view returns(bytes32[] memory) {
-        bytes32[] memory allPermissions = new bytes32[](0);
+    function getPermissions() public view returns(bytes32[] memory allPermissions) {
+        //bytes32[] memory allPermissions = new bytes32[](0);
         return allPermissions;
     }
 

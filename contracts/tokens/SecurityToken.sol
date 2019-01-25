@@ -308,13 +308,6 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     }
 
     /**
-     * @notice Internal - adjusts totalSupply at checkpoint after minting or burning tokens
-     */
-    function _adjustTotalSupplyCheckpoints() internal {
-        TokenLib.adjustCheckpoints(checkpointTotalSupply, totalSupply(), currentCheckpointId);
-    }
-
-    /**
      * @notice Internal - adjusts token holder balance at checkpoint after a token transfer
      * @param _investor address of the token holder affected
      */
@@ -494,7 +487,6 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     {
         // Add a function to validate the `_data` parameter
         require(_updateTransfer(address(0), _tokenHolder, _value, _data), "Transfer invalid");
-         _adjustTotalSupplyCheckpoints();
         _mint(_tokenHolder, _value);
         emit Issued(msg.sender, _tokenHolder, _value, _data);
     }
@@ -527,7 +519,6 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
 
     function _checkAndBurn(address _from, uint256 _value, bytes memory _data) internal returns(bool) {
         bool verified = _updateTransfer(_from, address(0), _value, _data);
-        _adjustTotalSupplyCheckpoints();
         _burn(_from, _value);
         emit Redeemed(address(0), msg.sender, _value, _data);
         return verified;
@@ -545,7 +536,6 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     function redeemFrom(address _tokenHolder, uint256 _value, bytes calldata _data) external onlyModule(BURN_KEY) {
         // Add a function to validate the `_data` parameter
         require(_updateTransfer(_tokenHolder, address(0), _value, _data), "Invalid redeem");
-        _adjustTotalSupplyCheckpoints();
         _burnFrom(_tokenHolder, _value);
         emit Redeemed(msg.sender, _tokenHolder, _value, _data);
     }
@@ -560,6 +550,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         /*solium-disable-next-line security/no-block-members*/
         checkpointTimes.push(now);
         /*solium-disable-next-line security/no-block-members*/
+        checkpointTotalSupply[currentCheckpointId] = totalSupply();
         emit CheckpointCreated(currentCheckpointId, now);
         return currentCheckpointId;
     }

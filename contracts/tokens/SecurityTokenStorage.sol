@@ -92,9 +92,6 @@ contract SecurityTokenStorage {
     // Times at which each checkpoint was created
     uint256[] checkpointTimes;
 
-    // List of checkpoints that relate to total supply
-    Checkpoint[] checkpointTotalSupply;
-
     InvestorDataStorage investorData;
 
     SemanticVersion securityTokenVersion;
@@ -107,6 +104,9 @@ contract SecurityTokenStorage {
 
     // Records added module names - module list should be order agnostic!
     mapping(bytes32 => address[]) names;
+
+    // Mapping of checkpoints that relate to total supply
+    mapping (uint256 => uint256) checkpointTotalSupply;
 
     // Map each investor to a series of checkpoints
     mapping(address => Checkpoint[]) checkpointBalances;

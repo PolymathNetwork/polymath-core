@@ -138,7 +138,7 @@ contract STGetter is OZStorage, SecurityTokenStorage {
      */
     function totalSupplyAt(uint256 _checkpointId) external view returns(uint256) {
         require(_checkpointId <= currentCheckpointId);
-        return TokenLib.getValueAt(checkpointTotalSupply, _checkpointId, totalSupply());
+        return checkpointTotalSupply[_checkpointId];
     }
 
     /**

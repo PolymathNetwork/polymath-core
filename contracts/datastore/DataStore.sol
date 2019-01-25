@@ -43,6 +43,7 @@ contract DataStore is DataStoreStorage, IDataStore {
      * @param _securityToken address of the security token
      */
     function setSecurityToken(address _securityToken) external onlyOwner {
+        //NB When dataStore is generated, the security token address is automatically set via the constructor in DataStoreProxy.
         if(address(securityToken) != address(0)) {
             require(msg.sender == IOwnable(address(securityToken)).owner(), "Unauthorized");
         }

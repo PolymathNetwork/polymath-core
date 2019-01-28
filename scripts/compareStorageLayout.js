@@ -6,20 +6,38 @@ const path = require("path");
 const util = require("util");
 const exec = util.promisify(require("child_process").exec);
 
+console.log(`Mandatory: Solc cli tool should be installed globally`);
 prompt.start();
 
 prompt.get(["LogicContract", "ProxyContract"], async (err, result) => {
-    let logicContract;
-    let proxyContract;
+    let temp;
+    let logicFilePath;
+    let proxyFilePath; 
 
-    if(fs.existsSync("./build/contracts/")) {
-        try {
-            logicContract = JSON.parse(require('fs').readFileSync(`./build/contracts/${result[`LogicContract`]}.json`).toString()).ast;
-            proxyContract = JSON.parse(require('fs').readFileSync(`./build/contracts/${result[`ProxyContract`]}.json`).toString()).ast;
-        } catch (error) {
-            console.log(`Contracts not found: ${error.message}`.red);
+    const fileList = walkSync("./contracts", []);
+
+    let paths = findPath(result.LogicContract, result.ProxyContract, fileList);
+
+    if (paths.length == 2) {
+        console.log("Contracts exists \n");
+
+        await flatContracts(paths);
+        let temp;
+        let logicFilePath = `./flat/${path.basename(paths[0])}`;
+        let proxyFilePath = `./flat/${path.basename(paths[1])}`;
+        
+        if (path.basename(paths[0]) === result.LogicContract) {
+            temp = logicFilePath;
+            logicFilePath = proxyFilePath;
+            proxyFilePath = temp;
         }
-        console.log(compareStorageLayouts(parseContract(logicContract), parseContract(proxyContract)));
+
+        let logicAST = await getAST(logicFilePath);
+        let proxyAST = await getAST(proxyFilePath);
+        // Deleting the temp folder (no longer required)
+        await flushTemp();
+
+        console.log(compareStorageLayouts(parseContract(logicAST), parseContract(proxyAST)));
     } else {
         console.log("Contracts doesn't exists");
     }
@@ -83,37 +101,46 @@ function parseContract(input) {
     return orderedStateVariables;
 }
 
-// var walkSync = function(dir, filelist) {
-//     files = fs.readdirSync(dir);
-//     filelist = filelist || [];
-//     files.forEach(function(file) {
-//         if (fs.statSync(path.join(dir, file)).isDirectory()) {
-//             filelist = walkSync(path.join(dir, file), filelist);
-//         } else {
-//             filelist.push(path.join(dir, file));
-//         }
-//     });
-//     return filelist;
-// };
+var walkSync = function(dir, filelist) {
+    files = fs.readdirSync(dir);
+    filelist = filelist || [];
+    files.forEach(function(file) {
+        if (fs.statSync(path.join(dir, file)).isDirectory()) {
+            filelist = walkSync(path.join(dir, file), filelist);
+        } else {
+            filelist.push(path.join(dir, file));
+        }
+    });
+    return filelist;
+};
 
-// var findPath = function(logicContractName, proxyContractName, fileList) {
-//     let paths = new Array();
-//     for (let i = 0; i < fileList.length; i++) {
-//         if (
-//             logicContractName === path.basename(fileList[i]) ||
-//             logicContractName === path.basename(fileList[i]).split(".")[0] ||
-//             (proxyContractName === path.basename(fileList[i]) || proxyContractName === path.basename(fileList[i]).split(".")[0])
-//         ) {
-//             paths.push(fileList[i]);
-//         }
-//     }
-//     return paths;
-// };
+var findPath = function(logicContractName, proxyContractName, fileList) {
+    let paths = new Array();
+    for (let i = 0; i < fileList.length; i++) {
+        if (
+            logicContractName === path.basename(fileList[i]) ||
+            logicContractName === path.basename(fileList[i]).split(".")[0] ||
+            (proxyContractName === path.basename(fileList[i]) || proxyContractName === path.basename(fileList[i]).split(".")[0])
+        ) {
+            paths.push(fileList[i]);
+        }
+    }
+    return paths;
+};
 
-// async function flatContracts(_paths, _logic) {
-//     let promises = new Array();
-//     for (let i = 0; i < _paths.length; i++) {
-//         promises.push(await exec(`./node_modules/.bin/sol-merger ${_paths[i]} ./flat`));
-//     }
-//     await Promise.all(promises);
-// }
+async function flatContracts(_paths, _logic) {
+    let promises = new Array();
+    for (let i = 0; i < _paths.length; i++) {
+        promises.push(await exec(`./node_modules/.bin/sol-merger ${_paths[i]} ./flat`));
+    }
+    await Promise.all(promises);
+}
+
+async function getAST(_filePath) {
+    await exec(`solc -o temp --ast-json ${_filePath}`, {maxBuffer: 1024 * 1000});
+    return JSON.parse(fs.readFileSync(`./temp/${path.basename(_filePath)}_json.ast`, "utf8").toString());
+}
+
+async function flushTemp() {
+    await exec(`rm -rf temp`);
+}

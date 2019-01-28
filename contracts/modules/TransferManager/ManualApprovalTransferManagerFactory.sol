@@ -22,12 +22,12 @@ contract ManualApprovalTransferManagerFactory is ModuleFactory {
         uint256 _usageCost,
         uint256 _subscriptionCost,
         address _logicContract
-    ) 
-        public 
-        ModuleFactory(_setupCost, _usageCost, _subscriptionCost) 
+    )
+        public
+        ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
     {
         require(_logicContract != address(0), "Invalid address");
-        version = "2.0.1";
+        version = "2.1.0";
         name = "ManualApprovalTransferManager";
         title = "Manual Approval Transfer Manager";
         description = "Manage transfers using single approvals";
@@ -42,9 +42,9 @@ contract ManualApprovalTransferManagerFactory is ModuleFactory {
      */
     function deploy(
         bytes calldata /* _data */
-    ) 
-        external 
-        returns(address) 
+    )
+        external
+        returns(address)
     {
         address polyToken = _takeFee();
         ManualApprovalTransferManagerProxy manualTransferManager = new ManualApprovalTransferManagerProxy(msg.sender, polyToken, logicContract);

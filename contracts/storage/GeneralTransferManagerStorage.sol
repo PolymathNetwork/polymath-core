@@ -36,7 +36,7 @@ contract GeneralTransferManagerStorage {
 
     // An address can only send / receive tokens once their corresponding uint256 > block.number
     // (unless allowAllTransfers == true or allowAllWhitelistTransfers == true)
-    mapping(address => TimeRestriction) public whitelist;
+    mapping (address => TimeRestriction) public whitelist;
     // Map of used nonces by customer
     mapping(address => mapping(uint256 => bool)) public nonceMap;
 

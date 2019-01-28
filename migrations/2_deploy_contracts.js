@@ -28,7 +28,9 @@ const MockOracle = artifacts.require("./MockOracle.sol");
 const TokenLib = artifacts.require("./TokenLib.sol");
 const SecurityToken = artifacts.require("./tokens/SecurityToken.sol");
 const STRGetter = artifacts.require('./STRGetter.sol');
-
+const VolumeRestrictionTMFactory = artifacts.require('./VolumeRestrictionTMFactory.sol')
+const VolumeRestrictionTMLogic = artifacts.require('./VolumeRestrictionTM.sol');
+const VolumeRestrictionLib = artifacts.require('./VolumeRestrictionLib.sol');
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -177,7 +179,11 @@ module.exports = function(deployer, network, accounts) {
             return deployer.deploy(TokenLib, { from: PolymathAccount });
         })
         .then(() => {
+            return deployer.deploy(VolumeRestrictionLib, { from: PolymathAccount });
+        })
+        .then(() => {
             // Link libraries
+            deployer.link(VolumeRestrictionLib, VolumeRestrictionTMLogic);
             deployer.link(TokenLib, SecurityToken);
             deployer.link(TokenLib, STFactory);
             // A) Deploy the ModuleRegistry Contract (It contains the list of verified ModuleFactory)
@@ -242,6 +248,11 @@ module.exports = function(deployer, network, accounts) {
             return deployer.deploy(USDTieredSTOLogic, nullAddress, nullAddress, { from: PolymathAccount });
         })
         .then(() => {
+            // B) Deploy the VolumeRestrictionTMLogic Contract (Factory used to generate the VolumeRestrictionTM contract and this
+            // manager attach with the securityToken contract at the time of deployment)
+            return deployer.deploy(VolumeRestrictionTMLogic, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: PolymathAccount });
+        })
+        .then(() => {
             // B) Deploy the CappedSTOLogic Contract (Factory used to generate the CappedSTO contract and this
             // manager attach with the securityToken contract at the time of deployment)
             return deployer.deploy(CappedSTOLogic, nullAddress, nullAddress, { from: PolymathAccount });
@@ -287,6 +298,11 @@ module.exports = function(deployer, network, accounts) {
             return deployer.deploy(ERC20DividendCheckpointFactory, new BN(0), new BN(0), new BN(0), ERC20DividendCheckpointLogic.address, {
                 from: PolymathAccount
             });
+        })
+        .then(() => {
+            // D) Deploy the VolumeRestrictionTMFactory Contract (Factory used to generate the VolumeRestrictionTM contract use
+            // to provide the functionality of restricting the token volume)
+            return deployer.deploy(VolumeRestrictionTMFactory, new BN(0), new BN(0), new BN(0), VolumeRestrictionTMLogic.address, { from: PolymathAccount });
         })
         .then(() => {
             // D) Deploy the ManualApprovalTransferManagerFactory Contract (Factory used to generate the ManualApprovalTransferManager contract use
@@ -367,6 +383,11 @@ module.exports = function(deployer, network, accounts) {
             return moduleRegistry.registerModule(EtherDividendCheckpointFactory.address, { from: PolymathAccount });
         })
         .then(() => {
+            // D) Register the VolumeRestrictionTMFactory in the ModuleRegistry to make the factory available at the protocol level.
+            // So any securityToken can use that factory to generate the VolumeRestrictionTM contract.
+            return moduleRegistry.registerModule(VolumeRestrictionTMFactory.address, { from: PolymathAccount });
+        })
+        .then(() => {
             // D) Register the ManualApprovalTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
             // So any securityToken can use that factory to generate the ManualApprovalTransferManager contract.
             return moduleRegistry.registerModule(ManualApprovalTransferManagerFactory.address, { from: PolymathAccount });
@@ -411,6 +432,12 @@ module.exports = function(deployer, network, accounts) {
             // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
             // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
             return moduleRegistry.verifyModule(ERC20DividendCheckpointFactory.address, true, { from: PolymathAccount });
+        })
+        .then(() => {
+            // G) Once the VolumeRestrictionTMFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
+            // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
+            // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
+            return moduleRegistry.verifyModule(VolumeRestrictionTMFactory.address, true, { from: PolymathAccount });
         })
         .then(() => {
             // G) Once the ManualApprovalTransferManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
@@ -460,6 +487,7 @@ module.exports = function(deployer, network, accounts) {
         .then(() => {
             console.log("\n");
             console.log(`
+
     ----------------------- Polymath Network Smart Contracts: -----------------------
     PolymathRegistry:                     ${PolymathRegistry.address}
     SecurityTokenRegistry (Proxy):        ${SecurityTokenRegistryProxy.address}
@@ -491,6 +519,8 @@ module.exports = function(deployer, network, accounts) {
     ERC20DividendCheckpointLogic:         ${ERC20DividendCheckpointLogic.address}
     EtherDividendCheckpointFactory:       ${EtherDividendCheckpointFactory.address}
     ERC20DividendCheckpointFactory:       ${ERC20DividendCheckpointFactory.address}
+    VolumeRestrictionTMFactory:           ${VolumeRestrictionTMFactory.address}
+    VolumeRestrictionTMLogic:             ${VolumeRestrictionTMLogic.address}
     ---------------------------------------------------------------------------------
     `);
             console.log("\n");

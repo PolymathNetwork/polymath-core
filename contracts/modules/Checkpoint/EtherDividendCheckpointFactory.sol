@@ -1,6 +1,8 @@
 pragma solidity ^0.5.0;
 
 import "../../proxy/EtherDividendCheckpointProxy.sol";
+import "../../libraries/Util.sol";
+import "../../interfaces/IBoot.sol";
 import "../ModuleFactory.sol";
 
 /**
@@ -21,9 +23,9 @@ contract EtherDividendCheckpointFactory is ModuleFactory {
         uint256 _usageCost,
         uint256 _subscriptionCost,
         address _logicContract
-    ) 
-        public 
-        ModuleFactory(_setupCost, _usageCost, _subscriptionCost) 
+    )
+        public
+        ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
     {
         require(_logicContract != address(0), "Invalid logic contract");
         version = "2.1.0";
@@ -39,14 +41,15 @@ contract EtherDividendCheckpointFactory is ModuleFactory {
      * @notice Used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
-    function deploy(
-        bytes calldata /* _data */
-    ) 
-        external 
-        returns(address) 
-    {
+    function deploy(bytes calldata _data) external returns(address) {
         address polyToken = _takeFee();
-        address ethDividendCheckpoint = address(new EtherDividendCheckpointProxy(msg.sender, polyToken, logicContract));
+        address ethDividendCheckpoint = address(new EtherDividendCheckpointProxy(msg.sender, address(polyToken), logicContract));
+        //Checks that _data is valid (not calling anything it shouldn't)
+        require(Util.getSig(_data) == IBoot(ethDividendCheckpoint).getInitFunction(), "Invalid data");
+        /*solium-disable-next-line security/no-low-level-calls*/
+        bool success;
+        (success, ) = ethDividendCheckpoint.call(_data);
+        require(success, "Unsuccessful call");
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(ethDividendCheckpoint, getName(), address(this), msg.sender, setupCost, now);
         return ethDividendCheckpoint;

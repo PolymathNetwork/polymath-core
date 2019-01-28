@@ -15,19 +15,15 @@ contract ManualApprovalTransferManagerStorage {
 
     //Manual approval is an allowance (that has been approved) with an expiry time
     struct ManualApproval {
+        address from;
+        address to;
         uint256 allowance;
         uint256 expiryTime;
+        bytes32 description;
     }
 
-    //Manual blocking allows you to specify a list of blocked address pairs with an associated expiry time for the block
-    struct ManualBlocking {
-        uint256 expiryTime;
-    }
-
-    //Store mappings of address => address with ManualApprovals
-    mapping (address => mapping (address => ManualApproval)) public manualApprovals;
-
-    //Store mappings of address => address with ManualBlockings
-    mapping (address => mapping (address => ManualBlocking)) public manualBlockings;
+    mapping (address => mapping (address => uint256)) public approvalIndex;
+    // An array to track all approvals
+    ManualApproval[] public approvals;
 
 }

@@ -404,20 +404,26 @@ contract("ManualApprovalTransferManager", accounts => {
         })
 
         it("Check verifyTransfer without actually transferring", async () => {
-            let verified = await I_SecurityToken.verifyTransfer.call(
-                account_investor1,
+            let verified = await I_SecurityToken.canTransfer.call(
                 account_investor4,
                 web3.utils.toWei("2", "ether"),
-                "0x0"
+                "0x0",
+                {
+                    from: account_investor1
+                }
             );
-            console.log(JSON.stringify(verified));
-            assert.equal(verified, true);
+            console.log(JSON.stringify(verified[0]));
+            assert.equal(verified[0], true);
 
-            verified = await I_SecurityToken.verifyTransfer.call(account_investor1, account_investor4, web3.utils.toWei("4", "ether"), "0x0");
-            assert.equal(verified, false);
+            verified = await I_SecurityToken.canTransfer.call(account_investor4, web3.utils.toWei("4", "ether"), "0x0", {
+                from: account_investor1
+            });
+            assert.equal(verified[0], false);
 
-            verified = await I_SecurityToken.verifyTransfer.call(account_investor1, account_investor4, web3.utils.toWei("1", "ether"), "0x0");
-            assert.equal(verified, true);
+            verified = await I_SecurityToken.canTransfer.call(account_investor4, web3.utils.toWei("1", "ether"), "0x0", {
+                from: account_investor1
+            });
+            assert.equal(verified[0], true);
         });
 
         it("Should fail to sell the tokens more than the allowance", async() => {

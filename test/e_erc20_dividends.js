@@ -917,10 +917,10 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             assert.equal(info[4][2].toString(), new BN(web3.utils.toWei("0.8", "ether")).toString(), "claim match");
             assert.equal(info[4][3].toString(), new BN(web3.utils.toWei("7", "ether")).toString(), "claim match");
 
-            assert.equal(info[5][0].toString(), (await I_SecurityToken.balanceOfAt(account_investor1, new BN(4))).toString(), "balance match");
-            assert.equal(info[5][1].toString(), (await I_SecurityToken.balanceOfAt(account_investor2, new BN(4))).toString(), "balance match");
-            assert.equal(info[5][2].toString(), (await I_SecurityToken.balanceOfAt(account_temp, new BN(4))).toString(), "balance match");
-            assert.equal(info[5][3].toString(), (await I_SecurityToken.balanceOfAt(account_investor3, new BN(4))).toString(), "balance match");
+            assert.equal(info[5][0].toString(), (await stGetter.balanceOfAt(account_investor1, new BN(4))).toString(), "balance match");
+            assert.equal(info[5][1].toString(), (await stGetter.balanceOfAt(account_investor2, new BN(4))).toString(), "balance match");
+            assert.equal(info[5][2].toString(), (await stGetter.balanceOfAt(account_temp, new BN(4))).toString(), "balance match");
+            assert.equal(info[5][3].toString(), (await stGetter.balanceOfAt(account_investor3, new BN(4))).toString(), "balance match");
 
 
             let issuerBalance = new BN(await I_PolyToken.balanceOf(wallet));
@@ -1146,10 +1146,10 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             assert.equal(info[0][1], account_investor2, "account match");
             assert.equal(info[0][2], account_temp, "account match");
             assert.equal(info[0][3], account_investor3, "account match");
-            assert.equal(info[1][0].toString(), (await I_SecurityToken.balanceOfAt.call(account_investor1, checkpointID)).toString(), "balance match");
-            assert.equal(info[1][1].toString(), (await I_SecurityToken.balanceOfAt.call(account_investor2, checkpointID)).toString(), "balance match");
-            assert.equal(info[1][2].toString(), (await I_SecurityToken.balanceOfAt.call(account_temp, checkpointID)).toString(), "balance match");
-            assert.equal(info[1][3].toString(), (await I_SecurityToken.balanceOfAt.call(account_investor3, checkpointID)).toString(), "balance match");
+            assert.equal(info[1][0].toString(), (await stGetter.balanceOfAt.call(account_investor1, checkpointID)).toString(), "balance match");
+            assert.equal(info[1][1].toString(), (await stGetter.balanceOfAt.call(account_investor2, checkpointID)).toString(), "balance match");
+            assert.equal(info[1][2].toString(), (await stGetter.balanceOfAt.call(account_temp, checkpointID)).toString(), "balance match");
+            assert.equal(info[1][3].toString(), (await stGetter.balanceOfAt.call(account_investor3, checkpointID)).toString(), "balance match");
             assert.equal(info[2][0].toNumber(), 0, "withholding match");
             assert.equal(info[2][1].toString(), new BN((10 * 10 ** 16).toString()).toString(), "withholding match");
             assert.equal(info[2][2].toString(), new BN((20 * 10 ** 16).toString()).toString(), "withholding match");

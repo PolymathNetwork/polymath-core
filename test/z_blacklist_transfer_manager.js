@@ -8,6 +8,7 @@ import { catchRevert } from "./helpers/exceptions";
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 const BlacklistTransferManager = artifacts.require("./BlacklistTransferManager");
 const SecurityToken = artifacts.require("./SecurityToken.sol");
+const STGetter = artifacts.require("./STGetter.sol");
 
 const Web3 = require('web3');
 let BN = Web3.utils.BN;
@@ -53,6 +54,8 @@ contract('BlacklistTransferManager', accounts => {
     let I_SecurityToken;
     let I_PolyToken;
     let I_PolymathRegistry;
+    let I_STGetter;
+    let stGetter;
 
     // SecurityToken Details
     const name = "Team";
@@ -103,7 +106,8 @@ contract('BlacklistTransferManager', accounts => {
             I_STFactory,
             I_SecurityTokenRegistry,
             I_SecurityTokenRegistryProxy,
-            I_STRProxied
+            I_STRProxied,
+            I_STGetter
         ] = instances;
 
         // STEP 2: Deploy the GeneralDelegateManagerFactory
@@ -152,7 +156,7 @@ contract('BlacklistTransferManager', accounts => {
             assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
             I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
-
+            stGetter = await STGetter.at(I_SecurityToken.address);
             const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTransferManager module get added successfully or not
@@ -165,7 +169,7 @@ contract('BlacklistTransferManager', accounts => {
         });
 
         it("Should intialize the auto attached modules", async () => {
-           let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
+           let moduleData = (await stGetter.getModulesByType(2))[0];
            I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
 
         });
@@ -229,7 +233,7 @@ contract('BlacklistTransferManager', accounts => {
             await increaseTime(5000);
 
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor1, web3.utils.toWei('5', 'ether'), { from: token_owner });
+            await I_SecurityToken.issue(account_investor1, web3.utils.toWei('5', 'ether'), "0x0", { from: token_owner });
 
             assert.equal(
                 (await I_SecurityToken.balanceOf(account_investor1)).toString(),
@@ -254,7 +258,7 @@ contract('BlacklistTransferManager', accounts => {
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor2.toLowerCase(), "Failed in adding the investor in whitelist");
 
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor2, web3.utils.toWei('2', 'ether'), { from: token_owner });
+            await I_SecurityToken.issue(account_investor2, web3.utils.toWei('2', 'ether'), "0x0", { from: token_owner });
 
             assert.equal(
                 (await I_SecurityToken.balanceOf(account_investor2)).toString(),
@@ -278,7 +282,7 @@ contract('BlacklistTransferManager', accounts => {
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor3.toLowerCase(), "Failed in adding the investor in whitelist");
 
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor3, web3.utils.toWei('2', 'ether'), { from: token_owner });
+            await I_SecurityToken.issue(account_investor3, web3.utils.toWei('2', 'ether'), "0x0", { from: token_owner });
 
             assert.equal(
                 (await I_SecurityToken.balanceOf(account_investor3)).toString(),
@@ -302,7 +306,7 @@ contract('BlacklistTransferManager', accounts => {
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor4.toLowerCase(), "Failed in adding the investor in whitelist");
 
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor4, web3.utils.toWei('2', 'ether'), { from: token_owner });
+            await I_SecurityToken.issue(account_investor4, web3.utils.toWei('2', 'ether'), "0x0", { from: token_owner });
 
             assert.equal(
                 (await I_SecurityToken.balanceOf(account_investor4)).toString(),
@@ -326,7 +330,7 @@ contract('BlacklistTransferManager', accounts => {
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor5.toLowerCase(), "Failed in adding the investor in whitelist");
 
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor5, web3.utils.toWei('2', 'ether'), { from: token_owner });
+            await I_SecurityToken.issue(account_investor5, web3.utils.toWei('2', 'ether'), "0x0", { from: token_owner });
 
             assert.equal(
                 (await I_SecurityToken.balanceOf(account_investor5)).toString(),

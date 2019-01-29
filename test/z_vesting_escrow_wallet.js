@@ -9,7 +9,7 @@ const SecurityToken = artifacts.require('./SecurityToken.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
 const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager");
 const VestingEscrowWallet = artifacts.require('./VestingEscrowWallet.sol');
-
+const STGetter = artifacts.require("./STGetter.sol");
 const Web3 = require('web3');
 const BN = Web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));// Hardcoded development port
@@ -50,6 +50,8 @@ contract('VestingEscrowWallet', accounts => {
     let I_SecurityToken;
     let I_PolyToken;
     let I_PolymathRegistry;
+    let I_STGetter;
+    let stGetter;
 
     // SecurityToken Details
     const name = "Team";
@@ -101,7 +103,8 @@ contract('VestingEscrowWallet', accounts => {
             I_STFactory,
             I_SecurityTokenRegistry,
             I_SecurityTokenRegistryProxy,
-            I_STRProxied
+            I_STRProxied,
+            I_STGetter
         ] = instances;
 
         // STEP 2: Deploy the GeneralDelegateManagerFactory
@@ -147,7 +150,7 @@ contract('VestingEscrowWallet', accounts => {
             assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
             I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
-
+            stGetter = await STGetter.at(I_SecurityToken.address);
             const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTransferManager module get added successfully or not
@@ -156,7 +159,7 @@ contract('VestingEscrowWallet', accounts => {
         });
 
         it("Should intialize the auto attached modules", async () => {
-            let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
+            let moduleData = (await stGetter.getModulesByType(2))[0];
             I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
 
         });
@@ -208,7 +211,7 @@ contract('VestingEscrowWallet', accounts => {
             assert.equal(tx.logs[0].args._investor.toLowerCase(), token_owner.toLowerCase(), "Failed in adding the token_owner in whitelist");
 
             // Mint some tokens
-            await I_SecurityToken.mint(token_owner, web3.utils.toHex(web3.utils.toWei('1', 'ether')), { from: token_owner });
+            await I_SecurityToken.issue(token_owner, web3.utils.toHex(web3.utils.toWei('1', 'ether')), "0x0", { from: token_owner });
 
             assert.equal(
                 (await I_SecurityToken.balanceOf(token_owner)).toString(),

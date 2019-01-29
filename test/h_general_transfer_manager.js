@@ -160,7 +160,7 @@ contract("GeneralTransferManager", async (accounts) => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            
+
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
@@ -941,3 +941,6 @@ function range1(i) {
 function rangeB(i) {
     return i ? rangeB(i - 1).concat(0) : [];
 }
+
+function range1(i) {return i?range1(i-1).concat(i):[]}
+function rangeB(i) {return i?rangeB(i-1).concat(0):[]}

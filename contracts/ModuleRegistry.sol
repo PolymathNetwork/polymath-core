@@ -103,7 +103,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     }
 
     function initialize(address _polymathRegistry, address _owner) external payable {
-        require(!getBool(Encoder.getKey("initialised")), "already initialized");
+        require(!getBoolValue(Encoder.getKey("initialised")), "already initialized");
         require(_owner != address(0) && _polymathRegistry != address(0), "0x address is invalid");
         set(Encoder.getKey("polymathRegistry"), _polymathRegistry);
         set(Encoder.getKey("owner"), _owner);
@@ -120,14 +120,14 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      */
     function useModule(address _moduleFactory) external {
         // This if statement is required to be able to add modules from the token proxy contract during deployment
-        if (ISecurityTokenRegistry(getAddress(Encoder.getKey("securityTokenRegistry"))).isSecurityToken(msg.sender)) {
-            if (IFeatureRegistry(getAddress(Encoder.getKey("featureRegistry"))).getFeatureStatus("customModulesAllowed")) {
+        if (ISecurityTokenRegistry(getAddressValue(Encoder.getKey("securityTokenRegistry"))).isSecurityToken(msg.sender)) {
+            if (IFeatureRegistry(getAddressValue(Encoder.getKey("featureRegistry"))).getFeatureStatus("customModulesAllowed")) {
                 require(
-                    getBool(Encoder.getKey("verified", _moduleFactory)) || IOwnable(_moduleFactory).owner() == IOwnable(msg.sender).owner(),
+                    getBoolValue(Encoder.getKey("verified", _moduleFactory)) || IOwnable(_moduleFactory).owner() == IOwnable(msg.sender).owner(),
                     "ModuleFactory must be verified or SecurityToken owner must be ModuleFactory owner"
                 );
             } else {
-                require(getBool(Encoder.getKey("verified", _moduleFactory)), "ModuleFactory must be verified");
+                require(getBoolValue(Encoder.getKey("verified", _moduleFactory)), "ModuleFactory must be verified");
             }
             require(_isCompatibleModule(_moduleFactory, msg.sender), "Version should within the compatible range of ST");
             pushArray(Encoder.getKey("reputation", _moduleFactory), msg.sender);
@@ -149,7 +149,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @param _moduleFactory is the address of the module factory to be registered
      */
     function registerModule(address _moduleFactory) external whenNotPausedOrOwner {
-        if (IFeatureRegistry(getAddress(Encoder.getKey("featureRegistry"))).getFeatureStatus("customModulesAllowed")) {
+        if (IFeatureRegistry(getAddressValue(Encoder.getKey("featureRegistry"))).getFeatureStatus("customModulesAllowed")) {
             require(
                 msg.sender == IOwnable(_moduleFactory).owner() || msg.sender == owner(),
                 "msg.sender must be the Module Factory owner or registry curator"
@@ -157,7 +157,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         } else {
             require(msg.sender == owner(), "Only owner allowed to register modules");
         }
-        require(getUint(Encoder.getKey("registry", _moduleFactory)) == 0, "Module factory should not be pre-registered");
+        require(getUintValue(Encoder.getKey("registry", _moduleFactory)) == 0, "Module factory should not be pre-registered");
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
         //Enforce type uniqueness
         uint256 i;
@@ -185,14 +185,14 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @param _moduleFactory is the address of the module factory to be deleted from the registry
      */
     function removeModule(address _moduleFactory) external whenNotPausedOrOwner {
-        uint256 moduleType = getUint(Encoder.getKey("registry", _moduleFactory));
+        uint256 moduleType = getUintValue(Encoder.getKey("registry", _moduleFactory));
 
         require(moduleType != 0, "Module factory should be registered");
         require(
             msg.sender == IOwnable(_moduleFactory).owner() || msg.sender == owner(),
             "msg.sender must be the Module Factory owner or registry curator"
         );
-        uint256 index = getUint(Encoder.getKey("moduleListIndex", _moduleFactory));
+        uint256 index = getUintValue(Encoder.getKey("moduleListIndex", _moduleFactory));
         uint256 last = getArrayAddress(Encoder.getKey("moduleList", moduleType)).length - 1;
         address temp = getArrayAddress(Encoder.getKey("moduleList", moduleType))[last];
 
@@ -224,7 +224,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     * @return bool
     */
     function verifyModule(address _moduleFactory, bool _verified) external onlyOwner {
-        require(getUint(Encoder.getKey("registry", _moduleFactory)) != uint256(0), "Module factory must be registered");
+        require(getUintValue(Encoder.getKey("registry", _moduleFactory)) != uint256(0), "Module factory must be registered");
         set(Encoder.getKey("verified", _moduleFactory), _verified);
         emit ModuleVerified(_moduleFactory, _verified);
     }
@@ -307,16 +307,16 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     function getModulesByTypeAndToken(uint8 _moduleType, address _securityToken) public view returns(address[] memory) {
         uint256 _len = getArrayAddress(Encoder.getKey("moduleList", uint256(_moduleType))).length;
         address[] memory _addressList = getArrayAddress(Encoder.getKey("moduleList", uint256(_moduleType)));
-        bool _isCustomModuleAllowed = IFeatureRegistry(getAddress(Encoder.getKey("featureRegistry"))).getFeatureStatus(
+        bool _isCustomModuleAllowed = IFeatureRegistry(getAddressValue(Encoder.getKey("featureRegistry"))).getFeatureStatus(
             "customModulesAllowed"
         );
         uint256 counter = 0;
         for (uint256 i = 0; i < _len; i++) {
             if (_isCustomModuleAllowed) {
-                if (IOwnable(_addressList[i]).owner() == IOwnable(_securityToken).owner() || getBool(
+                if (IOwnable(_addressList[i]).owner() == IOwnable(_securityToken).owner() || getBoolValue(
                     Encoder.getKey("verified", _addressList[i])
                 )) if (_isCompatibleModule(_addressList[i], _securityToken)) counter++;
-            } else if (getBool(Encoder.getKey("verified", _addressList[i]))) {
+            } else if (getBoolValue(Encoder.getKey("verified", _addressList[i]))) {
                 if (_isCompatibleModule(_addressList[i], _securityToken)) counter++;
             }
         }
@@ -324,7 +324,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         counter = 0;
         for (uint256 j = 0; j < _len; j++) {
             if (_isCustomModuleAllowed) {
-                if (IOwnable(_addressList[j]).owner() == IOwnable(_securityToken).owner() || getBool(
+                if (IOwnable(_addressList[j]).owner() == IOwnable(_securityToken).owner() || getBoolValue(
                     Encoder.getKey("verified", _addressList[j])
                 )) {
                     if (_isCompatibleModule(_addressList[j], _securityToken)) {
@@ -332,7 +332,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
                         counter++;
                     }
                 }
-            } else if (getBool(Encoder.getKey("verified", _addressList[j]))) {
+            } else if (getBoolValue(Encoder.getKey("verified", _addressList[j]))) {
                 if (_isCompatibleModule(_addressList[j], _securityToken)) {
                     _tempArray[counter] = _addressList[j];
                     counter++;
@@ -375,7 +375,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @notice Stores the contract addresses of other key contracts from the PolymathRegistry
      */
     function updateFromRegistry() external onlyOwner {
-        address _polymathRegistry = getAddress(Encoder.getKey("polymathRegistry"));
+        address _polymathRegistry = getAddressValue(Encoder.getKey("polymathRegistry"));
         set(Encoder.getKey("securityTokenRegistry"), IPolymathRegistry(_polymathRegistry).getAddress("SecurityTokenRegistry"));
         set(Encoder.getKey("featureRegistry"), IPolymathRegistry(_polymathRegistry).getAddress("FeatureRegistry"));
         set(Encoder.getKey("polyToken"), IPolymathRegistry(_polymathRegistry).getAddress("PolyToken"));
@@ -396,7 +396,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @return address owner
      */
     function owner() public view returns(address) {
-        return getAddress(Encoder.getKey("owner"));
+        return getAddressValue(Encoder.getKey("owner"));
     }
 
     /**
@@ -404,6 +404,6 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @return bool
      */
     function isPaused() public view returns(bool) {
-        return getBool(Encoder.getKey("paused"));
+        return getBoolValue(Encoder.getKey("paused"));
     }
 }

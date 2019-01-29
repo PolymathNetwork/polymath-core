@@ -4,7 +4,7 @@
   "description": "CLI for Polymath-core",
   "main": "polymath-cli.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "stable_coin": "scripts/stable_coin.sh" 
   },
   "author": "Polymath Inc",
   "license": "MIT",

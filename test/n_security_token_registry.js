@@ -130,7 +130,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         console.log(I_SecurityTokenRegistry.address);
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new({ from: account_polymath });
         console.log(I_SecurityTokenRegistry.address);
-        
+
         assert.notEqual(
             I_SecurityTokenRegistry.address.valueOf(),
             address_zero,
@@ -230,7 +230,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
                 "tx-> revert because tickerRegFee is 0"
             );
         });
-        
+
         it("Should successfully update the implementation address -- fail because owner address is 0x", async () => {
             let bytesProxy = encodeProxyCall(STRProxyParameters, [
                 I_PolymathRegistry.address,
@@ -277,28 +277,28 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
     describe(" Test cases of the registerTicker", async () => {
         it("verify the intial parameters", async () => {
-            let intialised = await I_STRProxied.getBoolValues.call(web3.utils.soliditySha3("initialised"));
+            let intialised = await I_STRProxied.getBoolValue.call(web3.utils.soliditySha3("initialised"));
             assert.isTrue(intialised, "Should be true");
 
-            let expiry = await I_STRProxied.getUintValues.call(web3.utils.soliditySha3("expiryLimit"));
+            let expiry = await I_STRProxied.getUintValue.call(web3.utils.soliditySha3("expiryLimit"));
             assert.equal(expiry.toNumber(), 5184000, "Expiry limit should be equal to 60 days");
 
-            let polytoken = await I_STRProxied.getAddressValues.call(web3.utils.soliditySha3("polyToken"));
+            let polytoken = await I_STRProxied.getAddressValue.call(web3.utils.soliditySha3("polyToken"));
             assert.equal(polytoken, I_PolyToken.address, "Should be the polytoken address");
 
-            let stlaunchFee = await I_STRProxied.getUintValues.call(web3.utils.soliditySha3("stLaunchFee"));
+            let stlaunchFee = await I_STRProxied.getUintValue.call(web3.utils.soliditySha3("stLaunchFee"));
             assert.equal(stlaunchFee.toString(), initRegFee.toString(), "Should be provided reg fee");
 
-            let tickerRegFee = await I_STRProxied.getUintValues.call(web3.utils.soliditySha3("tickerRegFee"));
+            let tickerRegFee = await I_STRProxied.getUintValue.call(web3.utils.soliditySha3("tickerRegFee"));
             assert.equal(tickerRegFee.toString(), tickerRegFee.toString(), "Should be provided reg fee");
 
-            let polymathRegistry = await I_STRProxied.getAddressValues.call(web3.utils.soliditySha3("polymathRegistry"));
+            let polymathRegistry = await I_STRProxied.getAddressValue.call(web3.utils.soliditySha3("polymathRegistry"));
             assert.equal(polymathRegistry, I_PolymathRegistry.address, "Should be the address of the polymath registry");
 
-            let getterContract = await I_STRProxied.getAddressValues.call(web3.utils.soliditySha3("STRGetter"));
+            let getterContract = await I_STRProxied.getAddressValue.call(web3.utils.soliditySha3("STRGetter"));
             assert.equal(getterContract, I_STRGetter.address, "Should be the address of the getter contract");
 
-            let owner = await I_STRProxied.getAddressValues.call(web3.utils.soliditySha3("owner"));
+            let owner = await I_STRProxied.getAddressValue.call(web3.utils.soliditySha3("owner"));
             assert.equal(owner, account_polymath, "Should be the address of the registry owner");
         });
 
@@ -420,7 +420,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         it("Should successfully set the expiry limit", async () => {
             await I_STRProxied.changeExpiryLimit(duration.days(10), { from: account_polymath });
             assert.equal(
-                (await I_STRProxied.getUintValues.call(web3.utils.soliditySha3("expiryLimit"))).toNumber(),
+                (await I_STRProxied.getUintValue.call(web3.utils.soliditySha3("expiryLimit"))).toNumber(),
                 duration.days(10),
                 "Failed to change the expiry limit"
             );
@@ -504,7 +504,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-            
+
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
@@ -601,7 +601,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should generate the new security token with version 2", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            
+
             let tx = await I_STRProxied.generateSecurityToken(name2, symbol2, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
@@ -633,7 +633,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         it("Should upgrade the logic contract into the STRProxy", async () => {
             await I_SecurityTokenRegistryProxy.upgradeTo("1.1.0", I_SecurityTokenRegistryV2.address, { from: account_polymath });
             I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
-            assert.isTrue(await I_STRProxied.getBoolValues.call(web3.utils.soliditySha3("paused")), "Paused value should be false");
+            assert.isTrue(await I_STRProxied.getBoolValue.call(web3.utils.soliditySha3("paused")), "Paused value should be false");
         });
 
         it("Should check the old data persist or not", async () => {
@@ -645,7 +645,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should unpause the logic contract", async () => {
             await I_STRProxied.unpause({ from: account_polymath });
-            assert.isFalse(await I_STRProxied.getBoolValues.call(web3.utils.soliditySha3("paused")), "Paused value should be false");
+            assert.isFalse(await I_STRProxied.getBoolValue.call(web3.utils.soliditySha3("paused")), "Paused value should be false");
         });
     });
 
@@ -900,7 +900,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         it("Should able to change the STLaunchFee", async () => {
             let tx = await I_STRProxied.changeSecurityLaunchFee(new BN(web3.utils.toWei("500")), { from: account_polymath });
             assert.equal(tx.logs[0].args._newFee.toString(), new BN(web3.utils.toWei("500")).toString());
-            let stLaunchFee = await I_STRProxied.getUintValues(web3.utils.soliditySha3("stLaunchFee"));
+            let stLaunchFee = await I_STRProxied.getUintValue(web3.utils.soliditySha3("stLaunchFee"));
             assert.equal(stLaunchFee.toString(), new BN(web3.utils.toWei("500")).toString());
         });
     });
@@ -923,7 +923,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         it("Should able to change the ExpiryLimit", async () => {
             let tx = await I_STRProxied.changeExpiryLimit(duration.days(20), { from: account_polymath });
             assert.equal(tx.logs[0].args._newExpiry, duration.days(20));
-            let expiry = await I_STRProxied.getUintValues(web3.utils.soliditySha3("expiryLimit"));
+            let expiry = await I_STRProxied.getUintValue(web3.utils.soliditySha3("expiryLimit"));
             assert.equal(expiry, duration.days(20));
         });
     });
@@ -946,7 +946,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         it("Should able to change the TickerRegFee", async () => {
             let tx = await I_STRProxied.changeTickerRegistrationFee(new BN(web3.utils.toWei("400")), { from: account_polymath });
             assert.equal(tx.logs[0].args._newFee.toString(), new BN(web3.utils.toWei("400")).toString());
-            let tickerRegFee = await I_STRProxied.getUintValues(web3.utils.soliditySha3("tickerRegFee"));
+            let tickerRegFee = await I_STRProxied.getUintValue(web3.utils.soliditySha3("tickerRegFee"));
             assert.equal(tickerRegFee.toString(), new BN(web3.utils.toWei("400")).toString());
         });
 
@@ -980,6 +980,29 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[2].args._ticker, "POLY", "SecurityToken doesn't get deployed");
+        });
+    });
+
+    describe("Test case for the update poly token", async () => {
+        it("Should change the polytoken address -- failed because of bad owner", async () => {
+            catchRevert(
+                I_STRProxied.updatePolyTokenAddress(dummy_token, { from: account_temp }),
+                "tx revert -> failed because of bad owner"
+            );
+        });
+
+        it("Should change the polytoken address -- failed because of 0x address", async () => {
+            catchRevert(
+                I_STRProxied.updatePolyTokenAddress(address_zero, { from: account_polymath }),
+                "tx revert -> failed because 0x address"
+            );
+        });
+
+        it("Should successfully change the polytoken address", async () => {
+            let _id = await takeSnapshot();
+            await I_STRProxied.updatePolyTokenAddress(dummy_token, { from: account_polymath });
+            assert.equal(await I_STRProxied.getAddressValue.call(web3.utils.soliditySha3("polyToken")), dummy_token);
+            await revertToSnapshot(_id);
         });
     });
 
@@ -1122,7 +1145,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
             it("Should successfully pause the contract", async () => {
                 await I_STRProxied.pause({ from: account_polymath });
-                let status = await I_STRProxied.getBoolValues.call(web3.utils.soliditySha3("paused"));
+                let status = await I_STRProxied.getBoolValue.call(web3.utils.soliditySha3("paused"));
                 assert.isOk(status);
             });
 
@@ -1132,7 +1155,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
             it("Should successfully unpause the contract", async () => {
                 await I_STRProxied.unpause({ from: account_polymath });
-                let status = await I_STRProxied.getBoolValues.call(web3.utils.soliditySha3("paused"));
+                let status = await I_STRProxied.getBoolValue.call(web3.utils.soliditySha3("paused"));
                 assert.isNotOk(status);
             });
         });

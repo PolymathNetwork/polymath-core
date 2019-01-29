@@ -1,6 +1,6 @@
 pragma solidity ^0.5.0;
 
-import "../modules/TransferManager/GeneralTransferManagerStorage.sol";
+import "../storage/GeneralTransferManagerStorage.sol";
 import "./OwnedProxy.sol";
 import "../Pausable.sol";
 import "../modules/ModuleStorage.sol";
@@ -16,12 +16,12 @@ contract GeneralTransferManagerProxy is GeneralTransferManagerStorage, ModuleSto
     * @param _implementation representing the address of the new implementation to be set
     */
     constructor(
-        address _securityToken, 
-        address _polyAddress, 
+        address _securityToken,
+        address _polyAddress,
         address _implementation
-    ) 
-        public 
-        ModuleStorage(_securityToken, _polyAddress) 
+    )
+        public
+        ModuleStorage(_securityToken, _polyAddress)
     {
         require(_implementation != address(0), "Implementation address should not be 0x");
         __implementation = _implementation;

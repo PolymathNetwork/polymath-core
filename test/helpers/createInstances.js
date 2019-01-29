@@ -18,6 +18,7 @@ const ManualApprovalTransferManagerFactory = artifacts.require("./ManualApproval
 const TrackedRedemptionFactory = artifacts.require("./TrackedRedemptionFactory.sol");
 const PercentageTransferManagerFactory = artifacts.require("./PercentageTransferManagerFactory.sol");
 const PercentageTransferManager = artifacts.require("./PercentageTransferManager.sol");
+const BlacklistTransferManagerFactory = artifacts.require("./BlacklistTransferManagerFactory.sol");
 const ScheduledCheckpointFactory = artifacts.require('./ScheduledCheckpointFactory.sol');
 const USDTieredSTOFactory = artifacts.require("./USDTieredSTOFactory.sol");
 const USDTieredSTO = artifacts.require("./USDTieredSTO");
@@ -29,7 +30,7 @@ const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager.s
 const GeneralPermissionManagerFactory = artifacts.require("./GeneralPermissionManagerFactory.sol");
 const CountTransferManager = artifacts.require("./CountTransferManager.sol");
 const CountTransferManagerFactory = artifacts.require("./CountTransferManagerFactory.sol");
-const VolumeRestrictionTransferManagerFactory = artifacts.require("./LockupVolumeRestrictionTMFactory");
+const LockUpTransferManagerFactory = artifacts.require("./LockUpTransferManagerFactory");
 const PreSaleSTOFactory = artifacts.require("./PreSaleSTOFactory.sol");
 const PreSaleSTO = artifacts.require("./PreSaleSTO.sol");
 const PolyToken = artifacts.require("./PolyToken.sol");
@@ -41,6 +42,10 @@ const STRGetter = artifacts.require("./STRGetter.sol");
 const MockWrongTypeFactory = artifacts.require("./MockWrongTypeFactory.sol");
 const DataStoreLogic = artifacts.require('./DataStore.sol');
 const DataStoreFactory = artifacts.require('./DataStoreFactory.sol');
+const VolumeRestrictionTMFactory = artifacts.require("./VolumeRestrictionTMFactory.sol");
+const VolumeRestrictionTM = artifacts.require("./VolumeRestrictionTM.sol");
+const VestingEscrowWalletFactory = artifacts.require("./VestingEscrowWalletFactory.sol");
+const VestingEscrowWallet = artifacts.require("./VestingEscrowWallet.sol");
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -65,10 +70,13 @@ let I_CountTransferManagerFactory;
 let I_ERC20DividendCheckpointLogic;
 let I_ERC20DividendCheckpointFactory;
 let I_GeneralPermissionManagerLogic;
+let I_VolumeRestrictionTMFactory;
 let I_GeneralPermissionManagerFactory;
 let I_GeneralTransferManagerLogic;
 let I_GeneralTransferManagerFactory;
+let I_VestingEscrowWalletFactory;
 let I_GeneralTransferManager;
+let I_VolumeRestrictionTMLogic;
 let I_ModuleRegistryProxy;
 let I_PreSaleSTOLogic;
 let I_PreSaleSTOFactory;
@@ -85,6 +93,8 @@ let I_STFactory;
 let I_USDTieredSTOLogic;
 let I_PolymathRegistry;
 let I_SecurityTokenRegistryProxy;
+let I_BlacklistTransferManagerFactory;
+let I_VestingEscrowWalletLogic;
 let I_STRProxied;
 let I_MRProxied;
 let I_STRGetter;
@@ -134,7 +144,7 @@ export async function setUpPolymathNetwork(account_polymath, token_owner) {
     return Promise.all(tempArray);
 }
 
-async function deployPolyRegistryAndPolyToken(account_polymath, token_owner) {
+export async function deployPolyRegistryAndPolyToken(account_polymath, token_owner) {
     // Step 0: Deploy the PolymathRegistry
     I_PolymathRegistry = await PolymathRegistry.new({ from: account_polymath });
 
@@ -269,6 +279,22 @@ export async function deployGTMAndVerifyed(accountPolymath, MRProxyInstance, set
     return Promise.all(new Array(I_GeneralTransferManagerFactory));
 }
 
+export async function deployVRTMAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
+    I_VolumeRestrictionTMLogic = await VolumeRestrictionTM.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
+
+    I_VolumeRestrictionTMFactory = await VolumeRestrictionTMFactory.new(setupCost, new BN(0), new BN(0), I_VolumeRestrictionTMLogic.address, { from: accountPolymath });
+
+    assert.notEqual(
+        I_VolumeRestrictionTMFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "VolumeRestrictionTMFactory contract was not deployed"
+    );
+
+    // (B) :  Register the GeneralDelegateManagerFactory
+    await registerAndVerifyByMR(I_VolumeRestrictionTMFactory.address, accountPolymath, MRProxyInstance);
+    return new Array(I_VolumeRestrictionTMFactory);
+}
+
 export async function deployCountTMAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
     I_CountTransferManagerLogic = await CountTransferManager.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
     I_CountTransferManagerFactory = await CountTransferManagerFactory.new(setupCost, new BN(0), new BN(0), I_CountTransferManagerLogic.address, { from: accountPolymath });
@@ -309,14 +335,27 @@ export async function deployPercentageTMAndVerified(accountPolymath, MRProxyInst
     return Promise.all(new Array(I_PercentageTransferManagerFactory));
 }
 
+export async function deployBlacklistTMAndVerified(accountPolymath, MRProxyInstance, setupCost) {
+
+    I_BlacklistTransferManagerFactory = await BlacklistTransferManagerFactory.new(setupCost, new BN(0), new BN(0), { from: accountPolymath });
+    assert.notEqual(
+        I_BlacklistTransferManagerFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "BlacklistTransferManagerFactory contract was not deployed"
+    );
+
+    await registerAndVerifyByMR(I_BlacklistTransferManagerFactory.address, accountPolymath, MRProxyInstance);
+    return new Array(I_BlacklistTransferManagerFactory);
+}
+
 export async function deployLockupVolumeRTMAndVerified(accountPolymath, MRProxyInstance, setupCost) {
-    I_VolumeRestrictionTransferManagerFactory = await VolumeRestrictionTransferManagerFactory.new(setupCost, new BN(0), new BN(0), {
+    I_VolumeRestrictionTransferManagerFactory = await LockUpTransferManagerFactory.new(setupCost, new BN(0), new BN(0), {
         from: accountPolymath
     });
     assert.notEqual(
         I_VolumeRestrictionTransferManagerFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",
-        "VolumeRestrictionTransferManagerFactory contract was not deployed"
+        "LockUpTransferManagerFactory contract was not deployed"
     );
 
     await registerAndVerifyByMR(I_VolumeRestrictionTransferManagerFactory.address, accountPolymath, MRProxyInstance);
@@ -467,6 +506,20 @@ export async function deployRedemptionAndVerifyed(accountPolymath, MRProxyInstan
 
     await registerAndVerifyByMR(I_TrackedRedemptionFactory.address, accountPolymath, MRProxyInstance);
     return Promise.all(new Array(I_TrackedRedemptionFactory));
+}
+
+export async function deployVestingEscrowWalletAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
+    I_VestingEscrowWalletLogic = await VestingEscrowWallet.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
+    I_VestingEscrowWalletFactory = await VestingEscrowWalletFactory.new(setupCost, new BN(0), new BN(0), I_VestingEscrowWalletLogic.address, { from: accountPolymath });
+
+    assert.notEqual(
+        I_VestingEscrowWalletFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "VestingEscrowWalletFactory contract was not deployed"
+    );
+
+    await registerAndVerifyByMR(I_VestingEscrowWalletFactory.address, accountPolymath, MRProxyInstance);
+    return new Array(I_VestingEscrowWalletFactory);
 }
 
 export async function deployMockRedemptionAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {

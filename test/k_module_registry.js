@@ -192,33 +192,33 @@ contract("ModuleRegistry", async (accounts) => {
             it("Should successfully update the registry contract addresses", async () => {
                 await I_MRProxied.updateFromRegistry({ from: account_polymath });
                 assert.equal(
-                    await I_MRProxied.getAddressValues.call(web3.utils.soliditySha3("securityTokenRegistry")),
+                    await I_MRProxied.getAddressValue.call(web3.utils.soliditySha3("securityTokenRegistry")),
                     I_SecurityTokenRegistryProxy.address
                 );
                 assert.equal(
-                    await I_MRProxied.getAddressValues.call(web3.utils.soliditySha3("featureRegistry")),
+                    await I_MRProxied.getAddressValue.call(web3.utils.soliditySha3("featureRegistry")),
                     I_FeatureRegistry.address
                 );
-                assert.equal(await I_MRProxied.getAddressValues.call(web3.utils.soliditySha3("polyToken")), I_PolyToken.address);
+                assert.equal(await I_MRProxied.getAddressValue.call(web3.utils.soliditySha3("polyToken")), I_PolyToken.address);
             });
         });
 
         describe("Test the state variables", async () => {
             it("Should be the right owner", async () => {
-                let _owner = await I_MRProxied.getAddressValues.call(web3.utils.soliditySha3("owner"));
+                let _owner = await I_MRProxied.getAddressValue.call(web3.utils.soliditySha3("owner"));
                 assert.equal(_owner, account_polymath, "Owner should be the correct");
             });
 
             it("Should be the expected value of the paused and intialised variable", async () => {
-                let _paused = await I_MRProxied.getBoolValues.call(web3.utils.soliditySha3("paused"));
+                let _paused = await I_MRProxied.getBoolValue.call(web3.utils.soliditySha3("paused"));
                 assert.isFalse(_paused, "Should be the false");
 
-                let _intialised = await I_MRProxied.getBoolValues.call(web3.utils.soliditySha3("initialised"));
+                let _intialised = await I_MRProxied.getBoolValue.call(web3.utils.soliditySha3("initialised"));
                 assert.isTrue(_intialised, "Values should be the true");
             });
 
             it("Should be the expected value of the polymath registry", async () => {
-                let _polymathRegistry = await I_MRProxied.getAddressValues.call(web3.utils.soliditySha3("polymathRegistry"));
+                let _polymathRegistry = await I_MRProxied.getAddressValue.call(web3.utils.soliditySha3("polymathRegistry"));
                 assert.equal(
                     _polymathRegistry,
                     I_PolymathRegistry.address,
@@ -481,10 +481,10 @@ contract("ModuleRegistry", async (accounts) => {
                 // re-ordering
                 assert.equal(sto3_end, sto3);
                 // delete related data
-                assert.equal(await I_MRProxied.getUintValues.call(web3.utils.soliditySha3("registry", sto4)), 0);
+                assert.equal(await I_MRProxied.getUintValue.call(web3.utils.soliditySha3("registry", sto4)), 0);
                 assert.equal(await I_MRProxied.getReputationByFactory.call(sto4), 0);
                 assert.equal((await I_MRProxied.getModulesByType.call(3)).length, 3);
-                assert.equal(await I_MRProxied.getBoolValues.call(web3.utils.soliditySha3("verified", sto4)), false);
+                assert.equal(await I_MRProxied.getBoolValue.call(web3.utils.soliditySha3("verified", sto4)), false);
 
                 await revertToSnapshot(snap);
             });
@@ -507,10 +507,10 @@ contract("ModuleRegistry", async (accounts) => {
                 // re-ordering
                 assert.equal(sto1_end, sto1);
                 // delete related data
-                assert.equal(await I_MRProxied.getUintValues.call(web3.utils.soliditySha3("registry", sto2)), 0);
+                assert.equal(await I_MRProxied.getUintValue.call(web3.utils.soliditySha3("registry", sto2)), 0);
                 assert.equal(await I_MRProxied.getReputationByFactory.call(sto2), 0);
                 assert.equal((await I_MRProxied.getModulesByType.call(3)).length, 3);
-                assert.equal(await I_MRProxied.getBoolValues.call(web3.utils.soliditySha3("verified", sto2)), false);
+                assert.equal(await I_MRProxied.getBoolValue.call(web3.utils.soliditySha3("verified", sto2)), false);
             });
 
             it("Should fail if module already removed", async () => {
@@ -548,7 +548,7 @@ contract("ModuleRegistry", async (accounts) => {
 
                 it("Should successfully pause the contract", async () => {
                     await I_MRProxied.pause({ from: account_polymath });
-                    let status = await I_MRProxied.getBoolValues.call(web3.utils.soliditySha3("paused"));
+                    let status = await I_MRProxied.getBoolValue.call(web3.utils.soliditySha3("paused"));
                     assert.isOk(status);
                 });
 
@@ -558,7 +558,7 @@ contract("ModuleRegistry", async (accounts) => {
 
                 it("Should successfully unpause the contract", async () => {
                     await I_MRProxied.unpause({ from: account_polymath });
-                    let status = await I_MRProxied.getBoolValues.call(web3.utils.soliditySha3("paused"));
+                    let status = await I_MRProxied.getBoolValue.call(web3.utils.soliditySha3("paused"));
                     assert.isNotOk(status);
                 });
             });

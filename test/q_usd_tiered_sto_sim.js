@@ -90,7 +90,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
     let _wallet = [];
     let _reserveWallet = [];
     let _usdToken = [];
-    
+
     const address_zero = "0x0000000000000000000000000000000000000000";
     const one_address = "0x0000000000000000000000000000000000000001";
 
@@ -157,8 +157,8 @@ contract("USDTieredSTO Sim", async (accounts) => {
                 name: "_reserveWallet"
             },
             {
-                type: "address",
-                name: "_usdToken"
+                type: "address[]",
+                name: "_usdTokens"
             }
         ]
     };
@@ -256,7 +256,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.getTokens(REGFEE, ISSUER);
             await I_PolyToken.approve(I_STRProxied.address, REGFEE, { from: ISSUER });
-            
+
             let tx = await I_STRProxied.generateSecurityToken(NAME, SYMBOL, TOKENDETAILS, true, { from: ISSUER });
             assert.equal(tx.logs[2].args._ticker, SYMBOL, "SecurityToken doesn't get deployed");
 
@@ -302,7 +302,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
                 _fundRaiseTypes[stoId],
                 _wallet[stoId],
                 _reserveWallet[stoId],
-                _usdToken[stoId]
+                [_usdToken[stoId]]
             ];
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
@@ -608,7 +608,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
                     await I_DaiToken.getTokens(investment_DAI, _investor);
                     await I_DaiToken.approve(I_USDTieredSTO_Array[stoId].address, investment_DAI, { from: _investor });
                     await catchRevert(
-                        I_USDTieredSTO_Array[stoId].buyWithUSD(_investor, investment_DAI, { from: _investor, gasPrice: GAS_PRICE })
+                        I_USDTieredSTO_Array[stoId].buyWithUSD(_investor, investment_DAI, I_DaiToken.address, { from: _investor, gasPrice: GAS_PRICE })
                     );
                 } else
                     await catchRevert(
@@ -691,7 +691,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
                             .yellow
                     );
                 } else if (isDai && investment_DAI.gt(new BN(10))) {
-                    tx = await I_USDTieredSTO_Array[stoId].buyWithUSD(_investor, investment_DAI, { from: _investor, gasPrice: GAS_PRICE });
+                    tx = await I_USDTieredSTO_Array[stoId].buyWithUSD(_investor, investment_DAI, I_DaiToken.address, { from: _investor, gasPrice: GAS_PRICE });
                     gasCost = new BN(GAS_PRICE).mul(new BN(tx.receipt.gasUsed));
                     console.log(
                         `buyWithUSD: ${investment_Token.div(e18)} tokens for ${investment_DAI.div(e18)} DAI by ${_investor}`
@@ -731,43 +731,43 @@ contract("USDTieredSTO Sim", async (accounts) => {
                 // console.log('final_TokenSupply: '+final_TokenSupply.div(10**18).toNumber());
 
                 if (isPoly) {
-                    assertIsNear(final_TokenSupply, init_TokenSupply.add(investment_Token), "Token Supply not changed as expected" ); 
-                    assertIsNear(final_InvestorTokenBal, init_InvestorTokenBal.add(investment_Token), "Investor Token Balance not changed as expected" ); 
-                    assertIsNear(final_InvestorETHBal, init_InvestorETHBal.sub(gasCost), "Investor ETH Balance not changed as expected" ); 
-                    assertIsNear(final_InvestorPOLYBal, init_InvestorPOLYBal.sub(investment_POLY), "Investor POLY Balance not changed as expected" ); 
-                    assertIsNear(final_STOTokenSold, init_STOTokenSold.add(investment_Token), "STO Token Sold not changed as expected" ); 
-                    assertIsNear(final_STOETHBal, init_STOETHBal, "STO ETH Balance not changed as expected" ); 
-                    assertIsNear(final_STOPOLYBal, init_STOPOLYBal, "STO POLY Balance not changed as expected" ); 
-                    assertIsNear(final_RaisedUSD, init_RaisedUSD.add(investment_USD), "Raised USD not changed as expected" ); 
-                    assertIsNear(final_RaisedETH, init_RaisedETH, "Raised ETH not changed as expected"); 
-                    assertIsNear(final_RaisedPOLY, init_RaisedPOLY.add(investment_POLY), "Raised POLY not changed as expected" ); 
-                    assertIsNear(final_WalletETHBal, init_WalletETHBal, "Wallet ETH Balance not changed as expected" ); 
-                    assertIsNear(final_WalletPOLYBal, init_WalletPOLYBal.add(investment_POLY), "Wallet POLY Balance not changed as expected" ); 
-                } else if (isDai) { 
-                    assertIsNear(final_TokenSupply, init_TokenSupply.add(investment_Token), "Token Supply not changed as expected" ); 
-                    assertIsNear(final_InvestorTokenBal, init_InvestorTokenBal.add(investment_Token), "Investor Token Balance not changed as expected" ); 
-                    assertIsNear(final_InvestorETHBal, init_InvestorETHBal.sub(gasCost), "Investor ETH Balance not changed as expected" ); 
-                    assertIsNear(final_InvestorDAIBal, init_InvestorDAIBal.sub(investment_DAI), "Investor DAI Balance not changed as expected" ); 
-                    assertIsNear(final_STOTokenSold, init_STOTokenSold.add(investment_Token), "STO Token Sold not changed as expected" ); 
-                    assertIsNear(final_STOETHBal, init_STOETHBal, "STO ETH Balance not changed as expected" ); 
-                    assertIsNear(final_STODAIBal, init_STODAIBal, "STO DAI Balance not changed as expected" ); 
-                    assertIsNear(final_RaisedUSD, init_RaisedUSD.add(investment_USD), "Raised USD not changed as expected" ); 
-                    assertIsNear(final_RaisedETH, init_RaisedETH, "Raised ETH not changed as expected"); 
-                    assertIsNear(final_RaisedDAI, init_RaisedDAI.add(investment_DAI), "Raised DAI not changed as expected" ); 
-                    assertIsNear(final_WalletETHBal, init_WalletETHBal, "Wallet ETH Balance not changed as expected" ); 
-                    assertIsNear(final_WalletDAIBal, init_WalletDAIBal.add(investment_DAI), "Wallet DAI Balance not changed as expected" ); 
-                } else { 
-                    assertIsNear(final_TokenSupply, init_TokenSupply.add(investment_Token), "Token Supply not changed as expected" ); 
-                    assertIsNear(final_InvestorTokenBal, init_InvestorTokenBal.add(investment_Token), "Investor Token Balance not changed as expected" ); 
-                    assertIsNear(final_InvestorETHBal, init_InvestorETHBal .sub(gasCost) .sub(investment_ETH) , "Investor ETH Balance not changed as expected" ); 
-                    assertIsNear(final_InvestorPOLYBal, init_InvestorPOLYBal, "Investor POLY Balance not changed as expected" ); 
-                    assertIsNear(final_STOTokenSold, init_STOTokenSold.add(investment_Token), "STO Token Sold not changed as expected" ); 
-                    assertIsNear(final_STOETHBal, init_STOETHBal, "STO ETH Balance not changed as expected" ); 
-                    assertIsNear(final_STOPOLYBal, init_STOPOLYBal, "STO POLY Balance not changed as expected" ); 
-                    assertIsNear(final_RaisedUSD, init_RaisedUSD.add(investment_USD), "Raised USD not changed as expected" ); 
-                    assertIsNear(final_RaisedETH, init_RaisedETH.add(investment_ETH), "Raised ETH not changed as expected" ); 
-                    assertIsNear(final_RaisedPOLY, init_RaisedPOLY, "Raised POLY not changed as expected" ); 
-                    assertIsNear(final_WalletETHBal, init_WalletETHBal.add(investment_ETH), "Wallet ETH Balance not changed as expected" ); 
+                    assertIsNear(final_TokenSupply, init_TokenSupply.add(investment_Token), "Token Supply not changed as expected" );
+                    assertIsNear(final_InvestorTokenBal, init_InvestorTokenBal.add(investment_Token), "Investor Token Balance not changed as expected" );
+                    assertIsNear(final_InvestorETHBal, init_InvestorETHBal.sub(gasCost), "Investor ETH Balance not changed as expected" );
+                    assertIsNear(final_InvestorPOLYBal, init_InvestorPOLYBal.sub(investment_POLY), "Investor POLY Balance not changed as expected" );
+                    assertIsNear(final_STOTokenSold, init_STOTokenSold.add(investment_Token), "STO Token Sold not changed as expected" );
+                    assertIsNear(final_STOETHBal, init_STOETHBal, "STO ETH Balance not changed as expected" );
+                    assertIsNear(final_STOPOLYBal, init_STOPOLYBal, "STO POLY Balance not changed as expected" );
+                    assertIsNear(final_RaisedUSD, init_RaisedUSD.add(investment_USD), "Raised USD not changed as expected" );
+                    assertIsNear(final_RaisedETH, init_RaisedETH, "Raised ETH not changed as expected");
+                    assertIsNear(final_RaisedPOLY, init_RaisedPOLY.add(investment_POLY), "Raised POLY not changed as expected" );
+                    assertIsNear(final_WalletETHBal, init_WalletETHBal, "Wallet ETH Balance not changed as expected" );
+                    assertIsNear(final_WalletPOLYBal, init_WalletPOLYBal.add(investment_POLY), "Wallet POLY Balance not changed as expected" );
+                } else if (isDai) {
+                    assertIsNear(final_TokenSupply, init_TokenSupply.add(investment_Token), "Token Supply not changed as expected" );
+                    assertIsNear(final_InvestorTokenBal, init_InvestorTokenBal.add(investment_Token), "Investor Token Balance not changed as expected" );
+                    assertIsNear(final_InvestorETHBal, init_InvestorETHBal.sub(gasCost), "Investor ETH Balance not changed as expected" );
+                    assertIsNear(final_InvestorDAIBal, init_InvestorDAIBal.sub(investment_DAI), "Investor DAI Balance not changed as expected" );
+                    assertIsNear(final_STOTokenSold, init_STOTokenSold.add(investment_Token), "STO Token Sold not changed as expected" );
+                    assertIsNear(final_STOETHBal, init_STOETHBal, "STO ETH Balance not changed as expected" );
+                    assertIsNear(final_STODAIBal, init_STODAIBal, "STO DAI Balance not changed as expected" );
+                    assertIsNear(final_RaisedUSD, init_RaisedUSD.add(investment_USD), "Raised USD not changed as expected" );
+                    assertIsNear(final_RaisedETH, init_RaisedETH, "Raised ETH not changed as expected");
+                    assertIsNear(final_RaisedDAI, init_RaisedDAI.add(investment_DAI), "Raised DAI not changed as expected" );
+                    assertIsNear(final_WalletETHBal, init_WalletETHBal, "Wallet ETH Balance not changed as expected" );
+                    assertIsNear(final_WalletDAIBal, init_WalletDAIBal.add(investment_DAI), "Wallet DAI Balance not changed as expected" );
+                } else {
+                    assertIsNear(final_TokenSupply, init_TokenSupply.add(investment_Token), "Token Supply not changed as expected" );
+                    assertIsNear(final_InvestorTokenBal, init_InvestorTokenBal.add(investment_Token), "Investor Token Balance not changed as expected" );
+                    assertIsNear(final_InvestorETHBal, init_InvestorETHBal .sub(gasCost) .sub(investment_ETH) , "Investor ETH Balance not changed as expected" );
+                    assertIsNear(final_InvestorPOLYBal, init_InvestorPOLYBal, "Investor POLY Balance not changed as expected" );
+                    assertIsNear(final_STOTokenSold, init_STOTokenSold.add(investment_Token), "STO Token Sold not changed as expected" );
+                    assertIsNear(final_STOETHBal, init_STOETHBal, "STO ETH Balance not changed as expected" );
+                    assertIsNear(final_STOPOLYBal, init_STOPOLYBal, "STO POLY Balance not changed as expected" );
+                    assertIsNear(final_RaisedUSD, init_RaisedUSD.add(investment_USD), "Raised USD not changed as expected" );
+                    assertIsNear(final_RaisedETH, init_RaisedETH.add(investment_ETH), "Raised ETH not changed as expected" );
+                    assertIsNear(final_RaisedPOLY, init_RaisedPOLY, "Raised POLY not changed as expected" );
+                    assertIsNear(final_WalletETHBal, init_WalletETHBal.add(investment_ETH), "Wallet ETH Balance not changed as expected" );
                     assertIsNear(final_WalletPOLYBal, init_WalletPOLYBal, "Wallet POLY Balance not changed as expected" );
                 }
             }

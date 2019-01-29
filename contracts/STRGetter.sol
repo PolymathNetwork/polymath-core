@@ -24,7 +24,7 @@ contract STRGetter is EternalStorage {
         for (i = 0; i < tickers.length; i++) {
             string memory ticker = Util.bytes32ToString(tickers[i]);
             /*solium-disable-next-line security/no-block-members*/
-            if (getUint(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now || getTickerStatus(ticker)) {
+            if (getUintValue(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now || getTickerStatus(ticker)) {
                 counter ++;
             }
         }
@@ -33,7 +33,7 @@ contract STRGetter is EternalStorage {
         for (i = 0; i < tickers.length; i++) {
             string memory ticker = Util.bytes32ToString(tickers[i]);
             /*solium-disable-next-line security/no-block-members*/
-            if (getUint(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now || getTickerStatus(ticker)) {
+            if (getUintValue(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now || getTickerStatus(ticker)) {
                 tempList[counter] = tickers[i];
                 counter ++;
             }
@@ -74,7 +74,7 @@ contract STRGetter is EternalStorage {
         for (i = 0; i < activeUsers.length; i++) {
             tickers = getArrayBytes32(Encoder.getKey("userToTickers", activeUsers[i]));
             for (j = 0; j < tickers.length; j++) {
-                token = getAddress(Encoder.getKey("tickerToSecurityToken", Util.bytes32ToString(tickers[j])));
+                token = getAddressValue(Encoder.getKey("tickerToSecurityToken", Util.bytes32ToString(tickers[j])));
                 if (token != address(0)) {
                     if (_allTokens || IOwnable(token).owner() == _owner) {
                         count = count + 1;
@@ -87,7 +87,7 @@ contract STRGetter is EternalStorage {
         for (i = 0; i < activeUsers.length; i++) {
             tickers = getArrayBytes32(Encoder.getKey("userToTickers", activeUsers[i]));
             for (j = 0; j < tickers.length; j++) {
-                token = getAddress(Encoder.getKey("tickerToSecurityToken", Util.bytes32ToString(tickers[j])));
+                token = getAddressValue(Encoder.getKey("tickerToSecurityToken", Util.bytes32ToString(tickers[j])));
                 if (token != address(0)) {
                     if (_allTokens || IOwnable(token).owner() == _owner) {
                         result[index] = token;
@@ -111,15 +111,15 @@ contract STRGetter is EternalStorage {
     function getTickerDetails(string calldata _ticker) external view returns (address, uint256, uint256, string memory, bool) {
         string memory ticker = Util.upper(_ticker);
         bool tickerStatus = getTickerStatus(ticker);
-        uint256 expiryDate = getUint(Encoder.getKey("registeredTickers_expiryDate", ticker));
+        uint256 expiryDate = getUintValue(Encoder.getKey("registeredTickers_expiryDate", ticker));
         /*solium-disable-next-line security/no-block-members*/
         if ((tickerStatus == true) || (expiryDate > now)) {
             return
             (
                 getTickerOwner(ticker),
-                getUint(Encoder.getKey("registeredTickers_registrationDate", ticker)),
+                getUintValue(Encoder.getKey("registeredTickers_registrationDate", ticker)),
                 expiryDate,
-                getString(Encoder.getKey("registeredTickers_tokenName", ticker)),
+                getStringValue(Encoder.getKey("registeredTickers_tokenName", ticker)),
                 tickerStatus
             );
         } else {
@@ -134,7 +134,7 @@ contract STRGetter is EternalStorage {
      */
     function getSecurityTokenAddress(string calldata _ticker) external view returns (address) {
         string memory ticker = Util.upper(_ticker);
-        return getAddress(Encoder.getKey("tickerToSecurityToken", ticker));
+        return getAddressValue(Encoder.getKey("tickerToSecurityToken", ticker));
     }
 
     /**
@@ -147,10 +147,10 @@ contract STRGetter is EternalStorage {
     */
     function getSecurityTokenData(address _securityToken) external view returns (string memory, address, string memory, uint256) {
         return (
-            getString(Encoder.getKey("securityTokens_ticker", _securityToken)),
+            getStringValue(Encoder.getKey("securityTokens_ticker", _securityToken)),
             IOwnable(_securityToken).owner(),
-            getString(Encoder.getKey("securityTokens_tokenDetails", _securityToken)),
-            getUint(Encoder.getKey("securityTokens_deployedAt", _securityToken))
+            getStringValue(Encoder.getKey("securityTokens_tokenDetails", _securityToken)),
+            getUintValue(Encoder.getKey("securityTokens_deployedAt", _securityToken))
         );
     }
 
@@ -158,14 +158,14 @@ contract STRGetter is EternalStorage {
      * @notice Returns the current STFactory Address
      */
     function getSTFactoryAddress() public view returns(address) {
-        return getAddress(Encoder.getKey("protocolVersionST", getUint(Encoder.getKey("latestVersion"))));
+        return getAddressValue(Encoder.getKey("protocolVersionST", getUintValue(Encoder.getKey("latestVersion"))));
     }
 
     /**
      * @notice Gets Protocol version
      */
     function getProtocolVersion() public view returns(uint8[] memory) {
-        return VersionUtils.unpack(uint24(getUint(Encoder.getKey("latestVersion"))));
+        return VersionUtils.unpack(uint24(getUintValue(Encoder.getKey("latestVersion"))));
     }
 
     /**
@@ -173,7 +173,7 @@ contract STRGetter is EternalStorage {
      * @return Fee amount
      */
     function getSecurityTokenLaunchFee() public view returns(uint256) {
-        return getUint(STLAUNCHFEE);
+        return getUintValue(STLAUNCHFEE);
     }
 
     /**
@@ -181,7 +181,7 @@ contract STRGetter is EternalStorage {
      * @return Fee amount
      */
     function getTickerRegistrationFee() public view returns(uint256) {
-        return getUint(TICKERREGFEE);
+        return getUintValue(TICKERREGFEE);
     }
 
     /**
@@ -189,16 +189,16 @@ contract STRGetter is EternalStorage {
      * @return Expiry limit
      */
     function getExpiryLimit() public view returns(uint256) {
-        return getUint(EXPIRYLIMIT);
+        return getUintValue(EXPIRYLIMIT);
     }
 
     /**
      * @notice Gets the status of the ticker
      * @param _ticker Ticker whose status need to determine
-     * @return bool 
+     * @return bool
      */
     function getTickerStatus(string memory _ticker) public view returns(bool) {
-        return getBool(Encoder.getKey("registeredTickers_status", _ticker));
+        return getBoolValue(Encoder.getKey("registeredTickers_status", _ticker));
     }
 
     /**
@@ -207,7 +207,7 @@ contract STRGetter is EternalStorage {
      * @return address Address of the owner
      */
     function getTickerOwner(string memory _ticker) public view returns(address) {
-        return getAddress(Encoder.getKey("registeredTickers_owner", _ticker));
+        return getAddressValue(Encoder.getKey("registeredTickers_owner", _ticker));
     }
 
 }

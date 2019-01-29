@@ -13,11 +13,13 @@ contract DataStore is DataStoreStorage, IDataStore {
     //Whenver an element is deleted from an Array, last element of that array is moved to the index of deleted element.
     //Delegate with MANAGEDATA permission can modify data.
 
+    event SecurityTokenChanged(address indexed _oldSecurityToken, address indexed _newSecurityToken);
+
     modifier onlyAuthorized() {
         bool isOwner = msg.sender == IOwnable(address(securityToken)).owner();
-        require(isOwner || 
-            securityToken.isModule(msg.sender, DATA_KEY) || 
-            securityToken.checkPermission(msg.sender, address(this), MANAGEDATA), 
+        require(isOwner ||
+            securityToken.isModule(msg.sender, DATA_KEY) ||
+            securityToken.checkPermission(msg.sender, address(this), MANAGEDATA),
             "Unauthorized"
         );
         _;
@@ -43,11 +45,10 @@ contract DataStore is DataStoreStorage, IDataStore {
      * @param _securityToken address of the security token
      */
     function setSecurityToken(address _securityToken) external onlyOwner {
-        if(address(securityToken) != address(0)) {
-            require(msg.sender == IOwnable(address(securityToken)).owner(), "Unauthorized");
-        }
+        require(_securityToken != address(0), "Invalid address");
+        emit SecurityTokenChanged(securityToken, _securityToken);
         securityToken = ISecurityToken(_securityToken);
-    } 
+    }
 
     /**
      * @dev Stores a uint256 data against a key

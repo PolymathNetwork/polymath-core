@@ -46,7 +46,7 @@ contract DataStore is DataStoreStorage, IDataStore {
      */
     function setSecurityToken(address _securityToken) external onlyOwner {
         require(_securityToken != address(0), "Invalid address");
-        emit SecurityTokenChanged(securityToken, _securityToken);
+        emit SecurityTokenChanged(address(securityToken), _securityToken);
         securityToken = ISecurityToken(_securityToken);
     }
 

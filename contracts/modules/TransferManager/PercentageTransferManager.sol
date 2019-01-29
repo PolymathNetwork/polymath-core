@@ -43,9 +43,9 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
         uint256 _amount,
         bytes calldata _data,
         bool /* _isTransfer */
-    ) 
-        external 
-        returns(Result) 
+    )
+        external
+        returns(Result)
     {
         (Result success,) = executeTransfer(_from, _to, _amount, _data);
         return success;
@@ -75,8 +75,8 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
             if (whitelist[_to]) {
                 return (Result.NA, 0xA0);
             }
-            uint256 newBalance = ISecurityToken(securityToken).balanceOf(_to).add(_amount);
-            if (newBalance.mul(uint256(10) ** 18).div(ISecurityToken(securityToken).totalSupply()) > maxHolderPercentage) {
+            uint256 newBalance = IERC20(securityToken).balanceOf(_to).add(_amount);
+            if (newBalance.mul(uint256(10) ** 18).div(IERC20(securityToken).totalSupply()) > maxHolderPercentage) {
                 return (Result.INVALID, 0xA4);
             }
             return (Result.NA, 0xA0);

@@ -308,7 +308,8 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     }
 
     /**
-     * @notice Internal - adjusts token holder balance at checkpoint after a token transfer
+    /**
+     * @notice Internal - adjusts token holder balance at checkpoint before a token transfer
      * @param _investor address of the token holder affected
      */
     function _adjustBalanceCheckpoints(address _investor) internal {

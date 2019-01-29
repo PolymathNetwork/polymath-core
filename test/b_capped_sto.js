@@ -139,7 +139,6 @@ contract("CappedSTO", async (accounts) => {
 
         // STEP 5: Deploy the GeneralDelegateManagerFactory
         [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, new BN(0));
-
         // STEP 6: Deploy the CappedSTOFactory
 
         [I_CappedSTOFactory] = await deployCappedSTOAndVerifyed(account_polymath, I_MRProxied, cappedSTOSetupCost);
@@ -173,7 +172,7 @@ contract("CappedSTO", async (accounts) => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            
+
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
@@ -335,7 +334,7 @@ contract("CappedSTO", async (accounts) => {
         it("Should Buy the tokens", async () => {
 
             balanceOfReceiver = new BN(await web3.eth.getBalance(account_fundsReceiver));
-            
+
             await I_CappedSTO_Array_ETH[0].buyTokens(account_investor1, {
                 from: account_investor1,
                 value: web3.utils.toWei("1", "ether")
@@ -621,7 +620,7 @@ contract("CappedSTO", async (accounts) => {
 
             it("POLY: Should generate the new security token with the same symbol as registered above", async () => {
                 await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-                
+
                 let tx = await I_STRProxied.generateSecurityToken(P_name, P_symbol, P_tokenDetails, false, { from: token_owner });
 
                 // Verify the successful generation of the security token
@@ -842,7 +841,7 @@ contract("CappedSTO", async (accounts) => {
                 );
                 let tags = await I_CappedSTOFactory.getTags.call();
                 assert.equal(web3.utils.hexToString(tags[0]), "Capped");
-                assert.equal(await I_CappedSTOFactory.version.call(), "1.0.0");
+                assert.equal(await I_CappedSTOFactory.version.call(), "2.1.0");
             });
 
             it("Should fail to change the title -- bad owner", async () => {

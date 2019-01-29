@@ -3,6 +3,7 @@ pragma solidity ^0.5.0;
 import "./IPermissionManager.sol";
 import "../Module.sol";
 import "./GeneralPermissionManagerStorage.sol";
+import "../../interfaces/ISecurityToken.sol";
 
 /**
  * @title Permission Manager module for core permissioning functionality
@@ -109,9 +110,9 @@ contract GeneralPermissionManager is GeneralPermissionManagerStorage, IPermissio
         address[] calldata _modules,
         bytes32[] calldata _perms,
         bool[] calldata _valids
-    ) 
-        external 
-        withPerm(CHANGE_PERMISSION) 
+    )
+        external
+        withPerm(CHANGE_PERMISSION)
     {
         require(_delegate != address(0), "invalid address");
         require(_modules.length > 0, "0 length is not allowed");

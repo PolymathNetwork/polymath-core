@@ -19,11 +19,13 @@ interface ITransferManager {
 
     /**
      * @notice return the amount of locked tokens for a given user
+     * @param _owner whom token amount need to query
      */
     function getLockedToken(address _owner) external view returns(uint256);
 
     /**
      * @notice return the amount of un locked tokens for a given user
+     * @param _owner whom token amount need to query
      */
     function getUnLockedToken(address _owner) external view returns(uint256);
 

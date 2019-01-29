@@ -51,9 +51,9 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
         uint256 _rate,
         FundRaiseType[] memory _fundRaiseTypes,
         address payable _fundsReceiver
-    ) 
-        public 
-        onlyFactory 
+    )
+        public
+        onlyFactory
     {
         require(endTime == 0, "Already configured");
         require(_rate > 0, "Rate of token should be greater than 0");

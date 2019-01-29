@@ -52,7 +52,7 @@ contract("SecurityTokenRegistryProxy", async (accounts) => {
     const decimals = 18;
 
     const transferManagerKey = 2;
-    
+
     const address_zero = "0x0000000000000000000000000000000000000000";
     const one_address = "0x0000000000000000000000000000000000000001";
     const STRProxyParameters = ["address", "address", "uint256", "uint256", "address", "address"];
@@ -138,12 +138,12 @@ contract("SecurityTokenRegistryProxy", async (accounts) => {
 
         it("Verify the initialize data", async () => {
             assert.equal(
-                (await I_STRProxied.getUintValues.call(web3.utils.soliditySha3("expiryLimit"))).toNumber(),
+                (await I_STRProxied.getUintValue.call(web3.utils.soliditySha3("expiryLimit"))).toNumber(),
                 60 * 24 * 60 * 60,
                 "Should equal to 60 days"
             );
             assert.equal(
-                await I_STRProxied.getUintValues.call(web3.utils.soliditySha3("tickerRegFee")),
+                await I_STRProxied.getUintValue.call(web3.utils.soliditySha3("tickerRegFee")),
                 web3.utils.toWei("250")
             );
         });
@@ -160,7 +160,7 @@ contract("SecurityTokenRegistryProxy", async (accounts) => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            
+
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token

@@ -28,6 +28,13 @@ interface ISecurityToken {
     function verifyTransfer(address _from, address _to, uint256 _value, bytes calldata _data) external returns(bool success);
 
     /**
+     * @notice Checks if an address is a module of certain type
+     * @param _module Address to check
+     * @param _type type to check against
+     */
+    function isModule(address _module, uint8 _type) external view returns(bool);
+
+    /**
      * @notice Mints new tokens and assigns them to the target _investor.
      * Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
      * @param _investor Address the tokens will be minted to
@@ -153,6 +160,18 @@ interface ISecurityToken {
      * @return Id
      */
     function currentCheckpointId() external view returns(uint256);
+
+    /**
+     * @notice Gets data store address
+     * @return data store address
+     */
+    function dataStore() external view returns (address);
+
+    /**
+    * @notice Allows owner to change data store
+    * @param _dataStore Address of the token data store
+    */
+    function changeDataStore(address _dataStore) external;
 
    /**
     * @notice Allows the owner to withdraw unspent POLY stored by them on the ST or any ERC20 token.

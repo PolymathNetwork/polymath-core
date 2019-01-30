@@ -46,6 +46,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     uint8 constant MINT_KEY = 3;
     uint8 constant CHECKPOINT_KEY = 4;
     uint8 constant BURN_KEY = 5;
+    uint8 constant DATA_KEY = 6;
 
     uint256 public granularity;
 
@@ -63,6 +64,9 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
 
     // Address whitelisted by issuer as controller
     address public controller;
+
+    // Address of the data store used to store shared data
+    address public dataStore;
 
     // Records added modules - module list should be order agnostic!
     mapping(uint8 => address[]) modules;
@@ -207,7 +211,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         securityTokenVersion = SemanticVersion(2, 0, 0);
     }
 
-     /**
+    /**
       * @notice Attachs a module to the SecurityToken
       * @dev  E.G.: On deployment (through the STR) ST gets a TransferManager module attached to it
       * @dev to control restrictions on transfers.
@@ -366,6 +370,15 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         require(_granularity != 0, "Invalid granularity");
         emit GranularityChanged(granularity, _granularity);
         granularity = _granularity;
+    }
+
+    /**
+    * @notice Allows owner to change data store
+    * @param _dataStore Address of the token data store
+    */
+    function changeDataStore(address _dataStore) external onlyOwner {
+        require(_dataStore != address(0), "Invalid address");
+        dataStore = _dataStore;
     }
 
     /**
@@ -681,6 +694,15 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
             );
         }
         return false;
+    }
+
+    /**
+     * @notice Checks if an address is a module of certain type
+     * @param _module Address to check
+     * @param _type type to check against
+     */
+    function isModule(address _module, uint8 _type) public view returns(bool) {
+        return _isModule(_module, _type);
     }
 
     function _checkAndBurn(address _from, uint256 _value, bytes memory _data) internal returns(bool) {

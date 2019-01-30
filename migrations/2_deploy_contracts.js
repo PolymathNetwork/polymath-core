@@ -28,6 +28,8 @@ const MockOracle = artifacts.require("./MockOracle.sol");
 const TokenLib = artifacts.require("./TokenLib.sol");
 const SecurityToken = artifacts.require("./tokens/SecurityToken.sol");
 const STRGetter = artifacts.require('./STRGetter.sol');
+const DataStoreLogic = artifacts.require('./DataStore.sol');
+const DataStoreFactory = artifacts.require('./DataStoreFactory.sol');
 const VolumeRestrictionTMFactory = artifacts.require('./VolumeRestrictionTMFactory.sol')
 const VolumeRestrictionTMLogic = artifacts.require('./VolumeRestrictionTM.sol');
 const VolumeRestrictionLib = artifacts.require('./VolumeRestrictionLib.sol');
@@ -258,6 +260,14 @@ module.exports = function(deployer, network, accounts) {
             return deployer.deploy(CappedSTOLogic, nullAddress, nullAddress, { from: PolymathAccount });
         })
         .then(() => {
+            // B) Deploy the DataStoreLogic Contract
+            return deployer.deploy(DataStoreLogic, { from: PolymathAccount });
+        })
+        .then(() => {
+            // B) Deploy the DataStoreFactory Contract
+            return deployer.deploy(DataStoreFactory, DataStoreLogic.address, { from: PolymathAccount });
+        })
+        .then(() => {
             // B) Deploy the GeneralTransferManagerFactory Contract (Factory used to generate the GeneralTransferManager contract and this
             // manager attach with the securityToken contract at the time of deployment)
             return deployer.deploy(GeneralTransferManagerFactory, new BN(0), new BN(0), new BN(0), GeneralTransferManagerLogic.address, {
@@ -313,7 +323,7 @@ module.exports = function(deployer, network, accounts) {
         })
         .then(() => {
             // H) Deploy the STVersionProxy001 Contract which contains the logic of deployment of securityToken.
-            return deployer.deploy(STFactory, GeneralTransferManagerFactory.address, { from: PolymathAccount });
+            return deployer.deploy(STFactory, GeneralTransferManagerFactory.address, DataStoreFactory.address, { from: PolymathAccount });
         })
         .then(() => {
             // K) Deploy the FeatureRegistry contract to control feature switches

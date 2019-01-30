@@ -591,7 +591,7 @@ contract("SecurityToken", async (accounts) => {
             await catchRevert(I_SecurityToken.transfer(accounts[7], new BN(10).pow(new BN(17)), { from: account_investor1 }));
         });
 
-        it("Should adjust granularity", async () => {
+        it("Should not allow 0 granularity", async () => {
             await catchRevert(I_SecurityToken.changeGranularity(0, { from: token_owner }));
         });
 
@@ -599,6 +599,21 @@ contract("SecurityToken", async (accounts) => {
             await I_SecurityToken.changeGranularity(new BN(10).pow(new BN(17)), { from: token_owner });
             await I_SecurityToken.transfer(accounts[7], new BN(10).pow(new BN(17)), { from: account_investor1, gas: 2500000 });
             await I_SecurityToken.transfer(account_investor1, new BN(10).pow(new BN(17)), { from: accounts[7], gas: 2500000 });
+        });
+
+        it("Should not allow unauthorized address to change data store", async () => {
+            await catchRevert(I_SecurityToken.changeDataStore(one_address, { from: account_polymath }));
+        });
+
+        it("Should not allow 0x0 address as data store", async () => {
+            await catchRevert(I_SecurityToken.changeDataStore(address_zero, { from: token_owner }));
+        });
+
+        it("Should change data store", async () => {
+            let ds = await I_SecurityToken.dataStore();
+            await I_SecurityToken.changeDataStore(one_address, { from: token_owner });
+            assert.equal(one_address, await I_SecurityToken.dataStore());
+            await I_SecurityToken.changeDataStore(ds, { from: token_owner });
         });
 
         it("Should transfer from whitelist investor to non-whitelist investor in first tx and in 2nd tx non-whitelist to non-whitelist transfer", async () => {

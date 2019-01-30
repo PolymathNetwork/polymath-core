@@ -1,8 +1,9 @@
 pragma solidity ^0.5.0;
 
 import "./TransferManager.sol";
-import "./GeneralTransferManagerStorage.sol";
+import "../../storage/GeneralTransferManagerStorage.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "../../interfaces/ISecurityToken.sol";
 
 /**
  * @title Transfer Manager module for core transfer validation functionality
@@ -31,9 +32,9 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     // if allowAllWhitelistTransfers is TRUE, then _toTime and _fromTime is ignored when sending or receiving tokens
     // in any case, any investor sending or receiving tokens, must have a _expiryTime in the future
     event ModifyWhitelist(
-        address _investor,
+        address indexed _investor,
         uint256 _dateAdded,
-        address _addedBy,
+        address indexed _addedBy,
         uint256 _fromTime,
         uint256 _toTime,
         uint256 _expiryTime,
@@ -174,7 +175,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
 
             //Anyone on the whitelist can transfer provided the blocknumber is large enough
             /*solium-disable-next-line security/no-block-members*/
-            return ((_onWhitelist(_from) && (adjustedFromTime <= uint64(now))) && (_onWhitelist(_to) && 
+            return ((_onWhitelist(_from) && (adjustedFromTime <= uint64(now))) && (_onWhitelist(_to) &&
                 (adjustedToTime <= uint64(now)))) ? Result.VALID : Result.NA; /*solium-disable-line security/no-block-members*/
         }
         return Result.NA;
@@ -194,9 +195,9 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         uint256 _toTime,
         uint256 _expiryTime,
         bool _canBuyFromSTO
-    ) 
-        public 
-        withPerm(WHITELIST) 
+    )
+        public
+        withPerm(WHITELIST)
     {
         _modifyWhitelist(_investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
     }
@@ -272,8 +273,8 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         uint8 _v,
         bytes32 _r,
         bytes32 _s
-    ) 
-        public 
+    )
+        public
     {
         /*solium-disable-next-line security/no-block-members*/
         require(_validFrom <= now, "ValidFrom is too early");

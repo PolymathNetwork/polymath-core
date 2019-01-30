@@ -40,11 +40,8 @@ contract KYCTransferManager is TransferManager {
         public 
         returns (Result) 
     {
-        if (!paused) {
-            bytes32 key = _getKYCKey(_to);
-            IDataStore dataStore = IDataStore(ISecurityToken(securityToken).dataStore());
-            if (dataStore.getUint256(key) > 0)
-                return Result.VALID;
+        if (!paused && checkKYC(_to)) {
+            return Result.VALID;
         }
         return Result.NA;
     }

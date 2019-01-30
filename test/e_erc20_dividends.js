@@ -3,6 +3,7 @@ import { duration, promisifyLogWatch, latestBlock } from "./helpers/utils";
 import takeSnapshot, { increaseTime, revertToSnapshot } from "./helpers/time";
 import { catchRevert } from "./helpers/exceptions";
 import { setUpPolymathNetwork, deployERC20DividendAndVerifyed, deployGPMAndVerifyed } from "./helpers/createInstances";
+import { encodeModuleCall } from "./helpers/encodeCall";
 
 const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
@@ -18,6 +19,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
     let account_polymath;
     let account_issuer;
     let token_owner;
+    let wallet;
     let account_investor1;
     let account_investor2;
     let account_investor3;
@@ -75,6 +77,8 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
 
     let currentTime;
 
+    const DividendParameters = ["address"];
+
     before(async () => {
         currentTime = new BN(await latestTime());
         account_polymath = accounts[0];
@@ -88,6 +92,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
         account_investor4 = accounts[9];
         account_temp = accounts[2];
         account_manager = accounts[5];
+        wallet = accounts[3];
 
         // Step 1: Deploy the genral PM ecosystem
         let instances = await setUpPolymathNetwork(account_polymath, token_owner);
@@ -141,7 +146,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            
+
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
@@ -161,8 +166,9 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
         });
 
         it("Should successfully attach the ERC20DividendCheckpoint with the security token - fail insufficient payment", async () => {
+            let bytesDividend = encodeModuleCall(DividendParameters, [wallet]);
             await catchRevert(
-                I_SecurityToken.addModule(P_ERC20DividendCheckpointFactory.address, "0x0", new BN(web3.utils.toWei("500", "ether")), new BN(0), {
+                I_SecurityToken.addModule(P_ERC20DividendCheckpointFactory.address, bytesDividend, new BN(web3.utils.toWei("500", "ether")), new BN(0), {
                     from: token_owner
                 })
             );
@@ -172,7 +178,8 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             let snapId = await takeSnapshot();
             await I_PolyToken.getTokens(new BN(web3.utils.toWei("500", "ether")), token_owner);
             await I_PolyToken.transfer(I_SecurityToken.address, new BN(web3.utils.toWei("500", "ether")), { from: token_owner });
-            const tx = await I_SecurityToken.addModule(P_ERC20DividendCheckpointFactory.address, "0x0", new BN(web3.utils.toWei("500", "ether")), new BN(0), {
+            let bytesDividend = encodeModuleCall(DividendParameters, [wallet]);
+            const tx = await I_SecurityToken.addModule(P_ERC20DividendCheckpointFactory.address, bytesDividend, new BN(web3.utils.toWei("500", "ether")), new BN(0), {
                 from: token_owner
             });
             assert.equal(tx.logs[3].args._types[0].toNumber(), checkpointKey, "ERC20DividendCheckpoint doesn't get deployed");
@@ -186,7 +193,8 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
         });
 
         it("Should successfully attach the ERC20DividendCheckpoint with the security token", async () => {
-            const tx = await I_SecurityToken.addModule(I_ERC20DividendCheckpointFactory.address, "0x0", new BN(0), new BN(0), { from: token_owner });
+            let bytesDividend = encodeModuleCall(DividendParameters, [wallet]);
+            const tx = await I_SecurityToken.addModule(I_ERC20DividendCheckpointFactory.address, bytesDividend, new BN(0), new BN(0), { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), checkpointKey, "ERC20DividendCheckpoint doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
@@ -334,6 +342,12 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             );
             assert.equal(tx.logs[0].args._checkpointId.toNumber(), 1, "Dividend should be created at checkpoint 1");
             assert.equal(tx.logs[0].args._name.toString(), dividendName, "Dividend name incorrect in event");
+            let data = await I_ERC20DividendCheckpoint.getDividendsData();
+            assert.equal(data[1][0].toNumber(), maturity, "maturity match");
+            assert.equal(data[2][0].toNumber(), expiry, "expiry match");
+            assert.equal(data[3][0].toString(), new BN(web3.utils.toWei("1.5", "ether")).toString(), "amount match");
+            assert.equal(data[4][0].toNumber(), 0, "claimed match");
+            assert.equal(data[5][0], dividendName, "dividendName match");
         });
 
         it("Investor 1 transfers his token balance to investor 2", async () => {
@@ -416,6 +430,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
                 dividendName,
                 { from: token_owner }
             );
+            console.log("Gas used w/ no exclusions: " + tx.receipt.gasUsed);
             assert.equal(tx.logs[0].args._checkpointId.toNumber(), 2, "Dividend should be created at checkpoint 1");
         });
 
@@ -462,7 +477,9 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             limit = limit.toNumber() + 42;
             let addresses = [];
             addresses.push(account_temp);
-            while (--limit > 42) addresses.push(web3.utils.toChecksumAddress('0x00000000000000000000000000000000000000' + limit));
+            let tempAdd = '0x0000000000000000000000000000000000000000';
+            while (--limit > 42) addresses.push(web3.utils.toChecksumAddress(tempAdd.substring(0, 42 - limit.toString().length) + limit));
+              //'0x00000000000000000000000000000000000000' + limit));
             await I_ERC20DividendCheckpoint.setDefaultExcluded(addresses, { from: token_owner });
             let excluded = await I_ERC20DividendCheckpoint.getDefaultExcluded();
             assert.equal(excluded[0], account_temp);
@@ -493,7 +510,11 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             limit = limit.toNumber() + 42;
             let addresses = [];
             addresses.push(account_temp);
-            while (limit-- > 42) addresses.push(web3.utils.toChecksumAddress('0x00000000000000000000000000000000000000' + limit));
+            let tempAdd = '0x0000000000000000000000000000000000000000';
+            while (limit-- > 42) addresses.push(web3.utils.toChecksumAddress(tempAdd.substring(0, 42 - limit.toString().length) + limit));
+
+            // while (limit-- > 42) addresses.push(web3.utils.toChecksumAddress('0x00000000000000000000000000000000000000' + limit));
+            console.log(addresses.length);
             await catchRevert(I_ERC20DividendCheckpoint.setDefaultExcluded(addresses, { from: token_owner }));
         });
 
@@ -510,7 +531,9 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
                 dividendName,
                 { from: token_owner }
             );
+            console.log("Gas used w/ max exclusions - default: " + tx.receipt.gasUsed);
             assert.equal(tx.logs[0].args._checkpointId.toNumber(), 3, "Dividend should be created at checkpoint 2");
+            assert.equal((await I_ERC20DividendCheckpoint.isExcluded.call(account_temp, tx.logs[0].args._dividendIndex)), true, "account_temp is excluded");
         });
 
         it("should investor 3 claims dividend - fail bad index", async () => {
@@ -529,6 +552,16 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             assert.equal(investor1BalanceAfter1.sub(investor1Balance).toNumber(), 0);
             assert.equal(investor2BalanceAfter1.sub(investor2Balance).toNumber(), 0);
             assert.equal(investor3BalanceAfter1.sub(investor3Balance).toString(), new BN(web3.utils.toWei("7", "ether")).toString());
+            let info = await I_ERC20DividendCheckpoint.getDividendProgress.call(2);
+            console.log(info);
+            assert.equal(info[0][1], account_temp, "account_temp");
+            assert.equal(info[1][1], false, "account_temp is not claimed");
+            assert.equal(info[2][1], true, "account_temp is excluded");
+            assert.equal(info[3][1], 0, "account_temp is not withheld");
+            assert.equal(info[0][2], account_investor3, "account_investor3");
+            assert.equal(info[1][2], true, "account_investor3 is claimed");
+            assert.equal(info[2][2], false, "account_investor3 is claimed");
+            assert.equal(info[3][2], 0, "account_investor3 is not withheld");
         });
 
         it("should investor 3 claims dividend - fails already claimed", async () => {
@@ -667,7 +700,9 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             let addresses = [];
             addresses.push(account_temp);
             addresses.push(token_owner);
-            while (--limit > 42) addresses.push(web3.utils.toChecksumAddress('0x00000000000000000000000000000000000000' + limit));
+            let tempAdd = '0x0000000000000000000000000000000000000000';
+            while (--limit > 42) addresses.push(web3.utils.toChecksumAddress(tempAdd.substring(0, 42 - limit.toString().length) + limit));
+            // while (--limit > 42) addresses.push(web3.utils.toChecksumAddress('0x00000000000000000000000000000000000000' + limit));
             await catchRevert(
                 I_ERC20DividendCheckpoint.createDividendWithCheckpointAndExclusions(
                     maturity,
@@ -697,7 +732,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
                 dividendName,
                 { from: token_owner }
             );
-            assert.equal(tx.logs[0].args._checkpointId.toNumber(), 4, "Dividend should be created at checkpoint 3");
+            assert.equal(tx.logs[0].args._checkpointId.toNumber(), 4, "Dividend should be created at checkpoint 4");
         });
 
         it("Should not create new dividend with duplicate exclusion", async () => {
@@ -825,10 +860,80 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
         });
 
         it("Issuer reclaims withholding tax", async () => {
-            let issuerBalance = new BN(await I_PolyToken.balanceOf(token_owner));
-            await I_ERC20DividendCheckpoint.withdrawWithholding(3, { from: token_owner, gasPrice: 0 });
-            let issuerBalanceAfter = new BN(await I_PolyToken.balanceOf(token_owner));
+            let info = await I_ERC20DividendCheckpoint.getDividendProgress.call(3);
+
+            console.log("Address:");
+            console.log(info[0][0]);
+            console.log(info[0][1]);
+            console.log(info[0][2]);
+            console.log(info[0][3]);
+
+            console.log("Claimed:");
+            console.log(info[1][0]);
+            console.log(info[1][1]);
+            console.log(info[1][2]);
+            console.log(info[1][3]);
+
+            console.log("Excluded:");
+            console.log(info[2][0]);
+            console.log(info[2][1]);
+            console.log(info[2][2]);
+            console.log(info[2][3]);
+
+            console.log("Withheld:");
+            console.log(info[3][0].toString());
+            console.log(info[3][1].toString());
+            console.log(info[3][2].toString());
+            console.log(info[3][3].toString());
+
+            console.log("Claimed:");
+            console.log(info[4][0].toString());
+            console.log(info[4][1].toString());
+            console.log(info[4][2].toString());
+            console.log(info[4][3].toString());
+
+            console.log("Balance:");
+            console.log(info[5][0].toString());
+            console.log(info[5][1].toString());
+            console.log(info[5][2].toString());
+            console.log(info[5][3].toString());
+
+            assert.equal(info[0][0], account_investor1, "account match");
+            assert.equal(info[0][1], account_investor2, "account match");
+            assert.equal(info[0][2], account_temp, "account match");
+            assert.equal(info[0][3], account_investor3, "account match");
+
+            assert.equal(info[3][0].toString(), 0, "withheld match");
+            assert.equal(info[3][1].toString(), new BN(web3.utils.toWei("0.2", "ether")).toString(), "withheld match");
+            assert.equal(info[3][2].toString(), new BN(web3.utils.toWei("0.2", "ether")).toString(), "withheld match");
+            assert.equal(info[3][3].toString(), 0, "withheld match");
+
+            assert.equal(info[4][0].toString(), 0, "excluded");
+            assert.equal(info[4][1].toString(), new BN(web3.utils.toWei("1.8", "ether")).toString(), "claim match");
+            assert.equal(info[4][2].toString(), new BN(web3.utils.toWei("0.8", "ether")).toString(), "claim match");
+            assert.equal(info[4][3].toString(), new BN(web3.utils.toWei("7", "ether")).toString(), "claim match");
+
+            assert.equal(info[5][0].toString(), (await I_SecurityToken.balanceOfAt(account_investor1, new BN(4))).toString(), "balance match");
+            assert.equal(info[5][1].toString(), (await I_SecurityToken.balanceOfAt(account_investor2, new BN(4))).toString(), "balance match");
+            assert.equal(info[5][2].toString(), (await I_SecurityToken.balanceOfAt(account_temp, new BN(4))).toString(), "balance match");
+            assert.equal(info[5][3].toString(), (await I_SecurityToken.balanceOfAt(account_investor3, new BN(4))).toString(), "balance match");
+
+
+            let issuerBalance = new BN(await I_PolyToken.balanceOf(wallet));
+            await I_ERC20DividendCheckpoint.withdrawWithholding(new BN(3), { from: token_owner, gasPrice: 0 });
+            let issuerBalanceAfter = new BN(await I_PolyToken.balanceOf(wallet));
             assert.equal(issuerBalanceAfter.sub(issuerBalance).toString(), new BN(web3.utils.toWei("0.4", "ether")).toString());
+
+        });
+
+        it("Issuer changes wallet address", async () => {
+            await catchRevert(I_ERC20DividendCheckpoint.changeWallet(token_owner, { from: wallet }));
+            await I_ERC20DividendCheckpoint.changeWallet(token_owner, {from: token_owner});
+            let newWallet = await I_ERC20DividendCheckpoint.wallet.call();
+            assert.equal(newWallet, token_owner, "Wallets match");
+            await I_ERC20DividendCheckpoint.changeWallet(wallet, {from: token_owner});
+            newWallet = await I_ERC20DividendCheckpoint.wallet.call();
+            assert.equal(newWallet, wallet, "Wallets match");
         });
 
         it("Issuer unable to reclaim dividend (expiry not passed)", async () => {
@@ -845,9 +950,9 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
         });
 
         it("Issuer is able to reclaim dividend after expiry", async () => {
-            let tokenOwnerBalance = new BN(await I_PolyToken.balanceOf(token_owner));
+            let tokenOwnerBalance = new BN(await I_PolyToken.balanceOf(wallet));
             await I_ERC20DividendCheckpoint.reclaimDividend(3, { from: token_owner, gasPrice: 0 });
-            let tokenOwnerAfter = new BN(await I_PolyToken.balanceOf(token_owner));
+            let tokenOwnerAfter = new BN(await I_PolyToken.balanceOf(wallet));
             assert.equal(tokenOwnerAfter.sub(tokenOwnerBalance).toString(), new BN(web3.utils.toWei("7", "ether")).toString());
         });
 
@@ -867,11 +972,6 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
         it("Should give the right dividend index", async () => {
             let index = await I_ERC20DividendCheckpoint.getDividendIndex.call(8);
             assert.equal(index.length, 0);
-        });
-
-        it("Get the init data", async () => {
-            let tx = await I_ERC20DividendCheckpoint.getInitFunction.call();
-            assert.equal(web3.utils.toAscii(tx).replace(/\u0000/g, ""), 0);
         });
 
         it("Should get the listed permissions", async () => {
@@ -1036,13 +1136,27 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
                 dividendName,
                 { from: account_manager }
             );
-            assert.equal(tx.logs[0].args._checkpointId.toNumber(), 8);
+            let info = await I_ERC20DividendCheckpoint.getCheckpointData.call(checkpointID);
+
+            assert.equal(info[0][0], account_investor1, "account match");
+            assert.equal(info[0][1], account_investor2, "account match");
+            assert.equal(info[0][2], account_temp, "account match");
+            assert.equal(info[0][3], account_investor3, "account match");
+            assert.equal(info[1][0].toString(), (await I_SecurityToken.balanceOfAt.call(account_investor1, checkpointID)).toString(), "balance match");
+            assert.equal(info[1][1].toString(), (await I_SecurityToken.balanceOfAt.call(account_investor2, checkpointID)).toString(), "balance match");
+            assert.equal(info[1][2].toString(), (await I_SecurityToken.balanceOfAt.call(account_temp, checkpointID)).toString(), "balance match");
+            assert.equal(info[1][3].toString(), (await I_SecurityToken.balanceOfAt.call(account_investor3, checkpointID)).toString(), "balance match");
+            assert.equal(info[2][0].toNumber(), 0, "withholding match");
+            assert.equal(info[2][1].toString(), new BN((10 * 10 ** 16).toString()).toString(), "withholding match");
+            assert.equal(info[2][2].toString(), new BN((20 * 10 ** 16).toString()).toString(), "withholding match");
+            assert.equal(info[2][3].toNumber(), 0, "withholding match");
+            assert.equal(tx.logs[0].args._checkpointId.toNumber(), checkpointID);
         });
 
         it("should allow manager with permission to create dividend with exclusion", async () => {
-            let maturity = await latestTime() + duration.days(1);
-            let expiry = await latestTime() + duration.days(10);
-            let exclusions = [one_address];
+            let maturity = (await latestTime()) + duration.days(1);
+            let expiry = (await latestTime()) + duration.days(10);
+            let exclusions = [account_temp];
             let tx = await I_ERC20DividendCheckpoint.createDividendWithExclusions(
                 maturity,
                 expiry,
@@ -1053,6 +1167,10 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
                 { from: account_manager }
             );
             assert.equal(tx.logs[0].args._checkpointId.toNumber(), 9);
+            console.log("Gas used w/ max exclusions - non-default: " + tx.receipt.gasUsed);
+            let info = await I_ERC20DividendCheckpoint.getDividendProgress.call(tx.logs[0].args._dividendIndex);
+            assert.equal(info[0][2], account_temp, "account_temp is excluded");
+            assert.equal(info[2][2], true, "account_temp is excluded");
         });
 
         it("should allow manager with permission to create dividend with checkpoint and exclusion", async () => {

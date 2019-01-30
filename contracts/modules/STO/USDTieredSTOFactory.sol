@@ -22,9 +22,9 @@ contract USDTieredSTOFactory is ModuleFactory {
         uint256 _usageCost,
         uint256 _subscriptionCost,
         address _logicContract
-    ) 
-        public 
-        ModuleFactory(_setupCost, _usageCost, _subscriptionCost) 
+    )
+        public
+        ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
     {
         require(_logicContract != address(0), "0x address is not allowed");
         logicContract = _logicContract;
@@ -52,7 +52,7 @@ contract USDTieredSTOFactory is ModuleFactory {
         require(success, "Unsuccessfull call");
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(usdTieredSTO, getName(), address(this), msg.sender, setupCost, now);
-        return address(usdTieredSTO);
+        return usdTieredSTO;
     }
 
     /**

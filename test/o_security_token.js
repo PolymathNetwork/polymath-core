@@ -48,6 +48,11 @@ contract("SecurityToken", async (accounts) => {
 
     let ID_snap;
     const message = "Transaction Should Fail!!";
+    const uri = "https://www.gogl.bts.fly";
+    const docHash = web3.utils.utf8ToHex("hello");
+
+    const empty_hash = "0x0000000000000000000000000000000000000000000000000000000000000000";
+
 
     // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;
@@ -277,6 +282,10 @@ contract("SecurityToken", async (accounts) => {
             
         });
 
+        it("Should ST be issuable", async() => {
+            assert.isTrue(await I_SecurityToken.isIssuable.call());
+        })
+
         it("Should finish the minting -- fail because feature is not activated", async () => {
             await catchRevert(I_SecurityToken.freezeIssuance({ from: token_owner }));
         });
@@ -301,6 +310,7 @@ contract("SecurityToken", async (accounts) => {
         it("Should finish minting & restrict the further minting", async () => {
             let id = await takeSnapshot();
             await I_SecurityToken.freezeIssuance({ from: token_owner });
+            assert.isFalse(await I_SecurityToken.isIssuable.call());
             await catchRevert(I_SecurityToken.issue(account_affiliate1, new BN(100).mul(new BN(10).pow(new BN(18))), "0x0", { from: token_owner, gas: 500000 }));
             await revertToSnapshot(id);
         });
@@ -437,6 +447,12 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(tx.logs[0].args._types[0], transferManagerKey);
             assert.equal(tx.logs[0].args._module, I_GeneralTransferManager.address);
             await I_SecurityToken.issue(account_investor1, new BN(web3.utils.toWei("500")), "0x0", { from: token_owner });
+            let _canTransfer = await I_SecurityToken.canTransfer.call(account_investor2, new BN(web3.utils.toWei("200")), "0x0", {from: account_investor1});
+            
+            assert.isTrue(_canTransfer[0]);
+            assert.equal(_canTransfer[1], 0x51);
+            assert.equal(_canTransfer[2], empty_hash);
+            
             await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("200")), { from: account_investor1 });
             
             assert.equal((await I_SecurityToken.balanceOf(account_investor2)).div(new BN(10).pow(new BN(18))).toNumber(), 200);
@@ -583,6 +599,11 @@ contract("SecurityToken", async (accounts) => {
         });
 
         it("Should Fail in transferring the token from one whitelist investor 1 to non whitelist investor 2", async () => {
+            let _canTransfer = await I_SecurityToken.canTransfer.call(account_investor2, new BN(10).mul(new BN(10).pow(new BN(18))), "0x0", {from: account_investor1});
+            
+            assert.isFalse(_canTransfer[0]);
+            assert.equal(_canTransfer[1], 0x50);
+
             await catchRevert(I_SecurityToken.transfer(account_investor2, new BN(10).mul(new BN(10).pow(new BN(18))), { from: account_investor1 }));
         });
 
@@ -614,7 +635,7 @@ contract("SecurityToken", async (accounts) => {
             await catchRevert(I_SecurityToken.transfer(accounts[7], new BN(10).pow(new BN(17)), { from: account_investor1 }));
         });
 
-        it("Should adjust granularity", async () => {
+        it("Should not allow 0 granularity", async () => {
             await catchRevert(I_SecurityToken.changeGranularity(0, { from: token_owner }));
         });
 
@@ -622,6 +643,21 @@ contract("SecurityToken", async (accounts) => {
             await I_SecurityToken.changeGranularity(new BN(10).pow(new BN(17)), { from: token_owner });
             await I_SecurityToken.transfer(accounts[7], new BN(10).pow(new BN(17)), { from: account_investor1, gas: 2500000 });
             await I_SecurityToken.transfer(account_investor1, new BN(10).pow(new BN(17)), { from: accounts[7], gas: 2500000 });
+        });
+
+        it("Should not allow unauthorized address to change data store", async () => {
+            await catchRevert(I_SecurityToken.changeDataStore(one_address, { from: account_polymath }));
+        });
+
+        it("Should not allow 0x0 address as data store", async () => {
+            await catchRevert(I_SecurityToken.changeDataStore(address_zero, { from: token_owner }));
+        });
+
+        it("Should change data store", async () => {
+            let ds = await I_SecurityToken.dataStore();
+            await I_SecurityToken.changeDataStore(one_address, { from: token_owner });
+            assert.equal(one_address, await I_SecurityToken.dataStore());
+            await I_SecurityToken.changeDataStore(ds, { from: token_owner });
         });
 
         it("Should transfer from whitelist investor to non-whitelist investor in first tx and in 2nd tx non-whitelist to non-whitelist transfer", async () => {
@@ -867,6 +903,10 @@ contract("SecurityToken", async (accounts) => {
             // check status
             let controller = await I_SecurityToken.controller.call();
             assert.equal(account_controller, controller, "Status not set correctly");
+        });
+
+        it("Should ST be the controllable", async() => {
+            assert.isTrue(await I_SecurityToken.isControllable.call());
         });
 
         it("Should force burn the tokens - value too high", async () => {
@@ -1168,6 +1208,10 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(true, await I_SecurityToken.controllerDisabled.call(), "State not changed");
         });
 
+        it("Should ST be not controllable", async() => {
+            assert.isFalse(await I_SecurityToken.isControllable.call());
+        });
+
         it("Should fail to freeze controller functionality because already frozen", async () => {
             await catchRevert(I_SecurityToken.disableController({ from: token_owner }));
         });
@@ -1352,35 +1396,181 @@ contract("SecurityToken", async (accounts) => {
             );
 
             console.log(`
+                Datastore address from the contract:         ${await stGetter.dataStore.call()}
+                Datastore address from the storage:          ${await readStorage(I_SecurityToken.address, 14)}
+            `)
+
+            assert.equal(
+                await stGetter.dataStore.call(),
+                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 14))
+            );
+
+            console.log(`
                 Granularity value from the contract:         ${await stGetter.granularity.call()}
-                Granularity value from the storage:          ${(web3.utils.toBN(await readStorage(I_SecurityToken.address, 14))).toString()}
+                Granularity value from the storage:          ${(web3.utils.toBN(await readStorage(I_SecurityToken.address, 15))).toString()}
             `)
 
             assert.equal(
                 web3.utils.fromWei(await stGetter.granularity.call()),
-                web3.utils.fromWei((web3.utils.toBN(await readStorage(I_SecurityToken.address, 14))).toString())
+                web3.utils.fromWei((web3.utils.toBN(await readStorage(I_SecurityToken.address, 15))).toString())
             );
 
             console.log(`
                 Current checkpoint ID from the contract:    ${await stGetter.currentCheckpointId.call()}
-                Current checkpoint ID from the storage:     ${(web3.utils.toBN(await readStorage(I_SecurityToken.address, 15))).toString()}
+                Current checkpoint ID from the storage:     ${(web3.utils.toBN(await readStorage(I_SecurityToken.address, 16))).toString()}
             `)
             assert.equal(
                 await stGetter.currentCheckpointId.call(),
-                (web3.utils.toBN(await readStorage(I_SecurityToken.address, 15))).toString()
+                (web3.utils.toBN(await readStorage(I_SecurityToken.address, 16))).toString()
             );
 
             console.log(`
                 TokenDetails from the contract:    ${await stGetter.tokenDetails.call()}
-                TokenDetails from the storage:     ${(web3.utils.toUtf8((await readStorage(I_SecurityToken.address, 16)).substring(0, 60)))}
+                TokenDetails from the storage:     ${(web3.utils.toUtf8((await readStorage(I_SecurityToken.address, 17)).substring(0, 60)))}
             `)
             assert.equal(
                 await stGetter.tokenDetails.call(),
-                (web3.utils.toUtf8((await readStorage(I_SecurityToken.address, 16)).substring(0, 60))).replace(/\u0000/g, "")
+                (web3.utils.toUtf8((await readStorage(I_SecurityToken.address, 17)).substring(0, 60))).replace(/\u0000/g, "")
             );
 
         });
 
     });
     
+    describe(`Test cases for the ERC1643 contract\n`, async () => {
+
+        describe(`Test cases for the setDocument() function of the ERC1643\n`, async() => {
+
+            it("\tShould failed in executing the setDocument() function because msg.sender is not authorised\n", async() => {
+                await catchRevert(
+                    I_SecurityToken.setDocument(web3.utils.utf8ToHex("doc1"), "https://www.gogl.bts.fly", "0x0", {from: account_temp})
+                );
+            });
+
+            it("\tShould failed to set a document details as name is empty\n", async() => {
+                await catchRevert(
+                    I_SecurityToken.setDocument(web3.utils.utf8ToHex(""), "https://www.gogl.bts.fly", "0x0", {from: token_owner})
+                );
+            });
+
+            it("\tShould failed to set a document details as URI is empty\n", async() => {
+                await catchRevert(
+                    I_SecurityToken.setDocument(web3.utils.utf8ToHex("doc1"), "", "0x0", {from: token_owner})
+                );
+            });
+
+            it("\tShould sucessfully add the document details in the `_documents` mapping and change the length of the `_docsNames`\n", async() => {
+                let tx = await I_SecurityToken.setDocument(web3.utils.utf8ToHex("doc1"), uri, docHash, {from: token_owner});
+                assert.equal(web3.utils.toUtf8(tx.logs[0].args._name), "doc1");
+                assert.equal(tx.logs[0].args._uri, uri);
+                assert.equal(web3.utils.toUtf8(tx.logs[0].args._documentHash), web3.utils.toUtf8(docHash));
+                assert.equal((await stGetter.getAllDocuments.call()).length, 1);
+            });
+
+            it("\tShould successfully add the new document and allow the empty docHash to be added in the `Document` structure\n", async() => {
+                let tx = await I_SecurityToken.setDocument(web3.utils.utf8ToHex("doc2"), uri, "0x0", {from: token_owner});
+                assert.equal(web3.utils.toUtf8(tx.logs[0].args._name), "doc2");
+                assert.equal(tx.logs[0].args._uri, uri);
+                assert.equal(tx.logs[0].args._documentHash, empty_hash);
+                assert.equal((await stGetter.getAllDocuments.call()).length, 2);
+            });
+
+            it("\tShould successfully update the existing document and length of `_docsNames` should remain unaffected\n", async() => {
+                let tx = await I_SecurityToken.setDocument(web3.utils.utf8ToHex("doc2"), "https://www.bts.l", "0x0", {from: token_owner});
+                assert.equal(web3.utils.toUtf8(tx.logs[0].args._name), "doc2");
+                assert.equal(tx.logs[0].args._uri, "https://www.bts.l");
+                assert.equal(tx.logs[0].args._documentHash, empty_hash);
+                assert.equal((await stGetter.getAllDocuments.call()).length, 2);
+            });
+
+        describe("Test cases for the getters functions\n", async()=> {
+
+                it("\tShould get the details of existed document\n", async() => {
+                    let doc1Details = await stGetter.getDocument.call(web3.utils.utf8ToHex("doc1"));
+                    assert.equal(doc1Details[0], uri);
+                    assert.equal(web3.utils.toUtf8(doc1Details[1]), web3.utils.toUtf8(docHash));
+                    assert.closeTo(doc1Details[2].toNumber(), await latestTime(), 2);
+
+                    let doc2Details = await stGetter.getDocument.call(web3.utils.utf8ToHex("doc2"));
+                    assert.equal(doc2Details[0], "https://www.bts.l");
+                    assert.equal(doc2Details[1], empty_hash);
+                    assert.closeTo(doc2Details[2].toNumber(), await latestTime(), 2);
+                });
+
+                it("\tShould get the details of the non-existed document it means every value should be zero\n", async() => {
+                    let doc3Details = await stGetter.getDocument.call(web3.utils.utf8ToHex("doc3"));
+                    assert.equal(doc3Details[0], "");
+                    assert.equal(web3.utils.toUtf8(doc3Details[1]), "");
+                    assert.equal(doc3Details[2], 0);
+                });
+
+                it("\tShould get all the documents present in the contract\n", async() => {
+                    let allDocs = await stGetter.getAllDocuments.call()
+                    assert.equal(allDocs.length, 2);
+                    assert.equal(web3.utils.toUtf8(allDocs[0]), "doc1");
+                    assert.equal(web3.utils.toUtf8(allDocs[1]), "doc2");
+                });
+            })
+        });
+
+        describe("Test cases for the removeDocument()\n", async() => {
+
+            it("\tShould failed to remove document because msg.sender is not authorised\n", async() => {
+                await catchRevert(
+                    I_SecurityToken.removeDocument(web3.utils.utf8ToHex("doc2"), {from: account_temp})
+                );
+            });
+
+            it("\tShould failed to remove the document that is not existed in the contract\n", async() => {
+                await catchRevert(
+                    I_SecurityToken.removeDocument(web3.utils.utf8ToHex("doc3"), {from: token_owner})
+                );
+            });
+
+            it("\tShould succssfully remove the document from the contract  which is present in the last index of the `_docsName` and check the params of the `DocumentRemoved` event\n", async() => {
+                // first add the new document 
+                await I_SecurityToken.setDocument(web3.utils.utf8ToHex("doc3"), "https://www.bts.l", "0x0", {from: token_owner});
+                // as this will be last in the array so remove this
+                let tx = await I_SecurityToken.removeDocument(web3.utils.utf8ToHex("doc3"), {from: token_owner});
+                assert.equal(web3.utils.toUtf8(tx.logs[0].args._name), "doc3");
+                assert.equal(tx.logs[0].args._uri, "https://www.bts.l");
+                assert.equal(tx.logs[0].args._documentHash, empty_hash);
+                assert.equal((await stGetter.getAllDocuments.call()).length, 2);
+
+                // remove the document that is not last in the `docsName` array
+                tx = await I_SecurityToken.removeDocument(web3.utils.utf8ToHex("doc1"), {from: token_owner});
+                assert.equal(web3.utils.toUtf8(tx.logs[0].args._name), "doc1");
+                assert.equal(tx.logs[0].args._uri, uri);
+                assert.equal(web3.utils.toUtf8(tx.logs[0].args._documentHash), web3.utils.toUtf8(docHash));
+                assert.equal((await stGetter.getAllDocuments.call()).length, 1);
+            });
+
+            it("\t Should delete the doc to validate the #17 issue problem", async() => {
+                let tx = await I_SecurityToken.removeDocument(web3.utils.utf8ToHex("doc2"), {from: token_owner});
+                assert.equal(web3.utils.toUtf8(tx.logs[0].args._name), "doc2");
+                assert.equal(tx.logs[0].args._uri, "https://www.bts.l");
+                assert.equal(web3.utils.toUtf8(tx.logs[0].args._documentHash), '');
+                assert.equal((await stGetter.getAllDocuments.call()).length, 0);
+            });
+
+        describe("Test cases for the getters functions\n", async()=> {
+
+            it("\tShould get the details of the non-existed (earlier was present but get removed ) document it means every value should be zero\n", async() => {
+                let doc1Details = await stGetter.getDocument.call(web3.utils.utf8ToHex("doc1"));
+                assert.equal(doc1Details[0], "");
+                assert.equal(web3.utils.toUtf8(doc1Details[1]), "");
+                assert.equal(doc1Details[2], 0);
+            });
+
+            it("\tShould get all the documents present in the contract which should be 1\n", async() => {
+                // add one doc before the getter call
+                await I_SecurityToken.setDocument(web3.utils.utf8ToHex("doc4"), "https://www.bts.l", docHash, {from: token_owner})
+                let allDocs = await stGetter.getAllDocuments.call()
+                assert.equal(allDocs.length, 1);
+                assert.equal(web3.utils.toUtf8(allDocs[0]), "doc4");
+            });
+        });
+    })
+    });
+
 });

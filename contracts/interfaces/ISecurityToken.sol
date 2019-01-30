@@ -85,6 +85,13 @@ interface ISecurityToken {
     function isControllable() external view returns (bool);
 
     /**
+     * @notice Checks if an address is a module of certain type
+     * @param _module Address to check
+     * @param _type type to check against
+     */
+    function isModule(address _module, uint8 _type) external view returns(bool);
+
+    /**
      * @notice This function must be called to increase the total supply (Corresponds to mint function of ERC20).
      * @dev It only be called by the token issuer or the operator defined by the issuer. ERC1594 doesn't have
      * have the any logic related to operator but its superset ERC1400 have the operator logic and this function
@@ -218,6 +225,18 @@ interface ISecurityToken {
      * @return Id
      */
     function currentCheckpointId() external view returns(uint256);
+
+    /**
+     * @notice Gets data store address
+     * @return data store address
+     */
+    function dataStore() external view returns (address);
+
+    /**
+    * @notice Allows owner to change data store
+    * @param _dataStore Address of the token data store
+    */
+    function changeDataStore(address _dataStore) external;
 
    /**
     * @notice Allows the owner to withdraw unspent POLY stored by them on the ST or any ERC20 token.

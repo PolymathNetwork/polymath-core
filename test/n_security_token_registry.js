@@ -13,6 +13,9 @@ const SecurityTokenRegistryMock = artifacts.require("./SecurityTokenRegistryMock
 const STFactory = artifacts.require("./STFactory.sol");
 const STRGetter = artifacts.require('./STRGetter.sol');
 const STGetter = artifacts.require("./STGetter.sol");
+const DataStoreLogic = artifacts.require('./DataStore.sol');
+const DataStoreFactory = artifacts.require('./DataStoreFactory.sol');
+
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -577,7 +580,10 @@ contract("SecurityTokenRegistry", async (accounts) => {
         it("Should deploy the st version 2", async () => {
             // Step 7: Deploy the STFactory contract
             I_STGetter = await STGetter.new();
-            I_STFactory002 = await STFactory.new(I_GeneralTransferManagerFactory.address, I_STGetter.address, { from: account_polymath });
+            let I_DataStoreLogic = await DataStoreLogic.new({ from: account_polymath });
+            let I_DataStoreFactory = await DataStoreFactory.new(I_DataStoreLogic.address, { from: account_polymath });
+
+            I_STFactory002 = await STFactory.new(I_GeneralTransferManagerFactory.address, I_DataStoreFactory.address, I_STGetter.address, { from: account_polymath });
 
             assert.notEqual(
                 I_STFactory002.address.valueOf(),

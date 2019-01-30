@@ -40,6 +40,8 @@ const MockBurnFactory = artifacts.require("./MockBurnFactory.sol");
 const STRGetter = artifacts.require("./STRGetter.sol");
 const MockWrongTypeFactory = artifacts.require("./MockWrongTypeFactory.sol");
 const STGetter = artifacts.require("./STGetter.sol");
+const DataStoreLogic = artifacts.require('./DataStore.sol');
+const DataStoreFactory = artifacts.require('./DataStoreFactory.sol');
 const VolumeRestrictionTMFactory = artifacts.require("./VolumeRestrictionTMFactory.sol");
 const VolumeRestrictionTM = artifacts.require("./VolumeRestrictionTM.sol");
 const VestingEscrowWalletFactory = artifacts.require("./VestingEscrowWalletFactory.sol");
@@ -209,7 +211,10 @@ async function deployGTM(account_polymath) {
 
 async function deploySTFactory(account_polymath) {
     I_STGetter = await STGetter.new({from: account_polymath});
-    I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, I_STGetter.address, { from: account_polymath });
+    let I_DataStoreLogic = await DataStoreLogic.new({ from: account_polymath });
+    let I_DataStoreFactory = await DataStoreFactory.new(I_DataStoreLogic.address, { from: account_polymath });
+    I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, I_DataStoreFactory.address, I_STGetter.address, { from: account_polymath });
+
     assert.notEqual(I_STFactory.address.valueOf(), "0x0000000000000000000000000000000000000000", "STFactory contract was not deployed");
 
     return new Array(I_STFactory, I_STGetter);

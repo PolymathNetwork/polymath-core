@@ -278,6 +278,15 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     }
 
     /**
+    * @notice Allows owner to change data store
+    * @param _dataStore Address of the token data store
+    */
+    function changeDataStore(address _dataStore) external onlyOwner {
+        require(_dataStore != address(0), "Invalid address");
+        dataStore = _dataStore;
+    }
+
+    /**
     * @notice Keeps track of the number of non-zero token holders
     * @param _from sender of transfer
     * @param _to receiver of transfer
@@ -516,6 +525,15 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     function redeem(uint256 _value, bytes calldata _data) external onlyModule(BURN_KEY) {
         // Add a function to validate the `_data` parameter
         require(_checkAndBurn(msg.sender, _value, _data), "Invalid redeem");
+    }
+
+    /**
+     * @notice Checks if an address is a module of certain type
+     * @param _module Address to check
+     * @param _type type to check against
+     */
+    function isModule(address _module, uint8 _type) public view returns(bool) {
+        return _isModule(_module, _type);
     }
 
     function _checkAndBurn(address _from, uint256 _value, bytes memory _data) internal returns(bool) {

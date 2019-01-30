@@ -14,6 +14,8 @@ const GeneralTransferManagerFactory = artifacts.require("./GeneralTransferManage
 const GeneralPermissionManagerFactory = artifacts.require("./GeneralPermissionManagerFactory.sol");
 const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager.sol");
 const STGetter = artifacts.require("./STGetter.sol");
+const DataStoreLogic = artifacts.require('./DataStore.sol');
+const DataStoreFactory = artifacts.require('./DataStoreFactory.sol');
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -156,7 +158,9 @@ contract("ModuleRegistryProxy", async (accounts) => {
 
             // Step 3: Deploy the STFactory contract
             I_STGetter = await STGetter.new();
-            I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, I_STGetter.address, { from: account_polymath });
+            let I_DataStoreLogic = await DataStoreLogic.new({ from: account_polymath });
+            let I_DataStoreFactory = await DataStoreFactory.new(I_DataStoreLogic.address, { from: account_polymath });
+            I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, I_DataStoreFactory.address, I_STGetter.address, { from: account_polymath });
 
             assert.notEqual(I_STFactory.address.valueOf(), address_zero, "STFactory contract was not deployed");
         });

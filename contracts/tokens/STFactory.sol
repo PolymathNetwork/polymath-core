@@ -2,6 +2,7 @@ pragma solidity ^0.5.0;
 
 import "./SecurityToken.sol";
 import "../interfaces/ISTFactory.sol";
+import "../datastore/DataStoreFactory.sol";
 
 /**
  * @title Proxy for deploying SecurityToken instances
@@ -9,9 +10,11 @@ import "../interfaces/ISTFactory.sol";
 contract STFactory is ISTFactory {
     address public transferManagerFactory;
     address public stDelegate;
+    DataStoreFactory public dataStoreFactory;
 
-    constructor(address _transferManagerFactory, address _stDelegate) public {
+    constructor(address _transferManagerFactory, address _dataStoreFactory, address _stDelegate) public {
         transferManagerFactory = _transferManagerFactory;
+        dataStoreFactory = DataStoreFactory(_dataStoreFactory);
         stDelegate = _stDelegate;
     }
 
@@ -41,6 +44,7 @@ contract STFactory is ISTFactory {
             stDelegate
         );
         newSecurityToken.addModule(transferManagerFactory, "", 0, 0);
+        newSecurityToken.changeDataStore(dataStoreFactory.generateDataStore(address(newSecurityToken)));
         newSecurityToken.transferOwnership(_issuer);
         return address(newSecurityToken);
     }

@@ -7,6 +7,7 @@ contract SecurityTokenStorage {
     uint8 constant MINT_KEY = 3;
     uint8 constant CHECKPOINT_KEY = 4;
     uint8 constant BURN_KEY = 5;
+    uint8 constant DATA_KEY = 6;
 
     //////////////////////////
     /// Document datastructure
@@ -62,6 +63,8 @@ contract SecurityTokenStorage {
     address public featureRegistry;
     address public polyToken;
     address public delegate;
+    // Address of the data store used to store shared data
+    address public dataStore;
 
     uint256 public granularity;
 

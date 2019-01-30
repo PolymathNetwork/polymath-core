@@ -8,9 +8,6 @@ contract SecurityTokenStorage {
     uint8 constant CHECKPOINT_KEY = 4;
     uint8 constant BURN_KEY = 5;
 
-    bytes32 constant LOCKED = "LOCKED";
-    bytes32 constant UNLOCKED = "UNLOCKED";
-
     //////////////////////////
     /// Document datastructure
     //////////////////////////

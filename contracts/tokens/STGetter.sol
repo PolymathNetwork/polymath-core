@@ -181,23 +181,19 @@ contract STGetter is OZStorage, SecurityTokenStorage {
         return false;
     }
 
-    /// @dev get the unlocked balance according to the tms
+    /**
+     * @notice Get the balance according to the provided partitions
+     * @param _owner Whom balance need to queried
+     * @param _partition Partition which differentiate the tokens.
+     * @return Amount of tokens as per the given partitions
+     */
     function balanceOfPartition(address _owner, bytes32 _partition) external view returns(uint256) {
         address[] memory tms = modules[TRANSFER_KEY];
-        uint8 i;
-        uint256 _amount;
-        if (_partition == LOCKED) {
-            for (i = 0; i < tms.length; i++) {
-               _amount += ITransferManager(tms[i]).getLockedToken(_owner);
-            }
-           return _amount;
-        }else if (_partition == UNLOCKED) {
-            for (i = 0; i < tms.length; i++) {
-               _amount += ITransferManager(tms[i]).getUnLockedToken(_owner);
-            }
-           return _amount;
+        uint256 _amount = 0;
+        for (uint256 i = 0; i < tms.length; i++) {
+            _amount += ITransferManager(tms[i]).getTokensByPartition(_owner, _partition);
         }
-        return 0;   
+        return _amount;
     }
 
     /**

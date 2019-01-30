@@ -2,7 +2,7 @@ pragma solidity ^0.5.0;
 
 import "./TransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "./ManualApprovalTransferManagerStorage.sol";
+import "../../storage/modules/TransferManager/ManualApprovalTransferManagerStorage.sol";
 
 /**
  * @title Transfer Manager module for manually approving transactions between accounts
@@ -416,16 +416,9 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
     }
 
     /**
-     * @notice return the amount of locked tokens for a given user
+     * @notice return the amount of tokens for a given user as per the partition
      */
-    function getLockedToken(address /*_owner*/) external view returns(uint256) {
-        return 0;
-    }
-
-    /**
-     * @notice return the amount of un locked tokens for a given user
-     */
-    function getUnLockedToken(address /*_owner*/) external view returns(uint256) {
+    function getTokensByPartition(address /*_owner*/, bytes32 /*_partition*/) external view returns(uint256){
         return 0;
     }
 

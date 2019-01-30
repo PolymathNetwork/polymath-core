@@ -3,7 +3,7 @@ pragma solidity ^0.5.0;
 import "./STO.sol";
 import "../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "./PreSaleSTOStorage.sol";
+import "../../storage/modules/STO/PreSaleSTOStorage.sol";
 
 /**
  * @title STO module for private presales

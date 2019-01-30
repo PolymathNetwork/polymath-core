@@ -3,7 +3,7 @@ pragma solidity ^0.5.0;
 import "../interfaces/IModule.sol";
 import "../interfaces/ICheckPermission.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
-import "./ModuleStorage.sol";
+import "../storage/modules/ModuleStorage.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 /**

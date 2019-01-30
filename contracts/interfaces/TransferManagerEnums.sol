@@ -11,4 +11,7 @@ contract TransferManagerEnums {
     //  NA, then the result from this TM is ignored
     enum Result {INVALID, NA, VALID, FORCE_VALID}
 
+    bytes32 public constant LOCKED = "LOCKED";
+    bytes32 public constant UNLOCKED = "UNLOCKED";
+
 }

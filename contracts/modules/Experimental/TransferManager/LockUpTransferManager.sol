@@ -638,24 +638,21 @@ contract LockUpTransferManager is TransferManager {
     }
 
     /**
-     * @notice return the amount of locked tokens for a given user
-     * @param _owner whom token amount need to query
+     * @notice return the amount of tokens for a given user as per the partition
+     * @param _owner Whom token amount need to query
+     * @param _partition Identifier
      */
-    function getLockedToken(address _owner) external view returns(uint256) {
-        return getLockedTokenToUser(_owner);
-    }
-
-    /**
-     * @notice return the amount of un locked tokens for a given user
-     * @param _owner whom token amount need to query
-     */
-    function getUnLockedToken(address _owner) external view returns(uint256) {
-        uint256 _currentBalance = IERC20(securityToken).balanceOf(_owner);
-        if (_currentBalance < getLockedTokenToUser(_owner)) {
-            return 0;
+    function getTokensByPartition(address _owner, bytes32 _partition) external view returns(uint256){
+        if (_partition == LOCKED) {
+            return getLockedTokenToUser(_owner);
+        } else if (_partition == UNLOCKED) {
+            uint256 _currentBalance = IERC20(securityToken).balanceOf(_owner);
+            if (_currentBalance < getLockedTokenToUser(_owner)) {
+                return 0;
+            }
+            return _currentBalance.sub(getLockedTokenToUser(_owner));
         }
-        return _currentBalance.sub(getLockedTokenToUser(_owner));
-    }
+    } 
 
     /**
      * @notice This function returns the signature of configure function

@@ -9,7 +9,7 @@ pragma solidity ^0.5.0;
 
 import "./TransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "./PercentageTransferManagerStorage.sol";
+import "../../storage/modules/TransferManager/PercentageTransferManagerStorage.sol";
 
 /**
  * @title Transfer Manager module for limiting percentage of token supply a single address can hold
@@ -144,18 +144,11 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
     }
 
     /**
-     * @notice return the amount of locked tokens for a given user
+     * @notice return the amount of tokens for a given user as per the partition
      */
-    function getLockedToken(address /*_owner*/) external view returns(uint256) {
+    function getTokensByPartition(address /*_owner*/, bytes32 /*_partition*/) external view returns(uint256){
         return 0;
-    }
-
-    /**
-     * @notice return the amount of un locked tokens for a given user
-     */
-    function getUnLockedToken(address /*_owner*/) external view returns(uint256) {
-        return 0;
-    }
+    } 
 
     /**
      * @notice Return the permissions flag that are associated with Percentage transfer Manager

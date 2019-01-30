@@ -1,7 +1,7 @@
 pragma solidity ^0.5.0;
 
 import "./TransferManager.sol";
-import "./CountTransferManagerStorage.sol";
+import "../../storage/modules/TransferManager/CountTransferManagerStorage.sol";
 import "../../interfaces/ISecurityToken.sol";
 
 /**
@@ -93,18 +93,11 @@ contract CountTransferManager is CountTransferManagerStorage, TransferManager {
     }
 
     /**
-     * @notice return the amount of locked tokens for a given user
+     * @notice return the amount of tokens for a given user as per the partition
      */
-    function getLockedToken(address /*_owner*/) external view returns(uint256) {
+    function getTokensByPartition(address /*_owner*/, bytes32 /*_partition*/) external view returns(uint256){
         return 0;
-    }
-
-    /**
-     * @notice return the amount of un locked tokens for a given user
-     */
-    function getUnLockedToken(address /*_owner*/) external view returns(uint256) {
-        return 0;
-    }
+    } 
 
     /**
      * @notice Returns the permissions flag that are associated with CountTransferManager

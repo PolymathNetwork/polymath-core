@@ -6,7 +6,7 @@ import "../../interfaces/IOracle.sol";
 import "../../RegistryUpdater.sol";
 import "../../libraries/DecimalMath.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "../../storage/USDTieredSTOStorage.sol";
+import "../../storage/modules/STO/USDTieredSTOStorage.sol";
 
 /**
  * @title STO module for standard capped crowdsale

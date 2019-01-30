@@ -2,6 +2,7 @@ pragma solidity ^0.5.0;
 
 import "../../TransferManager/TransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "openzeppelin-solidity/contracts/math/Math.sol";
 
 contract LockUpTransferManager is TransferManager {
 
@@ -643,15 +644,16 @@ contract LockUpTransferManager is TransferManager {
      * @param _partition Identifier
      */
     function getTokensByPartition(address _owner, bytes32 _partition) external view returns(uint256){
+        uint256 _currentBalance = IERC20(securityToken).balanceOf(_owner);
         if (_partition == LOCKED) {
-            return getLockedTokenToUser(_owner);
+            return Math.min(getLockedTokenToUser(_owner), _currentBalance);
         } else if (_partition == UNLOCKED) {
-            uint256 _currentBalance = IERC20(securityToken).balanceOf(_owner);
             if (_currentBalance < getLockedTokenToUser(_owner)) {
                 return 0;
             }
             return _currentBalance.sub(getLockedTokenToUser(_owner));
         }
+        return 0;
     } 
 
     /**

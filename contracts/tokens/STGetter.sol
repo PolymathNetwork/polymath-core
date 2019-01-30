@@ -193,6 +193,9 @@ contract STGetter is OZStorage, SecurityTokenStorage {
         for (uint256 i = 0; i < tms.length; i++) {
             _amount += ITransferManager(tms[i]).getTokensByPartition(_owner, _partition);
         }
+        if (_amount == 0 && _partition == "UNLOCKED") {
+            return balanceOf(_owner);
+        }
         return _amount;
     }
 

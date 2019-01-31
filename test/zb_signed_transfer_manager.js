@@ -1,7 +1,7 @@
 import latestTime from "./helpers/latestTime";
 import { duration, promisifyLogWatch, latestBlock } from "./helpers/utils";
 import takeSnapshot, { increaseTime, revertToSnapshot } from "./helpers/time";
-import { getSignTMData } from "./helpers/signData";
+import { getSignSTMData } from "./helpers/signData";
 import { pk } from "./helpers/testprivateKey";
 import { encodeProxyCall, encodeModuleCall } from "./helpers/encodeCall";
 import { catchRevert } from "./helpers/exceptions";
@@ -117,7 +117,7 @@ contract("SignedTransferManager", accounts => {
         FeatureRegistry:                   ${I_FeatureRegistry.address}
 
         ManualApprovalTransferManagerFactory: ${I_SignedTransferManagerFactory.address}
-        
+
 
         -----------------------------------------------------------------------------
         `);
@@ -133,7 +133,7 @@ contract("SignedTransferManager", accounts => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            
+
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
@@ -223,10 +223,10 @@ contract("SignedTransferManager", accounts => {
             await web3.eth.sendTransaction({ from: token_owner, to: signer.address, value: oneeth });
 
             await I_SignedTransferManager.updateSigners([signer.address], [true], {from: token_owner});
-            
+
             let nonce = new BN(10);
             let expiry = new BN(currentTime.add(new BN(duration.days(100))));
-            let data = await getSignTMData(
+            let data = await getSignSTMData(
                 I_SignedTransferManager.address,
                 nonce,
                 expiry,
@@ -247,7 +247,7 @@ contract("SignedTransferManager", accounts => {
             let oneeth = new BN(web3.utils.toWei("1", "ether"));
             let nonce = new BN(10);
             let expiry = new BN(currentTime.add(new BN(duration.days(100))));
-            let data = await getSignTMData(
+            let data = await getSignSTMData(
                 I_SignedTransferManager.address,
                 nonce,
                 expiry,
@@ -270,7 +270,7 @@ contract("SignedTransferManager", accounts => {
             assert.equal(balance11.sub(oneeth).toString(), (await I_SecurityToken.balanceOf(account_investor1)).toString());
             assert.equal(balance21.add(oneeth).toString(), (await I_SecurityToken.balanceOf(account_investor2)).toString());
 
-            
+
         });
 
         it("should not allow transfer if the signer is not on the signer list", async () => {
@@ -278,7 +278,7 @@ contract("SignedTransferManager", accounts => {
             let oneeth = new BN(web3.utils.toWei("1", "ether"));
             let nonce = new BN(10);
             let expiry = new BN(currentTime.add(new BN(duration.days(100))));
-            let data = await getSignTMData(
+            let data = await getSignSTMData(
                 I_SignedTransferManager.address,
                 nonce,
                 expiry,
@@ -292,4 +292,3 @@ contract("SignedTransferManager", accounts => {
         });
     });
 });
-

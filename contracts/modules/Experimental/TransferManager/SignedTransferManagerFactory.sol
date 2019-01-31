@@ -38,7 +38,7 @@ contract SignedTransferManagerFactory is ModuleFactory {
      function deploy(bytes calldata /* _data */) external returns(address) {
         address polyToken = _takeFee();
         SignedTransferManager signedTransferManager = new SignedTransferManager(msg.sender, polyToken);
-        emit GenerateModuleFromFactory(address(signedTransferManager), getName(), address(this), msg.sender, now);
+        emit GenerateModuleFromFactory(address(signedTransferManager), getName(), address(this), msg.sender, setupCost, now);
         return address(signedTransferManager);
     }
 
@@ -100,7 +100,7 @@ contract SignedTransferManagerFactory is ModuleFactory {
      */
     function getTags() public view returns(bytes32[] memory) {
         bytes32[] memory availableTags = new bytes32[](2);
-        availableTags[0] = "General";
+        availableTags[0] = "Signed";
         availableTags[1] = "Transfer Restriction";
         return availableTags;
     }

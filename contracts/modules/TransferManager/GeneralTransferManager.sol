@@ -4,12 +4,14 @@ import "./TransferManager.sol";
 import "../../storage/GeneralTransferManagerStorage.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "../../interfaces/ISecurityToken.sol";
+import "openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
 
 /**
  * @title Transfer Manager module for core transfer validation functionality
  */
 contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManager {
     using SafeMath for uint256;
+    using ECDSA for bytes32;
 
     // Emit when Issuance address get changed
     event ChangeIssuanceAddress(address _issuanceAddress);
@@ -257,9 +259,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     * @param _validFrom is the time that this signature is valid from
     * @param _validTo is the time that this signature is valid until
     * @param _nonce nonce of signature (avoid replay attack)
-    * @param _v issuer signature
-    * @param _r issuer signature
-    * @param _s issuer signature
+    * @param _signature issuer signature
     */
     function modifyWhitelistSigned(
         address _investor,
@@ -270,9 +270,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         uint256 _validFrom,
         uint256 _validTo,
         uint256 _nonce,
-        uint8 _v,
-        bytes32 _r,
-        bytes32 _s
+        bytes memory _signature
     )
         public
     {
@@ -285,17 +283,17 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         bytes32 hash = keccak256(
             abi.encodePacked(this, _investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO, _validFrom, _validTo, _nonce)
         );
-        _checkSig(hash, _v, _r, _s);
+        _checkSig(hash, _signature);
         _modifyWhitelist(_investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
     }
 
     /**
      * @notice Used to verify the signature
      */
-    function _checkSig(bytes32 _hash, uint8 _v, bytes32 _r, bytes32 _s) internal view {
+    function _checkSig(bytes32 _hash, bytes memory _signature) internal view {
         //Check that the signature is valid
         //sig should be signing - _investor, _fromTime, _toTime & _expiryTime and be signed by the issuer address
-        address signer = ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", _hash)), _v, _r, _s);
+        address signer = _hash.toEthSignedMessageHash().recover(_signature);
         require(signer == Ownable(securityToken).owner() || signer == signingAddress, "Incorrect signer");
     }
 

@@ -4,12 +4,14 @@ import "../../TransferManager/TransferManager.sol";
 import "../../../interfaces/IDataStore.sol";
 import "../../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
 
 /**
  * @title Transfer Manager module for verifing transations with a signed message
  */
 contract SignedTransferManager is TransferManager {
     using SafeMath for uint256;
+    using ECDSA for bytes32;
 
     bytes32 constant public ADMIN = "ADMIN";
 
@@ -25,7 +27,7 @@ contract SignedTransferManager is TransferManager {
     event SignersUpdated(address[] _signers, bool[] _signersStats);
 
     // Emit when a signature has been deemed invalid
-    event SignatureInvalidated(bytes _data);
+    event SignatureUsed(bytes _data);
 
 
     /**
@@ -108,8 +110,7 @@ contract SignedTransferManager is TransferManager {
                 return Result.NA;
 
             bytes32 hash = keccak256(abi.encodePacked(targetAddress, nonce, expiry, _from, _to, _amount));
-            bytes32 prependedHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
-            address signer = _recoverSignerAdd(prependedHash, signature);
+            address signer = hash.toEthSignedMessageHash().recover(signature);
 
             if (!_checkSigner(signer)) {
                 return Result.NA;
@@ -134,7 +135,7 @@ contract SignedTransferManager is TransferManager {
     */
     function invalidateSignature(address _from, address _to, uint256 _amount, bytes calldata _data) external {
         require(_checkSigner(msg.sender), "Unauthorized Signer");
-        
+
         address targetAddress;
         uint256 nonce;
         uint256 expiry;
@@ -145,39 +146,9 @@ contract SignedTransferManager is TransferManager {
         require(targetAddress == address(this), "Signature not for this module");
 
         bytes32 hash = keccak256(abi.encodePacked(targetAddress, nonce, expiry, _from, _to, _amount));
-        bytes32 prependedHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", hash));
-
-        require(_recoverSignerAdd(prependedHash, signature) == msg.sender, "Incorrect Signer");
+        require(hash.toEthSignedMessageHash().recover(signature) == msg.sender, "Incorrect Signer");
 
         _invalidateSignature(signature);
-    }
-
-    /**
-     * @notice used to recover signers' address from signature
-     */
-    function _recoverSignerAdd(bytes32 _hash, bytes memory _data) internal pure returns(address) {
-
-        if (_data.length != 65) {
-            return address(0);
-        }
-
-        bytes32 r;
-        bytes32 s;
-        uint8 v;
-
-        assembly {
-            r := mload(add(_data, 32))
-            s := mload(add(_data, 64))
-            v := and(mload(add(_data, 65)), 255)
-        }
-        if (v < 27) {
-            v += 27;
-        }
-        if (v != 27 && v != 28) {
-            
-        }
-
-        return ecrecover(_hash, v, r, s);
     }
 
     /**
@@ -202,6 +173,6 @@ contract SignedTransferManager is TransferManager {
     function _invalidateSignature(bytes memory _data) internal {
         IDataStore dataStore = IDataStore(ISecurityToken(securityToken).dataStore());
         dataStore.setBool(keccak256(abi.encodePacked(INVALID_SIG, _data)), true);
-        emit SignatureInvalidated(_data);
+        emit SignatureUsed(_data);
     }
 }

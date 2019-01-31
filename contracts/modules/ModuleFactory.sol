@@ -3,22 +3,26 @@ pragma solidity ^0.5.0;
 import "../RegistryUpdater.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "../interfaces/IModuleFactory.sol";
+import "../interfaces/IOracle.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "../libraries/VersionUtils.sol";
+import "../PolymathRegistry.sol";
+import "../libraries/DecimalMath.sol";
 
 /**
  * @title Interface that any module factory contract should implement
  * @notice Contract is abstract
  */
 contract ModuleFactory is IModuleFactory, Ownable {
-    uint256 public usageCost;
-    uint256 public monthlySubscriptionCost;
-
     uint256 public setupCost;
+    uint256 public usageCost;
+    address public polymathRegistry;
     string public description;
     string public version;
     bytes32 public name;
     string public title;
+
+    string constant POLY_ORACLE = "PolyUsdOracle";
 
     // @notice Allow only two variables to be stored
     // 1. lowerBound
@@ -30,18 +34,18 @@ contract ModuleFactory is IModuleFactory, Ownable {
     /**
      * @notice Constructor
      */
-    constructor(uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public {
+    constructor(uint256 _setupCost, uint256 _usageCost, address _polymathRegistry) public {
         setupCost = _setupCost;
         usageCost = _usageCost;
-        monthlySubscriptionCost = _subscriptionCost;
+        polymathRegistry = _polymathRegistry;
     }
 
     /**
      * @notice Used to change the fee of the setup cost
      * @param _newSetupCost new setup cost
      */
-    function changeFactorySetupFee(uint256 _newSetupCost) public onlyOwner {
-        emit ChangeFactorySetupFee(setupCost, _newSetupCost, address(this));
+    function changeSetupCost(uint256 _newSetupCost) public onlyOwner {
+        emit ChangeSetupCost(setupCost, _newSetupCost);
         setupCost = _newSetupCost;
     }
 
@@ -49,19 +53,9 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @notice Used to change the fee of the usage cost
      * @param _newUsageCost new usage cost
      */
-    function changeFactoryUsageFee(uint256 _newUsageCost) public onlyOwner {
-        emit ChangeFactoryUsageFee(usageCost, _newUsageCost, address(this));
+    function changeUsageCost(uint256 _newUsageCost) public onlyOwner {
+        emit ChangeUsageCost(usageCost, _newUsageCost);
         usageCost = _newUsageCost;
-    }
-
-    /**
-     * @notice Used to change the fee of the subscription cost
-     * @param _newSubscriptionCost new subscription cost
-     */
-    function changeFactorySubscriptionFee(uint256 _newSubscriptionCost) public onlyOwner {
-        emit ChangeFactorySubscriptionFee(monthlySubscriptionCost, _newSubscriptionCost, address(this));
-        monthlySubscriptionCost = _newSubscriptionCost;
-
     }
 
     /**
@@ -140,24 +134,35 @@ contract ModuleFactory is IModuleFactory, Ownable {
     /**
      * @notice Get the setup cost of the module
      */
-    function getSetupCost() external view returns(uint256) {
+    function getSetupCost() public view returns (uint256) {
         return setupCost;
     }
 
     /**
-    * @notice Get the name of the Module
-    */
+     * @notice Get the setup cost of the module
+     */
+    function getSetupCostInPoly() public view returns (uint256) {
+        uint256 polyRate = IOracle(PolymathRegistry(polymathRegistry).getAddress(POLY_ORACLE)).getPrice();
+        return DecimalMath.mul(setupCost, polyRate);
+    }
+
+    /**
+     * @notice Get the name of the Module
+     */
     function getName() public view returns(bytes32) {
         return name;
     }
 
+
+    /**
+     * @notice Calculates fee in POLY
+     */
     function _takeFee() internal returns(address) {
-        address polyToken = RegistryUpdater(msg.sender).polyToken();
-        require(polyToken != address(0), "Invalid POLY token");
-        if (setupCost > 0) {
-            require(IERC20(polyToken).transferFrom(msg.sender, owner(), setupCost), "Insufficient allowance for module fee");
+        uint256 setupCostInPoly = getSetupCostInPoly();
+        address polyToken = PolymathRegistry(polymathRegistry).getAddress("PolyToken");
+        if (setupCostInPoly > 0) {
+            require(IERC20(polyToken).transferFrom(msg.sender, owner(), setupCostInPoly), "Insufficient allowance for module fee");
         }
-        return polyToken;
     }
 
 }

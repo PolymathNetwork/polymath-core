@@ -14,17 +14,17 @@ contract ManualApprovalTransferManagerFactory is ModuleFactory {
      * @notice Constructor
      * @param _setupCost Setup cost of the module
      * @param _usageCost Usage cost of the module
-     * @param _subscriptionCost Subscription cost of the module
      * @param _logicContract Contract address that contains the logic related to `description`
+     * @param _polymathRegistry Address of the Polymath registry
      */
     constructor(
         uint256 _setupCost,
         uint256 _usageCost,
-        uint256 _subscriptionCost,
-        address _logicContract
+        address _logicContract,
+        address _polymathRegistry
     )
         public
-        ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
+        ModuleFactory(_setupCost, _usageCost, _polymathRegistry)
     {
         require(_logicContract != address(0), "Invalid address");
         version = "2.1.0";
@@ -49,7 +49,7 @@ contract ManualApprovalTransferManagerFactory is ModuleFactory {
         address polyToken = _takeFee();
         ManualApprovalTransferManagerProxy manualTransferManager = new ManualApprovalTransferManagerProxy(msg.sender, polyToken, logicContract);
         /*solium-disable-next-line security/no-block-members*/
-        emit GenerateModuleFromFactory(address(manualTransferManager), getName(), address(this), msg.sender, setupCost, now);
+        emit GenerateModuleFromFactory(address(manualTransferManager), getName(), address(this), msg.sender, getSetupCost(), getSetupCostInPoly(), now);
         return address(manualTransferManager);
     }
 

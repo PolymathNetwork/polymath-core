@@ -9,8 +9,8 @@ contract KYCTransferManagerFactory is ModuleFactory {
     /**
      * @notice Constructor
      */
-    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-    ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
+    constructor (uint256 _setupCost, uint256 _usageCost, address _polymathRegistry) public
+    ModuleFactory(_setupCost, _usageCost, _polymathRegistry)
     {
         version = "1.0.0";
         name = "KYCTransferManager";
@@ -27,10 +27,10 @@ contract KYCTransferManagerFactory is ModuleFactory {
      */
     function deploy(bytes calldata /* _data */) external returns(address) {
         address polyToken = _takeFee();
-        KYCTransferManager kycTransferManager = new KYCTransferManager(msg.sender, polyToken);
+        address kycTransferManager = address(new KYCTransferManager(msg.sender, polyToken));
         /*solium-disable-next-line security/no-block-members*/
-        emit GenerateModuleFromFactory(address(kycTransferManager), getName(), address(this), msg.sender, setupCost, now);
-        return address(kycTransferManager);
+        emit GenerateModuleFromFactory(kycTransferManager, getName(), address(this), msg.sender, getSetupCost(), getSetupCostInPoly(), now);
+        return kycTransferManager;
     }
 
 

@@ -116,10 +116,8 @@ contract SignedTransferManager is TransferManager {
                 return Result.NA;
             } else if(_isTransfer) {
                 _invalidateSignature(signature);
-                return Result.VALID;
-            } else {
-                return Result.VALID;
             }
+            return Result.VALID;
         }
         return Result.NA;
     }

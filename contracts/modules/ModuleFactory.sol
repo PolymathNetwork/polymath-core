@@ -163,6 +163,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
         if (setupCostInPoly > 0) {
             require(IERC20(polyToken).transferFrom(msg.sender, owner(), setupCostInPoly), "Insufficient allowance for module fee");
         }
+        return polyToken;
     }
 
 }

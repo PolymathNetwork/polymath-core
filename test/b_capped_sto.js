@@ -717,6 +717,7 @@ contract("CappedSTO", async (accounts) => {
                     (await I_SecurityToken_POLY.balanceOf(account_investor1)).div(new BN(10).pow(new BN(18))).toNumber(),
                     5000
                 );
+                
             });
 
             it("Verification of the event Token Purchase", async () => {

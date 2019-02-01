@@ -2,6 +2,7 @@ pragma solidity ^0.5.0;
 
 import "../../proxy/GeneralTransferManagerProxy.sol";
 import "../ModuleFactory.sol";
+import "../../interfaces/IBoot.sol";
 
 /**
  * @title Factory for deploying GeneralTransferManager module
@@ -49,6 +50,7 @@ contract GeneralTransferManagerFactory is ModuleFactory {
         GeneralTransferManagerProxy generalTransferManager = new GeneralTransferManagerProxy(msg.sender, polyToken, logicContract);
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(address(generalTransferManager), getName(), address(this), msg.sender, setupCost, now);
+        IBoot(address(generalTransferManager)).initialize();
         return address(generalTransferManager);
     }
 

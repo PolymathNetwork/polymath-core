@@ -1,7 +1,6 @@
 pragma solidity ^0.5.0;
 
 import "./STO.sol";
-import "../../interfaces/ISecurityToken.sol";
 import "./DummySTOStorage.sol";
 
 /**

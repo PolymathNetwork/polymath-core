@@ -6,7 +6,7 @@ import "../interfaces/IModuleFactory.sol";
 import "../interfaces/IOracle.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "../libraries/VersionUtils.sol";
-import "../PolymathRegistry.sol";
+import "../interfaces/IPolymathRegistry.sol";
 import "../libraries/DecimalMath.sol";
 
 /**
@@ -142,8 +142,8 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @notice Get the setup cost of the module
      */
     function getSetupCostInPoly() public view returns (uint256) {
-        uint256 polyRate = IOracle(PolymathRegistry(polymathRegistry).getAddress(POLY_ORACLE)).getPrice();
-        return DecimalMath.mul(setupCost, polyRate);
+        uint256 polyRate = IOracle(IPolymathRegistry(polymathRegistry).getAddress(POLY_ORACLE)).getPrice();
+        return DecimalMath.div(setupCost, polyRate);
     }
 
     /**
@@ -159,7 +159,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      */
     function _takeFee() internal returns(address) {
         uint256 setupCostInPoly = getSetupCostInPoly();
-        address polyToken = PolymathRegistry(polymathRegistry).getAddress("PolyToken");
+        address polyToken = IPolymathRegistry(polymathRegistry).getAddress("PolyToken");
         if (setupCostInPoly > 0) {
             require(IERC20(polyToken).transferFrom(msg.sender, owner(), setupCostInPoly), "Insufficient allowance for module fee");
         }

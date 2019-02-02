@@ -5,7 +5,7 @@ import "../Pausable.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "../modules/STO/STOStorage.sol";
 import "../modules/ModuleStorage.sol";
-import "../modules/storage/POLYCappedSTOStorage.sol";
+import "../storage/POLYCappedSTOStorage.sol";
 
 /**
  * @title POLYCappedSTO module Proxy

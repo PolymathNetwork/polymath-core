@@ -1,9 +1,9 @@
 pragma solidity ^0.5.0;
 
-import "./POLYCappedSTO.sol";
 import "../ModuleFactory.sol";
 import "../../proxy/POLYCappedSTOProxy.sol";
 import "../../libraries/Util.sol";
+import "../../interfaces/IBoot.sol";
 
 /**
  * @title Factory for deploying POLYCappedSTO module
@@ -13,11 +13,21 @@ contract POLYCappedSTOFactory is ModuleFactory {
     address public logicContract;
     /**
      * @notice Constructor
-     * @param _polyAddress Address of the polytoken
+     * @param _setupCost Setup cost of the module
+     * @param _usageCost Usage cost of the module
+     * @param _subscriptionCost Subscription cost of the module
      */
-    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-    ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+    constructor(
+        uint256 _setupCost,
+        uint256 _usageCost,
+        uint256 _subscriptionCost,
+        address _logicContract
+    )
+        public
+        ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
     {
+        require(_logicContract != address(0), "address 0x not allowed");
+        logicContract = _logicContract;
         version = "1.0.0";
         name = "POLYCappedSTO";
         title = "POLY - Capped STO";
@@ -61,7 +71,7 @@ contract POLYCappedSTOFactory is ModuleFactory {
     function getInstructions() external view returns(string memory) {
         /*solium-disable-next-line max-len*/
         // NEED TO UPDATE INSTRUCTIONS
-        return "Initialises a POLY capped STO. Init parameters are _startTime (time STO starts), _endTime (time STO ends), _cap (cap in tokens for STO), _rate (POLY to token rate), _nonAccreditedLimit (maximum investment for non-accredited investors), _minimumInvestment (required minimum investment)  _wallet (address which will receive funds), _reserveWallet (address which will receive unsold tokens if _mintReserveEnabled), _nonAccreditedLimitEnabled (Enables the non-accredited investor investment limit), bool _mintReserveEnabled (enables minting unsold tokens to the reserve wallet)";
+        return "Initialises a POLY capped STO. Init parameters are _startTime (time STO starts), _endTime (time STO ends), _cap (cap in tokens for STO), _rate (POLY to token rate), _minimumInvestment (required minimum investment), _nonAccreditedLimit (maximum investment for non-accredited investors), _maxNonAccreditedInvestors (maximum number of non accredited investors), _wallet (address which will receive funds), _reserveWallet (address which will receive unsold tokens)";
     }
 
     /**

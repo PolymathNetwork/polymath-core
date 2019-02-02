@@ -18,6 +18,8 @@ const ManualApprovalTransferManagerFactory = artifacts.require("./ManualApproval
 const ManualApprovalTransferManagerLogic = artifacts.require("./ManualApprovalTransferManager.sol");
 const CappedSTOFactory = artifacts.require("./CappedSTOFactory.sol");
 const CappedSTOLogic = artifacts.require("./CappedSTO.sol");
+const POLYCappedSTOFactory = artifacts.require("./POLYCappedSTOFactory.sol");
+const POLYCappedSTOLogic = artifacts.require("./POLYCappedSTO.sol");
 const USDTieredSTOFactory = artifacts.require("./USDTieredSTOFactory.sol");
 const SecurityTokenRegistry = artifacts.require("./SecurityTokenRegistry.sol");
 const SecurityTokenRegistryProxy = artifacts.require("./SecurityTokenRegistryProxy.sol");
@@ -38,6 +40,7 @@ const Web3 = require("web3");
 let BN = Web3.utils.BN;
 const nullAddress = "0x0000000000000000000000000000000000000000";
 const cappedSTOSetupCost = new BN(20000).mul(new BN(10).pow(new BN(18))); // 20K POLY fee
+const polyCappedSTOSetupCost = new BN(20000).mul(new BN(10).pow(new BN(18))); // 20K POLY fee
 const usdTieredSTOSetupCost = new BN(100000).mul(new BN(10).pow(new BN(18))); // 100K POLY fee
 const initRegFee = new BN(250).mul(new BN(10).pow(new BN(18))); // 250 POLY fee for registering ticker or security token in registry
 let PolyToken;
@@ -252,12 +255,17 @@ module.exports = function(deployer, network, accounts) {
         .then(() => {
             // B) Deploy the VolumeRestrictionTMLogic Contract (Factory used to generate the VolumeRestrictionTM contract and this
             // manager attach with the securityToken contract at the time of deployment)
-            return deployer.deploy(VolumeRestrictionTMLogic, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: PolymathAccount });
+            return deployer.deploy(VolumeRestrictionTMLogic, nullAddress, nullAddress, { from: PolymathAccount });
         })
         .then(() => {
             // B) Deploy the CappedSTOLogic Contract (Factory used to generate the CappedSTO contract and this
             // manager attach with the securityToken contract at the time of deployment)
             return deployer.deploy(CappedSTOLogic, nullAddress, nullAddress, { from: PolymathAccount });
+        })
+        .then(() => {
+            // B) Deploy the POLYCappedSTOLogic Contract (Factory used to generate the POLYCappedSTO contract and this
+            // manager attach with the securityToken contract at the time of deployment)
+            return deployer.deploy(POLYCappedSTOLogic, nullAddress, nullAddress, { from: PolymathAccount });
         })
         .then(() => {
             // B) Deploy the DataStoreLogic Contract
@@ -471,6 +479,21 @@ module.exports = function(deployer, network, accounts) {
             return moduleRegistry.verifyModule(CappedSTOFactory.address, true, { from: PolymathAccount });
         })
         .then(() => {
+            // M) Deploy the POLYCappedSTOFactory (Use to generate the POLYCappedSTO contract which will used to collect the funds ).
+            return deployer.deploy(POLYCappedSTOFactory, polyCappedSTOSetupCost, new BN(0), new BN(0), POLYCappedSTOLogic.address, { from: PolymathAccount });
+        })
+        .then(() => {
+            // N) Register the POLYCappedSTOFactory in the ModuleRegistry to make the factory available at the protocol level.
+            // So any securityToken can use that factory to generate the POLYCappedSTOFactory contract.
+            return moduleRegistry.registerModule(POLYCappedSTOFactory.address, { from: PolymathAccount });
+        })
+        .then(() => {
+            // G) Once the POLYCappedSTOFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
+            // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
+            // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
+            return moduleRegistry.verifyModule(POLYCappedSTOFactory.address, true, { from: PolymathAccount });
+        })
+        .then(() => {
             // H) Deploy the USDTieredSTOFactory (Use to generate the USDTieredSTOFactory contract which will used to collect the funds ).
             return deployer.deploy(USDTieredSTOFactory, usdTieredSTOSetupCost, new BN(0), new BN(0), USDTieredSTOLogic.address, { from: PolymathAccount });
         })
@@ -516,6 +539,8 @@ module.exports = function(deployer, network, accounts) {
 
     CappedSTOLogic:                       ${CappedSTOLogic.address}
     CappedSTOFactory:                     ${CappedSTOFactory.address}
+    POLYCappedSTOLogic:                   ${POLYCappedSTOLogic.address}
+    POLYCappedSTOFactory:                 ${POLYCappedSTOFactory.address}
     USDTieredSTOLogic:                    ${USDTieredSTOLogic.address}
     USDTieredSTOFactory:                  ${USDTieredSTOFactory.address}
 

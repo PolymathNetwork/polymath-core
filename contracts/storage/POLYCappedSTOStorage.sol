@@ -40,6 +40,12 @@ contract POLYCappedSTOStorage {
     // Amount in the selected fund raise type invested by each investor
     mapping(address => uint256) public investorInvested;
 
+    // Amount in USD invested by each address
+    mapping(address => uint256) public investorInvestedUSD;
+
+    // Amount of USD funds raised
+    uint256 public fundsRaisedUSD;
+
     struct Investor {
         // Whether investor is accredited (0 = non-accredited, 1 = accredited)
         uint8 accredited;

@@ -15,6 +15,8 @@ import "../../storage/POLYCappedSTOStorage.sol";
 contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
     using SafeMath for uint256;
 
+    string internal constant POLY_ORACLE = "PolyUsdOracle";
+
     ////////////
     // Events //
     ////////////
@@ -27,12 +29,14 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
     * @param _purchaser who paid for the tokens
     * @param _beneficiary who got the tokens
     * @param _value amount paid for purchase in Fund Raise Type
+    * @param _valueUSD value of POLY invested in USD at the time of purchase
     * @param _amount amount of tokens purchased
     */
     event TokenPurchase(
         address indexed _purchaser,
         address indexed _beneficiary,
         uint256 _value,
+        uint256 _valueUSD,
         uint256 _amount
     );
     event FundsReceived(
@@ -328,11 +332,15 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
         (_tokens, _spentValue) = prePurchaseChecks (_beneficiary, _investmentValue);
         require(_tokens >= _minTokens, "Insufficient tokens minted");
         _processPurchase(_beneficiary, _tokens);
-        emit TokenPurchase(msg.sender, _beneficiary, _spentValue, _tokens);
+        uint256 polyUsdRate = IOracle(PolymathRegistry(RegistryUpdater(securityToken).polymathRegistry()).getAddress(POLY_ORACLE)).getPrice();
+        uint256 _spentUSD = DecimalMath.mul(_spentValue, polyUsdRate);
+        emit TokenPurchase(msg.sender, _beneficiary, _spentValue, _spentUSD, _tokens);
         _updatePurchasingState(_beneficiary, _investmentValue);
         // Modify storage
         investorInvested[_beneficiary] = investorInvested[_beneficiary].add(_spentValue);
         fundsRaised[uint8(_fundRaiseType)] = fundsRaised[uint8(_fundRaiseType)].add(_spentValue);
+        investorInvestedUSD[_beneficiary] = investorInvestedUSD[_beneficiary].add(_spentUSD);
+        fundsRaisedUSD = fundsRaisedUSD.add(_spentUSD);
         totalTokensSold = totalTokensSold.add(_tokens);
     }
 

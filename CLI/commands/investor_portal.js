@@ -152,7 +152,6 @@ async function showTokenInfo() {
 
 // Show info
 async function showUserInfo(_user) {
-    let listOfStableCoins = await currentSTO.methods.getUsdTokens().call();
 
     console.log(`
     *******************    User Information    ********************
@@ -164,6 +163,7 @@ async function showUserInfo(_user) {
         console.log(`    - ETH balance:\t     ${web3.utils.fromWei(await web3.eth.getBalance(_user))}`);
     }
     if (await currentSTO.methods.fundRaiseTypes(gbl.constants.FUND_RAISE_TYPES.STABLE).call()) {
+        let listOfStableCoins = await currentSTO.methods.getUsdTokens().call();
         let stableSymbolsAndBalance = await processAddressWithBalance(listOfStableCoins);
         stableSymbolsAndBalance.forEach(stable => {
             console.log(`    - ${stable.symbol} balance:\t     ${web3.utils.fromWei(stable.balance)}`);

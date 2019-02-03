@@ -14,7 +14,7 @@ const MULTIMINT_DATA_CSV = './CLI/data/ST/multi_mint_data.csv';
 const contracts = require('./helpers/contract_addresses');
 const abis = require('./helpers/contract_abis');
 
-let securityTokenRegistry;
+let strGetter;
 let polyToken;
 let featureRegistry;
 let securityToken;
@@ -25,9 +25,9 @@ let tokenSymbol
 async function setup() {
   try {
     let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
-    let securityTokenRegistryABI = abis.securityTokenRegistry();
-    securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
-    securityTokenRegistry.setProvider(web3.currentProvider);
+    let strGetterABI = abis.strGetter();
+    strGetter = new web3.eth.Contract(strGetterABI, securityTokenRegistryAddress);
+    strGetter.setProvider(web3.currentProvider);
 
     let polytokenAddress = await contracts.polyToken();
     let polytokenABI = abis.polyToken();
@@ -643,7 +643,7 @@ async function initialize(_tokenSymbol) {
   } else {
     tokenSymbol = _tokenSymbol;
   }
-  let securityTokenAddress = await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call();
+  let securityTokenAddress = await strGetter.methods.getSecurityTokenAddress(tokenSymbol).call();
   if (securityTokenAddress == '0x0000000000000000000000000000000000000000') {
     console.log(chalk.red(`Selected Security Token ${tokenSymbol} does not exist.`));
     process.exit(0);
@@ -665,9 +665,9 @@ function welcome() {
 async function selectToken() {
   let result = null;
 
-  let userTokens = await securityTokenRegistry.methods.getTokensByOwner(Issuer.address).call();
+  let userTokens = await strGetter.methods.getTokensByOwner(Issuer.address).call();
   let tokenDataArray = await Promise.all(userTokens.map(async function (t) {
-    let tokenData = await securityTokenRegistry.methods.getSecurityTokenData(t).call();
+    let tokenData = await strGetter.methods.getSecurityTokenData(t).call();
     return { symbol: tokenData[0], address: t };
   }));
   let options = tokenDataArray.map(function (t) {

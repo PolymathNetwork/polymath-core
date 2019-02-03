@@ -13,7 +13,7 @@ const ETH = 'ETH';
 const POLY = 'POLY';
 const STABLE = 'STABLE';
 
-let securityTokenRegistry;
+let strGetter;
 let securityToken;
 let selectedSTO;
 let currentSTO;
@@ -83,9 +83,9 @@ async function executeApp(investorAddress, investorPrivKey, symbol, currency, am
 async function setup() {
     try {
         let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
-        let securityTokenRegistryABI = abis.securityTokenRegistry();
-        securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
-        securityTokenRegistry.setProvider(web3.currentProvider);
+        let strGetterABI = abis.strGetter();
+        strGetter = new web3.eth.Contract(strGetterABI, securityTokenRegistryAddress);
+        strGetter.setProvider(web3.currentProvider);
 
         let polytokenAddress = await contracts.polyToken();
         let polytokenABI = abis.polyToken();
@@ -108,7 +108,7 @@ async function inputSymbol(symbol) {
 
     if (STSymbol == "") process.exit();
 
-    STAddress = await securityTokenRegistry.methods.getSecurityTokenAddress(STSymbol).call();
+    STAddress = await strGetter.methods.getSecurityTokenAddress(STSymbol).call();
     if (STAddress == "0x0000000000000000000000000000000000000000") {
         console.log(`Token symbol provided is not a registered Security Token. Please enter another symbol.`);
     } else {

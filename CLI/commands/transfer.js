@@ -10,6 +10,7 @@ let _transferTo; //investment beneficiary
 let _transferAmount; //ETH investment
 
 let securityToken;
+let strGetter;
 
 //////////////////////////////////////////ENTRY INTO SCRIPT//////////////////////////////////////////
 
@@ -21,8 +22,9 @@ async function startScript(tokenSymbol, transferTo, transferAmount) {
   try {
     let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
     let securityTokenRegistryABI = abis.securityTokenRegistry();
-    securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
-    securityTokenRegistry.setProvider(web3.currentProvider);
+    let strGetterABI = abis.strGetter();
+    strGetter = new web3.eth.Contract(strGetterABI, securityTokenRegistryAddress);
+    strGetter.setProvider(web3.currentProvider);
     transfer();
   } catch (err) {
     console.log(err)
@@ -33,7 +35,7 @@ async function startScript(tokenSymbol, transferTo, transferAmount) {
 
 async function transfer() {
   // Let's check if token has already been deployed, if it has, skip to STO
-  await securityTokenRegistry.methods.getSecurityTokenAddress(_tokenSymbol).call({}, function (error, result) {
+  await strGetter.methods.getSecurityTokenAddress(_tokenSymbol).call({}, function (error, result) {
     if (result != "0x0000000000000000000000000000000000000000") {
       console.log('\x1b[32m%s\x1b[0m', "Token deployed at address " + result + ".");
       let securityTokenABI = abis.securityToken();

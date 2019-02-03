@@ -193,7 +193,7 @@ async function approvePoly(spender, fee) {
   polyBalance = await polyToken.methods.balanceOf(Issuer.address).call();
   let requiredAmount = web3.utils.toWei(fee.toString(), "ether");
   if (parseInt(polyBalance) >= parseInt(requiredAmount)) {
-    let allowance = await polyToken.methods.allowance(spender, Issuer.address).call();
+    let allowance = await polyToken.methods.allowance(Issuer.address, spender).call();
     if (allowance == web3.utils.toWei(fee.toString(), "ether")) {
       return true;
     } else {

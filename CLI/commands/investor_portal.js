@@ -499,7 +499,7 @@ async function investCappedSTO(currency, amount) {
     if (raiseTypes[0] == 'POLY') {
         let userBalance = await polyBalance(User.address);
         if (parseInt(userBalance) >= parseInt(cost)) {
-            let allowance = await polyToken.methods.allowance(STOAddress, User.address).call();
+            let allowance = await polyToken.methods.allowance(User.address, STOAddress).call();
             if (allowance < costWei) {
                 let approveAction = polyToken.methods.approve(STOAddress, costWei);
                 await common.sendTransaction(approveAction, { from: User });
@@ -607,7 +607,7 @@ async function investUsdTieredSTO(currency, amount) {
     if (raiseType == POLY) {
         let userBalance = await polyBalance(User.address);
         if (parseInt(userBalance) >= parseInt(cost)) {
-            let allowance = await polyToken.methods.allowance(STOAddress, User.address).call();
+            let allowance = await polyToken.methods.allowance(User.address, STOAddress).call();
             if (allowance < costWei) {
                 let approveAction = polyToken.methods.approve(STOAddress, costWei);
                 await common.sendTransaction(approveAction, { from: User });

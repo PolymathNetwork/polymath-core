@@ -398,7 +398,7 @@ async function generalTransferManager() {
       let toTime = readlineSync.questionInt(`Enter the time (Unix Epoch time) when the purchase lockup period ends and the investor can freely purchase tokens from others (now = ${now}): `, { defaultInput: now });
       let oneHourFromNow = Math.floor(Date.now() / 1000 + 3600);
       let expiryTime = readlineSync.questionInt(`Enter the time till investors KYC will be validated (after that investor need to do re - KYC) (1 hour from now = ${oneHourFromNow}): `, { defaultInput: oneHourFromNow });
-      let canBuyFromSTO = readlineSync.keyInYNStrict('Is the investor a restricted investor?');
+      let canBuyFromSTO = readlineSync.keyInYNStrict('Can the investor buy from security token offerings?');
       let modifyWhitelistAction = currentTransferManager.methods.modifyWhitelist(investor, fromTime, toTime, expiryTime, canBuyFromSTO);
       let modifyWhitelistReceipt = await common.sendTransaction(modifyWhitelistAction);
       let modifyWhitelistEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, modifyWhitelistReceipt.logs, 'ModifyWhitelist');
@@ -421,7 +421,7 @@ async function generalTransferManager() {
       let vSigned = readlineSync.questionInt('Enter v: ');
       let rSigned = readlineSync.question('Enter r: ');
       let sSigned = readlineSync.question('Enter s: ');
-      let canBuyFromSTOSigned = readlineSync.keyInYNStrict('Is the investor a restricted investor?');
+      let canBuyFromSTOSigned = readlineSync.keyInYNStrict('Can the investor buy from security token offerings?');
       let modifyWhitelistSignedAction = currentTransferManager.methods.modifyWhitelistSigned(investorSigned, fromTimeSigned, toTimeSigned, expiryTimeSigned, canBuyFromSTOSigned);
       let modifyWhitelistSignedReceipt = await common.sendTransaction(Issuer, modifyWhitelistSignedAction, defaultGasPrice);
       let modifyWhitelistSignedEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, modifyWhitelistSignedReceipt.logs, 'ModifyWhitelist');

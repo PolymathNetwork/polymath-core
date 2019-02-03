@@ -15,7 +15,7 @@ const TAX_WITHHOLDING_DATA_CSV = `${__dirname}/../data/Checkpoint/tax_withholdin
 let tokenSymbol;
 let securityToken;
 let polyToken;
-let securityTokenRegistry;
+let strGetter;
 let moduleRegistry;
 let currentDividendsModule;
 
@@ -810,7 +810,7 @@ async function initialize(_tokenSymbol) {
   } else {
     tokenSymbol = _tokenSymbol;
   }
-  let securityTokenAddress = await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call();
+  let securityTokenAddress = await strGetter.methods.getSecurityTokenAddress(tokenSymbol).call();
   if (securityTokenAddress == '0x0000000000000000000000000000000000000000') {
     console.log(chalk.red(`Selected Security Token ${tokenSymbol} does not exist.`));
     process.exit(0);
@@ -831,9 +831,9 @@ function welcome() {
 async function setup() {
   try {
     let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
-    let securityTokenRegistryABI = abis.securityTokenRegistry();
-    securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
-    securityTokenRegistry.setProvider(web3.currentProvider);
+    let strGetterABI = abis.strGetter();
+    strGetter = new web3.eth.Contract(strGetterABI, securityTokenRegistryAddress);
+    strGetter.setProvider(web3.currentProvider);
 
     let polyTokenAddress = await contracts.polyToken();
     let polyTokenABI = abis.polyToken();
@@ -854,9 +854,9 @@ async function setup() {
 async function selectToken() {
   let result = null;
 
-  let userTokens = await securityTokenRegistry.methods.getTokensByOwner(Issuer.address).call();
+  let userTokens = await strGetter.methods.getTokensByOwner(Issuer.address).call();
   let tokenDataArray = await Promise.all(userTokens.map(async function (t) {
-    let tokenData = await securityTokenRegistry.methods.getSecurityTokenData(t).call();
+    let tokenData = await strGetter.methods.getSecurityTokenData(t).call();
     return { symbol: tokenData[0], address: t };
   }));
   let options = tokenDataArray.map(function (t) {

@@ -1,5 +1,6 @@
 let polymathRegistryABI;
 let securityTokenRegistryABI;
+let strGetterABI;
 let featureRegistryABI;
 let moduleRegistryABI;
 let securityTokenABI;
@@ -31,6 +32,7 @@ let erc20ABI;
 try {
     polymathRegistryABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/PolymathRegistry.json`).toString()).abi;
     securityTokenRegistryABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/SecurityTokenRegistry.json`).toString()).abi;
+    strGetterABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/STRGetter.json`).toString()).abi;
     featureRegistryABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/FeatureRegistry.json`).toString()).abi;
     moduleRegistryABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/ModuleRegistry.json`).toString()).abi;
     securityTokenABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/SecurityToken.json`).toString()).abi;
@@ -69,6 +71,9 @@ module.exports = {
     },
     securityTokenRegistry: function () {
         return securityTokenRegistryABI;
+    },
+    strGetter: function () {
+        return strGetterABI;
     },
     featureRegistry: function () {
         return featureRegistryABI;

@@ -13,7 +13,7 @@ contract GeneralTransferManagerStorage {
     bytes32 public constant ALLOWALLTRANSFERS = "ALLOW_ALL_TRANFERS";
     bytes32 public constant ALLOWALLWHITELISTTRANSFERS = "ALLOW_ALL_WHITELIST_TRANSFERS";
     bytes32 public constant ALLOWALLWHITELISTISSUANCES = "ALLOW_ALL_WHITELIST_ISSUANCES";
-    bytes32 public constant ALLOWALLBURNTRANSFERS = "ALLOWALLBURNTRANSFERS";
+    bytes32 public constant ALLOWALLBURNTRANSFERS = "ALLOW_ALL_BURN_TRANSFERS";
     bytes32 public constant DEFAULTS = "DEFAULTS";
 
     // Data Structure of GTM

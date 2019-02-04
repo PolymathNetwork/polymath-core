@@ -63,7 +63,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     /**
      * @notice This function use to initialize the local variables of the contract
      */
-    function initialize() public onlyFactory {
+    function initialize() public onlyST {
         IDataStore(getDataStore()).setBool(ALLOWALLWHITELISTISSUANCES, true);
     }
 
@@ -235,13 +235,17 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         uint8 canBuyFromSTO = 0;
         uint8 added;
         IDataStore dataStore = IDataStore(getDataStore());
-        (,,,,added) = _kycValues(dataStore.getBytes(_getKey(WHITELIST, _investor)));
+        bytes memory _whitelistData = dataStore.getBytes(_getKey(WHITELIST, _investor));
+        if (_whitelistData.length > 0) {
+            (,,,,added) = _kycValues(_whitelistData);
+        } 
         if (_canBuyFromSTO) {
             canBuyFromSTO = 1;
         }
         if (added == uint8(0)) {
             dataStore.insertAddress(INVESTORS_ARRAY, _investor);
         }
+
         //whitelist[_investor] = TimeRestriction(uint64(_fromTime), uint64(_toTime), uint64(_expiryTime), canBuyFromSTO, uint8(1));
         bytes memory _data = abi.encode(uint64(_fromTime), uint64(_toTime), uint64(_expiryTime), canBuyFromSTO, uint8(1));
         dataStore.setBytes(_getKey(WHITELIST, _investor), _data);

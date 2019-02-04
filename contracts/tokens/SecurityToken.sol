@@ -1,6 +1,7 @@
 pragma solidity ^0.5.0;
 
 import "openzeppelin-solidity/contracts/math/Math.sol";
+import "../interfaces/IBoot.sol";
 import "../interfaces/IPoly.sol";
 import "../interfaces/IModule.sol";
 import "../interfaces/IModuleFactory.sol";
@@ -263,6 +264,15 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
             _label
         );
         names[moduleName].push(module);
+        if (Util.getSig(_data) == "") {
+            IBoot(module).initialize();
+        } else {
+            require(Util.getSig(_data) == IBoot(module).getInitFunction(), "Provided data is not valid");
+            bool success;
+            /*solium-disable-next-line security/no-low-level-calls*/
+            (success, ) = module.call(_data);
+            require(success, "Unsuccessful call");
+        }
         //Emit log event
         /*solium-disable-next-line security/no-block-members*/
         emit ModuleAdded(moduleTypes, moduleName, _moduleFactory, module, moduleCost, _budget, _label, now);

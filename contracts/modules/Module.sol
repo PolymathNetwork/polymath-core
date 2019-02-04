@@ -53,6 +53,11 @@ contract Module is IModule, ModuleStorage {
         _;
     }
 
+    modifier onlyST() {
+        require(msg.sender == securityToken, "Unathorized");
+        _;
+    }
+
     /**
      * @notice used to withdraw the fee by the factory owner
      */

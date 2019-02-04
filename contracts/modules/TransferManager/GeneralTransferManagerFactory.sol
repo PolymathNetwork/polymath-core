@@ -50,7 +50,6 @@ contract GeneralTransferManagerFactory is ModuleFactory {
         GeneralTransferManagerProxy generalTransferManager = new GeneralTransferManagerProxy(msg.sender, polyToken, logicContract);
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(address(generalTransferManager), getName(), address(this), msg.sender, setupCost, now);
-        IBoot(address(generalTransferManager)).initialize();
         return address(generalTransferManager);
     }
 
@@ -58,8 +57,9 @@ contract GeneralTransferManagerFactory is ModuleFactory {
      * @notice Type of the Module factory
      */
     function getTypes() external view returns(uint8[] memory) {
-        uint8[] memory res = new uint8[](1);
+        uint8[] memory res = new uint8[](2);
         res[0] = 2;
+        res[1] = 6;
         return res;
     }
 

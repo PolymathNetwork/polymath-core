@@ -25,7 +25,7 @@ contract DummySTO is DummySTOStorage, STO {
      * @param _cap Maximum No. of tokens for sale
      * @param _someString Any string that contails the details
      */
-    function configure(uint256 _startTime, uint256 _endTime, uint256 _cap, string memory _someString) public onlyFactory {
+    function configure(uint256 _startTime, uint256 _endTime, uint256 _cap, string memory _someString) public onlyST {
         startTime = _startTime;
         endTime = _endTime;
         cap = _cap;
@@ -36,7 +36,7 @@ contract DummySTO is DummySTOStorage, STO {
      * @notice This function returns the signature of configure function
      */
     function getInitFunction() public pure returns(bytes4) {
-        return bytes4(keccak256("configure(uint256,uint256,uint256,string)"));
+        return this.configure.selector;
     }
 
     /**

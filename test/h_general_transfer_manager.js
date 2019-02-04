@@ -237,173 +237,200 @@ contract("GeneralTransferManager", async (accounts) => {
             assert.deepEqual(await I_GeneralTransferManager.getInvestors.call(), [account_affiliates1, account_affiliates2]);
             console.log(await I_GeneralTransferManager.getAllInvestorsData.call());
             let data = await I_GeneralTransferManager.getInvestorsData.call([account_affiliates1, account_affiliates2]);
-            // assert.equal(data[0][0].toString(), fromTime1);
-            // assert.equal(data[0][1].toString(), fromTime2);
-            // assert.equal(data[1][0].toString(), toTime1);
-            // assert.equal(data[1][1].toString(), toTime2);
-            // assert.equal(data[2][0].toString(), expiryTime1);
-            // assert.equal(data[2][1].toString(), expiryTime2);
-            // assert.isFalse(data[3][0]);
-            // assert.isFalse(data[3][1]);
+            assert.equal(data[0][0].toString(), fromTime1);
+            assert.equal(data[0][1].toString(), fromTime2);
+            assert.equal(data[1][0].toString(), toTime1);
+            assert.equal(data[1][1].toString(), toTime2);
+            assert.equal(data[2][0].toString(), expiryTime1);
+            assert.equal(data[2][1].toString(), expiryTime2);
+            assert.isFalse(data[3][0]);
+            assert.isFalse(data[3][1]);
         });
 
         it("Should whitelist lots of addresses and check gas", async () => {
             let mockInvestors = [];
-            for (let i = 0; i < 45; i++) {
+            for (let i = 0; i < 90; i++) {
                 mockInvestors.push("0x1000000000000000000000000000000000000000".substring(0, 42 - i.toString().length) + i.toString());
             }
 
-            let times = range1(45);
-            let bools = rangeB(45);
+            let times = range1(90);
+            let bools = rangeB(90);
             let tx = await I_GeneralTransferManager.modifyWhitelistMulti(mockInvestors, times, times, times, bools, {
                 from: account_issuer,
                 gas: 7900000
             });
-            console.log("Multi Whitelist x 45: " + tx.receipt.gasUsed);
+            console.log("Multi Whitelist x 90: " + tx.receipt.gasUsed);
             assert.deepEqual(
                 await I_GeneralTransferManager.getInvestors.call(),
                 [account_affiliates1, account_affiliates2].concat(mockInvestors)
             );
         });
 
-        // it("Should mint the tokens to the affiliates", async () => {
-        //     await I_SecurityToken.mintMulti([account_affiliates1, account_affiliates2], [new BN(100).mul(new BN(10).pow(new BN(18))), new BN(10).pow(new BN(20))], {
-        //         from: account_issuer,
-        //         gas: 6000000
-        //     });
-        //     assert.equal((await I_SecurityToken.balanceOf.call(account_affiliates1)).div(new BN(10).pow(new BN(18))).toNumber(), 100);
-        //     assert.equal((await I_SecurityToken.balanceOf.call(account_affiliates2)).div(new BN(10).pow(new BN(18))).toNumber(), 100);
-        // });
+        it("Should mint the tokens to the affiliates", async () => {
+            await I_SecurityToken.mintMulti([account_affiliates1, account_affiliates2], [new BN(100).mul(new BN(10).pow(new BN(18))), new BN(10).pow(new BN(20))], {
+                from: account_issuer,
+                gas: 6000000
+            });
+            assert.equal((await I_SecurityToken.balanceOf.call(account_affiliates1)).div(new BN(10).pow(new BN(18))).toNumber(), 100);
+            assert.equal((await I_SecurityToken.balanceOf.call(account_affiliates2)).div(new BN(10).pow(new BN(18))).toNumber(), 100);
+        });
 
-        // it("Should successfully attach the STO factory with the security token -- failed because of no tokens", async () => {
-        //     let bytesSTO = encodeModuleCall(STOParameters, [
-        //         await latestTime() + duration.seconds(1000),
-        //         await latestTime() + duration.days(40),
-        //         cap,
-        //         someString
-        //     ]);
-        //     await catchRevert(
-        //         I_SecurityToken.addModule(P_DummySTOFactory.address, bytesSTO, new BN(web3.utils.toWei("500")), new BN(0), { from: token_owner })
-        //     );
-        // });
+        it("Should successfully attach the STO factory with the security token -- failed because of no tokens", async () => {
+            let bytesSTO = encodeModuleCall(STOParameters, [
+                await latestTime() + duration.seconds(1000),
+                await latestTime() + duration.days(40),
+                cap,
+                someString
+            ]);
+            await catchRevert(
+                I_SecurityToken.addModule(P_DummySTOFactory.address, bytesSTO, new BN(web3.utils.toWei("500")), new BN(0), { from: token_owner })
+            );
+        });
 
-        // it("Should successfully attach the STO factory with the security token", async () => {
-        //     let snap_id = await takeSnapshot();
-        //     let bytesSTO = encodeModuleCall(STOParameters, [
-        //         await latestTime() + duration.seconds(1000),
-        //         await latestTime() + duration.days(40),
-        //         cap,
-        //         someString
-        //     ]);
-        //     await I_PolyToken.getTokens(new BN(web3.utils.toWei("500")), I_SecurityToken.address);
-        //     const tx = await I_SecurityToken.addModule(P_DummySTOFactory.address, bytesSTO, new BN(web3.utils.toWei("500")), new BN(0), {
-        //         from: token_owner
-        //     });
-        //     assert.equal(tx.logs[3].args._types[0].toNumber(), stoKey, "DummySTO doesn't get deployed");
-        //     assert.equal(
-        //         web3.utils.toAscii(tx.logs[3].args._name).replace(/\u0000/g, ""),
-        //         "DummySTO",
-        //         "DummySTOFactory module was not added"
-        //     );
-        //     I_DummySTO = await DummySTO.at(tx.logs[3].args._module);
-        //     await revertToSnapshot(snap_id);
-        // });
+        it("Should successfully attach the STO factory with the security token", async () => {
+            let snap_id = await takeSnapshot();
+            let bytesSTO = encodeModuleCall(STOParameters, [
+                await latestTime() + duration.seconds(1000),
+                await latestTime() + duration.days(40),
+                cap,
+                someString
+            ]);
+            await I_PolyToken.getTokens(new BN(web3.utils.toWei("500")), I_SecurityToken.address);
+            const tx = await I_SecurityToken.addModule(P_DummySTOFactory.address, bytesSTO, new BN(web3.utils.toWei("500")), new BN(0), {
+                from: token_owner
+            });
+            assert.equal(tx.logs[3].args._types[0].toNumber(), stoKey, "DummySTO doesn't get deployed");
+            assert.equal(
+                web3.utils.toAscii(tx.logs[3].args._name).replace(/\u0000/g, ""),
+                "DummySTO",
+                "DummySTOFactory module was not added"
+            );
+            I_DummySTO = await DummySTO.at(tx.logs[3].args._module);
+            await revertToSnapshot(snap_id);
+        });
 
-        // it("Should successfully attach the STO factory with the security token - invalid data", async () => {
-        //     let bytesSTO = encodeModuleCall(["uint256", "string"], [await latestTime() + duration.seconds(1000), someString]);
-        //     await catchRevert(I_SecurityToken.addModule(P_DummySTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: token_owner }));
-        // });
+        it("Should successfully attach the STO factory with the security token - invalid data", async () => {
+            let bytesSTO = encodeModuleCall(["uint256", "string"], [await latestTime() + duration.seconds(1000), someString]);
+            await catchRevert(I_SecurityToken.addModule(P_DummySTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: token_owner }));
+        });
 
-        // it("Should successfully attach the STO factory with the security token", async () => {
-        //     let bytesSTO = encodeModuleCall(STOParameters, [
-        //         await latestTime() + duration.seconds(1000),
-        //         await latestTime() + duration.days(40),
-        //         cap,
-        //         someString
-        //     ]);
-        //     const tx = await I_SecurityToken.addModule(I_DummySTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: token_owner });
-        //     assert.equal(tx.logs[2].args._types[0].toNumber(), stoKey, "DummySTO doesn't get deployed");
-        //     assert.equal(
-        //         web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
-        //         "DummySTO",
-        //         "DummySTOFactory module was not added"
-        //     );
-        //     I_DummySTO = await DummySTO.at(tx.logs[2].args._module);
-        // });
+        it("Should successfully attach the STO factory with the security token", async () => {
+            let bytesSTO = encodeModuleCall(STOParameters, [
+                await latestTime() + duration.seconds(1000),
+                await latestTime() + duration.days(40),
+                cap,
+                someString
+            ]);
+            const tx = await I_SecurityToken.addModule(I_DummySTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: token_owner });
+            assert.equal(tx.logs[2].args._types[0].toNumber(), stoKey, "DummySTO doesn't get deployed");
+            assert.equal(
+                web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
+                "DummySTO",
+                "DummySTOFactory module was not added"
+            );
+            I_DummySTO = await DummySTO.at(tx.logs[2].args._module);
+        });
 
-        // it("Should successfully attach the permission manager factory with the security token", async () => {
-        //     const tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, new BN(0), new BN(0), new BN(0), { from: token_owner });
-        //     assert.equal(tx.logs[2].args._types[0].toNumber(), delegateManagerKey, "GeneralPermissionManager doesn't get deployed");
-        //     assert.equal(
-        //         web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
-        //         "GeneralPermissionManager",
-        //         "GeneralPermissionManager module was not added"
-        //     );
-        //     I_GeneralPermissionManager = await GeneralPermissionManager.at(tx.logs[2].args._module);
-        // });
+        it("Should successfully attach the permission manager factory with the security token", async () => {
+            const tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, new BN(0), new BN(0), new BN(0), { from: token_owner });
+            assert.equal(tx.logs[2].args._types[0].toNumber(), delegateManagerKey, "GeneralPermissionManager doesn't get deployed");
+            assert.equal(
+                web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
+                "GeneralPermissionManager",
+                "GeneralPermissionManager module was not added"
+            );
+            I_GeneralPermissionManager = await GeneralPermissionManager.at(tx.logs[2].args._module);
+        });
     });
 
-    // describe("Buy tokens using on-chain whitelist", async () => {
-    //     it("Should buy the tokens -- Failed due to investor is not in the whitelist", async () => {
-    //         await catchRevert(I_DummySTO.generateTokens(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner }));
-    //     });
+    describe("Verify the values of the public variables", async() => {
 
-    //     it("Should Buy the tokens", async () => {
-    //         // Add the Investor in to the whitelist
+        it("Should the signing address be 0x", async() => {
+            assert.equal(await I_GeneralTransferManager.getSigningAddress.call(), address_zero);
+        });
 
-    //         let tx = await I_GeneralTransferManager.modifyWhitelist(
-    //             account_investor1,
-    //             currentTime,
-    //             currentTime,
-    //             currentTime.add(new BN(duration.days(10))),
-    //             true,
-    //             {
-    //                 from: account_issuer,
-    //                 gas: 6000000
-    //             }
-    //         );
+        it("Should issuance address will be 0x", async() => {
+            assert.equal(await I_GeneralTransferManager.getIssuanceAddress.call(), address_zero);
+        });
 
-    //         assert.equal(
-    //             tx.logs[0].args._investor.toLowerCase(),
-    //             account_investor1.toLowerCase(),
-    //             "Failed in adding the investor in whitelist"
-    //         );
+        it("Should allowAllTransfers be false", async() => {
+            assert.isFalse(await I_GeneralTransferManager.allowAllTransfers.call());
+        });
 
-    //         // Jump time
-    //         await increaseTime(5000);
+        it("Should allowAllWhitelistTransfers be false", async() => {
+            assert.isFalse(await I_GeneralTransferManager.allowAllWhitelistTransfers.call());
+        });
 
-    //         // Mint some tokens
-    //         await I_DummySTO.generateTokens(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner });
+        it("Should allowAllWhitelistIssuances be true", async() => {
+            assert.isTrue(await I_GeneralTransferManager.allowAllWhitelistIssuances.call());
+        });
 
-    //         assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
-    //     });
+        it("Should allowAllBurnTransfers be false", async() => {
+            assert.isFalse(await I_GeneralTransferManager.allowAllBurnTransfers.call());
+        });
+    })
 
-    //     it("Should fail in buying the token from the STO", async () => {
-    //         await catchRevert(I_DummySTO.generateTokens(account_affiliates1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner }));
-    //     });
+    describe("Buy tokens using on-chain whitelist", async () => {
+        it("Should buy the tokens -- Failed due to investor is not in the whitelist", async () => {
+            await catchRevert(I_DummySTO.generateTokens(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner }));
+        });
 
-    //     it("Should fail in buying the tokens from the STO -- because amount is 0", async () => {
-    //         await catchRevert(I_DummySTO.generateTokens(account_investor1, new BN(0), { from: token_owner }));
-    //     });
+        it("Should Buy the tokens", async () => {
+            // Add the Investor in to the whitelist
 
-    //     it("Should fail in buying the tokens from the STO -- because STO is paused", async () => {
-    //         await I_DummySTO.pause({ from: account_issuer });
-    //         await catchRevert(I_DummySTO.generateTokens(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner }));
-    //         // Reverting the changes releated to pause
-    //         await I_DummySTO.unpause({ from: account_issuer });
-    //     });
+            let tx = await I_GeneralTransferManager.modifyWhitelist(
+                account_investor1,
+                currentTime,
+                currentTime,
+                currentTime.add(new BN(duration.days(10))),
+                true,
+                {
+                    from: account_issuer,
+                    gas: 6000000
+                }
+            );
 
-    //     it("Should buy more tokens from the STO to investor1", async () => {
-    //         await I_DummySTO.generateTokens(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner });
-    //         assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), new BN(web3.utils.toWei("2", "ether")).toString());
-    //     });
+            assert.equal(
+                tx.logs[0].args._investor.toLowerCase(),
+                account_investor1.toLowerCase(),
+                "Failed in adding the investor in whitelist"
+            );
 
-    //     it("Should fail in investing the money in STO -- expiry limit reached", async () => {
-    //         await increaseTime(duration.days(10));
+            // Jump time
+            await increaseTime(5000);
 
-    //         await catchRevert(I_DummySTO.generateTokens(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner }));
-    //     });
-    // });
+            // Mint some tokens
+            await I_DummySTO.generateTokens(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner });
+
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
+        });
+
+        it("Should fail in buying the token from the STO", async () => {
+            await catchRevert(I_DummySTO.generateTokens(account_affiliates1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner }));
+        });
+
+        it("Should fail in buying the tokens from the STO -- because amount is 0", async () => {
+            await catchRevert(I_DummySTO.generateTokens(account_investor1, new BN(0), { from: token_owner }));
+        });
+
+        it("Should fail in buying the tokens from the STO -- because STO is paused", async () => {
+            await I_DummySTO.pause({ from: account_issuer });
+            await catchRevert(I_DummySTO.generateTokens(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner }));
+            // Reverting the changes releated to pause
+            await I_DummySTO.unpause({ from: account_issuer });
+        });
+
+        it("Should buy more tokens from the STO to investor1", async () => {
+            await I_DummySTO.generateTokens(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner });
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), new BN(web3.utils.toWei("2", "ether")).toString());
+        });
+
+        it("Should fail in investing the money in STO -- expiry limit reached", async () => {
+            await increaseTime(duration.days(10));
+
+            await catchRevert(I_DummySTO.generateTokens(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner }));
+        });
+    });
 
     // describe("Buy tokens using on-chain whitelist and defaults", async () => {
     //     // let snap_id;

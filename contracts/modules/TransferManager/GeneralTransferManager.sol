@@ -1,6 +1,8 @@
 pragma solidity ^0.5.0;
 
 import "./TransferManager.sol";
+import "../../libraries/Encoder.sol";
+import "../../libraries/VersionUtils.sol";
 import "../../storage/GeneralTransferManagerStorage.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
@@ -25,7 +27,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     // Emit when there is change in the flag variable called signingAddress
     event ChangeSigningAddress(address _signingAddress);
     // Emit when investor details get modified related to their whitelisting
-    event ChangeDefaults(uint64 _defaultFromTime, uint64 _defaultToTime);
+    event ChangeDefaults(uint256 _defaultFromTime, uint256 _defaultToTime);
 
     // _fromTime is the time from which the _investor can send tokens
     // _toTime is the time from which the _investor can receive tokens
@@ -72,9 +74,9 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
      * @param _defaultFromTime default for zero fromTime
      * @param _defaultToTime default for zero toTime
      */
-    function changeDefaults(uint64 _defaultFromTime, uint64 _defaultToTime) public withPerm(FLAGS) {
-        bytes memory _data = abi.encode(_defaultFromTime, _defaultToTime);
-        IDataStore(getDataStore()).setBytes(DEFAULTS, _data);
+    function changeDefaults(uint256 _defaultFromTime, uint256 _defaultToTime) public withPerm(FLAGS) {
+        IDataStore(getDataStore()).setUint256(Encoder.getKey("fromTime", DEFAULTS), _defaultFromTime);
+        IDataStore(getDataStore()).setUint256(Encoder.getKey("toTime", DEFAULTS), _defaultFromTime);
         emit ChangeDefaults(_defaultFromTime, _defaultToTime);
     }
 
@@ -172,7 +174,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
                 return Result.VALID;
             }
 
-            (fromTime, fromExpiry, canBuyFromSTO, toTime, toExpiry) = _getValues(_from, _to);
+            (fromTime, fromExpiry, canBuyFromSTO, toTime, toExpiry) = _getValuesToUser(_from, _to);
 
             if (dataStore.getBool(ALLOWALLWHITELISTTRANSFERS)) {
                 //Anyone on the whitelist can transfer, regardless of time
@@ -232,23 +234,18 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     */
     function _modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime, uint256 _expiryTime, bool _canBuyFromSTO) internal {
         require(_investor != address(0), "Invalid investor");
-        uint8 canBuyFromSTO = 0;
         uint8 added;
+        uint8 canBuyFromSTO = 0;
         IDataStore dataStore = IDataStore(getDataStore());
-        bytes memory _whitelistData = dataStore.getBytes(_getKey(WHITELIST, _investor));
-        if (_whitelistData.length > 0) {
-            (,,,,added) = _kycValues(_whitelistData);
-        } 
-        if (_canBuyFromSTO) {
-            canBuyFromSTO = 1;
-        }
+        (,,,,added) = _getValues(_investor);
         if (added == uint8(0)) {
             dataStore.insertAddress(INVESTORS_ARRAY, _investor);
         }
-
-        //whitelist[_investor] = TimeRestriction(uint64(_fromTime), uint64(_toTime), uint64(_expiryTime), canBuyFromSTO, uint8(1));
-        bytes memory _data = abi.encode(uint64(_fromTime), uint64(_toTime), uint64(_expiryTime), canBuyFromSTO, uint8(1));
-        dataStore.setBytes(_getKey(WHITELIST, _investor), _data);
+        if (_canBuyFromSTO) {
+            canBuyFromSTO = 1;
+        }
+        uint256 _data = VersionUtils.packKYC(uint64(_fromTime), uint64(_toTime), uint64(_expiryTime), canBuyFromSTO, uint8(1));
+        dataStore.setUint256(_getKey(WHITELIST, _investor), _data);
         emit ModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
     }
 
@@ -349,28 +346,28 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     function _adjustTimes(uint64 _fromTime, uint64 _toTime) internal view returns(uint64, uint64) {
         uint64 adjustedFromTime = _fromTime;
         uint64 adjustedToTime = _toTime;
-        (uint64 defaultFromTime, uint64 defaultToTime) = abi.decode(IDataStore(getDataStore()).getBytes(DEFAULTS), (uint64, uint64));
         if (_fromTime == 0) {
-            adjustedFromTime = defaultFromTime;
+            adjustedFromTime = uint64(IDataStore(getDataStore()).getUint256(Encoder.getKey("fromTime", DEFAULTS)));
         }
         if (_toTime == 0) {
-            adjustedToTime = defaultToTime;
+            adjustedToTime = uint64(IDataStore(getDataStore()).getUint256(Encoder.getKey("toTime", DEFAULTS)));
         }
         return (adjustedFromTime, adjustedToTime);
     }
 
-    function _kycValues(bytes memory _data) internal pure returns(uint64 fromTime, uint64 toTime, uint64 expiryTime, uint8 canBuy, uint8 added) {
-        return abi.decode(_data, (uint64, uint64, uint64, uint8, uint8));
-    }
-
-    function _getValues(address _from, address _to) internal view returns(uint64 fromTime, uint64 fromExpiry, uint8 canBuyFromSTO, uint64 toTime, uint64 toExpiry ) {
-        IDataStore dataStore = IDataStore(getDataStore());
-        (fromTime,, fromExpiry, canBuyFromSTO,) = _kycValues(dataStore.getBytes(_getKey(WHITELIST, _from)));
-        (, toTime, toExpiry,,) = _kycValues(dataStore.getBytes(_getKey(WHITELIST, _to)));
-    }
-
     function _getKey(bytes32 _key1, address _key2) internal pure returns(bytes32) {
         return bytes32(keccak256(abi.encodePacked(_key1, _key2)));
+    }
+
+    function _getValues(address _investor) internal view returns(uint64 fromTime, uint64 toTime, uint64 expiryTime, uint8 canBuyFromSTO, uint8 added) {
+        IDataStore dataStore = IDataStore(getDataStore());
+        uint256 _whitelistData = dataStore.getUint256(_getKey(WHITELIST, _investor));
+        (fromTime, toTime, expiryTime, canBuyFromSTO, added)  = VersionUtils.unpackKYC(_whitelistData);
+    }
+
+    function _getValuesToUser(address _from, address _to) internal view returns(uint64 fromTime, uint64 fromExpiry, uint8 canBuyFromSTO, uint64 toTime, uint64 toExpiry ) {
+        (fromTime,, fromExpiry, canBuyFromSTO,) = _getValues(_from);
+        (, toTime, toExpiry,,) = _getValues(_to);
     }
 
     /**
@@ -419,9 +416,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         bool[] memory canBuyFromSTOs = new bool[](_investors.length);
         for (uint256 i = 0; i < _investors.length; i++) {
             uint8 canBuyFromSTO;
-            (fromTimes[i], toTimes[i], expiryTimes[i], canBuyFromSTO,) = _kycValues(
-                IDataStore(getDataStore()).getBytes(_getKey(WHITELIST, _investors[i]))
-            );
+            (fromTimes[i], toTimes[i], expiryTimes[i], canBuyFromSTO,) = _getValues(_investors[i]);
             if (canBuyFromSTO == 0) {
                 canBuyFromSTOs[i] = false;
             } else {
@@ -429,6 +424,37 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
             }
         }
         return (fromTimes, toTimes, expiryTimes, canBuyFromSTOs);
+    }
+
+    function getSigningAddress() external view returns(address) {
+        return IDataStore(getDataStore()).getAddress(SIGNING_ADD);
+    }
+
+    function getIssuanceAddress() external view returns(address) {
+        return IDataStore(getDataStore()).getAddress(ISSUANCE_ADD);
+    }
+
+    function allowAllTransfers() external view returns(bool) {
+        return IDataStore(getDataStore()).getBool(ALLOWALLTRANSFERS);
+    }
+
+    function allowAllWhitelistTransfers() external view returns(bool) {
+        return IDataStore(getDataStore()).getBool(ALLOWALLWHITELISTTRANSFERS);
+    }
+
+    function allowAllWhitelistIssuances() external view returns(bool) {
+        return IDataStore(getDataStore()).getBool(ALLOWALLWHITELISTISSUANCES);        
+    }
+
+    function allowAllBurnTransfers() external view returns(bool) {
+        return IDataStore(getDataStore()).getBool(ALLOWALLBURNTRANSFERS);  
+    }
+
+    function getDefaultTimes() external view returns(uint256, uint256) {
+        return(
+            IDataStore(getDataStore()).getUint256(Encoder.getKey("fromTime", DEFAULTS)),
+            IDataStore(getDataStore()).getUint256(Encoder.getKey("toTime", DEFAULTS))
+        );
     }
 
     /**

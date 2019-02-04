@@ -406,7 +406,7 @@ contract("USDTieredSTO", async (accounts) => {
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
             await catchRevert(
-                I_SecurityToken.addModule(P_USDTieredSTOFactory.address, bytesSTO, new BN(web3.utils.toWei("500")), new BN(0), {
+                I_SecurityToken.addModule(P_USDTieredSTOFactory.address, bytesSTO, new BN(web3.utils.toWei("2000")), new BN(0), {
                     from: ISSUER,
                     gasPrice: GAS_PRICE
                 })
@@ -432,8 +432,8 @@ contract("USDTieredSTO", async (accounts) => {
             ];
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
-            await I_PolyToken.getTokens(new BN(web3.utils.toWei("500")), I_SecurityToken.address);
-            let tx = await I_SecurityToken.addModule(P_USDTieredSTOFactory.address, bytesSTO, new BN(web3.utils.toWei("500")), new BN(0), {
+            await I_PolyToken.getTokens(new BN(web3.utils.toWei("2000")), I_SecurityToken.address);
+            let tx = await I_SecurityToken.addModule(P_USDTieredSTOFactory.address, bytesSTO, new BN(web3.utils.toWei("2000")), new BN(0), {
                 from: ISSUER,
                 gasPrice: GAS_PRICE
             });

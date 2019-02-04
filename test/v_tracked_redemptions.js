@@ -135,7 +135,7 @@ contract("TrackedRedemption", async (accounts) => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            
+
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
@@ -157,8 +157,8 @@ contract("TrackedRedemption", async (accounts) => {
 
         it("Should successfully attach the paid TrackedRedemption with the security token", async () => {
             let snapId = await takeSnapshot();
-            await I_PolyToken.getTokens(new BN(web3.utils.toWei("500")), I_SecurityToken.address);
-            const tx = await I_SecurityToken.addModule(P_TrackedRedemptionFactory.address, "0x0", new BN(web3.utils.toWei("500")), new BN(0), {
+            await I_PolyToken.getTokens(new BN(web3.utils.toWei("2000")), I_SecurityToken.address);
+            const tx = await I_SecurityToken.addModule(P_TrackedRedemptionFactory.address, "0x0", new BN(web3.utils.toWei("2000")), new BN(0), {
                 from: token_owner
             });
             assert.equal(tx.logs[3].args._types[0].toNumber(), burnKey, "TrackedRedemption doesn't get deployed");

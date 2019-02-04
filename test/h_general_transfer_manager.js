@@ -72,7 +72,7 @@ contract("GeneralTransferManager", async (accounts) => {
     const stoKey = 3;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = new BN(web3.utils.toWei("250"));
+    const initRegFee = new BN(web3.utils.toWei("1000"));
 
     // Dummy STO details
     let startTime;
@@ -189,14 +189,14 @@ contract("GeneralTransferManager", async (accounts) => {
 
         it("Should attach the paid GTM -- failed because of no tokens", async () => {
             await catchRevert(
-                I_SecurityToken.addModule(P_GeneralTransferManagerFactory.address, "0x0", new BN(web3.utils.toWei("500")), new BN(0), { from: account_issuer })
+                I_SecurityToken.addModule(P_GeneralTransferManagerFactory.address, "0x0", new BN(web3.utils.toWei("2000")), new BN(0), { from: account_issuer })
             );
         });
 
         it("Should attach the paid GTM", async () => {
             let snap_id = await takeSnapshot();
-            await I_PolyToken.getTokens(new BN(web3.utils.toWei("500")), I_SecurityToken.address);
-            await I_SecurityToken.addModule(P_GeneralTransferManagerFactory.address, "0x0", new BN(web3.utils.toWei("500")), new BN(0), {
+            await I_PolyToken.getTokens(new BN(web3.utils.toWei("2000")), I_SecurityToken.address);
+            await I_SecurityToken.addModule(P_GeneralTransferManagerFactory.address, "0x0", new BN(web3.utils.toWei("2000")), new BN(0), {
                 from: account_issuer
             });
             await revertToSnapshot(snap_id);
@@ -257,7 +257,7 @@ contract("GeneralTransferManager", async (accounts) => {
                 someString
             ]);
             await catchRevert(
-                I_SecurityToken.addModule(P_DummySTOFactory.address, bytesSTO, new BN(web3.utils.toWei("500")), new BN(0), { from: token_owner })
+                I_SecurityToken.addModule(P_DummySTOFactory.address, bytesSTO, new BN(web3.utils.toWei("2000")), new BN(0), { from: token_owner })
             );
         });
 
@@ -269,8 +269,8 @@ contract("GeneralTransferManager", async (accounts) => {
                 cap,
                 someString
             ]);
-            await I_PolyToken.getTokens(new BN(web3.utils.toWei("500")), I_SecurityToken.address);
-            const tx = await I_SecurityToken.addModule(P_DummySTOFactory.address, bytesSTO, new BN(web3.utils.toWei("500")), new BN(0), {
+            await I_PolyToken.getTokens(new BN(web3.utils.toWei("2000")), I_SecurityToken.address);
+            const tx = await I_SecurityToken.addModule(P_DummySTOFactory.address, bytesSTO, new BN(web3.utils.toWei("2000")), new BN(0), {
                 from: token_owner
             });
             assert.equal(tx.logs[3].args._types[0].toNumber(), stoKey, "DummySTO doesn't get deployed");
@@ -306,7 +306,7 @@ contract("GeneralTransferManager", async (accounts) => {
         });
 
         it("Should successfully attach the permission manager factory with the security token", async () => {
-            const tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, new BN(0), new BN(0), new BN(0), { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x0", new BN(0), new BN(0), { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), delegateManagerKey, "GeneralPermissionManager doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),

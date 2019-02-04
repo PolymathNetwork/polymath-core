@@ -59,7 +59,7 @@ contract("Checkpoints", async function(accounts) {
     const stoKey = 3;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = new BN(web3.utils.toWei("250"));
+    const initRegFee = new BN(web3.utils.toWei("1000"));
 
     before(async () => {
         fromTime = await latestTime();

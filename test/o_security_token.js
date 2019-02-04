@@ -84,7 +84,7 @@ contract("SecurityToken", async (accounts) => {
     const budget = 0;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = new BN(web3.utils.toWei("250"));
+    const initRegFee = new BN(web3.utils.toWei("1000"));
 
     // delagate details
     const delegateDetails = web3.utils.fromAscii("I am delegate ..");

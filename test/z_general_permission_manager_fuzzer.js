@@ -204,9 +204,9 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
 
         it("Should successfully attach the General permission manager factory with the security token -- failed because Token is not paid", async () => {
             let errorThrown = false;
-            await I_PolyToken.getTokens(new BN(web3.utils.toWei("500", "ether")), token_owner);
+            await I_PolyToken.getTokens(new BN(web3.utils.toWei("2000", "ether")), token_owner);
             await catchRevert(
-                I_SecurityToken.addModule(P_GeneralPermissionManagerFactory.address, "0x", new BN(web3.utils.toWei("500", "ether")), new BN(0), {
+                I_SecurityToken.addModule(P_GeneralPermissionManagerFactory.address, "0x", new BN(web3.utils.toWei("2000", "ether")), new BN(0), {
                     from: token_owner
                 })
             );
@@ -214,11 +214,11 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
 
         it("Should successfully attach the General permission manager factory with the security token - paid module", async () => {
             let snapId = await takeSnapshot();
-            await I_PolyToken.transfer(I_SecurityToken.address, new BN(web3.utils.toWei("500", "ether")), { from: token_owner });
+            await I_PolyToken.transfer(I_SecurityToken.address, new BN(web3.utils.toWei("2000", "ether")), { from: token_owner });
             const tx = await I_SecurityToken.addModule(
                 P_GeneralPermissionManagerFactory.address,
                 "0x",
-                new BN(web3.utils.toWei("500", "ether")),
+                new BN(web3.utils.toWei("2000", "ether")),
                 new BN(0),
                 { from: token_owner }
             );

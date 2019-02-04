@@ -171,7 +171,7 @@ async function cappedSTO_launch(stoConfig) {
       let transferAction = polyToken.methods.transfer(securityToken._address, transferAmount);
       let receipt = await common.sendTransaction(transferAction, { factor: 2 });
       let event = common.getEventFromLogs(polyToken._jsonInterface, receipt.logs, 'Transfer');
-      console.log(`Number of POLY sent: ${web3.utils.fromWei(new web3.utils.BN(event._value))}`)
+      console.log(`Number of POLY sent: ${web3.utils.fromWei(new web3.utils.BN(event.value))}`)
     }
   }
 
@@ -536,7 +536,7 @@ async function usdTieredSTO_launch(stoConfig) {
       let transferAction = polyToken.methods.transfer(securityToken._address, transferAmount);
       let receipt = await common.sendTransaction(transferAction, { factor: 2 });
       let event = common.getEventFromLogs(polyToken._jsonInterface, receipt.logs, 'Transfer');
-      console.log(`Number of POLY sent: ${web3.utils.fromWei(new web3.utils.BN(event._value))}`)
+      console.log(`Number of POLY sent: ${web3.utils.fromWei(new web3.utils.BN(event.value))}`)
     }
   }
 

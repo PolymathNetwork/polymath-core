@@ -371,7 +371,7 @@ contract("ModuleRegistry", async (accounts) => {
             });
 
             it("Should failed in adding the TestSTOFactory module because not compatible with the current protocol version --lower", async () => {
-                I_TestSTOFactory = await TestSTOFactory.new(new BN(0), new BN(0), new BN(0), address_zero, { from: account_polymath });
+                I_TestSTOFactory = await TestSTOFactory.new(new BN(0), new BN(0), address_zero, I_PolymathRegistry.address, { from: account_polymath });
                 await I_MRProxied.registerModule(I_TestSTOFactory.address, { from: account_polymath });
                 await I_MRProxied.verifyModule(I_TestSTOFactory.address, true, { from: account_polymath });
                 // Taking the snapshot the revert the changes from here

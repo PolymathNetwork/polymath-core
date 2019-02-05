@@ -82,8 +82,8 @@ contract("SecurityTokenRegistry", async (accounts) => {
     const budget = 0;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = new BN(web3.utils.toWei("1000"));
-    const newRegFee = new BN(web3.utils.toWei("300"));
+    const initRegFee = new BN(web3.utils.toWei("250"));
+    const initRegFeePOLY = new BN(web3.utils.toWei("1000"));
 
     const STRProxyParameters = ["address", "address", "uint256", "uint256", "address", "address"];
     const STOParameters = ["uint256", "uint256", "uint256", "string"];
@@ -324,8 +324,8 @@ contract("SecurityTokenRegistry", async (accounts) => {
         });
 
         it("Should fail to register ticker if owner is 0x", async () => {
-            await I_PolyToken.getTokens(initRegFee, account_temp);
-            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: account_temp });
+            await I_PolyToken.getTokens(initRegFeePOLY, account_temp);
+            await I_PolyToken.approve(I_STRProxied.address, initRegFeePOLY, { from: account_temp });
 
             await catchRevert(
                 I_STRProxied.registerTicker(address_zero, symbol, name, { from: account_temp }),
@@ -368,8 +368,8 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should fail to register same symbol again", async () => {
             // Give POLY to token issuer
-            await I_PolyToken.getTokens(initRegFee, token_owner);
-            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
+            await I_PolyToken.getTokens(initRegFeePOLY, token_owner);
+            await I_PolyToken.approve(I_STRProxied.address, initRegFeePOLY, { from: token_owner });
             // Call registration function
             await catchRevert(
                 I_STRProxied.registerTicker(token_owner, symbol, name, { from: token_owner }),
@@ -379,7 +379,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should successfully register pre registerd ticker if expiry is reached", async () => {
             await increaseTime(5184000 + 100); // 60(5184000) days of expiry + 100 sec for buffer
-            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
+            await I_PolyToken.approve(I_STRProxied.address, initRegFeePOLY, { from: token_owner });
             let tx = await I_STRProxied.registerTicker(token_owner, symbol, name, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner, `Owner should be the ${token_owner}`);
             assert.equal(tx.logs[0].args._ticker, symbol, `Symbol should be ${symbol}`);
@@ -387,7 +387,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should fail to register ticker if registration is paused", async () => {
             await I_STRProxied.pause({ from: account_polymath });
-            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
+            await I_PolyToken.approve(I_STRProxied.address, initRegFeePOLY, { from: token_owner });
 
             await catchRevert(
                 I_STRProxied.registerTicker(token_owner, "AAA", name, { from: token_owner }),
@@ -401,7 +401,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should successfully register ticker if registration is unpaused", async () => {
             await I_STRProxied.unpause({ from: account_polymath });
-            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
+            await I_PolyToken.approve(I_STRProxied.address, initRegFeePOLY, { from: token_owner });
             let tx = await I_STRProxied.registerTicker(token_owner, "AAA", name, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner, `Owner should be the ${token_owner}`);
             assert.equal(tx.logs[0].args._ticker, "AAA", `Symbol should be AAA`);
@@ -472,7 +472,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should fail to generate token if registration is paused", async () => {
             await I_STRProxied.pause({ from: account_polymath });
-            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
+            await I_PolyToken.approve(I_STRProxied.address, initRegFeePOLY, { from: token_owner });
 
             await catchRevert(
                 I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner }),
@@ -593,14 +593,14 @@ contract("SecurityTokenRegistry", async (accounts) => {
         });
 
         it("Should register the ticker before the generation of the security token", async () => {
-            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
+            await I_PolyToken.approve(I_STRProxied.address, initRegFeePOLY, { from: token_owner });
             let tx = await I_STRProxied.registerTicker(token_owner, symbol2, name2, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner, `Token owner should be ${token_owner}`);
             assert.equal(tx.logs[0].args._ticker, symbol2, `Symbol should be ${symbol2}`);
         });
 
         it("Should generate the new security token with version 2", async () => {
-            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
+            await I_PolyToken.approve(I_STRProxied.address, initRegFeePOLY, { from: token_owner });
 
             let tx = await I_STRProxied.generateSecurityToken(name2, symbol2, tokenDetails, false, { from: token_owner });
 
@@ -705,7 +705,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         it("Should successfully generate custom token", async () => {
             // Register the new ticker -- Fulfiling the TickerStatus.ON condition
             await I_PolyToken.getTokens(new BN(web3.utils.toWei("1000")), account_temp);
-            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: account_temp });
+            await I_PolyToken.approve(I_STRProxied.address, initRegFeePOLY, { from: account_temp });
             let tickersListArray = await I_Getter.getTickersByOwner.call(account_temp);
             console.log(tickersListArray);
             await I_STRProxied.registerTicker(account_temp, "LOG", "LOGAN", { from: account_temp });
@@ -951,7 +951,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         });
 
         it("Should fail to register the ticker with the old fee", async () => {
-            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
+            await I_PolyToken.approve(I_STRProxied.address, initRegFeePOLY, { from: token_owner });
             await catchRevert(
                 I_STRProxied.registerTicker(token_owner, "POLY", "Polymath", { from: token_owner }),
                 "tx revert -> failed because of ticker registeration fee gets change"
@@ -959,7 +959,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         });
 
         it("Should register the ticker with the new fee", async () => {
-            await I_PolyToken.getTokens(new BN(web3.utils.toWei("1000")), token_owner);
+            await I_PolyToken.getTokens(new BN(web3.utils.toWei("1600")), token_owner);
             await I_PolyToken.approve(I_STRProxied.address, new BN(web3.utils.toWei("2000")), { from: token_owner });
             let tx = await I_STRProxied.registerTicker(token_owner, "POLY", "Polymath", { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner, `Token owner should be ${token_owner}`);
@@ -967,7 +967,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         });
 
         it("Should fail to launch the securityToken with the old launch fee", async () => {
-            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
+            await I_PolyToken.approve(I_STRProxied.address, initRegFeePOLY, { from: token_owner });
             await catchRevert(
                 I_STRProxied.generateSecurityToken("Polymath", "POLY", tokenDetails, false, { from: token_owner }),
                 "tx revert -> failed because of old launch fee"

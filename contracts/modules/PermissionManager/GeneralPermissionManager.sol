@@ -27,8 +27,6 @@ contract GeneralPermissionManager is GeneralPermissionManagerStorage, IPermissio
         return bytes4(0);
     }
 
-    function initialize() public {}
-
     /**
      * @notice Used to check the permission on delegate corresponds to module contract address
      * @param _delegate Ethereum address of the delegate

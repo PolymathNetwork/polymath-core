@@ -7,5 +7,4 @@ interface IBoot {
      */
     function getInitFunction() external pure returns(bytes4);
 
-    function initialize() external; 
 }

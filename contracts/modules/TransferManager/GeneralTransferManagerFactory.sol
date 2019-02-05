@@ -2,7 +2,6 @@ pragma solidity ^0.5.0;
 
 import "../../proxy/GeneralTransferManagerProxy.sol";
 import "../ModuleFactory.sol";
-import "../../interfaces/IBoot.sol";
 
 /**
  * @title Factory for deploying GeneralTransferManager module

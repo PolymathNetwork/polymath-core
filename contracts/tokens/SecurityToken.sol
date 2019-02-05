@@ -1,7 +1,6 @@
 pragma solidity ^0.5.0;
 
 import "openzeppelin-solidity/contracts/math/Math.sol";
-import "../interfaces/IBoot.sol";
 import "../interfaces/IPoly.sol";
 import "../interfaces/IModule.sol";
 import "../interfaces/IModuleFactory.sol";

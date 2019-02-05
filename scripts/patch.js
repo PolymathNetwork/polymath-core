@@ -14,7 +14,7 @@ fs.readFile(".solcover.js", "utf8", function(err, data) {
 
     let testCommand = "truffle test --network coverage";
     fs.readdirSync("./test").forEach(file => {
-        if (file != "a_poly_oracle.js" && file != "s_v130_to_v140_upgrade.js") testCommand = testCommand + " test\\\\" + file;
+        if (file != "a_poly_oracle.js") testCommand = testCommand + " test\\\\" + file;
     });
     testCommand = testCommand + "',";
     let result = data.replace(regex2, testCommand);

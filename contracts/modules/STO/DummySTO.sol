@@ -25,7 +25,7 @@ contract DummySTO is DummySTOStorage, STO {
      * @param _cap Maximum No. of tokens for sale
      * @param _someString Any string that contails the details
      */
-    function configure(uint256 _startTime, uint256 _endTime, uint256 _cap, string memory _someString) public onlyST {
+    function configure(uint256 _startTime, uint256 _endTime, uint256 _cap, string memory _someString) public onlyFactory {
         startTime = _startTime;
         endTime = _endTime;
         cap = _cap;

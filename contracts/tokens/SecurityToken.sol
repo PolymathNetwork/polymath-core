@@ -264,15 +264,6 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
             _label
         );
         names[moduleName].push(module);
-        if (Util.getSig(_data) == "") {
-            IBoot(module).initialize();
-        } else {
-            require(Util.getSig(_data) == IBoot(module).getInitFunction(), "Provided data is not valid");
-            bool success;
-            /*solium-disable-next-line security/no-low-level-calls*/
-            (success, ) = module.call(_data);
-            require(success, "Unsuccessful call");
-        }
         //Emit log event
         /*solium-disable-next-line security/no-block-members*/
         emit ModuleAdded(moduleTypes, moduleName, _moduleFactory, module, moduleCost, _budget, _label, now);

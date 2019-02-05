@@ -46,12 +46,12 @@ contract DummySTOFactory is ModuleFactory {
         address polyToken = _takeFee();
         //Check valid bytes - can only call module init function
         address dummySTO = address(new DummySTOProxy(msg.sender, polyToken, logicContract));
-        // //Checks that _data is valid (not calling anything it shouldn't)
-        // require(Util.getSig(_data) == IBoot(dummySTO).getInitFunction(), "Invalid data");
-        // bool success;
-        // /*solium-disable-next-line security/no-low-level-calls*/
-        // (success, ) = dummySTO.call(_data);
-        // require(success, "Unsuccessfull call");
+        //Checks that _data is valid (not calling anything it shouldn't)
+        require(Util.getSig(_data) == IBoot(dummySTO).getInitFunction(), "Invalid data");
+        bool success;
+        /*solium-disable-next-line security/no-low-level-calls*/
+        (success, ) = dummySTO.call(_data);
+        require(success, "Unsuccessfull call");
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(dummySTO, getName(), address(this), msg.sender, setupCost, now);
         return dummySTO;

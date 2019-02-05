@@ -27,7 +27,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     // Emit when there is change in the flag variable called signingAddress
     event ChangeSigningAddress(address _signingAddress);
     // Emit when investor details get modified related to their whitelisting
-    event ChangeDefaults(uint256 _defaultFromTime, uint256 _defaultToTime);
+    event ChangeDefaults(uint64 _defaultFromTime, uint64 _defaultToTime);
 
     // _fromTime is the time from which the _investor can send tokens
     // _toTime is the time from which the _investor can receive tokens
@@ -41,7 +41,8 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         uint256 _fromTime,
         uint256 _toTime,
         uint256 _expiryTime,
-        bool _canBuyFromSTO
+        bool _canBuyFromSTO,
+        bool _isAccredited
     );
 
     /**
@@ -63,20 +64,13 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     }
 
     /**
-     * @notice This function use to initialize the local variables of the contract
-     */
-    function initialize() public onlyST {
-        IDataStore(getDataStore()).setBool(ALLOWALLWHITELISTISSUANCES, true);
-    }
-
-    /**
      * @notice Used to change the default times used when fromTime / toTime are zero
      * @param _defaultFromTime default for zero fromTime
      * @param _defaultToTime default for zero toTime
      */
-    function changeDefaults(uint256 _defaultFromTime, uint256 _defaultToTime) public withPerm(FLAGS) {
-        IDataStore(getDataStore()).setUint256(Encoder.getKey("fromTime", DEFAULTS), _defaultFromTime);
-        IDataStore(getDataStore()).setUint256(Encoder.getKey("toTime", DEFAULTS), _defaultFromTime);
+    function changeDefaults(uint64 _defaultFromTime, uint64 _defaultToTime) public withPerm(FLAGS) {
+        defaults.fromTime = _defaultFromTime;
+        defaults.toTime = _defaultToTime;
         emit ChangeDefaults(_defaultFromTime, _defaultToTime);
     }
 
@@ -85,7 +79,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
      * @param _issuanceAddress new address for the issuance
      */
     function changeIssuanceAddress(address _issuanceAddress) public withPerm(FLAGS) {
-        IDataStore(getDataStore()).setAddress(ISSUANCE_ADD, _issuanceAddress);
+        issuanceAddress = _issuanceAddress;
         emit ChangeIssuanceAddress(_issuanceAddress);
     }
 
@@ -94,7 +88,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
      * @param _signingAddress new address for the signing
      */
     function changeSigningAddress(address _signingAddress) public withPerm(FLAGS) {
-        IDataStore(getDataStore()).setAddress(SIGNING_ADD, _signingAddress);
+        signingAddress = _signingAddress;
         emit ChangeSigningAddress(_signingAddress);
     }
 
@@ -105,7 +99,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
      * @param _allowAllTransfers flag value
      */
     function changeAllowAllTransfers(bool _allowAllTransfers) public withPerm(FLAGS) {
-        IDataStore(getDataStore()).setBool(ALLOWALLTRANSFERS, _allowAllTransfers);
+        allowAllTransfers = _allowAllTransfers;
         emit AllowAllTransfers(_allowAllTransfers);
     }
 
@@ -116,7 +110,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
      * @param _allowAllWhitelistTransfers flag value
      */
     function changeAllowAllWhitelistTransfers(bool _allowAllWhitelistTransfers) public withPerm(FLAGS) {
-        IDataStore(getDataStore()).setBool(ALLOWALLWHITELISTTRANSFERS, _allowAllWhitelistTransfers);
+        allowAllWhitelistTransfers = _allowAllWhitelistTransfers;
         emit AllowAllWhitelistTransfers(_allowAllWhitelistTransfers);
     }
 
@@ -127,7 +121,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
      * @param _allowAllWhitelistIssuances flag value
      */
     function changeAllowAllWhitelistIssuances(bool _allowAllWhitelistIssuances) public withPerm(FLAGS) {
-        IDataStore(getDataStore()).setBool(ALLOWALLWHITELISTISSUANCES, _allowAllWhitelistIssuances);
+        allowAllWhitelistIssuances = _allowAllWhitelistIssuances;
         emit AllowAllWhitelistIssuances(_allowAllWhitelistIssuances);
     }
 
@@ -138,7 +132,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
      * @param _allowAllBurnTransfers flag value
      */
     function changeAllowAllBurnTransfers(bool _allowAllBurnTransfers) public withPerm(FLAGS) {
-        IDataStore(getDataStore()).setBool(ALLOWALLBURNTRANSFERS, _allowAllBurnTransfers);
+        allowAllBurnTransfers = _allowAllBurnTransfers;
         emit AllowAllBurnTransfers(_allowAllBurnTransfers);
     }
 
@@ -165,30 +159,29 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
             uint64 toExpiry;
             uint64 toTime;
             uint8 canBuyFromSTO;
-            IDataStore dataStore = IDataStore(getDataStore());
-            if (dataStore.getBool(ALLOWALLTRANSFERS)) {
+            if (allowAllTransfers) {
                 //All transfers allowed, regardless of whitelist
                 return Result.VALID;
             }
-            if (dataStore.getBool(ALLOWALLBURNTRANSFERS) && (_to == address(0))) {
+            if (allowAllBurnTransfers && (_to == address(0))) {
                 return Result.VALID;
             }
 
             (fromTime, fromExpiry, canBuyFromSTO, toTime, toExpiry) = _getValuesToUser(_from, _to);
 
-            if (dataStore.getBool(ALLOWALLWHITELISTTRANSFERS)) {
+            if (allowAllWhitelistTransfers) {
                 //Anyone on the whitelist can transfer, regardless of time
                 return (_onWhitelist(toExpiry) && _onWhitelist(fromExpiry)) ? Result.VALID : Result.NA;
             }
             // Using the local variables to avoid the stack too deep error
             (fromTime, toTime) = _adjustTimes(fromTime, toTime);
-            if (_from == dataStore.getAddress(ISSUANCE_ADD)) {
+            if (_from == issuanceAddress) {
                 // Possible STO transaction, but investor not allowed to purchased from STO
-                if ((canBuyFromSTO == 0) && _isSTOAttached()) {
+                if ((canBuyFromSTO == uint8(0)) && _isSTOAttached()) {
                     return Result.NA;
                 }
                 // if allowAllWhitelistIssuances is true, so time stamp ignored
-                if (dataStore.getBool(ALLOWALLWHITELISTISSUANCES)) {
+                if (allowAllWhitelistIssuances) {
                     return _onWhitelist(toExpiry) ? Result.VALID : Result.NA;
                 } else {
                     return (_onWhitelist(toExpiry) && (toTime <= uint64(now))) ? Result.VALID : Result.NA;
@@ -210,18 +203,20 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
     * @param _expiryTime is the moment till investors KYC will be validated. After that investor need to do re-KYC
     * @param _canBuyFromSTO is used to know whether the investor is restricted investor or not.
+    * @param _isAccredited is used to differentiate whether the investor is Accredited or not.
     */
     function modifyWhitelist(
         address _investor,
         uint256 _fromTime,
         uint256 _toTime,
         uint256 _expiryTime,
-        bool _canBuyFromSTO
+        bool _canBuyFromSTO,
+        bool _isAccredited
     )
         public
         withPerm(WHITELIST)
     {
-        _modifyWhitelist(_investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
+        _modifyWhitelist(_investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO, _isAccredited);
     }
 
     /**
@@ -231,22 +226,23 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
     * @param _expiryTime is the moment till investors KYC will be validated. After that investor need to do re-KYC
     * @param _canBuyFromSTO is used to know whether the investor is restricted investor or not.
+    * @param _isAccredited is used to differentiate whether the investor is Accredited or not.
     */
-    function _modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime, uint256 _expiryTime, bool _canBuyFromSTO) internal {
+    function _modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime, uint256 _expiryTime, bool _canBuyFromSTO, bool _isAccredited) internal {
         require(_investor != address(0), "Invalid investor");
         uint8 added;
-        uint8 canBuyFromSTO = 0;
+        uint8 canBuyFromSTO;
+        uint8 accredited;
         IDataStore dataStore = IDataStore(getDataStore());
-        (,,,,added) = _getValues(_investor);
+        (,,,,added,) = _getValues(_investor, dataStore);
         if (added == uint8(0)) {
-            dataStore.insertAddress(INVESTORS_ARRAY, _investor);
+           investors.push(_investor);
         }
-        if (_canBuyFromSTO) {
-            canBuyFromSTO = 1;
-        }
-        uint256 _data = VersionUtils.packKYC(uint64(_fromTime), uint64(_toTime), uint64(_expiryTime), canBuyFromSTO, uint8(1));
+        canBuyFromSTO = _canBuyFromSTO ? 1 : 0;
+        accredited = _isAccredited ? 1 : 0;
+        uint256 _data = VersionUtils.packKYC(uint64(_fromTime), uint64(_toTime), uint64(_expiryTime), canBuyFromSTO, uint8(1), accredited);
         dataStore.setUint256(_getKey(WHITELIST, _investor), _data);
-        emit ModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
+        emit ModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime, _canBuyFromSTO, _isAccredited);
     }
 
     /**
@@ -255,21 +251,30 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     * @param _fromTimes An array of the moment when the sale lockup period ends and the investor can freely sell his tokens
     * @param _toTimes An array of the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
     * @param _expiryTimes An array of the moment till investors KYC will be validated. After that investor need to do re-KYC
-    * @param _canBuyFromSTO An array of boolean values
+    * @param _canBuyFromSTO An array of boolean values.
+    * @param _isAccredited An array of boolean values to differentiate whether the investor is Accredited or not.
     */
     function modifyWhitelistMulti(
         address[] memory _investors,
         uint256[] memory _fromTimes,
         uint256[] memory _toTimes,
         uint256[] memory _expiryTimes,
-        bool[] memory _canBuyFromSTO
-    ) public withPerm(WHITELIST) {
-        require(_investors.length == _fromTimes.length, "Mismatched input lengths");
-        require(_fromTimes.length == _toTimes.length, "Mismatched input lengths");
-        require(_toTimes.length == _expiryTimes.length, "Mismatched input lengths");
-        require(_canBuyFromSTO.length == _toTimes.length, "Mismatched input length");
+        bool[] memory _canBuyFromSTO,
+        bool[] memory _isAccredited
+    ) 
+        public
+        withPerm(WHITELIST)
+    {
+        require(
+            _investors.length == _fromTimes.length &&
+            _fromTimes.length == _toTimes.length &&
+            _toTimes.length == _expiryTimes.length &&
+            _canBuyFromSTO.length == _toTimes.length &&
+            _canBuyFromSTO.length == _isAccredited.length,
+            "Mismatched input lengths"
+        );
         for (uint256 i = 0; i < _investors.length; i++) {
-            _modifyWhitelist(_investors[i], _fromTimes[i], _toTimes[i], _expiryTimes[i], _canBuyFromSTO[i]);
+            _modifyWhitelist(_investors[i], _fromTimes[i], _toTimes[i], _expiryTimes[i], _canBuyFromSTO[i], _isAccredited[i]);
         }
     }
 
@@ -280,6 +285,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
     * @param _expiryTime is the moment till investors KYC will be validated. After that investor need to do re-KYC
     * @param _canBuyFromSTO is used to know whether the investor is restricted investor or not.
+    * @param _isAccredited is used to differentiate whether the investor is Accredited or not.
     * @param _validFrom is the time that this signature is valid from
     * @param _validTo is the time that this signature is valid until
     * @param _nonce nonce of signature (avoid replay attack)
@@ -291,6 +297,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         uint256 _toTime,
         uint256 _expiryTime,
         bool _canBuyFromSTO,
+        bool _isAccredited,
         uint256 _validFrom,
         uint256 _validTo,
         uint256 _nonce,
@@ -302,15 +309,13 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         require(_validFrom <= now, "ValidFrom is too early");
         /*solium-disable-next-line security/no-block-members*/
         require(_validTo >= now, "ValidTo is too late");
-        bytes32 _key = keccak256(abi.encodePacked("nonceMap", _investor, _nonce));
-        require(!IDataStore(getDataStore()).getBool(_key), "Already used signature");
-        //nonceMap[_investor][_nonce] = true;
-        IDataStore(getDataStore()).setBool(_key, true);
+        require(!nonceMap[_investor][_nonce], "Already used signature");
+        nonceMap[_investor][_nonce] = true;
         bytes32 hash = keccak256(
-            abi.encodePacked(this, _investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO, _validFrom, _validTo, _nonce)
+            abi.encodePacked(this, _investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO, _isAccredited, _validFrom, _validTo, _nonce)
         );
         _checkSig(hash, _signature);
-        _modifyWhitelist(_investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
+        _modifyWhitelist(_investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO, _isAccredited);
     }
 
     /**
@@ -320,7 +325,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         //Check that the signature is valid
         //sig should be signing - _investor, _fromTime, _toTime & _expiryTime and be signed by the issuer address
         address signer = _hash.toEthSignedMessageHash().recover(_signature);
-        require(signer == Ownable(securityToken).owner() || signer == IDataStore(getDataStore()).getAddress(SIGNING_ADD), "Incorrect signer");
+        require(signer == Ownable(securityToken).owner() || signer == signingAddress, "Incorrect signer");
     }
 
     /**
@@ -347,10 +352,10 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         uint64 adjustedFromTime = _fromTime;
         uint64 adjustedToTime = _toTime;
         if (_fromTime == 0) {
-            adjustedFromTime = uint64(IDataStore(getDataStore()).getUint256(Encoder.getKey("fromTime", DEFAULTS)));
+            adjustedFromTime = defaults.fromTime;
         }
         if (_toTime == 0) {
-            adjustedToTime = uint64(IDataStore(getDataStore()).getUint256(Encoder.getKey("toTime", DEFAULTS)));
+            adjustedToTime = defaults.toTime;
         }
         return (adjustedFromTime, adjustedToTime);
     }
@@ -359,22 +364,30 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         return bytes32(keccak256(abi.encodePacked(_key1, _key2)));
     }
 
-    function _getValues(address _investor) internal view returns(uint64 fromTime, uint64 toTime, uint64 expiryTime, uint8 canBuyFromSTO, uint8 added) {
-        IDataStore dataStore = IDataStore(getDataStore());
+    function _getValues(address _investor, IDataStore dataStore) internal view returns(
+        uint64 fromTime,
+        uint64 toTime,
+        uint64 expiryTime,
+        uint8 canBuyFromSTO,
+        uint8 added,
+        uint8 isAccredited
+    ) 
+    {
         uint256 _whitelistData = dataStore.getUint256(_getKey(WHITELIST, _investor));
-        (fromTime, toTime, expiryTime, canBuyFromSTO, added)  = VersionUtils.unpackKYC(_whitelistData);
+        (fromTime, toTime, expiryTime, canBuyFromSTO, added, isAccredited)  = VersionUtils.unpackKYC(_whitelistData);
     }
 
-    function _getValuesToUser(address _from, address _to) internal view returns(uint64 fromTime, uint64 fromExpiry, uint8 canBuyFromSTO, uint64 toTime, uint64 toExpiry ) {
-        (fromTime,, fromExpiry, canBuyFromSTO,) = _getValues(_from);
-        (, toTime, toExpiry,,) = _getValues(_to);
+    function _getValuesToUser(address _from, address _to) internal view returns(uint64 fromTime, uint64 fromExpiry, uint8 canBuyFromSTO, uint64 toTime, uint64 toExpiry) {
+        IDataStore dataStore = IDataStore(getDataStore());
+        (fromTime,, fromExpiry,,,) = _getValues(_from, dataStore);
+        (, toTime, toExpiry, canBuyFromSTO,,) = _getValues(_to, dataStore);
     }
 
     /**
      * @dev Returns list of all investors
      */
     function getInvestors() public view returns(address[] memory) {
-        return IDataStore(getDataStore()).getAddressArray(INVESTORS_ARRAY);
+        return investors;
     }
 
     /**
@@ -385,10 +398,11 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         uint256[] memory fromTimes,
         uint256[] memory toTimes,
         uint256[] memory expiryTimes,
-        bool[] memory canBuyFromSTOs
+        bool[] memory canBuyFromSTOs,
+        bool[] memory isAccrediteds
     ) {
-        (fromTimes, toTimes, expiryTimes, canBuyFromSTOs) = _investorsData(getInvestors());
-        return (getInvestors(), fromTimes, toTimes, expiryTimes, canBuyFromSTOs);
+        (fromTimes, toTimes, expiryTimes, canBuyFromSTOs, isAccrediteds) = _investorsData(getInvestors());
+        return (getInvestors(), fromTimes, toTimes, expiryTimes, canBuyFromSTOs, isAccrediteds);
 
     }
 
@@ -399,6 +413,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         uint256[] memory,
         uint256[] memory,
         uint256[] memory,
+        bool[] memory,
         bool[] memory
     ) {
         return _investorsData(_investors);
@@ -408,53 +423,22 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         uint256[] memory,
         uint256[] memory,
         uint256[] memory,
+        bool[] memory,
         bool[] memory
     ) {
         uint256[] memory fromTimes = new uint256[](_investors.length);
         uint256[] memory toTimes = new uint256[](_investors.length);
         uint256[] memory expiryTimes = new uint256[](_investors.length);
         bool[] memory canBuyFromSTOs = new bool[](_investors.length);
+        bool[] memory isAccrediteds = new bool[](_investors.length);
         for (uint256 i = 0; i < _investors.length; i++) {
             uint8 canBuyFromSTO;
-            (fromTimes[i], toTimes[i], expiryTimes[i], canBuyFromSTO,) = _getValues(_investors[i]);
-            if (canBuyFromSTO == 0) {
-                canBuyFromSTOs[i] = false;
-            } else {
-                canBuyFromSTOs[i] = true;
-            }
+            uint8 isAccredited;
+            (fromTimes[i], toTimes[i], expiryTimes[i], canBuyFromSTO,,isAccredited) = _getValues(_investors[i], IDataStore(getDataStore()));
+            canBuyFromSTOs[i] = canBuyFromSTO == 0 ? false : true;
+            isAccrediteds[i] = isAccredited == 0 ? false : true;
         }
-        return (fromTimes, toTimes, expiryTimes, canBuyFromSTOs);
-    }
-
-    function getSigningAddress() external view returns(address) {
-        return IDataStore(getDataStore()).getAddress(SIGNING_ADD);
-    }
-
-    function getIssuanceAddress() external view returns(address) {
-        return IDataStore(getDataStore()).getAddress(ISSUANCE_ADD);
-    }
-
-    function allowAllTransfers() external view returns(bool) {
-        return IDataStore(getDataStore()).getBool(ALLOWALLTRANSFERS);
-    }
-
-    function allowAllWhitelistTransfers() external view returns(bool) {
-        return IDataStore(getDataStore()).getBool(ALLOWALLWHITELISTTRANSFERS);
-    }
-
-    function allowAllWhitelistIssuances() external view returns(bool) {
-        return IDataStore(getDataStore()).getBool(ALLOWALLWHITELISTISSUANCES);        
-    }
-
-    function allowAllBurnTransfers() external view returns(bool) {
-        return IDataStore(getDataStore()).getBool(ALLOWALLBURNTRANSFERS);  
-    }
-
-    function getDefaultTimes() external view returns(uint256, uint256) {
-        return(
-            IDataStore(getDataStore()).getUint256(Encoder.getKey("fromTime", DEFAULTS)),
-            IDataStore(getDataStore()).getUint256(Encoder.getKey("toTime", DEFAULTS))
-        );
+        return (fromTimes, toTimes, expiryTimes, canBuyFromSTOs, isAccrediteds);
     }
 
     /**

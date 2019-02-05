@@ -188,7 +188,7 @@ contract("SignedTransferManager", accounts => {
 
 
         it("Should successfully attach the SignedTransferManager with the security token", async () => {
-            const tx = await I_SecurityToken.addModule(I_SignedTransferManagerFactory.address, new BN(0),new BN(0),new BN(0), { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_SignedTransferManagerFactory.address, "0x0",new BN(0),new BN(0), { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), transferManagerKey, "SignedTransferManager doesn't get deployed");
             assert.equal(
                 web3.utils.toUtf8(tx.logs[2].args._name),

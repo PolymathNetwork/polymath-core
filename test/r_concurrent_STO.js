@@ -58,6 +58,7 @@ contract("Concurrent STO", async (accounts) => {
     // Initial fees
     const initRegFee = new BN(web3.utils.toWei("1000"));
     const STOSetupCost = web3.utils.toHex(200 * Math.pow(10, 18));
+    const STOSetupCostPOLY = web3.utils.toHex(800 * Math.pow(10, 18));
 
     // Module keys
     const transferManagerKey = 2;
@@ -142,7 +143,7 @@ contract("Concurrent STO", async (accounts) => {
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.getTokens(initRegFee, account_issuer);
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: account_issuer });
-            
+
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: account_issuer });
             assert.equal(tx.logs[2].args._ticker, symbol, "SecurityToken doesn't get deployed");
 
@@ -184,7 +185,7 @@ contract("Concurrent STO", async (accounts) => {
             const rate = new BN(web3.utils.toWei("1000"));
             const fundRaiseType = [0];
             const budget = 0;
-            const maxCost = STOSetupCost;
+            const maxCost = STOSetupCostPOLY;
             const cappedBytesSig = encodeModuleCall(CappedSTOParameters, [
                 startTime,
                 endTime,
@@ -197,8 +198,8 @@ contract("Concurrent STO", async (accounts) => {
             const presaleBytesSig = encodeModuleCall(PresaleSTOParameters, [endTime]);
 
             for (var STOIndex = 0; STOIndex < MAX_MODULES; STOIndex++) {
-                await I_PolyToken.getTokens(STOSetupCost, account_issuer);
-                await I_PolyToken.transfer(I_SecurityToken.address, STOSetupCost, { from: account_issuer });
+                await I_PolyToken.getTokens(STOSetupCostPOLY, account_issuer);
+                await I_PolyToken.transfer(I_SecurityToken.address, STOSetupCostPOLY, { from: account_issuer });
                 switch (STOIndex % 3) {
                     case 0:
                         // Capped STO

@@ -975,7 +975,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         });
 
         it("Should launch the the securityToken", async () => {
-            await I_PolyToken.approve(I_STRProxied.address, new BN(web3.utils.toWei("500")), { from: token_owner });
+            await I_PolyToken.approve(I_STRProxied.address, new BN(web3.utils.toWei("2000")), { from: token_owner });
             let tx = await I_STRProxied.generateSecurityToken("Polymath", "POLY", tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
@@ -1051,8 +1051,8 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
     describe(" Test cases of the registerTicker", async () => {
         it("Should register the ticker 1", async () => {
-            await I_PolyToken.getTokens(new BN(web3.utils.toWei("1000")), account_temp);
-            await I_PolyToken.approve(I_STRProxied.address, new BN(web3.utils.toWei("1000")), { from: account_temp });
+            await I_PolyToken.getTokens(new BN(web3.utils.toWei("1600")), account_temp);
+            await I_PolyToken.approve(I_STRProxied.address, new BN(web3.utils.toWei("1600")), { from: account_temp });
             let tx = await I_STRProxied.registerTicker(account_temp, "TOK1", "0x0", { from: account_temp });
             assert.equal(tx.logs[0].args._owner, account_temp, `Owner should be the ${account_temp}`);
             assert.equal(tx.logs[0].args._ticker, "TOK1", `Symbol should be TOK1`);
@@ -1060,8 +1060,8 @@ contract("SecurityTokenRegistry", async (accounts) => {
         });
 
         it("Should register the ticker 2", async () => {
-            await I_PolyToken.getTokens(new BN(web3.utils.toWei("1000")), account_temp);
-            await I_PolyToken.approve(I_STRProxied.address, new BN(web3.utils.toWei("1000")), { from: account_temp });
+            await I_PolyToken.getTokens(new BN(web3.utils.toWei("1600")), account_temp);
+            await I_PolyToken.approve(I_STRProxied.address, new BN(web3.utils.toWei("1600")), { from: account_temp });
             let tx = await I_STRProxied.registerTicker(account_temp, "TOK2", "0x0", { from: account_temp });
             assert.equal(tx.logs[0].args._owner, account_temp, `Owner should be the ${account_temp}`);
             assert.equal(tx.logs[0].args._ticker, "TOK2", `Symbol should be TOK2`);
@@ -1069,8 +1069,8 @@ contract("SecurityTokenRegistry", async (accounts) => {
         });
 
         it("Should register the ticker 3", async () => {
-            await I_PolyToken.getTokens(new BN(web3.utils.toWei("1000")), account_temp);
-            await I_PolyToken.approve(I_STRProxied.address, new BN(web3.utils.toWei("1000")), { from: account_temp });
+            await I_PolyToken.getTokens(new BN(web3.utils.toWei("1600")), account_temp);
+            await I_PolyToken.approve(I_STRProxied.address, new BN(web3.utils.toWei("1600")), { from: account_temp });
             let tx = await I_STRProxied.registerTicker(account_temp, "TOK3", "0x0", { from: account_temp });
             assert.equal(tx.logs[0].args._owner, account_temp, `Owner should be the ${account_temp}`);
             assert.equal(tx.logs[0].args._ticker, "TOK3", `Symbol should be TOK3`);

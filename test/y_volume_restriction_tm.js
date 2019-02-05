@@ -74,7 +74,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
     let tempArrayGlobal = new Array();
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = new BN(web3.utils.toWei("250"));
+    const initRegFee = new BN(web3.utils.toWei("1000"));
 
     const address_zero = "0x0000000000000000000000000000000000000000";
 

@@ -44,7 +44,6 @@ contract("ModuleRegistryProxy", async (accounts) => {
     let account_polymath_new;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = new BN(web3.utils.toWei("250"));
     const version = "1.0.0";
     const message = "Transaction Should Fail!";
     const address_zero = "0x0000000000000000000000000000000000000000";

@@ -198,7 +198,7 @@ contract("SecurityToken", async (accounts) => {
             let toTime = new BN(currentTime.add(new BN(duration.days(100))));
             let expiryTime = new BN(toTime.add(new BN(duration.days(100))));
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_affiliate1, currentTime, toTime, expiryTime, true, {
+            let tx = await I_GeneralTransferManager.modifyWhitelist(account_affiliate1, currentTime, toTime, expiryTime, true, false, {
                 from: token_owner,
                 gas: 6000000
             });
@@ -217,7 +217,7 @@ contract("SecurityToken", async (accounts) => {
             let toTime = new BN(currentTime.add(new BN(duration.days(100))));
             let expiryTime = new BN(toTime.add(new BN(duration.days(100))));
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_affiliate2, currentTime, toTime, expiryTime, true, {
+            let tx = await I_GeneralTransferManager.modifyWhitelist(account_affiliate2, currentTime, toTime, expiryTime, true, false, {
                 from: token_owner,
                 gas: 6000000
             });
@@ -535,7 +535,7 @@ contract("SecurityToken", async (accounts) => {
             toTime = fromTime + duration.days(100);
             expiryTime = toTime + duration.days(100);
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, fromTime, toTime, expiryTime, true, {
+            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, fromTime, toTime, expiryTime, true, false, {
                 from: token_owner,
                 gas: 6000000
             });
@@ -647,7 +647,7 @@ contract("SecurityToken", async (accounts) => {
         });
 
         it("Should transfer from whitelist investor1 to whitelist investor 2", async () => {
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor2, fromTime, toTime, expiryTime, true, {
+            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor2, fromTime, toTime, expiryTime, true, false, {
                 from: token_owner,
                 gas: 500000
             });
@@ -669,7 +669,7 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should transferFrom from one investor to other", async () => {
             await I_SecurityToken.approve(account_investor1, new BN(2).mul(new BN(10).pow(new BN(18))), { from: account_investor2 });
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor3, fromTime, toTime, expiryTime, true, {
+            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor3, fromTime, toTime, expiryTime, true, false, {
                 from: token_owner,
                 gas: 500000
             });
@@ -714,7 +714,7 @@ contract("SecurityToken", async (accounts) => {
         });
 
         it("Should add the investor in the whitelist by the delegate", async () => {
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_temp, fromTime, toTime, expiryTime, true, {
+            let tx = await I_GeneralTransferManager.modifyWhitelist(account_temp, fromTime, toTime, expiryTime, true, false, {
                 from: account_delegate,
                 gas: 6000000
             });
@@ -754,7 +754,7 @@ contract("SecurityToken", async (accounts) => {
         });
 
         it("Should remove investor from the whitelist by the delegate", async () => {
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_temp, new BN(0), new BN(0), new BN(0), true, {
+            let tx = await I_GeneralTransferManager.modifyWhitelist(account_temp, new BN(0), new BN(0), new BN(0), true, false, {
                 from: account_delegate,
                 gas: 6000000
             });
@@ -783,7 +783,7 @@ contract("SecurityToken", async (accounts) => {
         });
 
         it("Should fail in buying to tokens", async () => {
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_temp, fromTime, toTime, expiryTime, true, {
+            let tx = await I_GeneralTransferManager.modifyWhitelist(account_temp, fromTime, toTime, expiryTime, true, false, {
                 from: account_delegate,
                 gas: 6000000
             });
@@ -969,7 +969,8 @@ contract("SecurityToken", async (accounts) => {
                 currentTime,
                 currentTime.add(new BN(duration.seconds(2))),
                 currentTime.add(new BN(duration.days(50))),
-                true,
+                true, 
+                false,
                 {
                     from: account_delegate,
                     gas: 6000000
@@ -1012,6 +1013,7 @@ contract("SecurityToken", async (accounts) => {
                 currentTime.add(new BN(duration.seconds(2))),
                 currentTime.add(new BN(duration.days(50))),
                 true,
+                false,
                 {
                     from: account_delegate,
                     gas: 6000000

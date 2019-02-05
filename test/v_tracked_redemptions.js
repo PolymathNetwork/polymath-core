@@ -193,6 +193,7 @@ contract("TrackedRedemption", async (accounts) => {
                 currentTime,
                 currentTime.add(new BN(duration.days(30))),
                 true,
+                false,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -223,6 +224,7 @@ contract("TrackedRedemption", async (accounts) => {
                 currentTime,
                 currentTime.add(new BN(duration.days(30))),
                 true,
+                false,
                 {
                     from: account_issuer,
                     gas: 500000

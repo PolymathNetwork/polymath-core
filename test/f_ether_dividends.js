@@ -209,6 +209,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
                 currentTime,
                 currentTime.add(new BN(duration.days(300000))),
                 true,
+                false,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -239,6 +240,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
                 currentTime,
                 currentTime.add(new BN(duration.days(3000000))),
                 true,
+                false,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -373,6 +375,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
                 currentTime,
                 currentTime.add(new BN(duration.days(200000))),
                 true,
+                false,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -424,6 +427,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
                 currentTime,
                 currentTime.add(new BN(duration.days(10000))),
                 true,
+                false,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -730,6 +734,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
                 currentTime,
                 currentTime.add(new BN(duration.days(1000000))),
                 true,
+                false,
                 {
                     from: account_issuer,
                     gas: 500000

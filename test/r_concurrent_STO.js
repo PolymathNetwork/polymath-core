@@ -166,7 +166,7 @@ contract("Concurrent STO", async (accounts) => {
             let expiryTime = toTime + duration.days(100);
             let canBuyFromSTO = true;
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, fromTime, toTime, expiryTime, canBuyFromSTO, {
+            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, fromTime, toTime, expiryTime, canBuyFromSTO, false, {
                 from: account_issuer,
                 gas: 500000
             });

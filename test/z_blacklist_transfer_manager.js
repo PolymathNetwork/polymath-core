@@ -220,6 +220,7 @@ contract('BlacklistTransferManager', accounts => {
                 currentTime,
                 currentTime.add(new BN(duration.days(50))),
                 true,
+                false,
                 {
                     from: account_issuer
                 });
@@ -247,6 +248,7 @@ contract('BlacklistTransferManager', accounts => {
                 currentTime,
                 currentTime.add(new BN(duration.days(50))),
                 true,
+                false,
                 {
                     from: account_issuer
                 });
@@ -271,6 +273,7 @@ contract('BlacklistTransferManager', accounts => {
                 currentTime,
                 currentTime.add(new BN(duration.days(50))),
                 true,
+                false,
                 {
                     from: account_issuer
                 });
@@ -295,6 +298,7 @@ contract('BlacklistTransferManager', accounts => {
                 currentTime,
                 currentTime.add(new BN(duration.days(50))),
                 true,
+                false,
                 {
                     from: account_issuer
                 });
@@ -319,6 +323,7 @@ contract('BlacklistTransferManager', accounts => {
                 currentTime,
                 currentTime.add(new BN(duration.days(50))),
                 true,
+                false,
                 {
                     from: account_issuer
                 });

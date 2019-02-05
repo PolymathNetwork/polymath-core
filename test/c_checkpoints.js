@@ -154,6 +154,7 @@ contract("Checkpoints", async function(accounts) {
                 ltime,
                 ltime.add(new BN(duration.days(10))),
                 false,
+                false,
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -180,6 +181,7 @@ contract("Checkpoints", async function(accounts) {
                 ltime,
                 ltime.add(new BN(duration.days(10))),
                 false,
+                false,
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -205,6 +207,7 @@ contract("Checkpoints", async function(accounts) {
                 ltime,
                 ltime,
                 ltime.add(new BN(duration.days(10))),
+                false,
                 false,
                 {
                     from: account_issuer,

@@ -44,7 +44,6 @@ contract("ModuleRegistryProxy", async (accounts) => {
     let account_polymath_new;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = new BN(web3.utils.toWei("250"));
     const version = "1.0.0";
     const message = "Transaction Should Fail!";
     const address_zero = "0x0000000000000000000000000000000000000000";
@@ -136,7 +135,7 @@ contract("ModuleRegistryProxy", async (accounts) => {
                 { from: account_polymath }
             );
 
-            I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(new BN(0), new BN(0), new BN(0), I_GeneralTransferManagerLogic.address, {
+            I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(new BN(0), new BN(0), I_GeneralTransferManagerLogic.address, I_PolymathRegistry.address, {
                 from: account_polymath
             });
 
@@ -173,7 +172,7 @@ contract("ModuleRegistryProxy", async (accounts) => {
     describe("Feed some data in storage", async () => {
         it("Register and verify the new module", async () => {
             I_GeneralPermissionManagerLogic = await GeneralPermissionManager.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: account_polymath });
-            I_GeneralPermissionManagerfactory = await GeneralPermissionManagerFactory.new(0, new BN(0), new BN(0), I_GeneralPermissionManagerLogic.address, {
+            I_GeneralPermissionManagerfactory = await GeneralPermissionManagerFactory.new(new BN(0), new BN(0), I_GeneralPermissionManagerLogic.address, I_PolymathRegistry.address, {
                 from: account_polymath
             });
 

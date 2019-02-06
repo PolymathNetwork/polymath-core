@@ -12,15 +12,15 @@ contract LockUpTransferManagerFactory is ModuleFactory {
      * @notice Constructor
      * @param _setupCost Setup cost of the module
      * @param _usageCost Usage cost of the module
-     * @param _subscriptionCost Subscription cost of the module
+     * @param _polymathRegistry Address of the Polymath registry
      */
     constructor(
         uint256 _setupCost,
         uint256 _usageCost,
-        uint256 _subscriptionCost
+        address _polymathRegistry
     )
         public
-        ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
+        ModuleFactory(_setupCost, _usageCost, _polymathRegistry)
     {
         version = "1.0.0";
         name = "LockUpTransferManager";
@@ -43,7 +43,7 @@ contract LockUpTransferManagerFactory is ModuleFactory {
         address polyToken = _takeFee();
         LockUpTransferManager lockUpTransferManager = new LockUpTransferManager(msg.sender, polyToken);
         /*solium-disable-next-line security/no-block-members*/
-        emit GenerateModuleFromFactory(address(lockUpTransferManager), getName(), address(this), msg.sender, setupCost, now);
+        emit GenerateModuleFromFactory(address(lockUpTransferManager), getName(), address(this), msg.sender, getSetupCost(), getSetupCostInPoly(), now);
         return address(lockUpTransferManager);
     }
 

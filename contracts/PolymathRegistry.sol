@@ -17,7 +17,7 @@ contract PolymathRegistry is ReclaimTokens {
      */
     function getAddress(string calldata _nameKey) external view returns(address) {
         bytes32 key = keccak256(bytes(_nameKey));
-        require(storedAddresses[key] != address(0), "Invalid address key");
+        require(storedAddresses[key] != address(0), "Invalid key");
         return storedAddresses[key];
     }
 

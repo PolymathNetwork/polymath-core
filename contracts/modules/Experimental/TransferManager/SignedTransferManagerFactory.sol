@@ -11,8 +11,8 @@ contract SignedTransferManagerFactory is ModuleFactory {
     /**
      * @notice Constructor
      */
-    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-    ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
+    constructor (uint256 _setupCost, uint256 _usageCost, address _polymathRegistry) public
+    ModuleFactory(_setupCost, _usageCost, _polymathRegistry)
     {
         version = "1.0.0";
         name = "SignedTransferManager";
@@ -38,7 +38,7 @@ contract SignedTransferManagerFactory is ModuleFactory {
      function deploy(bytes calldata /* _data */) external returns(address) {
         address polyToken = _takeFee();
         SignedTransferManager signedTransferManager = new SignedTransferManager(msg.sender, polyToken);
-        emit GenerateModuleFromFactory(address(signedTransferManager), getName(), address(this), msg.sender, setupCost, now);
+        emit GenerateModuleFromFactory(address(signedTransferManager), getName(), address(this), msg.sender, getSetupCost(), getSetupCostInPoly(), now);
         return address(signedTransferManager);
     }
 
@@ -51,41 +51,6 @@ contract SignedTransferManagerFactory is ModuleFactory {
         res[0] = 2;
         res[1] = 6;
         return res;
-    }
-
-    /**
-     * @notice Get the name of the Module
-     */
-    function getName() public view returns(bytes32) {
-        return name;
-    }
-
-    /**
-     * @notice Get the description of the Module
-     */
-    function getDescription() external view returns(string memory) {
-        return description;
-    }
-
-    /**
-     * @notice Get the version of the Module
-     */
-    function getVersion() external view returns(string memory) {
-        return version;
-    }
-
-    /**
-     * @notice Get the title of the Module
-     */
-    function getTitle() external view returns(string memory) {
-        return title;
-    }
-
-    /**
-     * @notice Get the setup cost of the module
-     */
-    function getSetupCost() external view returns (uint256) {
-        return setupCost;
     }
 
     /**

@@ -251,17 +251,17 @@ contract("GeneralTransferManager", async (accounts) => {
 
         it("Should whitelist lots of addresses and check gas", async () => {
             let mockInvestors = [];
-            for (let i = 0; i < 100; i++) {
+            for (let i = 0; i < 50; i++) {
                 mockInvestors.push("0x1000000000000000000000000000000000000000".substring(0, 42 - i.toString().length) + i.toString());
             }
 
-            let times = range1(100);
-            let bools = rangeB(100);
+            let times = range1(50);
+            let bools = rangeB(50);
             let tx = await I_GeneralTransferManager.modifyWhitelistMulti(mockInvestors, times, times, times, bools, bools, {
                 from: account_issuer,
                 gas: 7900000
             });
-            console.log("Multi Whitelist x 100: " + tx.receipt.gasUsed);
+            console.log("Multi Whitelist x 50: " + tx.receipt.gasUsed);
             assert.deepEqual(
                 await I_GeneralTransferManager.getInvestors.call(),
                 [account_affiliates1, account_affiliates2].concat(mockInvestors)

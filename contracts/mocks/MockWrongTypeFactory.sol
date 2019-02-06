@@ -13,15 +13,15 @@ contract MockWrongTypeFactory is MockBurnFactory {
     * @notice Constructor
     * @param _setupCost Setup cost of the module
     * @param _usageCost Usage cost of the module
-    * @param _subscriptionCost Subscription cost of the module
+    * @param _polymathRegistry Address of the Polymath Registry
     */
     constructor(
         uint256 _setupCost,
         uint256 _usageCost,
-        uint256 _subscriptionCost
-    ) 
-        public 
-        MockBurnFactory(_setupCost, _usageCost, _subscriptionCost) 
+        address _polymathRegistry
+    )
+        public
+        MockBurnFactory(_setupCost, _usageCost, _polymathRegistry)
     {
 
     }

@@ -154,7 +154,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         bool /* _isTransfer */
     ) external returns(Result) {
         if (!paused) {
-            uint64 fromTime; 
+            uint64 fromTime;
             uint64 fromExpiry;
             uint64 toExpiry;
             uint64 toTime;
@@ -167,11 +167,11 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
                 return Result.VALID;
             }
 
-            (fromTime, fromExpiry, canBuyFromSTO, toTime, toExpiry) = _getValuesToUser(_from, _to);
+            (fromTime, fromExpiry, canBuyFromSTO, toTime, toExpiry) = _getValuesForTransfer(_from, _to);
 
             if (allowAllWhitelistTransfers) {
                 //Anyone on the whitelist can transfer, regardless of time
-                return (_onWhitelist(toExpiry) && _onWhitelist(fromExpiry)) ? Result.VALID : Result.NA;
+                return (_validExpiry(toExpiry) && _validExpiry(fromExpiry)) ? Result.VALID : Result.NA;
             }
             // Using the local variables to avoid the stack too deep error
             (fromTime, toTime) = _adjustTimes(fromTime, toTime);
@@ -182,16 +182,16 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
                 }
                 // if allowAllWhitelistIssuances is true, so time stamp ignored
                 if (allowAllWhitelistIssuances) {
-                    return _onWhitelist(toExpiry) ? Result.VALID : Result.NA;
+                    return _validExpiry(toExpiry) ? Result.VALID : Result.NA;
                 } else {
-                    return (_onWhitelist(toExpiry) && (toTime <= uint64(now))) ? Result.VALID : Result.NA;
+                    return (_validExpiry(toExpiry) && _validLockTime(toTime)) ? Result.VALID : Result.NA;
                 }
             }
 
             //Anyone on the whitelist can transfer provided the blocknumber is large enough
             /*solium-disable-next-line security/no-block-members*/
-            return ((_onWhitelist(fromExpiry) && (fromTime <= uint64(now))) && (_onWhitelist(toExpiry) &&
-                (toTime <= uint64(now)))) ? Result.VALID : Result.NA; /*solium-disable-line security/no-block-members*/
+            return (_validExpiry(fromExpiry) && _validLockTime(fromTime) && _validExpiry(toExpiry) &&
+                _validLockTime(toTime)) ? Result.VALID : Result.NA; /*solium-disable-line security/no-block-members*/
         }
         return Result.NA;
     }
@@ -232,15 +232,15 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         require(_investor != address(0), "Invalid investor");
         uint8 added;
         uint8 canBuyFromSTO;
-        uint8 accredited;
+        uint8 isAccredited;
         IDataStore dataStore = IDataStore(getDataStore());
         (,,,,added,) = _getValues(_investor, dataStore);
         if (added == uint8(0)) {
            investors.push(_investor);
         }
         canBuyFromSTO = _canBuyFromSTO ? 1 : 0;
-        accredited = _isAccredited ? 1 : 0;
-        uint256 _data = VersionUtils.packKYC(uint64(_fromTime), uint64(_toTime), uint64(_expiryTime), canBuyFromSTO, uint8(1), accredited);
+        isAccredited = _isAccredited ? 1 : 0;
+        uint256 _data = VersionUtils.packKYC(uint64(_fromTime), uint64(_toTime), uint64(_expiryTime), canBuyFromSTO, uint8(1), isAccredited);
         dataStore.setUint256(_getKey(WHITELIST, _investor), _data);
         emit ModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime, _canBuyFromSTO, _isAccredited);
     }
@@ -261,7 +261,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         uint256[] memory _expiryTimes,
         bool[] memory _canBuyFromSTO,
         bool[] memory _isAccredited
-    ) 
+    )
         public
         withPerm(WHITELIST)
     {
@@ -329,12 +329,19 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     }
 
     /**
-     * @notice Internal function used to check whether the investor is in the whitelist or not
-            & also checks whether the KYC of investor get expired or not
+     * @notice Internal function used to check whether the KYC of investor is valid
      * @param _expiryTime Expiry time of the investor
      */
-    function _onWhitelist(uint64 _expiryTime) internal view returns(bool) {
+    function _validExpiry(uint64 _expiryTime) internal view returns(bool) {
         return (_expiryTime >= uint64(now)); /*solium-disable-line security/no-block-members*/
+    }
+
+    /**
+     * @notice Internal function used to check whether the lock time of investor is valid
+     * @param _lockTime Lock time of the investor
+     */
+    function _validLockTime(uint64 _lockTime) internal view returns(bool) {
+        return (_lockTime <= uint64(now)); /*solium-disable-line security/no-block-members*/
     }
 
     /**
@@ -371,13 +378,13 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         uint8 canBuyFromSTO,
         uint8 added,
         uint8 isAccredited
-    ) 
+    )
     {
         uint256 _whitelistData = dataStore.getUint256(_getKey(WHITELIST, _investor));
         (fromTime, toTime, expiryTime, canBuyFromSTO, added, isAccredited)  = VersionUtils.unpackKYC(_whitelistData);
     }
 
-    function _getValuesToUser(address _from, address _to) internal view returns(uint64 fromTime, uint64 fromExpiry, uint8 canBuyFromSTO, uint64 toTime, uint64 toExpiry) {
+    function _getValuesForTransfer(address _from, address _to) internal view returns(uint64 fromTime, uint64 fromExpiry, uint8 canBuyFromSTO, uint64 toTime, uint64 toExpiry) {
         IDataStore dataStore = IDataStore(getDataStore());
         (fromTime,, fromExpiry,,,) = _getValues(_from, dataStore);
         (, toTime, toExpiry, canBuyFromSTO,,) = _getValues(_to, dataStore);

@@ -234,7 +234,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         uint8 canBuyFromSTO;
         uint8 isAccredited;
         IDataStore dataStore = IDataStore(getDataStore());
-        (,,,,added,) = _getValues(_investor, dataStore);
+        added = _getAddedValue(_investor, dataStore);
         if (added == uint8(0)) {
            investors.push(_investor);
         }
@@ -382,6 +382,12 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     {
         uint256 _whitelistData = dataStore.getUint256(_getKey(WHITELIST, _investor));
         (fromTime, toTime, expiryTime, canBuyFromSTO, added, isAccredited)  = VersionUtils.unpackKYC(_whitelistData);
+    }
+
+    function _getAddedValue(address _investor, IDataStore dataStore) internal view returns(uint8) {
+        uint256 _whitelistData = dataStore.getUint256(_getKey(WHITELIST, _investor));
+        //extracts `added` from packed `_whitelistData`
+        return uint8(_whitelistData >> 8);
     }
 
     function _getValuesForTransfer(address _from, address _to) internal view returns(uint64 fromTime, uint64 fromExpiry, uint8 canBuyFromSTO, uint64 toTime, uint64 toExpiry) {

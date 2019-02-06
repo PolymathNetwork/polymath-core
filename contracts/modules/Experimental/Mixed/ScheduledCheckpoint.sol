@@ -2,7 +2,6 @@ pragma solidity ^0.5.0;
 
 import "./../../Checkpoint/ICheckpoint.sol";
 import "../../TransferManager/TransferManager.sol";
-import "../../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**

@@ -230,6 +230,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     [newLatestTime, newLatestTime, newLatestTime],
                     [newLatestTime.add(new BN(duration.days(60))), newLatestTime.add(new BN(duration.days(60))), newLatestTime.add(new BN(duration.days(60)))],
                     [true, true, true],
+                    [false,false,false],
                     {
                         from: token_owner
                     }
@@ -1304,6 +1305,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 newLatestTime,
                 newLatestTime.add(new BN(duration.days(30))),
                 true,
+                false,
                 {
                     from: token_owner
                 }

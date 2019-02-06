@@ -6,4 +6,5 @@ interface IBoot {
      * @return bytes4 Configure function signature
      */
     function getInitFunction() external pure returns(bytes4);
+
 }

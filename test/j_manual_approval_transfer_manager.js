@@ -176,6 +176,7 @@ contract("ManualApprovalTransferManager", accounts => {
                 currentTime,
                 currentTime.add(new BN(duration.days(30))),
                 true,
+                false,
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -206,6 +207,7 @@ contract("ManualApprovalTransferManager", accounts => {
                 currentTime,
                 currentTime.add(new BN(duration.days(30))),
                 true,
+                false,
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -295,6 +297,7 @@ contract("ManualApprovalTransferManager", accounts => {
                 currentTime,
                 currentTime.add(new BN(duration.days(10))),
                 true,
+                false,
                 {
                     from: account_issuer,
                     gas: 6000000

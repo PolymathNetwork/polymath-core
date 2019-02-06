@@ -218,6 +218,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     [currentTime, currentTime, currentTime],
                     [currentTime.add(new BN(duration.days(60))), currentTime.add(new BN(duration.days(60))), currentTime.add(new BN(duration.days(60)))],
                     [true, true, true],
+                    [false, false, false],
                     {
                         from: token_owner
                     }

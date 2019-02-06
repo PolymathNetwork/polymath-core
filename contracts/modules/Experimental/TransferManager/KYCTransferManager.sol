@@ -1,7 +1,6 @@
 pragma solidity ^0.5.0;
 
 import "../../TransferManager/TransferManager.sol";
-import "../../../interfaces/IDataStore.sol";
 import "../../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 

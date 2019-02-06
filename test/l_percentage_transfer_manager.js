@@ -203,6 +203,7 @@ contract("PercentageTransferManager", async (accounts) => {
                 currentTime,
                 currentTime.add(new BN(duration.days(10))),
                 true,
+                false,
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -233,6 +234,7 @@ contract("PercentageTransferManager", async (accounts) => {
                 currentTime,
                 currentTime.add(new BN(duration.days(10))),
                 true,
+                false,
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -298,6 +300,7 @@ contract("PercentageTransferManager", async (accounts) => {
                 currentTime,
                 currentTime.add(new BN(duration.days(10))),
                 true,
+                false,
                 {
                     from: account_issuer,
                     gas: 6000000

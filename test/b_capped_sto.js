@@ -316,7 +316,7 @@ contract("CappedSTO", async (accounts) => {
             P_expiryTime = toTime + duration.days(100);
 
             // Add the Investor in to the whitelist
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, fromTime, toTime, expiryTime, true, {
+            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, fromTime, toTime, expiryTime, true, false, {
                 from: account_issuer
             });
 
@@ -392,6 +392,7 @@ contract("CappedSTO", async (accounts) => {
                 toTime + duration.days(20),
                 expiryTime,
                 true,
+                false,
                 {
                     from: account_issuer
                 }
@@ -530,7 +531,7 @@ contract("CappedSTO", async (accounts) => {
         it("Should successfully whitelist investor 3", async () => {
             balanceOfReceiver = new BN(await web3.eth.getBalance(account_fundsReceiver));
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor3, fromTime, toTime, expiryTime, true, {
+            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor3, fromTime, toTime, expiryTime, true, false, {
                 from: account_issuer,
                 gas: 500000
             });
@@ -696,7 +697,7 @@ contract("CappedSTO", async (accounts) => {
                     10500,
                     "Tokens are not transfered properly"
                 );
-                let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, P_fromTime, P_toTime, P_expiryTime, true, {
+                let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, P_fromTime, P_toTime, P_expiryTime, true, false, {
                     from: account_issuer,
                     gas: 500000
                 });
@@ -761,6 +762,7 @@ contract("CappedSTO", async (accounts) => {
                     P_toTime + duration.days(20),
                     P_expiryTime,
                     true,
+                    false,
                     {
                         from: account_issuer,
                         gas: 500000
@@ -971,7 +973,7 @@ contract("CappedSTO", async (accounts) => {
 
             await I_PolyToken.getTokens(polyToInvest.mul(new BN(10).pow(new BN(18))), account_investor3);
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor3, P_fromTime, P_toTime, P_expiryTime, true, {
+            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor3, P_fromTime, P_toTime, P_expiryTime, true, false, {
                 from: account_issuer,
                 gas: 500000
             });

@@ -353,7 +353,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
 
                 console.log("3");
                 if (randomPerms === "WHITELIST") {
-                    let tx = await I_GeneralTransferManager.modifyWhitelist(accounts[j], fromTime, toTime, expiryTime, 1, {
+                    let tx = await I_GeneralTransferManager.modifyWhitelist(accounts[j], fromTime, toTime, expiryTime, 1, false, {
                         from: accounts[j]
                     });
                     assert.equal(tx.logs[0].args._investor, accounts[j]);
@@ -364,6 +364,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                         [toTime, toTime],
                         [expiryTime, expiryTime],
                         [1, 1],
+                        [false, false],
                         { from: accounts[j] }
                     );
                     console.log(tx2.logs[1].args);
@@ -372,7 +373,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                 } else {
                     console.log("3.3");
                     await catchRevert(
-                        I_GeneralTransferManager.modifyWhitelist(accounts[j], fromTime, toTime, expiryTime, 1, { from: accounts[j] })
+                        I_GeneralTransferManager.modifyWhitelist(accounts[j], fromTime, toTime, expiryTime, 1, false, { from: accounts[j] })
                     );
                     console.log("3.4");
                     await catchRevert(
@@ -382,6 +383,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                             [toTime, toTime],
                             [expiryTime, expiryTime],
                             [1, 1],
+                            [false, false],
                             { from: accounts[j] }
                         )
                     );

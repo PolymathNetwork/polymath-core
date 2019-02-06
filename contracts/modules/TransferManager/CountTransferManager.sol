@@ -2,7 +2,6 @@ pragma solidity ^0.5.0;
 
 import "./TransferManager.sol";
 import "./CountTransferManagerStorage.sol";
-import "../../interfaces/ISecurityToken.sol";
 
 /**
  * @title Transfer Manager for limiting maximum number of token holders

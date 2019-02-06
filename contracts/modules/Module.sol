@@ -1,9 +1,11 @@
 pragma solidity ^0.5.0;
 
+import "./ModuleStorage.sol";
 import "../interfaces/IModule.sol";
+import "../interfaces/IDataStore.sol";
+import "../interfaces/ISecurityToken.sol";
 import "../interfaces/ICheckPermission.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
-import "./ModuleStorage.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 /**
@@ -57,5 +59,9 @@ contract Module is IModule, ModuleStorage {
     function takeFee(uint256 _amount) public withPerm(FEE_ADMIN) returns(bool) {
         require(polyToken.transferFrom(securityToken, Ownable(factory).owner(), _amount), "Unable to take fee");
         return true;
+    }
+
+    function getDataStore() public view returns(address) {
+        return ISecurityToken(securityToken).dataStore();
     }
 }

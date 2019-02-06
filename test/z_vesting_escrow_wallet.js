@@ -199,6 +199,7 @@ contract('VestingEscrowWallet', accounts => {
                 currentTime,
                 currentTime.add(new BN(durationUtil.days(10))),
                 true,
+                false,
                 {
                     from: token_owner,
                     gas: 6000000
@@ -225,6 +226,7 @@ contract('VestingEscrowWallet', accounts => {
                 [currentTime, currentTime, currentTime, currentTime],
                 [currentTime.add(new BN(durationUtil.days(10))), currentTime.add(new BN(durationUtil.days(10))), currentTime.add(new BN(durationUtil.days(10))), currentTime.add(new BN(durationUtil.days(10)))],
                 [true, true, true, true],
+                [false, false, false, false],
                 {
                     from: token_owner,
                     gas: 6000000

@@ -215,6 +215,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
                 currentTime,
                 currentTime.add(new BN(duration.days(30))),
                 true,
+                false,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -245,6 +246,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
                 currentTime,
                 currentTime.add(new BN(duration.days(30))),
                 true,
+                false,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -391,6 +393,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
                 currentTime,
                 currentTime.add(new BN(duration.days(20))),
                 true,
+                false,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -454,6 +457,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
                 currentTime,
                 currentTime.add(new BN(duration.days(100000))),
                 true,
+                false,
                 {
                     from: account_issuer,
                     gas: 500000

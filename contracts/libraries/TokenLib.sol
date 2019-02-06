@@ -3,7 +3,6 @@ pragma solidity ^0.5.0;
 import "../interfaces/IPoly.sol";
 import "../tokens/SecurityTokenStorage.sol";
 import "../interfaces/ITransferManager.sol";
-import "../interfaces/TransferManagerEnums.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "../modules/PermissionManager/IPermissionManager.sol";
 
@@ -290,13 +289,13 @@ library TokenLib {
             for (uint256 i = 0; i < modules.length; i++) {
                 if (!modulesToData[modules[i]].isArchived) {
                     transfersFrozen = true;
-                    (TransferManagerEnums.Result valid, byte reason) = ITransferManager(modules[i]).executeTransfer(from, to, value, data);
-                    if (valid == TransferManagerEnums.Result.INVALID) {
+                    (ITransferManager.Result valid, byte reason) = ITransferManager(modules[i]).executeTransfer(from, to, value, data);
+                    if (valid == ITransferManager.Result.INVALID) {
                         isInvalid = true;
                         reasonCode = reason;
-                    } else if (valid == TransferManagerEnums.Result.VALID) {
+                    } else if (valid == ITransferManager.Result.VALID) {
                         isValid = true;
-                    } else if (valid == TransferManagerEnums.Result.FORCE_VALID) {
+                    } else if (valid == ITransferManager.Result.FORCE_VALID) {
                         isForceValid = true;
                     }
                 }

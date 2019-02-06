@@ -1,7 +1,7 @@
 import latestTime from "./helpers/latestTime";
 import { duration, promisifyLogWatch, latestBlock } from "./helpers/utils";
 import takeSnapshot, { increaseTime, revertToSnapshot } from "./helpers/time";
-import { signData } from "./helpers/signData";
+import { getSignGTMData, signData } from "./helpers/signData";
 import { pk } from "./helpers/testprivateKey";
 import { encodeProxyCall, encodeModuleCall } from "./helpers/encodeCall";
 import { catchRevert } from "./helpers/exceptions";
@@ -87,6 +87,7 @@ contract("GeneralTransferManager", async (accounts) => {
     let currentTime;
     const address_zero = "0x0000000000000000000000000000000000000000";
     const one_address = "0x0000000000000000000000000000000000000001";
+    let signer;
 
     before(async () => {
         currentTime = new BN(await latestTime());
@@ -110,6 +111,12 @@ contract("GeneralTransferManager", async (accounts) => {
 
         account_affiliates1 = accounts[3];
         account_affiliates2 = accounts[4];
+
+        let oneeth = new BN(web3.utils.toWei("1", "ether"));
+        signer = web3.eth.accounts.create();
+        await web3.eth.personal.importRawKey(signer.privateKey, "");
+        await web3.eth.personal.unlockAccount(signer.address, "", 6000);
+        await web3.eth.sendTransaction({ from: token_owner, to: signer.address, value: oneeth });
 
         // Step 1: Deploy the genral PM ecosystem
         let instances = await setUpPolymathNetwork(account_polymath, token_owner);
@@ -448,13 +455,29 @@ contract("GeneralTransferManager", async (accounts) => {
             await catchRevert(I_DummySTO.generateTokens(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: token_owner }));
         });
 
+        it("Should provide the permission and change the signing address", async () => {
+            let log = await I_GeneralPermissionManager.addDelegate(account_delegate, web3.utils.fromAscii("My details"), { from: token_owner });
+            assert.equal(log.logs[0].args._delegate, account_delegate);
+
+            await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("FLAGS"), true, {
+                from: token_owner
+            });
+
+            assert.isTrue(
+                await I_GeneralPermissionManager.checkPermission.call(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("FLAGS"))
+            );
+            console.log(JSON.stringify(signer));
+            let tx = await I_GeneralTransferManager.changeSigningAddress(signer.address, { from: account_delegate });
+            assert.equal(tx.logs[0].args._signingAddress, signer.address);
+        });
+
         it("Should buy the tokens -- Failed due to incorrect signature input", async () => {
             // Add the Investor in to the whitelist
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
             let validFrom = await latestTime();
             let validTo = await latestTime() + duration.days(5);
             let nonce = 5;
-            const sig = signData(
+            const sig = getSignGTMData(
                 account_investor2,
                 account_investor2,
                 fromTime,
@@ -464,12 +487,8 @@ contract("GeneralTransferManager", async (accounts) => {
                 validFrom,
                 validTo,
                 nonce,
-                token_owner_pk
+                signer.privateKey
             );
-
-            const r = `0x${sig.r.toString("hex")}`;
-            const s = `0x${sig.s.toString("hex")}`;
-            const v = sig.v;
 
             await catchRevert(
                 I_GeneralTransferManager.modifyWhitelistSigned(
@@ -481,9 +500,7 @@ contract("GeneralTransferManager", async (accounts) => {
                     validFrom,
                     validTo,
                     nonce,
-                    v,
-                    r,
-                    s,
+                    sig,
                     {
                         from: account_investor2,
                         gas: 6000000
@@ -498,7 +515,7 @@ contract("GeneralTransferManager", async (accounts) => {
             let validFrom = await latestTime() - 100;
             let validTo = await latestTime() - 1;
             let nonce = 5;
-            const sig = signData(
+            const sig = getSignGTMData(
                 I_GeneralTransferManager.address,
                 account_investor2,
                 fromTime,
@@ -508,12 +525,8 @@ contract("GeneralTransferManager", async (accounts) => {
                 validFrom,
                 validTo,
                 nonce,
-                token_owner_pk
+                signer.privateKey
             );
-
-            const r = `0x${sig.r.toString("hex")}`;
-            const s = `0x${sig.s.toString("hex")}`;
-            const v = sig.v;
 
             await catchRevert(
                 I_GeneralTransferManager.modifyWhitelistSigned(
@@ -525,9 +538,7 @@ contract("GeneralTransferManager", async (accounts) => {
                     validFrom,
                     validTo,
                     nonce,
-                    v,
-                    r,
-                    s,
+                    sig,
                     {
                         from: account_investor2,
                         gas: 6000000
@@ -542,7 +553,7 @@ contract("GeneralTransferManager", async (accounts) => {
             let validFrom = await latestTime();
             let validTo = await latestTime() + 60 * 60;
             let nonce = 5;
-            const sig = signData(
+            const sig = getSignGTMData(
                 account_investor2,
                 account_investor2,
                 fromTime,
@@ -555,10 +566,6 @@ contract("GeneralTransferManager", async (accounts) => {
                 "2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200"
             );
 
-            const r = `0x${sig.r.toString("hex")}`;
-            const s = `0x${sig.s.toString("hex")}`;
-            const v = sig.v;
-
             await catchRevert(
                 I_GeneralTransferManager.modifyWhitelistSigned(
                     account_investor2,
@@ -569,9 +576,7 @@ contract("GeneralTransferManager", async (accounts) => {
                     validFrom,
                     validTo,
                     nonce,
-                    v,
-                    r,
-                    s,
+                    sig,
                     {
                         from: account_investor2,
                         gas: 6000000
@@ -580,13 +585,13 @@ contract("GeneralTransferManager", async (accounts) => {
             );
         });
 
-        it("Should Buy the tokens", async () => {
+        it("Should Buy the tokens with signers signature", async () => {
             // Add the Investor in to the whitelist
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
             let validFrom = await latestTime();
             let validTo = await latestTime() + duration.days(5);
             let nonce = 5;
-            const sig = signData(
+            const sig = getSignGTMData(
                 I_GeneralTransferManager.address,
                 account_investor2,
                 currentTime.toNumber(),
@@ -596,12 +601,8 @@ contract("GeneralTransferManager", async (accounts) => {
                 validFrom,
                 validTo,
                 nonce,
-                token_owner_pk
+                signer.privateKey
             );
-
-            const r = `0x${sig.r.toString("hex")}`;
-            const s = `0x${sig.s.toString("hex")}`;
-            const v = sig.v;
 
             let tx = await I_GeneralTransferManager.modifyWhitelistSigned(
                 account_investor2,
@@ -612,9 +613,7 @@ contract("GeneralTransferManager", async (accounts) => {
                 validFrom,
                 validTo,
                 nonce,
-                v,
-                r,
-                s,
+                sig,
                 {
                     from: account_investor2,
                     gas: 6000000
@@ -642,7 +641,7 @@ contract("GeneralTransferManager", async (accounts) => {
             let validFrom = await latestTime();
             let validTo = await latestTime() + duration.days(5);
             let nonce = 5;
-            const sig = signData(
+            const sig = getSignGTMData(
                 I_GeneralTransferManager.address,
                 account_investor2,
                 currentTime.toNumber(),
@@ -652,12 +651,8 @@ contract("GeneralTransferManager", async (accounts) => {
                 validFrom,
                 validTo,
                 nonce,
-                token_owner_pk
+                signer.privateKey
             );
-
-            const r = `0x${sig.r.toString("hex")}`;
-            const s = `0x${sig.s.toString("hex")}`;
-            const v = sig.v;
 
             await catchRevert(
                 I_GeneralTransferManager.modifyWhitelistSigned(
@@ -669,15 +664,50 @@ contract("GeneralTransferManager", async (accounts) => {
                     validFrom,
                     validTo,
                     nonce,
-                    v,
-                    r,
-                    s,
+                    sig,
                     {
                         from: account_investor2,
                         gas: 6000000
                     }
                 )
             );
+        });
+
+        it("Should sign with token owner key", async () => {
+            // Add the Investor in to the whitelist
+            //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
+            let validFrom = await latestTime();
+            let validTo = await latestTime() + duration.days(5);
+            let nonce = 6;
+            const sig = getSignGTMData(
+                I_GeneralTransferManager.address,
+                account_investor2,
+                currentTime.toNumber(),
+                currentTime.add(new BN(duration.days(100))).toNumber(),
+                expiryTime + duration.days(200),
+                true,
+                validFrom,
+                validTo,
+                nonce,
+                "0x" + token_owner_pk
+            );
+
+            await I_GeneralTransferManager.modifyWhitelistSigned(
+                account_investor2,
+                currentTime.toNumber(),
+                currentTime.add(new BN(duration.days(100))).toNumber(),
+                expiryTime + duration.days(200),
+                true,
+                validFrom,
+                validTo,
+                nonce,
+                sig,
+                {
+                    from: account_investor2,
+                    gas: 6000000
+                }
+            )
+
         });
 
         it("Should fail in changing the signing address", async () => {
@@ -688,22 +718,6 @@ contract("GeneralTransferManager", async (accounts) => {
             let perm = await I_GeneralTransferManager.getPermissions.call();
             assert.equal(web3.utils.toAscii(perm[0]).replace(/\u0000/g, ""), "WHITELIST");
             assert.equal(web3.utils.toAscii(perm[1]).replace(/\u0000/g, ""), "FLAGS");
-        });
-
-        it("Should provide the permission and change the signing address", async () => {
-            let log = await I_GeneralPermissionManager.addDelegate(account_delegate, web3.utils.fromAscii("My details"), { from: token_owner });
-            assert.equal(log.logs[0].args._delegate, account_delegate);
-
-            await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("FLAGS"), true, {
-                from: token_owner
-            });
-
-            assert.isTrue(
-                await I_GeneralPermissionManager.checkPermission.call(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("FLAGS"))
-            );
-
-            let tx = await I_GeneralTransferManager.changeSigningAddress(account_polymath, { from: account_delegate });
-            assert.equal(tx.logs[0].args._signingAddress, account_polymath);
         });
 
         it("Should fail to pull fees as no budget set", async () => {

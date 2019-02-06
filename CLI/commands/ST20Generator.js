@@ -187,13 +187,13 @@ async function selectTicker() {
 
 async function approvePoly(spender, fee) {
   polyBalance = await polyToken.methods.balanceOf(Issuer.address).call();
-  let requiredAmount = web3.utils.toWei(fee.toString(), "ether");
+  let requiredAmount = web3.utils.toWei(fee.toString());
   if (parseInt(polyBalance) >= parseInt(requiredAmount)) {
-    let allowance = await polyToken.methods.allowance(spender, Issuer.address).call();
-    if (allowance == web3.utils.toWei(fee.toString(), "ether")) {
+    let allowance = await polyToken.methods.allowance(Issuer.address, spender).call();
+    if (parseInt(allowance) >= parseInt(requiredAmount)) {
       return true;
     } else {
-      let approveAction = polyToken.methods.approve(spender, web3.utils.toWei(fee.toString(), "ether"));
+      let approveAction = polyToken.methods.approve(spender, requiredAmount);
       await common.sendTransaction(approveAction);
     }
   } else {

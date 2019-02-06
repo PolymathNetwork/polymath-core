@@ -70,7 +70,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
     const STOKEY = 3;
 
     // Initial fee for ticker registry and security token registry
-    const REGFEE = new BN(web3.utils.toWei("250"));
+    const REGFEE = new BN(web3.utils.toWei("1000"));
     const STOSetupCost = 0;
 
     // MockOracle USD prices

@@ -68,7 +68,7 @@ contract('LockUpTransferManager', accounts => {
     let temp;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = new BN(web3.utils.toWei("250"));
+    const initRegFee = new BN(web3.utils.toWei("1000"));
     let currentTime;
 
     before(async() => {
@@ -248,17 +248,17 @@ contract('LockUpTransferManager', accounts => {
         });
 
         it("Should unsuccessfully attach the LockUpTransferManager factory with the security token -- failed because Token is not paid", async () => {
-            await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
+            await I_PolyToken.getTokens(web3.utils.toWei("2000", "ether"), token_owner);
             await catchRevert(
-                 I_SecurityToken.addModule(P_LockUpTransferManagerFactory.address, "0x", new BN(web3.utils.toWei("500", "ether")), 0, { from: token_owner })
+                 I_SecurityToken.addModule(P_LockUpTransferManagerFactory.address, "0x", new BN(web3.utils.toWei("2000", "ether")), 0, { from: token_owner })
             )
         });
 
         it("Should successfully attach the LockUpTransferManager factory with the security token", async () => {
             let snapId = await takeSnapshot();
-            await I_PolyToken.transfer(I_SecurityToken.address, new BN(web3.utils.toWei("500", "ether")), {from: token_owner});
+            await I_PolyToken.transfer(I_SecurityToken.address, new BN(web3.utils.toWei("2000", "ether")), {from: token_owner});
             console.log((await P_LockUpTransferManagerFactory.getSetupCost.call()).toString());
-            const tx = await I_SecurityToken.addModule(P_LockUpTransferManagerFactory.address, "0x", new BN(web3.utils.toWei("500", "ether")), new BN(0), { from: token_owner });
+            const tx = await I_SecurityToken.addModule(P_LockUpTransferManagerFactory.address, "0x", new BN(web3.utils.toWei("2000", "ether")), new BN(0), { from: token_owner });
             assert.equal(tx.logs[3].args._types[0].toString(), transferManagerKey, "LockUpVolumeRestrictionTMFactory doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[3].args._name)

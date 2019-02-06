@@ -41,7 +41,7 @@ contract("Data store", async (accounts) => {
     const bytes32data2 = "0x4400000000000000000000000000000000000000000000000000000000000000";
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = new BN(web3.utils.toWei("250"));
+    const initRegFee = new BN(web3.utils.toWei("1000"));
 
     const address_zero = "0x0000000000000000000000000000000000000000";
     const address_one = "0x0000000000000000000000000000000000000001";
@@ -422,7 +422,7 @@ contract("Data store", async (accounts) => {
         });
 
         it("Should not allow unauthorized addresses to delete bytes32 from Array", async () => {
-            await catchRevert(I_DataStore.deleteBytes32(key, 0, { from: account_polymath }));        
+            await catchRevert(I_DataStore.deleteBytes32(key, 0, { from: account_polymath }));
         });
 
         it("Should not allow unauthorized addresses to delete address from Array", async () => {

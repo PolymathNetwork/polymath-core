@@ -68,7 +68,7 @@ contract("Issuance", async (accounts) => {
     const one_address = "0x0000000000000000000000000000000000000001";
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = new BN(web3.utils.toWei("250"));
+    const initRegFee = new BN(web3.utils.toWei("1000"));
 
     // Capped STO details
     //let startTime;           // Start time will be 5000 seconds more than the latest time
@@ -77,7 +77,8 @@ contract("Issuance", async (accounts) => {
     const rate = new BN(web3.utils.toWei("1000"));
     const fundRaiseType = [0];
     const cappedSTOSetupCost = new BN(web3.utils.toWei("20000", "ether"));
-    const maxCost = cappedSTOSetupCost;
+    const cappedSTOSetupCostPOLY = new BN(web3.utils.toWei("80000", "ether"));
+    const maxCost = cappedSTOSetupCostPOLY;
     const STOParameters = ["uint256", "uint256", "uint256", "uint256", "uint8[]", "address"];
     const STRProxyParameters = ["address", "address", "uint256", "uint256", "address", "address"];
     const MRProxyParameters = ["address", "address"];
@@ -149,7 +150,7 @@ contract("Issuance", async (accounts) => {
 
             it("POLYMATH: Should generate the new security token with the same symbol as registered above", async () => {
                 await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: account_polymath });
-                
+
                 let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: account_polymath });
 
                 // Verify the successful generation of the security token
@@ -183,8 +184,8 @@ contract("Issuance", async (accounts) => {
                     account_fundsReceiver
                 ]);
 
-                await I_PolyToken.getTokens(cappedSTOSetupCost, account_polymath);
-                await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCost, { from: account_polymath });
+                await I_PolyToken.getTokens(cappedSTOSetupCostPOLY, account_polymath);
+                await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCostPOLY, { from: account_polymath });
 
                 const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), { from: account_polymath });
 

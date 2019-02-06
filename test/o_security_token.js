@@ -84,7 +84,7 @@ contract("SecurityToken", async (accounts) => {
     const budget = 0;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = new BN(web3.utils.toWei("250"));
+    const initRegFee = new BN(web3.utils.toWei("1000"));
 
     // delagate details
     const delegateDetails = web3.utils.fromAscii("I am delegate ..");
@@ -98,7 +98,8 @@ contract("SecurityToken", async (accounts) => {
     const rate = new BN(web3.utils.toWei("1000"));
     const fundRaiseType = [0];
     const cappedSTOSetupCost = new BN(web3.utils.toWei("20000", "ether"));
-    const maxCost = cappedSTOSetupCost;
+    const cappedSTOSetupCostPOLY = new BN(web3.utils.toWei("80000", "ether"));
+    const maxCost = cappedSTOSetupCostPOLY;
     const STOParameters = ["uint256", "uint256", "uint256", "uint256", "uint8[]", "address"];
 
     let currentTime;
@@ -292,8 +293,8 @@ contract("SecurityToken", async (accounts) => {
             startTime = await latestTime() + duration.seconds(5000);
             endTime = startTime + duration.days(30);
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
-            await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
-            await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCost, { from: token_owner });
+            await I_PolyToken.getTokens(cappedSTOSetupCostPOLY, token_owner);
+            await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCostPOLY, { from: token_owner });
 
             await catchRevert(
                 I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, new BN(web3.utils.toWei("1000", "ether")), new BN(0), { from: token_owner })
@@ -306,8 +307,8 @@ contract("SecurityToken", async (accounts) => {
             endTime = startTime + duration.days(30);
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
 
-            await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
-            await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCost, { from: token_owner });
+            await I_PolyToken.getTokens(cappedSTOSetupCostPOLY, token_owner);
+            await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCostPOLY, { from: token_owner });
             console.log("0");
             const tx = await I_SecurityToken.addModuleWithLabel(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), web3.utils.fromAscii("stofactory"), {
                 from: token_owner
@@ -326,8 +327,8 @@ contract("SecurityToken", async (accounts) => {
             endTime = startTime + duration.days(30);
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
 
-            await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
-            await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCost, { from: token_owner });
+            await I_PolyToken.getTokens(cappedSTOSetupCostPOLY, token_owner);
+            await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCostPOLY, { from: token_owner });
 
             const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), { from: token_owner });
 
@@ -1049,13 +1050,14 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should successfully withdraw the poly", async () => {
             let balanceBefore = await I_PolyToken.balanceOf(token_owner);
-            await I_SecurityToken.withdrawERC20(I_PolyToken.address, new BN(web3.utils.toWei("20000", "ether")), { from: token_owner });
+            let stBalance = await I_PolyToken.balanceOf(I_SecurityToken.address);
+            await I_SecurityToken.withdrawERC20(I_PolyToken.address, new BN(stBalance), { from: token_owner });
             let balanceAfter = await I_PolyToken.balanceOf(token_owner);
             assert.equal(
                 BN(balanceAfter)
                     .sub(new BN(balanceBefore))
                     .toString(),
-                new BN(web3.utils.toWei("20000", "ether").toString())
+                stBalance.toString()
             );
         });
 

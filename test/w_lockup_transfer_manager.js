@@ -940,6 +940,10 @@ contract('LockUpTransferManager', accounts => {
             );
         })
 
+        it("Should get the data of all lockups", async() => {
+            console.log(await I_LockUpTransferManager.getAllLockupData.call());
+        });
+
         it("Should succesfully get the non existed lockup value, it will give everything 0", async() => {
             let data = await I_LockUpTransferManager.getLockUp(9);
             assert.equal(data[0], 0);

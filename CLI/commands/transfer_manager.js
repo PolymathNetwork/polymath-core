@@ -2209,7 +2209,7 @@ async function lockUpTransferManager() {
 
   let options = ['Add new lockup'];
   if (currentLockups.length > 0) {
-    options.push('Manage existing lockups', 'Explore investor');
+    options.push('Show all existing lockups', 'Manage existing lockups', 'Explore investor');
   }
   options.push('Operate with multiple lockups');
 
@@ -2256,6 +2256,16 @@ async function lockUpTransferManager() {
         console.log(chalk.green(`${web3.utils.hexToUtf8(addLockupTypeEvent._lockupName)} lockup type has been added successfully!`));
       }
       break;
+    case 'Show all existing lockups':
+      let allLockups = await currentTransferManager.methods.getAllLockupData().call();
+      let nameArray = allLockups[0];
+      let amountArray = allLockups[1];
+      let startTimeArray = allLockups[2];
+      let periodSecondsArray = allLockups[3];
+      let releaseFrequencySecondsArray = allLockups[4];
+      let unlockedAmountsArray = allLockups[5];
+      showLockupTable(nameArray, amountArray, startTimeArray, periodSecondsArray, releaseFrequencySecondsArray, unlockedAmountsArray);
+      break;
     case 'Manage existing lockups':
       let options = currentLockups.map(b => web3.utils.hexToUtf8(b));
       let index = readlineSync.keyInSelect(options, 'Which lockup type do you want to manage? ', { cancel: 'RETURN' });
@@ -2289,6 +2299,22 @@ async function lockUpTransferManager() {
   }
 
   await lockUpTransferManager();
+}
+
+function showLockupTable(nameArray, amountArray, startTimeArray, periodSecondsArray, releaseFrequencySecondsArray, unlockedAmountsArray) {
+  let dataTable = [['Lockup Name', `Amount (${tokenSymbol})`, 'Start time', 'Period (seconds)', 'Release frequency (seconds)', `Unlocked amount (${tokenSymbol})`]];
+  for (let i = 0; i < nameArray.length; i++) {
+    dataTable.push([
+      web3.utils.hexToUtf8(nameArray[i]),
+      web3.utils.fromWei(amountArray[i]),
+      moment.unix(startTimeArray[i]).format('MM/DD/YYYY HH:mm'),
+      periodSecondsArray[i],
+      releaseFrequencySecondsArray[i],
+      web3.utils.fromWei(unlockedAmountsArray[i])
+    ]);
+  }
+  console.log();
+  console.log(table(dataTable));
 }
 
 async function manageExistingLockups(lockupName) {
@@ -2464,6 +2490,7 @@ async function addLockupsInBatch() {
   for (let batch = 0; batch < batches.length; batch++) {
     console.log(`Batch ${batch + 1} - Attempting to add the following lockups: \n\n`, lockupNameArray[batch], '\n');
     lockupNameArray[batch] = lockupNameArray[batch].map(n => web3.utils.toHex(n));
+    amountArray[batch] = amountArray[batch].map(n => web3.utils.toWei(n.toString()));
     let action = currentTransferManager.methods.addNewLockUpTypeMulti(amountArray[batch], startTimeArray[batch], lockUpPeriodArray[batch], releaseFrequencyArray[batch], lockupNameArray[batch]);
     let receipt = await common.sendTransaction(action);
     console.log(chalk.green('Add multiple lockups transaction was successful.'));
@@ -2498,6 +2525,7 @@ async function modifyLockupsInBatch() {
   for (let batch = 0; batch < batches.length; batch++) {
     console.log(`Batch ${batch + 1} - Attempting to modify the following lockups: \n\n`, lockupNameArray[batch], '\n');
     lockupNameArray[batch] = lockupNameArray[batch].map(n => web3.utils.toHex(n));
+    amountArray[batch] = amountArray[batch].map(n => web3.utils.toWei(n.toString()));
     let action = currentTransferManager.methods.modifyLockUpTypeMulti(amountArray[batch], startTimeArray[batch], lockUpPeriodArray[batch], releaseFrequencyArray[batch], lockupNameArray[batch]);
     let receipt = await common.sendTransaction(action);
     console.log(chalk.green('Modify multiple lockups transaction was successful.'));

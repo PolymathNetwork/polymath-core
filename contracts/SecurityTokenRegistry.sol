@@ -165,8 +165,8 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @notice Initializes instance of STR
      * @param _polymathRegistry is the address of the Polymath Registry
      * @param _STFactory is the address of the Proxy contract for Security Tokens
-     * @param _stLaunchFee is the fee in POLY required to launch a token
-     * @param _tickerRegFee is the fee in POLY required to register a ticker
+     * @param _stLaunchFee is the fee in USD required to launch a token
+     * @param _tickerRegFee is the fee in USD required to register a ticker
      * @param _owner is the owner of the STR,
      * @param _getterContract Contract address of the contract which consists getter functions.
      */
@@ -252,7 +252,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     function registerTicker(address _owner, string calldata _ticker, string calldata _tokenName) external whenNotPausedOrOwner {
         require(_owner != address(0), "Owner should not be 0x");
         require(bytes(_ticker).length > 0 && bytes(_ticker).length <= 10, "Ticker length range (0,10]");
-        // Attempt to charge the reg fee if it is > 0 POLY
+        // Attempt to charge the reg fee if it is > 0 USD
         (uint256 _usdFee, uint256 _polyFee) = _takeFee(TICKERREGFEE);
         string memory ticker = Util.upper(_ticker);
         require(_tickerAvailable(ticker), "Ticker is reserved");
@@ -609,8 +609,8 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     }
 
     /**
-    * @notice Sets the ticker registration fee in POLY tokens. Only Polymath.
-    * @param _tickerRegFee is the registration fee in POLY tokens (base 18 decimals)
+    * @notice Sets the ticker registration fee in USD tokens. Only Polymath.
+    * @param _tickerRegFee is the registration fee in USD tokens (base 18 decimals)
     */
     function changeTickerRegistrationFee(uint256 _tickerRegFee) external onlyOwner {
         uint256 fee = getUintValue(TICKERREGFEE);
@@ -620,8 +620,8 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     }
 
     /**
-    * @notice Sets the ticker registration fee in POLY tokens. Only Polymath.
-    * @param _stLaunchFee is the registration fee in POLY tokens (base 18 decimals)
+    * @notice Sets the ticker registration fee in USD tokens. Only Polymath.
+    * @param _stLaunchFee is the registration fee in USD tokens (base 18 decimals)
     */
     function changeSecurityLaunchFee(uint256 _stLaunchFee) external onlyOwner {
         uint256 fee = getUintValue(STLAUNCHFEE);

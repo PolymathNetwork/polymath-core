@@ -14,6 +14,7 @@ import "../libraries/DecimalMath.sol";
  * @notice Contract is abstract
  */
 contract ModuleFactory is IModuleFactory, Ownable {
+    // Fee to create underlying module in USD
     uint256 public setupCost;
     uint256 public usageCost;
     address public polymathRegistry;
@@ -42,7 +43,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
 
     /**
      * @notice Used to change the fee of the setup cost
-     * @param _newSetupCost new setup cost
+     * @param _newSetupCost new setup cost in USD
      */
     function changeSetupCost(uint256 _newSetupCost) public onlyOwner {
         emit ChangeSetupCost(setupCost, _newSetupCost);
@@ -51,7 +52,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
 
     /**
      * @notice Used to change the fee of the usage cost
-     * @param _newUsageCost new usage cost
+     * @param _newUsageCost new usage cost in USD
      */
     function changeUsageCost(uint256 _newUsageCost) public onlyOwner {
         emit ChangeUsageCost(usageCost, _newUsageCost);

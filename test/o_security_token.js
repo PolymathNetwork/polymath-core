@@ -244,19 +244,19 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should check the balance of the locked tokens", async() => {
             console.log(`\t Total balance: ${web3.utils.fromWei((await I_SecurityToken.balanceOf.call(account_affiliate1)).toString())}`);
-            console.log(`\t Locked balance: ${web3.utils.fromWei((await stGetter.balanceOfPartition.call(account_affiliate1, web3.utils.utf8ToHex(`LOCKED`))).toString())}`);
-            console.log(`\t Unlocked balance: ${web3.utils.fromWei((await stGetter.balanceOfPartition.call(account_affiliate1, web3.utils.utf8ToHex(`UNLOCKED`))).toString())}`);
+            console.log(`\t Locked balance: ${web3.utils.fromWei((await stGetter.balanceOfByPartition.call(account_affiliate1, web3.utils.utf8ToHex(`LOCKED`))).toString())}`);
+            console.log(`\t Unlocked balance: ${web3.utils.fromWei((await stGetter.balanceOfByPartition.call(account_affiliate1, web3.utils.utf8ToHex(`UNLOCKED`))).toString())}`);
             assert.equal(
-                web3.utils.fromWei((await stGetter.balanceOfPartition.call(account_affiliate1, web3.utils.utf8ToHex(`LOCKED`))).toString()),
+                web3.utils.fromWei((await stGetter.balanceOfByPartition.call(account_affiliate1, web3.utils.utf8ToHex(`LOCKED`))).toString()),
                 0
             );
             assert.equal(
-                web3.utils.fromWei((await stGetter.balanceOfPartition.call(account_affiliate1, web3.utils.utf8ToHex(`UNLOCKED`))).toString()),
+                web3.utils.fromWei((await stGetter.balanceOfByPartition.call(account_affiliate1, web3.utils.utf8ToHex(`UNLOCKED`))).toString()),
                 web3.utils.fromWei((await I_SecurityToken.balanceOf.call(account_affiliate1)).toString())
             );
-            console.log(`\t Wrong partition: ${web3.utils.fromWei((await stGetter.balanceOfPartition.call(account_affiliate1, web3.utils.toHex(`OCKED`))).toString())}`);
+            console.log(`\t Wrong partition: ${web3.utils.fromWei((await stGetter.balanceOfByPartition.call(account_affiliate1, web3.utils.toHex(`OCKED`))).toString())}`);
             assert.equal(
-                web3.utils.fromWei((await stGetter.balanceOfPartition.call(account_affiliate1, web3.utils.toHex(`OCKED`))).toString()),
+                web3.utils.fromWei((await stGetter.balanceOfByPartition.call(account_affiliate1, web3.utils.toHex(`OCKED`))).toString()),
                 0
             );
         });

@@ -187,7 +187,7 @@ contract STGetter is OZStorage, SecurityTokenStorage {
      * @param _partition Partition which differentiate the tokens.
      * @return Amount of tokens as per the given partitions
      */
-    function balanceOfPartition(address _owner, bytes32 _partition) external view returns(uint256) {
+    function balanceOfByPartition(address _owner, bytes32 _partition) external view returns(uint256) {
         address[] memory tms = modules[TRANSFER_KEY];
         uint256 _amount = 0;
         for (uint256 i = 0; i < tms.length; i++) {

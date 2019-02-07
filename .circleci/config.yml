@@ -96,7 +96,6 @@ workflows:
   commit:
     jobs:
       - coverage
-      - deploy_kovan
   daily-builds:
     triggers:
       - schedule:

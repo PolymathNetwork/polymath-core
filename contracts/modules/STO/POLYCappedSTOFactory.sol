@@ -15,30 +15,32 @@ contract POLYCappedSTOFactory is ModuleFactory {
      * @notice Constructor
      * @param _setupCost Setup cost of the module
      * @param _usageCost Usage cost of the module
-     * @param _subscriptionCost Subscription cost of the module
+     * @param _logicContract Contract address that contains the logic related to `description`
+     * @param _polymathRegistry Address of the Polymath registry
      */
     constructor(
         uint256 _setupCost,
         uint256 _usageCost,
-        uint256 _subscriptionCost,
-        address _logicContract
+        address _logicContract,
+        address _polymathRegistry
     )
         public
-        ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
+        ModuleFactory(_setupCost, _usageCost, _polymathRegistry)
     {
         require(_logicContract != address(0), "address 0x not allowed");
         logicContract = _logicContract;
         version = "1.0.0";
         name = "POLYCappedSTO";
         title = "POLY - Capped STO";
-        //NEED TO UPDATE DESCRIPTION
         description = "This smart contract creates a maximum number of tokens (i.e. hard cap) which the total aggregate of tokens acquired by all investors cannot exceed. Security tokens are sent to the investor upon reception of the funds (POLY). This STO supports options for a minimum investment limit for all investors, maximum investment limit for non-accredited investors and an option to mint unsold tokens to a reserve wallet upon termination of the offering.";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        logicContract = _logicContract;
     }
 
     /**
      * @notice Used to launch the Module with the help of factory
+     * @param _data Data used for the intialization of the module factory variables
      * @return address Contract address of the Module
      */
     function deploy(bytes calldata _data) external returns(address) {
@@ -52,8 +54,8 @@ contract POLYCappedSTOFactory is ModuleFactory {
         (success, ) = polyCappedSTO.call(_data);
         require(success, "Unsuccessfull call");
         /*solium-disable-next-line security/no-block-members*/
-        emit GenerateModuleFromFactory(polyCappedSTO, getName(), address(this), msg.sender, setupCost, now);
-        return polyCappedSTO;
+        emit GenerateModuleFromFactory(address(polyCappedSTO), getName(), address(this), msg.sender, getSetupCost(), getSetupCostInPoly(), now);
+        return address(polyCappedSTO);
     }
 
     /**

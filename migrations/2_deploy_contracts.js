@@ -480,7 +480,7 @@ module.exports = function(deployer, network, accounts) {
         })
         .then(() => {
             // M) Deploy the POLYCappedSTOFactory (Use to generate the POLYCappedSTO contract which will used to collect the funds ).
-            return deployer.deploy(POLYCappedSTOFactory, polyCappedSTOSetupCost, new BN(0), new BN(0), POLYCappedSTOLogic.address, { from: PolymathAccount });
+            return deployer.deploy(POLYCappedSTOFactory, polyCappedSTOSetupCost, new BN(0), POLYCappedSTOLogic.address, polymathRegistry.address, { from: PolymathAccount });
         })
         .then(() => {
             // N) Register the POLYCappedSTOFactory in the ModuleRegistry to make the factory available at the protocol level.

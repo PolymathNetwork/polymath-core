@@ -311,10 +311,14 @@ contract('GeneralPermissionManager', accounts => {
         });
 
         it("Should return all delegates", async() => {
+            console.log(await I_STRProxied.getTokensByDelegate.call(account_delegate));
+            console.log(await I_STRProxied.getTokensByDelegate.call(account_delegate2));
             await I_GeneralPermissionManager.addDelegate(account_delegate2, delegateDetails, { from: token_owner});
+            console.log(await I_STRProxied.getTokensByDelegate.call(account_delegate));
+            console.log(await I_STRProxied.getTokensByDelegate.call(account_delegate2));
             let tx = await I_GeneralPermissionManager.getAllDelegates.call();
             assert.equal(tx.length, 2);
-            assert.equal(tx[0], account_delegate);  
+            assert.equal(tx[0], account_delegate);
             assert.equal(tx[1], account_delegate2);
         });
 
@@ -332,7 +336,7 @@ contract('GeneralPermissionManager', accounts => {
             assert.equal(await I_GeneralPermissionManager.checkDelegate.call(account_delegate), true);
         });
 
-        
+
         it("Should successfully provide the permissions in batch -- failed because of array length is 0", async() => {
             await I_GeneralPermissionManager.addDelegate(account_delegate3, delegateDetails, { from: token_owner});
             await catchRevert(

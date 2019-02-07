@@ -199,8 +199,8 @@ async function forcedTransfers() {
         },
         limitMessage: `Amount must be less or equal than ${fromBalance} ${tokenSymbol}`,
       });
-      let data = readlineSync.question('Enter the data to indicate validation: ');
-      let log = readlineSync.question('Enter the data attached to the transfer by controller to emit in event: ');
+      let data = '';//readlineSync.question('Enter the data to indicate validation: ');
+      let log = readlineSync.question('Enter a message to attach to the transfer (i.e. "Private key lost"): ');
       let forceTransferAction = securityToken.methods.forceTransfer(from, to, web3.utils.toWei(amount), web3.utils.asciiToHex(data), web3.utils.asciiToHex(log));
       let forceTransferReceipt = await common.sendTransaction(forceTransferAction, { factor: 1.5 });
       let forceTransferEvent = common.getEventFromLogs(securityToken._jsonInterface, forceTransferReceipt.logs, 'ForceTransfer');
@@ -380,7 +380,7 @@ async function generalTransferManager() {
       break;
     case 'Change the default times used when they are zero':
       let fromTimeDefault = readlineSync.questionInt(`Enter the default time (Unix Epoch time) used when fromTime is zero: `);
-      let toTimeDefault = readlineSync.questionInt(`Enter the default time (Unix Epoch time) used when fromTime is zero: `);
+      let toTimeDefault = readlineSync.questionInt(`Enter the default time (Unix Epoch time) used when toTime is zero: `);
       let changeDefaultsAction = currentTransferManager.methods.changeDefaults(fromTimeDefault, toTimeDefault);
       let changeDefaultsReceipt = await common.sendTransaction(changeDefaultsAction);
       let changeDefaultsEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeDefaultsReceipt.logs, 'ChangeDefaults');
@@ -396,9 +396,9 @@ async function generalTransferManager() {
       let now = Math.floor(Date.now() / 1000);
       let fromTime = readlineSync.questionInt(`Enter the time (Unix Epoch time) when the sale lockup period ends and the investor can freely sell his tokens (now = ${now}): `, { defaultInput: now });
       let toTime = readlineSync.questionInt(`Enter the time (Unix Epoch time) when the purchase lockup period ends and the investor can freely purchase tokens from others (now = ${now}): `, { defaultInput: now });
-      let oneHourFromNow = Math.floor(Date.now() / 1000 + 3600);
-      let expiryTime = readlineSync.questionInt(`Enter the time till investors KYC will be validated (after that investor need to do re - KYC) (1 hour from now = ${oneHourFromNow}): `, { defaultInput: oneHourFromNow });
-      let canBuyFromSTO = readlineSync.keyInYNStrict('Is the investor a restricted investor?');
+      let oneYearFromNow = Math.floor(Date.now() / 1000 + (60 * 60 * 24 * 365));
+      let expiryTime = readlineSync.questionInt(`Enter the time until the investors KYC will be valid (after this time expires, the investor must re-do KYC) (1 year from now = ${oneYearFromNow}): `, { defaultInput: oneYearFromNow });
+      let canBuyFromSTO = readlineSync.keyInYNStrict('Can the investor buy from security token offerings?');
       let modifyWhitelistAction = currentTransferManager.methods.modifyWhitelist(investor, fromTime, toTime, expiryTime, canBuyFromSTO);
       let modifyWhitelistReceipt = await common.sendTransaction(modifyWhitelistAction);
       let modifyWhitelistEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, modifyWhitelistReceipt.logs, 'ModifyWhitelist');
@@ -421,7 +421,7 @@ async function generalTransferManager() {
       let vSigned = readlineSync.questionInt('Enter v: ');
       let rSigned = readlineSync.question('Enter r: ');
       let sSigned = readlineSync.question('Enter s: ');
-      let canBuyFromSTOSigned = readlineSync.keyInYNStrict('Is the investor a restricted investor?');
+      let canBuyFromSTOSigned = readlineSync.keyInYNStrict('Can the investor buy from security token offerings?');
       let modifyWhitelistSignedAction = currentTransferManager.methods.modifyWhitelistSigned(investorSigned, fromTimeSigned, toTimeSigned, expiryTimeSigned, canBuyFromSTOSigned);
       let modifyWhitelistSignedReceipt = await common.sendTransaction(Issuer, modifyWhitelistSignedAction, defaultGasPrice);
       let modifyWhitelistSignedEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, modifyWhitelistSignedReceipt.logs, 'ModifyWhitelist');
@@ -2328,16 +2328,15 @@ async function manageExistingLockups(lockupName) {
   console.log(`- Currently unlocked:   ${web3.utils.fromWei(currentLockup.unlockedAmount)}  ${tokenSymbol}`);
   console.log(`- Start time:           ${moment.unix(currentLockup.startTime).format('MMMM Do YYYY, HH:mm:ss')}`);
   console.log(`- Lockup period:        ${currentLockup.lockUpPeriodSeconds} seconds`);
-  console.log(`- End time:             ${moment.unix(currentLockup.endTime).add(parseInt(currentLockup.lockUpPeriodSeconds)).format('MMMM Do YYYY, HH:mm:ss')}`);
-  console.log(`- Release frequency:    ${currentLockup.releaseFrequencySeconds} senconds`);
+  console.log(`- End time:             ${moment.unix(currentLockup.startTime).add(parseInt(currentLockup.lockUpPeriodSeconds), 'seconds').format('MMMM Do YYYY, HH:mm:ss')}`); console.log(`- Release frequency:    ${currentLockup.releaseFrequencySeconds} seconds`);
   console.log(`- Investors:            ${investors.length}`);
   // ------------------
 
   let options = [
     'Modify properties',
     'Show investors',
-    'Add this lockup to investors',
-    'Remove this lockup from investors',
+    'Add investors to this lockup',
+    'Remove investors from this lockup',
     'Delete this lockup type'
   ];
 
@@ -2351,7 +2350,7 @@ async function manageExistingLockups(lockupName) {
       let startTime = readlineSync.questionInt(`Enter the start time (Unix Epoch time) of the lockup type (a minute from now = ${minuteFromNow}): `, { defaultInput: minuteFromNow });
       let lockUpPeriodSeconds = readlineSync.questionInt(`Enter the total period (seconds) of the lockup type (ten minutes = 600): `, { defaultInput: 600 });
       let releaseFrequencySeconds = readlineSync.questionInt(`Enter how often to release a tranche of tokens in seconds (one minute = 60): `, { defaultInput: 60 });
-      let modifyLockUpTypeAction = currentTransferManager.methods.modifyLockUpType(lockupAmount, startTime, lockUpPeriodSeconds, releaseFrequencySeconds, lockupName);
+      let modifyLockUpTypeAction = currentTransferManager.methods.modifyLockUpType(web3.utils.toWei(lockupAmount.toString()), startTime, lockUpPeriodSeconds, releaseFrequencySeconds, lockupName);
       let modifyLockUpTypeReceipt = await common.sendTransaction(modifyLockUpTypeAction);
       let modifyLockUpTypeEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, modifyLockUpTypeReceipt.logs, 'ModifyLockUpType');
       console.log(chalk.green(`${web3.utils.hexToUtf8(modifyLockUpTypeEvent._lockupName)} lockup type has been modified successfully!`));

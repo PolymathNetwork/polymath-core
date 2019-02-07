@@ -15,7 +15,8 @@ contract StableOracle is IOracle, Ownable {
     uint256 public manualPrice;
 
     /*solium-disable-next-line security/no-block-members*/
-    event ChangeOracle(address _newOracle, address _oldOracle);
+    event ChangeOracle(address _oldOracle, address _newOracle);
+    event ChangeEvictPercentage(uint256 _oldEvictPercentage, uint256 _newEvictPercentage);
     event SetManualPrice(uint256 _oldPrice, uint256 _newPrice, uint256 _time);
     event SetManualOverride(bool _override, uint256 _time);
 
@@ -36,8 +37,17 @@ contract StableOracle is IOracle, Ownable {
     function changeOracle(address _oracle) public onlyOwner {
         require(_oracle != address(0), "Invalid oracle");
         /*solium-disable-next-line security/no-block-members*/
-        emit ChangeOracle(_oracle, address(oracle));
+        emit ChangeOracle(address(oracle), _oracle);
         oracle = IOracle(_oracle);
+    }
+
+    /**
+      * @notice Updates eviction percentage
+      * @param _evictPercentage Percentage multiplied by 10**16
+      */
+    function changeEvictPercentage(uint256 _evictPercentage) public onlyOwner {
+        emit ChangeEvictPercentage(evictPercentage, _evictPercentage);
+        evictPercentage = _evictPercentage;
     }
 
     /**

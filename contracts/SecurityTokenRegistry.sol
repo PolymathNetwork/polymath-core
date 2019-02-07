@@ -214,13 +214,22 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     /**
      * @notice Converts USD fees into POLY amounts
      */
-    function _takeFee(bytes32 _feeType) internal returns (uint256, uint256){
+    function _takeFee(bytes32 _feeType) internal returns (uint256, uint256) {
+        (uint256 usdFee, uint256 polyFee) = getFees(_feeType);
+        if (polyFee > 0)
+            require(IERC20(getAddressValue(POLYTOKEN)).transferFrom(msg.sender, address(this), polyFee), "Insufficent allowance");
+        return (usdFee, polyFee);
+    }
+
+    /**
+     * @notice Returns the usd & poly fee for a particular feetype
+     * @param _feeType Key corresponding to fee type
+     */
+    function getFees(bytes32 _feeType) public returns (uint256, uint256) {
         address polymathRegistry = getAddressValue(POLYMATHREGISTRY);
         uint256 polyRate = IOracle(IPolymathRegistry(polymathRegistry).getAddress(POLY_ORACLE)).getPrice();
         uint256 usdFee = getUintValue(_feeType);
         uint256 polyFee = DecimalMath.div(usdFee, polyRate);
-        if (polyFee > 0)
-            require(IERC20(getAddressValue(POLYTOKEN)).transferFrom(msg.sender, address(this), polyFee), "Insufficent allowance");
         return (usdFee, polyFee);
     }
 

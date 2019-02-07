@@ -73,7 +73,7 @@ interface ISecurityToken {
      * @return uint256 Name index
 
      */
-    function getModule(address _module) external view returns(bytes32, address, address, bool, uint8, uint256, uint256);
+    function getModule(address _module) external view returns (bytes32, address, address, bool, uint8[]);
 
     /**
      * @notice Returns module list for a module name
@@ -130,7 +130,7 @@ interface ISecurityToken {
      * @return list of investors
      */
     function iterateInvestors(uint256 _start, uint256 _end) external view returns(address[]);
-    
+
     /**
      * @notice Gets current checkpoint ID
      * @return Id

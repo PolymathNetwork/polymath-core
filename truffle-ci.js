@@ -1,6 +1,8 @@
 require('babel-register');
 require('babel-polyfill');
 
+let HDWalletProvider = require("truffle-hdwallet-provider");
+
 module.exports = {
   networks: {
     development: {

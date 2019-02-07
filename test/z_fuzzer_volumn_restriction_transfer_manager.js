@@ -74,7 +74,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
     let tempArrayGlobal = new Array();
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = web3.utils.toWei("250");
+    const initRegFee = web3.utils.toWei("1000");
 
     async function print(data, account) {
         console.log(`
@@ -218,6 +218,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     [currentTime, currentTime, currentTime],
                     [currentTime.add(new BN(duration.days(60))), currentTime.add(new BN(duration.days(60))), currentTime.add(new BN(duration.days(60)))],
                     [true, true, true],
+                    [false, false, false],
                     {
                         from: token_owner
                     }

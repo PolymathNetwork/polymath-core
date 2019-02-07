@@ -64,7 +64,7 @@ contract("SignedTransferManager", accounts => {
     const stoKey = 3;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = web3.utils.toWei("250");
+    const initRegFee = web3.utils.toWei("1000");
 
     let currentTime;
 
@@ -166,6 +166,7 @@ contract("SignedTransferManager", accounts => {
                 currentTime,
                 currentTime.add(new BN(duration.days(10))),
                 true,
+                false,
                 {
                     from: account_issuer
                 }
@@ -188,7 +189,7 @@ contract("SignedTransferManager", accounts => {
 
 
         it("Should successfully attach the SignedTransferManager with the security token", async () => {
-            const tx = await I_SecurityToken.addModule(I_SignedTransferManagerFactory.address, new BN(0),new BN(0),new BN(0), { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_SignedTransferManagerFactory.address, "0x0",new BN(0),new BN(0), { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), transferManagerKey, "SignedTransferManager doesn't get deployed");
             assert.equal(
                 web3.utils.toUtf8(tx.logs[2].args._name),

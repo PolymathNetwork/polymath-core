@@ -10,7 +10,6 @@ pragma solidity ^0.5.0;
 import "./ICheckpoint.sol";
 import "./DividendCheckpointStorage.sol";
 import "../Module.sol";
-import "../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/math/Math.sol";
 

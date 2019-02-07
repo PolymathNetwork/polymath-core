@@ -72,7 +72,7 @@ contract("ManualApprovalTransferManager", accounts => {
     let approvalTime;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = web3.utils.toWei("250");
+    const initRegFee = web3.utils.toWei("1000");
 
     const STOParameters = ["uint256", "uint256", "uint256", "uint256", "uint8[]", "address"];
     let currentTime;
@@ -176,6 +176,7 @@ contract("ManualApprovalTransferManager", accounts => {
                 currentTime,
                 currentTime.add(new BN(duration.days(30))),
                 true,
+                false,
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -206,6 +207,7 @@ contract("ManualApprovalTransferManager", accounts => {
                 currentTime,
                 currentTime.add(new BN(duration.days(30))),
                 true,
+                false,
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -225,9 +227,9 @@ contract("ManualApprovalTransferManager", accounts => {
         });
 
         it("Should successfully attach the ManualApprovalTransferManager with the security token", async () => {
-            await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
+            await I_PolyToken.getTokens(web3.utils.toWei("2000", "ether"), token_owner);
             await catchRevert(
-                I_SecurityToken.addModule(P_ManualApprovalTransferManagerFactory.address, "0x0", web3.utils.toWei("500", "ether"), 0, {
+                I_SecurityToken.addModule(P_ManualApprovalTransferManagerFactory.address, "0x0", web3.utils.toWei("2000", "ether"), 0, {
                     from: token_owner
                 })
             );
@@ -235,11 +237,11 @@ contract("ManualApprovalTransferManager", accounts => {
 
         it("Should successfully attach the General permission manager factory with the security token", async () => {
             let snapId = await takeSnapshot();
-            await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), { from: token_owner });
+            await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("2000", "ether"), { from: token_owner });
             const tx = await I_SecurityToken.addModule(
                 P_ManualApprovalTransferManagerFactory.address,
                 "0x0",
-                web3.utils.toWei("500", "ether"),
+                web3.utils.toWei("2000", "ether"),
                 0,
                 { from: token_owner }
             );
@@ -295,6 +297,7 @@ contract("ManualApprovalTransferManager", accounts => {
                 currentTime,
                 currentTime.add(new BN(duration.days(10))),
                 true,
+                false,
                 {
                     from: account_issuer,
                     gas: 6000000

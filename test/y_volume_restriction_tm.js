@@ -74,7 +74,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
     let tempArrayGlobal = new Array();
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = new BN(web3.utils.toWei("250"));
+    const initRegFee = new BN(web3.utils.toWei("1000"));
 
     const address_zero = "0x0000000000000000000000000000000000000000";
 
@@ -230,6 +230,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     [newLatestTime, newLatestTime, newLatestTime],
                     [newLatestTime.add(new BN(duration.days(60))), newLatestTime.add(new BN(duration.days(60))), newLatestTime.add(new BN(duration.days(60)))],
                     [true, true, true],
+                    [false,false,false],
                     {
                         from: token_owner
                     }
@@ -1304,6 +1305,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 newLatestTime,
                 newLatestTime.add(new BN(duration.days(30))),
                 true,
+                false,
                 {
                     from: token_owner
                 }

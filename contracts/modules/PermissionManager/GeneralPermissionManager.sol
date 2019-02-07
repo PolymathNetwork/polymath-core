@@ -3,7 +3,6 @@ pragma solidity ^0.5.0;
 import "./IPermissionManager.sol";
 import "../Module.sol";
 import "./GeneralPermissionManagerStorage.sol";
-import "../../interfaces/ISecurityToken.sol";
 
 /**
  * @title Permission Manager module for core permissioning functionality

@@ -14,8 +14,8 @@ contract VestingEscrowWalletFactory is ModuleFactory {
     /**
      * @notice Constructor
      */
-    constructor (uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _logicContract) public
-    ModuleFactory(_setupCost, _usageCost, _subscriptionCost)
+    constructor (uint256 _setupCost, uint256 _usageCost, address _logicContract, address _polymathRegistry) public
+    ModuleFactory(_setupCost, _usageCost, _polymathRegistry)
     {
         require(_logicContract != address(0), "Invalid address");
         version = "1.0.0";
@@ -42,7 +42,7 @@ contract VestingEscrowWalletFactory is ModuleFactory {
         (success, ) = vestingEscrowWallet.call(_data);
         require(success, "Unsuccessfull call");
         /*solium-disable-next-line security/no-block-members*/
-        emit GenerateModuleFromFactory(vestingEscrowWallet, getName(), address(this), msg.sender, setupCost, now);
+        emit GenerateModuleFromFactory(vestingEscrowWallet, getName(), address(this), msg.sender, getSetupCost(), getSetupCostInPoly(), now);
         return vestingEscrowWallet;
     }
 

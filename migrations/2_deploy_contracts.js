@@ -9,6 +9,8 @@ const EtherDividendCheckpointLogic = artifacts.require('./EtherDividendCheckpoin
 const ERC20DividendCheckpointLogic = artifacts.require('./ERC20DividendCheckpoint.sol')
 const EtherDividendCheckpointFactory = artifacts.require('./EtherDividendCheckpointFactory.sol')
 const ERC20DividendCheckpointFactory = artifacts.require('./ERC20DividendCheckpointFactory.sol')
+const LockUpTransferManagerFactory = artifacts.require('./LockUpTransferManagerFactory.sol')
+const BlacklistTransferManagerFactory = artifacts.require('./BlacklistTransferManagerFactory.sol')
 const VestingEscrowWalletFactory = artifacts.require('./VestingEscrowWalletFactory.sol');
 const VestingEscrowWalletLogic = artifacts.require('./VestingEscrowWallet.sol');
 const ModuleRegistry = artifacts.require('./ModuleRegistry.sol');
@@ -25,6 +27,7 @@ const STFactory = artifacts.require('./tokens/STFactory.sol')
 const DevPolyToken = artifacts.require('./helpers/PolyTokenFaucet.sol')
 const MockOracle = artifacts.require('./MockOracle.sol')
 const TokenLib = artifacts.require('./TokenLib.sol');
+const VolumeRestrictionLib = artifacts.require('./VolumeRestrictionLib.sol');
 const SecurityToken = artifacts.require('./tokens/SecurityToken.sol')
 
 let BigNumber = require('bignumber.js');
@@ -139,7 +142,11 @@ module.exports = function (deployer, network, accounts) {
     // Deploy libraries
     return deployer.deploy(TokenLib, { from: PolymathAccount });
   }).then(() => {
+    return deployer.deploy(VolumeRestrictionLib, { from: PolymathAccount });
+  }).then(() => {
+
     // Link libraries
+    deployer.link(VolumeRestrictionLib, VolumeRestrictionTMLogic);
     deployer.link(TokenLib, SecurityToken);
     deployer.link(TokenLib, STFactory);
     // A) Deploy the ModuleRegistry Contract (It contains the list of verified ModuleFactory)
@@ -186,6 +193,10 @@ module.exports = function (deployer, network, accounts) {
     // manager attach with the securityToken contract at the time of deployment)
     return deployer.deploy(GeneralTransferManagerFactory, PolyToken, 0, 0, 0, GeneralTransferManagerLogic.address, { from: PolymathAccount });
   }).then(() => {
+    // C) Deploy the LockUpTransferManagerFactory Contract (Factory used to generate the LockUpTransferManager contract and
+    // this manager attach with the securityToken contract at the time of deployment)
+    return deployer.deploy(LockUpTransferManagerFactory, PolyToken, 0, 0, 0, { from: PolymathAccount });
+  }).then(() => {
     // C) Deploy the GeneralPermissionManagerFactory Contract (Factory used to generate the GeneralPermissionManager contract and
     // this manager attach with the securityToken contract at the time of deployment)
     return deployer.deploy(GeneralPermissionManagerFactory, PolyToken, 0, 0, 0, { from: PolymathAccount });
@@ -193,6 +204,10 @@ module.exports = function (deployer, network, accounts) {
     // D) Deploy the CountTransferManagerFactory Contract (Factory used to generate the CountTransferManager contract use
     // to track the counts of the investors of the security token)
     return deployer.deploy(CountTransferManagerFactory, PolyToken, 0, 0, 0, { from: PolymathAccount });
+  }).then(() => {
+    // D) Deploy the BlacklistTransferManagerFactory Contract (Factory used to generate the BlacklistTransferManager contract use
+    // to to automate blacklist and restrict transfers)
+    return deployer.deploy(BlacklistTransferManagerFactory, PolyToken, 0, 0, 0, { from: PolymathAccount });
   }).then(() => {
     // D) Deploy the PercentageTransferManagerFactory Contract (Factory used to generate the PercentageTransferManager contract use
     // to track the percentage of investment the investors could do for a particular security token)
@@ -237,6 +252,10 @@ module.exports = function (deployer, network, accounts) {
     // Update all addresses into the registry contract by calling the function updateFromregistry
     return moduleRegistry.updateFromRegistry({ from: PolymathAccount });
   }).then(() => {
+    // D) Register the LockUpTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
+    // So any securityToken can use that factory to generate the LockUpTransferManager contract.
+    return moduleRegistry.registerModule(LockUpTransferManagerFactory.address, { from: PolymathAccount });
+  }).then(() => {
     // D) Register the PercentageTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
     // So any securityToken can use that factory to generate the PercentageTransferManager contract.
     return moduleRegistry.registerModule(PercentageTransferManagerFactory.address, { from: PolymathAccount });
@@ -252,6 +271,10 @@ module.exports = function (deployer, network, accounts) {
     // D) Register the GeneralTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
     // So any securityToken can use that factory to generate the GeneralTransferManager contract.
     return moduleRegistry.registerModule(GeneralTransferManagerFactory.address, { from: PolymathAccount });
+  }).then(() => {
+    // D) Register the BlacklistTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
+    // So any securityToken can use that factory to generate the GeneralTransferManager contract.
+    return moduleRegistry.registerModule(BlacklistTransferManagerFactory.address, { from: PolymathAccount });
   }).then(() => {
     // E) Register the GeneralPermissionManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
     // So any securityToken can use that factory to generate the GeneralPermissionManager contract.
@@ -278,10 +301,20 @@ module.exports = function (deployer, network, accounts) {
     // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
     return moduleRegistry.verifyModule(GeneralTransferManagerFactory.address, true, { from: PolymathAccount });
   }).then(() => {
+    // G) Once the BlacklistTransferManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
+    // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
+    // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
+    return moduleRegistry.verifyModule(BlacklistTransferManagerFactory.address, true, { from: PolymathAccount });
+  }).then(() => {
     // G) Once the CountTransferManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
     // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
     // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
     return moduleRegistry.verifyModule(CountTransferManagerFactory.address, true, { from: PolymathAccount });
+  }).then(() => {
+    // F) Once the LockUpTransferManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
+    // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
+    // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
+    return moduleRegistry.verifyModule(LockUpTransferManagerFactory.address, true, { from: PolymathAccount });
   }).then(() => {
     // G) Once the PercentageTransferManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
     // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
@@ -375,6 +408,8 @@ module.exports = function (deployer, network, accounts) {
     ERC20DividendCheckpointLogic:         ${ERC20DividendCheckpointLogic.address}
     EtherDividendCheckpointFactory:       ${EtherDividendCheckpointFactory.address}
     ERC20DividendCheckpointFactory:       ${ERC20DividendCheckpointFactory.address}
+    LockUpTransferManagerFactory:         ${LockUpTransferManagerFactory.address}
+    BlacklistTransferManagerFactory:      ${BlacklistTransferManagerFactory.address}
     VolumeRestrictionTMFactory:           ${VolumeRestrictionTMFactory.address}
     VolumeRestrictionTMLogic:             ${VolumeRestrictionTMLogic.address}
     VestingEscrowWalletFactory:           ${VestingEscrowWalletFactory.address}

@@ -158,8 +158,8 @@ module.exports = {
   },
   splitIntoBatches: function (data, batchSize) {
     let allBatches = [];
-    for (let index = 0; index < data.length; index += batchSize) {
-      allBatches.push(data.slice(index, index + batchSize));
+    for (let index = 0; index < data.length; index += parseInt(batchSize)) {
+      allBatches.push(data.slice(index, index + parseInt(batchSize)));
     }
     return allBatches;
   },

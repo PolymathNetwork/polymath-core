@@ -152,8 +152,6 @@ async function showTokenInfo() {
 
 // Show info
 async function showUserInfo(_user) {
-    let listOfStableCoins = await currentSTO.methods.getUsdTokens().call();
-
     console.log(`
     *******************    User Information    ********************
     - Address:               ${_user}`);
@@ -164,6 +162,7 @@ async function showUserInfo(_user) {
         console.log(`    - ETH balance:\t     ${web3.utils.fromWei(await web3.eth.getBalance(_user))}`);
     }
     if (await currentSTO.methods.fundRaiseTypes(gbl.constants.FUND_RAISE_TYPES.STABLE).call()) {
+        let listOfStableCoins = await currentSTO.methods.getUsdTokens().call();
         let stableSymbolsAndBalance = await processAddressWithBalance(listOfStableCoins);
         stableSymbolsAndBalance.forEach(stable => {
             console.log(`    - ${stable.symbol} balance:\t     ${web3.utils.fromWei(stable.balance)}`);
@@ -245,7 +244,7 @@ async function processAddressWithBalance(array) {
     for (const address of array) {
         let symbol = await checkSymbol(address);
         let balance = await checkBalance(address);
-        list.push({'address': address, 'symbol': symbol, 'balance': balance})
+        list.push({ 'address': address, 'symbol': symbol, 'balance': balance })
     }
     return list
 }
@@ -254,7 +253,7 @@ async function processAddress(array) {
     let list = [];
     for (const address of array) {
         let symbol = await checkSymbol(address);
-        list.push({"symbol": symbol, "address": address})
+        list.push({ "symbol": symbol, "address": address })
     }
     return list
 }
@@ -277,8 +276,7 @@ async function checkBalance(address) {
     }
 }
 
-async function showUserInfoForUSDTieredSTO()
-{
+async function showUserInfoForUSDTieredSTO() {
     let stableSymbols = [];
     let listOfStableCoins = await currentSTO.methods.getUsdTokens().call();
 
@@ -306,11 +304,12 @@ async function showUserInfoForUSDTieredSTO()
     console.log(`    - Whitelisted:           ${(displayCanBuy) ? 'YES' : 'NO'}`);
     console.log(`    - Valid KYC:             ${(displayValidKYC) ? 'YES' : 'NO'}`);
 
-    let displayIsUserAccredited = await currentSTO.methods.accredited(User.address).call();
+    let investorData = await currentSTO.methods.investors(User.address).call();
+    let displayIsUserAccredited = investorData.accredited == 1;
     console.log(`    - Accredited:            ${(displayIsUserAccredited) ? "YES" : "NO"}`)
 
-    if (!await currentSTO.methods.accredited(User.address).call()) {
-        let displayOverrideNonAccreditedLimitUSD = web3.utils.fromWei(await currentSTO.methods.nonAccreditedLimitUSDOverride(User.address).call())
+    if (!displayIsUserAccredited) {
+        let displayOverrideNonAccreditedLimitUSD = web3.utils.fromWei(investorData.nonAccreditedLimitUSDOverride);
         let displayNonAccreditedLimitUSD = displayOverrideNonAccreditedLimitUSD != 0 ? displayOverrideNonAccreditedLimitUSD : web3.utils.fromWei(await currentSTO.methods.nonAccreditedLimitUSD().call());
         let displayTokensRemainingAllocation = displayNonAccreditedLimitUSD - displayInvestorInvestedUSD;
         console.log(`    - Remaining allocation:  ${(displayTokensRemainingAllocation > 0 ? displayTokensRemainingAllocation : 0)} USD`);
@@ -402,7 +401,7 @@ async function showUSDTieredSTOInfo() {
             })
         } else {
             displayFundsRaisedPerType += `
-        ${type}:\t\t\t   ${fundsRaised} ${type}`;    
+        ${type}:\t\t\t   ${fundsRaised} ${type}`;
         }
         //Only show sold per raise type is more than one are allowed
         if (raiseTypes.length > 1) {
@@ -420,7 +419,7 @@ async function showUSDTieredSTOInfo() {
     let displayRaiseType = raiseTypes.join(' - ');
     //If STO has stable coins, we list them one by one
     if (stableSymbols.length) {
-        displayRaiseType = displayRaiseType.replace(STABLE, "") + `${stableSymbols.map((obj) => {return obj.symbol}).toString().replace(`,`,` - `)}`
+        displayRaiseType = displayRaiseType.replace(STABLE, "") + `${stableSymbols.map((obj) => { return obj.symbol }).toString().replace(`,`, ` - `)}`
     }
 
     let now = Math.floor(Date.now() / 1000);
@@ -499,8 +498,8 @@ async function investCappedSTO(currency, amount) {
     if (raiseTypes[0] == 'POLY') {
         let userBalance = await polyBalance(User.address);
         if (parseInt(userBalance) >= parseInt(cost)) {
-            let allowance = await polyToken.methods.allowance(STOAddress, User.address).call();
-            if (allowance < costWei) {
+            let allowance = await polyToken.methods.allowance(User.address, STOAddress).call();
+            if (parseInt(allowance) < parseInt(costWei)) {
                 let approveAction = polyToken.methods.approve(STOAddress, costWei);
                 await common.sendTransaction(approveAction, { from: User });
             }
@@ -608,8 +607,8 @@ async function investUsdTieredSTO(currency, amount) {
     if (raiseType == POLY) {
         let userBalance = await polyBalance(User.address);
         if (parseInt(userBalance) >= parseInt(cost)) {
-            let allowance = await polyToken.methods.allowance(STOAddress, User.address).call();
-            if (allowance < costWei) {
+            let allowance = await polyToken.methods.allowance(User.address, STOAddress).call();
+            if (parseInt(allowance) < parseInt(costWei)) {
                 let approveAction = polyToken.methods.approve(STOAddress, costWei);
                 await common.sendTransaction(approveAction, { from: User });
             }
@@ -629,8 +628,8 @@ async function investUsdTieredSTO(currency, amount) {
 
         if (parseInt(stableInfo.balance) >= parseInt(cost)) {
             let stableCoin = common.connect(abis.erc20(), stableInfo.address);
-            let allowance = await stableCoin.methods.allowance(STOAddress, User.address).call();
-            if (allowance < costWei) {
+            let allowance = await stableCoin.methods.allowance(User.address, STOAddress).call();
+            if (parseInt(allowance) < parseInt(costWei)) {
                 let approveAction = stableCoin.methods.approve(STOAddress, costWei);
                 await common.sendTransaction(approveAction, { from: User });
             }

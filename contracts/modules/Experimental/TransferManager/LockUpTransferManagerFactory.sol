@@ -1,12 +1,12 @@
 pragma solidity ^0.4.24;
 
-import "./../../ModuleFactory.sol";
-import "./LockupVolumeRestrictionTM.sol";
+import "../../ModuleFactory.sol";
+import "./LockUpTransferManager.sol";
 
 /**
- * @title Factory for deploying ManualApprovalTransferManager module
+ * @title Factory for deploying LockUpTransferManager module
  */
-contract LockupVolumeRestrictionTMFactory is ModuleFactory {
+contract LockUpTransferManagerFactory is ModuleFactory {
 
     /**
      * @notice Constructor
@@ -19,8 +19,8 @@ contract LockupVolumeRestrictionTMFactory is ModuleFactory {
       ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
         version = "1.0.0";
-        name = "LockupVolumeRestrictionTM";
-        title = "Lockup Volume Restriction Transfer Manager";
+        name = "LockUpTransferManager";
+        title = "LockUp Transfer Manager";
         description = "Manage transfers using lock ups over time";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
@@ -33,10 +33,10 @@ contract LockupVolumeRestrictionTMFactory is ModuleFactory {
     function deploy(bytes /* _data */) external returns(address) {
         if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
-        LockupVolumeRestrictionTM lockupVolumeRestrictionTransferManager = new LockupVolumeRestrictionTM(msg.sender, address(polyToken));
+        LockUpTransferManager lockUpTransferManager = new LockUpTransferManager(msg.sender, address(polyToken));
         /*solium-disable-next-line security/no-block-members*/
-        emit GenerateModuleFromFactory(address(lockupVolumeRestrictionTransferManager), getName(), address(this), msg.sender, now);
-        return address(lockupVolumeRestrictionTransferManager);
+        emit GenerateModuleFromFactory(address(lockUpTransferManager), getName(), address(this), msg.sender, setupCost, now);
+        return address(lockUpTransferManager);
     }
 
     /**
@@ -61,7 +61,7 @@ contract LockupVolumeRestrictionTMFactory is ModuleFactory {
      */
     function getTags() external view returns(bytes32[]) {
         bytes32[] memory availableTags = new bytes32[](2);
-        availableTags[0] = "Volume";
+        availableTags[0] = "LockUp";
         availableTags[1] = "Transfer Restriction";
         return availableTags;
     }

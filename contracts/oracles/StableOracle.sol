@@ -69,7 +69,7 @@ contract StableOracle is IOracle, Ownable {
             return manualPrice;
         }
         uint256 currentPrice = oracle.getPrice();
-        if (_change(currentPrice, lastPrice) >= evictPercentage) {
+        if ((lastPrice == 0) || (_change(currentPrice, lastPrice) >= evictPercentage)) {
             lastPrice = currentPrice;
         }
         return lastPrice;

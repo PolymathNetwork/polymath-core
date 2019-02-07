@@ -76,7 +76,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     bytes32 constant POLYMATHREGISTRY = 0x90eeab7c36075577c7cc5ff366e389fefa8a18289b949bab3529ab4471139d4d;
     bytes32 constant STRGETTER = 0x982f24b3bd80807ec3cb227ba152e15c07d66855fa8ae6ca536e689205c0e2e9;
 
-    string constant POLY_ORACLE = "PolyUsdOracle";
+    string constant POLY_ORACLE = "StablePolyUsdOracle";
 
     // Emit when network becomes paused
     event Pause(uint256 _timestammp);

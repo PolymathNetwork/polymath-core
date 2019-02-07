@@ -23,7 +23,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
     bytes32 public name;
     string public title;
 
-    string constant POLY_ORACLE = "PolyUsdOracle";
+    string constant POLY_ORACLE = "StablePolyUsdOracle";
 
     // @notice Allow only two variables to be stored
     // 1. lowerBound

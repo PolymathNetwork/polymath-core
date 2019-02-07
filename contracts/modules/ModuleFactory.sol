@@ -142,7 +142,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
     /**
      * @notice Get the setup cost of the module
      */
-    function getSetupCostInPoly() public view returns (uint256) {
+    function getSetupCostInPoly() public returns (uint256) {
         uint256 polyRate = IOracle(IPolymathRegistry(polymathRegistry).getAddress(POLY_ORACLE)).getPrice();
         return DecimalMath.div(setupCost, polyRate);
     }

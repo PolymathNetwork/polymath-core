@@ -7,6 +7,7 @@ import "../interfaces/IModuleFactory.sol";
 import "../interfaces/IModuleRegistry.sol";
 import "../interfaces/IFeatureRegistry.sol";
 import "../interfaces/ITransferManager.sol";
+import "../modules/PermissionManager/IPermissionManager.sol";
 import "../RegistryUpdater.sol";
 import "../libraries/Util.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
@@ -200,9 +201,9 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         uint256 _granularity,
         string memory _tokenDetails,
         address _polymathRegistry
-    ) 
-        public 
-        ERC20Detailed(_name, _symbol, _decimals) RegistryUpdater(_polymathRegistry) 
+    )
+        public
+        ERC20Detailed(_name, _symbol, _decimals) RegistryUpdater(_polymathRegistry)
     {
         //When it is created, the owner is the STR
         updateFromRegistry();
@@ -227,9 +228,9 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         uint256 _maxCost,
         uint256 _budget,
         bytes32 _label
-    ) 
-        public 
-        onlyOwner nonReentrant 
+    )
+        public
+        onlyOwner nonReentrant
     {
         //Check that the module factory exists in the ModuleRegistry - will throw otherwise
         IModuleRegistry(moduleRegistry).useModule(_moduleFactory);
@@ -571,10 +572,10 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         uint256 _value,
         bytes memory _data,
         bool _isTransfer
-    ) 
-        internal 
-        checkGranularity(_value) 
-        returns(bool) 
+    )
+        internal
+        checkGranularity(_value)
+        returns(bool)
     {
         if (!transfersFrozen) {
             bool isInvalid = false;
@@ -648,11 +649,11 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         address _investor,
         uint256 _value,
         bytes memory _data
-    ) 
-        public 
-        onlyModuleOrOwner(MINT_KEY) 
-        isMintingAllowed 
-        returns(bool success) 
+    )
+        public
+        onlyModuleOrOwner(MINT_KEY)
+        isMintingAllowed
+        returns(bool success)
     {
         require(_updateTransfer(address(0), _investor, _value, _data), "Transfer invalid");
         _mint(_investor, _value);
@@ -686,12 +687,11 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      */
     function checkPermission(address _delegate, address _module, bytes32 _perm) public view returns(bool) {
         for (uint256 i = 0; i < modules[PERMISSION_KEY].length; i++) {
-            if (!modulesToData[modules[PERMISSION_KEY][i]].isArchived) return TokenLib.checkPermission(
-                modules[PERMISSION_KEY],
-                _delegate,
-                _module,
-                _perm
-            );
+            if (!modulesToData[modules[PERMISSION_KEY][i]].isArchived) {
+                if (IPermissionManager(modules[PERMISSION_KEY][i]).checkPermission(_delegate, _module, _perm)) {
+                    return true;
+                }
+            }
         }
         return false;
     }

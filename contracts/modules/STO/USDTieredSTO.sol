@@ -598,7 +598,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @dev returns current conversion rate of funds
      * @param _fundRaiseType Fund raise type to get rate of
      */
-    function getRate(FundRaiseType _fundRaiseType) public view returns (uint256) {
+    function getRate(FundRaiseType _fundRaiseType) public returns (uint256) {
         if (_fundRaiseType == FundRaiseType.ETH) {
             return IOracle(_getOracle(bytes32("ETH"), bytes32("USD"))).getPrice();
         } else if (_fundRaiseType == FundRaiseType.POLY) {
@@ -614,7 +614,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @param _amount Value to convert to USD
      * @return uint256 Value in USD
      */
-    function convertToUSD(FundRaiseType _fundRaiseType, uint256 _amount) public view returns(uint256) {
+    function convertToUSD(FundRaiseType _fundRaiseType, uint256 _amount) public returns(uint256) {
         return DecimalMath.mul(_amount, getRate(_fundRaiseType));
     }
 
@@ -624,7 +624,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @param _amount Value to convert from USD
      * @return uint256 Value in ETH or POLY
      */
-    function convertFromUSD(FundRaiseType _fundRaiseType, uint256 _amount) public view returns(uint256) {
+    function convertFromUSD(FundRaiseType _fundRaiseType, uint256 _amount) public returns(uint256) {
         return DecimalMath.div(_amount, getRate(_fundRaiseType));
     }
 

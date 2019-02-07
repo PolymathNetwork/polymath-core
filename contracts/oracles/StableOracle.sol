@@ -1,65 +1,64 @@
 pragma solidity ^0.5.0;
 
 import "../interfaces/IOracle.sol";
-import "../external/IMedianizer.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
-contract MakerDAOOracle is IOracle, Ownable {
-    address public medianizer;
-    address public currencyAddress;
-    bytes32 public currencySymbol;
+contract StableOracle is IOracle, Ownable {
+    using SafeMath for uint256;
+
+    IOracle public oracle;
+    uint256 public lastPrice;
+    uint256 public evictPercentage; //% multiplid by 10**16
 
     bool public manualOverride;
     uint256 public manualPrice;
 
     /*solium-disable-next-line security/no-block-members*/
-    event ChangeMedianizer(address _newMedianizer, address _oldMedianizer, uint256 _now);
+    event ChangeOracle(address _newOracle, address _oldOracle);
     event SetManualPrice(uint256 _oldPrice, uint256 _newPrice, uint256 _time);
     event SetManualOverride(bool _override, uint256 _time);
 
     /**
-      * @notice Creates a new Maker based oracle
-      * @param _medianizer Address of Maker medianizer
-      * @param _currencyAddress Address of currency (0x0 for ETH)
-      * @param _currencySymbol Symbol of currency
+      * @notice Creates a new stable oracle based on existing oracle
+      * @param _oracle address of underlying oracle
       */
-    constructor(address _medianizer, address _currencyAddress, bytes32 _currencySymbol) public {
-        medianizer = _medianizer;
-        currencyAddress = _currencyAddress;
-        currencySymbol = _currencySymbol;
+    constructor(address _oracle, uint256 _evictPercentage) public {
+        require(_oracle != address(0), "Invalid oracle");
+        oracle = IOracle(_oracle);
+        evictPercentage = _evictPercentage;
     }
 
     /**
       * @notice Updates medianizer address
-      * @param _medianizer Address of Maker medianizer
+      * @param _oracle Address of underlying oracle
       */
-    function changeMedianier(address _medianizer) public onlyOwner {
-        require(_medianizer != address(0), "0x not allowed");
+    function changeOracle(address _oracle) public onlyOwner {
+        require(_oracle != address(0), "Invalid oracle");
         /*solium-disable-next-line security/no-block-members*/
-        emit ChangeMedianizer(_medianizer, medianizer, now);
-        medianizer = _medianizer;
+        emit ChangeOracle(_oracle, address(oracle));
+        oracle = IOracle(_oracle);
     }
 
     /**
     * @notice Returns address of oracle currency (0x0 for ETH)
     */
     function getCurrencyAddress() external view returns(address) {
-        return currencyAddress;
+        return oracle.getCurrencyAddress();
     }
 
     /**
     * @notice Returns symbol of oracle currency (0x0 for ETH)
     */
     function getCurrencySymbol() external view returns(bytes32) {
-        return currencySymbol;
+        return oracle.getCurrencySymbol();
     }
 
     /**
     * @notice Returns denomination of price
     */
     function getCurrencyDenominated() external view returns(bytes32) {
-        // All MakerDAO oracles are denominated in USD
-        return bytes32("USD");
+        return oracle.getCurrencyDenominated();
     }
 
     /**
@@ -69,9 +68,16 @@ contract MakerDAOOracle is IOracle, Ownable {
         if (manualOverride) {
             return manualPrice;
         }
-        (bytes32 price, bool valid) = IMedianizer(medianizer).peek();
-        require(valid, "MakerDAO Oracle returning invalid value");
-        return uint256(price);
+        uint256 currentPrice = oracle.getPrice();
+        if (_change(currentPrice, lastPrice) >= evictPercentage) {
+            lastPrice = currentPrice;
+        }
+        return lastPrice;
+    }
+
+    function _change(uint256 _newPrice, uint256 _oldPrice) internal pure returns(uint256) {
+        uint256 diff = _newPrice > _oldPrice ? _newPrice.sub(_oldPrice) : _oldPrice.sub(_newPrice);
+        return diff.mul(10**18).div(_oldPrice);
     }
 
     /**

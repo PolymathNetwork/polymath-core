@@ -68,9 +68,7 @@ jobs:
       - run: node --version
       - run: truffle version
       - run: mv truffle-ci.js truffle-config.js
-      - run: 
-          command: node_modules/.bin/truffle deploy --network kovan
-          no_output_timeout: 1h
+      - run: npm run deploy-kovan
       - save_cache:
           key: dependency-cache-{{ checksum "package.json" }}
           paths:
@@ -96,6 +94,7 @@ workflows:
   commit:
     jobs:
       - coverage
+      - deploy_kovan
   daily-builds:
     triggers:
       - schedule:

@@ -297,7 +297,7 @@ async function mintTokens() {
       let fromTime = readlineSync.questionInt('Enter the time (Unix Epoch time) when the sale lockup period ends and the investor can freely sell his tokens: ');
       let toTime = readlineSync.questionInt('Enter the time (Unix Epoch time) when the purchase lockup period ends and the investor can freely purchase tokens from others: ');
       let expiryTime = readlineSync.questionInt('Enter the time till investors KYC will be validated (after that investor need to do re-KYC): ');
-      let canBuyFromSTO = readlineSync.keyInYNStrict('Is the investor a restricted investor?');
+      let canBuyFromSTO = readlineSync.keyInYNStrict('Can the investor buy from security token offerings?');
       await modifyWhitelist(investor, fromTime, toTime, expiryTime, canBuyFromSTO);
       break;
     case 'Mint tokens to a single address':
@@ -467,7 +467,7 @@ async function listModuleOptions() {
 // Modules a actions
 async function addModule() {
   let options = ['Permission Manager', 'Transfer Manager', 'Security Token Offering', 'Dividends', 'Burn'];
-  let index = readlineSync.keyInSelect(options, 'What type of module whould you like to add?', { cancel: 'Return' });
+  let index = readlineSync.keyInSelect(options, 'What type of module would you like to add?', { cancel: 'Return' });
   switch (options[index]) {
     case 'Permission Manager':
       console.log(chalk.red(`
@@ -498,13 +498,13 @@ async function addModule() {
 
 async function pauseModule(modules) {
   let options = modules.map(m => `${m.name} (${m.address})`);
-  let index = readlineSync.keyInSelect(options, 'Which module whould you like to pause?');
+  let index = readlineSync.keyInSelect(options, 'Which module would you like to pause?');
   if (index != -1) {
     console.log("\nSelected:", options[index]);
     let moduleABI;
     if (modules[index].type == gbl.constants.MODULES_TYPES.STO) {
       moduleABI = abis.ISTO();
-    } else if (modules[index].type == gbl.constants.MODULES_TYPES.STO) {
+    } else if (modules[index].type == gbl.constants.MODULES_TYPES.TRANSFER) {
       moduleABI = abis.ITransferManager();
     } else {
       console.log(chalk.red(`Only STO and TM modules can be paused/unpaused`));
@@ -519,13 +519,13 @@ async function pauseModule(modules) {
 
 async function unpauseModule(modules) {
   let options = modules.map(m => `${m.name} (${m.address})`);
-  let index = readlineSync.keyInSelect(options, 'Which module whould you like to pause?');
+  let index = readlineSync.keyInSelect(options, 'Which module would you like to pause?');
   if (index != -1) {
     console.log("\nSelected: ", options[index]);
     let moduleABI;
     if (modules[index].type == gbl.constants.MODULES_TYPES.STO) {
       moduleABI = abis.ISTO();
-    } else if (modules[index].type == gbl.constants.MODULES_TYPES.STO) {
+    } else if (modules[index].type == gbl.constants.MODULES_TYPES.TRANSFER) {
       moduleABI = abis.ITransferManager();
     } else {
       console.log(chalk.red(`Only STO and TM modules can be paused/unpaused`));
@@ -551,7 +551,7 @@ async function archiveModule(modules) {
 
 async function unarchiveModule(modules) {
   let options = modules.map(m => `${m.name} (${m.address})`);
-  let index = readlineSync.keyInSelect(options, 'Which module whould you like to unarchive?');
+  let index = readlineSync.keyInSelect(options, 'Which module would you like to unarchive?');
   if (index != -1) {
     console.log("\nSelected: ", options[index]);
     let unarchiveModuleAction = securityToken.methods.unarchiveModule(modules[index].address);
@@ -562,7 +562,7 @@ async function unarchiveModule(modules) {
 
 async function removeModule(modules) {
   let options = modules.map(m => `${m.name} (${m.address})`);
-  let index = readlineSync.keyInSelect(options, 'Which module whould you like to remove?');
+  let index = readlineSync.keyInSelect(options, 'Which module would you like to remove?');
   if (index != -1) {
     console.log("\nSelected: ", options[index]);
     let removeModuleAction = securityToken.methods.removeModule(modules[index].address);
@@ -571,9 +571,9 @@ async function removeModule(modules) {
   }
 }
 
-async function changeBudget() {
+async function changeBudget(modules) {
   let options = modules.map(m => `${m.name} (${m.address})`);
-  let index = readlineSync.keyInSelect(options, 'Which module whould you like to remove?');
+  let index = readlineSync.keyInSelect(options, 'Which module would you like to change budget for?');
   if (index != -1) {
     console.log("\nSelected: ", options[index]);
     let increase = 0 == readlineSync.keyInSelect(['Increase', 'Decrease'], `Do you want to increase or decrease budget?`, { cancel: false });

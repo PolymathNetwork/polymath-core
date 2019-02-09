@@ -22,7 +22,6 @@ let tokenSymbol;
 let securityTokenRegistry;
 let moduleRegistry;
 let polyToken;
-let usdToken;
 let securityToken;
 
 async function executeApp() {
@@ -329,7 +328,7 @@ async function addressesConfigUSDTieredSTO(usdTokenRaise) {
     let listOfAddress;
 
     if (usdTokenRaise) {
-      addresses.usdToken = readlineSync.question('Enter the address (or multiple addresses separated by commas) of the USD stable coin(s) (' + usdToken.options.address + '): ', {
+      addresses.usdToken = readlineSync.question('Enter the address (or multiple addresses separated by commas) of the USD stable coin(s): ', {
         limit: function (input) {
           listOfAddress = input.split(',');
           return listOfAddress.every((addr) => {
@@ -337,12 +336,7 @@ async function addressesConfigUSDTieredSTO(usdTokenRaise) {
           })
         },
         limitMessage: "Must be a valid address",
-        defaultInput: usdToken.options.address
       });
-      if (addresses.usdToken == "") {
-        listOfAddress = [usdToken.options.address]
-        addresses.usdToken = [usdToken.options.address];
-      }
     } else {
       listOfAddress = []
       addresses.usdToken = [];
@@ -978,8 +972,6 @@ async function getBalance(from, type) {
       return await web3.eth.getBalance(from);
     case gbl.constants.FUND_RAISE_TYPES.POLY:
       return await polyToken.methods.balanceOf(from).call();
-    case gbl.constants.FUND_RAISE_TYPES.STABLE:
-      return await usdToken.methods.balanceOf(from).call();
   }
 }
 
@@ -1055,11 +1047,6 @@ async function setup() {
     let polytokenABI = abis.polyToken();
     polyToken = new web3.eth.Contract(polytokenABI, polytokenAddress);
     polyToken.setProvider(web3.currentProvider);
-
-    //TODO: Use proper DAI token here
-    let usdTokenAddress = await contracts.usdToken();
-    usdToken = new web3.eth.Contract(polytokenABI, usdTokenAddress);
-    usdToken.setProvider(web3.currentProvider);
   } catch (err) {
     console.log(err)
     console.log('\x1b[31m%s\x1b[0m', "There was a problem getting the contracts. Make sure they are deployed to the selected network.");

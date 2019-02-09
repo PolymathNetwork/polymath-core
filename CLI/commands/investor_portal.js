@@ -152,8 +152,6 @@ async function showTokenInfo() {
 
 // Show info
 async function showUserInfo(_user) {
-    let listOfStableCoins = await currentSTO.methods.getUsdTokens().call();
-
     console.log(`
     *******************    User Information    ********************
     - Address:               ${_user}`);
@@ -164,6 +162,7 @@ async function showUserInfo(_user) {
         console.log(`    - ETH balance:\t     ${web3.utils.fromWei(await web3.eth.getBalance(_user))}`);
     }
     if (await currentSTO.methods.fundRaiseTypes(gbl.constants.FUND_RAISE_TYPES.STABLE).call()) {
+        let listOfStableCoins = await currentSTO.methods.getUsdTokens().call();
         let stableSymbolsAndBalance = await processAddressWithBalance(listOfStableCoins);
         stableSymbolsAndBalance.forEach(stable => {
             console.log(`    - ${stable.symbol} balance:\t     ${web3.utils.fromWei(stable.balance)}`);
@@ -499,8 +498,8 @@ async function investCappedSTO(currency, amount) {
     if (raiseTypes[0] == 'POLY') {
         let userBalance = await polyBalance(User.address);
         if (parseInt(userBalance) >= parseInt(cost)) {
-            let allowance = await polyToken.methods.allowance(STOAddress, User.address).call();
-            if (allowance < costWei) {
+            let allowance = await polyToken.methods.allowance(User.address, STOAddress).call();
+            if (parseInt(allowance) < parseInt(costWei)) {
                 let approveAction = polyToken.methods.approve(STOAddress, costWei);
                 await common.sendTransaction(approveAction, { from: User });
             }
@@ -608,8 +607,8 @@ async function investUsdTieredSTO(currency, amount) {
     if (raiseType == POLY) {
         let userBalance = await polyBalance(User.address);
         if (parseInt(userBalance) >= parseInt(cost)) {
-            let allowance = await polyToken.methods.allowance(STOAddress, User.address).call();
-            if (allowance < costWei) {
+            let allowance = await polyToken.methods.allowance(User.address, STOAddress).call();
+            if (parseInt(allowance) < parseInt(costWei)) {
                 let approveAction = polyToken.methods.approve(STOAddress, costWei);
                 await common.sendTransaction(approveAction, { from: User });
             }
@@ -629,8 +628,8 @@ async function investUsdTieredSTO(currency, amount) {
 
         if (parseInt(stableInfo.balance) >= parseInt(cost)) {
             let stableCoin = common.connect(abis.erc20(), stableInfo.address);
-            let allowance = await stableCoin.methods.allowance(STOAddress, User.address).call();
-            if (allowance < costWei) {
+            let allowance = await stableCoin.methods.allowance(User.address, STOAddress).call();
+            if (parseInt(allowance) < parseInt(costWei)) {
                 let approveAction = stableCoin.methods.approve(STOAddress, costWei);
                 await common.sendTransaction(approveAction, { from: User });
             }

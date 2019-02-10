@@ -359,7 +359,7 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
         require(isOpen(), "STO not open");
         require(_investmentValue > 0, "No funds were sent");
         require(_beneficiary != address(0), "Beneficiary address should not be 0x");
-        if (maxNonAccreditedInvestors != 0) {
+        if (investors[_beneficiary].accredited == uint8(0) && maxNonAccreditedInvestors != 0) {
             require(nonAccreditedCount < maxNonAccreditedInvestors, "Limit for number of non-accredited investor reached");
         }
         require(_investmentValue.add(investorInvested[_beneficiary]) >= minimumInvestment, "Total investment less than minimum investment");

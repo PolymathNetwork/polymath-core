@@ -108,6 +108,13 @@ interface ISecurityTokenRegistry {
     function getTokensByOwner(address _owner) external view returns(address[]);
 
     /**
+     * @notice Returns the list of tokens to which the delegate has some access
+     * @param _delegate is the address for the delegate
+     * @dev Intention is that this is called off-chain so block gas limit is not relevant
+     */
+    function getTokensByDelegate(address _delegate) external view returns(address[]);
+
+    /**
      * @notice Returns the owner and timestamp for a given ticker
      * @param _ticker ticker
      * @return address

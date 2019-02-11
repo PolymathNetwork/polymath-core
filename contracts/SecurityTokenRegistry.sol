@@ -515,7 +515,7 @@ contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage {
                 return token;
             }
         }
-        return token;
+        return address(0);
     }
 
     /**

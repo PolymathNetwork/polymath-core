@@ -1,6 +1,5 @@
 pragma solidity ^0.5.0;
 
-import "../modules/PermissionManager/IPermissionManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "../interfaces/IPoly.sol";
 
@@ -158,30 +157,6 @@ library TokenLib {
     }
 
     /**
-     * @notice Validates permissions with PermissionManager if it exists. If there's no permission return false
-     * @dev Note that IModule withPerm will allow ST owner all permissions by default
-     * @dev this allows individual modules to override this logic if needed (to not allow ST owner all permissions)
-     * @param _modules is the modules to check permissions on
-     * @param _delegate is the address of the delegate
-     * @param _module is the address of the PermissionManager module
-     * @param _perm is the permissions data
-     * @return success
-     */
-    function checkPermission(address[] storage _modules, address _delegate, address _module, bytes32 _perm) public view returns(bool) {
-        if (_modules.length == 0) {
-            return false;
-        }
-
-        for (uint8 i = 0; i < _modules.length; i++) {
-            if (IPermissionManager(_modules[i]).checkPermission(_delegate, _module, _perm)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /**
      * @notice Queries a value at a defined checkpoint
      * @param _checkpoints is array of Checkpoint objects
      * @param _checkpointId is the Checkpoint ID to query
@@ -256,8 +231,8 @@ library TokenLib {
         uint256 _value,
         uint256 _balanceTo,
         uint256 _balanceFrom
-    ) 
-        public 
+    )
+        public
     {
         if ((_value == 0) || (_from == _to)) {
             return;

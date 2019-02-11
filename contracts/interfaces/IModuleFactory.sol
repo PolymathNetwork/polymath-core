@@ -67,7 +67,7 @@ interface IModuleFactory {
     /**
      * @notice Get the setup cost of the module
      */
-    function getSetupCostInPoly() external view returns (uint256);
+    function getSetupCostInPoly() external returns (uint256);
 
     /**
      * @notice Used to get the lower bound

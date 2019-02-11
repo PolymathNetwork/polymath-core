@@ -311,11 +311,65 @@ contract('GeneralPermissionManager', accounts => {
         });
 
         it("Should return all delegates", async() => {
+            assert.equal((await I_STRProxied.getTokensByDelegate.call(account_delegate))[0], I_SecurityToken.address);
+            assert.equal((await I_STRProxied.getTokensByDelegate.call(account_delegate)).length, 1);
+            assert.equal((await I_STRProxied.getTokensByDelegate.call(account_delegate2)).length, 0);
             await I_GeneralPermissionManager.addDelegate(account_delegate2, delegateDetails, { from: token_owner});
+            assert.equal((await I_STRProxied.getTokensByDelegate.call(account_delegate))[0], I_SecurityToken.address);
+            assert.equal((await I_STRProxied.getTokensByDelegate.call(account_delegate)).length, 1);
+            assert.equal((await I_STRProxied.getTokensByDelegate.call(account_delegate2))[0], I_SecurityToken.address);
+            assert.equal((await I_STRProxied.getTokensByDelegate.call(account_delegate2)).length, 1);
             let tx = await I_GeneralPermissionManager.getAllDelegates.call();
             assert.equal(tx.length, 2);
-            assert.equal(tx[0], account_delegate);  
+            assert.equal(tx[0], account_delegate);
             assert.equal(tx[1], account_delegate2);
+        });
+
+        it("Should create a new token and add some more delegates, then get them", async() => {
+            await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
+            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
+            let tx1 = await I_STRProxied.registerTicker(token_owner, "DEL", contact, { from: token_owner });
+            assert.equal(tx1.logs[0].args._owner, token_owner);
+            assert.equal(tx1.logs[0].args._ticker, "DEL");
+
+            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
+            let _blockNo = latestBlock();
+            let tx2 = await I_STRProxied.generateSecurityToken(name, "DEL", tokenDetails, false, { from: token_owner });
+
+            // Verify the successful generation of the security token
+            assert.equal(tx2.logs[1].args._ticker, "DEL", "SecurityToken doesn't get deployed");
+
+            let I_SecurityToken_DEL = SecurityToken.at(tx2.logs[1].args._securityTokenAddress);
+
+            const tx = await I_SecurityToken_DEL.addModule(I_GeneralPermissionManagerFactory.address, "0x", 0, 0, { from: token_owner });
+            assert.equal(tx.logs[2].args._types[0].toNumber(), delegateManagerKey, "General Permission Manager doesn't get deployed");
+            assert.equal(
+                web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
+                "GeneralPermissionManager",
+                "GeneralPermissionManagerFactory module was not added"
+            );
+            const log = await promisifyLogWatch(I_SecurityToken_DEL.ModuleAdded({ from: _blockNo }), 1);
+
+            let I_GeneralPermissionManager_DEL = GeneralPermissionManager.at(tx.logs[2].args._module);
+            await I_GeneralPermissionManager_DEL.addDelegate(account_delegate3, delegateDetails, { from: token_owner});
+
+            assert.equal((await I_STRProxied.getTokensByDelegate.call(account_delegate))[0], I_SecurityToken.address);
+            assert.equal((await I_STRProxied.getTokensByDelegate.call(account_delegate2))[0], I_SecurityToken.address);
+            assert.equal((await I_STRProxied.getTokensByDelegate.call(account_delegate3))[0], I_SecurityToken_DEL.address);
+            assert.equal((await I_STRProxied.getTokensByDelegate.call(account_delegate)).length, 1);
+            assert.equal((await I_STRProxied.getTokensByDelegate.call(account_delegate2)).length, 1);
+            assert.equal((await I_STRProxied.getTokensByDelegate.call(account_delegate3)).length, 1);
+            await I_GeneralPermissionManager_DEL.addDelegate(account_delegate2, delegateDetails, { from: token_owner});
+            assert.equal((await I_STRProxied.getTokensByDelegate.call(account_delegate))[0], I_SecurityToken.address);
+            assert.equal((await I_STRProxied.getTokensByDelegate.call(account_delegate2))[0], I_SecurityToken.address);
+            assert.equal((await I_STRProxied.getTokensByDelegate.call(account_delegate2))[1], I_SecurityToken_DEL.address);
+            assert.equal((await I_STRProxied.getTokensByDelegate.call(account_delegate3))[0], I_SecurityToken_DEL.address);
+            assert.equal((await I_STRProxied.getTokensByDelegate.call(account_delegate)).length, 1);
+            assert.equal((await I_STRProxied.getTokensByDelegate.call(account_delegate2)).length, 2);
+            assert.equal((await I_STRProxied.getTokensByDelegate.call(account_delegate3)).length, 1);
+            let tx4 = await I_GeneralPermissionManager_DEL.getAllDelegates.call();
+            assert.equal(tx4.length, 2);
+            assert.equal(tx4[0], account_delegate3, account_delegate2);
         });
 
         it("Should check is delegate for 0x address - failed 0x address is not allowed", async() => {
@@ -332,7 +386,7 @@ contract('GeneralPermissionManager', accounts => {
             assert.equal(await I_GeneralPermissionManager.checkDelegate.call(account_delegate), true);
         });
 
-        
+
         it("Should successfully provide the permissions in batch -- failed because of array length is 0", async() => {
             await I_GeneralPermissionManager.addDelegate(account_delegate3, delegateDetails, { from: token_owner});
             await catchRevert(
@@ -369,6 +423,7 @@ contract('GeneralPermissionManager', accounts => {
         it("Should provide all delegates with specified permission", async() => {
             await I_GeneralPermissionManager.changePermission(account_delegate2, I_GeneralTransferManager.address, "WHITELIST", true, {from: token_owner});
             let tx = await I_GeneralPermissionManager.getAllDelegatesWithPerm.call(I_GeneralTransferManager.address, "WHITELIST");
+            console.log(tx);
             assert.equal(tx.length, 3);
             assert.equal(tx[0], account_delegate);
             assert.equal(tx[1], account_delegate2);

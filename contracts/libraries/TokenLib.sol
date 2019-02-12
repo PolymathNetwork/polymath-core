@@ -38,11 +38,11 @@ library TokenLib {
     // }
 
     // Emit when Module is archived from the SecurityToken
-    event ModuleArchived(uint8[] _types, address _module, uint256 _timestamp);
+    event ModuleArchived(uint8[] _types, address _module);
     // Emit when Module is unarchived from the SecurityToken
-    event ModuleUnarchived(uint8[] _types, address _module, uint256 _timestamp);
+    event ModuleUnarchived(uint8[] _types, address _module);
     // Emit when Module get removed from the securityToken
-    event ModuleRemoved(uint8[] _types, address _module, uint256 _timestamp);
+    event ModuleRemoved(uint8[] _types, address _module);
     // Emit when the budget allocated to a module is changed
     event ModuleBudgetChanged(uint8[] _moduleTypes, address _module, uint256 _oldBudget, uint256 _budget);
 
@@ -55,7 +55,7 @@ library TokenLib {
         require(!_moduleData.isArchived, "Module archived");
         require(_moduleData.module != address(0), "Module missing");
         /*solium-disable-next-line security/no-block-members*/
-        emit ModuleArchived(_moduleData.moduleTypes, _module, now);
+        emit ModuleArchived(_moduleData.moduleTypes, _module);
         _moduleData.isArchived = true;
     }
 
@@ -67,7 +67,7 @@ library TokenLib {
     function unarchiveModule(ModuleData storage _moduleData, address _module) public {
         require(_moduleData.isArchived, "Module unarchived");
         /*solium-disable-next-line security/no-block-members*/
-        emit ModuleUnarchived(_moduleData.moduleTypes, _module, now);
+        emit ModuleUnarchived(_moduleData.moduleTypes, _module);
         _moduleData.isArchived = false;
     }
 
@@ -86,7 +86,7 @@ library TokenLib {
         require(_modulesToData[_module].isArchived, "Not archived");
         require(_modulesToData[_module].module != address(0), "Module missing");
         /*solium-disable-next-line security/no-block-members*/
-        emit ModuleRemoved(_modulesToData[_module].moduleTypes, _module, now);
+        emit ModuleRemoved(_modulesToData[_module].moduleTypes, _module);
         // Remove from module type list
         uint8[] memory moduleTypes = _modulesToData[_module].moduleTypes;
         for (uint256 i = 0; i < moduleTypes.length; i++) {

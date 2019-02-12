@@ -79,9 +79,9 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     string constant POLY_ORACLE = "StablePolyUsdOracle";
 
     // Emit when network becomes paused
-    event Pause(uint256 _timestammp);
+    event Pause(address account);
     // Emit when network becomes unpaused
-    event Unpause(uint256 _timestamp);
+    event Unpause(address account);
     // Emit when the ticker is removed from the registry
     event TickerRemoved(string _ticker, uint256 _removedAt, address _removedBy);
     // Emit when the token ticker expiry is changed
@@ -605,7 +605,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     function pause() external whenNotPaused onlyOwner {
         set(PAUSED, true);
         /*solium-disable-next-line security/no-block-members*/
-        emit Pause(now);
+        emit Pause(msg.sender);
     }
 
     /**
@@ -614,7 +614,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     function unpause() external whenPaused onlyOwner {
         set(PAUSED, false);
         /*solium-disable-next-line security/no-block-members*/
-        emit Unpause(now);
+        emit Unpause(msg.sender);
     }
 
     /**

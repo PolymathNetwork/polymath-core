@@ -17,8 +17,8 @@ contract StableOracle is IOracle, Ownable {
     /*solium-disable-next-line security/no-block-members*/
     event ChangeOracle(address _oldOracle, address _newOracle);
     event ChangeEvictPercentage(uint256 _oldEvictPercentage, uint256 _newEvictPercentage);
-    event SetManualPrice(uint256 _oldPrice, uint256 _newPrice, uint256 _time);
-    event SetManualOverride(bool _override, uint256 _time);
+    event SetManualPrice(uint256 _oldPrice, uint256 _newPrice);
+    event SetManualOverride(bool _override);
 
     /**
       * @notice Creates a new stable oracle based on existing oracle
@@ -96,7 +96,7 @@ contract StableOracle is IOracle, Ownable {
       */
     function setManualPrice(uint256 _price) public onlyOwner {
         /*solium-disable-next-line security/no-block-members*/
-        emit SetManualPrice(manualPrice, _price, now);
+        emit SetManualPrice(manualPrice, _price);
         manualPrice = _price;
     }
 
@@ -107,7 +107,7 @@ contract StableOracle is IOracle, Ownable {
     function setManualOverride(bool _override) public onlyOwner {
         manualOverride = _override;
         /*solium-disable-next-line security/no-block-members*/
-        emit SetManualOverride(_override, now);
+        emit SetManualOverride(_override);
     }
 
 }

@@ -19,7 +19,7 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
 
     event ModifyHolderPercentage(uint256 _oldHolderPercentage, uint256 _newHolderPercentage);
     event ModifyWhitelist(address _investor, uint256 _dateAdded, address _addedBy, bool _valid);
-    event SetAllowPrimaryIssuance(bool _allowPrimaryIssuance, uint256 _timestamp);
+    event SetAllowPrimaryIssuance(bool _allowPrimaryIssuance);
 
     /**
      * @notice Constructor
@@ -117,7 +117,7 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
         require(_allowPrimaryIssuance != allowPrimaryIssuance, "Must change setting");
         allowPrimaryIssuance = _allowPrimaryIssuance;
         /*solium-disable-next-line security/no-block-members*/
-        emit SetAllowPrimaryIssuance(_allowPrimaryIssuance, now);
+        emit SetAllowPrimaryIssuance(_allowPrimaryIssuance);
     }
 
     /**

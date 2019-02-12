@@ -10,9 +10,9 @@ import "./GeneralPermissionManagerStorage.sol";
 contract GeneralPermissionManager is GeneralPermissionManagerStorage, IPermissionManager, Module {
 
     /// Event emitted after any permission get changed for the delegate
-    event ChangePermission(address indexed _delegate, address _module, bytes32 _perm, bool _valid, uint256 _timestamp);
+    event ChangePermission(address indexed _delegate, address _module, bytes32 _perm, bool _valid);
     /// Used to notify when delegate is added in permission manager contract
-    event AddDelegate(address indexed _delegate, bytes32 _details, uint256 _timestamp);
+    event AddDelegate(address indexed _delegate, bytes32 _details);
 
     /// @notice constructor
     constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
@@ -52,7 +52,7 @@ contract GeneralPermissionManager is GeneralPermissionManagerStorage, IPermissio
         delegateDetails[_delegate] = _details;
         allDelegates.push(_delegate);
         /*solium-disable-next-line security/no-block-members*/
-        emit AddDelegate(_delegate, _details, now);
+        emit AddDelegate(_delegate, _details);
     }
 
     /**
@@ -207,7 +207,7 @@ contract GeneralPermissionManager is GeneralPermissionManagerStorage, IPermissio
     function _changePermission(address _delegate, address _module, bytes32 _perm, bool _valid) internal {
         perms[_module][_delegate][_perm] = _valid;
         /*solium-disable-next-line security/no-block-members*/
-        emit ChangePermission(_delegate, _module, _perm, _valid, now);
+        emit ChangePermission(_delegate, _module, _perm, _valid);
     }
 
     /**

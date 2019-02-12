@@ -268,16 +268,15 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
     //////////////////////////
 
     /**
-    * @notice fallback function - non-payable
-    */
+    * @notice no fallback function - non-payable
     function() external {}
+    */
 
     /**
       * @notice Purchase tokens using POLY
       * @param _beneficiary Address where security tokens will be sent
       * @param _investedPOLY Amount of POLY invested
       */
-
     function buyWithPOLY(address _beneficiary, uint256 _investedPOLY) external {
         buyWithPOLYRateLimited(_beneficiary, _investedPOLY, 0);
     }

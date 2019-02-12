@@ -7,6 +7,8 @@ const ModuleRegistryProxy = artifacts.require("./ModuleRegistryProxy.sol");
 const SecurityToken = artifacts.require("./SecurityToken.sol");
 const CappedSTOFactory = artifacts.require("./CappedSTOFactory.sol");
 const CappedSTO = artifacts.require("./CappedSTO.sol");
+const POLYCappedSTOFactory = artifacts.require("./POLYCappedSTOFactory.sol");
+const POLYCappedSTO = artifacts.require("./POLYCappedSTO.sol");
 const SecurityTokenRegistryProxy = artifacts.require("./SecurityTokenRegistryProxy.sol");
 const SecurityTokenRegistry = artifacts.require("./SecurityTokenRegistry.sol");
 const SecurityTokenRegistryMock = artifacts.require("./SecurityTokenRegistryMock.sol");
@@ -87,6 +89,8 @@ let I_FeatureRegistry;
 let I_SecurityTokenRegistry;
 let I_CappedSTOLogic;
 let I_CappedSTOFactory;
+let I_POLYCappedSTOLogic;
+let I_POLYCappedSTOFactory;
 let I_SecurityToken;
 let I_DummySTOLogic;
 let I_DummySTOFactory;
@@ -434,6 +438,25 @@ export async function deployCappedSTOAndVerifyed(accountPolymath, MRProxyInstanc
 
     await registerAndVerifyByMR(I_CappedSTOFactory.address, accountPolymath, MRProxyInstance);
     return Promise.all(new Array(I_CappedSTOFactory));
+}
+
+export async function deployPOLYCappedSTOAndVerified(accountPolymath, MRProxyInstance, setupCost) {
+    I_POLYCappedSTOLogic = await POLYCappedSTO.new(
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        { from: accountPolymath }
+    );
+
+    I_POLYCappedSTOFactory = await POLYCappedSTOFactory.new(setupCost, new BN(0), I_POLYCappedSTOLogic.address, I_PolymathRegistry.address, { from: accountPolymath });
+
+    assert.notEqual(
+        I_POLYCappedSTOFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "POLYCappedSTOFactory contract was not deployed"
+    );
+
+    await registerAndVerifyByMR(I_POLYCappedSTOFactory.address, accountPolymath, MRProxyInstance);
+    return Promise.all(new Array(I_POLYCappedSTOFactory));
 }
 
 export async function deployPresaleSTOAndVerified(accountPolymath, MRProxyInstance, setupCost) {

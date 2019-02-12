@@ -400,8 +400,7 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
     */
     function _processPurchase(address _beneficiary, uint256 _tokenAmount) internal {
         if (investorInvested[_beneficiary] == 0) {
-            investedList.push(_beneficiary);
-            investorCount = investedList.length;
+            investorCount = investorCount + 1;
             if (investors[_beneficiary].accredited == uint8(0)) {
                 nonAccreditedCount = nonAccreditedCount + 1;
             }

@@ -62,9 +62,6 @@ contract POLYCappedSTOStorage {
     // the default limit
     address[] public investorsList;
 
-    // List of all addresses that have been invested in the STO
-    address[] public investedList;
-
     // Final amount of tokens returned to issuer
     uint256 public finalAmountReturned;
 

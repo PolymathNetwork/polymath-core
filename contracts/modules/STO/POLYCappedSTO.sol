@@ -278,30 +278,19 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
       * @param _investedPOLY Amount of POLY invested
       */
     function buyWithPOLY(address _beneficiary, uint256 _investedPOLY) external {
-        buyWithPOLYRateLimited(_beneficiary, _investedPOLY, 0);
-    }
-
-    /**
-      * @notice Purchase tokens using POLY with a minimum purchase requirement
-      * @param _beneficiary Address where security tokens will be sent
-      * @param _investedPOLY Amount of POLY invested
-      * @param _minTokens Minumum number of tokens to buy or else revert
-      */
-    function buyWithPOLYRateLimited(address _beneficiary, uint256 _investedPOLY, uint256 _minTokens) public {
-        _buyWithTokens(_beneficiary, _investedPOLY, FundRaiseType.POLY, _minTokens, polyToken);
+        _buyWithTokens(_beneficiary, _investedPOLY, FundRaiseType.POLY, polyToken);
     }
 
     function _buyWithTokens(
         address _beneficiary,
         uint256 _tokenAmount,
         FundRaiseType _fundRaiseType,
-        uint256 _minTokens,
         IERC20 _token
     ) internal {
         if (!allowBeneficialInvestments) {
             require(_beneficiary == msg.sender, "Beneficiary != msg.sender");
         }
-        uint256 _spentValue = _buyTokens(_beneficiary, _tokenAmount, _fundRaiseType, _minTokens);
+        uint256 _spentValue = _buyTokens(_beneficiary, _tokenAmount, _fundRaiseType);
         // Forward coins to issuer wallet
         require(_token.transferFrom(msg.sender, wallet, _spentValue), "Transfer failed");
         emit FundsReceived(msg.sender, _beneficiary, _fundRaiseType, _tokenAmount, _spentValue);
@@ -313,13 +302,11 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
       * @param _beneficiary Address where security tokens will be sent
       * @param _investmentValue Amount of POLY invested
       * @param _fundRaiseType Fund raise type (POLY)
-      * @param _minTokens Minimum number that can be bought
       */
     function _buyTokens(
         address _beneficiary,
         uint256 _investmentValue,
-        FundRaiseType _fundRaiseType,
-        uint256 _minTokens
+        FundRaiseType _fundRaiseType
     )
         internal
         nonReentrant
@@ -328,7 +315,6 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
     {
         uint256 _tokens;
         (_tokens, _spentValue) = prePurchaseChecks (_beneficiary, _investmentValue);
-        require(_tokens >= _minTokens, "Insufficient tokens minted");
         _processPurchase(_beneficiary, _tokens);
         uint256 polyUsdRate = IOracle(PolymathRegistry(RegistryUpdater(securityToken).polymathRegistry()).getAddress(POLY_ORACLE)).getPrice();
         uint256 _spentUSD = DecimalMath.mul(_spentValue, polyUsdRate);

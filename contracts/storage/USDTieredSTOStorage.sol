@@ -7,7 +7,6 @@ import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
  */
 contract USDTieredSTOStorage {
 
-    bytes32 internal constant INVESTORFLAGS = "INVESTORFLAGS";
     bytes32 internal constant INVESTORS = "INVESTORS";
 
     /////////////

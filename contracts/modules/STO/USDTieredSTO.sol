@@ -417,6 +417,8 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
             require(_beneficiary == msg.sender, "Beneficiary != funder");
         }
 
+        require(_canBuy(_beneficiary), "Unauthorized");
+
         uint256 originalUSD = DecimalMath.mul(_rate, _investmentValue);
         uint256 allowedUSD = _buyTokensChecks(_beneficiary, _investmentValue, originalUSD);
 
@@ -551,10 +553,6 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         uint256 flags = dataStore.getUint256(_getKey(INVESTORFLAGS, _investor));
         uint256 flag = flags & uint256(1); //isAccredited is flag 0 so we don't need to bit shift flags.
         return flag > 0 ? true : false;
-    }
-
-    function _getKey(bytes32 _key1, address _key2) internal pure returns(bytes32) {
-        return bytes32(keccak256(abi.encodePacked(_key1, _key2)));
     }
 
     function _getKey(bytes32 _key1) internal pure returns(bytes32) {

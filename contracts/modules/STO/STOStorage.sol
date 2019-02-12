@@ -5,6 +5,7 @@ pragma solidity ^0.5.0;
  */
 
 contract STOStorage {
+    bytes32 internal constant INVESTORFLAGS = "INVESTORFLAGS";
 
     mapping (uint8 => bool) public fundRaiseTypes;
     mapping (uint8 => uint256) public fundsRaised;

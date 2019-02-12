@@ -6,13 +6,16 @@ pragma solidity ^0.5.0;
 contract GeneralTransferManagerStorage {
 
     bytes32 public constant WHITELIST = "WHITELIST";
+    bytes32 public constant INVESTORS = "INVESTORS";
+    bytes32 public constant KYCDATA = "KYCDATA";
+    bytes32 public constant INVESTORDATA = "INVESTORDATA";
     bytes32 public constant FLAGS = "FLAGS";
 
     //Address from which issuances come
-    address public issuanceAddress = address(0);
+    address public issuanceAddress;
 
     //Address which can sign whitelist changes
-    address public signingAddress = address(0);
+    address public signingAddress;
 
 /*
     //from and to timestamps that an investor can send / receive tokens respectively
@@ -37,9 +40,6 @@ contract GeneralTransferManagerStorage {
     // Offset to be applied to all timings (except KYC expiry)
     Defaults public defaults;
 
-    // List of all addresses that have been added to the GTM at some point
-    address[] public investors;
-
     // Map of used nonces by customer
     mapping(address => mapping(uint256 => bool)) public nonceMap;
 
@@ -51,5 +51,5 @@ contract GeneralTransferManagerStorage {
     bool public allowAllWhitelistIssuances = true;
     //If true, time lock is ignored for burn transactions
     bool public allowAllBurnTransfers = false;
-    
+
 }

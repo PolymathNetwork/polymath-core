@@ -110,19 +110,34 @@ library VersionUtils {
     /**
      * @notice Used to packed the KYC data
      */
-    function packKYC(uint64 _a, uint64 _b, uint64 _c, uint8 _d, uint8 _e, uint8 _f) internal pure returns(uint256) {
-        return (uint256(_a) << 152) | (uint256(_b) << 88) | (uint256(_c) << 24) | (uint256(_d) << 16) | (uint256(_e) << 8) | uint256(_f);
+    function packKYC(uint64 _a, uint64 _b, uint64 _c, uint8 _d) internal pure returns(uint256) {
+        return (uint256(_a) << 136) | (uint256(_b) << 72) | (uint256(_c) << 8) | uint256(_d);
     }
 
     /**
      * @notice Used to convert packed data into KYC data
      * @param _packedVersion Packed data
      */
-    function unpackKYC(uint256 _packedVersion) internal pure returns(uint64 fromTime, uint64 toTime, uint64 expiryTime, uint8 canBuy, uint8 added, uint8 accredited) {
-        fromTime = uint64(_packedVersion >> 152);
-        toTime = uint64(_packedVersion >> 88);
-        expiryTime = uint64(_packedVersion >> 24);
-        canBuy = uint8(_packedVersion >> 16);
+    function unpackKYC(uint256 _packedVersion) internal pure returns(uint64 fromTime, uint64 toTime, uint64 expiryTime, uint8 added) {
+        fromTime = uint64(_packedVersion >> 136);
+        toTime = uint64(_packedVersion >> 72);
+        expiryTime = uint64(_packedVersion >> 8);
+        added = uint8(_packedVersion);
+    }
+
+    /**
+     * @notice Used to packed the KYC data
+     */
+    function packInvestorData(uint240 _a, uint8 _b, uint8 _c) internal pure returns(uint256) {
+        return (uint256(_a) << 16) | (uint256(_b) << 8) | uint256(_c);
+    }
+
+    /**
+     * @notice Used to convert packed data into KYC data
+     * @param _packedVersion Packed data
+     */
+    function unpackInvestorData(uint256 _packedVersion) internal pure returns(uint240 limit, uint8 added, uint8 accredited) {
+        limit = uint240(_packedVersion >> 16);
         added = uint8(_packedVersion >> 8);
         accredited = uint8(_packedVersion);
     }

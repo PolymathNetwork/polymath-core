@@ -3,9 +3,13 @@ pragma solidity ^0.5.0;
 import "../modules/PermissionManager/IPermissionManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "../interfaces/IPoly.sol";
+import "../interfaces/IDataStore.sol";
 
 library TokenLib {
     using SafeMath for uint256;
+
+    bytes32 internal constant WHITELIST = "WHITELIST";
+    bytes32 internal constant INVESTORS = "INVESTORS";
 
     // Struct for module data
     struct ModuleData {
@@ -25,14 +29,14 @@ library TokenLib {
         uint256 value;
     }
 
-    struct InvestorDataStorage {
-        // List of investors who have ever held a non-zero token balance
-        mapping(address => bool) investorListed;
-        // List of token holders
-        address[] investors;
-        // Total number of non-zero token holders
-        uint256 investorCount;
-    }
+    // struct InvestorDataStorage {
+    //     // List of investors who have ever held a non-zero token balance
+    //     mapping(address => bool) investorListed;
+    //     // List of token holders
+    //     address[] investors;
+    //     // Total number of non-zero token holders
+    //     uint256 investorCount;
+    // }
 
     // Emit when Module is archived from the SecurityToken
     event ModuleArchived(uint8[] _types, address _module, uint256 _timestamp);
@@ -242,40 +246,58 @@ library TokenLib {
 
     /**
     * @notice Keeps track of the number of non-zero token holders
-    * @param _investorData Date releated to investor metrics
+    * @param _holderCount Number of current token holders
     * @param _from Sender of transfer
     * @param _to Receiver of transfer
     * @param _value Value of transfer
     * @param _balanceTo Balance of the _to address
     * @param _balanceFrom Balance of the _from address
+    * @param _dataStore address of data store
     */
     function adjustInvestorCount(
-        InvestorDataStorage storage _investorData,
+        uint256 _holderCount,
         address _from,
         address _to,
         uint256 _value,
         uint256 _balanceTo,
-        uint256 _balanceFrom
-    ) 
-        public 
+        uint256 _balanceFrom,
+        address _dataStore
+    )
+        public
+        returns(uint256)
     {
         if ((_value == 0) || (_from == _to)) {
-            return;
+            return _holderCount;
         }
         // Check whether receiver is a new token holder
         if ((_balanceTo == 0) && (_to != address(0))) {
-            _investorData.investorCount = (_investorData.investorCount).add(1);
+            _holderCount = _holderCount.add(1);
+            IDataStore dataStore = IDataStore(_dataStore);
+            if (!_isExistingInvestor(_to, dataStore)) {
+                dataStore.insertAddress(_getKey(INVESTORS), _to);
+                //KYC data can not be present if added is false and hence we can set packed KYC as uint256(1) to set added as true
+                dataStore.setUint256(_getKey(WHITELIST, _to), uint256(1));
+            }
         }
         // Check whether sender is moving all of their tokens
         if (_value == _balanceFrom) {
-            _investorData.investorCount = (_investorData.investorCount).sub(1);
-        }
-        //Also adjust investor list
-        if (!_investorData.investorListed[_to] && (_to != address(0))) {
-            _investorData.investors.push(_to);
-            _investorData.investorListed[_to] = true;
+            _holderCount = _holderCount.sub(1);
         }
 
+        return _holderCount;
     }
 
+    function _getKey(bytes32 _key1, address _key2) internal pure returns(bytes32) {
+        return bytes32(keccak256(abi.encodePacked(_key1, _key2)));
+    }
+
+    function _getKey(bytes32 _key1) internal pure returns(bytes32) {
+        return bytes32(keccak256(abi.encodePacked(_key1)));
+    }
+
+    function _isExistingInvestor(address _investor, IDataStore dataStore) internal view returns(bool) {
+        uint256 data = dataStore.getUint256(_getKey(WHITELIST, _investor));
+        //extracts `added` from packed `whitelistData`
+        return uint8(data) == 0 ? false : true;
+    }
 }

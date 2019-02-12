@@ -13,6 +13,7 @@ import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
 import "../libraries/TokenLib.sol";
+import "../interfaces/IDataStore.sol";
 
 /**
 * @title Security Token contract
@@ -27,7 +28,8 @@ import "../libraries/TokenLib.sol";
 contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater {
     using SafeMath for uint256;
 
-    TokenLib.InvestorDataStorage investorData;
+    //TODO: Store keccak hash instead of investors to save gas.
+    bytes32 internal constant INVESTORS = "INVESTORS";
 
     // Used to hold the semantic version data
     struct SemanticVersion {
@@ -67,6 +69,9 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
 
     // Address of the data store used to store shared data
     address public dataStore;
+
+    // Number of investors with non-zero balance
+    uint256 public holderCount;
 
     // Records added modules - module list should be order agnostic!
     mapping(uint8 => address[]) modules;
@@ -200,9 +205,9 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         uint256 _granularity,
         string memory _tokenDetails,
         address _polymathRegistry
-    ) 
-        public 
-        ERC20Detailed(_name, _symbol, _decimals) RegistryUpdater(_polymathRegistry) 
+    )
+        public
+        ERC20Detailed(_name, _symbol, _decimals) RegistryUpdater(_polymathRegistry)
     {
         //When it is created, the owner is the STR
         updateFromRegistry();
@@ -227,9 +232,9 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         uint256 _maxCost,
         uint256 _budget,
         bytes32 _label
-    ) 
-        public 
-        onlyOwner nonReentrant 
+    )
+        public
+        onlyOwner nonReentrant
     {
         //Check that the module factory exists in the ModuleRegistry - will throw otherwise
         IModuleRegistry(moduleRegistry).useModule(_moduleFactory);
@@ -388,7 +393,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     * @param _value value of transfer
     */
     function _adjustInvestorCount(address _from, address _to, uint256 _value) internal {
-        TokenLib.adjustInvestorCount(investorData, _from, _to, _value, balanceOf(_to), balanceOf(_from));
+        holderCount = TokenLib.adjustInvestorCount(holderCount, _from, _to, _value, balanceOf(_to), balanceOf(_from), dataStore);
     }
 
     /**
@@ -396,33 +401,35 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * NB - this length may differ from investorCount as it contains all investors that ever held tokens
      * @return list of addresses
      */
-    function getInvestors() external view returns(address[] memory) {
-        return investorData.investors;
+    function getInvestors() public view returns(address[] memory investors) {
+        IDataStore dataStoreInstance = IDataStore(dataStore);
+        investors = dataStoreInstance.getAddressArray(_getKey(INVESTORS));
     }
 
     /**
-     * @notice returns an array of investors at a given checkpoint
-     * NB - this length may differ from investorCount as it contains all investors that ever held tokens
+     * @notice returns an array of investors with non zero balance at a given checkpoint
      * @param _checkpointId Checkpoint id at which investor list is to be populated
      * @return list of investors
      */
     function getInvestorsAt(uint256 _checkpointId) external view returns(address[] memory) {
-        uint256 count = 0;
+        uint256 count;
         uint256 i;
-        for (i = 0; i < investorData.investors.length; i++) {
-            if (balanceOfAt(investorData.investors[i], _checkpointId) > 0) {
+        IDataStore dataStoreInstance = IDataStore(dataStore);
+        address[] memory investors = dataStoreInstance.getAddressArray(_getKey(INVESTORS));
+        for (i = 0; i < investors.length; i++) {
+            if (balanceOfAt(investors[i], _checkpointId) > 0) {
                 count++;
             }
         }
-        address[] memory investors = new address[](count);
+        address[] memory holders = new address[](count);
         count = 0;
-        for (i = 0; i < investorData.investors.length; i++) {
-            if (balanceOfAt(investorData.investors[i], _checkpointId) > 0) {
-                investors[count] = investorData.investors[i];
+        for (i = 0; i < investors.length; i++) {
+            if (balanceOfAt(investors[i], _checkpointId) > 0) {
+                investors[count] = investors[i];
                 count++;
             }
         }
-        return investors;
+        return holders;
     }
 
     /**
@@ -433,22 +440,17 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @return list of investors
      */
     function iterateInvestors(uint256 _start, uint256 _end) external view returns(address[] memory) {
-        require(_end <= investorData.investors.length, "Invalid end");
-        address[] memory investors = new address[](_end.sub(_start));
-        uint256 index = 0;
-        for (uint256 i = _start; i < _end; i++) {
-            investors[index] = investorData.investors[i];
-            index++;
-        }
-        return investors;
+        IDataStore dataStoreInstance = IDataStore(dataStore);
+        return dataStoreInstance.getAddressArrayElements(_getKey(INVESTORS), _start, _end);
     }
 
     /**
-     * @notice Returns the investor count
+     * @notice Returns the count of address that were added as (potential) investors
      * @return Investor count
      */
     function getInvestorCount() external view returns(uint256) {
-        return investorData.investorCount;
+        IDataStore dataStoreInstance = IDataStore(dataStore);
+        return dataStoreInstance.getAddressArrayLength(_getKey(INVESTORS));
     }
 
     /**
@@ -571,10 +573,10 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         uint256 _value,
         bytes memory _data,
         bool _isTransfer
-    ) 
-        internal 
-        checkGranularity(_value) 
-        returns(bool) 
+    )
+        internal
+        checkGranularity(_value)
+        returns(bool)
     {
         if (!transfersFrozen) {
             bool isInvalid = false;
@@ -648,11 +650,11 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         address _investor,
         uint256 _value,
         bytes memory _data
-    ) 
-        public 
-        onlyModuleOrOwner(MINT_KEY) 
-        isMintingAllowed 
-        returns(bool success) 
+    )
+        public
+        onlyModuleOrOwner(MINT_KEY)
+        isMintingAllowed
+        returns(bool success)
     {
         require(_updateTransfer(address(0), _investor, _value, _data), "Transfer invalid");
         _mint(_investor, _value);
@@ -838,6 +840,10 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         _version[1] = securityTokenVersion.minor;
         _version[2] = securityTokenVersion.patch;
         return _version;
+    }
+
+    function _getKey(bytes32 _key1) internal pure returns(bytes32) {
+        return bytes32(keccak256(abi.encodePacked(_key1)));
     }
 
 }

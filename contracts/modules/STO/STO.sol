@@ -79,5 +79,4 @@ contract STO is ISTO, STOStorage, Module, Pausable {
     function _getKey(bytes32 _key1, address _key2) internal pure returns(bytes32) {
         return bytes32(keccak256(abi.encodePacked(_key1, _key2)));
     }
-
 }

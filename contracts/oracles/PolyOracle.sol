@@ -265,7 +265,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     /**
     * @notice Returns price - should throw if not valid
     */
-    function getPrice() external view returns(uint256) {
+    function getPrice() external returns(uint256) {
         /*solium-disable-next-line security/no-block-members*/
         require(latestUpdate >= now - staleTime, "Invalid price");
         return POLYUSD;

@@ -19,6 +19,6 @@ interface IOracle {
     /**
     * @notice Returns price - should throw if not valid
     */
-    function getPrice() external view returns(uint256);
+    function getPrice() external returns(uint256);
 
 }

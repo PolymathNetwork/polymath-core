@@ -61,6 +61,9 @@ contract("SecurityTokenRegistry", async (accounts) => {
     let I_MRProxied;
     let I_STRGetter;
     let I_Getter;
+    let I_USDOracle;
+    let I_POLYOracle;
+    let I_StablePOLYOracle;
 
     // SecurityToken Details (Launched ST on the behalf of the issuer)
     const name = "Demo Token";
@@ -120,7 +123,10 @@ contract("SecurityTokenRegistry", async (accounts) => {
             I_SecurityTokenRegistry,
             I_SecurityTokenRegistryProxy,
             I_STRProxied,
-            I_STRGetter
+            I_STRGetter,
+            I_USDOracle,
+            I_POLYOracle,
+            I_StablePOLYOracle
         ] = instances;
 
         // STEP 8: Deploy the CappedSTOFactory
@@ -355,6 +361,59 @@ contract("SecurityTokenRegistry", async (accounts) => {
             data = await I_STRGetter.getTickerDetails.call(symbol);
             assert.equal(data[0], address_zero);
             assert.equal(data[3], "");
+        });
+
+        it("Should change ticker price based on oracle", async () => {
+            let snap_Id = await takeSnapshot();
+            let origPriceUSD = new BN(web3.utils.toWei("250"));
+            let origPricePOLY = new BN(web3.utils.toWei("1000"));
+            let currentRate = await I_POLYOracle.getPrice.call();
+            console.log("Current Rate: " + currentRate);
+            let feesTicker = await I_STRProxied.getFees.call("0x2fcc69711628630fb5a42566c68bd1092bc4aa26826736293969fddcd11cb2d2");
+            let feesToken = await I_STRProxied.getFees.call("0x2fcc69711628630fb5a42566c68bd1092bc4aa26826736293969fddcd11cb2d2");
+            assert.equal(feesTicker[0].toString(), origPriceUSD.toString());
+            assert.equal(feesTicker[1].toString(), origPricePOLY.toString());
+            assert.equal(feesToken[0].toString(), origPriceUSD.toString());
+            assert.equal(feesToken[1].toString(), origPricePOLY.toString());
+            await I_POLYOracle.changePrice(new BN(27).mul(new BN(10).pow(new BN(16))));
+            await I_STRProxied.getFees("0x2fcc69711628630fb5a42566c68bd1092bc4aa26826736293969fddcd11cb2d2");
+            feesTicker = await I_STRProxied.getFees.call("0x2fcc69711628630fb5a42566c68bd1092bc4aa26826736293969fddcd11cb2d2");
+            feesToken = await I_STRProxied.getFees.call("0x2fcc69711628630fb5a42566c68bd1092bc4aa26826736293969fddcd11cb2d2");
+            // No change as difference is less than 10%
+            assert.equal(feesTicker[0].toString(), origPriceUSD.toString());
+            assert.equal(feesTicker[1].toString(), origPricePOLY.toString());
+            assert.equal(feesToken[0].toString(), origPriceUSD.toString());
+            assert.equal(feesToken[1].toString(), origPricePOLY.toString());
+            await I_POLYOracle.changePrice(new BN(20).mul(new BN(10).pow(new BN(16))));
+            await I_STRProxied.getFees("0x2fcc69711628630fb5a42566c68bd1092bc4aa26826736293969fddcd11cb2d2");
+            feesTicker = await I_STRProxied.getFees.call("0x2fcc69711628630fb5a42566c68bd1092bc4aa26826736293969fddcd11cb2d2");
+            feesToken = await I_STRProxied.getFees.call("0x2fcc69711628630fb5a42566c68bd1092bc4aa26826736293969fddcd11cb2d2");
+            let newPricePOLY = new BN(web3.utils.toWei("1250"));
+            assert.equal(feesTicker[0].toString(), origPriceUSD.toString());
+            assert.equal(feesTicker[1].toString(), newPricePOLY.toString());
+            assert.equal(feesToken[0].toString(), origPriceUSD.toString());
+            assert.equal(feesToken[1].toString(), newPricePOLY.toString());
+            await I_POLYOracle.changePrice(new BN(21).mul(new BN(10).pow(new BN(16))));
+            await I_STRProxied.getFees("0x2fcc69711628630fb5a42566c68bd1092bc4aa26826736293969fddcd11cb2d2");
+            feesTicker = await I_STRProxied.getFees.call("0x2fcc69711628630fb5a42566c68bd1092bc4aa26826736293969fddcd11cb2d2");
+            feesToken = await I_STRProxied.getFees.call("0x2fcc69711628630fb5a42566c68bd1092bc4aa26826736293969fddcd11cb2d2");
+            // No change as difference is less than 10%
+            assert.equal(feesTicker[0].toString(), origPriceUSD.toString());
+            assert.equal(feesTicker[1].toString(), newPricePOLY.toString());
+            assert.equal(feesToken[0].toString(), origPriceUSD.toString());
+            assert.equal(feesToken[1].toString(), newPricePOLY.toString());
+            await I_StablePOLYOracle.changeEvictPercentage(new BN(10).pow(new BN(16)));
+            await I_STRProxied.getFees("0x2fcc69711628630fb5a42566c68bd1092bc4aa26826736293969fddcd11cb2d2");
+            feesTicker = await I_STRProxied.getFees.call("0x2fcc69711628630fb5a42566c68bd1092bc4aa26826736293969fddcd11cb2d2");
+            feesToken = await I_STRProxied.getFees.call("0x2fcc69711628630fb5a42566c68bd1092bc4aa26826736293969fddcd11cb2d2");
+            // Change as eviction percentage updated
+            // newPricePOLY = new BN(web3.utils.toWei("1250"));
+            //1190.476190476190476190 = 250/0.21
+            assert.equal(feesTicker[0].toString(), origPriceUSD.toString());
+            assert.equal(feesTicker[1].toString(), "1190476190476190476190");
+            assert.equal(feesToken[0].toString(), origPriceUSD.toString());
+            assert.equal(feesToken[1].toString(), "1190476190476190476190");
+            await revertToSnapshot(snap_Id);
         });
 
         it("Should register the ticker when the tickerRegFee is 0", async () => {

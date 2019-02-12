@@ -7,6 +7,7 @@ import "../interfaces/IModuleFactory.sol";
 import "../interfaces/IModuleRegistry.sol";
 import "../interfaces/IFeatureRegistry.sol";
 import "../interfaces/ITransferManager.sol";
+import "../modules/PermissionManager/IPermissionManager.sol";
 import "../RegistryUpdater.sol";
 import "../libraries/Util.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
@@ -688,12 +689,11 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      */
     function checkPermission(address _delegate, address _module, bytes32 _perm) public view returns(bool) {
         for (uint256 i = 0; i < modules[PERMISSION_KEY].length; i++) {
-            if (!modulesToData[modules[PERMISSION_KEY][i]].isArchived) return TokenLib.checkPermission(
-                modules[PERMISSION_KEY],
-                _delegate,
-                _module,
-                _perm
-            );
+            if (!modulesToData[modules[PERMISSION_KEY][i]].isArchived) {
+                if (IPermissionManager(modules[PERMISSION_KEY][i]).checkPermission(_delegate, _module, _perm)) {
+                    return true;
+                }
+            }
         }
         return false;
     }

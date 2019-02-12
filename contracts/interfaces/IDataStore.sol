@@ -125,4 +125,12 @@ interface IDataStore {
     function getAddressArrayElement(bytes32 _key, uint256 _index) external view returns(address);
 
     function getBoolArrayElement(bytes32 _key, uint256 _index) external view returns(bool);
+
+    function getUint256ArrayElements(bytes32 _key, uint256 _startIndex, uint256 _endIndex) external view returns(uint256[] memory);
+
+    function getBytes32ArrayElements(bytes32 _key, uint256 _startIndex, uint256 _endIndex) external view returns(bytes32[] memory);
+
+    function getAddressArrayElements(bytes32 _key, uint256 _startIndex, uint256 _endIndex) external view returns(address[] memory);
+
+    function getBoolArrayElements(bytes32 _key, uint256 _startIndex, uint256 _endIndex) external view returns(bool[] memory);
 }

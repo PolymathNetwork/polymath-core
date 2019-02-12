@@ -7,9 +7,9 @@ contract GeneralTransferManagerStorage {
 
     bytes32 public constant WHITELIST = "WHITELIST";
     bytes32 public constant INVESTORS = "INVESTORS";
-    bytes32 public constant KYCDATA = "KYCDATA";
-    bytes32 public constant INVESTORDATA = "INVESTORDATA";
+    bytes32 public constant INVESTORFLAGS = "INVESTORFLAGS";
     bytes32 public constant FLAGS = "FLAGS";
+    uint256 internal constant ONE = uint256(1);
 
     //Address from which issuances come
     address public issuanceAddress;
@@ -17,20 +17,20 @@ contract GeneralTransferManagerStorage {
     //Address which can sign whitelist changes
     address public signingAddress;
 
-/*
-    //from and to timestamps that an investor can send / receive tokens respectively
-    struct TimeRestriction {
-        uint64 fromTime;
-        uint64 toTime;
-        uint64 expiryTime;
-        uint8 canBuyFromSTO;
-        uint8 added;
-    }
 
-    // An address can only send / receive tokens once their corresponding uint256 > block.number
-    // (unless allowAllTransfers == true or allowAllWhitelistTransfers == true)
-    mapping (address => TimeRestriction) public whitelist;
-*/
+    // //from and to timestamps that an investor can send / receive tokens respectively
+    // struct TimeRestriction {
+    //     uint64 fromTime;
+    //     uint64 toTime;
+    //     uint64 expiryTime;
+    //     uint8 canBuyFromSTO;
+    //     uint8 added;
+    // }
+
+    // // An address can only send / receive tokens once their corresponding uint256 > block.number
+    // // (unless allowAllTransfers == true or allowAllWhitelistTransfers == true)
+    // mapping (address => TimeRestriction) public whitelist;
+
     // Allows all TimeRestrictions to be offset
     struct Defaults {
         uint64 fromTime;

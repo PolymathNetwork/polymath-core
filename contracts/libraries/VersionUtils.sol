@@ -124,22 +124,4 @@ library VersionUtils {
         expiryTime = uint64(_packedVersion >> 8);
         added = uint8(_packedVersion);
     }
-
-    /**
-     * @notice Used to packed the KYC data
-     */
-    function packInvestorData(uint240 _a, uint8 _b, uint8 _c) internal pure returns(uint256) {
-        return (uint256(_a) << 16) | (uint256(_b) << 8) | uint256(_c);
-    }
-
-    /**
-     * @notice Used to convert packed data into KYC data
-     * @param _packedVersion Packed data
-     */
-    function unpackInvestorData(uint256 _packedVersion) internal pure returns(uint240 limit, uint8 added, uint8 accredited) {
-        limit = uint240(_packedVersion >> 16);
-        added = uint8(_packedVersion >> 8);
-        accredited = uint8(_packedVersion);
-    }
-
 }

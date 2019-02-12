@@ -76,12 +76,12 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     bytes32 constant POLYMATHREGISTRY = 0x90eeab7c36075577c7cc5ff366e389fefa8a18289b949bab3529ab4471139d4d;
     bytes32 constant STRGETTER = 0x982f24b3bd80807ec3cb227ba152e15c07d66855fa8ae6ca536e689205c0e2e9;
 
-    string constant POLY_ORACLE = "PolyUsdOracle";
+    string constant POLY_ORACLE = "StablePolyUsdOracle";
 
     // Emit when network becomes paused
-    event Pause(uint256 _timestammp);
+    event Pause(address account);
     // Emit when network becomes unpaused
-    event Unpause(uint256 _timestamp);
+    event Unpause(address account);
     // Emit when the ticker is removed from the registry
     event TickerRemoved(string _ticker, uint256 _removedAt, address _removedBy);
     // Emit when the token ticker expiry is changed
@@ -214,13 +214,22 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     /**
      * @notice Converts USD fees into POLY amounts
      */
-    function _takeFee(bytes32 _feeType) internal returns (uint256, uint256){
+    function _takeFee(bytes32 _feeType) internal returns (uint256, uint256) {
+        (uint256 usdFee, uint256 polyFee) = getFees(_feeType);
+        if (polyFee > 0)
+            require(IERC20(getAddressValue(POLYTOKEN)).transferFrom(msg.sender, address(this), polyFee), "Insufficent allowance");
+        return (usdFee, polyFee);
+    }
+
+    /**
+     * @notice Returns the usd & poly fee for a particular feetype
+     * @param _feeType Key corresponding to fee type
+     */
+    function getFees(bytes32 _feeType) public returns (uint256, uint256) {
         address polymathRegistry = getAddressValue(POLYMATHREGISTRY);
         uint256 polyRate = IOracle(IPolymathRegistry(polymathRegistry).getAddress(POLY_ORACLE)).getPrice();
         uint256 usdFee = getUintValue(_feeType);
         uint256 polyFee = DecimalMath.div(usdFee, polyRate);
-        if (polyFee > 0)
-            require(IERC20(getAddressValue(POLYTOKEN)).transferFrom(msg.sender, address(this), polyFee), "Insufficent allowance");
         return (usdFee, polyFee);
     }
 
@@ -596,7 +605,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     function pause() external whenNotPaused onlyOwner {
         set(PAUSED, true);
         /*solium-disable-next-line security/no-block-members*/
-        emit Pause(now);
+        emit Pause(msg.sender);
     }
 
     /**
@@ -605,7 +614,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     function unpause() external whenPaused onlyOwner {
         set(PAUSED, false);
         /*solium-disable-next-line security/no-block-members*/
-        emit Unpause(now);
+        emit Unpause(msg.sender);
     }
 
     /**

@@ -179,18 +179,18 @@ contract("USDTieredSTO", async (accounts) => {
                 .div(e18);
             if (_currencyTo == "USD") return tokenToUSD;
             if (_currencyTo == "ETH") {
-                return await I_USDTieredSTO_Array[_stoID].convertFromUSD(ETH, tokenToUSD);
+                return await I_USDTieredSTO_Array[_stoID].convertFromUSD.call(ETH, tokenToUSD);
             } else if (_currencyTo == "POLY") {
-                return await I_USDTieredSTO_Array[_stoID].convertFromUSD(POLY, tokenToUSD);
+                return await I_USDTieredSTO_Array[_stoID].convertFromUSD.call(POLY, tokenToUSD);
             }
         }
         if (_currencyFrom == "USD") {
             if (_currencyTo == "TOKEN") return _amount.div(USDTOKEN).mul(e18); // USD / USD/TOKEN = TOKEN
             if (_currencyTo == "ETH" || _currencyTo == "POLY")
-                return await I_USDTieredSTO_Array[_stoID].convertFromUSD(_currencyTo == "ETH" ? ETH : POLY, _amount);
+                return await I_USDTieredSTO_Array[_stoID].convertFromUSD.call(_currencyTo == "ETH" ? ETH : POLY, _amount);
         }
         if (_currencyFrom == "ETH" || _currencyFrom == "POLY") {
-            let ethToUSD = await I_USDTieredSTO_Array[_stoID].convertToUSD(_currencyTo == "ETH" ? ETH : POLY, _amount);
+            let ethToUSD = await I_USDTieredSTO_Array[_stoID].convertToUSD.call(_currencyTo == "ETH" ? ETH : POLY, _amount);
             if (_currencyTo == "USD") return ethToUSD;
             if (_currencyTo == "TOKEN") return ethToUSD.div(USDTOKEN).mul(e18); // USD / USD/TOKEN = TOKEN
         }
@@ -4596,7 +4596,7 @@ contract("USDTieredSTO", async (accounts) => {
             it("should get the right conversion for ETH to USD", async () => {
                 // 20 ETH to 10000 USD
                 let ethInWei = new BN(web3.utils.toWei("20", "ether"));
-                let usdInWei = await I_USDTieredSTO_Array[0].convertToUSD(ETH, ethInWei);
+                let usdInWei = await I_USDTieredSTO_Array[0].convertToUSD.call(ETH, ethInWei);
                 assert.equal(
                     usdInWei.div(e18).toString(),
                     ethInWei
@@ -4609,7 +4609,7 @@ contract("USDTieredSTO", async (accounts) => {
             it("should get the right conversion for POLY to USD", async () => {
                 // 40000 POLY to 10000 USD
                 let polyInWei = new BN(web3.utils.toWei("40000", "ether"));
-                let usdInWei = await I_USDTieredSTO_Array[0].convertToUSD(POLY, polyInWei);
+                let usdInWei = await I_USDTieredSTO_Array[0].convertToUSD.call(POLY, polyInWei);
                 assert.equal(
                     usdInWei.toString(),
                     polyInWei
@@ -4624,7 +4624,7 @@ contract("USDTieredSTO", async (accounts) => {
             it("should get the right conversion for USD to ETH", async () => {
                 // 10000 USD to 20 ETH
                 let usdInWei = new BN(web3.utils.toWei("10000", "ether"));
-                let ethInWei = await I_USDTieredSTO_Array[0].convertFromUSD(ETH, usdInWei);
+                let ethInWei = await I_USDTieredSTO_Array[0].convertFromUSD.call(ETH, usdInWei);
                 assert.equal(
                     ethInWei.div(e18).toString(),
                     usdInWei
@@ -4637,7 +4637,7 @@ contract("USDTieredSTO", async (accounts) => {
             it("should get the right conversion for USD to POLY", async () => {
                 // 10000 USD to 40000 POLY
                 let usdInWei = new BN(web3.utils.toWei("10000", "ether"));
-                let polyInWei = await I_USDTieredSTO_Array[0].convertFromUSD(POLY, usdInWei);
+                let polyInWei = await I_USDTieredSTO_Array[0].convertFromUSD.call(POLY, usdInWei);
                 assert.equal(
                     polyInWei.toString(),
                     usdInWei.mul(e18).div(USDPOLY).toString()

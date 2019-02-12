@@ -2,6 +2,7 @@ import { encodeProxyCall, encodeModuleCall } from "./encodeCall";
 
 const PolymathRegistry = artifacts.require("./PolymathRegistry.sol");
 const MockOracle = artifacts.require("./MockOracle.sol");
+const StableOracle = artifacts.require("./StableOracle.sol");
 const ModuleRegistry = artifacts.require("./ModuleRegistry.sol");
 const ModuleRegistryProxy = artifacts.require("./ModuleRegistryProxy.sol");
 const SecurityToken = artifacts.require("./SecurityToken.sol");
@@ -107,6 +108,7 @@ let I_STRGetter;
 let I_SignedTransferManagerFactory;
 let I_USDOracle;
 let I_POLYOracle;
+let I_StablePOLYOracle;
 
 // Initial fee for ticker registry and security token registry
 const initRegFee = new BN(web3.utils.toWei("250"));
@@ -151,7 +153,10 @@ export async function setUpPolymathNetwork(account_polymath, token_owner) {
         I_SecurityTokenRegistry,
         I_SecurityTokenRegistryProxy,
         I_STRProxied,
-        I_STRGetter
+        I_STRGetter,
+        I_USDOracle,
+        I_POLYOracle,
+        I_StablePOLYOracle
     );
     return Promise.all(tempArray);
 }
@@ -159,10 +164,13 @@ export async function setUpPolymathNetwork(account_polymath, token_owner) {
 export async function addOracles(account_polymath) {
     let USDETH = new BN(500).mul(new BN(10).pow(new BN(18))); // 500 USD/ETH
     let USDPOLY = new BN(25).mul(new BN(10).pow(new BN(16))); // 0.25 USD/POLY
+    let StableChange = new BN(10).mul(new BN(10).pow(new BN(16))); // 0.25 USD/POLY
     I_USDOracle = await MockOracle.new("0x0000000000000000000000000000000000000000", web3.utils.fromAscii("ETH"), web3.utils.fromAscii("USD"), USDETH, { from: account_polymath }); // 500 dollars per POLY
     I_POLYOracle = await MockOracle.new(I_PolyToken.address, web3.utils.fromAscii("POLY"), web3.utils.fromAscii("USD"), USDPOLY, { from: account_polymath }); // 25 cents per POLY
+    I_StablePOLYOracle = await StableOracle.new(I_POLYOracle.address, StableChange, { from: account_polymath });
     await I_PolymathRegistry.changeAddress("EthUsdOracle", I_USDOracle.address, { from: account_polymath });
     await I_PolymathRegistry.changeAddress("PolyUsdOracle", I_POLYOracle.address, { from: account_polymath });
+    await I_PolymathRegistry.changeAddress("StablePolyUsdOracle", I_StablePOLYOracle.address, { from: account_polymath });
 }
 
 export async function deployPolyRegistryAndPolyToken(account_polymath, token_owner) {

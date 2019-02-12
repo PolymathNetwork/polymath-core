@@ -29,7 +29,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
 
     event PriceUpdated(uint256 _price, uint256 _oldPrice, bytes32 _queryId, uint256 _time);
     event NewOraclizeQuery(uint256 _time, bytes32 _queryId, string _query);
-    event AdminSet(address _admin, bool _valid, uint256 _time);
+    event AdminSet(address _admin, bool _valid);
     event StalePriceUpdate(bytes32 _queryId, uint256 _time, string _result);
 
     modifier isAdminOrOwner() {
@@ -230,7 +230,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     function setAdmin(address _admin, bool _valid) public onlyOwner {
         admin[_admin] = _valid;
         /*solium-disable-next-line security/no-block-members*/
-        emit AdminSet(_admin, _valid, now);
+        emit AdminSet(_admin, _valid);
     }
 
     /**
@@ -265,7 +265,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     /**
     * @notice Returns price - should throw if not valid
     */
-    function getPrice() external view returns(uint256) {
+    function getPrice() external returns(uint256) {
         /*solium-disable-next-line security/no-block-members*/
         require(latestUpdate >= now - staleTime, "Invalid price");
         return POLYUSD;

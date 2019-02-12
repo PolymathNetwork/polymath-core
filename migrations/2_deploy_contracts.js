@@ -27,6 +27,7 @@ const FeatureRegistry = artifacts.require("./FeatureRegistry.sol");
 const STFactory = artifacts.require("./tokens/STFactory.sol");
 const DevPolyToken = artifacts.require("./helpers/PolyTokenFaucet.sol");
 const MockOracle = artifacts.require("./MockOracle.sol");
+const StableOracle = artifacts.require("./StableOracle.sol");
 const TokenLib = artifacts.require("./TokenLib.sol");
 const SecurityToken = artifacts.require("./tokens/SecurityToken.sol");
 const STRGetter = artifacts.require('./STRGetter.sol');
@@ -47,6 +48,7 @@ let PolyToken;
 let UsdToken;
 let ETHOracle;
 let POLYOracle;
+let StablePOLYOracle;
 
 module.exports = function(deployer, network, accounts) {
     // Ethereum account address hold by the Polymath (Act as the main account which have ownable permissions)
@@ -71,11 +73,22 @@ module.exports = function(deployer, network, accounts) {
                 web3.utils.fromAscii("USD"),
                 new BN(5).mul(new BN(10).pow(new BN(17))),
                 { from: PolymathAccount }
-            )
-            .then(() => {
-                MockOracle.deployed().then(mockedOracle => {
-                    POLYOracle = mockedOracle.address;
-                });
+            ).then(() => {
+                return MockOracle.deployed();
+            }).then(mockedOracle => {
+                POLYOracle = mockedOracle.address;
+            }).then(() => {
+                return deployer
+                    .deploy(
+                        StableOracle,
+                        POLYOracle,
+                        new BN(10).mul(new BN(10).pow(new BN(16))),
+                        { from: PolymathAccount }
+                    );
+            }).then(() => {
+                return StableOracle.deployed();
+            }).then(stableOracle => {
+                    StablePOLYOracle = stableOracle.address;
             });
         deployer
             .deploy(
@@ -97,12 +110,14 @@ module.exports = function(deployer, network, accounts) {
         PolyToken = "0xb347b9f5b56b431b2cf4e1d90a5995f7519ca792"; // PolyToken Kovan Faucet Address
         POLYOracle = "0x461d98EF2A0c7Ac1416EF065840fF5d4C946206C"; // Poly Oracle Kovan Address
         ETHOracle = "0xCE5551FC9d43E9D2CC255139169FC889352405C8"; // ETH Oracle Kovan Address
+        StablePOLYOracle = ""; // TODO
     } else if (network === "mainnet") {
         web3 = new Web3(new Web3.providers.HttpProvider("https://mainnet.infura.io/g5xfoQ0jFSE9S5LwM1Ei"));
         PolymathAccount = accounts[0];
         PolyToken = "0x9992eC3cF6A55b00978cdDF2b27BC6882d88D1eC"; // Mainnet PolyToken Address
         POLYOracle = "0x52cb4616E191Ff664B0bff247469ce7b74579D1B"; // Poly Oracle Mainnet Address
         ETHOracle = "0x60055e9a93aae267da5a052e95846fa9469c0e7a"; // ETH Oracle Mainnet Address
+        StablePOLYOracle = ""; // TODO
     }
     if (network === "coverage") {
         web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
@@ -111,9 +126,21 @@ module.exports = function(deployer, network, accounts) {
         deployer
             .deploy(MockOracle, PolyToken, web3.utils.fromAscii("POLY"), web3.utils.fromAscii("USD"), new BN(0.5).mul(new BN(10).pow(new BN(18))), { from: PolymathAccount })
             .then(() => {
-                MockOracle.deployed().then(mockedOracle => {
-                    POLYOracle = mockedOracle.address;
-                });
+                return MockOracle.deployed();
+            }).then(mockedOracle => {
+                POLYOracle = mockedOracle.address;
+            }).then(() => {
+                return deployer
+                    .deploy(
+                        StableOracle,
+                        POLYOracle,
+                        new BN(10).mul(new BN(10).pow(new BN(16))),
+                        { from: PolymathAccount }
+                    )
+            }).then(() => {
+                return StableOracle.deployed();
+            }).then(stableOracle => {
+                StablePOLYOracle = stableOracle.address;
             });
         deployer.deploy(MockOracle, nullAddress, web3.utils.fromAscii("ETH"), web3.utils.fromAscii("USD"), new BN(500).mul(new BN(10).pow(new BN(18))), { from: PolymathAccount }).then(() => {
             MockOracle.deployed().then(mockedOracle => {
@@ -515,6 +542,9 @@ module.exports = function(deployer, network, accounts) {
             return polymathRegistry.changeAddress("EthUsdOracle", ETHOracle, { from: PolymathAccount });
         })
         .then(() => {
+            return polymathRegistry.changeAddress("StablePolyUsdOracle", StablePOLYOracle, { from: PolymathAccount });
+        })
+        .then(() => {
             return deployer.deploy(SecurityToken, "a", "a", 18, 1, "a", polymathRegistry.address, { from: PolymathAccount });
         })
         .then(() => {
@@ -530,6 +560,7 @@ module.exports = function(deployer, network, accounts) {
 
     ETHOracle:                            ${ETHOracle}
     POLYOracle:                           ${POLYOracle}
+    POLYStableOracle:                     ${StablePOLYOracle}
 
     STFactory:                            ${STFactory.address}
     GeneralTransferManagerLogic:          ${GeneralTransferManagerLogic.address}

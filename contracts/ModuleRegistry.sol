@@ -40,9 +40,9 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     //////////
 
     // Emit when network becomes paused
-    event Pause(uint256 _timestammp);
+    event Pause(address account);
     // Emit when network becomes unpaused
-    event Unpause(uint256 _timestamp);
+    event Unpause(address account);
     // Emit when Module is used by the SecurityToken
     event ModuleUsed(address indexed _moduleFactory, address indexed _securityToken);
     // Emit when the Module Factory gets registered on the ModuleRegistry contract
@@ -359,7 +359,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     function pause() external whenNotPaused onlyOwner {
         set(Encoder.getKey("paused"), true);
         /*solium-disable-next-line security/no-block-members*/
-        emit Pause(now);
+        emit Pause(msg.sender);
     }
 
     /**
@@ -368,7 +368,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     function unpause() external whenPaused onlyOwner {
         set(Encoder.getKey("paused"), false);
         /*solium-disable-next-line security/no-block-members*/
-        emit Unpause(now);
+        emit Unpause(msg.sender);
     }
 
     /**

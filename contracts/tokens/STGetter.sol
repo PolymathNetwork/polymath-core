@@ -4,6 +4,7 @@ import "./OZStorage.sol";
 import "./SecurityTokenStorage.sol";
 import "../libraries/TokenLib.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "../modules/PermissionManager/IPermissionManager.sol";
 
 contract STGetter is OZStorage, SecurityTokenStorage {
 
@@ -170,13 +171,11 @@ contract STGetter is OZStorage, SecurityTokenStorage {
      */
     function checkPermission(address _delegate, address _module, bytes32 _perm) public view returns(bool) {
         for (uint256 i = 0; i < modules[PERMISSION_KEY].length; i++) {
-            if (!modulesToData[modules[PERMISSION_KEY][i]].isArchived) 
-                return TokenLib.checkPermission(
-                        modules[PERMISSION_KEY],
-                        _delegate,
-                        _module,
-                        _perm
-                    );
+            if (!modulesToData[modules[PERMISSION_KEY][i]].isArchived) {
+                if (IPermissionManager(modules[PERMISSION_KEY][i]).checkPermission(_delegate, _module, _perm)) {
+                    return true;
+                }
+            }
         }
         return false;
     }

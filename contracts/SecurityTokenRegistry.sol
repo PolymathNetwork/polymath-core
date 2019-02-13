@@ -11,6 +11,8 @@ import "./libraries/Util.sol";
 import "./libraries/Encoder.sol";
 import "./libraries/VersionUtils.sol";
 import "./proxy/Proxy.sol";
+import "./interfaces/IOracle.sol";
+import "./libraries/DecimalMath.sol";
 
 /**
  * @title Registry contract for issuers to register their tickers and security tokens
@@ -74,10 +76,12 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     bytes32 constant POLYMATHREGISTRY = 0x90eeab7c36075577c7cc5ff366e389fefa8a18289b949bab3529ab4471139d4d;
     bytes32 constant STRGETTER = 0x982f24b3bd80807ec3cb227ba152e15c07d66855fa8ae6ca536e689205c0e2e9;
 
+    string constant POLY_ORACLE = "StablePolyUsdOracle";
+
     // Emit when network becomes paused
-    event Pause(uint256 _timestammp);
+    event Pause(address account);
     // Emit when network becomes unpaused
-    event Unpause(uint256 _timestamp);
+    event Unpause(address account);
     // Emit when the ticker is removed from the registry
     event TickerRemoved(string _ticker, uint256 _removedAt, address _removedBy);
     // Emit when the token ticker expiry is changed
@@ -99,7 +103,8 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         uint256 _addedAt,
         address _registrant,
         bool _fromAdmin,
-        uint256 _registrationFee
+        uint256 _usdFee,
+        uint256 _polyFee
     );
     // Emit after ticker registration
     event RegisterTicker(
@@ -109,7 +114,8 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         uint256 indexed _registrationDate,
         uint256 indexed _expiryDate,
         bool _fromAdmin,
-        uint256 _registrationFee
+        uint256 _usdFee,
+        uint256 _polyFee
     );
 
     /////////////////////////////
@@ -159,8 +165,8 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @notice Initializes instance of STR
      * @param _polymathRegistry is the address of the Polymath Registry
      * @param _STFactory is the address of the Proxy contract for Security Tokens
-     * @param _stLaunchFee is the fee in POLY required to launch a token
-     * @param _tickerRegFee is the fee in POLY required to register a ticker
+     * @param _stLaunchFee is the fee in USD required to launch a token
+     * @param _tickerRegFee is the fee in USD required to register a ticker
      * @param _owner is the owner of the STR,
      * @param _getterContract Contract address of the contract which consists getter functions.
      */
@@ -206,6 +212,28 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     }
 
     /**
+     * @notice Converts USD fees into POLY amounts
+     */
+    function _takeFee(bytes32 _feeType) internal returns (uint256, uint256) {
+        (uint256 usdFee, uint256 polyFee) = getFees(_feeType);
+        if (polyFee > 0)
+            require(IERC20(getAddressValue(POLYTOKEN)).transferFrom(msg.sender, address(this), polyFee), "Insufficent allowance");
+        return (usdFee, polyFee);
+    }
+
+    /**
+     * @notice Returns the usd & poly fee for a particular feetype
+     * @param _feeType Key corresponding to fee type
+     */
+    function getFees(bytes32 _feeType) public returns (uint256, uint256) {
+        address polymathRegistry = getAddressValue(POLYMATHREGISTRY);
+        uint256 polyRate = IOracle(IPolymathRegistry(polymathRegistry).getAddress(POLY_ORACLE)).getPrice();
+        uint256 usdFee = getUintValue(_feeType);
+        uint256 polyFee = DecimalMath.div(usdFee, polyRate);
+        return (usdFee, polyFee);
+    }
+
+    /**
      * @notice Set the getter contract address
      * @param _getterContract Address of the contract
      */
@@ -233,10 +261,8 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     function registerTicker(address _owner, string calldata _ticker, string calldata _tokenName) external whenNotPausedOrOwner {
         require(_owner != address(0), "Owner should not be 0x");
         require(bytes(_ticker).length > 0 && bytes(_ticker).length <= 10, "Ticker length range (0,10]");
-        // Attempt to charge the reg fee if it is > 0 POLY
-        uint256 tickerFee = getUintValue(TICKERREGFEE);
-        if (tickerFee > 0)
-            require(IERC20(getAddressValue(POLYTOKEN)).transferFrom(msg.sender, address(this), tickerFee), "Insufficent allowance");
+        // Attempt to charge the reg fee if it is > 0 USD
+        (uint256 _usdFee, uint256 _polyFee) = _takeFee(TICKERREGFEE);
         string memory ticker = Util.upper(_ticker);
         require(_tickerAvailable(ticker), "Ticker is reserved");
         // Check whether ticker was previously registered (and expired)
@@ -245,7 +271,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
             _deleteTickerOwnership(previousOwner, ticker);
         }
         /*solium-disable-next-line security/no-block-members*/
-        _addTicker(_owner, ticker, _tokenName, now, now.add(getUintValue(EXPIRYLIMIT)), false, false, tickerFee);
+        _addTicker(_owner, ticker, _tokenName, now, now.add(getUintValue(EXPIRYLIMIT)), false, false, _usdFee, _polyFee);
     }
 
     /**
@@ -259,13 +285,14 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         uint256 _expiryDate,
         bool _status,
         bool _fromAdmin,
-        uint256 _fee
+        uint256 _usdFee,
+        uint256 _polyFee
     )
         internal
     {
         _setTickerOwnership(_owner, _ticker);
         _storeTickerDetails(_ticker, _owner, _registrationDate, _expiryDate, _tokenName, _status);
-        emit RegisterTicker(_owner, _ticker, _tokenName, _registrationDate, _expiryDate, _fromAdmin, _fee);
+        emit RegisterTicker(_owner, _ticker, _tokenName, _registrationDate, _expiryDate, _fromAdmin, _usdFee, _polyFee);
     }
 
     /**
@@ -321,7 +348,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         if (_status) {
             require(getAddressValue(Encoder.getKey("tickerToSecurityToken", _ticker)) != address(0), "Token not registered");
         }
-        _addTicker(_owner, _ticker, _tokenName, _registrationDate, _expiryDate, _status, true, uint256(0));
+        _addTicker(_owner, _ticker, _tokenName, _registrationDate, _expiryDate, _status, true, uint256(0), uint256(0));
     }
 
     function _tickerOwner(string memory _ticker) internal view returns(address) {
@@ -478,10 +505,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         require(_tickerOwner(ticker) == msg.sender, "Not authorised");
         /*solium-disable-next-line security/no-block-members*/
         require(getUintValue(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now, "Ticker gets expired");
-
-        uint256 launchFee = getUintValue(STLAUNCHFEE);
-        if (launchFee > 0)
-            require(IERC20(getAddressValue(POLYTOKEN)).transferFrom(msg.sender, address(this), launchFee), "Insufficient allowance");
+        (uint256 _usdFee, uint256 _polyFee) = _takeFee(STLAUNCHFEE);
 
         address newSecurityTokenAddress = ISTFactory(getAddressValue(Encoder.getKey("protocolVersionST", getUintValue(Encoder.getKey("latestVersion"))))).deployToken(
             _name,
@@ -497,7 +521,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         _storeSecurityTokenData(newSecurityTokenAddress, ticker, _tokenDetails, now);
         set(Encoder.getKey("tickerToSecurityToken", ticker), newSecurityTokenAddress);
         /*solium-disable-next-line security/no-block-members*/
-        emit NewSecurityToken(ticker, _name, newSecurityTokenAddress, msg.sender, now, msg.sender, false, launchFee);
+        emit NewSecurityToken(ticker, _name, newSecurityTokenAddress, msg.sender, now, msg.sender, false, _usdFee, _polyFee);
     }
 
     /**
@@ -535,7 +559,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         set(Encoder.getKey("tickerToSecurityToken", ticker), _securityToken);
         _modifyTicker(_owner, ticker, _name, registrationTime, expiryTime, true);
         _storeSecurityTokenData(_securityToken, ticker, _tokenDetails, _deployedAt);
-        emit NewSecurityToken(ticker, _name, _securityToken, _owner, _deployedAt, msg.sender, true, getUintValue(STLAUNCHFEE));
+        emit NewSecurityToken(ticker, _name, _securityToken, _owner, _deployedAt, msg.sender, true, uint256(0), uint256(0));
     }
 
     /**
@@ -581,7 +605,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     function pause() external whenNotPaused onlyOwner {
         set(PAUSED, true);
         /*solium-disable-next-line security/no-block-members*/
-        emit Pause(now);
+        emit Pause(msg.sender);
     }
 
     /**
@@ -590,12 +614,12 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     function unpause() external whenPaused onlyOwner {
         set(PAUSED, false);
         /*solium-disable-next-line security/no-block-members*/
-        emit Unpause(now);
+        emit Unpause(msg.sender);
     }
 
     /**
-    * @notice Sets the ticker registration fee in POLY tokens. Only Polymath.
-    * @param _tickerRegFee is the registration fee in POLY tokens (base 18 decimals)
+    * @notice Sets the ticker registration fee in USD tokens. Only Polymath.
+    * @param _tickerRegFee is the registration fee in USD tokens (base 18 decimals)
     */
     function changeTickerRegistrationFee(uint256 _tickerRegFee) external onlyOwner {
         uint256 fee = getUintValue(TICKERREGFEE);
@@ -605,8 +629,8 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     }
 
     /**
-    * @notice Sets the ticker registration fee in POLY tokens. Only Polymath.
-    * @param _stLaunchFee is the registration fee in POLY tokens (base 18 decimals)
+    * @notice Sets the ticker registration fee in USD tokens. Only Polymath.
+    * @param _stLaunchFee is the registration fee in USD tokens (base 18 decimals)
     */
     function changeSecurityLaunchFee(uint256 _stLaunchFee) external onlyOwner {
         uint256 fee = getUintValue(STLAUNCHFEE);

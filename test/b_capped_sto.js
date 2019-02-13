@@ -84,7 +84,7 @@ contract("CappedSTO", async (accounts) => {
     const budget = 0;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = new BN(web3.utils.toWei("250"));
+    const initRegFee = new BN(web3.utils.toWei("1000"));
 
     // Capped STO details
     let startTime_ETH1;
@@ -105,7 +105,8 @@ contract("CappedSTO", async (accounts) => {
     const P_fundRaiseType = 1;
     const P_rate = new BN(web3.utils.toWei("5"));
     const cappedSTOSetupCost = new BN(web3.utils.toWei("20000", "ether"));
-    const maxCost = cappedSTOSetupCost;
+    const cappedSTOSetupCostPOLY = new BN(web3.utils.toWei("80000", "ether"));
+    const maxCost = cappedSTOSetupCostPOLY;
     const STOParameters = ["uint256", "uint256", "uint256", "uint256", "uint8[]", "address"];
 
     let currentTime;
@@ -198,7 +199,7 @@ contract("CappedSTO", async (accounts) => {
         it("Should fail to launch the STO due to security token doesn't have the sufficient POLY", async () => {
             let startTime = await latestTime() + duration.days(1);
             let endTime = startTime + duration.days(30);
-            await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
+            await I_PolyToken.getTokens(cappedSTOSetupCostPOLY, token_owner);
 
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, new BN(0), [E_fundRaiseType], account_fundsReceiver]);
 
@@ -208,7 +209,7 @@ contract("CappedSTO", async (accounts) => {
         it("Should fail to launch the STO due to rate is 0", async () => {
             let startTime = await latestTime() + duration.days(1);
             let endTime = startTime + duration.days(30);
-            await I_PolyToken.transfer(I_SecurityToken_ETH.address, cappedSTOSetupCost, { from: token_owner });
+            await I_PolyToken.transfer(I_SecurityToken_ETH.address, cappedSTOSetupCostPOLY, { from: token_owner });
 
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, new BN(0), [E_fundRaiseType], account_fundsReceiver]);
 
@@ -320,7 +321,7 @@ contract("CappedSTO", async (accounts) => {
             P_expiryTime = toTime + duration.days(100);
 
             // Add the Investor in to the whitelist
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, fromTime, toTime, expiryTime, true, {
+            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, fromTime, toTime, expiryTime, true, false, {
                 from: account_issuer
             });
 
@@ -396,6 +397,7 @@ contract("CappedSTO", async (accounts) => {
                 toTime + duration.days(20),
                 expiryTime,
                 true,
+                false,
                 {
                     from: account_issuer
                 }
@@ -502,8 +504,8 @@ contract("CappedSTO", async (accounts) => {
             startTime_ETH2 = await latestTime() + duration.days(1);
             endTime_ETH2 = startTime_ETH2 + duration.days(30);
 
-            await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
-            await I_PolyToken.transfer(I_SecurityToken_ETH.address, cappedSTOSetupCost, { from: token_owner });
+            await I_PolyToken.getTokens(cappedSTOSetupCostPOLY, token_owner);
+            await I_PolyToken.transfer(I_SecurityToken_ETH.address, cappedSTOSetupCostPOLY, { from: token_owner });
             let bytesSTO = encodeModuleCall(STOParameters, [
                 startTime_ETH2,
                 endTime_ETH2,
@@ -534,7 +536,7 @@ contract("CappedSTO", async (accounts) => {
         it("Should successfully whitelist investor 3", async () => {
             balanceOfReceiver = new BN(await web3.eth.getBalance(account_fundsReceiver));
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor3, fromTime, toTime, expiryTime, true, {
+            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor3, fromTime, toTime, expiryTime, true, false, {
                 from: account_issuer,
                 gas: 500000
             });
@@ -579,9 +581,10 @@ contract("CappedSTO", async (accounts) => {
             const MAX_MODULES = 10;
             let startTime = await latestTime() + duration.days(1);
             let endTime = startTime + duration.days(30);
-
-            await I_PolyToken.getTokens(new BN(cappedSTOSetupCost.mul(new BN(19))), token_owner);
-            await I_PolyToken.transfer(I_SecurityToken_ETH.address, new BN(cappedSTOSetupCost.mul(new BN(19))), { from: token_owner });
+            for (var i = 0; i < MAX_MODULES; i++) {
+                await I_PolyToken.getTokens(new BN(cappedSTOSetupCostPOLY), token_owner);
+            };
+            await I_PolyToken.transfer(I_SecurityToken_ETH.address, new BN(cappedSTOSetupCostPOLY.mul(new BN(MAX_MODULES))), { from: token_owner });
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, [E_fundRaiseType], account_fundsReceiver]);
 
             for (var STOIndex = 2; STOIndex < MAX_MODULES; STOIndex++) {
@@ -644,8 +647,8 @@ contract("CappedSTO", async (accounts) => {
                 startTime_POLY1 = await latestTime() + duration.days(2);
                 endTime_POLY1 = startTime_POLY1 + duration.days(30);
 
-                await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
-                await I_PolyToken.transfer(I_SecurityToken_POLY.address, cappedSTOSetupCost, { from: token_owner });
+                await I_PolyToken.getTokens(cappedSTOSetupCostPOLY, token_owner);
+                await I_PolyToken.transfer(I_SecurityToken_POLY.address, cappedSTOSetupCostPOLY, { from: token_owner });
 
                 let bytesSTO = encodeModuleCall(STOParameters, [
                     startTime_POLY1,
@@ -699,7 +702,7 @@ contract("CappedSTO", async (accounts) => {
                     10500,
                     "Tokens are not transfered properly"
                 );
-                let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, P_fromTime, P_toTime, P_expiryTime, true, {
+                let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, P_fromTime, P_toTime, P_expiryTime, true, false, {
                     from: account_issuer,
                     gas: 500000
                 });
@@ -720,6 +723,7 @@ contract("CappedSTO", async (accounts) => {
                     (await I_SecurityToken_POLY.balanceOf(account_investor1)).div(new BN(10).pow(new BN(18))).toNumber(),
                     5000
                 );
+                
             });
 
             it("Verification of the event Token Purchase", async () => {
@@ -763,6 +767,7 @@ contract("CappedSTO", async (accounts) => {
                     P_toTime + duration.days(20),
                     P_expiryTime,
                     true,
+                    false,
                     {
                         from: account_issuer,
                         gas: 500000
@@ -826,6 +831,7 @@ contract("CappedSTO", async (accounts) => {
         describe("Test cases for the CappedSTOFactory", async () => {
             it("should get the exact details of the factory", async () => {
                 assert.equal((await I_CappedSTOFactory.getSetupCost.call()).toString(), cappedSTOSetupCost.toString());
+                assert.equal((await I_CappedSTOFactory.getSetupCostInPoly.call()).toString(), cappedSTOSetupCostPOLY.toString());
                 assert.equal((await I_CappedSTOFactory.getTypes.call())[0], 3);
                 assert.equal(web3.utils.hexToString(await I_CappedSTOFactory.getName.call()), "CappedSTO", "Wrong Module added");
                 assert.equal(
@@ -923,8 +929,8 @@ contract("CappedSTO", async (accounts) => {
             startTime_POLY2 = await latestTime() + duration.days(1);
             endTime_POLY2 = startTime_POLY2 + duration.days(30);
 
-            await I_PolyToken.getTokens(cappedSTOSetupCost, token_owner);
-            await I_PolyToken.transfer(I_SecurityToken_POLY.address, cappedSTOSetupCost, { from: token_owner });
+            await I_PolyToken.getTokens(cappedSTOSetupCostPOLY, token_owner);
+            await I_PolyToken.transfer(I_SecurityToken_POLY.address, cappedSTOSetupCostPOLY, { from: token_owner });
 
             let bytesSTO = encodeModuleCall(STOParameters, [
                 startTime_POLY2,
@@ -972,7 +978,7 @@ contract("CappedSTO", async (accounts) => {
 
             await I_PolyToken.getTokens(polyToInvest.mul(new BN(10).pow(new BN(18))), account_investor3);
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor3, P_fromTime, P_toTime, P_expiryTime, true, {
+            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor3, P_fromTime, P_toTime, P_expiryTime, true, false, {
                 from: account_issuer,
                 gas: 500000
             });

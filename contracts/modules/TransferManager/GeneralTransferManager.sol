@@ -1,10 +1,11 @@
 pragma solidity ^0.5.0;
 
 import "./TransferManager.sol";
-import "../../storage/modules/TransferManager/GeneralTransferManagerStorage.sol";
+import "../../libraries/Encoder.sol";
+import "../../libraries/VersionUtils.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
+import "../../storage/modules/TransferManager/GeneralTransferManagerStorage.sol";
 
 /**
  * @title Transfer Manager module for core transfer validation functionality
@@ -40,14 +41,18 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         uint256 _fromTime,
         uint256 _toTime,
         uint256 _expiryTime,
-        bool _canBuyFromSTO
+        bool _canBuyFromSTO,
+        bool _isAccredited
     );
 
     /**
      * @notice Constructor
      * @param _securityToken Address of the security token
      */
-    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
+    constructor(address _securityToken, address _polyToken)
+    public
+    Module(_securityToken, _polyToken)
+    {
 
     }
 
@@ -174,6 +179,11 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     {
         Result success;
         if (!paused) {
+            uint64 fromTime;
+            uint64 fromExpiry;
+            uint64 toExpiry;
+            uint64 toTime;
+            uint8 canBuyFromSTO;
             if (allowAllTransfers) {
                 //All transfers allowed, regardless of whitelist
                 return (Result.VALID, 0xA1);
@@ -181,32 +191,35 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
             if (allowAllBurnTransfers && (_to == address(0))) {
                 return (Result.VALID, 0xA1);
             }
+
+            (fromTime, fromExpiry, canBuyFromSTO, toTime, toExpiry) = _getValuesForTransfer(_from, _to);
+
             if (allowAllWhitelistTransfers) {
                 //Anyone on the whitelist can transfer, regardless of time
-                success = (_onWhitelist(_to) && _onWhitelist(_from)) ? Result.VALID : Result.NA;
+                success = (_validExpiry(toExpiry) && _validExpiry(fromExpiry)) ? Result.VALID : Result.NA;
                 return (success, success == Result.VALID ? byte(0xA1) : byte(0xA0));
             }
-
-            (uint64 adjustedFromTime, uint64 adjustedToTime) = _adjustTimes(whitelist[_from].fromTime, whitelist[_to].toTime);
+            // Using the local variables to avoid the stack too deep error
+            (fromTime, toTime) = _adjustTimes(fromTime, toTime);
             if (_from == issuanceAddress) {
                 // Possible STO transaction, but investor not allowed to purchased from STO
-                if ((whitelist[_to].canBuyFromSTO == 0) && _isSTOAttached()) {
+                if ((canBuyFromSTO == uint8(0)) && _isSTOAttached()) {
                     return (Result.NA, 0xA0);
                 }
                 // if allowAllWhitelistIssuances is true, so time stamp ignored
                 if (allowAllWhitelistIssuances) {
-                    success = _onWhitelist(_to) ? Result.VALID : Result.NA;
+                    success = _validExpiry(toExpiry) ? Result.VALID : Result.NA;
                     return (success, success == Result.VALID ? byte(0xA1) : byte(0xA0));
                 } else {
-                    success = (_onWhitelist(_to) && (adjustedToTime <= uint64(now))) ? Result.VALID : Result.NA;
+                    success = (_validExpiry(toExpiry) && _validLockTime(toTime)) ? Result.VALID : Result.NA;
                     return (success, success == Result.VALID ? byte(0xA1) : byte(0xA0));
                 }
             }
 
             //Anyone on the whitelist can transfer provided the blocknumber is large enough
             /*solium-disable-next-line security/no-block-members*/
-            success = ((_onWhitelist(_from) && (adjustedFromTime <= uint64(now))) && (_onWhitelist(_to) && 
-                (adjustedToTime <= uint64(now)))) ? Result.VALID : Result.NA; /*solium-disable-line security/no-block-members*/
+            success = (_validExpiry(fromExpiry) && _validLockTime(fromTime) && _validExpiry(toExpiry) &&
+                _validLockTime(toTime)) ? Result.VALID : Result.NA; /*solium-disable-line security/no-block-members*/
             return (success, success == Result.VALID ? byte(0xA1) : byte(0xA0));
         }
         return (Result.NA, 0xA0);
@@ -220,18 +233,20 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
     * @param _expiryTime is the moment till investors KYC will be validated. After that investor need to do re-KYC
     * @param _canBuyFromSTO is used to know whether the investor is restricted investor or not.
+    * @param _isAccredited is used to differentiate whether the investor is Accredited or not.
     */
     function modifyWhitelist(
         address _investor,
         uint256 _fromTime,
         uint256 _toTime,
         uint256 _expiryTime,
-        bool _canBuyFromSTO
+        bool _canBuyFromSTO,
+        bool _isAccredited
     )
         public
         withPerm(WHITELIST)
     {
-        _modifyWhitelist(_investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
+        _modifyWhitelist(_investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO, _isAccredited);
     }
 
     /**
@@ -241,18 +256,23 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
     * @param _expiryTime is the moment till investors KYC will be validated. After that investor need to do re-KYC
     * @param _canBuyFromSTO is used to know whether the investor is restricted investor or not.
+    * @param _isAccredited is used to differentiate whether the investor is Accredited or not.
     */
-    function _modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime, uint256 _expiryTime, bool _canBuyFromSTO) internal {
+    function _modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime, uint256 _expiryTime, bool _canBuyFromSTO, bool _isAccredited) internal {
         require(_investor != address(0), "Invalid investor");
-        uint8 canBuyFromSTO = 0;
-        if (_canBuyFromSTO) {
-            canBuyFromSTO = 1;
+        uint8 added;
+        uint8 canBuyFromSTO;
+        uint8 isAccredited;
+        IDataStore dataStore = IDataStore(getDataStore());
+        added = _getAddedValue(_investor, dataStore);
+        if (added == uint8(0)) {
+           investors.push(_investor);
         }
-        if (whitelist[_investor].added == uint8(0)) {
-            investors.push(_investor);
-        }
-        whitelist[_investor] = TimeRestriction(uint64(_fromTime), uint64(_toTime), uint64(_expiryTime), canBuyFromSTO, uint8(1));
-        emit ModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
+        canBuyFromSTO = _canBuyFromSTO ? 1 : 0;
+        isAccredited = _isAccredited ? 1 : 0;
+        uint256 _data = VersionUtils.packKYC(uint64(_fromTime), uint64(_toTime), uint64(_expiryTime), canBuyFromSTO, uint8(1), isAccredited);
+        dataStore.setUint256(_getKey(WHITELIST, _investor), _data);
+        emit ModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime, _canBuyFromSTO, _isAccredited);
     }
 
     /**
@@ -261,21 +281,30 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     * @param _fromTimes An array of the moment when the sale lockup period ends and the investor can freely sell his tokens
     * @param _toTimes An array of the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
     * @param _expiryTimes An array of the moment till investors KYC will be validated. After that investor need to do re-KYC
-    * @param _canBuyFromSTO An array of boolean values
+    * @param _canBuyFromSTO An array of boolean values.
+    * @param _isAccredited An array of boolean values to differentiate whether the investor is Accredited or not.
     */
     function modifyWhitelistMulti(
         address[] memory _investors,
         uint256[] memory _fromTimes,
         uint256[] memory _toTimes,
         uint256[] memory _expiryTimes,
-        bool[] memory _canBuyFromSTO
-    ) public withPerm(WHITELIST) {
-        require(_investors.length == _fromTimes.length, "Mismatched input lengths");
-        require(_fromTimes.length == _toTimes.length, "Mismatched input lengths");
-        require(_toTimes.length == _expiryTimes.length, "Mismatched input lengths");
-        require(_canBuyFromSTO.length == _toTimes.length, "Mismatched input length");
+        bool[] memory _canBuyFromSTO,
+        bool[] memory _isAccredited
+    )
+        public
+        withPerm(WHITELIST)
+    {
+        require(
+            _investors.length == _fromTimes.length &&
+            _fromTimes.length == _toTimes.length &&
+            _toTimes.length == _expiryTimes.length &&
+            _canBuyFromSTO.length == _toTimes.length &&
+            _canBuyFromSTO.length == _isAccredited.length,
+            "Mismatched input lengths"
+        );
         for (uint256 i = 0; i < _investors.length; i++) {
-            _modifyWhitelist(_investors[i], _fromTimes[i], _toTimes[i], _expiryTimes[i], _canBuyFromSTO[i]);
+            _modifyWhitelist(_investors[i], _fromTimes[i], _toTimes[i], _expiryTimes[i], _canBuyFromSTO[i], _isAccredited[i]);
         }
     }
 
@@ -286,6 +315,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
     * @param _expiryTime is the moment till investors KYC will be validated. After that investor need to do re-KYC
     * @param _canBuyFromSTO is used to know whether the investor is restricted investor or not.
+    * @param _isAccredited is used to differentiate whether the investor is Accredited or not.
     * @param _validFrom is the time that this signature is valid from
     * @param _validTo is the time that this signature is valid until
     * @param _nonce nonce of signature (avoid replay attack)
@@ -297,6 +327,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         uint256 _toTime,
         uint256 _expiryTime,
         bool _canBuyFromSTO,
+        bool _isAccredited,
         uint256 _validFrom,
         uint256 _validTo,
         uint256 _nonce,
@@ -311,10 +342,10 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         require(!nonceMap[_investor][_nonce], "Already used signature");
         nonceMap[_investor][_nonce] = true;
         bytes32 hash = keccak256(
-            abi.encodePacked(this, _investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO, _validFrom, _validTo, _nonce)
+            abi.encodePacked(this, _investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO, _isAccredited, _validFrom, _validTo, _nonce)
         );
         _checkSig(hash, _signature);
-        _modifyWhitelist(_investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
+        _modifyWhitelist(_investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO, _isAccredited);
     }
 
     /**
@@ -328,12 +359,19 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     }
 
     /**
-     * @notice Internal function used to check whether the investor is in the whitelist or not
-            & also checks whether the KYC of investor get expired or not
-     * @param _investor Address of the investor
+     * @notice Internal function used to check whether the KYC of investor is valid
+     * @param _expiryTime Expiry time of the investor
      */
-    function _onWhitelist(address _investor) internal view returns(bool) {
-        return (whitelist[_investor].expiryTime >= uint64(now)); /*solium-disable-line security/no-block-members*/
+    function _validExpiry(uint64 _expiryTime) internal view returns(bool) {
+        return (_expiryTime >= uint64(now)); /*solium-disable-line security/no-block-members*/
+    }
+
+    /**
+     * @notice Internal function used to check whether the lock time of investor is valid
+     * @param _lockTime Lock time of the investor
+     */
+    function _validLockTime(uint64 _lockTime) internal view returns(bool) {
+        return (_lockTime <= uint64(now)); /*solium-disable-line security/no-block-members*/
     }
 
     /**
@@ -359,10 +397,39 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         return (adjustedFromTime, adjustedToTime);
     }
 
+    function _getKey(bytes32 _key1, address _key2) internal pure returns(bytes32) {
+        return bytes32(keccak256(abi.encodePacked(_key1, _key2)));
+    }
+
+    function _getValues(address _investor, IDataStore dataStore) internal view returns(
+        uint64 fromTime,
+        uint64 toTime,
+        uint64 expiryTime,
+        uint8 canBuyFromSTO,
+        uint8 added,
+        uint8 isAccredited
+    )
+    {
+        uint256 _whitelistData = dataStore.getUint256(_getKey(WHITELIST, _investor));
+        (fromTime, toTime, expiryTime, canBuyFromSTO, added, isAccredited)  = VersionUtils.unpackKYC(_whitelistData);
+    }
+
+    function _getAddedValue(address _investor, IDataStore dataStore) internal view returns(uint8) {
+        uint256 _whitelistData = dataStore.getUint256(_getKey(WHITELIST, _investor));
+        //extracts `added` from packed `_whitelistData`
+        return uint8(_whitelistData >> 8);
+    }
+
+    function _getValuesForTransfer(address _from, address _to) internal view returns(uint64 fromTime, uint64 fromExpiry, uint8 canBuyFromSTO, uint64 toTime, uint64 toExpiry) {
+        IDataStore dataStore = IDataStore(getDataStore());
+        (fromTime,, fromExpiry,,,) = _getValues(_from, dataStore);
+        (, toTime, toExpiry, canBuyFromSTO,,) = _getValues(_to, dataStore);
+    }
+
     /**
      * @dev Returns list of all investors
      */
-    function getInvestors() external view returns(address[] memory) {
+    function getInvestors() public view returns(address[] memory) {
         return investors;
     }
 
@@ -374,10 +441,11 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         uint256[] memory fromTimes,
         uint256[] memory toTimes,
         uint256[] memory expiryTimes,
-        bool[] memory canBuyFromSTOs
+        bool[] memory canBuyFromSTOs,
+        bool[] memory isAccrediteds
     ) {
-        (fromTimes, toTimes, expiryTimes, canBuyFromSTOs) = _investorsData(investors);
-        return (investors, fromTimes, toTimes, expiryTimes, canBuyFromSTOs);
+        (fromTimes, toTimes, expiryTimes, canBuyFromSTOs, isAccrediteds) = _investorsData(getInvestors());
+        return (getInvestors(), fromTimes, toTimes, expiryTimes, canBuyFromSTOs, isAccrediteds);
 
     }
 
@@ -388,6 +456,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         uint256[] memory,
         uint256[] memory,
         uint256[] memory,
+        bool[] memory,
         bool[] memory
     ) {
         return _investorsData(_investors);
@@ -397,23 +466,22 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         uint256[] memory,
         uint256[] memory,
         uint256[] memory,
+        bool[] memory,
         bool[] memory
     ) {
         uint256[] memory fromTimes = new uint256[](_investors.length);
         uint256[] memory toTimes = new uint256[](_investors.length);
         uint256[] memory expiryTimes = new uint256[](_investors.length);
         bool[] memory canBuyFromSTOs = new bool[](_investors.length);
+        bool[] memory isAccrediteds = new bool[](_investors.length);
         for (uint256 i = 0; i < _investors.length; i++) {
-            fromTimes[i] = whitelist[_investors[i]].fromTime;
-            toTimes[i] = whitelist[_investors[i]].toTime;
-            expiryTimes[i] = whitelist[_investors[i]].expiryTime;
-            if (whitelist[_investors[i]].canBuyFromSTO == 0) {
-                canBuyFromSTOs[i] = false;
-            } else {
-                canBuyFromSTOs[i] = true;
-            }
+            uint8 canBuyFromSTO;
+            uint8 isAccredited;
+            (fromTimes[i], toTimes[i], expiryTimes[i], canBuyFromSTO,,isAccredited) = _getValues(_investors[i], IDataStore(getDataStore()));
+            canBuyFromSTOs[i] = canBuyFromSTO == 0 ? false : true;
+            isAccrediteds[i] = isAccredited == 0 ? false : true;
         }
-        return (fromTimes, toTimes, expiryTimes, canBuyFromSTOs);
+        return (fromTimes, toTimes, expiryTimes, canBuyFromSTOs, isAccrediteds);
     }
 
     /**

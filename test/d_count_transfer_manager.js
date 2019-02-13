@@ -69,7 +69,7 @@ contract("CountTransferManager", async (accounts) => {
     const stoKey = 3;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = new BN(web3.utils.toWei("250"));
+    const initRegFee = new BN(web3.utils.toWei("1000"));
 
     // CountTransferManager details
     const holderCount = 2; // Maximum number of token holders
@@ -161,9 +161,9 @@ contract("CountTransferManager", async (accounts) => {
         });
 
         it("Should successfully attach the CountTransferManager factory with the security token", async () => {
-            await I_PolyToken.getTokens(new BN(web3.utils.toWei("500", "ether")), token_owner);
+            await I_PolyToken.getTokens(new BN(web3.utils.toWei("2000", "ether")), token_owner);
             await catchRevert(
-                I_SecurityToken.addModule(P_CountTransferManagerFactory.address, bytesSTO, new BN(web3.utils.toWei("500", "ether")), new BN(0), {
+                I_SecurityToken.addModule(P_CountTransferManagerFactory.address, bytesSTO, new BN(web3.utils.toWei("2000", "ether")), new BN(0), {
                     from: token_owner
                 })
             );
@@ -171,11 +171,11 @@ contract("CountTransferManager", async (accounts) => {
 
         it("Should successfully attach the CountTransferManager factory with the security token", async () => {
             let snapId = await takeSnapshot();
-            await I_PolyToken.transfer(I_SecurityToken.address, new BN(web3.utils.toWei("500", "ether")), { from: token_owner });
+            await I_PolyToken.transfer(I_SecurityToken.address, new BN(web3.utils.toWei("2000", "ether")), { from: token_owner });
             const tx = await I_SecurityToken.addModule(
                 P_CountTransferManagerFactory.address,
                 bytesSTO,
-                new BN(web3.utils.toWei("500", "ether")),
+                new BN(web3.utils.toWei("2000", "ether")),
                 new BN(0),
                 { from: token_owner }
             );
@@ -211,6 +211,7 @@ contract("CountTransferManager", async (accounts) => {
                 currentTime,
                 currentTime.add(new BN(duration.days(10))),
                 true,
+                false,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -241,6 +242,7 @@ contract("CountTransferManager", async (accounts) => {
                 currentTime,
                 currentTime.add(new BN(duration.days(10))),
                 true,
+                false,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -268,6 +270,7 @@ contract("CountTransferManager", async (accounts) => {
                 currentTime,
                 currentTime.add(new BN(duration.days(10))),
                 true,
+                false,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -293,6 +296,7 @@ contract("CountTransferManager", async (accounts) => {
                 currentTime,
                 currentTime.add(new BN(duration.days(10))),
                 true,
+                false,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -381,6 +385,7 @@ contract("CountTransferManager", async (accounts) => {
                     currentTime,
                     currentTime.add(new BN(duration.days(10))),
                     true,
+                    false,
                     {
                         from: account_issuer,
                         gas: 500000
@@ -393,6 +398,7 @@ contract("CountTransferManager", async (accounts) => {
                     currentTime,
                     currentTime.add(new BN(duration.days(10))),
                     true,
+                    false,
                     {
                         from: account_issuer,
                         gas: 500000
@@ -405,6 +411,7 @@ contract("CountTransferManager", async (accounts) => {
                     currentTime,
                     currentTime.add(new BN(duration.days(10))),
                     true,
+                    false,
                     {
                         from: account_issuer,
                         gas: 500000
@@ -417,6 +424,7 @@ contract("CountTransferManager", async (accounts) => {
                     currentTime,
                     currentTime.add(new BN(duration.days(10))),
                     true,
+                    false,
                     {
                         from: account_issuer,
                         gas: 500000
@@ -439,9 +447,9 @@ contract("CountTransferManager", async (accounts) => {
             });
 
             it("Should successfully attach the CountTransferManager factory with the security token", async () => {
-                await I_PolyToken.getTokens(new BN(web3.utils.toWei("500", "ether")), token_owner);
+                await I_PolyToken.getTokens(new BN(web3.utils.toWei("2000", "ether")), token_owner);
                 await catchRevert(
-                    I_SecurityToken2.addModule(P_CountTransferManagerFactory.address, bytesSTO, new BN(web3.utils.toWei("500", "ether")), new BN(0), {
+                    I_SecurityToken2.addModule(P_CountTransferManagerFactory.address, bytesSTO, new BN(web3.utils.toWei("2000", "ether")), new BN(0), {
                         from: token_owner
                     })
                 );
@@ -501,35 +509,24 @@ contract("CountTransferManager", async (accounts) => {
         describe("Test cases for the ModuleFactory", async () => {
             it("Should successfully change the SetupCost -- fail beacuse of bad owner", async () => {
                 await catchRevert(
-                    I_CountTransferManagerFactory.changeFactorySetupFee(new BN(web3.utils.toWei("500")), { from: account_investor3 })
+                    I_CountTransferManagerFactory.changeSetupCost(new BN(web3.utils.toWei("500")), { from: account_investor3 })
                 );
             });
 
             it("Should successfully change the setupCost", async () => {
-                await I_CountTransferManagerFactory.changeFactorySetupFee(new BN(web3.utils.toWei("800")), { from: account_polymath });
+                await I_CountTransferManagerFactory.changeSetupCost(new BN(web3.utils.toWei("800")), { from: account_polymath });
                 assert.equal((await I_CountTransferManagerFactory.getSetupCost.call()).toString(), new BN(web3.utils.toWei("800")).toString());
             });
 
             it("Should successfully change the usage fee -- fail beacuse of bad owner", async () => {
                 await catchRevert(
-                    I_CountTransferManagerFactory.changeFactoryUsageFee(new BN(web3.utils.toWei("500")), { from: account_investor3 })
+                    I_CountTransferManagerFactory.changeUsageCost(new BN(web3.utils.toWei("500")), { from: account_investor3 })
                 );
             });
 
             it("Should successfully change the usage fee", async () => {
-                await I_CountTransferManagerFactory.changeFactoryUsageFee(new BN(web3.utils.toWei("800")), { from: account_polymath });
+                await I_CountTransferManagerFactory.changeUsageCost(new BN(web3.utils.toWei("800")), { from: account_polymath });
                 assert.equal((await I_CountTransferManagerFactory.usageCost.call()).toString(), new BN(web3.utils.toWei("800")).toString());
-            });
-
-            it("Should successfully change the subscription fee -- fail beacuse of bad owner", async () => {
-                await catchRevert(
-                    I_CountTransferManagerFactory.changeFactorySubscriptionFee(new BN(web3.utils.toWei("500")), { from: account_investor3 })
-                );
-            });
-
-            it("Should successfully change the subscription fee", async () => {
-                await I_CountTransferManagerFactory.changeFactorySubscriptionFee(new BN(web3.utils.toWei("800")), { from: account_polymath });
-                assert.equal((await I_CountTransferManagerFactory.monthlySubscriptionCost.call()), new BN(web3.utils.toWei("800")).toString());
             });
 
             it("Should successfully change the version of the factory -- failed because of bad owner", async () => {

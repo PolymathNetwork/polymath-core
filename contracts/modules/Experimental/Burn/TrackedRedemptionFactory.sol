@@ -11,15 +11,15 @@ contract TrackedRedemptionFactory is ModuleFactory {
      * @notice Constructor
      * @param _setupCost Setup cost of module
      * @param _usageCost Usage cost of module
-     * @param _subscriptionCost Monthly cost of module
+     * @param _polymathRegistry Address of the Polymath registry
      */
     constructor(
         uint256 _setupCost,
         uint256 _usageCost,
-        uint256 _subscriptionCost
-    ) 
-        public 
-        ModuleFactory(_setupCost, _usageCost, _subscriptionCost) 
+        address _polymathRegistry
+    )
+        public
+        ModuleFactory(_setupCost, _usageCost, _polymathRegistry)
     {
         version = "1.0.0";
         name = "TrackedRedemption";
@@ -35,15 +35,15 @@ contract TrackedRedemptionFactory is ModuleFactory {
      */
     function deploy(
         bytes calldata /* _data */
-    ) 
-        external 
-        returns(address) 
+    )
+        external
+        returns(address)
     {
         address polyToken = _takeFee();
         address trackedRedemption = address(new TrackedRedemption(msg.sender, polyToken));
         /*solium-disable-next-line security/no-block-members*/
-        emit GenerateModuleFromFactory(address(trackedRedemption), getName(), address(this), msg.sender, setupCost, now);
-        return address(trackedRedemption);
+        emit GenerateModuleFromFactory(trackedRedemption, getName(), address(this), msg.sender, getSetupCost(), getSetupCostInPoly(), now);
+        return trackedRedemption;
     }
 
     /**

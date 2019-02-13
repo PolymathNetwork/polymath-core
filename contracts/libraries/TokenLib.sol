@@ -11,11 +11,11 @@ library TokenLib {
     using SafeMath for uint256;
 
     // Emit when Module is archived from the SecurityToken
-    event ModuleArchived(uint8[] _types, address _module, uint256 _timestamp);
+    event ModuleArchived(uint8[] _types, address _module);
     // Emit when Module is unarchived from the SecurityToken
-    event ModuleUnarchived(uint8[] _types, address _module, uint256 _timestamp);
+    event ModuleUnarchived(uint8[] _types, address _module);
     // Emit when Module get removed from the securityToken
-    event ModuleRemoved(uint8[] _types, address _module, uint256 _timestamp);
+    event ModuleRemoved(uint8[] _types, address _module);
     // Emit when the budget allocated to a module is changed
     event ModuleBudgetChanged(uint8[] _moduleTypes, address _module, uint256 _oldBudget, uint256 _budget);
 
@@ -28,7 +28,7 @@ library TokenLib {
         require(!_moduleData.isArchived, "Module archived");
         require(_moduleData.module != address(0), "Module missing");
         /*solium-disable-next-line security/no-block-members*/
-        emit ModuleArchived(_moduleData.moduleTypes, _module, now);
+        emit ModuleArchived(_moduleData.moduleTypes, _module);
         _moduleData.isArchived = true;
     }
 
@@ -40,7 +40,7 @@ library TokenLib {
     function unarchiveModule(SecurityTokenStorage.ModuleData storage _moduleData, address _module) public {
         require(_moduleData.isArchived, "Module unarchived");
         /*solium-disable-next-line security/no-block-members*/
-        emit ModuleUnarchived(_moduleData.moduleTypes, _module, now);
+        emit ModuleUnarchived(_moduleData.moduleTypes, _module);
         _moduleData.isArchived = false;
     }
 
@@ -59,7 +59,7 @@ library TokenLib {
         require(_modulesToData[_module].isArchived, "Not archived");
         require(_modulesToData[_module].module != address(0), "Module missing");
         /*solium-disable-next-line security/no-block-members*/
-        emit ModuleRemoved(_modulesToData[_module].moduleTypes, _module, now);
+        emit ModuleRemoved(_modulesToData[_module].moduleTypes, _module);
         // Remove from module type list
         uint8[] memory moduleTypes = _modulesToData[_module].moduleTypes;
         for (uint256 i = 0; i < moduleTypes.length; i++) {
@@ -131,30 +131,6 @@ library TokenLib {
             newAllowance = currentAllowance.sub(_change);
         }
         emit ModuleBudgetChanged(_modulesToData[_module].moduleTypes, _module, currentAllowance, newAllowance);
-    }
-
-    /**
-     * @notice Validates permissions with PermissionManager if it exists. If there's no permission return false
-     * @dev Note that IModule withPerm will allow ST owner all permissions by default
-     * @dev this allows individual modules to override this logic if needed (to not allow ST owner all permissions)
-     * @param _modules is the modules to check permissions on
-     * @param _delegate is the address of the delegate
-     * @param _module is the address of the PermissionManager module
-     * @param _perm is the permissions data
-     * @return success
-     */
-    function checkPermission(address[] storage _modules, address _delegate, address _module, bytes32 _perm) public view returns(bool) {
-        if (_modules.length == 0) {
-            return false;
-        }
-
-        for (uint8 i = 0; i < _modules.length; i++) {
-            if (IPermissionManager(_modules[i]).checkPermission(_delegate, _module, _perm)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /**
@@ -232,8 +208,8 @@ library TokenLib {
         uint256 _value,
         uint256 _balanceTo,
         uint256 _balanceFrom
-    ) 
-        public 
+    )
+        public
     {
         if ((_value == 0) || (_from == _to)) {
             return;

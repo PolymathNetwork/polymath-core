@@ -43,9 +43,9 @@ contract STFactory is ISTFactory {
             _polymathRegistry,
             stDelegate
         );
-        newSecurityToken.addModule(transferManagerFactory, "", 0, 0);
         //NB When dataStore is generated, the security token address is automatically set via the constructor in DataStoreProxy.
         newSecurityToken.changeDataStore(dataStoreFactory.generateDataStore(address(newSecurityToken)));
+        newSecurityToken.addModule(transferManagerFactory, "", 0, 0);
         newSecurityToken.transferOwnership(_issuer);
         return address(newSecurityToken);
     }

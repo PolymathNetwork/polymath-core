@@ -67,7 +67,7 @@ contract('VestingEscrowWallet', accounts => {
     const stoKey = 3;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = new BN(web3.utils.toWei("250"));
+    const initRegFee = new BN(web3.utils.toWei("1000"));
 
     let currentTime;
     const address_zero = "0x0000000000000000000000000000000000000000";
@@ -126,7 +126,7 @@ contract('VestingEscrowWallet', accounts => {
         STFactory:                         ${I_STFactory.address}
         GeneralTransferManagerFactory:     ${I_GeneralTransferManagerFactory.address}
         GeneralPermissionManagerFactory:   ${I_GeneralPermissionManagerFactory.address}
-        
+
         I_VestingEscrowWalletFactory:      ${I_VestingEscrowWalletFactory.address}
         -----------------------------------------------------------------------------
         `);
@@ -202,6 +202,7 @@ contract('VestingEscrowWallet', accounts => {
                 currentTime,
                 currentTime.add(new BN(durationUtil.days(10))),
                 true,
+                false,
                 {
                     from: token_owner,
                     gas: 6000000
@@ -228,6 +229,7 @@ contract('VestingEscrowWallet', accounts => {
                 [currentTime, currentTime, currentTime, currentTime],
                 [currentTime.add(new BN(durationUtil.days(10))), currentTime.add(new BN(durationUtil.days(10))), currentTime.add(new BN(durationUtil.days(10))), currentTime.add(new BN(durationUtil.days(10)))],
                 [true, true, true, true],
+                [false, false, false, false],
                 {
                     from: token_owner,
                     gas: 6000000

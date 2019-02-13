@@ -2,7 +2,6 @@ pragma solidity ^0.5.0;
 
 import "../../Burn/IBurn.sol";
 import "../../Module.sol";
-import "../../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
@@ -13,7 +12,7 @@ contract TrackedRedemption is IBurn, Module {
 
     mapping(address => uint256) redeemedTokens;
 
-    event Redeemed(address _investor, uint256 _value, uint256 _timestamp);
+    event Redeemed(address _investor, uint256 _value);
 
     /**
      * @notice Constructor
@@ -38,7 +37,7 @@ contract TrackedRedemption is IBurn, Module {
         ISecurityToken(securityToken).redeemFrom(msg.sender, _value, "");
         redeemedTokens[msg.sender] = redeemedTokens[msg.sender].add(_value);
         /*solium-disable-next-line security/no-block-members*/
-        emit Redeemed(msg.sender, _value, now);
+        emit Redeemed(msg.sender, _value);
     }
 
     /**

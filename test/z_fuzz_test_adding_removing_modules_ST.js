@@ -100,7 +100,7 @@ contract('GeneralPermissionManager', accounts => {
     const stoKey = 3;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = web3.utils.toWei("250");
+    const initRegFee = web3.utils.toWei("1000");
 
 	let _details = "details holding for test";
     let testRepeat = 20;
@@ -213,19 +213,19 @@ contract('GeneralPermissionManager', accounts => {
 
         it("Should successfully attach the General permission manager factory with the security token -- failed because Token is not paid", async () => {
             let errorThrown = false;
-            await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
+            await I_PolyToken.getTokens(web3.utils.toWei("2000", "ether"), token_owner);
             await catchRevert(
-                I_SecurityToken.addModule(P_GeneralPermissionManagerFactory.address, "0x0", web3.utils.toWei("500", "ether"), 0, { from: token_owner })
+                I_SecurityToken.addModule(P_GeneralPermissionManagerFactory.address, "0x0", web3.utils.toWei("2000", "ether"), 0, { from: token_owner })
             );
         });
 
         it("Should successfully attach the General permission manager factory with the security token", async () => {
             let snapId = await takeSnapshot();
-            await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), { from: token_owner });
+            await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("2000", "ether"), { from: token_owner });
             const tx = await I_SecurityToken.addModule(
                 P_GeneralPermissionManagerFactory.address,
                 "0x0",
-                web3.utils.toWei("500", "ether"),
+                web3.utils.toWei("2000", "ether"),
                 0,
                 { from: token_owner }
             );

@@ -13,17 +13,17 @@ contract GeneralTransferManagerFactory is ModuleFactory {
      * @notice Constructor
      * @param _setupCost Setup cost of the module
      * @param _usageCost Usage cost of the module
-     * @param _subscriptionCost Subscription cost of the module
      * @param _logicContract Contract address that contains the logic related to `description`
+     * @param _polymathRegistry Address of the Polymath registry
      */
     constructor(
         uint256 _setupCost,
         uint256 _usageCost,
-        uint256 _subscriptionCost,
-        address _logicContract
-    ) 
-        public 
-        ModuleFactory(_setupCost, _usageCost, _subscriptionCost) 
+        address _logicContract,
+        address _polymathRegistry
+    )
+        public
+        ModuleFactory(_setupCost, _usageCost, _polymathRegistry)
     {
         require(_logicContract != address(0), "Invalid logic contract");
         version = "2.1.0";
@@ -41,14 +41,14 @@ contract GeneralTransferManagerFactory is ModuleFactory {
      */
     function deploy(
         bytes calldata /* _data */
-    ) 
-        external 
-        returns(address) 
+    )
+        external
+        returns(address)
     {
         address polyToken = _takeFee();
         GeneralTransferManagerProxy generalTransferManager = new GeneralTransferManagerProxy(msg.sender, polyToken, logicContract);
         /*solium-disable-next-line security/no-block-members*/
-        emit GenerateModuleFromFactory(address(generalTransferManager), getName(), address(this), msg.sender, setupCost, now);
+        emit GenerateModuleFromFactory(address(generalTransferManager), getName(), address(this), msg.sender, getSetupCost(), getSetupCostInPoly(), now);
         return address(generalTransferManager);
     }
 
@@ -56,8 +56,9 @@ contract GeneralTransferManagerFactory is ModuleFactory {
      * @notice Type of the Module factory
      */
     function getTypes() external view returns(uint8[] memory) {
-        uint8[] memory res = new uint8[](1);
+        uint8[] memory res = new uint8[](2);
         res[0] = 2;
+        res[1] = 6;
         return res;
     }
 

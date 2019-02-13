@@ -72,7 +72,7 @@ contract("PreSaleSTO", async (accounts) => {
     const budget = 0;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = new BN(web3.utils.toWei("250"));
+    const initRegFee = new BN(web3.utils.toWei("1000"));
     let endTime;
     const address_zero = "0x0000000000000000000000000000000000000000";
     const one_address = "0x0000000000000000000000000000000000000001";
@@ -245,7 +245,7 @@ contract("PreSaleSTO", async (accounts) => {
             expiryTime = toTime + duration.days(100);
 
             // Add the Investor in to the whitelist
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, fromTime, toTime, expiryTime, true, {
+            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, fromTime, toTime, expiryTime, true, false, {
                 from: account_issuer,
                 gas: 6000000
             });
@@ -286,7 +286,7 @@ contract("PreSaleSTO", async (accounts) => {
             expiryTime = toTime + duration.days(100);
 
             // Add the Investor in to the whitelist
-            let tx1 = await I_GeneralTransferManager.modifyWhitelist(account_investor2, fromTime, toTime, expiryTime, true, {
+            let tx1 = await I_GeneralTransferManager.modifyWhitelist(account_investor2, fromTime, toTime, expiryTime, true, false, {
                 from: account_issuer,
                 gas: 6000000
             });
@@ -294,7 +294,7 @@ contract("PreSaleSTO", async (accounts) => {
             assert.equal(tx1.logs[0].args._investor, account_investor2, "Failed in adding the investor in whitelist");
 
             // Add the Investor in to the whitelist
-            let tx2 = await I_GeneralTransferManager.modifyWhitelist(account_investor3, fromTime, toTime, expiryTime, true, {
+            let tx2 = await I_GeneralTransferManager.modifyWhitelist(account_investor3, fromTime, toTime, expiryTime, true, false, {
                 from: account_issuer,
                 gas: 6000000
             });

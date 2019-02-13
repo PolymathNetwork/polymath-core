@@ -182,18 +182,18 @@ contract("USDTieredSTO", async (accounts) => {
                 .div(e18);
             if (_currencyTo == "USD") return tokenToUSD;
             if (_currencyTo == "ETH") {
-                return await I_USDTieredSTO_Array[_stoID].convertFromUSD(ETH, tokenToUSD);
+                return await I_USDTieredSTO_Array[_stoID].convertFromUSD.call(ETH, tokenToUSD);
             } else if (_currencyTo == "POLY") {
-                return await I_USDTieredSTO_Array[_stoID].convertFromUSD(POLY, tokenToUSD);
+                return await I_USDTieredSTO_Array[_stoID].convertFromUSD.call(POLY, tokenToUSD);
             }
         }
         if (_currencyFrom == "USD") {
             if (_currencyTo == "TOKEN") return _amount.div(USDTOKEN).mul(e18); // USD / USD/TOKEN = TOKEN
             if (_currencyTo == "ETH" || _currencyTo == "POLY")
-                return await I_USDTieredSTO_Array[_stoID].convertFromUSD(_currencyTo == "ETH" ? ETH : POLY, _amount);
+                return await I_USDTieredSTO_Array[_stoID].convertFromUSD.call(_currencyTo == "ETH" ? ETH : POLY, _amount);
         }
         if (_currencyFrom == "ETH" || _currencyFrom == "POLY") {
-            let ethToUSD = await I_USDTieredSTO_Array[_stoID].convertToUSD(_currencyTo == "ETH" ? ETH : POLY, _amount);
+            let ethToUSD = await I_USDTieredSTO_Array[_stoID].convertToUSD.call(_currencyTo == "ETH" ? ETH : POLY, _amount);
             if (_currencyTo == "USD") return ethToUSD;
             if (_currencyTo == "TOKEN") return ethToUSD.div(USDTOKEN).mul(e18); // USD / USD/TOKEN = TOKEN
         }
@@ -206,7 +206,7 @@ contract("USDTieredSTO", async (accounts) => {
         e18 = new BN(10).pow(new BN(18));
         e16 = new BN(10).pow(new BN(16));
         currentTime = new BN(await latestTime());
-        REGFEE = new BN(web3.utils.toWei("250"));
+        REGFEE = new BN(web3.utils.toWei("1000"));
         USDETH = new BN(500).mul(new BN(10).pow(new BN(18))); // 500 USD/ETH
         USDPOLY = new BN(25).mul(new BN(10).pow(new BN(16))); // 0.25 USD/POLY
         POLYMATH = accounts[0];
@@ -411,7 +411,7 @@ contract("USDTieredSTO", async (accounts) => {
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
             await catchRevert(
-                I_SecurityToken.addModule(P_USDTieredSTOFactory.address, bytesSTO, new BN(web3.utils.toWei("500")), new BN(0), {
+                I_SecurityToken.addModule(P_USDTieredSTOFactory.address, bytesSTO, new BN(web3.utils.toWei("2000")), new BN(0), {
                     from: ISSUER,
                     gasPrice: GAS_PRICE
                 })
@@ -437,8 +437,8 @@ contract("USDTieredSTO", async (accounts) => {
             ];
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
-            await I_PolyToken.getTokens(new BN(web3.utils.toWei("500")), I_SecurityToken.address);
-            let tx = await I_SecurityToken.addModule(P_USDTieredSTOFactory.address, bytesSTO, new BN(web3.utils.toWei("500")), new BN(0), {
+            await I_PolyToken.getTokens(new BN(web3.utils.toWei("2000")), I_SecurityToken.address);
+            let tx = await I_SecurityToken.addModule(P_USDTieredSTOFactory.address, bytesSTO, new BN(web3.utils.toWei("2000")), new BN(0), {
                 from: ISSUER,
                 gasPrice: GAS_PRICE
             });
@@ -1015,8 +1015,8 @@ contract("USDTieredSTO", async (accounts) => {
             let expiryTime = toTime + duration.days(100);
             let whitelisted = true;
 
-            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, whitelisted, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, whitelisted, { from: ISSUER });
+            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, whitelisted, true, { from: ISSUER });
+            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, whitelisted, false, { from: ISSUER });
 
             // // Advance time to after STO start
             // await increaseTime(duration.days(3));
@@ -1115,8 +1115,8 @@ contract("USDTieredSTO", async (accounts) => {
             let expiryTime = toTime + duration.days(100);
             let whitelisted = true;
 
-            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, whitelisted, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, whitelisted, { from: ISSUER });
+            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, whitelisted, true, { from: ISSUER });
+            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, whitelisted, false, { from: ISSUER });
 
             // Advance time to after STO start
             await increaseTime(duration.days(3));
@@ -1170,8 +1170,8 @@ contract("USDTieredSTO", async (accounts) => {
             let expiryTime = toTime + duration.days(100);
             let whitelisted = true;
 
-            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, whitelisted, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, whitelisted, { from: ISSUER });
+            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, whitelisted, true, { from: ISSUER });
+            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, whitelisted,false, { from: ISSUER });
 
             // Advance time to after STO start
             await increaseTime(duration.days(3));
@@ -1240,8 +1240,8 @@ contract("USDTieredSTO", async (accounts) => {
             let expiryTime = toTime.add(new BN(duration.days(100)));
             let whitelisted = true;
 
-            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, whitelisted, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, whitelisted, { from: ISSUER });
+            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, whitelisted, true, { from: ISSUER });
+            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, whitelisted, false, { from: ISSUER });
 
             // Advance time to after STO start
             await increaseTime(duration.days(3));
@@ -1287,8 +1287,8 @@ contract("USDTieredSTO", async (accounts) => {
             let expiryTime = toTime + duration.days(100);
             let whitelisted = true;
 
-            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, whitelisted, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, whitelisted, { from: ISSUER });
+            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, whitelisted, true, { from: ISSUER });
+            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, whitelisted, false, { from: ISSUER });
 
             // Advance time to after STO end
             await increaseTime(duration.days(3));
@@ -1342,9 +1342,9 @@ contract("USDTieredSTO", async (accounts) => {
             let expiryTime = toTime + duration.days(100);
             let whitelisted = true;
 
-            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, whitelisted, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, whitelisted, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(RESERVEWALLET, fromTime, toTime, expiryTime, whitelisted, { from: ISSUER });
+            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, whitelisted, true, { from: ISSUER });
+            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, whitelisted, false, { from: ISSUER });
+            await I_GeneralTransferManager.modifyWhitelist(RESERVEWALLET, fromTime, toTime, expiryTime, whitelisted, false, { from: ISSUER });
 
             // Advance time to after STO start
             await increaseTime(duration.days(3));
@@ -1410,11 +1410,11 @@ contract("USDTieredSTO", async (accounts) => {
             let expiryTime = toTime + duration.days(100);
             let whitelisted = true;
 
-            const tx1 = await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, whitelisted, {
+            const tx1 = await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, whitelisted, false, {
                 from: ISSUER
             });
             assert.equal(tx1.logs[0].args._investor, NONACCREDITED1, "Failed in adding the investor in whitelist");
-            const tx2 = await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, whitelisted, {
+            const tx2 = await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, whitelisted, true, {
                 from: ISSUER
             });
             assert.equal(tx2.logs[0].args._investor, ACCREDITED1, "Failed in adding the investor in whitelist");
@@ -4601,7 +4601,7 @@ contract("USDTieredSTO", async (accounts) => {
             it("should get the right conversion for ETH to USD", async () => {
                 // 20 ETH to 10000 USD
                 let ethInWei = new BN(web3.utils.toWei("20", "ether"));
-                let usdInWei = await I_USDTieredSTO_Array[0].convertToUSD(ETH, ethInWei);
+                let usdInWei = await I_USDTieredSTO_Array[0].convertToUSD.call(ETH, ethInWei);
                 assert.equal(
                     usdInWei.div(e18).toString(),
                     ethInWei
@@ -4614,7 +4614,7 @@ contract("USDTieredSTO", async (accounts) => {
             it("should get the right conversion for POLY to USD", async () => {
                 // 40000 POLY to 10000 USD
                 let polyInWei = new BN(web3.utils.toWei("40000", "ether"));
-                let usdInWei = await I_USDTieredSTO_Array[0].convertToUSD(POLY, polyInWei);
+                let usdInWei = await I_USDTieredSTO_Array[0].convertToUSD.call(POLY, polyInWei);
                 assert.equal(
                     usdInWei.toString(),
                     polyInWei
@@ -4629,7 +4629,7 @@ contract("USDTieredSTO", async (accounts) => {
             it("should get the right conversion for USD to ETH", async () => {
                 // 10000 USD to 20 ETH
                 let usdInWei = new BN(web3.utils.toWei("10000", "ether"));
-                let ethInWei = await I_USDTieredSTO_Array[0].convertFromUSD(ETH, usdInWei);
+                let ethInWei = await I_USDTieredSTO_Array[0].convertFromUSD.call(ETH, usdInWei);
                 assert.equal(
                     ethInWei.div(e18).toString(),
                     usdInWei
@@ -4642,7 +4642,7 @@ contract("USDTieredSTO", async (accounts) => {
             it("should get the right conversion for USD to POLY", async () => {
                 // 10000 USD to 40000 POLY
                 let usdInWei = new BN(web3.utils.toWei("10000", "ether"));
-                let polyInWei = await I_USDTieredSTO_Array[0].convertFromUSD(POLY, usdInWei);
+                let polyInWei = await I_USDTieredSTO_Array[0].convertFromUSD.call(POLY, usdInWei);
                 assert.equal(
                     polyInWei.toString(),
                     usdInWei.mul(e18).div(USDPOLY).toString()

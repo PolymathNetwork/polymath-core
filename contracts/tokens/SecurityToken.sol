@@ -13,8 +13,8 @@ import "../interfaces/token/IERC1644.sol";
 import "../interfaces/IModuleRegistry.sol";
 import "../interfaces/IFeatureRegistry.sol";
 import "../interfaces/ITransferManager.sol";
-import "openzeppelin-solidity/contracts/utils/Address.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
@@ -34,9 +34,9 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     using SafeMath for uint256;
 
     // Emit when transfers are frozen or unfrozen
-    event FreezeTransfers(bool _status, uint256 _timestamp);
+    event FreezeTransfers(bool _status);
     // Emit when is permanently frozen by the issuer
-    event FreezeIssuance(uint256 _timestamp);
+    event FreezeIssuance();
     // Emit when the token details get updated
     event UpdateTokenDetails(string _oldDetails, string _newDetails);
     // Emit when the granularity get changed
@@ -49,22 +49,21 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         address _module,
         uint256 _moduleCost,
         uint256 _budget,
-        bytes32 _label,
-        uint256 _timestamp
+        bytes32 _label
     );
     // Emit when Module get archived from the securityToken
-    event ModuleArchived(uint8[] _types, address _module, uint256 _timestamp);
+    event ModuleArchived(uint8[] _types, address _module);
     // Emit when Module get unarchived from the securityToken
-    event ModuleUnarchived(uint8[] _types, address _module, uint256 _timestamp);
+    event ModuleUnarchived(uint8[] _types, address _module);
     // Emit when Module get removed from the securityToken
-    event ModuleRemoved(uint8[] _types, address _module, uint256 _timestamp);
+    event ModuleRemoved(uint8[] _types, address _module);
     // Emit when the budget allocated to a module is changed
     event ModuleBudgetChanged(uint8[] _moduleTypes, address _module, uint256 _oldBudget, uint256 _budget);
     // Emit when new checkpoint created
-    event CheckpointCreated(uint256 indexed _checkpointId, uint256 _timestamp);
+    event CheckpointCreated(uint256 indexed _checkpointId);
     // Events to log controller actions
     event SetController(address indexed _oldController, address indexed _newController);
-    event DisableController(uint256 _timestamp);
+    event DisableController();
     
     function _isModule(address _module, uint8 _type) internal view returns(bool) {
         require(modulesToData[_module].module == _module, "Wrong address");
@@ -172,7 +171,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         IModuleRegistry(moduleRegistry).useModule(_moduleFactory);
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
         uint8[] memory moduleTypes = moduleFactory.getTypes();
-        uint256 moduleCost = moduleFactory.getSetupCost();
+        uint256 moduleCost = moduleFactory.getSetupCostInPoly();
         require(moduleCost <= _maxCost, "Invalid cost");
         //Approve fee for module
         ERC20(polyToken).approve(_moduleFactory, moduleCost);
@@ -202,7 +201,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         names[moduleName].push(module);
         //Emit log event
         /*solium-disable-next-line security/no-block-members*/
-        emit ModuleAdded(moduleTypes, moduleName, _moduleFactory, module, moduleCost, _budget, _label, now);
+        emit ModuleAdded(moduleTypes, moduleName, _moduleFactory, module, moduleCost, _budget, _label);
     }
 
     /**
@@ -303,7 +302,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         require(!transfersFrozen, "Already frozen");
         transfersFrozen = true;
         /*solium-disable-next-line security/no-block-members*/
-        emit FreezeTransfers(true, now);
+        emit FreezeTransfers(true);
     }
 
     /**
@@ -313,7 +312,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         require(transfersFrozen, "Not frozen");
         transfersFrozen = false;
         /*solium-disable-next-line security/no-block-members*/
-        emit FreezeTransfers(false, now);
+        emit FreezeTransfers(false);
     }
 
     /**
@@ -474,7 +473,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     function freezeIssuance() external isIssuanceAllowed isEnabled("freezeIssuanceAllowed") onlyOwner {
         issuance = false;
         /*solium-disable-next-line security/no-block-members*/
-        emit FreezeIssuance(now);
+        emit FreezeIssuance();
     }
 
     /**
@@ -570,7 +569,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         checkpointTimes.push(now);
         /*solium-disable-next-line security/no-block-members*/
         checkpointTotalSupply[currentCheckpointId] = totalSupply();
-        emit CheckpointCreated(currentCheckpointId, now);
+        emit CheckpointCreated(currentCheckpointId);
         return currentCheckpointId;
     }
 
@@ -596,7 +595,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         require(_isControllable());
         controllerDisabled = true;
         delete controller;
-        emit DisableController(now);
+        emit DisableController();
     }
 
     /**

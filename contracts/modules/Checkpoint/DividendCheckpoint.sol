@@ -10,7 +10,6 @@ pragma solidity ^0.5.0;
 import "./ICheckpoint.sol";
 import "../../storage/modules/Checkpoint/DividendCheckpointStorage.sol";
 import "../Module.sol";
-import "../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/math/Math.sol";
 
@@ -21,10 +20,10 @@ import "openzeppelin-solidity/contracts/math/Math.sol";
 contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
     using SafeMath for uint256;
 
-    event SetDefaultExcludedAddresses(address[] _excluded, uint256 _timestamp);
-    event SetWithholding(address[] _investors, uint256[] _withholding, uint256 _timestamp);
-    event SetWithholdingFixed(address[] _investors, uint256 _withholding, uint256 _timestamp);
-    event SetWallet(address indexed _oldWallet, address indexed _newWallet, uint256 _timestamp);
+    event SetDefaultExcludedAddresses(address[] _excluded);
+    event SetWithholding(address[] _investors, uint256[] _withholding);
+    event SetWithholdingFixed(address[] _investors, uint256 _withholding);
+    event SetWallet(address indexed _oldWallet, address indexed _newWallet);
 
     modifier validDividendIndex(uint256 _dividendIndex) {
         require(_dividendIndex < dividends.length, "Invalid dividend");
@@ -64,7 +63,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
 
     function _setWallet(address payable _wallet) internal {
         require(_wallet != address(0));
-        emit SetWallet(wallet, _wallet, now);
+        emit SetWallet(wallet, _wallet);
         wallet = _wallet;
     }
 
@@ -98,7 +97,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
         }
         excluded = _excluded;
         /*solium-disable-next-line security/no-block-members*/
-        emit SetDefaultExcludedAddresses(excluded, now);
+        emit SetDefaultExcludedAddresses(excluded);
     }
 
     /**
@@ -109,7 +108,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
     function setWithholding(address[] memory _investors, uint256[] memory _withholding) public withPerm(MANAGE) {
         require(_investors.length == _withholding.length, "Mismatched input lengths");
         /*solium-disable-next-line security/no-block-members*/
-        emit SetWithholding(_investors, _withholding, now);
+        emit SetWithholding(_investors, _withholding);
         for (uint256 i = 0; i < _investors.length; i++) {
             require(_withholding[i] <= 10 ** 18, "Incorrect withholding tax");
             withholdingTax[_investors[i]] = _withholding[i];
@@ -124,7 +123,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
     function setWithholdingFixed(address[] memory _investors, uint256 _withholding) public withPerm(MANAGE) {
         require(_withholding <= 10 ** 18, "Incorrect withholding tax");
         /*solium-disable-next-line security/no-block-members*/
-        emit SetWithholdingFixed(_investors, _withholding, now);
+        emit SetWithholdingFixed(_investors, _withholding);
         for (uint256 i = 0; i < _investors.length; i++) {
             withholdingTax[_investors[i]] = _withholding;
         }

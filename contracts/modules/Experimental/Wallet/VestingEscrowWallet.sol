@@ -3,7 +3,6 @@ pragma solidity ^0.5.0;
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "../../../storage/modules/Wallet/VestingEscrowWalletStorage.sol";
 import "./IWallet.sol";
-import "../../../interfaces/ISecurityToken.sol";
 
 /**
  * @title Wallet for core vesting escrow functionality

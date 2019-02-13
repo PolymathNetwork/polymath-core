@@ -153,7 +153,7 @@ contract LockUpTransferManager is TransferManager {
             _lockupNames.length == _releaseFrequenciesSeconds.length && /*solium-disable-line operator-whitespace*/
             _lockupNames.length == _startTimes.length && /*solium-disable-line operator-whitespace*/
             _lockupNames.length == _lockupAmounts.length,
-            "Input array length mismatch"
+            "Length mismatch"
         );
         for (uint256 i = 0; i < _lockupNames.length; i++) {
             _addNewLockUpType(
@@ -255,7 +255,7 @@ contract LockUpTransferManager is TransferManager {
             _userAddresses.length == _startTimes.length && /*solium-disable-line operator-whitespace*/
             _userAddresses.length == _lockupAmounts.length &&
             _userAddresses.length == _lockupNames.length,
-            "Input array length mismatch"
+            "Length mismatch"
         );
         for (uint256 i = 0; i < _userAddresses.length; i++) {
             _addNewLockUpToUser(_userAddresses[i], _lockupAmounts[i], _startTimes[i], _lockUpPeriodsSeconds[i], _releaseFrequenciesSeconds[i], _lockupNames[i]);
@@ -295,7 +295,7 @@ contract LockUpTransferManager is TransferManager {
      * @param _lockupNames Array of the names of the lockup that needs to be removed.
      */
     function removeLockUpFromUserMulti(address[] calldata _userAddresses, bytes32[] calldata _lockupNames) external withPerm(ADMIN) {
-        require(_userAddresses.length == _lockupNames.length, "Array length mismatch");
+        require(_userAddresses.length == _lockupNames.length, "Length mismatch");
         for (uint256 i = 0; i < _userAddresses.length; i++) {
             _removeLockUpFromUser(_userAddresses[i], _lockupNames[i]);
         }
@@ -351,7 +351,7 @@ contract LockUpTransferManager is TransferManager {
             _lockupNames.length == _releaseFrequenciesSeconds.length && /*solium-disable-line operator-whitespace*/
             _lockupNames.length == _startTimes.length && /*solium-disable-line operator-whitespace*/
             _lockupNames.length == _lockupAmounts.length,
-            "Input array length mismatch"
+            "Length mismatch"
         );
         for (uint256 i = 0; i < _lockupNames.length; i++) {
             _modifyLockUpType(
@@ -393,7 +393,7 @@ contract LockUpTransferManager is TransferManager {
     * @return address List of users associated with the blacklist
     */
     function getListOfAddresses(bytes32 _lockupName) external view returns(address[] memory) {
-        require(lockups[_lockupName].startTime != 0, "Blacklist type doesn't exist");
+        require(lockups[_lockupName].startTime != 0, "Invalid blacklist");
         return lockupToUsers[_lockupName];
     }
 
@@ -470,8 +470,8 @@ contract LockUpTransferManager is TransferManager {
     }
 
     function _removeLockupType(bytes32 _lockupName) internal {
-        require(lockups[_lockupName].startTime != 0, "Lockup type doesn’t exist");
-        require(lockupToUsers[_lockupName].length == 0, "Users are associated with the lockup");
+        require(lockups[_lockupName].startTime != 0, "Invalid lockup");
+        require(lockupToUsers[_lockupName].length == 0, "Not empty");
         // delete lockup type
         delete(lockups[_lockupName]);
         uint256 i = 0;
@@ -532,7 +532,7 @@ contract LockUpTransferManager is TransferManager {
         require(_lockupName != bytes32(0), "Invalid lockup name");
         require(
             userToLockups[_userAddress][userToLockupIndex[_userAddress][_lockupName]] == _lockupName,
-            "User not assosicated with given lockup"
+            "Not empty"
         );
 
         // delete the user from the lockup type
@@ -633,9 +633,12 @@ contract LockUpTransferManager is TransferManager {
         internal
         pure
     {
-        require(_lockUpPeriodSeconds != 0, "lockUpPeriodSeconds cannot be zero");
-        require(_releaseFrequencySeconds != 0, "releaseFrequencySeconds cannot be zero");
-        require(_lockupAmount != 0, "lockupAmount cannot be zero");
+        require(
+            _lockUpPeriodSeconds != 0 &&
+            _releaseFrequencySeconds != 0 &&
+            _lockupAmount != 0,
+            "Cannot be zero"
+        );
     }
 
     /**

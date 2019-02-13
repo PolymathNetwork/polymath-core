@@ -425,7 +425,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         count = 0;
         for (i = 0; i < investors.length; i++) {
             if (balanceOfAt(investors[i], _checkpointId) > 0) {
-                investors[count] = investors[i];
+                holders[count] = investors[i];
                 count++;
             }
         }

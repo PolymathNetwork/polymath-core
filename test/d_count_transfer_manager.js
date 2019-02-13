@@ -366,7 +366,7 @@ contract("CountTransferManager", async (accounts) => {
             });
 
             it("add 3 holders to the token", async () => {
-                await I_GeneralTransferManager2.modifyWhitelist(
+                await I_GeneralTransferManager2.modifyKYCData(
                     account_investor1,
                     currentTime,
                     currentTime,
@@ -377,7 +377,7 @@ contract("CountTransferManager", async (accounts) => {
                     }
                 );
 
-                await I_GeneralTransferManager2.modifyWhitelist(
+                await I_GeneralTransferManager2.modifyKYCData(
                     account_investor2,
                     currentTime,
                     currentTime,
@@ -388,7 +388,7 @@ contract("CountTransferManager", async (accounts) => {
                     }
                 );
 
-                await I_GeneralTransferManager2.modifyWhitelist(
+                await I_GeneralTransferManager2.modifyKYCData(
                     account_investor3,
                     currentTime,
                     currentTime,
@@ -399,7 +399,7 @@ contract("CountTransferManager", async (accounts) => {
                     }
                 );
 
-                await I_GeneralTransferManager2.modifyWhitelist(
+                await I_GeneralTransferManager2.modifyKYCData(
                     account_investor4,
                     currentTime,
                     currentTime,

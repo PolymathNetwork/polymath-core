@@ -1011,14 +1011,11 @@ contract("USDTieredSTO", async (accounts) => {
             let whitelisted = true;
 
             await I_GeneralTransferManager.modifyKYCData(ACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
-            await I_GeneralTransferManager.modifyInvestorFlag(ACCREDITED1, 0, true, { from: ISSUER });
+            await I_GeneralTransferManager.modifyInvestorFlag(ACCREDITED1, 0, true, { from: ISSUER }); //set as Accredited
             await I_GeneralTransferManager.modifyKYCData(NONACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
 
             // // Advance time to after STO start
             // await increaseTime(duration.days(3));
-
-            // Set as accredited
-            await I_USDTieredSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
 
             // Prep for investments
             let investment_ETH = new BN(web3.utils.toWei("1", "ether")); // Invest 1 ETH
@@ -1064,7 +1061,7 @@ contract("USDTieredSTO", async (accounts) => {
             await increaseTime(duration.days(3));
 
             // Set as accredited
-            await I_USDTieredSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
+            await I_GeneralTransferManager.modifyInvestorFlag(ACCREDITED1, 0, true, { from: ISSUER });
 
             // Prep for investments
             let investment_ETH = new BN(web3.utils.toWei("1", "ether")); // Invest 1 ETH
@@ -1118,9 +1115,6 @@ contract("USDTieredSTO", async (accounts) => {
             // Advance time to after STO start
             await increaseTime(duration.days(3));
 
-            // Set as accredited
-            await I_USDTieredSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
-
             let investment_USD = new BN(2).mul(e18);
             let investment_ETH = await convert(stoId, tierId, false, "USD", "ETH", investment_USD);
             let investment_POLY = await convert(stoId, tierId, false, "USD", "POLY", investment_USD);
@@ -1173,9 +1167,6 @@ contract("USDTieredSTO", async (accounts) => {
 
             // Advance time to after STO start
             await increaseTime(duration.days(3));
-
-            // Set as accredited
-            await I_USDTieredSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
 
             // Pause the STO
             await I_USDTieredSTO_Array[stoId].pause({ from: ISSUER });
@@ -1245,9 +1236,6 @@ contract("USDTieredSTO", async (accounts) => {
             // Advance time to after STO start
             await increaseTime(duration.days(3));
 
-            // Set as accredited
-            await I_USDTieredSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
-
             // Prep for investments
             let investment_DAI = web3.utils.toWei("500", "ether"); // Invest 10000 POLY
             await I_DaiToken.getTokens(investment_DAI, NONACCREDITED1);
@@ -1294,9 +1282,6 @@ contract("USDTieredSTO", async (accounts) => {
             await increaseTime(duration.days(3));
 
             assert.equal(await I_USDTieredSTO_Array[stoId].isOpen(), false, "STO is not showing correct status");
-
-            // Set as accredited
-            await I_USDTieredSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
 
             // Prep for investments
             let investment_ETH = new BN(web3.utils.toWei("1", "ether")); // Invest 1 ETH
@@ -1349,9 +1334,6 @@ contract("USDTieredSTO", async (accounts) => {
 
             // Advance time to after STO start
             await increaseTime(duration.days(3));
-
-            // Set as accredited
-            await I_USDTieredSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
 
             // Finalize STO
             await I_USDTieredSTO_Array[stoId].finalize({ from: ISSUER });
@@ -1422,25 +1404,8 @@ contract("USDTieredSTO", async (accounts) => {
             assert.equal(tx2.logs[0].args._investor, ACCREDITED1, "Failed in adding the investor in whitelist");
         });
 
-        it("should successfully modify accredited addresses for first STO", async () => {
+        it("should successfully modify accredited addresses for the STOs", async () => {
             let stoId = 0;
-            let investorStatus = await I_USDTieredSTO_Array[stoId].investors.call(NONACCREDITED1);
-            let status1 = investorStatus[0].toNumber();
-            assert.equal(status1, 0, "Initial accreditation is set to true");
-
-            await I_USDTieredSTO_Array[stoId].changeAccredited([NONACCREDITED1], [true], { from: ISSUER });
-            investorStatus = await I_USDTieredSTO_Array[stoId].investors.call(NONACCREDITED1);
-            let status2 = investorStatus[0].toNumber();
-            assert.equal(status2, 1, "Failed to set single address");
-
-            await I_USDTieredSTO_Array[stoId].changeAccredited([NONACCREDITED1, ACCREDITED1], [false, true], { from: ISSUER });
-            investorStatus = await I_USDTieredSTO_Array[stoId].investors.call(NONACCREDITED1);
-            let status3 = investorStatus[0].toNumber();
-            assert.equal(status3, 0, "Failed to set multiple addresses");
-            investorStatus = await I_USDTieredSTO_Array[stoId].investors.call(ACCREDITED1);
-            let status4 = investorStatus[0].toNumber();
-            assert.equal(status4, 1, "Failed to set multiple addresses");
-
             let totalStatus = await I_USDTieredSTO_Array[stoId].getAccreditedData.call();
             console.log(totalStatus);
             assert.equal(totalStatus[0][0], NONACCREDITED1, "Account match");
@@ -1449,19 +1414,6 @@ contract("USDTieredSTO", async (accounts) => {
             assert.equal(totalStatus[1][1], true, "Account match");
             assert.equal(totalStatus[2][0].toNumber(), 0, "override match");
             assert.equal(totalStatus[2][1].toNumber(), 0, "override match");
-            await catchRevert(I_USDTieredSTO_Array[stoId].changeAccredited([NONACCREDITED1, ACCREDITED1], [true], { from: ISSUER }));
-        });
-
-        it("should successfully modify accredited addresses for second STO", async () => {
-            let stoId = 1;
-
-            await I_USDTieredSTO_Array[stoId].changeAccredited([NONACCREDITED1, ACCREDITED1], [false, true], { from: ISSUER });
-            let investorStatus = await I_USDTieredSTO_Array[stoId].investors.call(NONACCREDITED1);
-            let status1 = investorStatus[0].toNumber();
-            investorStatus = await I_USDTieredSTO_Array[stoId].investors.call(ACCREDITED1);
-            let status2 = investorStatus[0].toNumber();
-            assert.equal(status1, 0, "Failed to set multiple address");
-            assert.equal(status2, 1, "Failed to set multiple address");
         });
     });
 
@@ -1869,8 +1821,6 @@ contract("USDTieredSTO", async (accounts) => {
             let stoId = 0;
             let tierId = 0;
 
-            await I_USDTieredSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
-
             let investment_Token = new BN(50).mul(e18);
             let investment_USD = await convert(stoId, tierId, false, "TOKEN", "USD", investment_Token);
             let investment_ETH = await convert(stoId, tierId, false, "TOKEN", "ETH", investment_Token);
@@ -2170,8 +2120,8 @@ contract("USDTieredSTO", async (accounts) => {
             await I_USDTieredSTO_Array[stoId].changeNonAccreditedLimit([NONACCREDITED1], [_nonAccreditedLimitUSD[stoId].div(new BN(2))], {
                 from: ISSUER
             });
-            let investorStatus = await I_USDTieredSTO_Array[stoId].investors.call(NONACCREDITED1);
-            console.log("Current limit: " + investorStatus[2].toString());
+            let investorLimit = await I_USDTieredSTO_Array[stoId].nonAccreditedLimitUSDOverride.call(NONACCREDITED1);
+            console.log("Current limit: " + investorLimit.toString());
             let totalStatus = await I_USDTieredSTO_Array[stoId].getAccreditedData.call();
 
             assert.equal(totalStatus[0][0], NONACCREDITED1, "Account match");
@@ -2186,8 +2136,7 @@ contract("USDTieredSTO", async (accounts) => {
             let stoId = 0;
             let tierId = 0;
 
-            let investorStatus = await I_USDTieredSTO_Array[stoId].investors.call(NONACCREDITED1);
-            let investment_USD = investorStatus[2];//await I_USDTieredSTO_Array[stoId].nonAccreditedLimitUSDOverride(NONACCREDITED1); //_nonAccreditedLimitUSD[stoId];
+            let investment_USD = await I_USDTieredSTO_Array[stoId].nonAccreditedLimitUSDOverride.call(NONACCREDITED1);//await I_USDTieredSTO_Array[stoId].nonAccreditedLimitUSDOverride(NONACCREDITED1); //_nonAccreditedLimitUSD[stoId];
             let investment_Token = await convert(stoId, tierId, false, "USD", "TOKEN", investment_USD);
             let investment_ETH = await convert(stoId, tierId, false, "USD", "ETH", investment_USD);
             let investment_POLY = await convert(stoId, tierId, false, "USD", "POLY", investment_USD);
@@ -2671,8 +2620,6 @@ contract("USDTieredSTO", async (accounts) => {
             let stoId = 1;
             let startTier = 2;
             let endTier = 3;
-
-            await I_USDTieredSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
 
             assert.equal(
                 (await I_USDTieredSTO_Array[stoId].currentTier.call()).toString(),
@@ -3447,8 +3394,6 @@ contract("USDTieredSTO", async (accounts) => {
             let stoId = 2;
             let tierId = 0;
 
-            await I_USDTieredSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
-
             let investment_Token = new BN(5).mul(e18);
             let investment_USD = await convert(stoId, tierId, false, "TOKEN", "USD", investment_Token);
             let investment_ETH = await convert(stoId, tierId, false, "TOKEN", "ETH", investment_Token);
@@ -3853,7 +3798,6 @@ contract("USDTieredSTO", async (accounts) => {
             await I_SecurityToken.changeGranularity(e18, { from: ISSUER });
             let stoId = 4;
             let tierId = 0;
-            await I_USDTieredSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
             let investment_Tokens = new BN(1050).mul(e16);
             let investment_POLY = await convert(stoId, tierId, true, "TOKEN", "POLY", investment_Tokens);
 
@@ -4069,7 +4013,6 @@ contract("USDTieredSTO", async (accounts) => {
         it("should fail when rate set my contract is too low", async () => {
             let stoId = 4;
             let tierId = 0;
-            await I_USDTieredSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
             let investment_Tokens = new BN(e18);
             let investment_POLY = await convert(stoId, tierId, true, "TOKEN", "POLY", investment_Tokens);
             let investment_ETH = await convert(stoId, tierId, true, "TOKEN", "ETH", investment_Tokens);

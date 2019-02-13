@@ -863,7 +863,6 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should force burn the tokens - value too high", async () => {
             await I_GeneralTransferManager.changeAllowAllBurnTransfers(true, { from: token_owner });
-            let currentInvestorCount = await I_SecurityToken.getInvestorCount.call();
             let currentBalance = await I_SecurityToken.balanceOf(account_temp);
             await catchRevert(
                 I_SecurityToken.forceBurn(account_temp, currentBalance + new BN(web3.utils.toWei("500", "ether")), "0x0", "0x0", {
@@ -873,19 +872,18 @@ contract("SecurityToken", async (accounts) => {
         });
         it("Should force burn the tokens - wrong caller", async () => {
             await I_GeneralTransferManager.changeAllowAllBurnTransfers(true, { from: token_owner });
-            let currentInvestorCount = await I_SecurityToken.getInvestorCount.call();
             let currentBalance = await I_SecurityToken.balanceOf(account_temp);
             await catchRevert(I_SecurityToken.forceBurn(account_temp, currentBalance, "0x0", "0x0", { from: token_owner }));
         });
 
         it("Should burn the tokens", async () => {
-            let currentInvestorCount = await I_SecurityToken.getInvestorCount.call();
+            let currentInvestorCount = await I_SecurityToken.holderCount.call();
             let currentBalance = await I_SecurityToken.balanceOf(account_temp);
             // console.log(currentInvestorCount.toString(), currentBalance.toString());
             let tx = await I_SecurityToken.forceBurn(account_temp, currentBalance, "0x0", "0x0", { from: account_controller });
             // console.log(tx.logs[1].args._value.toNumber(), currentBalance.toNumber());
             assert.equal(tx.logs[1].args._value.toString(), currentBalance.toString());
-            let newInvestorCount = await I_SecurityToken.getInvestorCount.call();
+            let newInvestorCount = await I_SecurityToken.holderCount.call();
             // console.log(newInvestorCount.toString());
             assert.equal(newInvestorCount.toNumber() + 1, currentInvestorCount.toNumber(), "Investor count drops by one");
         });
@@ -928,17 +926,17 @@ contract("SecurityToken", async (accounts) => {
         it("Should get filtered investors", async () => {
             let investors = await I_SecurityToken.getInvestors.call();
             console.log("All Investors: " + investors);
-            let filteredInvestors = await I_SecurityToken.iterateInvestors.call(0, 1);
-            console.log("Filtered Investors (0, 1): " + filteredInvestors);
+            let filteredInvestors = await I_SecurityToken.iterateInvestors.call(0, 0);
+            console.log("Filtered Investors (0, 0): " + filteredInvestors);
             assert.equal(filteredInvestors[0], investors[0]);
             assert.equal(filteredInvestors.length, 1);
-            filteredInvestors = await I_SecurityToken.iterateInvestors.call(2, 4);
-            console.log("Filtered Investors (2, 4): " + filteredInvestors);
+            filteredInvestors = await I_SecurityToken.iterateInvestors.call(2, 3);
+            console.log("Filtered Investors (2, 3): " + filteredInvestors);
             assert.equal(filteredInvestors[0], investors[2]);
             assert.equal(filteredInvestors[1], investors[3]);
             assert.equal(filteredInvestors.length, 2);
-            filteredInvestors = await I_SecurityToken.iterateInvestors.call(0, 4);
-            console.log("Filtered Investors (0, 4): " + filteredInvestors);
+            filteredInvestors = await I_SecurityToken.iterateInvestors.call(0, 3);
+            console.log("Filtered Investors (0, 3): " + filteredInvestors);
             assert.equal(filteredInvestors[0], investors[0]);
             assert.equal(filteredInvestors[1], investors[1]);
             assert.equal(filteredInvestors[2], investors[2]);
@@ -1091,7 +1089,7 @@ contract("SecurityToken", async (accounts) => {
             let sender = account_investor1;
             let receiver = account_investor2;
 
-            let start_investorCount = await I_SecurityToken.getInvestorCount.call();
+            let start_investorCount = await I_SecurityToken.holderCount.call();
             let start_balInv1 = await I_SecurityToken.balanceOf.call(account_investor1);
             let start_balInv2 = await I_SecurityToken.balanceOf.call(account_investor2);
 
@@ -1104,7 +1102,7 @@ contract("SecurityToken", async (accounts) => {
                 { from: account_controller }
             );
 
-            let end_investorCount = await I_SecurityToken.getInvestorCount.call();
+            let end_investorCount = await I_SecurityToken.holderCount.call();
             let end_balInv1 = await I_SecurityToken.balanceOf.call(account_investor1);
             let end_balInv2 = await I_SecurityToken.balanceOf.call(account_investor2);
 

@@ -30,7 +30,7 @@ contract USDTieredSTOStorage {
         uint256 mintedDiscountPoly;
     }
 
-    mapping(address => uint256) nonAccreditedLimitUSDOverride;
+    mapping(address => uint256) public nonAccreditedLimitUSDOverride;
 
     mapping(bytes32 => mapping(bytes32 => string)) oracleKeys;
 

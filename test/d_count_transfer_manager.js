@@ -449,11 +449,11 @@ contract("CountTransferManager", async (accounts) => {
 
             it("Should allow add a new token holder while transfer all the tokens at one go", async () => {
                 let amount = await I_SecurityToken2.balanceOf(account_investor2);
-                let investorCount = await I_SecurityToken2.getInvestorCount({ from: account_investor2 });
+                let investorCount = await I_SecurityToken2.holderCount({ from: account_investor2 });
                 console.log("current investor count is " + investorCount);
                 await I_SecurityToken2.transfer(account_investor4, amount, { from: account_investor2 });
                 assert((await I_SecurityToken2.balanceOf(account_investor4)).toString(), amount.toString(), { from: account_investor2 });
-                assert(await I_SecurityToken2.getInvestorCount({ from: account_investor2 }), investorCount);
+                assert(await I_SecurityToken2.holderCount({ from: account_investor2 }), investorCount);
             });
         });
 

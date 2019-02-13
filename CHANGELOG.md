@@ -12,6 +12,9 @@ All notable changes to this project will be documented in this file.
 * Fixed event `ModuleAdded` to also emit `_label`.    
 * Fixed function `getModule` to also return the respective module label.
 * Added datastore that is used to store data like investor list that is shared among modules.
+* `getInvestorCount()` now returns length of investor array that is everyone who ever held some st or has kyc data attached.
+* `holderCount()` returns the number of current st holders.
+* Added flags for Investors. Accredited and canbuyfromsto are now flags
 
 ## STR
 * Introduce new contract `STRGetter.sol`. It only contains the getter functions of the STR.
@@ -21,7 +24,7 @@ All notable changes to this project will be documented in this file.
 
 ## GeneralTransferManager
 * `modifyWhitelist()` function renamed to `modifyKYCData()`.
-* Added flags for Investors.
+* Added functions to modify and get flags
 
 ## Generalize
 * Removed `_polyAddress` parameter from constructors of all modules and module factories.

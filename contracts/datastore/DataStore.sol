@@ -15,22 +15,26 @@ contract DataStore is DataStoreStorage, IDataStore {
     event SecurityTokenChanged(address indexed _oldSecurityToken, address indexed _newSecurityToken);
 
     modifier onlyAuthorized() {
-        bool isOwner = msg.sender == IOwnable(address(securityToken)).owner();
-        require(isOwner ||
-            securityToken.isModule(msg.sender, DATA_KEY) ||
-            securityToken.checkPermission(msg.sender, address(this), MANAGEDATA),
-            "Unauthorized"
-        );
+        _isAuthorized();
         _;
     }
 
+    function _isAuthorized() internal view {
+        require(msg.sender == address(securityToken) ||
+            msg.sender == IOwnable(address(securityToken)).owner() ||
+            securityToken.checkPermission(msg.sender, address(this), MANAGEDATA) ||
+            securityToken.isModule(msg.sender, DATA_KEY),
+            "Unauthorized"
+        );
+    }
+
     modifier validKey(bytes32 _key) {
-        require(_key != bytes32(0), "Missing key");
+        require(_key != bytes32(0), "bad key");
         _;
     }
 
     modifier validArrayLength(uint256 _keyLength, uint256 _dataLength) {
-        require(_keyLength == _dataLength, "Array length mismatch");
+        require(_keyLength == _dataLength, "bad length");
         _;
     }
 

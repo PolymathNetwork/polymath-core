@@ -139,8 +139,8 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     event DisableController();
 
     function _isModule(address _module, uint8 _type) internal view returns(bool) {
-        require(modulesToData[_module].module == _module, "Wrong address");
-        require(!modulesToData[_module].isArchived, "Module archived");
+        if (modulesToData[_module].module != _module || modulesToData[_module].isArchived)
+            return false;
         for (uint256 i = 0; i < modulesToData[_module].moduleTypes.length; i++) {
             if (modulesToData[_module].moduleTypes[i] == _type) {
                 return true;
@@ -434,7 +434,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
 
     /**
      * @notice generates subset of investors
-     * NB - can be used in batches if investor list is large
+     * NB - can be used in batches if investor list is large. start and end both are included in array.
      * @param _start Position of investor to start iteration from
      * @param _end Position of investor to stop iteration at
      * @return list of investors

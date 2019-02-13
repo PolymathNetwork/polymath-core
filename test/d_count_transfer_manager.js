@@ -467,11 +467,10 @@ contract("CountTransferManager", async (accounts) => {
             it("Should upgrade the CTM", async () => {
                 let I_MockCountTransferManagerLogic = await MockCountTransferManager.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: account_polymath });
                 let bytesCM = encodeProxyCall(["uint256"], [11]);
-                await I_CountTransferManagerFactory.setLogicContract(I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath });
+                await I_CountTransferManagerFactory.setLogicContract("2.0.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath });
                 await I_SecurityToken2.upgradeModule(I_CountTransferManager2.address, { from: token_owner });
                 let I_MockCountTransferManager = await MockCountTransferManager.at(I_CountTransferManager2.address);
                 await I_MockCountTransferManager.newFunction(99);
-                assert.equal(0,1);
             });
 
             it("Should allow add a new token holder while transfer all the tokens at one go", async () => {

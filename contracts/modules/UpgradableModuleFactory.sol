@@ -9,6 +9,7 @@ import "../proxy/OwnedUpgradeabilityProxy.sol";
 contract UpgradableModuleFactory is ModuleFactory {
 
     struct LogicContract {
+        string version;
         address logicContract;
         bytes logicData;
     }
@@ -42,23 +43,24 @@ contract UpgradableModuleFactory is ModuleFactory {
     {
         require(_logicContract != address(0), "Invalid address");
         logicContracts[currentVersion].logicContract = _logicContract;
+        logicContracts[currentVersion].version = "1.0.0";
     }
 
-    function setLogicContract(address _logicContract, bytes calldata _logicData) external onlyOwner {
-        currentVersion++;
+    function setLogicContract(string calldata _version, address _logicContract, bytes calldata _logicData) external onlyOwner {
+        require(keccak256(abi.encodePacked(_version)) != keccak256(abi.encodePacked(logicContracts[currentVersion].version)), "Same version");
+        require(_logicContract != logicContracts[currentVersion].logicContract, "Same version");
         require(_logicContract != address(0), "Invalid address");
+        currentVersion++;
         logicContracts[currentVersion].logicContract = _logicContract;
         logicContracts[currentVersion].logicData = _logicData;
+        logicContracts[currentVersion].version = _version;
     }
-
-    event LogB(bytes _log);
 
     function upgrade() external {
         // Only allow issuers to upgrade in single step verisons to preserve upgradeToAndCall semantics
         uint256 newVersion = moduleVersions[msg.sender] + 1;
         require(newVersion <= currentVersion, "Incorrect version");
-        emit LogB(logicContracts[newVersion].logicData);
-        OwnedUpgradeabilityProxy(address(uint160(modules[msg.sender]))).upgradeToAndCall("", logicContracts[newVersion].logicContract, logicContracts[newVersion].logicData);
+        OwnedUpgradeabilityProxy(address(uint160(modules[msg.sender]))).upgradeToAndCall(logicContracts[newVersion].version, logicContracts[newVersion].logicContract, logicContracts[newVersion].logicData);
         moduleVersions[msg.sender] = newVersion;
     }
 

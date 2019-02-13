@@ -94,8 +94,8 @@ contract BlacklistTransferManager is TransferManager {
     * if the current time is between the timeframe define for the
     * blacklist type associated with the _from address
     */
-    function verifyTransfer(address _from, address _to, uint256 _amount, bytes  calldata _data, bool /* _isTransfer */) external returns(Result) {
-        (Result success, ) = executeTransfer(_from, _to, _amount, _data);
+    function executeTransfer(address _from, address _to, uint256 _amount, bytes  calldata _data) external returns(Result) {
+        (Result success, ) = verifyTransfer(_from, _to, _amount, _data);
         return success;
     }
 
@@ -107,7 +107,7 @@ contract BlacklistTransferManager is TransferManager {
     * if the current time is between the timeframe define for the
     * blacklist type associated with the _from address
     */
-    function executeTransfer(
+    function verifyTransfer(
         address _from,
         address /* _to */,
         uint256 /* _amount */,
@@ -115,7 +115,7 @@ contract BlacklistTransferManager is TransferManager {
     )   
         public
         view
-        returns(Result, byte)
+        returns(Result, bytes32)
     {
         if (!paused) {
             if (investorToBlacklist[_from].length != 0) {
@@ -131,13 +131,13 @@ contract BlacklistTransferManager is TransferManager {
                         uint256 repeater = (now.sub(startTimeTemp)).div(repeatPeriodTimeTemp);
                         /*solium-disable-next-line security/no-block-members*/
                         if (startTimeTemp.add(repeatPeriodTimeTemp.mul(repeater)) <= now && endTimeTemp.add(repeatPeriodTimeTemp.mul(repeater)) >= now) {
-                            return (Result.INVALID, 0xA6);
+                            return (Result.INVALID, bytes32(uint256(address(this)) << 96));
                         }
                     }
                 }
             }
         }
-        return (Result.NA, 0xA0);
+        return (Result.NA, bytes32(0));
     }
 
 

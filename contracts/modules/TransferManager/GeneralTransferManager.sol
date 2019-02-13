@@ -146,14 +146,13 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
      * @param _from Address of the sender
      * @param _to Address of the receiver
     */
-    function verifyTransfer(
+    function executeTransfer(
         address _from,
         address _to,
         uint256 _amount,
-        bytes calldata _data,
-        bool /* _isTransfer */
+        bytes calldata _data
     ) external returns(Result) {
-       (Result success,) = executeTransfer(_from, _to, _amount, _data);
+       (Result success,) = verifyTransfer(_from, _to, _amount, _data);
        return success;
     }
 
@@ -167,7 +166,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
      * @param _from Address of the sender
      * @param _to Address of the receiver
     */
-    function executeTransfer(
+    function verifyTransfer(
         address _from,
         address _to,
         uint256, /*_amount*/
@@ -175,7 +174,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     ) 
         public
         view
-        returns(Result, byte)
+        returns(Result, bytes32)
     {
         Result success;
         if (!paused) {
@@ -186,10 +185,10 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
             uint8 canBuyFromSTO;
             if (allowAllTransfers) {
                 //All transfers allowed, regardless of whitelist
-                return (Result.VALID, 0xA1);
+                return (Result.VALID, getAddressBytes32());
             }
             if (allowAllBurnTransfers && (_to == address(0))) {
-                return (Result.VALID, 0xA1);
+                return (Result.VALID, getAddressBytes32());
             }
 
             (fromTime, fromExpiry, canBuyFromSTO, toTime, toExpiry) = _getValuesForTransfer(_from, _to);
@@ -197,22 +196,22 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
             if (allowAllWhitelistTransfers) {
                 //Anyone on the whitelist can transfer, regardless of time
                 success = (_validExpiry(toExpiry) && _validExpiry(fromExpiry)) ? Result.VALID : Result.NA;
-                return (success, success == Result.VALID ? byte(0xA1) : byte(0xA0));
+                return (success, success == Result.VALID ? getAddressBytes32() : bytes32(0));
             }
             // Using the local variables to avoid the stack too deep error
             (fromTime, toTime) = _adjustTimes(fromTime, toTime);
             if (_from == issuanceAddress) {
                 // Possible STO transaction, but investor not allowed to purchased from STO
                 if ((canBuyFromSTO == uint8(0)) && _isSTOAttached()) {
-                    return (Result.NA, 0xA0);
+                    return (Result.NA, bytes32(0));
                 }
                 // if allowAllWhitelistIssuances is true, so time stamp ignored
                 if (allowAllWhitelistIssuances) {
                     success = _validExpiry(toExpiry) ? Result.VALID : Result.NA;
-                    return (success, success == Result.VALID ? byte(0xA1) : byte(0xA0));
+                    return (success, success == Result.VALID ? getAddressBytes32() : bytes32(0));
                 } else {
                     success = (_validExpiry(toExpiry) && _validLockTime(toTime)) ? Result.VALID : Result.NA;
-                    return (success, success == Result.VALID ? byte(0xA1) : byte(0xA0));
+                    return (success, success == Result.VALID ? getAddressBytes32() : bytes32(0));
                 }
             }
 
@@ -220,9 +219,9 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
             /*solium-disable-next-line security/no-block-members*/
             success = (_validExpiry(fromExpiry) && _validLockTime(fromTime) && _validExpiry(toExpiry) &&
                 _validLockTime(toTime)) ? Result.VALID : Result.NA; /*solium-disable-line security/no-block-members*/
-            return (success, success == Result.VALID ? byte(0xA1) : byte(0xA0));
+            return (success, success == Result.VALID ? getAddressBytes32() : bytes32(0));
         }
-        return (Result.NA, 0xA0);
+        return (Result.NA, bytes32(0));
     }
 
 
@@ -499,6 +498,10 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         allPermissions[0] = WHITELIST;
         allPermissions[1] = FLAGS;
         return allPermissions;
+    }
+
+    function getAddressBytes32() public view returns(bytes32) {
+        return bytes32(uint256(address(this)) << 96); 
     }
 
 }

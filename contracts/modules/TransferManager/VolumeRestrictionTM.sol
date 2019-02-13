@@ -107,19 +107,16 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
      * whose volume of tokens will voilate the maximum volume transfer restriction
      * @param _from Address of the sender
      * @param _amount The amount of tokens to transfer
-     * @param _isTransfer Whether or not this is an actual transfer or just a test to see if the tokens would be transferrable
      */
-    function verifyTransfer(address _from, address /*_to */, uint256 _amount, bytes calldata /*_data*/, bool _isTransfer) external returns (Result success) {
-        // Function must only be called by the associated security token if _isTransfer == true
-        require(msg.sender == securityToken || !_isTransfer);
+    function executeTransfer(address _from, address /*_to */, uint256 _amount, bytes calldata /*_data*/) external onlySecurityToken returns (Result success) {
         uint256 fromTimestamp;
         uint256 sumOfLastPeriod;
         uint256 daysCovered;
         uint256 dailyTime;
         uint256 endTime;
         bool isGlobal;
-        (success, fromTimestamp, sumOfLastPeriod, daysCovered, dailyTime, endTime, isGlobal) = _executeTransfer(_from, _amount);
-        if (_isTransfer && (fromTimestamp != 0 || dailyTime != 0)) {
+        (success, fromTimestamp, sumOfLastPeriod, daysCovered, dailyTime, endTime, isGlobal) = _verifyTransfer(_from, _amount);
+        if (fromTimestamp != 0 || dailyTime != 0) {
             _updateStorage(
                 _from,
                 _amount,
@@ -140,7 +137,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
      * @param _from Address of the sender
      * @param _amount The amount of tokens to transfer
      */
-    function executeTransfer(
+    function verifyTransfer(
         address _from,
         address /*_to*/ ,
         uint256 _amount,
@@ -148,13 +145,13 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
     ) 
         public
         view
-        returns (Result, byte)
+        returns (Result, bytes32)
     {
        
-        (Result success,,,,,,) = _executeTransfer(_from, _amount);
+        (Result success,,,,,,) = _verifyTransfer(_from, _amount);
         if (success == Result.INVALID)
-            return (success, 0xA5); 
-        return (Result.NA, 0xA0);
+            return (success, bytes32(uint256(address(this)) << 96)); 
+        return (Result.NA, bytes32(0));
     }
 
     /**
@@ -163,7 +160,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
      * @param _from Address of the sender
      * @param _amount The amount of tokens to transfer
      */
-    function _executeTransfer(
+    function _verifyTransfer(
         address _from,
         uint256 _amount
     ) 

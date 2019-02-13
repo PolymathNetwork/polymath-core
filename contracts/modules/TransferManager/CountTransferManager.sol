@@ -24,17 +24,16 @@ contract CountTransferManager is CountTransferManagerStorage, TransferManager {
      * @param _to Address of the receiver
      * @param _amount Amount to send
      */
-    function verifyTransfer(
+    function executeTransfer(
         address _from,
         address _to,
         uint256 _amount,
-        bytes calldata _data,
-        bool /* _isTransfer */
+        bytes calldata _data
     )
         external
         returns(Result)
     {
-        (Result success,) = executeTransfer(_from, _to, _amount, _data);
+        (Result success,) = verifyTransfer(_from, _to, _amount, _data);
         return success;
     }
 
@@ -44,7 +43,7 @@ contract CountTransferManager is CountTransferManagerStorage, TransferManager {
      * @param _to Address of the receiver
      * @param _amount Amount to send
      */
-    function executeTransfer(
+    function verifyTransfer(
         address _from,
         address _to,
         uint256 _amount,
@@ -52,19 +51,19 @@ contract CountTransferManager is CountTransferManagerStorage, TransferManager {
     ) 
         public
         view 
-        returns(Result, byte) 
+        returns(Result, bytes32) 
     {
         if (!paused) {
             if (maxHolderCount < ISecurityToken(securityToken).getInvestorCount()) {
                 // Allow transfers to existing maxHolders
                 if (ISecurityToken(securityToken).balanceOf(_to) != 0 || ISecurityToken(securityToken).balanceOf(_from) == _amount) {
-                    return (Result.NA, 0xA0);
+                    return (Result.NA, bytes32(0));
                 }
-                return (Result.INVALID, 0xA2);
+                return (Result.INVALID, bytes32(uint256(address(this)) << 96));
             }
-            return (Result.NA, 0xA0);
+            return (Result.NA, bytes32(0));
         }
-        return (Result.NA, 0xA0);
+        return (Result.NA, bytes32(0));
     }
 
 

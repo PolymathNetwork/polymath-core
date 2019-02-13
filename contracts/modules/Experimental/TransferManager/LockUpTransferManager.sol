@@ -75,8 +75,8 @@ contract LockUpTransferManager is TransferManager {
      * @param _from Address of the sender
      * @param _amount The amount of tokens to transfer
      */
-    function verifyTransfer(address  _from, address _to, uint256  _amount, bytes calldata _data, bool /*_isTransfer*/) external returns(Result) {
-        (Result success,) = executeTransfer(_from, _to, _amount, _data);
+    function executeTransfer(address  _from, address _to, uint256  _amount, bytes calldata _data) external returns(Result) {
+        (Result success,) = verifyTransfer(_from, _to, _amount, _data);
         return success;
     }
 
@@ -84,7 +84,7 @@ contract LockUpTransferManager is TransferManager {
      * @param _from Address of the sender
      * @param _amount The amount of tokens to transfer
      */
-    function executeTransfer(
+    function verifyTransfer(
         address  _from,
         address /* _to*/,
         uint256  _amount,
@@ -92,14 +92,14 @@ contract LockUpTransferManager is TransferManager {
     )   
         public
         view
-        returns(Result, byte)
+        returns(Result, bytes32)
     {
         // only attempt to verify the transfer if the token is unpaused, this isn't a mint txn, and there exists a lockup for this user
         if (!paused && _from != address(0) && userToLockups[_from].length != 0) {
             // check if this transfer is valid
             return _checkIfValidTransfer(_from, _amount);
         }
-        return (Result.NA, 0xA0);
+        return (Result.NA, bytes32(0));
     }
 
 
@@ -438,14 +438,14 @@ contract LockUpTransferManager is TransferManager {
      * @param _userAddress Address of the user whose lock ups should be checked
      * @param _amount Amount of tokens that need to transact
      */
-    function _checkIfValidTransfer(address _userAddress, uint256 _amount) internal view returns (Result, byte) {
+    function _checkIfValidTransfer(address _userAddress, uint256 _amount) internal view returns (Result, bytes32) {
         uint256 totalRemainingLockedAmount = getLockedTokenToUser(_userAddress);
         // Present balance of the user
         uint256 currentBalance = IERC20(securityToken).balanceOf(_userAddress);
         if ((currentBalance.sub(_amount)) >= totalRemainingLockedAmount) {
-            return (Result.NA, 0xA0);
+            return (Result.NA, bytes32(0));
         }
-        return (Result.INVALID, 0x55);
+        return (Result.INVALID, bytes32(uint256(address(this)) << 96));
     }
 
     /**

@@ -79,24 +79,21 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
 
     /**
      * @notice Used to create checkpoints that correctly reflect balances
-     * @param _isTransfer whether or not an actual transfer is occuring
      * @return always returns Result.NA
      */
-    function verifyTransfer(
+    function executeTransfer(
         address, /* _from */
         address, /* _to */
         uint256, /* _amount */
-        bytes calldata, /* _data */
-        bool _isTransfer
+        bytes calldata /* _data */
     ) 
-        external 
+        external
+        onlySecurityToken
         returns(Result) 
     {
-        require(_isTransfer == false || msg.sender == securityToken, "Sender is not owner");
-        if (paused || !_isTransfer) {
-            return (Result.NA);
+        if (!paused) {
+            _updateAll();
         }
-        _updateAll();
         return (Result.NA);
     }
 
@@ -104,7 +101,7 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
      * @notice Used to create checkpoints that correctly reflect balances
      * @return always returns Result.NA
      */
-    function executeTransfer(
+    function verifyTransfer(
         address, /* _from */
         address, /* _to */
         uint256, /* _amount */
@@ -112,9 +109,9 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
     ) 
         public
         view 
-        returns(Result, byte) 
+        returns(Result, bytes32) 
     {
-        return (Result.NA, 0xA0);
+        return (Result.NA, bytes32(0));
     }
 
     /**

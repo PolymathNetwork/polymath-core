@@ -398,7 +398,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         //  - to avoid the situation where a transfer manager transfers tokens, and this function is called recursively,
         //the function is marked as nonReentrant. This means that no TM can transfer (or mint / burn) tokens.
         _adjustInvestorCount(_from, _to, _value);
-        bool verified = _verifyTransfer(_from, _to, _value, _data, true);
+        bool verified = _executeTransfer(_from, _to, _value, _data);
         _adjustBalanceCheckpoints(_from);
         _adjustBalanceCheckpoints(_to);
         return verified;
@@ -407,23 +407,18 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     /**
      * @notice Validate transfer with TransferManager module if it exists
      * @dev TransferManager module has a key of 2
-     * @dev _isTransfer boolean flag is the deciding factor for whether the
-     * state variables gets modified or not within the different modules. i.e isTransfer = true
-     * leads to change in the modules environment otherwise _verifyTransfer() works as a read-only
      * function (no change in the state).
      * @param _from sender of transfer
      * @param _to receiver of transfer
      * @param _value value of transfer
      * @param _data data to indicate validation
-     * @param _isTransfer whether transfer is being executed
      * @return bool
      */
-    function _verifyTransfer(
+    function _executeTransfer(
         address _from,
         address _to,
         uint256 _value,
-        bytes memory _data,
-        bool _isTransfer
+        bytes memory _data
     ) 
         internal 
         checkGranularity(_value) 
@@ -439,7 +434,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
                 module = modules[TRANSFER_KEY][i];
                 if (!modulesToData[module].isArchived) {
                     unarchived = true;
-                    ITransferManager.Result valid = ITransferManager(module).verifyTransfer(_from, _to, _value, _data, _isTransfer);
+                    ITransferManager.Result valid = ITransferManager(module).executeTransfer(_from, _to, _value, _data);
                     if (valid == ITransferManager.Result.INVALID) {
                         isInvalid = true;
                     } else if (valid == ITransferManager.Result.VALID) {
@@ -634,15 +629,14 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     }
 
     function _canTransfer(address _from, address _to, uint256 _value, bytes memory _data) internal view returns (bool, byte, bytes32) {
-        byte reasonCode;
+        bytes32 appCode;
         bool success;
         if (_value % granularity != 0) {
-            reasonCode = 0xA8;
-            return (false, 0x50, bytes32(reasonCode));
+            return (false, 0x50, "Invalid granularity");
         }
-        (success, reasonCode) = TokenLib.verifyTransfer(modules[TRANSFER_KEY], modulesToData, _from, _to, _value, _data, transfersFrozen);
+        (success, appCode) = TokenLib.verifyTransfer(modules[TRANSFER_KEY], modulesToData, _from, _to, _value, _data, transfersFrozen);
         if (!success)
-            return (false, 0x50, bytes32(reasonCode));
+            return (false, 0x50, appCode);
 
         else if (balanceOf(_from) < _value)
             return (false, 0x52, bytes32(0));

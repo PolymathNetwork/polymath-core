@@ -54,23 +54,20 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
      * @param _from Address of the sender
      * @param _to Address of the receiver
      * @param _amount The amount of tokens to transfer
-     * @param _isTransfer Whether or not this is an actual transfer or just a test to see if the tokens would be transferrable
      */
-    function verifyTransfer(
+    function executeTransfer(
         address _from,
         address _to,
         uint256 _amount,
-        bytes calldata _data, 
-        bool _isTransfer
+        bytes calldata _data
     )
         external
+        onlySecurityToken
         returns(Result)
     {
-        // function must only be called by the associated security token if _isTransfer == true
-        require(_isTransfer == false || msg.sender == securityToken, "Sender is not the owner");
 
-       (Result success, byte esc) = executeTransfer(_from, _to, _amount, _data);
-        if (_isTransfer && esc == 0xA1) {
+       (Result success, bytes32 esc) = verifyTransfer(_from, _to, _amount, _data);
+        if (esc != bytes32(0)) {
             uint256 index = approvalIndex[_from][_to] - 1;
             ManualApproval storage approval = approvals[index];
             approval.allowance = approval.allowance.sub(_amount);
@@ -85,7 +82,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
      * @param _to Address of the receiver
      * @param _amount The amount of tokens to transfer
      */
-    function executeTransfer(
+    function verifyTransfer(
         address _from,
         address _to,
         uint256 _amount,
@@ -93,16 +90,16 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
     ) 
         public
         view 
-        returns(Result, byte) 
+        returns(Result, bytes32) 
     {
         if (!paused && approvalIndex[_from][_to] != 0) {
             uint256 index = approvalIndex[_from][_to] - 1;
             ManualApproval memory approval = approvals[index];
             if ((approval.expiryTime >= now) && (approval.allowance >= _amount)) {
-                return (Result.VALID, 0xA1);
+                return (Result.VALID, bytes32(uint256(address(this)) << 96)); 
             }
         }
-        return (Result.NA, 0xA0);
+        return (Result.NA, bytes32(0));
     }
 
 

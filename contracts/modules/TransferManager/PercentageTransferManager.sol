@@ -37,17 +37,16 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
      * @param _to Address of the receiver
      * @param _amount The amount of tokens to transfer
      */
-    function verifyTransfer(
+    function executeTransfer(
         address _from,
         address _to,
         uint256 _amount,
-        bytes calldata _data,
-        bool /* _isTransfer */
+        bytes calldata _data
     )
         external
         returns(Result)
     {
-        (Result success,) = executeTransfer(_from, _to, _amount, _data);
+        (Result success,) = verifyTransfer(_from, _to, _amount, _data);
         return success;
     }
 
@@ -57,7 +56,7 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
      * @param _to Address of the receiver
      * @param _amount The amount of tokens to transfer
      */
-    function executeTransfer(
+    function verifyTransfer(
         address _from,
         address _to,
         uint256 _amount,
@@ -65,23 +64,23 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
     ) 
         public
         view 
-        returns(Result, byte) 
+        returns(Result, bytes32) 
     {
         if (!paused) {
             if (_from == address(0) && allowPrimaryIssuance) {
-                return (Result.NA, 0xA0);
+                return (Result.NA, bytes32(0));
             }
             // If an address is on the whitelist, it is allowed to hold more than maxHolderPercentage of the tokens.
             if (whitelist[_to]) {
-                return (Result.NA, 0xA0);
+                return (Result.NA, bytes32(0));
             }
             uint256 newBalance = IERC20(securityToken).balanceOf(_to).add(_amount);
             if (newBalance.mul(uint256(10) ** 18).div(IERC20(securityToken).totalSupply()) > maxHolderPercentage) {
-                return (Result.INVALID, 0xA4);
+                return (Result.INVALID, bytes32(uint256(address(this)) << 96)); 
             }
-            return (Result.NA, 0xA0);
+            return (Result.NA, bytes32(0));
         }
-        return (Result.NA, 0xA0);
+        return (Result.NA, bytes32(0));
     }
 
     /**

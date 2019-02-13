@@ -253,7 +253,7 @@ library TokenLib {
     ) 
         public 
         view
-        returns(bool, byte) 
+        returns(bool, bytes32) 
     {   
         if (!transfersFrozen) {
             bool isInvalid = false;
@@ -261,14 +261,14 @@ library TokenLib {
             bool isForceValid = false;
             // Use the local variables to avoid the stack too deep error
             transfersFrozen = false; // bool unarchived = false;
-            byte reasonCode;
+            bytes32 appCode;
             for (uint256 i = 0; i < modules.length; i++) {
                 if (!modulesToData[modules[i]].isArchived) {
                     transfersFrozen = true;
-                    (ITransferManager.Result valid, byte reason) = ITransferManager(modules[i]).executeTransfer(from, to, value, data);
+                    (ITransferManager.Result valid, bytes32 reason) = ITransferManager(modules[i]).verifyTransfer(from, to, value, data);
                     if (valid == ITransferManager.Result.INVALID) {
                         isInvalid = true;
-                        reasonCode = reason;
+                        appCode = reason;
                     } else if (valid == ITransferManager.Result.VALID) {
                         isValid = true;
                     } else if (valid == ITransferManager.Result.FORCE_VALID) {
@@ -279,9 +279,9 @@ library TokenLib {
             // If no unarchived modules, return true by default
             // Use the local variables to avoid the stack too deep error
             isValid = transfersFrozen ? (isForceValid ? true : (isInvalid ? false : isValid)) : true;
-            return (isValid, isValid ? byte(0x51): reasonCode);
+            return (isValid, isValid ? bytes32(hex"51"): appCode);
         }
-        return (false, 0x54);
+        return (false, bytes32(hex"54"));
     }
 
 }

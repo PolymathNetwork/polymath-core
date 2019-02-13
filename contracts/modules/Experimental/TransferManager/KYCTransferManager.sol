@@ -35,19 +35,19 @@ contract KYCTransferManager is TransferManager {
         return bytes4(0);
     }
 
-    function verifyTransfer(address _from, address _to, uint256 _amount, bytes calldata _data, bool /* _isTransfer */) 
+    function executeTransfer(address _from, address _to, uint256 _amount, bytes calldata _data) 
         external 
         returns (Result) 
     {
-        (Result success,)= executeTransfer(_from, _to, _amount, _data);
+        (Result success,)= verifyTransfer(_from, _to, _amount, _data);
         return success;
     }
 
-    function executeTransfer(address /*_from*/, address _to, uint256 /*_amount*/, bytes memory /* _data */) public view returns(Result, byte) {
+    function verifyTransfer(address /*_from*/, address _to, uint256 /*_amount*/, bytes memory /* _data */) public view returns(Result, bytes32) {
         if (!paused && checkKYC(_to)) {
-            return (Result.VALID, 0xA1);
+            return (Result.VALID, bytes32(uint256(address(this)) << 96));
         }
-        return (Result.NA, 0xA0);
+        return (Result.NA, bytes32(0));
     } 
 
     function modifyKYC( address _investor, bool _kycStatus) public withPerm(KYC_PROVIDER) {

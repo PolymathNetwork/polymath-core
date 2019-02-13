@@ -86,14 +86,12 @@ contract SignedTransferManager is TransferManager {
     * @param _to address transfer to
     * @param _amount transfer amount
     * @param _data signature
-    * @param _isTransfer bool value of isTransfer
     * Sig needs to be valid (not used or deemed as invalid)
     * Signer needs to be in the signers mapping
     */
-    function verifyTransfer(address _from, address _to, uint256 _amount, bytes calldata _data , bool _isTransfer) external returns(Result) {
-        (Result success, ) = executeTransfer(_from, _to, _amount, _data);
-        require (_isTransfer == false || msg.sender == securityToken, "Sender is not ST");
-        if (_isTransfer && success == Result.VALID) {
+    function executeTransfer(address _from, address _to, uint256 _amount, bytes calldata _data) external onlySecurityToken returns(Result) {
+        (Result success, ) = verifyTransfer(_from, _to, _amount, _data);
+        if (success == Result.VALID) {
             bytes memory signature;
             (,,,signature) = abi.decode(_data, (address, uint256, uint256, bytes));
             _invalidateSignature(signature);
@@ -110,11 +108,11 @@ contract SignedTransferManager is TransferManager {
     * Sig needs to be valid (not used or deemed as invalid)
     * Signer needs to be in the signers mapping
     */
-    function executeTransfer(address _from, address _to, uint256 _amount, bytes memory _data) public view returns(Result, byte) {
+    function verifyTransfer(address _from, address _to, uint256 _amount, bytes memory _data) public view returns(Result, bytes32) {
         if (!paused) {
 
             if (_data.length == 0)
-                return (Result.NA, 0xA0);
+                return (Result.NA, bytes32(0));
 
             address targetAddress;
             uint256 nonce;
@@ -123,16 +121,16 @@ contract SignedTransferManager is TransferManager {
             (targetAddress, nonce, expiry, signature) = abi.decode(_data, (address, uint256, uint256, bytes));
 
             if (address(this) != targetAddress || signature.length == 0 || _checkSignatureIsInvalid(signature) || expiry < now)
-                return (Result.NA, 0xA0);
+                return (Result.NA, bytes32(0));
 
             bytes32 hash = keccak256(abi.encodePacked(targetAddress, nonce, expiry, _from, _to, _amount));
             address signer = hash.toEthSignedMessageHash().recover(signature);
 
             if (!_checkSigner(signer))
-                return (Result.NA, 0xA0);
-            return (Result.VALID, 0xA1);
+                return (Result.NA, bytes32(0));
+            return (Result.VALID, bytes32(uint256(address(this)) << 96));
         }
-        return (Result.NA, 0xA0);
+        return (Result.NA, bytes32(0));
     }
 
     /**

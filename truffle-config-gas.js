@@ -69,6 +69,13 @@ module.exports = {
     }
   },
   mocha: {
-    enableTimeouts: false
+    enableTimeouts: false,
+    reporter: 'eth-gas-reporter',
+    reporterOptions : {
+      currency: 'USD',
+      gasPrice: 5,
+      onlyCalledMethods: true,
+      showTimeSpent: true
+    }
   }
 };

@@ -8,6 +8,7 @@
   },
   "scripts": {
     "test": "scripts/test.sh 2> /dev/null",
+    "gas": "scripts/gasUsage.sh",
     "wintest": "scripts\\wintest.cmd",
     "wincov": "scripts\\wincov.cmd",
     "docs": "scripts/docs.sh",

@@ -85,6 +85,7 @@
     "eslint-plugin-node": "^8.0.0",
     "eslint-plugin-promise": "^4.0.1",
     "eslint-plugin-standard": "^4.0.0",
+    "eth-gas-reporter": "^0.1.12",
     "ethereum-bridge": "^0.6.1",
     "ethereumjs-abi": "^0.6.5",
     "ganache-cli": "^6.2.4",

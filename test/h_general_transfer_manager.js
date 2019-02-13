@@ -230,19 +230,20 @@ contract("GeneralTransferManager", async (accounts) => {
                     gas: 6000000
                 }
             );
+            await I_GeneralTransferManager.modifyInvestorFlagMulti([account_affiliates1, account_affiliates2], [1, 1], [true, true], { from: account_issuer });
             assert.equal(tx.logs[0].args._investor, account_affiliates1);
             assert.equal(tx.logs[1].args._investor, account_affiliates2);
-            assert.deepEqual(await I_GeneralTransferManager.getInvestors.call(), [account_affiliates1, account_affiliates2]);
-            console.log(await I_GeneralTransferManager.getAllInvestorsData.call());
-            let data = await I_GeneralTransferManager.getInvestorsData.call([account_affiliates1, account_affiliates2]);
+            assert.deepEqual(await I_GeneralTransferManager.getAllInvestors.call(), [account_affiliates1, account_affiliates2]);
+            console.log(await I_GeneralTransferManager.getAllKYCData.call());
+            let data = await I_GeneralTransferManager.getKYCData.call([account_affiliates1, account_affiliates2]);
             assert.equal(data[0][0].toString(), fromTime1);
             assert.equal(data[0][1].toString(), fromTime2);
             assert.equal(data[1][0].toString(), toTime1);
             assert.equal(data[1][1].toString(), toTime2);
             assert.equal(data[2][0].toString(), expiryTime1);
             assert.equal(data[2][1].toString(), expiryTime2);
-            assert.isFalse(data[3][0]);
-            assert.isFalse(data[3][1]);
+            assert.equal(await I_GeneralTransferManager.getInvestorFlag(account_affiliates1, 1), true);
+            assert.equal(await I_GeneralTransferManager.getInvestorFlag(account_affiliates2, 1), true);
         });
 
         it("Should whitelist lots of addresses and check gas", async () => {
@@ -259,7 +260,7 @@ contract("GeneralTransferManager", async (accounts) => {
             });
             console.log("Multi Whitelist x 50: " + tx.receipt.gasUsed);
             assert.deepEqual(
-                await I_GeneralTransferManager.getInvestors.call(),
+                await I_GeneralTransferManager.getAllInvestors.call(),
                 [account_affiliates1, account_affiliates2].concat(mockInvestors)
             );
         });

@@ -687,8 +687,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
         it("Should succesfully transact the tokens by investor 1 just after the startTime", async() => {
             // Check the transfer will be valid or not by calling the verifyTransfer() directly by using _isTransfer = false
-            let result = await I_VolumeRestrictionTM.verifyTransfer.call(account_investor1, account_investor3, new BN(web3.utils.toWei('.3', "ether")), "0x0", false);
-            assert.equal(result.toString(), 1);
+            let result = await I_VolumeRestrictionTM.verifyTransfer.call(account_investor1, account_investor3, new BN(web3.utils.toWei('.3', "ether")), "0x0");
+            assert.equal(result[0].toString(), 1);
             // Perform the transaction
             console.log(`
                 Gas estimation (Individual): ${await I_SecurityToken.transfer.estimateGas(account_investor3, new BN(web3.utils.toWei('.3', "ether")), {from: account_investor1})}`

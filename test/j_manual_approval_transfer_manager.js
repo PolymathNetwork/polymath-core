@@ -271,15 +271,14 @@ contract("ManualApprovalTransferManager", accounts => {
             );
             I_ManualApprovalTransferManager = await ManualApprovalTransferManager.at(tx.logs[2].args._module);
         });
-        //function verifyTransfer(address _from, address _to, uint256 _amount, bool _isTransfer) public returns(Result) {
-        it("Cannot call verifyTransfer on the TM directly if _isTransfer == true", async () => {
+        
+        it("Cannot call executeTransfer on the TM directly", async () => {
             await catchRevert(
-                I_ManualApprovalTransferManager.verifyTransfer(
+                I_ManualApprovalTransferManager.executeTransfer(
                     account_investor4,
                     account_investor4,
                     web3.utils.toWei("2", "ether"),
                     "0x0",
-                    true,
                     { from: token_owner }
                 )
             );
@@ -291,7 +290,6 @@ contract("ManualApprovalTransferManager", accounts => {
                 account_investor4,
                 web3.utils.toWei("2", "ether"),
                 "0x0",
-                false,
                 { from: token_owner }
             );
         });

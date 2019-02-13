@@ -179,10 +179,6 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
             // Using the local variables to avoid the stack too deep error
             (fromTime, toTime) = _adjustTimes(fromTime, toTime);
             if (_from == issuanceAddress) {
-                // Possible STO transaction, but investor not allowed to purchased from STO
-                // if ((canBuyFromSTO == uint8(0)) && _isSTOAttached()) {
-                //     return Result.NA;
-                // }
                 // if allowAllWhitelistIssuances is true, so time stamp ignored
                 if (allowAllWhitelistIssuances) {
                     return _validExpiry(toExpiry) ? Result.VALID : Result.NA;
@@ -258,6 +254,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
 
     /**
     * @notice Used to modify investor Flag.
+    * @dev Flags are properties about investors that can be true or false like isAccredited
     * @param _investor is the address of the investor.
     * @param _flag index of flag to change. flag is used to know specifics about investor like isAccredited.
     * @param _value value of the flag. a flag can be true or false.
@@ -282,6 +279,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
            //KYC data can not be present if added is false and hence we can set packed KYC as uint256(1) to set added as true
            dataStore.setUint256(_getKey(WHITELIST, _investor), uint256(1));
         }
+        //NB Flags are packed together in a uint256 to save gas. We can have a maximum of 256 flags.
         uint256 flags = dataStore.getUint256(_getKey(INVESTORFLAGS, _investor));
         flags = flags | (ONE << _flag);
         dataStore.setUint256(_getKey(INVESTORFLAGS, _investor), flags);

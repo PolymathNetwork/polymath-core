@@ -28,15 +28,6 @@ library TokenLib {
         uint256 value;
     }
 
-    // struct InvestorDataStorage {
-    //     // List of investors who have ever held a non-zero token balance
-    //     mapping(address => bool) investorListed;
-    //     // List of token holders
-    //     address[] investors;
-    //     // Total number of non-zero token holders
-    //     uint256 investorCount;
-    // }
-
     // Emit when Module is archived from the SecurityToken
     event ModuleArchived(uint8[] _types, address _module);
     // Emit when Module is unarchived from the SecurityToken

@@ -19,17 +19,13 @@ contract GeneralTransferManagerStorage {
 
 
     // //from and to timestamps that an investor can send / receive tokens respectively
+    // // Now Stored in DataStore
     // struct TimeRestriction {
     //     uint64 fromTime;
     //     uint64 toTime;
     //     uint64 expiryTime;
-    //     uint8 canBuyFromSTO;
     //     uint8 added;
     // }
-
-    // // An address can only send / receive tokens once their corresponding uint256 > block.number
-    // // (unless allowAllTransfers == true or allowAllWhitelistTransfers == true)
-    // mapping (address => TimeRestriction) public whitelist;
 
     // Allows all TimeRestrictions to be offset
     struct Defaults {

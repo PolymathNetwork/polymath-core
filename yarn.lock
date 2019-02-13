@@ -7394,10 +7394,10 @@ truffle-wallet-provider@0.0.5:
     web3 "^0.18.2"
     web3-provider-engine "^8.4.0"
 
-truffle@^5.0.0:
-  version "5.0.0"
-  resolved "https://registry.yarnpkg.com/truffle/-/truffle-5.0.0.tgz#2e4e2eedc5583ae38c7227585e5177d6360fbc6d"
-  integrity sha512-la0TJu+E59Ut62i6cGY0sugeubglDqH5w49a7IrpxZ1nnsDqv6qWB3ibiyYiCp/jr+iI0bLtcr3DKkfQjVDd+g==
+truffle@^5.0.4:
+  version "5.0.4"
+  resolved "https://registry.yarnpkg.com/truffle/-/truffle-5.0.4.tgz#fc68cb6a6a35b46a7ca69eca7b64d161b491db3d"
+  integrity sha512-pZYFbU10Hb6PiTalJm+dB6s1qIZjE5qc0ux5fIgQ7Nj24zDrlYmOYruP3yhuqywwzr3PUHGPxr6hXuje0BFYoA==
   dependencies:
     app-module-path "^2.2.0"
     mocha "^4.1.0"

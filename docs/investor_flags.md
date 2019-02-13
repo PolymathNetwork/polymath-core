@@ -16,8 +16,8 @@
         </tr>
         <tr>
             <td> 1 </td>
-            <td> canBuyFromSto </td>
-            <td> Defines if an Investor has special permission to buy from STOs</td>
+            <td> canNotBuyFromSto </td>
+            <td> Defines if an Investor is restricted from participating in STOs</td>
         </tr>
     </tbody>
 </table>

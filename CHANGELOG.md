@@ -25,6 +25,7 @@ All notable changes to this project will be documented in this file.
 ## GeneralTransferManager
 * `modifyWhitelist()` function renamed to `modifyKYCData()`.
 * Added functions to modify and get flags
+* `canBuyFromSto` is now `canNotBuyFromSto` and it is the flag `1`
 
 ## Generalize
 * Removed `_polyAddress` parameter from constructors of all modules and module factories.

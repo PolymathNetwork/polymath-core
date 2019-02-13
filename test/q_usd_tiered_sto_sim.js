@@ -379,6 +379,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
             await I_GeneralTransferManager.modifyKYCData(NONACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
             await I_GeneralTransferManager.modifyKYCData(NONACCREDITED2, fromTime, toTime, expiryTime, { from: ISSUER });
             await I_GeneralTransferManager.modifyKYCData(NOTAPPROVED, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyInvestorFlag(NOTAPPROVED, 1, true, { from: ISSUER });
 
             await increaseTime(duration.days(3));
 

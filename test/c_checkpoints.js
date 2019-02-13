@@ -148,13 +148,11 @@ contract("Checkpoints", async function(accounts) {
         it("Should Buy the tokens", async () => {
             // Add the Investor in to the whitelist
             let ltime = new BN(await latestTime());
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
+            let tx = await I_GeneralTransferManager.modifyKYCData(
                 account_investor1,
                 ltime,
                 ltime,
                 ltime.add(new BN(duration.days(10))),
-                false,
-                false,
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -175,13 +173,11 @@ contract("Checkpoints", async function(accounts) {
         it("Should Buy some more tokens", async () => {
             // Add the Investor in to the whitelist
             let ltime = new BN(await latestTime());
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
+            let tx = await I_GeneralTransferManager.modifyKYCData(
                 account_investor2,
                 ltime,
                 ltime,
                 ltime.add(new BN(duration.days(10))),
-                false,
-                false,
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -202,13 +198,11 @@ contract("Checkpoints", async function(accounts) {
 
         it("Add a new token holder", async () => {
             let ltime = new BN(await latestTime());
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
+            let tx = await I_GeneralTransferManager.modifyKYCData(
                 account_investor3,
                 ltime,
                 ltime,
                 ltime.add(new BN(duration.days(10))),
-                false,
-                false,
                 {
                     from: account_issuer,
                     gas: 6000000

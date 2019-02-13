@@ -199,7 +199,7 @@ contract("SecurityToken", async (accounts) => {
             let toTime = new BN(currentTime.add(new BN(duration.days(100))));
             let expiryTime = new BN(toTime.add(new BN(duration.days(100))));
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_affiliate1, currentTime, toTime, expiryTime, true, false, {
+            let tx = await I_GeneralTransferManager.modifyKYCData(account_affiliate1, currentTime, toTime, expiryTime, {
                 from: token_owner,
                 gas: 6000000
             });
@@ -218,7 +218,7 @@ contract("SecurityToken", async (accounts) => {
             let toTime = new BN(currentTime.add(new BN(duration.days(100))));
             let expiryTime = new BN(toTime.add(new BN(duration.days(100))));
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_affiliate2, currentTime, toTime, expiryTime, true, false, {
+            let tx = await I_GeneralTransferManager.modifyKYCData(account_affiliate2, currentTime, toTime, expiryTime, {
                 from: token_owner,
                 gas: 6000000
             });
@@ -536,7 +536,7 @@ contract("SecurityToken", async (accounts) => {
             toTime = fromTime + duration.days(100);
             expiryTime = toTime + duration.days(100);
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, fromTime, toTime, expiryTime, true, false, {
+            let tx = await I_GeneralTransferManager.modifyKYCData(account_investor1, fromTime, toTime, expiryTime, {
                 from: token_owner,
                 gas: 6000000
             });
@@ -648,7 +648,7 @@ contract("SecurityToken", async (accounts) => {
         });
 
         it("Should transfer from whitelist investor1 to whitelist investor 2", async () => {
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor2, fromTime, toTime, expiryTime, true, false, {
+            let tx = await I_GeneralTransferManager.modifyKYCData(account_investor2, fromTime, toTime, expiryTime, {
                 from: token_owner,
                 gas: 500000
             });
@@ -670,7 +670,7 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should transferFrom from one investor to other", async () => {
             await I_SecurityToken.approve(account_investor1, new BN(2).mul(new BN(10).pow(new BN(18))), { from: account_investor2 });
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor3, fromTime, toTime, expiryTime, true, false, {
+            let tx = await I_GeneralTransferManager.modifyKYCData(account_investor3, fromTime, toTime, expiryTime, {
                 from: token_owner,
                 gas: 500000
             });
@@ -715,7 +715,7 @@ contract("SecurityToken", async (accounts) => {
         });
 
         it("Should add the investor in the whitelist by the delegate", async () => {
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_temp, fromTime, toTime, expiryTime, true, false, {
+            let tx = await I_GeneralTransferManager.modifyKYCData(account_temp, fromTime, toTime, expiryTime, {
                 from: account_delegate,
                 gas: 6000000
             });
@@ -755,7 +755,7 @@ contract("SecurityToken", async (accounts) => {
         });
 
         it("Should remove investor from the whitelist by the delegate", async () => {
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_temp, new BN(0), new BN(0), new BN(0), true, false, {
+            let tx = await I_GeneralTransferManager.modifyKYCData(account_temp, new BN(0), new BN(0), new BN(0), {
                 from: account_delegate,
                 gas: 6000000
             });
@@ -784,7 +784,7 @@ contract("SecurityToken", async (accounts) => {
         });
 
         it("Should fail in buying to tokens", async () => {
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_temp, fromTime, toTime, expiryTime, true, false, {
+            let tx = await I_GeneralTransferManager.modifyKYCData(account_temp, fromTime, toTime, expiryTime, {
                 from: account_delegate,
                 gas: 6000000
             });
@@ -965,13 +965,11 @@ contract("SecurityToken", async (accounts) => {
             I_MockRedemptionManager = await MockRedemptionManager.at(tx.logs[2].args._module);
             // adding the burn module into the GTM
             currentTime = new BN(await latestTime());
-            tx = await I_GeneralTransferManager.modifyWhitelist(
+            tx = await I_GeneralTransferManager.modifyKYCData(
                 I_MockRedemptionManager.address,
                 currentTime,
                 currentTime.add(new BN(duration.seconds(2))),
                 currentTime.add(new BN(duration.days(50))),
-                true, 
-                false,
                 {
                     from: account_delegate,
                     gas: 6000000
@@ -1008,13 +1006,11 @@ contract("SecurityToken", async (accounts) => {
 
             // adding the burn module into the GTM
             currentTime = new BN(await latestTime());
-            tx = await I_GeneralTransferManager.modifyWhitelist(
+            tx = await I_GeneralTransferManager.modifyKYCData(
                 I_MockRedemptionManager.address,
                 currentTime,
                 currentTime.add(new BN(duration.seconds(2))),
                 currentTime.add(new BN(duration.days(50))),
-                true,
-                false,
                 {
                     from: account_delegate,
                     gas: 6000000

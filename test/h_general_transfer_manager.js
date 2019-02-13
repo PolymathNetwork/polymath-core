@@ -203,13 +203,11 @@ contract("GeneralTransferManager", async (accounts) => {
 
         it("Should whitelist the affiliates before the STO attached", async () => {
             console.log(`Estimate gas of one Whitelist: 
-                ${await I_GeneralTransferManager.modifyWhitelist.estimateGas(
+                ${await I_GeneralTransferManager.modifyKYCData.estimateGas(
                     account_affiliates1,
                     currentTime + currentTime.add(new BN(duration.days(30))),
                     currentTime + currentTime.add(new BN(duration.days(90))),
                     currentTime + currentTime.add(new BN(duration.days(965))),
-                    false,
-                    false,
                     {
                         from: account_issuer
                     }
@@ -222,13 +220,11 @@ contract("GeneralTransferManager", async (accounts) => {
             let expiryTime1 = currentTime + currentTime.add(new BN(duration.days(965)));
             let expiryTime2 = currentTime.add(new BN(duration.days(365)));
 
-            let tx = await I_GeneralTransferManager.modifyWhitelistMulti(
+            let tx = await I_GeneralTransferManager.modifyKYCDataMulti(
                 [account_affiliates1, account_affiliates2],
                 [fromTime1, fromTime2],
                 [toTime1, toTime2],
                 [expiryTime1, expiryTime2],
-                [false, false],
-                [false, false],
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -257,7 +253,7 @@ contract("GeneralTransferManager", async (accounts) => {
 
             let times = range1(50);
             let bools = rangeB(50);
-            let tx = await I_GeneralTransferManager.modifyWhitelistMulti(mockInvestors, times, times, times, bools, bools, {
+            let tx = await I_GeneralTransferManager.modifyKYCDataMulti(mockInvestors, times, times, times, {
                 from: account_issuer,
                 gas: 7900000
             });
@@ -358,13 +354,11 @@ contract("GeneralTransferManager", async (accounts) => {
         it("Should Buy the tokens", async () => {
             // Add the Investor in to the whitelist
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
+            let tx = await I_GeneralTransferManager.modifyKYCData(
                 account_investor1,
                 currentTime,
                 currentTime,
                 currentTime.add(new BN(duration.days(10))),
-                true,
-                false,
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -422,7 +416,7 @@ contract("GeneralTransferManager", async (accounts) => {
         it("Should Buy the tokens", async () => {
             // Add the Investor in to the whitelist
             // snap_id = await takeSnapshot();
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, new BN(0), new BN(0), currentTime.add(new BN(duration.days(20))), true, false, {
+            let tx = await I_GeneralTransferManager.modifyKYCData(account_investor1, new BN(0), new BN(0), currentTime.add(new BN(duration.days(20))), {
                 from: account_issuer,
                 gas: 6000000
             });
@@ -433,13 +427,11 @@ contract("GeneralTransferManager", async (accounts) => {
                 "Failed in adding the investor in whitelist"
             );
 
-            tx = await I_GeneralTransferManager.modifyWhitelist(
+            tx = await I_GeneralTransferManager.modifyKYCData(
                 account_investor2,
                 currentTime,
                 currentTime,
                 currentTime.add(new BN(duration.days(20))),
-                true,
-                true,
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -476,7 +468,7 @@ contract("GeneralTransferManager", async (accounts) => {
             await increaseTime(duration.days(2));
             await I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("2", "ether")), { from: account_investor2 });
             // revert changes
-            await I_GeneralTransferManager.modifyWhitelist(account_investor2, new BN(0), new BN(0), new BN(0), false, false, {
+            await I_GeneralTransferManager.modifyKYCData(account_investor2, new BN(0), new BN(0), new BN(0), {
                 from: account_issuer,
                 gas: 6000000
             });
@@ -517,8 +509,6 @@ contract("GeneralTransferManager", async (accounts) => {
                 fromTime,
                 toTime,
                 expiryTime,
-                true,
-                false,
                 validFrom,
                 validTo,
                 nonce,
@@ -526,13 +516,11 @@ contract("GeneralTransferManager", async (accounts) => {
             );
 
             await catchRevert(
-                I_GeneralTransferManager.modifyWhitelistSigned(
+                I_GeneralTransferManager.modifyKYCDataSigned(
                     account_investor2,
                     fromTime,
                     toTime,
                     expiryTime,
-                    true,
-                    false,
                     validFrom,
                     validTo,
                     nonce,
@@ -557,8 +545,6 @@ contract("GeneralTransferManager", async (accounts) => {
                 fromTime,
                 toTime,
                 expiryTime,
-                true,
-                false,
                 validFrom,
                 validTo,
                 nonce,
@@ -566,13 +552,11 @@ contract("GeneralTransferManager", async (accounts) => {
             );
 
             await catchRevert(
-                I_GeneralTransferManager.modifyWhitelistSigned(
+                I_GeneralTransferManager.modifyKYCDataSigned(
                     account_investor2,
                     fromTime,
                     toTime,
                     expiryTime,
-                    true,
-                    false,
                     validFrom,
                     validTo,
                     nonce,
@@ -597,8 +581,6 @@ contract("GeneralTransferManager", async (accounts) => {
                 fromTime,
                 toTime,
                 expiryTime,
-                true,
-                false,
                 validFrom,
                 validTo,
                 nonce,
@@ -606,13 +588,11 @@ contract("GeneralTransferManager", async (accounts) => {
             );
 
             await catchRevert(
-                I_GeneralTransferManager.modifyWhitelistSigned(
+                I_GeneralTransferManager.modifyKYCDataSigned(
                     account_investor2,
                     fromTime,
                     toTime,
                     expiryTime,
-                    true,
-                    false,
                     validFrom,
                     validTo,
                     nonce,
@@ -637,21 +617,17 @@ contract("GeneralTransferManager", async (accounts) => {
                 currentTime.toNumber(),
                 currentTime.add(new BN(duration.days(100))).toNumber(),
                 expiryTime + duration.days(200),
-                true,
-                false,
                 validFrom,
                 validTo,
                 nonce,
                 signer.privateKey
             );
 
-            let tx = await I_GeneralTransferManager.modifyWhitelistSigned(
+            let tx = await I_GeneralTransferManager.modifyKYCDataSigned(
                 account_investor2,
                 currentTime.toNumber(),
                 currentTime.add(new BN(duration.days(100))).toNumber(),
                 expiryTime + duration.days(200),
-                true,
-                false,
                 validFrom,
                 validTo,
                 nonce,
@@ -689,8 +665,6 @@ contract("GeneralTransferManager", async (accounts) => {
                 currentTime.toNumber(),
                 currentTime.add(new BN(duration.days(100))).toNumber(),
                 expiryTime + duration.days(200),
-                true,
-                false,
                 validFrom,
                 validTo,
                 nonce,
@@ -698,13 +672,11 @@ contract("GeneralTransferManager", async (accounts) => {
             );
 
             await catchRevert(
-                I_GeneralTransferManager.modifyWhitelistSigned(
+                I_GeneralTransferManager.modifyKYCDataSigned(
                     account_investor2,
                     currentTime.toNumber(),
                     currentTime.add(new BN(duration.days(100))).toNumber(),
                     expiryTime + duration.days(200),
-                    true,
-                    false,
                     validFrom,
                     validTo,
                     nonce,
@@ -729,21 +701,17 @@ contract("GeneralTransferManager", async (accounts) => {
                 currentTime.toNumber(),
                 currentTime.add(new BN(duration.days(100))).toNumber(),
                 expiryTime + duration.days(200),
-                true,
-                false,
                 validFrom,
                 validTo,
                 nonce,
                 "0x" + token_owner_pk
             );
 
-            await I_GeneralTransferManager.modifyWhitelistSigned(
+            await I_GeneralTransferManager.modifyKYCDataSigned(
                 account_investor2,
                 currentTime.toNumber(),
                 currentTime.add(new BN(duration.days(100))).toNumber(),
                 expiryTime + duration.days(200),
-                true,
-                false,
                 validFrom,
                 validTo,
                 nonce,
@@ -827,13 +795,11 @@ contract("GeneralTransferManager", async (accounts) => {
             let expiryTime = toTime + duration.days(10);
 
             await catchRevert(
-                I_GeneralTransferManager.modifyWhitelistMulti(
+                I_GeneralTransferManager.modifyKYCDataMulti(
                     [account_investor3, account_investor4],
                     [fromTime, fromTime],
                     [toTime, toTime],
                     [expiryTime, expiryTime],
-                    [true, true],
-                    [true, true],
                     {
                         from: account_delegate,
                         gas: 6000000
@@ -848,13 +814,11 @@ contract("GeneralTransferManager", async (accounts) => {
             let expiryTime = toTime + duration.days(10);
 
             await catchRevert(
-                I_GeneralTransferManager.modifyWhitelistMulti(
+                I_GeneralTransferManager.modifyKYCDataMulti(
                     [account_investor3, account_investor4],
                     [fromTime],
                     [toTime, toTime],
                     [expiryTime, expiryTime],
-                    [1, 1],
-                    [true, true],
                     {
                         from: account_delegate,
                         gas: 6000000
@@ -869,13 +833,11 @@ contract("GeneralTransferManager", async (accounts) => {
             let expiryTime = toTime + duration.days(10);
 
             await catchRevert(
-                I_GeneralTransferManager.modifyWhitelistMulti(
+                I_GeneralTransferManager.modifyKYCDataMulti(
                     [account_investor3, account_investor4],
                     [fromTime, fromTime],
                     [toTime],
                     [expiryTime, expiryTime],
-                    [true, true],
-                    [true, true],
                     {
                         from: account_delegate,
                         gas: 6000000
@@ -890,13 +852,11 @@ contract("GeneralTransferManager", async (accounts) => {
             let expiryTime = toTime + duration.days(10);
 
             await catchRevert(
-                I_GeneralTransferManager.modifyWhitelistMulti(
+                I_GeneralTransferManager.modifyKYCDataMulti(
                     [account_investor3, account_investor4],
                     [fromTime, fromTime],
                     [toTime, toTime],
                     [expiryTime],
-                    [true, true],
-                    [true, true],
                     {
                         from: account_delegate,
                         gas: 6000000
@@ -910,13 +870,11 @@ contract("GeneralTransferManager", async (accounts) => {
             let toTime = await latestTime() + duration.days(20);
             let expiryTime = toTime + duration.days(10);
 
-            let tx = await I_GeneralTransferManager.modifyWhitelistMulti(
+            let tx = await I_GeneralTransferManager.modifyKYCDataMulti(
                 [account_investor3, account_investor4],
                 [fromTime, fromTime],
                 [toTime, toTime],
                 [expiryTime, expiryTime],
-                [true, true],
-                [true, true],
                 {
                     from: token_owner,
                     gas: 6000000

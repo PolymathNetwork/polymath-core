@@ -200,13 +200,11 @@ contract("CountTransferManager", async (accounts) => {
         it("Should Buy the tokens", async () => {
             // Add the Investor in to the whitelist
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
+            let tx = await I_GeneralTransferManager.modifyKYCData(
                 account_investor1,
                 currentTime,
                 currentTime,
                 currentTime.add(new BN(duration.days(10))),
-                true,
-                false,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -231,13 +229,11 @@ contract("CountTransferManager", async (accounts) => {
         it("Should Buy some more tokens", async () => {
             // Add the Investor in to the whitelist
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
+            let tx = await I_GeneralTransferManager.modifyKYCData(
                 account_investor2,
                 currentTime,
                 currentTime,
                 currentTime.add(new BN(duration.days(10))),
-                true,
-                false,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -259,13 +255,11 @@ contract("CountTransferManager", async (accounts) => {
         it("Should able to buy some more tokens (more than 2 hoders) -- because CountTransferManager is paused", async () => {
             await I_CountTransferManager.pause({ from: account_issuer });
             let snapId = await takeSnapshot();
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
+            let tx = await I_GeneralTransferManager.modifyKYCData(
                 account_investor3,
                 currentTime,
                 currentTime,
                 currentTime.add(new BN(duration.days(10))),
-                true,
-                false,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -285,13 +279,11 @@ contract("CountTransferManager", async (accounts) => {
         it("Should fail to buy some more tokens (more than 2 holders)", async () => {
             await I_CountTransferManager.unpause({ from: account_issuer });
             // Add the Investor in to the whitelist
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
+            let tx = await I_GeneralTransferManager.modifyKYCData(
                 account_investor3,
                 currentTime,
                 currentTime,
                 currentTime.add(new BN(duration.days(10))),
-                true,
-                false,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -379,8 +371,6 @@ contract("CountTransferManager", async (accounts) => {
                     currentTime,
                     currentTime,
                     currentTime.add(new BN(duration.days(10))),
-                    true,
-                    false,
                     {
                         from: account_issuer,
                         gas: 500000
@@ -392,8 +382,6 @@ contract("CountTransferManager", async (accounts) => {
                     currentTime,
                     currentTime,
                     currentTime.add(new BN(duration.days(10))),
-                    true,
-                    false,
                     {
                         from: account_issuer,
                         gas: 500000
@@ -405,8 +393,6 @@ contract("CountTransferManager", async (accounts) => {
                     currentTime,
                     currentTime,
                     currentTime.add(new BN(duration.days(10))),
-                    true,
-                    false,
                     {
                         from: account_issuer,
                         gas: 500000
@@ -418,8 +404,6 @@ contract("CountTransferManager", async (accounts) => {
                     currentTime,
                     currentTime,
                     currentTime.add(new BN(duration.days(10))),
-                    true,
-                    false,
                     {
                         from: account_issuer,
                         gas: 500000

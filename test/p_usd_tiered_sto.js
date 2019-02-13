@@ -1010,8 +1010,9 @@ contract("USDTieredSTO", async (accounts) => {
             let expiryTime = toTime + duration.days(100);
             let whitelisted = true;
 
-            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, whitelisted, true, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, whitelisted, false, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(ACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyInvestorFlag(ACCREDITED1, 0, true, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(NONACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
 
             // // Advance time to after STO start
             // await increaseTime(duration.days(3));
@@ -1056,8 +1057,8 @@ contract("USDTieredSTO", async (accounts) => {
             // let expiryTime = toTime + duration.days(100);
             // let whitelisted = true;
             //
-            // await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, whitelisted,{ from: ISSUER });
-            // await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, whitelisted,{ from: ISSUER });
+            // await I_GeneralTransferManager.modifyKYCData(ACCREDITED1, fromTime, toTime, expiryTime, whitelisted,{ from: ISSUER });
+            // await I_GeneralTransferManager.modifyKYCData(NONACCREDITED1, fromTime, toTime, expiryTime, whitelisted,{ from: ISSUER });
 
             // Advance time to after STO start
             await increaseTime(duration.days(3));
@@ -1110,8 +1111,9 @@ contract("USDTieredSTO", async (accounts) => {
             let expiryTime = toTime + duration.days(100);
             let whitelisted = true;
 
-            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, whitelisted, true, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, whitelisted, false, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(ACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyInvestorFlag(ACCREDITED1, 0, true, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(NONACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
 
             // Advance time to after STO start
             await increaseTime(duration.days(3));
@@ -1165,8 +1167,9 @@ contract("USDTieredSTO", async (accounts) => {
             let expiryTime = toTime + duration.days(100);
             let whitelisted = true;
 
-            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, whitelisted, true, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, whitelisted,false, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(ACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyInvestorFlag(ACCREDITED1, 0, true, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(NONACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
 
             // Advance time to after STO start
             await increaseTime(duration.days(3));
@@ -1235,8 +1238,9 @@ contract("USDTieredSTO", async (accounts) => {
             let expiryTime = toTime.add(new BN(duration.days(100)));
             let whitelisted = true;
 
-            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, whitelisted, true, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, whitelisted, false, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(ACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyInvestorFlag(ACCREDITED1, 0, true, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(NONACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
 
             // Advance time to after STO start
             await increaseTime(duration.days(3));
@@ -1282,8 +1286,9 @@ contract("USDTieredSTO", async (accounts) => {
             let expiryTime = toTime + duration.days(100);
             let whitelisted = true;
 
-            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, whitelisted, true, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, whitelisted, false, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(ACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyInvestorFlag(ACCREDITED1, 0, true, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(NONACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
 
             // Advance time to after STO end
             await increaseTime(duration.days(3));
@@ -1337,9 +1342,10 @@ contract("USDTieredSTO", async (accounts) => {
             let expiryTime = toTime + duration.days(100);
             let whitelisted = true;
 
-            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, whitelisted, true, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, whitelisted, false, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(RESERVEWALLET, fromTime, toTime, expiryTime, whitelisted, false, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(ACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyInvestorFlag(ACCREDITED1, 0, true, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(NONACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(RESERVEWALLET, fromTime, toTime, expiryTime, { from: ISSUER });
 
             // Advance time to after STO start
             await increaseTime(duration.days(3));
@@ -1405,13 +1411,14 @@ contract("USDTieredSTO", async (accounts) => {
             let expiryTime = toTime + duration.days(100);
             let whitelisted = true;
 
-            const tx1 = await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, whitelisted, false, {
+            const tx1 = await I_GeneralTransferManager.modifyKYCData(NONACCREDITED1, fromTime, toTime, expiryTime, {
                 from: ISSUER
             });
             assert.equal(tx1.logs[0].args._investor, NONACCREDITED1, "Failed in adding the investor in whitelist");
-            const tx2 = await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, whitelisted, true, {
+            const tx2 = await I_GeneralTransferManager.modifyKYCData(ACCREDITED1, fromTime, toTime, expiryTime, {
                 from: ISSUER
             });
+            await I_GeneralTransferManager.modifyInvestorFlag(ACCREDITED1, 0, true, { from: ISSUER });
             assert.equal(tx2.logs[0].args._investor, ACCREDITED1, "Failed in adding the investor in whitelist");
         });
 

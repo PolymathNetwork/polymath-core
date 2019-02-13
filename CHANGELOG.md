@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 * Fixed `addModule` function to be backwards compatible and call the new `addModuleWithLabel` function with an empty label.
 * Fixed event `ModuleAdded` to also emit `_label`.    
 * Fixed function `getModule` to also return the respective module label.
+* Added datastore that is used to store data like investor list that is shared among modules.
 
 ## STR
 * Introduce new contract `STRGetter.sol`. It only contains the getter functions of the STR.
@@ -19,7 +20,8 @@ All notable changes to this project will be documented in this file.
 * Removed `_polyToken` parameter from `initialize` function in `SecurityTokenRegistry`.
 
 ## GeneralTransferManager
-* Add `_isAccredited` variable in the `modifyWhitelist()` function of the GeneralTransferManager.
+* `modifyWhitelist()` function renamed to `modifyKYCData()`.
+* Added flags for Investors.
 
 ## Generalize
 * Removed `_polyAddress` parameter from constructors of all modules and module factories.

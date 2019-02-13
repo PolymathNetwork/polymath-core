@@ -32,8 +32,8 @@ contract UpgradeabilityProxy is Proxy {
             "Old address is not allowed and implementation address should not be 0x"
         );
         require(Address.isContract(_newImplementation), "Cannot set a proxy implementation to a non-contract address");
-        require(bytes(_newVersion).length > 0, "Version should not be empty string");
-        require(keccak256(abi.encodePacked(__version)) != keccak256(abi.encodePacked(_newVersion)), "New version equals to current");
+        /* require(bytes(_newVersion).length > 0, "Version should not be empty string"); */
+        /* require(keccak256(abi.encodePacked(__version)) != keccak256(abi.encodePacked(_newVersion)), "New version equals to current"); */
         __version = _newVersion;
         __implementation = _newImplementation;
         emit Upgraded(_newVersion, _newImplementation);

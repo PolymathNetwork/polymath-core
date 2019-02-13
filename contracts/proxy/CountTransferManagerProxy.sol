@@ -1,14 +1,14 @@
 pragma solidity ^0.5.0;
 
 import "../modules/TransferManager/CountTransferManagerStorage.sol";
-import "./OwnedProxy.sol";
+import "./OwnedUpgradeabilityProxy.sol";
 import "../Pausable.sol";
 import "../modules/ModuleStorage.sol";
 
 /**
  * @title CountTransferManager module Proxy
  */
-contract CountTransferManagerProxy is CountTransferManagerStorage, ModuleStorage, Pausable, OwnedProxy {
+contract CountTransferManagerProxy is CountTransferManagerStorage, ModuleStorage, Pausable, OwnedUpgradeabilityProxy {
 
     /**
     * @notice Constructor
@@ -17,8 +17,8 @@ contract CountTransferManagerProxy is CountTransferManagerStorage, ModuleStorage
     * @param _implementation representing the address of the new implementation to be set
     */
     constructor (
-        address _securityToken, 
-        address _polyAddress, 
+        address _securityToken,
+        address _polyAddress,
         address _implementation
     )
         public

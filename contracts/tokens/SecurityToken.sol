@@ -280,7 +280,11 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     * @param _module address of module to archive
     */
     function archiveModule(address _module) external onlyOwner {
-        TokenLib.archiveModule(modulesToData[_module], _module);
+        TokenLib.archiveModule(modulesToData[_module]);
+    }
+
+    function upgradeModule(address _module) external onlyOwner {
+        TokenLib.upgradeModule(modulesToData[_module]);
     }
 
     /**
@@ -288,7 +292,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     * @param _module address of module to unarchive
     */
     function unarchiveModule(address _module) external onlyOwner {
-        TokenLib.unarchiveModule(modulesToData[_module], _module);
+        TokenLib.unarchiveModule(modulesToData[_module]);
     }
 
     /**

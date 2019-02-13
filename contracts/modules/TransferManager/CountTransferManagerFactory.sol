@@ -1,6 +1,6 @@
 pragma solidity ^0.5.0;
 
-import "../ModuleFactory.sol";
+import "../UpgradableModuleFactory.sol";
 import "../../libraries/Util.sol";
 import "../../proxy/CountTransferManagerProxy.sol";
 import "../../interfaces/IBoot.sol";
@@ -8,9 +8,7 @@ import "../../interfaces/IBoot.sol";
 /**
  * @title Factory for deploying CountTransferManager module
  */
-contract CountTransferManagerFactory is ModuleFactory {
-
-    address public logicContract;
+contract CountTransferManagerFactory is UpgradableModuleFactory {
 
     /**
      * @notice Constructor
@@ -25,16 +23,14 @@ contract CountTransferManagerFactory is ModuleFactory {
         address _logicContract,
         address _polymathRegistry
     )
-        public ModuleFactory(_setupCost, _usageCost, _polymathRegistry)
+        public UpgradableModuleFactory(_setupCost, _usageCost, _logicContract, _polymathRegistry)
     {
-        require(_logicContract != address(0), "Invalid address");
         version = "2.1.0";
         name = "CountTransferManager";
         title = "Count Transfer Manager";
         description = "Restrict the number of investors";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-        logicContract = _logicContract;
     }
 
     /**
@@ -44,7 +40,7 @@ contract CountTransferManagerFactory is ModuleFactory {
      */
     function deploy(bytes calldata _data) external returns(address) {
         address polyToken = _takeFee();
-        address countTransferManager = address(new CountTransferManagerProxy(msg.sender, polyToken, logicContract));
+        address countTransferManager = address(new CountTransferManagerProxy(msg.sender, polyToken, logicContracts[currentVersion].logicContract));
         require(Util.getSig(_data) == IBoot(countTransferManager).getInitFunction(), "Provided data is not valid");
         bool success;
         /*solium-disable-next-line security/no-low-level-calls*/
@@ -52,6 +48,7 @@ contract CountTransferManagerFactory is ModuleFactory {
         require(success, "Unsuccessful call");
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(address(countTransferManager), getName(), address(this), msg.sender, getSetupCost(), getSetupCostInPoly(), now);
+        modules[msg.sender] = address(countTransferManager);
         return address(countTransferManager);
     }
 

@@ -1,7 +1,7 @@
 import latestTime from "./helpers/latestTime";
 import { duration, ensureException, promisifyLogWatch, latestBlock } from "./helpers/utils";
 import takeSnapshot, { increaseTime, revertToSnapshot } from "./helpers/time";
-import { encodeModuleCall } from "./helpers/encodeCall";
+import { encodeModuleCall, encodeProxyCall } from "./helpers/encodeCall";
 import { setUpPolymathNetwork, deployCountTMAndVerifyed } from "./helpers/createInstances";
 import { catchRevert } from "./helpers/exceptions";
 
@@ -9,6 +9,7 @@ const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 const CountTransferManagerFactory = artifacts.require("./CountTransferManagerFactory.sol");
 const CountTransferManager = artifacts.require("./CountTransferManager");
+const MockCountTransferManager = artifacts.require("./MockCountTransferManager");
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -461,6 +462,16 @@ contract("CountTransferManager", async (accounts) => {
                 I_CountTransferManager2 = await CountTransferManager.at(tx.logs[2].args._module);
                 await I_CountTransferManager2.changeHolderCount(2, { from: token_owner });
                 console.log("current max holder number is " + (await I_CountTransferManager2.maxHolderCount({ from: token_owner })));
+            });
+
+            it("Should upgrade the CTM", async () => {
+                let I_MockCountTransferManagerLogic = await MockCountTransferManager.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: account_polymath });
+                let bytesCM = encodeProxyCall(["uint256"], [11]);
+                await I_CountTransferManagerFactory.setLogicContract(I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath });
+                await I_SecurityToken2.upgradeModule(I_CountTransferManager2.address, { from: token_owner });
+                let I_MockCountTransferManager = await MockCountTransferManager.at(I_CountTransferManager2.address);
+                await I_MockCountTransferManager.newFunction(99);
+                assert.equal(0,1);
             });
 
             it("Should allow add a new token holder while transfer all the tokens at one go", async () => {

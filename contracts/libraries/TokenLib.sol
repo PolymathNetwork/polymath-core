@@ -2,6 +2,7 @@ pragma solidity ^0.5.0;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "../interfaces/IPoly.sol";
+import "../modules/UpgradableModuleFactory.sol";
 
 library TokenLib {
     using SafeMath for uint256;
@@ -45,26 +46,35 @@ library TokenLib {
     /**
     * @notice Archives a module attached to the SecurityToken
     * @param _moduleData Storage data
-    * @param _module Address of module to archive
     */
-    function archiveModule(ModuleData storage _moduleData, address _module) public {
+    function archiveModule(ModuleData storage _moduleData) public {
         require(!_moduleData.isArchived, "Module archived");
         require(_moduleData.module != address(0), "Module missing");
         /*solium-disable-next-line security/no-block-members*/
-        emit ModuleArchived(_moduleData.moduleTypes, _module);
+        emit ModuleArchived(_moduleData.moduleTypes, _moduleData.module);
         _moduleData.isArchived = true;
     }
 
     /**
     * @notice Unarchives a module attached to the SecurityToken
     * @param _moduleData Storage data
-    * @param _module Address of module to unarchive
     */
-    function unarchiveModule(ModuleData storage _moduleData, address _module) public {
+    function unarchiveModule(ModuleData storage _moduleData) public {
         require(_moduleData.isArchived, "Module unarchived");
         /*solium-disable-next-line security/no-block-members*/
-        emit ModuleUnarchived(_moduleData.moduleTypes, _module);
+        emit ModuleUnarchived(_moduleData.moduleTypes, _moduleData.module);
         _moduleData.isArchived = false;
+    }
+
+    /**
+    * @notice Upgrades a module attached to the SecurityToken
+    * @param _moduleData Storage data
+    */
+    function upgradeModule(ModuleData storage _moduleData) public {
+        require(!_moduleData.isArchived, "Module archived");
+        require(_moduleData.module != address(0), "Module missing");
+        // Will revert if module isn't upgradable
+        UpgradableModuleFactory(_moduleData.moduleFactory).upgrade();
     }
 
     /**

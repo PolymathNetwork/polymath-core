@@ -255,8 +255,7 @@ contract("GeneralTransferManager", async (accounts) => {
             let times = range1(50);
             let bools = rangeB(50);
             let tx = await I_GeneralTransferManager.modifyKYCDataMulti(mockInvestors, times, times, times, {
-                from: account_issuer,
-                gas: 7900000
+                from: account_issuer
             });
             console.log("Multi Whitelist x 50: " + tx.receipt.gasUsed);
             assert.deepEqual(

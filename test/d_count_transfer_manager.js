@@ -470,7 +470,7 @@ contract("CountTransferManager", async (accounts) => {
                 await I_CountTransferManagerFactory.setLogicContract("2.0.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath });
                 await I_SecurityToken2.upgradeModule(I_CountTransferManager2.address, { from: token_owner });
                 let I_MockCountTransferManager = await MockCountTransferManager.at(I_CountTransferManager2.address);
-                await I_MockCountTransferManager.newFunction(99);
+                await I_MockCountTransferManager.newFunction();
             });
 
             it("Should allow add a new token holder while transfer all the tokens at one go", async () => {

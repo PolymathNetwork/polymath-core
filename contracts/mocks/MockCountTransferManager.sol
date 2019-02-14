@@ -80,13 +80,16 @@ contract MockCountTransferManager is CountTransferManagerStorage, TransferManage
     }
 
     event Upgrader(uint256 _someData);
+    event Caller(address _log);
 
-    function initialize(uint256 _someData) external {
+    function initialize(uint256 _someData) public {
+        require(msg.sender == address(this));
         emit Upgrader(_someData);
+        emit Caller(msg.sender);
     }
 
-    function newFunction(uint256 _someData) external {
-        emit Upgrader(_someData);
+    function newFunction() external {
+        emit Upgrader(maxHolderCount);
     }
 
 }

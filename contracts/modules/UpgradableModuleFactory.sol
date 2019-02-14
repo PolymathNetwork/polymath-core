@@ -8,6 +8,8 @@ import "../proxy/OwnedUpgradeabilityProxy.sol";
  */
 contract UpgradableModuleFactory is ModuleFactory {
 
+    event LogicContractSet(string _version, address _logicContract, bytes _logicData);
+
     struct LogicContract {
         string version;
         address logicContract;
@@ -24,7 +26,7 @@ contract UpgradableModuleFactory is ModuleFactory {
     mapping (address => address) modules;
 
     // Current version
-    uint256 public currentVersion;
+    uint256 public latestVersion;
 
     /**
      * @notice Constructor
@@ -42,26 +44,37 @@ contract UpgradableModuleFactory is ModuleFactory {
         public ModuleFactory(_setupCost, _usageCost, _polymathRegistry)
     {
         require(_logicContract != address(0), "Invalid address");
-        logicContracts[currentVersion].logicContract = _logicContract;
-        logicContracts[currentVersion].version = "1.0.0";
+        logicContracts[latestVersion].logicContract = _logicContract;
+        logicContracts[latestVersion].version = "1.0.0";
     }
 
     function setLogicContract(string calldata _version, address _logicContract, bytes calldata _logicData) external onlyOwner {
-        require(keccak256(abi.encodePacked(_version)) != keccak256(abi.encodePacked(logicContracts[currentVersion].version)), "Same version");
-        require(_logicContract != logicContracts[currentVersion].logicContract, "Same version");
+        require(keccak256(abi.encodePacked(_version)) != keccak256(abi.encodePacked(logicContracts[latestVersion].version)), "Same version");
+        require(_logicContract != logicContracts[latestVersion].logicContract, "Same version");
         require(_logicContract != address(0), "Invalid address");
-        currentVersion++;
-        logicContracts[currentVersion].logicContract = _logicContract;
-        logicContracts[currentVersion].logicData = _logicData;
-        logicContracts[currentVersion].version = _version;
+        latestVersion++;
+        logicContracts[latestVersion].logicContract = _logicContract;
+        logicContracts[latestVersion].logicData = _logicData;
+        logicContracts[latestVersion].version = _version;
+        emit LogicContractSet(_version, _logicContract, _logicData);
     }
 
     function upgrade() external {
         // Only allow issuers to upgrade in single step verisons to preserve upgradeToAndCall semantics
         uint256 newVersion = moduleVersions[msg.sender] + 1;
-        require(newVersion <= currentVersion, "Incorrect version");
+        require(newVersion <= latestVersion, "Incorrect version");
         OwnedUpgradeabilityProxy(address(uint160(modules[msg.sender]))).upgradeToAndCall(logicContracts[newVersion].version, logicContracts[newVersion].logicContract, logicContracts[newVersion].logicData);
         moduleVersions[msg.sender] = newVersion;
+    }
+
+    /**
+     * @notice Used to initialize the module
+     * @param _module Address of module
+     * @param _data Data used for the intialization of the module factory variables
+     */
+    function _initializeModule(address _module, bytes memory _data) internal {
+        super._initializeModule(_module, _data);
+        modules[msg.sender] = _module;
     }
 
 }

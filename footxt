@@ -1,0 +1,785 @@
+pragma solidity ^0.5.0;
+
+// File: openzeppelin-solidity/contracts/ownership/Ownable.sol
+
+/**
+ * @title Ownable
+ * @dev The Ownable contract has an owner address, and provides basic authorization control
+ * functions, this simplifies the implementation of "user permissions".
+ */
+contract Ownable {
+    address private _owner;
+
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    /**
+     * @dev The Ownable constructor sets the original `owner` of the contract to the sender
+     * account.
+     */
+    constructor () internal {
+        _owner = msg.sender;
+        emit OwnershipTransferred(address(0), _owner);
+    }
+
+    /**
+     * @return the address of the owner.
+     */
+    function owner() public view returns (address) {
+        return _owner;
+    }
+
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        require(isOwner());
+        _;
+    }
+
+    /**
+     * @return true if `msg.sender` is the owner of the contract.
+     */
+    function isOwner() public view returns (bool) {
+        return msg.sender == _owner;
+    }
+
+    /**
+     * @dev Allows the current owner to relinquish control of the contract.
+     * @notice Renouncing to ownership will leave the contract without an owner.
+     * It will not be possible to call the functions with the `onlyOwner`
+     * modifier anymore.
+     */
+    function renounceOwnership() public onlyOwner {
+        emit OwnershipTransferred(_owner, address(0));
+        _owner = address(0);
+    }
+
+    /**
+     * @dev Allows the current owner to transfer control of the contract to a newOwner.
+     * @param newOwner The address to transfer ownership to.
+     */
+    function transferOwnership(address newOwner) public onlyOwner {
+        _transferOwnership(newOwner);
+    }
+
+    /**
+     * @dev Transfers control of the contract to a newOwner.
+     * @param newOwner The address to transfer ownership to.
+     */
+    function _transferOwnership(address newOwner) internal {
+        require(newOwner != address(0));
+        emit OwnershipTransferred(_owner, newOwner);
+        _owner = newOwner;
+    }
+}
+
+// File: openzeppelin-solidity/contracts/token/ERC20/IERC20.sol
+
+/**
+ * @title ERC20 interface
+ * @dev see https://github.com/ethereum/EIPs/issues/20
+ */
+interface IERC20 {
+    function transfer(address to, uint256 value) external returns (bool);
+
+    function approve(address spender, uint256 value) external returns (bool);
+
+    function transferFrom(address from, address to, uint256 value) external returns (bool);
+
+    function totalSupply() external view returns (uint256);
+
+    function balanceOf(address who) external view returns (uint256);
+
+    function allowance(address owner, address spender) external view returns (uint256);
+
+    event Transfer(address indexed from, address indexed to, uint256 value);
+
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+}
+
+// File: contracts/ReclaimTokens.sol
+
+/**
+ * @title Utility contract to allow owner to retreive any ERC20 sent to the contract
+ */
+contract ReclaimTokens is Ownable {
+    /**
+    * @notice Reclaim all ERC20Basic compatible tokens
+    * @param _tokenContract The address of the token contract
+    */
+    function reclaimERC20(address _tokenContract) external onlyOwner {
+        require(_tokenContract != address(0), "Invalid address");
+        IERC20 token = IERC20(_tokenContract);
+        uint256 balance = token.balanceOf(address(this));
+        require(token.transfer(owner(), balance), "Transfer failed");
+    }
+}
+
+// File: contracts/PolymathRegistry.sol
+
+/**
+ * @title Core functionality for registry upgradability
+ */
+contract PolymathRegistry is ReclaimTokens {
+    mapping(bytes32 => address) public storedAddresses;
+
+    event ChangeAddress(string _nameKey, address indexed _oldAddress, address indexed _newAddress);
+
+    /**
+     * @notice Gets the contract address
+     * @param _nameKey is the key for the contract address mapping
+     * @return address
+     */
+    function getAddress(string calldata _nameKey) external view returns(address) {
+        bytes32 key = keccak256(bytes(_nameKey));
+        require(storedAddresses[key] != address(0), "Invalid key");
+        return storedAddresses[key];
+    }
+
+    /**
+     * @notice Changes the contract address
+     * @param _nameKey is the key for the contract address mapping
+     * @param _newAddress is the new contract address
+     */
+    function changeAddress(string calldata _nameKey, address _newAddress) external onlyOwner {
+        bytes32 key = keccak256(bytes(_nameKey));
+        emit ChangeAddress(_nameKey, storedAddresses[key], _newAddress);
+        storedAddresses[key] = _newAddress;
+    }
+
+}
+
+// File: contracts/RegistryUpdater.sol
+
+contract RegistryUpdater is Ownable {
+    address public polymathRegistry;
+    address public moduleRegistry;
+    address public securityTokenRegistry;
+    address public featureRegistry;
+    address public polyToken;
+
+    constructor(address _polymathRegistry) public {
+        require(_polymathRegistry != address(0), "Invalid address");
+        polymathRegistry = _polymathRegistry;
+    }
+
+    function updateFromRegistry() public onlyOwner {
+        moduleRegistry = PolymathRegistry(polymathRegistry).getAddress("ModuleRegistry");
+        securityTokenRegistry = PolymathRegistry(polymathRegistry).getAddress("SecurityTokenRegistry");
+        featureRegistry = PolymathRegistry(polymathRegistry).getAddress("FeatureRegistry");
+        polyToken = PolymathRegistry(polymathRegistry).getAddress("PolyToken");
+    }
+
+}
+
+// File: contracts/interfaces/IBoot.sol
+
+interface IBoot {
+    /**
+     * @notice This function returns the signature of configure function
+     * @return bytes4 Configure function signature
+     */
+    function getInitFunction() external pure returns(bytes4);
+
+}
+
+// File: contracts/interfaces/IModuleFactory.sol
+
+/**
+ * @title Interface that every module factory contract should implement
+ */
+interface IModuleFactory {
+    event ChangeSetupCost(uint256 _oldSetupCost, uint256 _newSetupCost);
+    event ChangeUsageCost(uint256 _oldUsageCost, uint256 _newUsageCost);
+    event GenerateModuleFromFactory(
+        address _module,
+        bytes32 indexed _moduleName,
+        address indexed _moduleFactory,
+        address _creator,
+        uint256 _setupCost,
+        uint256 _setupCostInPoly
+    );
+    event ChangeSTVersionBound(string _boundType, uint8 _major, uint8 _minor, uint8 _patch);
+
+    //Should create an instance of the Module, or throw
+    function deploy(bytes calldata _data) external returns(address);
+
+    /**
+     * @notice Get the tags related to the module factory
+     */
+    function version() external view returns(string memory);
+
+    /**
+     * @notice Get the tags related to the module factory
+     */
+    function name() external view returns(bytes32);
+
+    /**
+     * @notice Returns the title associated with the module
+     */
+    function title() external view returns(string memory);
+
+    /**
+     * @notice Returns the description associated with the module
+     */
+    function description() external view returns(string memory);
+
+    /**
+     * @notice Returns the instructions associated with the module
+     */
+    function instructions() external view returns(string memory);
+
+    /**
+     * @notice Get the setup cost of the module in USD
+     */
+    function usageCost() external returns(uint256);
+
+    /**
+     * @notice Get the setup cost of the module in USD
+     */
+    function setupCost() external returns(uint256);
+
+    /**
+     * @notice Type of the Module factory
+     */
+    function types() external view returns(uint8[] memory);
+
+    /**
+     * @notice Get the tags related to the module factory
+     */
+    function tags() external view returns(bytes32[] memory);
+
+    /**
+     * @notice Used to change the setup fee
+     * @param _newSetupCost New setup fee
+     */
+    function changeSetupCost(uint256 _newSetupCost) external;
+
+    /**
+     * @notice Used to change the usage fee
+     * @param _newUsageCost New usage fee
+     */
+    function changeUsageCost(uint256 _newUsageCost) external;
+
+    /**
+     * @notice Function use to change the lower and upper bound of the compatible version st
+     * @param _boundType Type of bound
+     * @param _newVersion New version array
+     */
+    function changeSTVersionBounds(string calldata _boundType, uint8[] calldata _newVersion) external;
+
+    /**
+     * @notice Get the setup cost of the module in USD
+     */
+    function usageCostInPoly() external returns(uint256);
+
+    /**
+     * @notice Get the setup cost of the module
+     */
+    function setupCostInPoly() external returns (uint256);
+
+    /**
+     * @notice Used to get the lower bound
+     * @return Lower bound
+     */
+    function lowerSTVersionBounds() external view returns(uint8[] memory);
+
+    /**
+     * @notice Used to get the upper bound
+     * @return Upper bound
+     */
+    function upperSTVersionBounds() external view returns(uint8[] memory);
+
+}
+
+// File: contracts/interfaces/IOracle.sol
+
+interface IOracle {
+    /**
+    * @notice Returns address of oracle currency (0x0 for ETH)
+    */
+    function getCurrencyAddress() external view returns(address);
+
+    /**
+    * @notice Returns symbol of oracle currency (0x0 for ETH)
+    */
+    function getCurrencySymbol() external view returns(bytes32);
+
+    /**
+    * @notice Returns denomination of price
+    */
+    function getCurrencyDenominated() external view returns(bytes32);
+
+    /**
+    * @notice Returns price - should throw if not valid
+    */
+    function getPrice() external returns(uint256);
+
+}
+
+// File: contracts/interfaces/IPolymathRegistry.sol
+
+interface IPolymathRegistry {
+    /**
+     * @notice Returns the contract address
+     * @param _nameKey is the key for the contract address mapping
+     * @return address
+     */
+    function getAddress(string calldata _nameKey) external view returns(address);
+
+}
+
+// File: contracts/libraries/Util.sol
+
+/**
+ * @title Utility contract for reusable code
+ */
+library Util {
+    /**
+    * @notice Changes a string to upper case
+    * @param _base String to change
+    */
+    function upper(string memory _base) internal pure returns(string memory) {
+        bytes memory _baseBytes = bytes(_base);
+        for (uint i = 0; i < _baseBytes.length; i++) {
+            bytes1 b1 = _baseBytes[i];
+            if (b1 >= 0x61 && b1 <= 0x7A) {
+                b1 = bytes1(uint8(b1) - 32);
+            }
+            _baseBytes[i] = b1;
+        }
+        return string(_baseBytes);
+    }
+
+    /**
+     * @notice Changes the string into bytes32
+     * @param _source String that need to convert into bytes32
+     */
+    /// Notice - Maximum Length for _source will be 32 chars otherwise returned bytes32 value will have lossy value.
+    function stringToBytes32(string memory _source) internal pure returns(bytes32) {
+        return bytesToBytes32(bytes(_source), 0);
+    }
+
+    /**
+     * @notice Changes bytes into bytes32
+     * @param _b Bytes that need to convert into bytes32
+     * @param _offset Offset from which to begin conversion
+     */
+    /// Notice - Maximum length for _source will be 32 chars otherwise returned bytes32 value will have lossy value.
+    function bytesToBytes32(bytes memory _b, uint _offset) internal pure returns(bytes32) {
+        bytes32 result;
+
+        for (uint i = 0; i < _b.length; i++) {
+            result |= bytes32(_b[_offset + i] & 0xFF) >> (i * 8);
+        }
+        return result;
+    }
+
+    /**
+     * @notice Changes the bytes32 into string
+     * @param _source that need to convert into string
+     */
+    function bytes32ToString(bytes32 _source) internal pure returns(string memory) {
+        bytes memory bytesString = new bytes(32);
+        uint charCount = 0;
+        uint j = 0;
+        for (j = 0; j < 32; j++) {
+            byte char = byte(bytes32(uint(_source) * 2 ** (8 * j)));
+            if (char != 0) {
+                bytesString[charCount] = char;
+                charCount++;
+            }
+        }
+        bytes memory bytesStringTrimmed = new bytes(charCount);
+        for (j = 0; j < charCount; j++) {
+            bytesStringTrimmed[j] = bytesString[j];
+        }
+        return string(bytesStringTrimmed);
+    }
+
+    /**
+     * @notice Gets function signature from _data
+     * @param _data Passed data
+     * @return bytes4 sig
+     */
+    function getSig(bytes memory _data) internal pure returns(bytes4 sig) {
+        uint len = _data.length < 4 ? _data.length : 4;
+        for (uint256 i = 0; i < len; i++) {
+          sig |= bytes4(_data[i] & 0xFF) >> (i * 8);
+        }
+        return sig;
+    }
+}
+
+// File: contracts/libraries/VersionUtils.sol
+
+/**
+ * @title Helper library use to compare or validate the semantic versions
+ */
+
+library VersionUtils {
+    /**
+     * @notice This function is used to validate the version submitted
+     * @param _current Array holds the present version of ST
+     * @param _new Array holds the latest version of the ST
+     * @return bool
+     */
+    function isValidVersion(uint8[] memory _current, uint8[] memory _new) internal pure returns(bool) {
+        bool[] memory _temp = new bool[](_current.length);
+        uint8 counter = 0;
+        uint8 i = 0;
+        for (i = 0; i < _current.length; i++) {
+            if (_current[i] < _new[i]) _temp[i] = true;
+            else _temp[i] = false;
+        }
+
+        for (i = 0; i < _current.length; i++) {
+            if (i == 0) {
+                if (_current[i] <= _new[i]) if (_temp[0]) {
+                    counter = counter + 3;
+                    break;
+                } else counter++;
+                else return false;
+            } else {
+                if (_temp[i - 1]) counter++;
+                else if (_current[i] <= _new[i]) counter++;
+                else return false;
+            }
+        }
+        if (counter == _current.length) return true;
+    }
+
+    /**
+     * @notice Used to compare the lower bound with the latest version
+     * @param _version1 Array holds the lower bound of the version
+     * @param _version2 Array holds the latest version of the ST
+     * @return bool
+     */
+    function compareLowerBound(uint8[] memory _version1, uint8[] memory _version2) internal pure returns(bool) {
+        require(_version1.length == _version2.length, "Input length mismatch");
+        uint counter = 0;
+        for (uint8 j = 0; j < _version1.length; j++) {
+            if (_version1[j] == 0) counter++;
+        }
+        if (counter != _version1.length) {
+            counter = 0;
+            for (uint8 i = 0; i < _version1.length; i++) {
+                if (_version2[i] > _version1[i]) return true;
+                else if (_version2[i] < _version1[i]) return false;
+                else counter++;
+            }
+            if (counter == _version1.length - 1) return true;
+            else return false;
+        } else return true;
+    }
+
+    /**
+     * @notice Used to compare the upper bound with the latest version
+     * @param _version1 Array holds the upper bound of the version
+     * @param _version2 Array holds the latest version of the ST
+     * @return bool
+     */
+    function compareUpperBound(uint8[] memory _version1, uint8[] memory _version2) internal pure returns(bool) {
+        require(_version1.length == _version2.length, "Input length mismatch");
+        uint counter = 0;
+        for (uint8 j = 0; j < _version1.length; j++) {
+            if (_version1[j] == 0) counter++;
+        }
+        if (counter != _version1.length) {
+            counter = 0;
+            for (uint8 i = 0; i < _version1.length; i++) {
+                if (_version1[i] > _version2[i]) return true;
+                else if (_version1[i] < _version2[i]) return false;
+                else counter++;
+            }
+            if (counter == _version1.length - 1) return true;
+            else return false;
+        } else return true;
+    }
+
+    /**
+     * @notice Used to pack the uint8[] array data into uint24 value
+     * @param _major Major version
+     * @param _minor Minor version
+     * @param _patch Patch version
+     */
+    function pack(uint8 _major, uint8 _minor, uint8 _patch) internal pure returns(uint24) {
+        return (uint24(_major) << 16) | (uint24(_minor) << 8) | uint24(_patch);
+    }
+
+    /**
+     * @notice Used to convert packed data into uint8 array
+     * @param _packedVersion Packed data
+     */
+    function unpack(uint24 _packedVersion) internal pure returns(uint8[] memory) {
+        uint8[] memory _unpackVersion = new uint8[](3);
+        _unpackVersion[0] = uint8(_packedVersion >> 16);
+        _unpackVersion[1] = uint8(_packedVersion >> 8);
+        _unpackVersion[2] = uint8(_packedVersion);
+        return _unpackVersion;
+    }
+
+
+    /**
+     * @notice Used to packed the KYC data
+     */
+    function packKYC(uint64 _a, uint64 _b, uint64 _c, uint8 _d, uint8 _e, uint8 _f) internal pure returns(uint256) {
+        return (uint256(_a) << 152) | (uint256(_b) << 88) | (uint256(_c) << 24) | (uint256(_d) << 16) | (uint256(_e) << 8) | uint256(_f);
+    }
+
+    /**
+     * @notice Used to convert packed data into KYC data
+     * @param _packedVersion Packed data
+     */
+    function unpackKYC(uint256 _packedVersion) internal pure returns(uint64 fromTime, uint64 toTime, uint64 expiryTime, uint8 canBuy, uint8 added, uint8 accredited) {
+        fromTime = uint64(_packedVersion >> 152);
+        toTime = uint64(_packedVersion >> 88);
+        expiryTime = uint64(_packedVersion >> 24);
+        canBuy = uint8(_packedVersion >> 16);
+        added = uint8(_packedVersion >> 8);
+        accredited = uint8(_packedVersion);
+    }
+
+}
+
+// File: openzeppelin-solidity/contracts/math/SafeMath.sol
+
+/**
+ * @title SafeMath
+ * @dev Unsigned math operations with safety checks that revert on error
+ */
+library SafeMath {
+    /**
+    * @dev Multiplies two unsigned integers, reverts on overflow.
+    */
+    function mul(uint256 a, uint256 b) internal pure returns (uint256) {
+        // Gas optimization: this is cheaper than requiring 'a' not being zero, but the
+        // benefit is lost if 'b' is also tested.
+        // See: https://github.com/OpenZeppelin/openzeppelin-solidity/pull/522
+        if (a == 0) {
+            return 0;
+        }
+
+        uint256 c = a * b;
+        require(c / a == b);
+
+        return c;
+    }
+
+    /**
+    * @dev Integer division of two unsigned integers truncating the quotient, reverts on division by zero.
+    */
+    function div(uint256 a, uint256 b) internal pure returns (uint256) {
+        // Solidity only automatically asserts when dividing by 0
+        require(b > 0);
+        uint256 c = a / b;
+        // assert(a == b * c + a % b); // There is no case in which this doesn't hold
+
+        return c;
+    }
+
+    /**
+    * @dev Subtracts two unsigned integers, reverts on overflow (i.e. if subtrahend is greater than minuend).
+    */
+    function sub(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(b <= a);
+        uint256 c = a - b;
+
+        return c;
+    }
+
+    /**
+    * @dev Adds two unsigned integers, reverts on overflow.
+    */
+    function add(uint256 a, uint256 b) internal pure returns (uint256) {
+        uint256 c = a + b;
+        require(c >= a);
+
+        return c;
+    }
+
+    /**
+    * @dev Divides two unsigned integers and returns the remainder (unsigned integer modulo),
+    * reverts when dividing by zero.
+    */
+    function mod(uint256 a, uint256 b) internal pure returns (uint256) {
+        require(b != 0);
+        return a % b;
+    }
+}
+
+// File: contracts/modules/ModuleFactory.sol
+
+/**
+ * @title Interface that any module factory contract should implement
+ * @notice Contract is abstract
+ */
+contract ModuleFactory is IModuleFactory, Ownable {
+    address public polymathRegistry;
+
+    string public version;
+    bytes32 public name;
+    string public title;
+    string public description;
+    string public instructions;
+    uint256 public usageCost; // Denominated in USD
+    uint256 public setupCost; // Denominated in USD
+
+    string constant POLY_ORACLE = "StablePolyUsdOracle";
+
+    // @notice Allow only two variables to be stored
+    // 1. lowerBound
+    // 2. upperBound
+    // @dev (0.0.0 will act as the wildcard)
+    // @dev uint24 consists packed value of uint8 _major, uint8 _minor, uint8 _patch
+    mapping(string => uint24) compatibleSTVersionRange;
+
+    /**
+     * @notice Constructor
+     */
+    constructor(uint256 _setupCost, uint256 _usageCost, address _polymathRegistry) public {
+        setupCost = _setupCost;
+        usageCost = _usageCost;
+        polymathRegistry = _polymathRegistry;
+    }
+
+    /**
+     * @notice Used to change the fee of the setup cost
+     * @param _newSetupCost new setup cost in USD
+     */
+    function changeSetupCost(uint256 _setupCost) public onlyOwner {
+        emit ChangeSetupCost(setupCost, _setupCost);
+        setupCost = _setupCost;
+    }
+
+    /**
+     * @notice Used to change the fee of the usage cost
+     * @param _newUsageCost new usage cost in USD
+     */
+    function changeUsageCost(uint256 _usageCost) public onlyOwner {
+        emit ChangeUsageCost(usageCost, _usageCost);
+        usageCost = _usageCost;
+    }
+
+    /**
+     * @notice Updates the title of the ModuleFactory
+     * @param _newTitle New Title that will replace the old one.
+     */
+    function changeTitle(string memory _title) public onlyOwner {
+        require(bytes(_title).length > 0, "Invalid text");
+        title = _title;
+    }
+
+    /**
+     * @notice Updates the description of the ModuleFactory
+     * @param _newDesc New description that will replace the old one.
+     */
+    function changeDescription(string memory _description) public onlyOwner {
+        require(bytes(_description).length > 0, "Invalid text");
+        description = _description;
+    }
+
+    /**
+     * @notice Updates the instructions of the ModuleFactory
+     * @param _newInstructions New instructions that will replace the old one.
+     */
+    function changeInstructions(string memory _instructions) public onlyOwner {
+        require(bytes(_instructions).length > 0, "Invalid text");
+        instructions = _instructions;
+    }
+
+    /**
+     * @notice Updates the name of the ModuleFactory
+     * @param _newName New name that will replace the old one.
+     */
+    function changeName(bytes32 _name) public onlyOwner {
+        require(_name != bytes32(0), "Invalid text");
+        name = _name;
+    }
+
+    /**
+     * @notice Updates the version of the ModuleFactory
+     * @param _newVersion New name that will replace the old one.
+     */
+    function changeVersion(string memory _version) public onlyOwner {
+        require(bytes(_version).length > 0, "Invalid text");
+        version = _version;
+    }
+
+    /**
+     * @notice Function use to change the lower and upper bound of the compatible version st
+     * @param _boundType Type of bound
+     * @param _newVersion new version array
+     */
+    function changeSTVersionBounds(string calldata _boundType, uint8[] calldata _newVersion) external onlyOwner {
+        require(
+            keccak256(abi.encodePacked(_boundType)) == keccak256(abi.encodePacked("lowerBound")) || keccak256(
+                abi.encodePacked(_boundType)
+            ) == keccak256(abi.encodePacked("upperBound")),
+            "Must be a valid bound type"
+        );
+        require(_newVersion.length == 3);
+        if (compatibleSTVersionRange[_boundType] != uint24(0)) {
+            uint8[] memory _currentVersion = VersionUtils.unpack(compatibleSTVersionRange[_boundType]);
+            require(VersionUtils.isValidVersion(_currentVersion, _newVersion), "Failed because of in-valid version");
+        }
+        compatibleSTVersionRange[_boundType] = VersionUtils.pack(_newVersion[0], _newVersion[1], _newVersion[2]);
+        emit ChangeSTVersionBound(_boundType, _newVersion[0], _newVersion[1], _newVersion[2]);
+    }
+
+    /**
+     * @notice Used to get the lower bound
+     * @return lower bound
+     */
+    function lowerSTVersionBounds() external view returns(uint8[] memory) {
+        return VersionUtils.unpack(compatibleSTVersionRange["lowerBound"]);
+    }
+
+    /**
+     * @notice Used to get the upper bound
+     * @return upper bound
+     */
+    function upperSTVersionBounds() external view returns(uint8[] memory) {
+        return VersionUtils.unpack(compatibleSTVersionRange["upperBound"]);
+    }
+
+    /**
+     * @notice Get the setup cost of the module
+     */
+    function setupCostInPoly() public returns (uint256) {
+        uint256 polyRate = IOracle(IPolymathRegistry(polymathRegistry).getAddress(POLY_ORACLE)).getPrice();
+        return setupCost().div(polyRate);
+    }
+
+    /**
+     * @notice Calculates fee in POLY
+     */
+    function _takeFee() internal returns(address, uint256) {
+        uint256 setupCostInPoly = setupCostInPoly();
+        address polyToken = IPolymathRegistry(polymathRegistry).getAddress("PolyToken");
+        if (setupCostInPoly > 0) {
+            require(IERC20(polyToken).transferFrom(msg.sender, owner(), setupCostInPoly), "Insufficient allowance for module fee");
+        }
+        return (polyToken, setupCostInPoly);
+    }
+
+    /**
+     * @notice Used to initialize the module
+     * @param _module Address of module
+     * @param _data Data used for the intialization of the module factory variables
+     */
+    function _initializeModule(address _module, bytes memory _data) internal {
+        /* address countTransferManager = address(new CountTransferManagerProxy(msg.sender, polyToken, logicContracts[latestVersion].logicContract)); */
+        (address polyToken, uint256 setupCostInPoly) = _takeFee();
+        bytes4 initFunction = IBoot(_module).getInitFunction();
+        if (initFunction != bytes4(0)) {
+            require(Util.getSig(_data) == initFunction, "Provided data is not valid");
+            /*solium-disable-next-line security/no-low-level-calls*/
+            (bool success, ) = _module.call(_data);
+            require(success, "Unsuccessful initialization");
+        }
+        /*solium-disable-next-line security/no-block-members*/
+        emit GenerateModuleFromFactory(_module, name, address(this), msg.sender, setupCost(), setupCostInPoly);
+    }
+
+}

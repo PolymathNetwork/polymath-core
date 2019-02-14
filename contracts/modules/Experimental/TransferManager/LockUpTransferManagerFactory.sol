@@ -35,39 +35,30 @@ contract LockUpTransferManagerFactory is ModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(
-        bytes calldata /* _data */
+        bytes calldata _data
     )
         external
         returns(address)
     {
-        address polyToken = _takeFee();
-        LockUpTransferManager lockUpTransferManager = new LockUpTransferManager(msg.sender, polyToken);
-        /*solium-disable-next-line security/no-block-members*/
-        emit GenerateModuleFromFactory(address(lockUpTransferManager), getName(), address(this), msg.sender, getSetupCost(), getSetupCostInPoly(), now);
-        return address(lockUpTransferManager);
+        address lockUpTransferManager = address(new LockUpTransferManager(msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken")));
+        _initializeModule(lockUpTransferManager, _data);
+        return lockUpTransferManager;
     }
 
     /**
      * @notice Type of the Module factory
      * @return uint8
      */
-    function getTypes() external view returns(uint8[] memory) {
+    function types() external view returns(uint8[] memory) {
         uint8[] memory res = new uint8[](1);
         res[0] = 2;
         return res;
     }
 
     /**
-     * @notice Returns the instructions associated with the module
-     */
-    function getInstructions() external view returns(string memory) {
-        return "Allows an issuer to set lockup periods for user addresses, with funds distributed over time. Init function takes no parameters.";
-    }
-
-    /**
      * @notice Get the tags related to the module factory
      */
-    function getTags() external view returns(bytes32[] memory) {
+    function tags() external view returns(bytes32[] memory) {
         bytes32[] memory availableTags = new bytes32[](2);
         availableTags[0] = "LockUp";
         availableTags[1] = "Transfer Restriction";

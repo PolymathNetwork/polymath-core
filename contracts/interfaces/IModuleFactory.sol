@@ -12,8 +12,7 @@ interface IModuleFactory {
         address indexed _moduleFactory,
         address _creator,
         uint256 _setupCost,
-        uint256 _setupCostInPoly,
-        uint256 _timestamp
+        uint256 _setupCostInPoly
     );
     event ChangeSTVersionBound(string _boundType, uint8 _major, uint8 _minor, uint8 _patch);
 
@@ -21,24 +20,49 @@ interface IModuleFactory {
     function deploy(bytes calldata _data) external returns(address);
 
     /**
-     * @notice Type of the Module factory
+     * @notice Get the tags related to the module factory
      */
-    function getTypes() external view returns(uint8[] memory);
-
-    /**
-     * @notice Get the name of the Module
-     */
-    function getName() external view returns(bytes32);
-
-    /**
-     * @notice Returns the instructions associated with the module
-     */
-    function getInstructions() external view returns(string memory);
+    function version() external view returns(string memory);
 
     /**
      * @notice Get the tags related to the module factory
      */
-    function getTags() external view returns(bytes32[] memory);
+    function name() external view returns(bytes32);
+
+    /**
+     * @notice Returns the title associated with the module
+     */
+    function title() external view returns(string memory);
+
+    /**
+     * @notice Returns the description associated with the module
+     */
+    function description() external view returns(string memory);
+
+    /**
+     * @notice Returns the instructions associated with the module
+     */
+    function instructions() external view returns(string memory);
+
+    /**
+     * @notice Get the setup cost of the module in USD
+     */
+    function usageCost() external returns(uint256);
+
+    /**
+     * @notice Get the setup cost of the module in USD
+     */
+    function setupCost() external returns(uint256);
+
+    /**
+     * @notice Type of the Module factory
+     */
+    function types() external view returns(uint8[] memory);
+
+    /**
+     * @notice Get the tags related to the module factory
+     */
+    function tags() external view returns(bytes32[] memory);
 
     /**
      * @notice Used to change the setup fee
@@ -62,23 +86,23 @@ interface IModuleFactory {
     /**
      * @notice Get the setup cost of the module in USD
      */
-    function getSetupCost() external view returns(uint256);
+    function usageCostInPoly() external returns(uint256);
 
     /**
      * @notice Get the setup cost of the module
      */
-    function getSetupCostInPoly() external returns (uint256);
+    function setupCostInPoly() external returns (uint256);
 
     /**
      * @notice Used to get the lower bound
      * @return Lower bound
      */
-    function getLowerSTVersionBounds() external view returns(uint8[] memory);
+    function lowerSTVersionBounds() external view returns(uint8[] memory);
 
     /**
      * @notice Used to get the upper bound
      * @return Upper bound
      */
-    function getUpperSTVersionBounds() external view returns(uint8[] memory);
+    function upperSTVersionBounds() external view returns(uint8[] memory);
 
 }

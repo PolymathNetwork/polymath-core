@@ -234,8 +234,8 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         //Check that the module factory exists in the ModuleRegistry - will throw otherwise
         IModuleRegistry(moduleRegistry).useModule(_moduleFactory);
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
-        uint8[] memory moduleTypes = moduleFactory.getTypes();
-        uint256 moduleCost = moduleFactory.getSetupCostInPoly();
+        uint8[] memory moduleTypes = moduleFactory.types();
+        uint256 moduleCost = moduleFactory.setupCostInPoly();
         require(moduleCost <= _maxCost, "Invalid cost");
         //Approve fee for module
         ERC20(polyToken).approve(_moduleFactory, moduleCost);
@@ -245,7 +245,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         //Approve ongoing budget
         ERC20(polyToken).approve(module, _budget);
         //Add to SecurityToken module map
-        bytes32 moduleName = moduleFactory.getName();
+        bytes32 moduleName = moduleFactory.name();
         uint256[] memory moduleIndexes = new uint256[](moduleTypes.length);
         uint256 i;
         for (i = 0; i < moduleTypes.length; i++) {

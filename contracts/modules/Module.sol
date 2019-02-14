@@ -2,6 +2,7 @@ pragma solidity ^0.5.0;
 
 import "./ModuleStorage.sol";
 import "../interfaces/IModule.sol";
+import "../interfaces/IModuleFactory.sol";
 import "../interfaces/IDataStore.sol";
 import "../interfaces/ISecurityToken.sol";
 import "../interfaces/ICheckPermission.sol";
@@ -56,8 +57,8 @@ contract Module is IModule, ModuleStorage {
     /**
      * @notice used to withdraw the fee by the factory owner
      */
-    function takeFee(uint256 _amount) public withPerm(FEE_ADMIN) returns(bool) {
-        require(polyToken.transferFrom(securityToken, Ownable(factory).owner(), _amount), "Unable to take fee");
+    function takeUsageFee() public withPerm(FEE_ADMIN) returns(bool) {
+        require(polyToken.transferFrom(securityToken, Ownable(factory).owner(), IModuleFactory(factory).usageCostInPoly()), "Unable to take fee");
         return true;
     }
 

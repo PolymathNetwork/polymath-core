@@ -1,6 +1,6 @@
 pragma solidity ^0.5.0;
 
-import "../ModuleFactory.sol";
+import "../UpgradableModuleFactory.sol";
 import "../../libraries/Util.sol";
 import "../../proxy/DummySTOProxy.sol";
 import "../../interfaces/IBoot.sol";
@@ -8,9 +8,7 @@ import "../../interfaces/IBoot.sol";
 /**
  * @title Factory for deploying DummySTO module
  */
-contract DummySTOFactory is ModuleFactory {
-
-    address public logicContract;
+contract DummySTOFactory is UpgradableModuleFactory {
 
     /**
      * @notice Constructor
@@ -26,7 +24,7 @@ contract DummySTOFactory is ModuleFactory {
         address _polymathRegistry
     )
         public
-        ModuleFactory(_setupCost, _usageCost, _polymathRegistry)
+        UpgradableModuleFactory(_setupCost, _usageCost, _logicContract, _polymathRegistry)
     {
         version = "1.0.0";
         name = "DummySTO";
@@ -34,7 +32,6 @@ contract DummySTOFactory is ModuleFactory {
         description = "Dummy STO";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-        logicContract = _logicContract;
     }
 
     /**
@@ -43,40 +40,24 @@ contract DummySTOFactory is ModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes calldata _data) external returns(address) {
-        address polyToken = _takeFee();
-        //Check valid bytes - can only call module init function
-        address dummySTO = address(new DummySTOProxy(msg.sender, polyToken, logicContract));
-        //Checks that _data is valid (not calling anything it shouldn't)
-        require(Util.getSig(_data) == IBoot(dummySTO).getInitFunction(), "Invalid data");
-        bool success;
-        /*solium-disable-next-line security/no-low-level-calls*/
-        (success, ) = dummySTO.call(_data);
-        require(success, "Unsuccessfull call");
-        /*solium-disable-next-line security/no-block-members*/
-        emit GenerateModuleFromFactory(dummySTO, getName(), address(this), msg.sender, getSetupCost(), getSetupCostInPoly(), now);
+        address dummySTO = address(new DummySTOProxy(msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
+        _initializeModule(dummySTO, _data);
         return dummySTO;
     }
 
     /**
      * @notice Type of the Module factory
      */
-    function getTypes() external view returns(uint8[] memory) {
+    function types() external view returns(uint8[] memory) {
         uint8[] memory res = new uint8[](1);
         res[0] = 3;
         return res;
     }
 
     /**
-     * @notice Returns the instructions associated with the module
-     */
-    function getInstructions() external view returns(string memory) {
-        return "Dummy STO - you can mint tokens at will";
-    }
-
-    /**
      * @notice Get the tags related to the module factory
      */
-    function getTags() external view returns(bytes32[] memory) {
+    function tags() external view returns(bytes32[] memory) {
         bytes32[] memory availableTags = new bytes32[](4);
         availableTags[0] = "Dummy";
         availableTags[1] = "Non-refundable";

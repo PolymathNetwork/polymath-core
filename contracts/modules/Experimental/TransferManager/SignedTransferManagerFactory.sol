@@ -27,26 +27,17 @@ contract SignedTransferManagerFactory is ModuleFactory {
      * @notice used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
-    // function deploy(bytes calldata /* _data */) external returns(address) {
-    //     if (setupCost > 0)
-    //         require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
-    //     address signedTransferManager = new SignedTransferManager(msg.sender, address(polyToken));
-    //     emit GenerateModuleFromFactory(address(signedTransferManager), getName(), address(this), msg.sender, setupCost, now);
-    //     return address(signedTransferManager);
-    // }
-
-     function deploy(bytes calldata /* _data */) external returns(address) {
-        address polyToken = _takeFee();
-        SignedTransferManager signedTransferManager = new SignedTransferManager(msg.sender, polyToken);
-        emit GenerateModuleFromFactory(address(signedTransferManager), getName(), address(this), msg.sender, getSetupCost(), getSetupCostInPoly(), now);
-        return address(signedTransferManager);
+     function deploy(bytes calldata _data) external returns(address) {
+        address signedTransferManager = address(new SignedTransferManager(msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken")));
+        _initializeModule(signedTransferManager, _data);
+        return signedTransferManager;
     }
 
 
     /**
      * @notice Type of the Module factory
      */
-    function getTypes() external view returns(uint8[] memory) {
+    function types() external view returns(uint8[] memory) {
         uint8[] memory res = new uint8[](2);
         res[0] = 2;
         res[1] = 6;
@@ -54,16 +45,9 @@ contract SignedTransferManagerFactory is ModuleFactory {
     }
 
     /**
-     * @notice Get the Instructions that helped to used the module
-     */
-    function getInstructions() external view returns(string memory) {
-        return "Allows an issuer to maintain a list of signers who can validate transfer request using signatures. A mapping is used to track valid signers which can be managed by the issuer. verifytransfer function takes in a signature and if the signature is valid, it will verify the transfer. invalidSigature function allow the signer to make a signature invalid after it is signed. Init function takes no parameters.";
-    }
-
-    /**
      * @notice Get the tags related to the module factory
      */
-    function getTags() public view returns(bytes32[] memory) {
+    function tags() public view returns(bytes32[] memory) {
         bytes32[] memory availableTags = new bytes32[](2);
         availableTags[0] = "Signed";
         availableTags[1] = "Transfer Restriction";

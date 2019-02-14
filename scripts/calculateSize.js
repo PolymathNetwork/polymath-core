@@ -1,28 +1,32 @@
 const fs = require("fs");
 const path = require("path");
-var size = new Array();
+const exec = require('child_process').execSync;
+const chalk = require('chalk');
 
-function readFiles() {
+async function readFiles() {
     if (fs.existsSync("./build/contracts/")) {
-        let files = fs.readdirSync("./build/contracts/");
-        return files;
+        return fs.readdirSync("./build/contracts/");
     } else {
-        console.log("Directory doesn't exists");
+        console.log('Compiling contracts. This may take a while, please wait.');
+        exec('truffle compile');
+        return fs.readdirSync("./build/contracts/");
     }
 }
 
 async function printSize() {
-    let files = readFiles();
+    let files = await readFiles();
+    console.log(`NOTE- Maximum size of contracts allowed to deloyed on the Ethereum mainnet is 24 KB(EIP170)`);
+    console.log(`---- Size of the contracts ----`);
     files.forEach(item => {
         let content = JSON.parse(fs.readFileSync(`./build/contracts/${item}`).toString()).deployedBytecode;
         let sizeInKB = content.toString().length / 2 / 1024;
-        size.push(sizeInKB);
+        if (sizeInKB > 24)
+            console.log(chalk.red(`${path.basename(item, ".json")} -  ${sizeInKB} KB`));
+        else if (sizeInKB > 20)
+            console.log(chalk.yellow(`${path.basename(item, ".json")} -  ${sizeInKB} KB`));
+        else
+            console.log(chalk.green(`${path.basename(item, ".json")} -  ${sizeInKB} KB`));
     });
-    console.log(`NOTE- Maximum size of contracts allowed to deloyed on the Ethereum mainnet is 24 KB(EIP170)`);
-    console.log(`---- Size of the contracts ----`);
-    for (let i = 0; i < files.length; i++) {
-        console.log(`${path.basename(files[i], ".json")} -  ${size[i]} KB`);
-    }
 }
 
 printSize();

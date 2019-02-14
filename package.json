@@ -90,6 +90,7 @@
     "ganache-cli": "^6.2.4",
     "mocha-junit-reporter": "^1.18.0",
     "prettier": "^1.15.3",
+    "table": "^5.2.3",
     "sol-merger": "^0.1.2",
     "solidity-coverage": "^0.5.11",
     "solidity-docgen": "^0.1.0",

@@ -218,7 +218,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         require(_investor != address(0), "Invalid investor");
         IDataStore dataStore = IDataStore(getDataStore());
         if (!_isExistingInvestor(_investor, dataStore)) {
-           dataStore.insertAddress(_getKey(INVESTORS), _investor);
+           dataStore.insertAddress(INVESTORSKEY, _investor);
         }
         uint256 _data = VersionUtils.packKYC(uint64(_fromTime), uint64(_toTime), uint64(_expiryTime), uint8(1));
         dataStore.setUint256(_getKey(WHITELIST, _investor), _data);
@@ -275,7 +275,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         require(_investor != address(0), "Invalid investor");
         IDataStore dataStore = IDataStore(getDataStore());
         if (!_isExistingInvestor(_investor, dataStore)) {
-           dataStore.insertAddress(_getKey(INVESTORS), _investor);
+           dataStore.insertAddress(INVESTORSKEY, _investor);
            //KYC data can not be present if added is false and hence we can set packed KYC as uint256(1) to set added as true
            dataStore.setUint256(_getKey(WHITELIST, _investor), uint256(1));
         }
@@ -391,10 +391,6 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         return bytes32(keccak256(abi.encodePacked(_key1, _key2)));
     }
 
-    function _getKey(bytes32 _key1) internal pure returns(bytes32) {
-        return bytes32(keccak256(abi.encodePacked(_key1)));
-    }
-
     function _getKYCValues(address _investor, IDataStore dataStore) internal view returns(
         uint64 fromTime,
         uint64 toTime,
@@ -423,7 +419,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
      */
     function getAllInvestors() public view returns(address[] memory investors) {
         IDataStore dataStore = IDataStore(getDataStore());
-        investors = dataStore.getAddressArray(_getKey(INVESTORS));
+        investors = dataStore.getAddressArray(INVESTORSKEY);
     }
 
     /**
@@ -431,7 +427,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
      */
     function getInvestors(uint256 _fromIndex, uint256 _toIndex) public view returns(address[] memory investors) {
         IDataStore dataStore = IDataStore(getDataStore());
-        investors = dataStore.getAddressArrayElements(_getKey(INVESTORS), _fromIndex, _toIndex);
+        investors = dataStore.getAddressArrayElements(INVESTORSKEY, _fromIndex, _toIndex);
     }
 
     function getAllInvestorFlags() public view returns(address[] memory investors, uint256[] memory flags) {

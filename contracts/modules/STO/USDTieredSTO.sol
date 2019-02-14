@@ -294,7 +294,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      */
     function getAccreditedData() external view returns (address[] memory investors, bool[] memory accredited, uint256[] memory overrides) {
         IDataStore dataStore = IDataStore(getDataStore());
-        investors = dataStore.getAddressArray(_getKey(INVESTORS));
+        investors = dataStore.getAddressArray(INVESTORSKEY);
         accredited = new bool[](investors.length);
         overrides = new uint256[](investors.length);
         for (uint256 i = 0; i < investors.length; i++) {
@@ -553,10 +553,6 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         uint256 flags = dataStore.getUint256(_getKey(INVESTORFLAGS, _investor));
         uint256 flag = flags & uint256(1); //isAccredited is flag 0 so we don't need to bit shift flags.
         return flag > 0 ? true : false;
-    }
-
-    function _getKey(bytes32 _key1) internal pure returns(bytes32) {
-        return bytes32(keccak256(abi.encodePacked(_key1)));
     }
 
     /////////////

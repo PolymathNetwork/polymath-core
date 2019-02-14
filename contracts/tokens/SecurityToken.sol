@@ -29,8 +29,7 @@ import "../interfaces/IDataStore.sol";
 contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater {
     using SafeMath for uint256;
 
-    //TODO: Store keccak hash instead of investors to save gas.
-    bytes32 internal constant INVESTORS = "INVESTORS";
+    bytes32 internal constant INVESTORSKEY = 0xdf3a8dd24acdd05addfc6aeffef7574d2de3f844535ec91e8e0f3e45dba96731; //keccak256(abi.encodePacked("INVESTORS"))
 
     // Used to hold the semantic version data
     struct SemanticVersion {
@@ -403,7 +402,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      */
     function getInvestors() public view returns(address[] memory investors) {
         IDataStore dataStoreInstance = IDataStore(dataStore);
-        investors = dataStoreInstance.getAddressArray(_getKey(INVESTORS));
+        investors = dataStoreInstance.getAddressArray(INVESTORSKEY);
     }
 
     /**
@@ -415,7 +414,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         uint256 count;
         uint256 i;
         IDataStore dataStoreInstance = IDataStore(dataStore);
-        address[] memory investors = dataStoreInstance.getAddressArray(_getKey(INVESTORS));
+        address[] memory investors = dataStoreInstance.getAddressArray(INVESTORSKEY);
         for (i = 0; i < investors.length; i++) {
             if (balanceOfAt(investors[i], _checkpointId) > 0) {
                 count++;
@@ -441,7 +440,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      */
     function iterateInvestors(uint256 _start, uint256 _end) external view returns(address[] memory) {
         IDataStore dataStoreInstance = IDataStore(dataStore);
-        return dataStoreInstance.getAddressArrayElements(_getKey(INVESTORS), _start, _end);
+        return dataStoreInstance.getAddressArrayElements(INVESTORSKEY, _start, _end);
     }
 
     /**
@@ -450,7 +449,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      */
     function getInvestorCount() external view returns(uint256) {
         IDataStore dataStoreInstance = IDataStore(dataStore);
-        return dataStoreInstance.getAddressArrayLength(_getKey(INVESTORS));
+        return dataStoreInstance.getAddressArrayLength(INVESTORSKEY);
     }
 
     /**
@@ -840,9 +839,4 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         _version[2] = securityTokenVersion.patch;
         return _version;
     }
-
-    function _getKey(bytes32 _key1) internal pure returns(bytes32) {
-        return bytes32(keccak256(abi.encodePacked(_key1)));
-    }
-
 }

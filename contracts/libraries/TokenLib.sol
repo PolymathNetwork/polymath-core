@@ -8,7 +8,7 @@ library TokenLib {
     using SafeMath for uint256;
 
     bytes32 internal constant WHITELIST = "WHITELIST";
-    bytes32 internal constant INVESTORS = "INVESTORS";
+    bytes32 internal constant INVESTORSKEY = 0xdf3a8dd24acdd05addfc6aeffef7574d2de3f844535ec91e8e0f3e45dba96731; //keccak256(abi.encodePacked("INVESTORS"))
 
     // Struct for module data
     struct ModuleData {
@@ -240,7 +240,7 @@ library TokenLib {
             _holderCount = _holderCount.add(1);
             IDataStore dataStore = IDataStore(_dataStore);
             if (!_isExistingInvestor(_to, dataStore)) {
-                dataStore.insertAddress(_getKey(INVESTORS), _to);
+                dataStore.insertAddress(INVESTORSKEY, _to);
                 //KYC data can not be present if added is false and hence we can set packed KYC as uint256(1) to set added as true
                 dataStore.setUint256(_getKey(WHITELIST, _to), uint256(1));
             }
@@ -255,10 +255,6 @@ library TokenLib {
 
     function _getKey(bytes32 _key1, address _key2) internal pure returns(bytes32) {
         return bytes32(keccak256(abi.encodePacked(_key1, _key2)));
-    }
-
-    function _getKey(bytes32 _key1) internal pure returns(bytes32) {
-        return bytes32(keccak256(abi.encodePacked(_key1)));
     }
 
     function _isExistingInvestor(address _investor, IDataStore dataStore) internal view returns(bool) {

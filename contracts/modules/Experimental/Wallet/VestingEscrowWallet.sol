@@ -59,16 +59,7 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
      * @notice This function returns the signature of the configure function
      */
     function getInitFunction() public pure returns (bytes4) {
-        return bytes4(keccak256("configure(address)"));
-    }
-
-    /**
-     * @notice Used to initialize the treasury wallet address
-     * @param _treasuryWallet Address of the treasury wallet
-     */
-    function configure(address _treasuryWallet) public onlyFactory {
-        require(_treasuryWallet != address(0), "Invalid address");
-        treasuryWallet = _treasuryWallet;
+        return bytes4(0);
     }
 
     /**
@@ -108,8 +99,20 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
         require(_amount <= unassignedTokens, "Amount is greater than unassigned tokens");
         uint256 amount = unassignedTokens;
         unassignedTokens = 0;
-        require(ISecurityToken(securityToken).transfer(treasuryWallet, amount), "Transfer failed");
+        address _wallet = getTreasuryWallet();
+        require(_wallet != address(0), "Invalid address");
+        require(ISecurityToken(securityToken).transfer(_wallet, amount), "Transfer failed");
         emit SendToTreasury(amount, msg.sender);
+    }
+
+    /**
+     * @notice Returns the treasury wallet address
+     */
+    function getTreasuryWallet() public view returns(address) {
+        if (treasuryWallet == address(0)) 
+            return IDataStore(getDataStore()).getAddress(TREASURY);
+        else
+            return treasuryWallet;
     }
 
     /**

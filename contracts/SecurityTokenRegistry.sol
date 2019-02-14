@@ -486,12 +486,14 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @param _name is the name of the token
      * @param _ticker is the ticker symbol of the security token
      * @param _tokenDetails is the off-chain details of the token
+     * @param _treasuryWallet Ethereum address which will holds the STs.
      * @param _divisible is whether or not the token is divisible
      */
     function generateSecurityToken(
         string calldata _name,
         string calldata _ticker,
         string calldata _tokenDetails,
+        address _treasuryWallet,
         bool _divisible
     )
         external
@@ -505,23 +507,27 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         require(_tickerOwner(ticker) == msg.sender, "Not authorised");
         /*solium-disable-next-line security/no-block-members*/
         require(getUintValue(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now, "Ticker gets expired");
-        (uint256 _usdFee, uint256 _polyFee) = _takeFee(STLAUNCHFEE);
+        _deployToken(_name, ticker, _tokenDetails, msg.sender, _divisible, _treasuryWallet); 
+    }
 
+    function _deployToken(string memory name, string memory ticker, string memory tokenDetails, address issuer, bool divisible, address wallet) internal {
+        (uint256 _usdFee, uint256 _polyFee) = _takeFee(STLAUNCHFEE);
         address newSecurityTokenAddress = ISTFactory(getAddressValue(Encoder.getKey("protocolVersionST", getUintValue(Encoder.getKey("latestVersion"))))).deployToken(
-            _name,
+            name,
             ticker,
             18,
-            _tokenDetails,
-            msg.sender,
-            _divisible,
+            tokenDetails,
+            issuer,
+            divisible,
+            wallet,
             getAddressValue(POLYMATHREGISTRY)
         );
 
         /*solium-disable-next-line security/no-block-members*/
-        _storeSecurityTokenData(newSecurityTokenAddress, ticker, _tokenDetails, now);
+        _storeSecurityTokenData(newSecurityTokenAddress, ticker, tokenDetails, now);
         set(Encoder.getKey("tickerToSecurityToken", ticker), newSecurityTokenAddress);
         /*solium-disable-next-line security/no-block-members*/
-        emit NewSecurityToken(ticker, _name, newSecurityTokenAddress, msg.sender, now, msg.sender, false, _usdFee, _polyFee);
+        emit NewSecurityToken(ticker, name, newSecurityTokenAddress, msg.sender, now, msg.sender, false, _usdFee, _polyFee);
     }
 
     /**

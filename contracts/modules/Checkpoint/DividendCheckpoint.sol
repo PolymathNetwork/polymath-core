@@ -36,21 +36,11 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
     }
 
     /**
-     * @notice Function used to intialize the contract variables
-     * @param _wallet Ethereum account address to receive reclaimed dividends and tax
-     */
-    function configure(
-        address payable _wallet
-    ) public onlyFactory {
-        _setWallet(_wallet);
-    }
-
-    /**
     * @notice Init function i.e generalise function to maintain the structure of the module contract
     * @return bytes4
     */
     function getInitFunction() public pure returns(bytes4) {
-        return this.configure.selector;
+        return bytes4(0);
     }
 
     /**
@@ -58,10 +48,6 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @param _wallet Ethereum account address to receive reclaimed dividends and tax
      */
     function changeWallet(address payable _wallet) external onlyOwner {
-        _setWallet(_wallet);
-    }
-
-    function _setWallet(address payable _wallet) internal {
         require(_wallet != address(0));
         emit SetWallet(wallet, _wallet);
         wallet = _wallet;
@@ -73,6 +59,16 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      */
     function getDefaultExcluded() external view returns(address[] memory) {
         return excluded;
+    }
+
+    /**
+     * @notice Returns the treasury wallet address
+     */
+    function getTreasuryWallet() public view returns(address payable) {
+        if (wallet == address(0)) 
+            return address(uint160(IDataStore(getDataStore()).getAddress(TREASURY)));
+        else
+            return wallet;
     }
 
     /**

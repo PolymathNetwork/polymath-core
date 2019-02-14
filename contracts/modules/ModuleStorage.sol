@@ -13,6 +13,8 @@ contract ModuleStorage {
 
     bytes32 public constant FEE_ADMIN = "FEE_ADMIN";
 
+    bytes32 public constant TREASURY = "TREASURY_WALLET";
+
     IERC20 public polyToken;
 
     /**

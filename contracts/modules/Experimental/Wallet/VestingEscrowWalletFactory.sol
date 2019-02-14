@@ -32,15 +32,9 @@ contract VestingEscrowWalletFactory is ModuleFactory {
      * _data Data used for the intialization of the module factory variables
      * @return address Contract address of the Module
      */
-    function deploy(bytes calldata _data) external returns(address) {
+    function deploy(bytes calldata /*_data*/) external returns(address) {
         address polyToken = _takeFee();
         address vestingEscrowWallet = address(new VestingEscrowWalletProxy(msg.sender, address(polyToken), logicContract));
-        //Checks that _data is valid (not calling anything it shouldn't)
-        require(Util.getSig(_data) == IBoot(vestingEscrowWallet).getInitFunction(), "Invalid data");
-        bool success;
-        /*solium-disable-next-line security/no-low-level-calls*/
-        (success, ) = vestingEscrowWallet.call(_data);
-        require(success, "Unsuccessfull call");
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(vestingEscrowWallet, getName(), address(this), msg.sender, getSetupCost(), getSetupCostInPoly(), now);
         return vestingEscrowWallet;
@@ -51,7 +45,7 @@ contract VestingEscrowWalletFactory is ModuleFactory {
      */
     function getTypes() external view returns(uint8[] memory)  {
         uint8[] memory res = new uint8[](1);
-        res[0] = 6;
+        res[0] = 7;
         return res;
     }
 

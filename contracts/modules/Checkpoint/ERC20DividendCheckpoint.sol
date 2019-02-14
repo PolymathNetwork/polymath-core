@@ -259,8 +259,10 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
         dividends[_dividendIndex].reclaimed = true;
         Dividend storage dividend = dividends[_dividendIndex];
         uint256 remainingAmount = dividend.amount.sub(dividend.claimedAmount);
-        require(IERC20(dividendTokens[_dividendIndex]).transfer(wallet, remainingAmount), "transfer failed");
-        emit ERC20DividendReclaimed(wallet, _dividendIndex, dividendTokens[_dividendIndex], remainingAmount);
+        address _wallet = getTreasuryWallet();
+        require(_wallet != address(0), "Invalid address");
+        require(IERC20(dividendTokens[_dividendIndex]).transfer(_wallet, remainingAmount), "transfer failed");
+        emit ERC20DividendReclaimed(_wallet, _dividendIndex, dividendTokens[_dividendIndex], remainingAmount);
     }
 
     /**
@@ -272,8 +274,10 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
         Dividend storage dividend = dividends[_dividendIndex];
         uint256 remainingWithheld = dividend.totalWithheld.sub(dividend.totalWithheldWithdrawn);
         dividend.totalWithheldWithdrawn = dividend.totalWithheld;
-        require(IERC20(dividendTokens[_dividendIndex]).transfer(wallet, remainingWithheld), "transfer failed");
-        emit ERC20DividendWithholdingWithdrawn(wallet, _dividendIndex, dividendTokens[_dividendIndex], remainingWithheld);
+        address _wallet = getTreasuryWallet();
+        require(_wallet != address(0), "Invalid address");
+        require(IERC20(dividendTokens[_dividendIndex]).transfer(_wallet, remainingWithheld), "transfer failed");
+        emit ERC20DividendWithholdingWithdrawn(_wallet, _dividendIndex, dividendTokens[_dividendIndex], remainingWithheld);
     }
 
 }

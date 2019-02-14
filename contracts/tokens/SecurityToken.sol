@@ -14,6 +14,7 @@ import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
 import "../libraries/TokenLib.sol";
+import "../interfaces/IDataStore.sol";
 
 /**
 * @title Security Token contract
@@ -86,6 +87,8 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
 
     // Times at which each checkpoint was created
     uint256[] checkpointTimes;
+
+    bytes32 constant TREASURY = "TREASURY_WALLET";
 
     // Emit at the time when module get added
     event ModuleAdded(
@@ -379,6 +382,10 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     function changeDataStore(address _dataStore) external onlyOwner {
         require(_dataStore != address(0), "Invalid address");
         dataStore = _dataStore;
+    }
+
+    function changeTreasuryWallet(address _wallet) external onlyOwner {
+        IDataStore(dataStore).setAddress(TREASURY, _wallet);
     }
 
     /**

@@ -201,6 +201,23 @@ contract("GeneralTransferManager", async (accounts) => {
             await revertToSnapshot(snap_id);
         });
 
+        it("Should add investor flags", async () => {
+            let snap_id = await takeSnapshot();
+            await I_GeneralTransferManager.modifyInvestorFlagMulti([account_investor1, account_investor1, account_investor2], [0, 1, 1], [true, true, true], { from: account_issuer });
+            let investors = await I_GeneralTransferManager.getInvestors(0, 1);
+            assert.equal(investors[0], account_investor1);
+            assert.equal(investors[1], account_investor2);
+            let investorCount = await I_SecurityToken.getInvestorCount();
+            assert.equal(investorCount.toNumber(), 2);
+            let allInvestorFlags = await I_GeneralTransferManager.getAllInvestorFlags();
+            assert.deepEqual(investors, allInvestorFlags[0]);
+            assert.equal(allInvestorFlags[1][0].toNumber(), 3)//0x000....00011
+            assert.equal(allInvestorFlags[1][1].toNumber(), 2)//0x000....00010
+            let investorFlags = await I_GeneralTransferManager.getInvestorFlags(allInvestorFlags[0][0]);
+            assert.equal(investorFlags, 3)//0x000....00011
+            await revertToSnapshot(snap_id);
+        });
+
         it("Should whitelist the affiliates before the STO attached", async () => {
             console.log(`Estimate gas of one Whitelist: 
                 ${await I_GeneralTransferManager.modifyKYCData.estimateGas(

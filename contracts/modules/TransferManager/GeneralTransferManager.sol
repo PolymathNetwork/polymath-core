@@ -373,14 +373,6 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     }
 
     /**
-     * @notice Internal function use to know whether the STO is attached or not
-     */
-    function _isSTOAttached() internal view returns(bool) {
-        bool attached = ISecurityToken(securityToken).getModulesByType(3).length > 0;
-        return attached;
-    }
-
-    /**
      * @notice Internal function to adjust times using default values
      */
     function _adjustTimes(uint64 _fromTime, uint64 _toTime) internal view returns(uint64, uint64) {

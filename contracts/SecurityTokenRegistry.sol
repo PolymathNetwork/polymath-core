@@ -486,15 +486,15 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @param _name is the name of the token
      * @param _ticker is the ticker symbol of the security token
      * @param _tokenDetails is the off-chain details of the token
-     * @param _treasuryWallet Ethereum address which will holds the STs.
      * @param _divisible is whether or not the token is divisible
+     * @param _treasuryWallet Ethereum address which will holds the STs.
      */
     function generateSecurityToken(
         string calldata _name,
         string calldata _ticker,
         string calldata _tokenDetails,
-        address _treasuryWallet,
-        bool _divisible
+        bool _divisible,
+        address _treasuryWallet
     )
         external
         whenNotPausedOrOwner

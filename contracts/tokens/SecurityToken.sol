@@ -137,8 +137,8 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     event DisableController();
 
     function _isModule(address _module, uint8 _type) internal view returns(bool) {
-        require(modulesToData[_module].module == _module, "Wrong address");
-        require(!modulesToData[_module].isArchived, "Module archived");
+        if (modulesToData[_module].module != _module || modulesToData[_module].isArchived)
+            return false;
         for (uint256 i = 0; i < modulesToData[_module].moduleTypes.length; i++) {
             if (modulesToData[_module].moduleTypes[i] == _type) {
                 return true;
@@ -384,6 +384,10 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         dataStore = _dataStore;
     }
 
+    /**
+     * @notice Allows to change the treasury wallet address
+     * @param _wallet Ethereum address of the treasury wallet 
+     */
     function changeTreasuryWallet(address _wallet) external onlyOwner {
         IDataStore(dataStore).setAddress(TREASURY, _wallet);
     }
@@ -844,6 +848,10 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         _version[1] = securityTokenVersion.minor;
         _version[2] = securityTokenVersion.patch;
         return _version;
+    }
+
+    function getTreasuryWallet() external view returns(address) {
+        return IDataStore(dataStore).getAddress(TREASURY);
     }
 
 }

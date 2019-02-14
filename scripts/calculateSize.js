@@ -38,7 +38,6 @@ async function printSize() {
             size[i]
         ]);
     }
-    console.log();
     console.log(table(dataTable));
 }
 

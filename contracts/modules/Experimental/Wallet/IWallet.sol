@@ -9,11 +9,13 @@ import "../../Module.sol";
  */
 contract IWallet is Module, Pausable {
 
-    function unpause() public onlyOwner {
+    function unpause() public {
+        _onlySecurityTokenOwner();
         super._unpause();
     }
 
-    function pause() public onlyOwner {
+    function pause() public {
+        _onlySecurityTokenOwner();
         super._pause();
     }
 }

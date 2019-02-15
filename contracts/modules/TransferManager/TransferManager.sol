@@ -8,11 +8,14 @@ import "../../interfaces/ITransferManager.sol";
  * @title Base abstract contract to be implemented by all Transfer Manager modules
  */
 contract TransferManager is ITransferManager, Module, Pausable {
-    function unpause() public onlyOwner {
+  
+    function unpause() public {
+        _onlySecurityTokenOwner();
         super._unpause();
     }
 
-    function pause() public onlyOwner {
+    function pause() public {
+        _onlySecurityTokenOwner();
         super._pause();
     }
 }

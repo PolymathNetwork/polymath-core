@@ -40,11 +40,6 @@ interface IModuleFactory {
     function description() external view returns(string memory);
 
     /**
-     * @notice Returns the instructions associated with the module
-     */
-    function instructions() external view returns(string memory);
-
-    /**
      * @notice Get the setup cost of the module in USD
      */
     function usageCost() external returns(uint256);

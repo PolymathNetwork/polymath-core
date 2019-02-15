@@ -34,9 +34,8 @@ contract Module is IModule, ModuleStorage {
         _;
     }
 
-    modifier onlyOwner() {
+    function _onlySecurityTokenOwner() internal view {
         require(msg.sender == Ownable(securityToken).owner(), "Sender is not owner");
-        _;
     }
 
     modifier onlyFactory() {

@@ -22,7 +22,11 @@ contract ModuleFactory is IModuleFactory, Ownable {
     bytes32 public name;
     string public title;
     string public description;
-    string public instructions;
+
+    uint8[] typesData; // Can't be modified unless using UpgradableModuleFactory
+    bytes32[] tagsData;
+
+
     uint256 public usageCost; // Denominated in USD
     uint256 public setupCost; // Denominated in USD
 
@@ -42,6 +46,20 @@ contract ModuleFactory is IModuleFactory, Ownable {
         setupCost = _setupCost;
         usageCost = _usageCost;
         polymathRegistry = _polymathRegistry;
+    }
+
+    /**
+     * @notice Type of the Module factory
+     */
+    function types() external view returns(uint8[] memory) {
+        return typesData;
+    }
+
+    /**
+     * @notice Get the tags related to the module factory
+     */
+    function tags() external view returns(bytes32[] memory) {
+        return tagsData;
     }
 
     /**
@@ -81,15 +99,6 @@ contract ModuleFactory is IModuleFactory, Ownable {
     }
 
     /**
-     * @notice Updates the instructions of the ModuleFactory
-     * @param _instructions New instructions that will replace the old one.
-     */
-    function changeInstructions(string memory _instructions) public onlyOwner {
-        require(bytes(_instructions).length > 0, "Invalid text");
-        instructions = _instructions;
-    }
-
-    /**
      * @notice Updates the name of the ModuleFactory
      * @param _name New name that will replace the old one.
      */
@@ -105,6 +114,15 @@ contract ModuleFactory is IModuleFactory, Ownable {
     function changeVersion(string memory _version) public onlyOwner {
         require(bytes(_version).length > 0, "Invalid text");
         version = _version;
+    }
+
+    /**
+     * @notice Updates the tags of the ModuleFactory
+     * @param _tagsData New list of tags
+     */
+    function changeTags(bytes32[] memory _tagsData) public onlyOwner {
+        require(_tagsData.length > 0, "Invalid text");
+        tagsData = _tagsData;
     }
 
     /**
@@ -150,6 +168,14 @@ contract ModuleFactory is IModuleFactory, Ownable {
     function setupCostInPoly() public returns (uint256) {
         uint256 polyRate = IOracle(IPolymathRegistry(polymathRegistry).getAddress(POLY_ORACLE)).getPrice();
         return SafeMath.div(setupCost, polyRate);
+    }
+
+    /**
+     * @notice Get the setup cost of the module
+     */
+    function usageCostInPoly() public returns (uint256) {
+        uint256 polyRate = IOracle(IPolymathRegistry(polymathRegistry).getAddress(POLY_ORACLE)).getPrice();
+        return SafeMath.div(usageCost, polyRate);
     }
 
     /**

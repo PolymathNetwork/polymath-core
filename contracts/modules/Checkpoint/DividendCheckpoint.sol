@@ -56,7 +56,8 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @notice Function used to change wallet address
      * @param _wallet Ethereum account address to receive reclaimed dividends and tax
      */
-    function changeWallet(address payable _wallet) external onlyOwner {
+    function changeWallet(address payable _wallet) external {
+        _onlySecurityTokenOwner();
         _setWallet(_wallet);
     }
 

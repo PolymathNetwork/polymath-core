@@ -27,6 +27,9 @@ contract CountTransferManagerFactory is UpgradableModuleFactory {
         version = "2.1.0";
         title = "Count Transfer Manager";
         description = "Restrict the number of investors";
+        typesData.push(2);
+        tagsData.push("Count");
+        tagsData.push("Transfer Manager");
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
@@ -42,22 +45,4 @@ contract CountTransferManagerFactory is UpgradableModuleFactory {
         return countTransferManager;
     }
 
-    /**
-     * @notice Type of the Module factory
-     */
-    function types() external view returns(uint8[] memory) {
-        uint8[] memory res = new uint8[](1);
-        res[0] = 2;
-        return res;
-    }
-
-    /**
-     * @notice Get the tags related to the module factory
-     */
-    function tags() external view returns(bytes32[] memory) {
-        bytes32[] memory availableTags = new bytes32[](2);
-        availableTags[0] = "Count";
-        availableTags[1] = "Transfer Restriction";
-        return availableTags;
-    }
 }

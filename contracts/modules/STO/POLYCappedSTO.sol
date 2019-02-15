@@ -45,8 +45,8 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
         uint256 _receivedValue,
         uint256 _spentValue
     );
-    event ReserveTokenMint(address indexed _owner, address indexed _reserveWallet, uint256 _tokens);
-    event SetAddresses(address indexed _wallet, address indexed _reserveWallet);
+    event ReserveTokenMint(address indexed _owner, address indexed _treasuryWallet, uint256 _tokens);
+    event SetAddresses(address indexed _wallet, address indexed _treasuryWallet);
     event SetLimits(uint256 _minimumInvestment, uint256 _nonAccreditedLimit, uint256 _maxNonAccreditedInvestors);
     event SetTimes(uint256 _startTime, uint256 _endTime);
     event SetRate(uint256 _rate);
@@ -58,7 +58,7 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
 
     modifier notStarted() {
         /*solium-disable-next-line security/no-block-members*/
-        require(now < startTime, "STO has started");
+        require(now < startTime, "STO already started");
         _;
     }
 
@@ -81,7 +81,7 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
      * @param _nonAccreditedLimit Limit in fund raise type (* 10**18) for non-accredited investors
      * @param _maxNonAccreditedInvestors Maximum number of non-accredited investors allowed (0 = unlimited)
      * @param _wallet Ethereum account address to hold the funds
-     * @param _reserveWallet Ethereum account where unsold Tokens will be sent (address 0x = do not mint unsold)
+     * @param _treasuryWallet Ethereum account where unsold Tokens will be sent (address 0x = do not mint unsold)
      */
     function configure(
         uint256 _startTime,
@@ -92,9 +92,9 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
         uint256 _nonAccreditedLimit,
         uint256 _maxNonAccreditedInvestors,
         address payable _wallet,
-        address _reserveWallet
+        address _treasuryWallet
     )
-        public
+        external
         onlyFactory
     {
         require(endTime == 0, "Already configured");
@@ -104,7 +104,7 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
         _modifyTimes(_startTime, _endTime);
         _modifyCap (_cap);
         _modifyRate (_rate);
-        _modifyAddresses(_wallet, _reserveWallet);
+        _modifyAddresses(_wallet, _treasuryWallet);
         _modifyLimits(_minimumInvestment, _nonAccreditedLimit, _maxNonAccreditedInvestors);
     }
 
@@ -148,13 +148,13 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
     }
 
     /**
-     * @dev Modifies addresses used as wallet and reserve wallet
+     * @dev Modifies addresses used as wallet and treasury wallet
      * @param _wallet Address of wallet where funds are sent
-     * @param _reserveWallet Ethereum address where unsold Tokens will be sent (address 0x = do not mint unsold)
+     * @param _treasuryWallet Ethereum address where unsold Tokens will be sent (address 0x = do not mint unsold)
      */
-    function modifyAddresses(address payable _wallet, address _reserveWallet) external onlyOwner {
+    function modifyAddresses(address payable _wallet, address _treasuryWallet) external onlyOwner {
         //can be modified even when STO started
-        _modifyAddresses(_wallet, _reserveWallet);
+        _modifyAddresses(_wallet, _treasuryWallet);
     }
 
     function _modifyLimits(
@@ -188,11 +188,11 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
         emit SetTimes(_startTime, _endTime);
     }
 
-    function _modifyAddresses(address payable _wallet, address _reserveWallet) internal {
+    function _modifyAddresses(address payable _wallet, address _treasuryWallet) internal {
         require(_wallet != address(0), "Invalid wallet");
         wallet = _wallet;
-        reserveWallet = _reserveWallet;
-        emit SetAddresses(wallet, reserveWallet);
+        treasuryWallet = _treasuryWallet;
+        emit SetAddresses(wallet, treasuryWallet);
     }
 
     ////////////////////
@@ -200,17 +200,20 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
     ////////////////////
 
     /**
-     * @notice Finalizes the STO and mints remaining tokens to reserve address
-     * @notice If the reserve wallet address is address 0x0 reserve tokens will not be minted
-     * @notice Reserve address must be whitelisted to successfully finalize
+     * @notice Finalizes the STO and mints remaining tokens to treasury address
+     * @notice Treasury address must be whitelisted to successfully finalize
+     * @param mintUnsoldTokens unsold tokens will be minted to the Treasury wallet if ture
      */
-    function finalize() public onlyOwner {
-        require(!isFinalized, "STO already finalized");
+    function finalize(bool mintUnsoldTokens) public onlyOwner {
+        require(!isFinalized, "Already finalized");
         isFinalized = true;
-        if ((reserveWallet != address(0) ) && (totalTokensSold < cap)) {
+        if ((mintUnsoldTokens) && (totalTokensSold < cap)) {
+//            address _wallet = (treasuryWallet == address(0) ? IDataStore(getDataStore()).getAddress(TREASURY) : treasuryWallet);
+            address _wallet = treasuryWallet;
+            require(_wallet != address(0));
             finalAmountReturned = cap.sub(totalTokensSold);
-            require(ISecurityToken(securityToken).mint(reserveWallet, finalAmountReturned), "Error minting");
-            emit ReserveTokenMint(msg.sender, reserveWallet, finalAmountReturned);
+            require(ISecurityToken(securityToken).mint(treasuryWallet, finalAmountReturned), "Error minting");
+            emit ReserveTokenMint(msg.sender, treasuryWallet, finalAmountReturned);
         }
      }
 
@@ -220,7 +223,7 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
      * @param _accredited Array of bools specifying accreditation status
      */
     function changeAccredited(address[] memory _investors, bool[] memory _accredited) public onlyOwner {
-        require(_investors.length == _accredited.length, "Array length mismatch");
+        require(_investors.length == _accredited.length, "Length mismatch");
         for (uint256 i = 0; i < _investors.length; i++) {
             if (_accredited[i]) {
                 investors[_investors[i]].accredited = uint8(1);
@@ -238,7 +241,7 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
      * @param _nonAccreditedLimit Array of uints specifying non-accredited limits
      */
     function changeNonAccreditedLimit(address[] memory _investors, uint256[] memory _nonAccreditedLimit) public onlyOwner {
-        require(_investors.length == _nonAccreditedLimit.length, "Array length mismatch");
+        require(_investors.length == _nonAccreditedLimit.length, "Length mismatch");
         for (uint256 i = 0; i < _investors.length; i++) {
             investors[_investors[i]].nonAccreditedLimitOverride = _nonAccreditedLimit[i];
             _addToInvestorsList(_investors[i]);
@@ -347,7 +350,7 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
         if (investors[_beneficiary].accredited == uint8(0) && maxNonAccreditedInvestors != 0) {
             require(nonAccreditedCount < maxNonAccreditedInvestors, "Limit for number of non-accredited investor reached");
         }
-        require(_investmentValue.add(investorInvested[_beneficiary]) >= minimumInvestment, "Total investment less than minimum investment");
+        require(_investmentValue.add(investorInvested[_beneficiary]) >= minimumInvestment, "Less than minimum investment");
         // Get the maximum allowed investment value
         uint256 allowedInvestment = _getAllowedInvestment (_beneficiary, _investmentValue);
         // Get the number of tokens to be minted and value in fund raise type
@@ -415,7 +418,7 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
     * @param _tokenAmount Number of tokens to be emitted
     */
     function _deliverTokens(address _beneficiary, uint256 _tokenAmount) internal {
-        require(ISecurityToken(securityToken).mint(_beneficiary, _tokenAmount), "Error in minting the tokens");
+        require(ISecurityToken(securityToken).mint(_beneficiary, _tokenAmount), "Error minting");
     }
 
     /**
@@ -460,7 +463,7 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
      * @notice Return the total no. of tokens sold
      * @return uint256 Total number of tokens sold
      */
-    function getTokensSold() public view returns (uint256) {
+    function getTokensSold() external view returns (uint256) {
         return totalTokensSold;
     }
 

@@ -32,7 +32,7 @@ contract POLYCappedSTOFactory is ModuleFactory {
         version = "1.0.0";
         name = "POLYCappedSTO";
         title = "POLY - Capped STO";
-        description = "This smart contract creates a maximum number of tokens (i.e. hard cap) which the total aggregate of tokens acquired by all investors cannot exceed. Security tokens are sent to the investor upon reception of the funds (POLY). This STO supports options for a minimum investment limit for all investors, maximum investment limit for non-accredited investors and an option to mint unsold tokens to a reserve wallet upon termination of the offering.";
+        description = "This smart contract creates a maximum number of tokens (i.e. hard cap) which the total aggregate of tokens acquired by all investors cannot exceed. Security tokens are sent to the investor upon reception of the funds (POLY). This STO supports options for a minimum investment limit for all investors, maximum investment limit for non-accredited investors and an option to mint unsold tokens to a treasury wallet upon termination of the offering.";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         logicContract = _logicContract;
@@ -73,7 +73,7 @@ contract POLYCappedSTOFactory is ModuleFactory {
     function getInstructions() external view returns(string memory) {
         /*solium-disable-next-line max-len*/
         // NEED TO UPDATE INSTRUCTIONS
-        return "Initialises a POLY capped STO. Init parameters are _startTime (time STO starts), _endTime (time STO ends), _cap (cap in tokens for STO), _rate (POLY to token rate), _minimumInvestment (required minimum investment), _nonAccreditedLimit (maximum investment for non-accredited investors), _maxNonAccreditedInvestors (maximum number of non accredited investors), _wallet (address which will receive funds), _reserveWallet (address which will receive unsold tokens)";
+        return "Initialises a POLY capped STO. Init parameters are _startTime (time STO starts), _endTime (time STO ends), _cap (cap in tokens for STO), _rate (POLY to token rate), _minimumInvestment (required minimum investment), _nonAccreditedLimit (maximum investment for non-accredited investors), _maxNonAccreditedInvestors (maximum number of non accredited investors), _wallet (address which will receive funds), _treasuryWallet (address which will receive unsold tokens)";
     }
 
     /**

@@ -28,8 +28,8 @@ contract POLYCappedSTOStorage {
     // Number of non accredited investors that have invested
     uint256 public nonAccreditedCount;
 
-    // Address of issuer reserve wallet for unsold tokens
-    address public reserveWallet;
+    // Address of issuer treasury wallet for unsold tokens
+    address public treasuryWallet;
 
     // Determine whether users can invest on behalf of a beneficiary
     bool public allowBeneficialInvestments = false;

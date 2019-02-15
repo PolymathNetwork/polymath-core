@@ -88,7 +88,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     // Times at which each checkpoint was created
     uint256[] checkpointTimes;
 
-    bytes32 constant TREASURY = "TREASURY_WALLET";
+    bytes32 internal constant TREASURY = 0xaae8817359f3dcb67d050f44f3e49f982e0359d90ca4b5f18569926304aaece6;
 
     // Emit at the time when module get added
     event ModuleAdded(

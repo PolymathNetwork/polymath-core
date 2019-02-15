@@ -281,7 +281,10 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         }
         //NB Flags are packed together in a uint256 to save gas. We can have a maximum of 256 flags.
         uint256 flags = dataStore.getUint256(_getKey(INVESTORFLAGS, _investor));
-        flags = flags | (ONE << _flag);
+        if (_value)
+            flags = flags | (ONE << _flag);
+        else
+            flags = flags & ~(ONE << _flag);
         dataStore.setUint256(_getKey(INVESTORFLAGS, _investor), flags);
         emit ModifyInvestorFlag(_investor, _flag, _value);
     }

@@ -141,13 +141,13 @@ contract('VestingEscrowWallet', accounts => {
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
 
-            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
+            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, address_zero, { from: token_owner });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
             I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
-
+            assert.equal(await I_SecurityToken.getTreasuryWallet.call(), address_zero, "Incorrect wallet set");
             const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTransferManager module get added successfully or not
@@ -173,15 +173,15 @@ contract('VestingEscrowWallet', accounts => {
         });
 
         it("Should successfully attach the VestingEscrowWallet with the security token", async () => {
-            let bytesData = encodeModuleCall(
-                ["address"],
-                [token_owner]
-            );
+            // let bytesData = encodeModuleCall(
+            //     ["address"],
+            //     [token_owner]
+            // );
 
             await I_SecurityToken.changeGranularity(1, {from: token_owner});
-            const tx = await I_SecurityToken.addModule(I_VestingEscrowWalletFactory.address, bytesData, 0, 0, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_VestingEscrowWalletFactory.address, "0x0", 0, 0, { from: token_owner });
 
-            assert.equal(tx.logs[2].args._types[0].toString(), 6, "VestingEscrowWallet doesn't get deployed");
+            assert.equal(tx.logs[2].args._types[0].toString(), 7, "VestingEscrowWallet doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name)
                     .replace(/\u0000/g, ''),
@@ -189,6 +189,17 @@ contract('VestingEscrowWallet', accounts => {
                 "VestingEscrowWallet module was not added"
             );
             I_VestingEscrowWallet = await VestingEscrowWallet.at(tx.logs[2].args._module);
+        });
+
+        it("Should fail to change the treasury wallet", async() => {
+            await catchRevert(
+                I_VestingEscrowWallet.changeTreasuryWallet(token_owner, {from: account_beneficiary1})
+            );
+        })
+
+        it("Should change the treasury wallet", async() => {
+            await I_VestingEscrowWallet.changeTreasuryWallet(token_owner, {from: token_owner});
+            assert.equal(await I_VestingEscrowWallet.treasuryWallet.call(), token_owner);
         });
 
         it("Should Buy the tokens for token_owner", async() => {
@@ -277,11 +288,11 @@ contract('VestingEscrowWallet', accounts => {
 
     describe("Depositing and withdrawing tokens", async () => {
 
-        it("Should not be able to change treasury wallet -- fail because address is invalid", async () => {
-            await catchRevert(
-                I_VestingEscrowWallet.changeTreasuryWallet(address_zero, {from: token_owner})
-            );
-        });
+        // it("Should not be able to change treasury wallet -- fail because address is invalid", async () => {
+        //     await catchRevert(
+        //         I_VestingEscrowWallet.changeTreasuryWallet(address_zero, {from: token_owner})
+        //     );
+        // });
 
         it("Should not be able to deposit -- fail because of permissions check", async () => {
             await catchRevert(

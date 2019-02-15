@@ -68,7 +68,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
     const transferManagerKey = 2;
     const stoKey = 3;
     const checkpointKey = 4;
-    const DividendParameters = ["address"];
+    //const DividendParameters = ["address"];
 
     // Initial fee for ticker registry and security token registry
     const initRegFee = new BN(web3.utils.toWei("1000"));
@@ -140,13 +140,13 @@ contract("EtherDividendCheckpoint", async (accounts) => {
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
 
-            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
+            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, wallet, { from: token_owner });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
             I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
-
+            assert.equal(await I_SecurityToken.getTreasuryWallet.call(), wallet, "Incorrect wallet set")
             const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTransferManager module get added successfully or not
@@ -161,9 +161,9 @@ contract("EtherDividendCheckpoint", async (accounts) => {
 
         it("Should successfully attach the ERC20DividendCheckpoint with the security token", async () => {
             await I_PolyToken.getTokens(new BN(web3.utils.toWei("2000", "ether")), token_owner);
-            let bytesDividend = encodeModuleCall(DividendParameters, [wallet]);
+            //let bytesDividend = encodeModuleCall(DividendParameters, [wallet]);
             await catchRevert(
-                I_SecurityToken.addModule(P_EtherDividendCheckpointFactory.address, bytesDividend, new BN(web3.utils.toWei("2000", "ether")), new BN(0), {
+                I_SecurityToken.addModule(P_EtherDividendCheckpointFactory.address, "0x0", new BN(web3.utils.toWei("2000", "ether")), new BN(0), {
                     from: token_owner
                 })
             );
@@ -172,8 +172,8 @@ contract("EtherDividendCheckpoint", async (accounts) => {
         it("Should successfully attach the EtherDividendCheckpoint with the security token", async () => {
             let snapId = await takeSnapshot();
             await I_PolyToken.transfer(I_SecurityToken.address, new BN(web3.utils.toWei("2000", "ether")), { from: token_owner });
-            let bytesDividend = encodeModuleCall(DividendParameters, [wallet]);
-            const tx = await I_SecurityToken.addModule(P_EtherDividendCheckpointFactory.address, bytesDividend, new BN(web3.utils.toWei("2000", "ether")), new BN(0), {
+            //let bytesDividend = encodeModuleCall(DividendParameters, [wallet]);
+            const tx = await I_SecurityToken.addModule(P_EtherDividendCheckpointFactory.address, "0x0", new BN(web3.utils.toWei("2000", "ether")), new BN(0), {
                 from: token_owner
             });
             assert.equal(tx.logs[3].args._types[0].toNumber(), checkpointKey, "EtherDividendCheckpoint doesn't get deployed");
@@ -187,8 +187,8 @@ contract("EtherDividendCheckpoint", async (accounts) => {
         });
 
         it("Should successfully attach the EtherDividendCheckpoint with the security token", async () => {
-            let bytesDividend = encodeModuleCall(DividendParameters, [wallet]);
-            const tx = await I_SecurityToken.addModule(I_EtherDividendCheckpointFactory.address, bytesDividend, new BN(0), new BN(0), { from: token_owner });
+            //let bytesDividend = encodeModuleCall(DividendParameters, [wallet]);
+            const tx = await I_SecurityToken.addModule(I_EtherDividendCheckpointFactory.address, "0x0", new BN(0), new BN(0), { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), checkpointKey, "EtherDividendCheckpoint doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),

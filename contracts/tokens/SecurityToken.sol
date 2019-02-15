@@ -389,6 +389,8 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @param _wallet Ethereum address of the treasury wallet 
      */
     function changeTreasuryWallet(address _wallet) external onlyOwner {
+        if (IDataStore(dataStore).getAddress(TREASURY) != address(0))
+            require(_wallet != address(0), "Invalid address");
         IDataStore(dataStore).setAddress(TREASURY, _wallet);
     }
 

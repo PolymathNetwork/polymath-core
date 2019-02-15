@@ -144,11 +144,11 @@ contract("Concurrent STO", async (accounts) => {
             await I_PolyToken.getTokens(initRegFee, account_issuer);
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: account_issuer });
 
-            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: account_issuer });
+            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, address_zero, { from: account_issuer });
             assert.equal(tx.logs[2].args._ticker, symbol, "SecurityToken doesn't get deployed");
 
             I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
-
+            assert.equal(await I_SecurityToken.getTreasuryWallet.call(), address_zero, "Incorrect wallet set");
             const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTransferManager module get added successfully or not

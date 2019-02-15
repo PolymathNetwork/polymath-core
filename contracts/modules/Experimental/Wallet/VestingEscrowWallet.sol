@@ -67,7 +67,6 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
      * @param _newTreasuryWallet Address of the treasury wallet
      */
     function changeTreasuryWallet(address _newTreasuryWallet) public onlyOwner {
-        require(_newTreasuryWallet != address(0));
         emit TreasuryWalletChanged(_newTreasuryWallet, treasuryWallet);
         treasuryWallet = _newTreasuryWallet;
     }

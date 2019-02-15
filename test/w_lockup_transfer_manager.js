@@ -56,6 +56,7 @@ contract('LockUpTransferManager', accounts => {
     const tokenDetails = "This is equity type of issuance";
     const decimals = 18;
     const contact = "team@polymath.network";
+    const address_zero = "0x0000000000000000000000000000000000000000";
 
     const name2 = "Core";
     const symbol2 = "Core";
@@ -135,13 +136,13 @@ contract('LockUpTransferManager', accounts => {
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
             let _blockNo = latestBlock();
-            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
+            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, address_zero, { from: token_owner });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
             I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
-
+            assert.equal(await I_SecurityToken.getTreasuryWallet.call(), address_zero, "Incorrect wallet set");
             const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTransferManager module get added successfully or not
@@ -167,12 +168,14 @@ contract('LockUpTransferManager', accounts => {
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
             let _blockNo = latestBlock();
-            let tx = await I_STRProxied.generateSecurityToken(name2, symbol2, tokenDetails, true, { from: token_owner });
+            let tx = await I_STRProxied.generateSecurityToken(name2, symbol2, tokenDetails, true, address_zero, { from: token_owner });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[2].args._ticker, symbol2.toUpperCase(), "SecurityToken doesn't get deployed");
 
             I_SecurityToken_div = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+            assert.equal(await I_SecurityToken_div.getTreasuryWallet.call(), address_zero, "Incorrect wallet set");
+            
             const log = (await I_SecurityToken_div.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTransferManager module get added successfully or not

@@ -1,12 +1,13 @@
 pragma solidity ^0.5.0;
 
-import "../../ModuleFactory.sol";
+import "../../../proxy/LockUpTransferManagerProxy.sol";
+import "../../UpgradableModuleFactory.sol";
 import "./LockUpTransferManager.sol";
 
 /**
  * @title Factory for deploying LockUpTransferManager module
  */
-contract LockUpTransferManagerFactory is ModuleFactory {
+contract LockUpTransferManagerFactory is UpgradableModuleFactory {
 
     /**
      * @notice Constructor
@@ -17,10 +18,11 @@ contract LockUpTransferManagerFactory is ModuleFactory {
     constructor(
         uint256 _setupCost,
         uint256 _usageCost,
+        address _logicContract,
         address _polymathRegistry
     )
         public
-        ModuleFactory(_setupCost, _usageCost, _polymathRegistry)
+        UpgradableModuleFactory(_setupCost, _usageCost, _logicContract, _polymathRegistry)
     {
         version = "1.0.0";
         name = "LockUpTransferManager";
@@ -40,7 +42,7 @@ contract LockUpTransferManagerFactory is ModuleFactory {
         external
         returns(address)
     {
-        address lockUpTransferManager = address(new LockUpTransferManager(msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken")));
+        address lockUpTransferManager = address(new LockUpTransferManagerProxy(msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
         _initializeModule(lockUpTransferManager, _data);
         return lockUpTransferManager;
     }

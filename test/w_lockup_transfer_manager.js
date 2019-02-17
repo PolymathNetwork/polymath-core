@@ -2,7 +2,7 @@ import latestTime from './helpers/latestTime';
 import { duration, promisifyLogWatch, latestBlock } from './helpers/utils';
 import takeSnapshot, { increaseTime, revertToSnapshot } from './helpers/time';
 import { encodeProxyCall } from './helpers/encodeCall';
-import { setUpPolymathNetwork, deployLockupVolumeRTMAndVerified } from "./helpers/createInstances";
+import { setUpPolymathNetwork, deployLockUpTMAndVerified } from "./helpers/createInstances";
 import { catchRevert } from "./helpers/exceptions";
 
 const SecurityToken = artifacts.require('./SecurityToken.sol');
@@ -100,9 +100,9 @@ contract('LockUpTransferManager', accounts => {
         ] = instances;
 
         // STEP 4(c): Deploy the LockUpVolumeRestrictionTMFactory
-        [I_LockUpTransferManagerFactory] = await deployLockupVolumeRTMAndVerified(account_polymath, I_MRProxied, 0);
+        [I_LockUpTransferManagerFactory] = await deployLockUpTMAndVerified(account_polymath, I_MRProxied, 0);
         // STEP 4(d): Deploy the LockUpVolumeRestrictionTMFactory
-        [P_LockUpTransferManagerFactory] = await deployLockupVolumeRTMAndVerified(account_polymath, I_MRProxied, new BN(web3.utils.toWei("500")));
+        [P_LockUpTransferManagerFactory] = await deployLockUpTMAndVerified(account_polymath, I_MRProxied, new BN(web3.utils.toWei("500")));
 
         // Printing all the contract addresses
         console.log(`
@@ -257,7 +257,7 @@ contract('LockUpTransferManager', accounts => {
         it("Should successfully attach the LockUpTransferManager factory with the security token", async () => {
             let snapId = await takeSnapshot();
             await I_PolyToken.transfer(I_SecurityToken.address, new BN(web3.utils.toWei("2000", "ether")), {from: token_owner});
-            console.log((await P_LockUpTransferManagerFactory.getSetupCost.call()).toString());
+            console.log((await P_LockUpTransferManagerFactory.setupCost.call()).toString());
             const tx = await I_SecurityToken.addModule(P_LockUpTransferManagerFactory.address, "0x", new BN(web3.utils.toWei("2000", "ether")), new BN(0), { from: token_owner });
             assert.equal(tx.logs[3].args._types[0].toString(), transferManagerKey, "LockUpVolumeRestrictionTMFactory doesn't get deployed");
             assert.equal(
@@ -942,9 +942,9 @@ contract('LockUpTransferManager', accounts => {
     describe("LockUpTransferManager Transfer Manager Factory test cases", async() => {
 
         it("Should get the exact details of the factory", async() => {
-            assert.equal(await I_LockUpTransferManagerFactory.getSetupCost.call(),0);
-            assert.equal((await I_LockUpTransferManagerFactory.getTypes.call())[0],2);
-            assert.equal(web3.utils.toAscii(await I_LockUpTransferManagerFactory.getName.call())
+            assert.equal(await I_LockUpTransferManagerFactory.setupCost.call(),0);
+            assert.equal((await I_LockUpTransferManagerFactory.types.call())[0],2);
+            assert.equal(web3.utils.toAscii(await I_LockUpTransferManagerFactory.name.call())
                         .replace(/\u0000/g, ''),
                         "LockUpTransferManager",
                         "Wrong Module added");
@@ -954,14 +954,11 @@ contract('LockUpTransferManager', accounts => {
             assert.equal(await I_LockUpTransferManagerFactory.title.call(),
                         "LockUp Transfer Manager",
                         "Wrong Module added");
-            assert.equal(await I_LockUpTransferManagerFactory.getInstructions.call(),
-                        "Allows an issuer to set lockup periods for user addresses, with funds distributed over time. Init function takes no parameters.",
-                        "Wrong Module added");
             assert.equal(await I_LockUpTransferManagerFactory.version.call(), "1.0.0");
         });
 
         it("Should get the tags of the factory", async() => {
-            let tags = await I_LockUpTransferManagerFactory.getTags.call();
+            let tags = await I_LockUpTransferManagerFactory.tags.call();
             assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ''), "LockUp");
         });
     });

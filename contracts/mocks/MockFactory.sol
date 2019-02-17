@@ -30,10 +30,10 @@ contract MockFactory is DummySTOFactory {
     /**
      * @notice Type of the Module factory
      */
-    function getTypes() external view returns(uint8[] memory) {
+    function types() external view returns(uint8[] memory) {
         if (!switchTypes) {
-            uint8[] memory types = new uint8[](0);
-            return types;
+            uint8[] memory res = new uint8[](0);
+            return res;
         } else {
             uint8[] memory res = new uint8[](2);
             res[0] = 1;
@@ -43,7 +43,7 @@ contract MockFactory is DummySTOFactory {
 
     }
 
-    function changeTypes() external onlyOwner {
+    function switchTypes() external onlyOwner {
         switchTypes = !switchTypes;
     }
 

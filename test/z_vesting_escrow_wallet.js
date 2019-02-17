@@ -260,17 +260,10 @@ contract('VestingEscrowWallet', accounts => {
         });
 
         it("Should get the tags of the factory", async () => {
-            let tags = await I_VestingEscrowWalletFactory.getTags.call();
+            let tags = await I_VestingEscrowWalletFactory.tags.call();
             assert.equal(tags.length, 2);
             assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ""), "Vested");
             assert.equal(web3.utils.toAscii(tags[1]).replace(/\u0000/g, ""), "Escrow Wallet");
-        });
-
-        it("Should get the instructions of the factory", async () => {
-            assert.equal(
-                (await I_VestingEscrowWalletFactory.getInstructions.call()).replace(/\u0000/g, ""),
-                "Issuer can deposit tokens to the contract and create the vesting schedule for the given address (Affiliate/Employee). These address can withdraw tokens according to there vesting schedule."
-            );
         });
 
     });

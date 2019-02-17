@@ -485,10 +485,10 @@ contract("CountTransferManager", async (accounts) => {
 
         describe("Test cases for the factory", async () => {
             it("should get the exact details of the factory", async () => {
-                assert.equal(await I_CountTransferManagerFactory.getSetupCost.call(), 0);
-                assert.equal((await I_CountTransferManagerFactory.getTypes.call())[0], 2);
+                assert.equal(await I_CountTransferManagerFactory.setupCost.call(), 0);
+                assert.equal((await I_CountTransferManagerFactory.types.call())[0], 2);
                 assert.equal(
-                    web3.utils.toAscii(await I_CountTransferManagerFactory.getName.call()).replace(/\u0000/g, ""),
+                    web3.utils.toAscii(await I_CountTransferManagerFactory.name.call()).replace(/\u0000/g, ""),
                     "CountTransferManager",
                     "Wrong Module added"
                 );
@@ -498,15 +498,10 @@ contract("CountTransferManager", async (accounts) => {
                     "Wrong Module added"
                 );
                 assert.equal(await I_CountTransferManagerFactory.title.call(), "Count Transfer Manager", "Wrong Module added");
-                assert.equal(
-                    await I_CountTransferManagerFactory.getInstructions.call(),
-                    "Allows an issuer to restrict the total number of non-zero token holders",
-                    "Wrong Module added"
-                );
             });
 
             it("Should get the tags of the factory", async () => {
-                let tags = await I_CountTransferManagerFactory.getTags.call();
+                let tags = await I_CountTransferManagerFactory.tags.call();
                 assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ""), "Count");
             });
         });
@@ -520,7 +515,7 @@ contract("CountTransferManager", async (accounts) => {
 
             it("Should successfully change the setupCost", async () => {
                 await I_CountTransferManagerFactory.changeSetupCost(new BN(web3.utils.toWei("800")), { from: account_polymath });
-                assert.equal((await I_CountTransferManagerFactory.getSetupCost.call()).toString(), new BN(web3.utils.toWei("800")).toString());
+                assert.equal((await I_CountTransferManagerFactory.setupCost.call()).toString(), new BN(web3.utils.toWei("800")).toString());
             });
 
             it("Should successfully change the usage fee -- fail beacuse of bad owner", async () => {

@@ -8,7 +8,7 @@ import {
     setUpPolymathNetwork,
     deployGPMAndVerifyed,
     deployCountTMAndVerifyed,
-    deployLockupVolumeRTMAndVerified,
+    deployLockUpTMAndVerified,
     deployPercentageTMAndVerified,
     deployManualApprovalTMAndVerifyed
 } from "./helpers/createInstances";
@@ -149,7 +149,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
         // Deploy Modules
         [I_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, 0);
 
-        [I_VolumeRestrictionTransferManagerFactory] = await deployLockupVolumeRTMAndVerified(account_polymath, I_MRProxied, 0);
+        [I_VolumeRestrictionTransferManagerFactory] = await deployLockUpTMAndVerified(account_polymath, I_MRProxied, 0);
 
         [I_PercentageTransferManagerFactory] = await deployPercentageTMAndVerified(account_polymath, I_MRProxied, 0);
 

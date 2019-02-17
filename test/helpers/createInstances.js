@@ -32,6 +32,7 @@ const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager.s
 const GeneralPermissionManagerFactory = artifacts.require("./GeneralPermissionManagerFactory.sol");
 const CountTransferManager = artifacts.require("./CountTransferManager.sol");
 const CountTransferManagerFactory = artifacts.require("./CountTransferManagerFactory.sol");
+const LockUpTransferManager = artifacts.require("./LockUpTransferManager");
 const LockUpTransferManagerFactory = artifacts.require("./LockUpTransferManagerFactory");
 const PreSaleSTOFactory = artifacts.require("./PreSaleSTOFactory.sol");
 const PreSaleSTO = artifacts.require("./PreSaleSTO.sol");
@@ -63,7 +64,8 @@ let I_MockBurnFactory;
 let I_MockWrongTypeBurnFactory;
 let I_ManualApprovalTransferManagerLogic;
 let I_ManualApprovalTransferManagerFactory;
-let I_VolumeRestrictionTransferManagerFactory;
+let I_LockUpTransferManagerLogic;
+let I_LockUpTransferManagerFactory;
 let I_PercentageTransferManagerLogic;
 let I_PercentageTransferManagerFactory;
 let I_EtherDividendCheckpointLogic;
@@ -373,18 +375,19 @@ export async function deployBlacklistTMAndVerified(accountPolymath, MRProxyInsta
     return new Array(I_BlacklistTransferManagerFactory);
 }
 
-export async function deployLockupVolumeRTMAndVerified(accountPolymath, MRProxyInstance, setupCost) {
-    I_VolumeRestrictionTransferManagerFactory = await LockUpTransferManagerFactory.new(setupCost, new BN(0), I_PolymathRegistry.address, {
+export async function deployLockUpTMAndVerified(accountPolymath, MRProxyInstance, setupCost) {
+    I_LockUpTransferManagerLogic = await LockUpTransferManager.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
+    I_LockUpTransferManagerFactory = await LockUpTransferManagerFactory.new(setupCost, new BN(0), I_LockUpTransferManagerLogic.address, I_PolymathRegistry.address, {
         from: accountPolymath
     });
     assert.notEqual(
-        I_VolumeRestrictionTransferManagerFactory.address.valueOf(),
+        I_LockUpTransferManagerFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",
         "LockUpTransferManagerFactory contract was not deployed"
     );
 
-    await registerAndVerifyByMR(I_VolumeRestrictionTransferManagerFactory.address, accountPolymath, MRProxyInstance);
-    return Promise.all(new Array(I_VolumeRestrictionTransferManagerFactory));
+    await registerAndVerifyByMR(I_LockUpTransferManagerFactory.address, accountPolymath, MRProxyInstance);
+    return Promise.all(new Array(I_LockUpTransferManagerFactory));
 }
 
 export async function deployScheduleCheckpointAndVerified(accountPolymath, MRProxyInstance, setupCost) {

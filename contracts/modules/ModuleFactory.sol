@@ -8,7 +8,7 @@ import "../interfaces/IPolymathRegistry.sol";
 import "../interfaces/IModuleFactory.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
-import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "../libraries/DecimalMath.sol";
 
 /**
  * @title Interface that any module factory contract should implement
@@ -167,7 +167,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      */
     function setupCostInPoly() public returns (uint256) {
         uint256 polyRate = IOracle(IPolymathRegistry(polymathRegistry).getAddress(POLY_ORACLE)).getPrice();
-        return SafeMath.div(setupCost, polyRate);
+        return DecimalMath.div(setupCost, polyRate);
     }
 
     /**
@@ -175,7 +175,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      */
     function usageCostInPoly() public returns (uint256) {
         uint256 polyRate = IOracle(IPolymathRegistry(polymathRegistry).getAddress(POLY_ORACLE)).getPrice();
-        return SafeMath.div(usageCost, polyRate);
+        return DecimalMath.div(usageCost, polyRate);
     }
 
     /**

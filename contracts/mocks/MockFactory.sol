@@ -7,7 +7,7 @@ import "../modules/STO/DummySTOFactory.sol";
  */
 
 contract MockFactory is DummySTOFactory {
-    bool public switchTypes = false;
+    bool public typesSwitch = false;
 
     /**
      * @notice Constructor
@@ -31,7 +31,7 @@ contract MockFactory is DummySTOFactory {
      * @notice Type of the Module factory
      */
     function types() external view returns(uint8[] memory) {
-        if (!switchTypes) {
+        if (!typesSwitch) {
             uint8[] memory res = new uint8[](0);
             return res;
         } else {
@@ -44,7 +44,7 @@ contract MockFactory is DummySTOFactory {
     }
 
     function switchTypes() external onlyOwner {
-        switchTypes = !switchTypes;
+        typesSwitch = !typesSwitch;
     }
 
 }

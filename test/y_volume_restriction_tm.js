@@ -1679,7 +1679,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal(await I_VolumeRestrictionTMFactory.title.call(),
                         "Volume Restriction Transfer Manager",
                         "Wrong Module added");
-            assert.equal(await I_VolumeRestrictionTMFactory.version.call(), "1.0.0");
+            assert.equal(await I_VolumeRestrictionTMFactory.version.call(), "3.0.0");
         });
 
         it("Should get the tags of the factory", async() => {

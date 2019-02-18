@@ -946,7 +946,7 @@ contract("GeneralTransferManager", async (accounts) => {
                 "Wrong Module added"
             );
             assert.equal(await I_GeneralTransferManagerFactory.title.call(), "General Transfer Manager", "Wrong Module added");
-            assert.equal(await I_GeneralTransferManagerFactory.version.call(), "2.1.0");
+            assert.equal(await I_GeneralTransferManagerFactory.version.call(), "3.0.0");
         });
 
         it("Should get the tags of the factory", async () => {
@@ -973,10 +973,6 @@ contract("GeneralTransferManager", async (accounts) => {
             assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ""), "Dummy");
         });
 
-        it("Should get the version of factory", async () => {
-            let version = await I_DummySTOFactory.version.call();
-            assert.equal(version, "1.0.0");
-        });
     });
 
     describe("Test cases for the get functions of the dummy sto", async () => {

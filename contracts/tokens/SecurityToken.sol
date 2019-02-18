@@ -102,14 +102,6 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     event UpdateTokenDetails(string _oldDetails, string _newDetails);
     // Emit when the granularity get changed
     event GranularityChanged(uint256 _oldGranularity, uint256 _newGranularity);
-    // Emit when Module get archived from the securityToken
-    event ModuleArchived(uint8[] _types, address _module);
-    // Emit when Module get unarchived from the securityToken
-    event ModuleUnarchived(uint8[] _types, address _module);
-    // Emit when Module get removed from the securityToken
-    event ModuleRemoved(uint8[] _types, address _module);
-    // Emit when the budget allocated to a module is changed
-    event ModuleBudgetChanged(uint8[] _moduleTypes, address _module, uint256 _oldBudget, uint256 _budget);
     // Emit when transfers are frozen or unfrozen
     event FreezeTransfers(bool _status);
     // Emit when new checkpoint created

@@ -34,6 +34,8 @@ library TokenLib {
         uint256 investorCount;
     }
 
+    // Emit when Module get upgraded from the securityToken
+    event ModuleUpgraded(uint8[] _types, address _module);
     // Emit when Module is archived from the SecurityToken
     event ModuleArchived(uint8[] _types, address _module);
     // Emit when Module is unarchived from the SecurityToken
@@ -75,6 +77,7 @@ library TokenLib {
         require(_moduleData.module != address(0), "Module missing");
         // Will revert if module isn't upgradable
         UpgradableModuleFactory(_moduleData.moduleFactory).upgrade();
+        emit ModuleUpgraded(_moduleData.moduleTypes, _moduleData.module);
     }
 
     /**

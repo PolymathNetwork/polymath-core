@@ -837,7 +837,7 @@ contract("CappedSTO", async (accounts) => {
                 assert.equal(await I_CappedSTOFactory.title.call(), "Capped STO", "Wrong Module added");
                 let tags = await I_CappedSTOFactory.tags.call();
                 assert.equal(web3.utils.hexToString(tags[0]), "Capped");
-                assert.equal(await I_CappedSTOFactory.version.call(), "2.1.0");
+                assert.equal(await I_CappedSTOFactory.version.call(), "3.0.0");
             });
 
             it("Should fail to change the title -- bad owner", async () => {

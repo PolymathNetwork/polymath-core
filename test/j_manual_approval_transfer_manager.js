@@ -819,7 +819,7 @@ contract("ManualApprovalTransferManager", accounts => {
             assert.equal(desc, "Manage transfers using single approvals", "Wrong Module added");
             let title = await I_ManualApprovalTransferManagerFactory.title.call();
             assert.equal(title, "Manual Approval Transfer Manager", "Wrong Module added");
-            assert.equal(await I_ManualApprovalTransferManagerFactory.version.call(), "2.1.0");
+            assert.equal(await I_ManualApprovalTransferManagerFactory.version.call(), "3.0.0");
         });
 
         it("Should get the tags of the factory", async () => {

@@ -984,7 +984,7 @@ contract('BlacklistTransferManager', accounts => {
                         "Blacklist Transfer Manager",
                         "Wrong Module added");
             assert.equal(await I_BlacklistTransferManagerFactory.version.call(),
-                        "2.1.0",
+                        "3.0.0",
                         "Wrong Module added");
 
         });

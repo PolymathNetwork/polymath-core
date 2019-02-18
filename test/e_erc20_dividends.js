@@ -1207,7 +1207,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             it("should get the exact details of the factory", async () => {
                 assert.equal((await I_ERC20DividendCheckpointFactory.setupCost.call()).toNumber(), 0);
                 assert.equal((await I_ERC20DividendCheckpointFactory.types.call())[0], 4);
-                assert.equal(await I_ERC20DividendCheckpointFactory.version.call(), "2.1.0");
+                assert.equal(await I_ERC20DividendCheckpointFactory.version.call(), "3.0.0");
                 assert.equal(
                     web3.utils.toAscii(await I_ERC20DividendCheckpointFactory.name.call()).replace(/\u0000/g, ""),
                     "ERC20DividendCheckpoint",

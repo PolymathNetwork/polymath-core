@@ -271,7 +271,7 @@ contract("TrackedRedemption", async (accounts) => {
             it("should get the exact details of the factory", async () => {
                 assert.equal((await I_TrackedRedemptionFactory.setupCost.call()).toNumber(), 0);
                 assert.equal((await I_TrackedRedemptionFactory.types.call())[0], 5);
-                assert.equal(await I_TrackedRedemptionFactory.version.call(), "1.0.0");
+                assert.equal(await I_TrackedRedemptionFactory.version.call(), "3.0.0");
                 assert.equal(
                     web3.utils.toAscii(await I_TrackedRedemptionFactory.name.call()).replace(/\u0000/g, ""),
                     "TrackedRedemption",

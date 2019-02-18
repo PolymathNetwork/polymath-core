@@ -469,7 +469,7 @@ contract("CountTransferManager", async (accounts) => {
                 let bytesCM = encodeProxyCall(["uint256"], [11]);
                 await catchRevert(
                     // Fails as no upgrade available
-                    await I_SecurityToken2.upgradeModule(I_CountTransferManager2.address, { from: token_owner })
+                    I_SecurityToken2.upgradeModule(I_CountTransferManager2.address, { from: token_owner })
                 );
                 await catchRevert(
                     // Fails due to the same version being used
@@ -494,7 +494,7 @@ contract("CountTransferManager", async (accounts) => {
                 let bytesCM = encodeProxyCall(["uint256"], [11]);
                 await catchRevert(
                     // Fails as no upgrade available
-                    await I_SecurityToken2.upgradeModule(I_CountTransferManager2.address, { from: token_owner })
+                    I_SecurityToken2.upgradeModule(I_CountTransferManager2.address, { from: token_owner })
                 );
                 await catchRevert(
                     // Fails due to the same version being used
@@ -503,8 +503,11 @@ contract("CountTransferManager", async (accounts) => {
                 await I_CountTransferManagerFactory.setLogicContract("5.0.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath });
                 await catchRevert(
                     // Fails due to the same contract being used
-                    await I_CountTransferManagerFactory.setLogicContract("6.0.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath })
+                    I_CountTransferManagerFactory.setLogicContract("6.0.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath })
                 );
+                I_MockCountTransferManagerLogic = await MockCountTransferManager.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: account_polymath });
+                await I_CountTransferManagerFactory.setLogicContract("6.0.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath });
+                await I_SecurityToken2.upgradeModule(I_CountTransferManager2.address, { from: token_owner });
                 await I_SecurityToken2.upgradeModule(I_CountTransferManager2.address, { from: token_owner });
             });
 

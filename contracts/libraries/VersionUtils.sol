@@ -111,6 +111,10 @@ library VersionUtils {
      * @notice Used to packed the KYC data
      */
     function packKYC(uint64 _a, uint64 _b, uint64 _c, uint8 _d) internal pure returns(uint256) {
+        // this function packs 3 uint64 and a uint8 together in a uint256 to save storage cost
+        // a is rotated left by 136 bits, b is rotated left by 72 bits and c is rotated left by 8 bits.
+        // rotation pads empty bits with zeroes so now we can safely do a bitwise OR operation to pack
+        // all the variables together.
         return (uint256(_a) << 136) | (uint256(_b) << 72) | (uint256(_c) << 8) | uint256(_d);
     }
 

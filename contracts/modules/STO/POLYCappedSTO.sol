@@ -492,25 +492,33 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
 
     /**
      * @notice Return the STO details
-     * @return Unixtimestamp at which offering gets start.
-     * @return Unixtimestamp at which offering ends.
-     * @return Number of token base units this STO will be allowed to sell to investors.
-     * @return Token units a buyer gets(multiplied by 10^18) base unit of fund raise type
-     * @return Amount of funds raised in Fund Raise Type
-     * @return Number of individual investors this STO have.
-     * @return Amount of tokens get sold.
-     * @return Fund Raise type, 0 = ETH, 1 = POLY, 2 = Stable Coin respectively
+     * @return startTime - Unixtimestamp at which offering gets start.
+     * @return endTime - Unixtimestamp at which offering ends.
+     * @return cap - Number of token base units this STO will be allowed to sell to investors.
+     * @return rate - Token units a buyer gets(multiplied by 10^18) base unit of fund raise type
+     * @return minimumInvestment - minimum investment in fund raise type
+     * @return nonAccreditedLimit - default non accredited investor limit
+     * @return maxNonAccreditedInvestors - maximum number of non-accredited investors that can invest in the offering
+     * @return totalTokensSold - Amount of tokens get sold.
+     * @return _raised - Amount of funds raised in Fund Raise Type
+     * @return fundsRaisedUSD - Amount of funds raised converted to USD at time of investment
+     * @return investorCount - Number of individual investors this STO have.
+     * @return nonAccreditedCount - Number of non-accredited investor that have invested in the offering
      */
-    function getSTODetails() public view returns(uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256) {
-        uint256 _Raised = fundsRaised[uint8(FundRaiseType.POLY)];
+    function getSTODetails() external view returns(uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256) {
+        uint256 _raised = fundsRaised[uint8(FundRaiseType.POLY)];
         return (
             startTime,
             endTime,
             cap,
             rate,
-            _Raised,
-            investorCount,
+            minimumInvestment,
+            nonAccreditedLimit,
+            maxNonAccreditedInvestors,
             totalTokensSold,
+            _raised,
+            fundsRaisedUSD,
+            investorCount,
             nonAccreditedCount
         );
     }

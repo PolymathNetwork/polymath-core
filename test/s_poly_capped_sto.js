@@ -2443,10 +2443,69 @@ contract("POLYCappedSTO", async (accounts) => {
             );
         });
 
-        it("Should return correct tokens sold in token details", async () => {
-            let tokensSold = (await I_POLYCappedSTO_Array[0].getTokensSold.call()).toString();
-            let tokenDetails = await I_POLYCappedSTO_Array[0].getSTODetails.call();
-            assert.equal(tokensSold, tokenDetails[6].toString());
+        it("Should return correct STO details", async () => {
+            let stoId = 0;
+            /*
+                getSTODetails array output:
+                0 - startTime,
+                1 - endTime,
+                2 - cap,
+                3 - rate,
+                4 - minimumInvestment,
+                5 - nonAccreditedLimit,
+                6 - maxNonAccreditedInvestors,
+                7 - totalTokensSold,
+                8 - _raised,
+                9 - fundsRaisedUSD,
+                10 - investorCount,
+                11 - nonAccreditedCount
+            */
+            // Get STO Details
+            let stoDetails = await I_POLYCappedSTO_Array[stoId].getSTODetails.call();
+            console.log(stoDetails);
+            let sto_startTime = new BN(stoDetails[0]);
+            let sto_endTime = new BN(stoDetails[1]);
+            let sto_cap = new BN(stoDetails[2]);
+            let sto_rate = new BN(stoDetails[3]);
+            let sto_minimumInvestment = new BN(stoDetails[4]);
+            let sto_nonAccreditedLimit = new BN(stoDetails[5]);
+            let sto_maxNonAccreditedInvestors = new BN(stoDetails[6]);
+            let sto_totalTokensSold = new BN(stoDetails[7]);
+            let sto_fundsRaisedPOLY = new BN(stoDetails[8]);
+            let sto_fundsRaisedUSD = new BN(stoDetails[9]);
+            let sto_investorCount = new BN(stoDetails[10]);
+            let sto_nonAccreditedCount = new BN(stoDetails[11]);
+
+            // Get details from invidual getters
+            let startTime = new BN(await I_POLYCappedSTO_Array[stoId].startTime.call());
+            let endTime = new BN(await I_POLYCappedSTO_Array[stoId].endTime.call());
+            let cap = new BN(await I_POLYCappedSTO_Array[stoId].cap.call());
+            let rate = new BN(await I_POLYCappedSTO_Array[stoId].rate.call());
+            let minimumInvestment = new BN(await I_POLYCappedSTO_Array[stoId].minimumInvestment.call());
+            let nonAccreditedLimit = new BN(await I_POLYCappedSTO_Array[stoId].nonAccreditedLimit.call());
+            let maxNonAccreditedInvestors = new BN(await I_POLYCappedSTO_Array[stoId].maxNonAccreditedInvestors.call());
+            let totalTokensSold = new BN(await I_POLYCappedSTO_Array[stoId].totalTokensSold.call());
+            let fundsRaisedPOLY = new BN(await I_POLYCappedSTO_Array[stoId].fundsRaised.call(POLY));
+            let fundsRaisedUSD = new BN(await I_POLYCappedSTO_Array[stoId].fundsRaisedUSD.call());
+            let investorCount = new BN(await I_POLYCappedSTO_Array[stoId].investorCount.call());
+            let nonAccreditedCount = new BN(await I_POLYCappedSTO_Array[stoId].nonAccreditedCount.call());
+
+            assert.equal(sto_startTime.toString(), startTime.toString(), "Incorrect startTime");
+            assert.equal(sto_endTime.toString(), endTime.toString(), "Incorrect endTime");
+            assert.equal(sto_cap.toString(), cap.toString(), "Incorrect cap");
+            assert.equal(sto_rate.toString(), rate.toString(), "Incorrect rate");
+            assert.equal(sto_minimumInvestment.toString(), minimumInvestment.toString(), "Incorrect minimumInvestment");
+            assert.equal(sto_nonAccreditedLimit.toString(), nonAccreditedLimit.toString(), "Incorrect nonAccreditedLimit");
+            assert.equal(
+                sto_maxNonAccreditedInvestors.toString(),
+                 maxNonAccreditedInvestors.toString(),
+                 "Incorrect maxNonAccreditedInvestors"
+             );
+            assert.equal(sto_totalTokensSold.toString(), totalTokensSold.toString(), "Incorrect totalTokensSold");
+            assert.equal(sto_fundsRaisedPOLY.toString(), sto_fundsRaisedPOLY.toString(), "Incorrect fundsRaisedPOLY");
+            assert.equal(sto_fundsRaisedUSD.toString(), fundsRaisedUSD.toString(), "Incorrect fundsRaisedPOLY");
+            assert.equal(sto_investorCount.toString(), investorCount.toString(), "Incorrect investorCount");
+            assert.equal(sto_nonAccreditedCount.toString(), nonAccreditedCount.toString(), "Incorrect nonAccreditedCount");
         });
 
         it("Should get the correct POLY token address", async () => {

@@ -4,14 +4,17 @@ pragma solidity ^0.5.0;
  * @title Contract used to store layout for the POLYCappedSTO storage
  */
 contract POLYCappedSTOStorage {
+
+    bytes32 internal constant INVESTORSKEY = 0xdf3a8dd24acdd05addfc6aeffef7574d2de3f844535ec91e8e0f3e45dba96731; //keccak256(abi.encodePacked("INVESTORS"))
+
     /////////////
     // Storage //
     /////////////
 
     // How many token base units this STO will be allowed to sell to investors
     // 1 full token = 10^decimals_of_token base units
-
     uint256 public cap;
+
     // How many token units a buyer gets per base unit of Fund Raise Type (i.e. ETH/POLY/SC) (multiplied by 10^18)
     // If rate is 10^18, buyer will get 1 token unit for every ETH/POLY/SC token.
     uint256 public rate;
@@ -46,21 +49,8 @@ contract POLYCappedSTOStorage {
     // Amount of USD funds raised
     uint256 public fundsRaisedUSD;
 
-    struct Investor {
-        // Whether investor is accredited (0 = non-accredited, 1 = accredited)
-        uint8 accredited;
-        // Whether we have seen the investor before (already added to investors list)
-        uint8 seen;
-        // Overrides for default limit for non-accredited investors (0 = no override)
-        uint256 nonAccreditedLimitOverride;
-    }
-
-    // Accredited & non-accredited investor data
-    mapping(address => Investor) public investors;
-
-    // List of all addresses that have been added as accredited or non-accredited without
-    // the default limit
-    address[] public investorsList;
+    // Overrides for default limit for non-accredited investors (0 = no override)
+    mapping(address => uint256) public nonAccreditedLimitOverride;
 
     // Final amount of tokens returned to issuer
     uint256 public finalAmountReturned;

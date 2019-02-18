@@ -770,12 +770,11 @@ contract("POLYCappedSTO", async (accounts) => {
             let fromTime = await latestTime();
             let toTime = await latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(100);
-            let canBuyFromSTO = true;
 
-            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, true, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, false, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(ACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(NONACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
             // Set as accredited
-            await I_POLYCappedSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
+            await I_GeneralTransferManager.modifyInvestorFlag(ACCREDITED1, 0, true, { from: ISSUER }); //set as Accredited
 
             // Prep for investments
             let investment_POLY = new BN(web3.utils.toWei("10000", "ether")); // Invest 10000 POLY
@@ -790,7 +789,7 @@ contract("POLYCappedSTO", async (accounts) => {
             await revertToSnapshot(snapId);
         });
 
-        it("Should fail if not whitelisted or canBuyFromSTO is false", async () => {
+        it("Should fail if not whitelisted or canNotBuyFromSTO Flag is true", async () => {
             let stoId = 0;
             let snapId = await takeSnapshot();
 
@@ -798,18 +797,20 @@ contract("POLYCappedSTO", async (accounts) => {
             await increaseTime(duration.days(3));
             assert.equal(await I_POLYCappedSTO_Array[stoId].isOpen(), true, "STO is not Open");
 
-            // Whitelist only Accredited1 and nonaccredited1 with canBuyFromSTO = false
+            // Whitelist only Accredited1 and nonaccredited1 with canNotBuyFromSTO = true
             let fromTime = await latestTime();
             let toTime = await latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(100);
-            let canBuyFromSTO = false;
 
-            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, true, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, false, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(ACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(NONACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
+
+            await I_GeneralTransferManager.modifyInvestorFlag(ACCREDITED1, 1, true, { from: ISSUER }); //set canNotbuyfromSTO flag
+            await I_GeneralTransferManager.modifyInvestorFlag(NONACCREDITED1, 1, true, { from: ISSUER }); //set canNotbuyfromSTO flag
 
             // Set as accredited
-            await I_POLYCappedSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
-            await I_POLYCappedSTO_Array[stoId].changeAccredited([ACCREDITED2], [true], { from: ISSUER });
+            await I_GeneralTransferManager.modifyInvestorFlag(ACCREDITED1, 0, true, { from: ISSUER }); //set as Accredited
+            await I_GeneralTransferManager.modifyInvestorFlag(ACCREDITED2, 0, true, { from: ISSUER }); //set as Accredited (not whitelisted)
 
             // Prep for investments
             let investment_POLY = new BN(web3.utils.toWei("10000", "ether")); // Invest 10000 POLY
@@ -841,17 +842,16 @@ contract("POLYCappedSTO", async (accounts) => {
             let fromTime = await latestTime();
             let toTime = await latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(100);
-            let canBuyFromSTO = true;
 
-            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, true, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, false, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(ACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(NONACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
 
             // Advance time to after STO start
             await increaseTime(duration.days(3));
             assert.equal(await I_POLYCappedSTO_Array[stoId].isOpen(), true, "STO is not Open");
 
             // Set as accredited
-            await I_POLYCappedSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
+            await I_GeneralTransferManager.modifyInvestorFlag(ACCREDITED1, 0, true, { from: ISSUER }); //set as Accredited
 
             let investment_POLY = new BN(2).mul(e18);
 
@@ -877,17 +877,16 @@ contract("POLYCappedSTO", async (accounts) => {
             let fromTime = await latestTime();
             let toTime = await latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(100);
-            let canBuyFromSTO = true;
 
-            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, true, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, false, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(ACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(NONACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
 
             // Advance time to after STO start
             await increaseTime(duration.days(3));
             assert.equal(await I_POLYCappedSTO_Array[stoId].isOpen(), true, "STO is not Open");
 
             // Set as accredited
-            await I_POLYCappedSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
+            await I_GeneralTransferManager.modifyInvestorFlag(ACCREDITED1, 0, true, { from: ISSUER }); //set as Accredited
 
             // Pause the STO
             await I_POLYCappedSTO_Array[stoId].pause({ from: ISSUER });
@@ -924,10 +923,9 @@ contract("POLYCappedSTO", async (accounts) => {
             let fromTime = await latestTime();
             let toTime = await latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(200);
-            let canBuyFromSTO = true;
 
-            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, true, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, false, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(ACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(NONACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
 
             // Advance time to after STO end
             await increaseTime(duration.days(120));
@@ -935,7 +933,7 @@ contract("POLYCappedSTO", async (accounts) => {
             assert.equal(await I_POLYCappedSTO_Array[stoId].isOpen(), false, "STO is Open");
 
             // Set as accredited
-            await I_POLYCappedSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
+            await I_GeneralTransferManager.modifyInvestorFlag(ACCREDITED1, 0, true, { from: ISSUER }); //set as Accredited
 
             // Prep for investments
             let investment_POLY = new BN(web3.utils.toWei("10000", "ether")); // Invest 10000 POLY
@@ -961,18 +959,17 @@ contract("POLYCappedSTO", async (accounts) => {
             let fromTime = await latestTime();
             let toTime = await latestTime();
             let expiryTime = toTime + duration.days(100);
-            let canBuyFromSTO = true;
 
-            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, true, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, false, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(TREASURYWALLET, fromTime, toTime, expiryTime, canBuyFromSTO, false, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(ACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(NONACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(TREASURYWALLET, fromTime, toTime, expiryTime, { from: ISSUER });
 
             // Advance time to after STO start
             await increaseTime(duration.days(3));
             assert.equal(await I_POLYCappedSTO_Array[stoId].isOpen(), true, "STO is not Open");
 
             // Set as accredited
-            await I_POLYCappedSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
+            await I_GeneralTransferManager.modifyInvestorFlag(ACCREDITED1, 0, true, { from: ISSUER }); //set as Accredited
 
             // Finalize STO
             await I_POLYCappedSTO_Array[stoId].finalize(false, { from: ISSUER });
@@ -1006,17 +1003,16 @@ contract("POLYCappedSTO", async (accounts) => {
             let fromTime = await latestTime();
             let toTime = await latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(200);
-            let canBuyFromSTO = true;
 
-            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, true, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, false, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(ACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(NONACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
 
             // Advance time to after STO start
             await increaseTime(duration.days(3));
             assert.equal(await I_POLYCappedSTO_Array[stoId].isOpen(), true, "STO is not Open");
 
             // Set as accredited
-            await I_POLYCappedSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
+            await I_GeneralTransferManager.modifyInvestorFlag(ACCREDITED1, 0, true, { from: ISSUER }); //set as Accredited
 
             // Prep for investments
             let investment_POLY = new BN(web3.utils.toWei("10000", "ether")); // Invest 10000 POLY
@@ -1040,17 +1036,16 @@ contract("POLYCappedSTO", async (accounts) => {
             let fromTime = await latestTime();
             let toTime = await latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(200);
-            let canBuyFromSTO = true;
 
-            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, true, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, false, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(ACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(NONACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
 
             // Advance time to after STO start
             await increaseTime(duration.days(3));
             assert.equal(await I_POLYCappedSTO_Array[stoId].isOpen(), true, "STO is not Open");
 
             // Set as accredited
-            await I_POLYCappedSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
+            await I_GeneralTransferManager.modifyInvestorFlag(ACCREDITED1, 0, true, { from: ISSUER }); //set as Accredited
 
             // Prep for investments
             let approved_POLY = new BN(0); // approve 0 POLY
@@ -1077,17 +1072,16 @@ contract("POLYCappedSTO", async (accounts) => {
             let fromTime = await latestTime();
             let toTime = await latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(200);
-            let canBuyFromSTO = true;
 
-            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, true, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, false, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(ACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(NONACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
 
             // Advance time to after STO start
             await increaseTime(duration.days(3));
             assert.equal(await I_POLYCappedSTO_Array[stoId].isOpen(), true, "STO is not Open");
 
             // Set as accredited
-            await I_POLYCappedSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
+            await I_GeneralTransferManager.modifyInvestorFlag(ACCREDITED1, 0, true, { from: ISSUER }); //set as Accredited
 
             // Prep for investments
             let approved_POLY = new BN(web3.utils.toWei("10000", "ether")); // approve 10000 POLY
@@ -1114,10 +1108,9 @@ contract("POLYCappedSTO", async (accounts) => {
             let fromTime = await latestTime();
             let toTime = await latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(200);
-            let canBuyFromSTO = true;
 
-            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, true, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, false, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(ACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(NONACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
 
             // Advance time to after STO start
             await increaseTime(duration.days(3));
@@ -1125,7 +1118,7 @@ contract("POLYCappedSTO", async (accounts) => {
             assert.equal(await I_POLYCappedSTO_Array[stoId].allowBeneficialInvestments(), false, "allowBeneficialInvestments should be false");
 
             // Set as accredited
-            await I_POLYCappedSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
+            await I_GeneralTransferManager.modifyInvestorFlag(ACCREDITED1, 0, true, { from: ISSUER }); //set as Accredited
 
             // Prep for investments
             let investment_POLY = new BN(web3.utils.toWei("10000", "ether")); // Invest 10000 POLY
@@ -1163,13 +1156,13 @@ contract("POLYCappedSTO", async (accounts) => {
             // ALLOW BENEFICIAL INVESTMENTS
             await I_POLYCappedSTO_Array[stoId].changeAllowBeneficialInvestments(true, { from: ISSUER });
             assert.equal(await I_POLYCappedSTO_Array[stoId].allowBeneficialInvestments(), true, "allowBeneficialInvestments should be true");
-            // Set as accredited
-            await I_POLYCappedSTO_Array[stoId].changeAccredited([address_zero], [true], { from: ISSUER });
 
             // Prep for investments
             let investment_POLY = new BN(web3.utils.toWei("10000", "ether")); // Invest 10000 POLY
+            await I_PolyToken.getTokens(investment_POLY, ACCREDITED1);
+            await I_PolyToken.approve(I_POLYCappedSTO_Array[stoId].address, investment_POLY, { from: ACCREDITED1 });
 
-            // ACCREDITED POLY
+            // Buy tokens
             await catchRevert(I_POLYCappedSTO_Array[stoId].buyWithPOLY(address_zero, investment_POLY, { from: ACCREDITED1 }));
 
             await revertToSnapshot(snapId);
@@ -1183,14 +1176,13 @@ contract("POLYCappedSTO", async (accounts) => {
             let fromTime = await latestTime();
             let toTime = await latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(200);
-            let canBuyFromSTO = true;
 
-            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, true, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, false, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED2, fromTime, toTime, expiryTime, canBuyFromSTO, false, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(ACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(NONACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(NONACCREDITED2, fromTime, toTime, expiryTime, { from: ISSUER });
 
             // Set as accredited
-            await I_POLYCappedSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
+            await I_GeneralTransferManager.modifyInvestorFlag(ACCREDITED1, 0, true, { from: ISSUER }); //set as Accredited
 
             // Set limit override for NONACCREDITED2
             let nonAccreditedLimitOverride = new BN(web3.utils.toWei("20000", "ether")); //Limit 20000 POLY
@@ -1236,19 +1228,18 @@ contract("POLYCappedSTO", async (accounts) => {
             let fromTime = await latestTime();
             let toTime = await latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(200);
-            let canBuyFromSTO = true;
 
-            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, true, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED2, fromTime, toTime, expiryTime, canBuyFromSTO, true, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, false, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED2, fromTime, toTime, expiryTime, canBuyFromSTO, false, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(INVESTOR1, fromTime, toTime, expiryTime, canBuyFromSTO, false, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(INVESTOR2, fromTime, toTime, expiryTime, canBuyFromSTO, false, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(INVESTOR3, fromTime, toTime, expiryTime, canBuyFromSTO, false, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(ACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(ACCREDITED2, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(NONACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(NONACCREDITED2, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(INVESTOR1, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(INVESTOR2, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(INVESTOR3, fromTime, toTime, expiryTime, { from: ISSUER });
 
             // Set as accredited
-            await I_POLYCappedSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
-            await I_POLYCappedSTO_Array[stoId].changeAccredited([ACCREDITED2], [true], { from: ISSUER });
+            await I_GeneralTransferManager.modifyInvestorFlag(ACCREDITED1, 0, true, { from: ISSUER }); //set as Accredited
+            await I_GeneralTransferManager.modifyInvestorFlag(ACCREDITED2, 0, true, { from: ISSUER }); //set as Accredited
 
             // Advance time to after STO start
             await increaseTime(duration.days(3));
@@ -1293,15 +1284,14 @@ contract("POLYCappedSTO", async (accounts) => {
             let fromTime = await latestTime();
             let toTime = await latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(200);
-            let canBuyFromSTO = true;
 
-            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, true, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED2, fromTime, toTime, expiryTime, canBuyFromSTO, true, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, false, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(ACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(ACCREDITED2, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(NONACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
 
             // Set as accredited
-            await I_POLYCappedSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
-            await I_POLYCappedSTO_Array[stoId].changeAccredited([ACCREDITED2], [true], { from: ISSUER });
+            await I_GeneralTransferManager.modifyInvestorFlag(ACCREDITED1, 0, true, { from: ISSUER }); //set as Accredited
+            await I_GeneralTransferManager.modifyInvestorFlag(ACCREDITED2, 0, true, { from: ISSUER }); //set as Accredited
 
             // Advance time to after STO start
             await increaseTime(duration.days(3));
@@ -1338,14 +1328,13 @@ contract("POLYCappedSTO", async (accounts) => {
             let fromTime = await latestTime();
             let toTime = await latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(200);
-            let canBuyFromSTO = true;
 
-            await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, true, { from: ISSUER });
-            await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, false, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(ACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(NONACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
 
             // Set as accredited
-            await I_POLYCappedSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
-            await I_POLYCappedSTO_Array[stoId].changeAccredited([ACCREDITED2], [true], { from: ISSUER });
+            await I_GeneralTransferManager.modifyInvestorFlag(ACCREDITED1, 0, true, { from: ISSUER }); //set as Accredited
+            await I_GeneralTransferManager.modifyInvestorFlag(ACCREDITED2, 0, true, { from: ISSUER }); //set as Accredited
 
             // Advance time to after STO start
             await increaseTime(duration.days(3));
@@ -1384,58 +1373,26 @@ contract("POLYCappedSTO", async (accounts) => {
             let fromTime = await latestTime();
             let toTime = await latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(100);
-            let canBuyFromSTO = true;
 
-            const tx1 = await I_GeneralTransferManager.modifyWhitelist(NONACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, false, {
-                from: ISSUER
-            });
+            const tx1 = await I_GeneralTransferManager.modifyKYCData(NONACCREDITED1, fromTime, toTime, expiryTime, {from: ISSUER});
             assert.equal(tx1.logs[0].args._investor, NONACCREDITED1, "Failed in adding the investor in whitelist");
-            const tx2 = await I_GeneralTransferManager.modifyWhitelist(ACCREDITED1, fromTime, toTime, expiryTime, canBuyFromSTO, true, {
-                from: ISSUER
-            });
+            const tx2 = await I_GeneralTransferManager.modifyKYCData(ACCREDITED1, fromTime, toTime, expiryTime, {from: ISSUER});
+            assert.equal(tx2.logs[0].args._investor, ACCREDITED1, "Failed in adding the investor in whitelist");
+            await I_GeneralTransferManager.modifyInvestorFlag(ACCREDITED1, 0, true, { from: ISSUER });
             assert.equal(tx2.logs[0].args._investor, ACCREDITED1, "Failed in adding the investor in whitelist");
         });
 
-        it("Should successfully modify accredited addresses for first STO", async () => {
-            let stoId = 0;
-            let investorStatus = await I_POLYCappedSTO_Array[stoId].investors.call(NONACCREDITED1);
-            let status1 = investorStatus[0].toNumber();
-            assert.equal(status1, 0, "Initial accreditation is set to true");
-
-            await I_POLYCappedSTO_Array[stoId].changeAccredited([NONACCREDITED1], [true], { from: ISSUER });
-            investorStatus = await I_POLYCappedSTO_Array[stoId].investors.call(NONACCREDITED1);
-            let status2 = investorStatus[0].toNumber();
-            assert.equal(status2, 1, "Failed to set single address");
-
-            await I_POLYCappedSTO_Array[stoId].changeAccredited([NONACCREDITED1, ACCREDITED1], [false, true], { from: ISSUER });
-            investorStatus = await I_POLYCappedSTO_Array[stoId].investors.call(NONACCREDITED1);
-            let status3 = investorStatus[0].toNumber();
-            assert.equal(status3, 0, "Failed to set multiple addresses");
-            investorStatus = await I_POLYCappedSTO_Array[stoId].investors.call(ACCREDITED1);
-            let status4 = investorStatus[0].toNumber();
-            assert.equal(status4, 1, "Failed to set multiple addresses");
-
-            let totalStatus = await I_POLYCappedSTO_Array[stoId].getAccreditedData.call();
-            assert.equal(totalStatus[0][0], NONACCREDITED1, "Account match");
-            assert.equal(totalStatus[0][1], ACCREDITED1, "Account match");
-            assert.equal(totalStatus[1][0], false, "Account match");
-            assert.equal(totalStatus[1][1], true, "Account match");
-            assert.equal(totalStatus[2][0].toNumber(), 0, "override match");
-            assert.equal(totalStatus[2][1].toNumber(), 0, "override match");
-            await catchRevert(I_POLYCappedSTO_Array[stoId].changeAccredited([NONACCREDITED1, ACCREDITED1], [true], { from: ISSUER }));
-        });
-
-        it("Should successfully modify accredited addresses for second STO", async () => {
-            let stoId = 1;
-
-            await I_POLYCappedSTO_Array[stoId].changeAccredited([NONACCREDITED1, ACCREDITED1], [false, true], { from: ISSUER });
-            let investorStatus = await I_POLYCappedSTO_Array[stoId].investors.call(NONACCREDITED1);
-            let status1 = investorStatus[0].toNumber();
-            investorStatus = await I_POLYCappedSTO_Array[stoId].investors.call(ACCREDITED1);
-            let status2 = investorStatus[0].toNumber();
-            assert.equal(status1, 0, "Failed to set multiple address");
-            assert.equal(status2, 1, "Failed to set multiple address");
-        });
+        it("should successfully modify accredited addresses for the STOs", async () => {
+             let stoId = 0;
+             let totalStatus = await I_POLYCappedSTO_Array[stoId].getAccreditedData.call();
+             console.log(totalStatus);
+             assert.equal(totalStatus[0][0], NONACCREDITED1, "Account match");
+             assert.equal(totalStatus[0][1], ACCREDITED1, "Account match");
+             assert.equal(totalStatus[1][0], false, "Account match");
+             assert.equal(totalStatus[1][1], true, "Account match");
+             assert.equal(totalStatus[2][0].toNumber(), 0, "override match");
+             assert.equal(totalStatus[2][1].toNumber(), 0, "override match");
+         });
     });
 
     //////////////////
@@ -1713,8 +1670,8 @@ contract("POLYCappedSTO", async (accounts) => {
             await I_POLYCappedSTO_Array[stoId].changeNonAccreditedLimit([NONACCREDITED1], [_nonAccreditedLimit[stoId].mul(new BN(2))], {
                 from: ISSUER
             });
-            let investorStatus = await I_POLYCappedSTO_Array[stoId].investors.call(NONACCREDITED1);
-            console.log("          Current limit: ".grey + investorStatus[2].toString().grey);
+            let investorLimit = await I_POLYCappedSTO_Array[stoId].nonAccreditedLimitOverride.call(NONACCREDITED1);
+            console.log("         Current limit: ".grey + investorLimit.toString().grey);
             let totalStatus = await I_POLYCappedSTO_Array[stoId].getAccreditedData.call();
 
             assert.equal(totalStatus[0][0], NONACCREDITED1, "Account match");
@@ -1728,13 +1685,13 @@ contract("POLYCappedSTO", async (accounts) => {
         it("Should successfully buy a partial amount and refund balance when reaching NONACCREDITED limit", async () => {
             let stoId = 0;
 
-            let investorStatus = await I_POLYCappedSTO_Array[stoId].investors.call(NONACCREDITED1);
-            let investmentLimit = investorStatus[2];//await I_POLYCappedSTO_Array[stoId].nonAccreditedLimitOverride(NONACCREDITED1); //_nonAccreditedLimit[stoId];
+            let investorLimit = await I_POLYCappedSTO_Array[stoId].nonAccreditedLimitOverride.call(NONACCREDITED1);
             let investedPOLY = await I_POLYCappedSTO_Array[stoId].investorInvested.call(NONACCREDITED1);
             let rate = await I_POLYCappedSTO_Array[stoId].rate.call();
             let surplus_POLY = new BN (web3.utils.toWei("1234", "ether")); // Amount above the limit to invest
             let surplus_USD = surplus_POLY.mul(await I_POLYOracle.getPrice.call()).div(e18);
-            let investment_POLY = investmentLimit.sub(investedPOLY).add(surplus_POLY); // Calculate investment amount
+
+            let investment_POLY = investorLimit.sub(investedPOLY).add(surplus_POLY); // Calculate investment amount
             let investment_USD = investment_POLY.mul(await I_POLYOracle.getPrice.call()).div(e18);
             let expectedTokens = (investment_POLY.sub(surplus_POLY)).mul(rate).div(e18); // Number of tokens that should with the limit applied
 
@@ -2323,11 +2280,8 @@ contract("POLYCappedSTO", async (accounts) => {
             let fromTime = await latestTime();
             let toTime = await latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(100);
-            let canBuyFromSTO = true;
 
-            const tx1 = await I_GeneralTransferManager.modifyWhitelist(TREASURYWALLET, fromTime, toTime, expiryTime, canBuyFromSTO, false, {
-                from: ISSUER
-            });
+            const tx1 = await I_GeneralTransferManager.modifyKYCData(TREASURYWALLET, fromTime, toTime, expiryTime, {from: ISSUER});
             assert.equal(tx1.logs[0].args._investor, TREASURYWALLET, "Failed in adding the treasury wallet to whitelist");
 
             // Finalize STO without minting
@@ -2345,9 +2299,8 @@ contract("POLYCappedSTO", async (accounts) => {
             let fromTime = await latestTime();
             let toTime = await latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(100);
-            let canBuyFromSTO = true;
 
-            const tx1 = await I_GeneralTransferManager.modifyWhitelist(TREASURYWALLET, fromTime, toTime, expiryTime, canBuyFromSTO, false, {
+            const tx1 = await I_GeneralTransferManager.modifyKYCData(TREASURYWALLET, fromTime, toTime, expiryTime, {
                 from: ISSUER
             });
             assert.equal(tx1.logs[0].args._investor, TREASURYWALLET, "Failed in adding the treasury wallet to whitelist");

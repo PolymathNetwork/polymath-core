@@ -224,24 +224,6 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
      }
 
     /**
-     * @notice Modifies the list of accredited addresses
-     * @param _investors Array of investor addresses to modify
-     * @param _accredited Array of bools specifying accreditation status
-     */
-    function changeAccredited(address[] memory _investors, bool[] memory _accredited) public onlyOwner {
-        require(_investors.length == _accredited.length, "Length mismatch");
-        for (uint256 i = 0; i < _investors.length; i++) {
-            if (_accredited[i]) {
-                investors[_investors[i]].accredited = uint8(1);
-            } else {
-                investors[_investors[i]].accredited = uint8(0);
-            }
-            _addToInvestorsList(_investors[i]);
-            emit SetAccredited(_investors[i], _accredited[i]);
-        }
-    }
-
-    /**
      * @notice Modifies the list of overrides for non-accredited limits in fund raise type
      * @param _investors Array of investor addresses to modify
      * @param _nonAccreditedLimit Array of uints specifying non-accredited limits
@@ -249,16 +231,8 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
     function changeNonAccreditedLimit(address[] memory _investors, uint256[] memory _nonAccreditedLimit) public onlyOwner {
         require(_investors.length == _nonAccreditedLimit.length, "Length mismatch");
         for (uint256 i = 0; i < _investors.length; i++) {
-            investors[_investors[i]].nonAccreditedLimitOverride = _nonAccreditedLimit[i];
-            _addToInvestorsList(_investors[i]);
+            nonAccreditedLimitOverride[_investors[i]] = _nonAccreditedLimit[i];
             emit SetNonAccreditedLimit(_investors[i], _nonAccreditedLimit[i]);
-        }
-    }
-
-    function _addToInvestorsList(address _investor) internal {
-        if (investors[_investor].seen == uint8(0)) {
-            investors[_investor].seen = uint8(1);
-            investorsList.push(_investor);
         }
     }
 
@@ -299,6 +273,7 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
         if (!allowBeneficialInvestments) {
             require(_beneficiary == msg.sender, "Beneficiary != msg.sender");
         }
+        require(_canBuy(_beneficiary), "Unauthorized");
         uint256 _spentValue = _buyTokens(_beneficiary, _tokenAmount, _fundRaiseType);
         // Forward coins to issuer wallet
         require(_token.transferFrom(msg.sender, wallet, _spentValue), "Transfer failed");
@@ -353,7 +328,7 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
         require(isOpen(), "STO not open");
         require(_investmentValue > 0, "No funds were sent");
         require(_beneficiary != address(0), "Beneficiary address should not be 0x");
-        if (investors[_beneficiary].accredited == uint8(0) && maxNonAccreditedInvestors != 0) {
+        if (!_isAccredited(_beneficiary) && maxNonAccreditedInvestors != 0) {
             require(nonAccreditedCount < maxNonAccreditedInvestors, "Limit for number of non-accredited investor reached");
         }
         require(_investmentValue.add(investorInvested[_beneficiary]) >= minimumInvestment, "Less than minimum investment");
@@ -375,8 +350,8 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
         // Accredited investors are not limited
         _allowedInvestment = _investmentValue;
         // Check for non-accredited investment limits
-        if (investors[_beneficiary].accredited == uint8(0)) {
-            uint256 investorLimit = (investors[_beneficiary].nonAccreditedLimitOverride == 0) ? nonAccreditedLimit : investors[_beneficiary].nonAccreditedLimitOverride;
+        if (!_isAccredited(_beneficiary)) {
+            uint256 investorLimit = (nonAccreditedLimitOverride[_beneficiary] == 0) ? nonAccreditedLimit : nonAccreditedLimitOverride[_beneficiary];
             require(investorInvested[_beneficiary] < investorLimit, "Over Non-accredited investor limit");
             if (_investmentValue.add(investorInvested[_beneficiary]) > investorLimit)
                 _allowedInvestment = investorLimit.sub(investorInvested[_beneficiary]);
@@ -410,7 +385,7 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
     function _processPurchase(address _beneficiary, uint256 _tokenAmount) internal {
         if (investorInvested[_beneficiary] == 0) {
             investorCount = investorCount + 1;
-            if (investors[_beneficiary].accredited == uint8(0)) {
+            if (!_isAccredited(_beneficiary)) {
                 nonAccreditedCount = nonAccreditedCount + 1;
             }
         }
@@ -441,6 +416,17 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
     */
     function _postValidatePurchase(address /*_beneficiary*/, uint256 /*_investedAmount*/) internal pure {
       // optional override
+    }
+
+    function _isAccredited(address _investor) internal view returns(bool) {
+        IDataStore dataStore = IDataStore(getDataStore());
+        return _getIsAccredited(_investor, dataStore);
+    }
+
+    function _getIsAccredited(address _investor, IDataStore dataStore) internal view returns(bool) {
+        uint256 flags = dataStore.getUint256(_getKey(INVESTORFLAGS, _investor));
+        uint256 flag = flags & uint256(1); //isAccredited is flag 0 so we don't need to bit shift flags.
+        return flag > 0 ? true : false;
     }
 
     /////////////
@@ -479,21 +465,22 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
     function getPermissions() external view returns(bytes32[] memory allPermissions) {
         return allPermissions;
     }
-        /**
+
+    /**
      * @notice Returns investor accredited & non-accredited override informatiomn
-     * @return address[] list of all configured investors
-     * @return bool[] whether investor is accredited
-     * @return uint256[] any overrides for non-accredited limits for the investor
+     * @return investors list of all configured investors
+     * @return accredited whether investor is accredited
+     * @return override any overrides for non-accredited limits for the investor
      */
-    function getAccreditedData() external view returns (address[] memory, bool[] memory, uint256[] memory) {
-        bool[] memory accrediteds = new bool[](investorsList.length);
-        uint256[] memory nonAccreditedLimitOverrides = new uint256[](investorsList.length);
-        uint256 i;
-        for (i = 0; i < investorsList.length; i++) {
-            accrediteds[i] = (investors[investorsList[i]].accredited == uint8(0)? false: true);
-            nonAccreditedLimitOverrides[i] = investors[investorsList[i]].nonAccreditedLimitOverride;
+    function getAccreditedData() external view returns (address[] memory investors, bool[] memory accredited, uint256[] memory overrides) {
+        IDataStore dataStore = IDataStore(getDataStore());
+        investors = dataStore.getAddressArray(INVESTORSKEY);
+        accredited = new bool[](investors.length);
+        overrides = new uint256[](investors.length);
+        for (uint256 i = 0; i < investors.length; i++) {
+            accredited[i] = _getIsAccredited(investors[i], dataStore);
+            overrides[i] = nonAccreditedLimitOverride[investors[i]];
         }
-        return (investorsList, accrediteds, nonAccreditedLimitOverrides);
     }
 
     /**

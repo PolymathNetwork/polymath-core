@@ -14,9 +14,8 @@ contract VestingEscrowWalletFactory is UpgradableModuleFactory {
      * @notice Constructor
      */
     constructor (uint256 _setupCost, uint256 _usageCost, address _logicContract, address _polymathRegistry) public
-    UpgradableModuleFactory(_setupCost, _usageCost, _logicContract, _polymathRegistry)
+    UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry)
     {
-        version = "1.0.0";
         name = "VestingEscrowWallet";
         title = "Vesting Escrow Wallet";
         description = "Manage vesting schedules to employees / affiliates";
@@ -30,7 +29,7 @@ contract VestingEscrowWalletFactory is UpgradableModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes calldata _data) external returns(address) {
-        address vestingEscrowWallet = address(new VestingEscrowWalletProxy(msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
+        address vestingEscrowWallet = address(new VestingEscrowWalletProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
         _initializeModule(vestingEscrowWallet, _data);
         return vestingEscrowWallet;
     }

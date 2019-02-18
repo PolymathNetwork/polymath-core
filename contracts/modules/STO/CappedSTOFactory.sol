@@ -24,9 +24,8 @@ contract CappedSTOFactory is UpgradableModuleFactory {
         address _polymathRegistry
     )
         public
-        UpgradableModuleFactory(_setupCost, _usageCost, _logicContract, _polymathRegistry)
+        UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry)
     {
-        version = "2.1.0";
         name = "CappedSTO";
         title = "Capped STO";
         description = "This smart contract creates a maximum number of tokens (i.e. hard cap) which the total aggregate of tokens acquired by all investors cannot exceed. Security tokens are sent to the investor upon reception of the funds (ETH or POLY), and any security tokens left upon termination of the offering will not be minted.";
@@ -40,7 +39,7 @@ contract CappedSTOFactory is UpgradableModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes calldata _data) external returns(address) {
-        address cappedSTO = address(new CappedSTOProxy(msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
+        address cappedSTO = address(new CappedSTOProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
         _initializeModule(cappedSTO, _data);
         return cappedSTO;
     }

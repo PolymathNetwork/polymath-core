@@ -17,8 +17,9 @@ contract ManualApprovalTransferManagerProxy is ManualApprovalTransferManagerStor
     * @param _implementation representing the address of the new implementation to be set
     */
     constructor (
-        address _securityToken, 
-        address _polyAddress, 
+        string memory _version, 
+        address _securityToken,
+        address _polyAddress,
         address _implementation
     )
         public
@@ -28,7 +29,7 @@ contract ManualApprovalTransferManagerProxy is ManualApprovalTransferManagerStor
             _implementation != address(0),
             "Implementation address should not be 0x"
         );
-        __implementation = _implementation;
+        _upgradeTo(_version, _implementation);
     }
 
 }

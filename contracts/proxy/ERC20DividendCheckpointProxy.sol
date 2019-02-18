@@ -17,6 +17,7 @@ contract ERC20DividendCheckpointProxy is ERC20DividendCheckpointStorage, Dividen
     * @param _implementation representing the address of the new implementation to be set
     */
     constructor(
+        string memory _version,
         address _securityToken,
         address _polyAddress,
         address _implementation
@@ -25,7 +26,7 @@ contract ERC20DividendCheckpointProxy is ERC20DividendCheckpointStorage, Dividen
         ModuleStorage(_securityToken, _polyAddress)
     {
         require(_implementation != address(0), "Implementation address should not be 0x");
-        __implementation = _implementation;
+        _upgradeTo(_version, _implementation);
     }
 
 }

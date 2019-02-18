@@ -22,9 +22,8 @@ contract LockUpTransferManagerFactory is UpgradableModuleFactory {
         address _polymathRegistry
     )
         public
-        UpgradableModuleFactory(_setupCost, _usageCost, _logicContract, _polymathRegistry)
+        UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry)
     {
-        version = "1.0.0";
         name = "LockUpTransferManager";
         title = "LockUp Transfer Manager";
         description = "Manage transfers using lock ups over time";
@@ -42,7 +41,7 @@ contract LockUpTransferManagerFactory is UpgradableModuleFactory {
         external
         returns(address)
     {
-        address lockUpTransferManager = address(new LockUpTransferManagerProxy(msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
+        address lockUpTransferManager = address(new LockUpTransferManagerProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
         _initializeModule(lockUpTransferManager, _data);
         return lockUpTransferManager;
     }

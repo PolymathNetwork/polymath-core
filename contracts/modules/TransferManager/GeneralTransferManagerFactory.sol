@@ -22,9 +22,8 @@ contract GeneralTransferManagerFactory is UpgradableModuleFactory {
         address _polymathRegistry
     )
         public
-        UpgradableModuleFactory(_setupCost, _usageCost, _logicContract, _polymathRegistry)
+        UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry)
     {
-        version = "2.1.0";
         name = "GeneralTransferManager";
         title = "General Transfer Manager";
         description = "Manage transfers using a time based whitelist";
@@ -42,7 +41,7 @@ contract GeneralTransferManagerFactory is UpgradableModuleFactory {
         external
         returns(address)
     {
-        address generalTransferManager = address(new GeneralTransferManagerProxy(msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
+        address generalTransferManager = address(new GeneralTransferManagerProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
         _initializeModule(generalTransferManager, _data);
         return generalTransferManager;
     }

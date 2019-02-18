@@ -24,9 +24,8 @@ contract ERC20DividendCheckpointFactory is UpgradableModuleFactory {
         address _polymathRegistry
     )
         public
-        UpgradableModuleFactory(_setupCost, _usageCost, _logicContract, _polymathRegistry)
+        UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry)
     {
-        version = "2.1.0";
         name = "ERC20DividendCheckpoint";
         title = "ERC20 Dividend Checkpoint";
         description = "Create ERC20 dividends for token holders at a specific checkpoint";
@@ -39,7 +38,7 @@ contract ERC20DividendCheckpointFactory is UpgradableModuleFactory {
      * @return Address Contract address of the Module
      */
     function deploy(bytes calldata _data) external returns(address) {
-        address erc20DividendCheckpoint = address(new ERC20DividendCheckpointProxy(msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
+        address erc20DividendCheckpoint = address(new ERC20DividendCheckpointProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
         _initializeModule(erc20DividendCheckpoint, _data);
         return erc20DividendCheckpoint;
     }

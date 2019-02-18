@@ -21,10 +21,9 @@ contract CountTransferManagerFactory is UpgradableModuleFactory {
         address _logicContract,
         address _polymathRegistry
     )
-        public UpgradableModuleFactory(_setupCost, _usageCost, _logicContract, _polymathRegistry)
+        public UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry)
     {
         name = "CountTransferManager";
-        version = "2.1.0";
         title = "Count Transfer Manager";
         description = "Restrict the number of investors";
         typesData.push(2);
@@ -40,7 +39,7 @@ contract CountTransferManagerFactory is UpgradableModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes calldata _data) external returns(address) {
-        address countTransferManager = address(new CountTransferManagerProxy(msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
+        address countTransferManager = address(new CountTransferManagerProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
         _initializeModule(countTransferManager, _data);
         return countTransferManager;
     }

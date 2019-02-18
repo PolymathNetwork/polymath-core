@@ -36,6 +36,7 @@ contract UpgradableModuleFactory is ModuleFactory {
      * @param _polymathRegistry Address of the Polymath registry
      */
     constructor(
+        string memory _version,
         uint256 _setupCost,
         uint256 _usageCost,
         address _logicContract,
@@ -45,7 +46,7 @@ contract UpgradableModuleFactory is ModuleFactory {
     {
         require(_logicContract != address(0), "Invalid address");
         logicContracts[latestVersion].logicContract = _logicContract;
-        logicContracts[latestVersion].version = "1.0.0";
+        logicContracts[latestVersion].version = _version;
     }
 
     function setLogicContract(string calldata _version, address _logicContract, bytes calldata _logicData) external onlyOwner {
@@ -75,6 +76,13 @@ contract UpgradableModuleFactory is ModuleFactory {
     function _initializeModule(address _module, bytes memory _data) internal {
         super._initializeModule(_module, _data);
         modules[msg.sender] = _module;
+    }
+
+    /**
+     * @notice Get the version related to the module factory
+     */
+    function version() external view returns(string memory) {
+        return logicContracts[latestVersion].version;
     }
 
 }

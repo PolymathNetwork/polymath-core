@@ -17,6 +17,7 @@ contract CountTransferManagerProxy is CountTransferManagerStorage, ModuleStorage
     * @param _implementation representing the address of the new implementation to be set
     */
     constructor (
+        string memory _version,
         address _securityToken,
         address _polyAddress,
         address _implementation
@@ -28,7 +29,7 @@ contract CountTransferManagerProxy is CountTransferManagerStorage, ModuleStorage
             _implementation != address(0),
             "Implementation address should not be 0x"
         );
-        __implementation = _implementation;
+        _upgradeTo(_version, _implementation);
     }
 
 }

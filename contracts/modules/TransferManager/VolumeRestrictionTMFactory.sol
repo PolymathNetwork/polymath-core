@@ -16,9 +16,8 @@ contract VolumeRestrictionTMFactory is UpgradableModuleFactory {
      * @param _polymathRegistry Address of the Polymath registry
      */
     constructor (uint256 _setupCost, uint256 _usageCost, address _logicContract, address _polymathRegistry) public
-    UpgradableModuleFactory(_setupCost, _usageCost, _logicContract, _polymathRegistry)
+    UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry)
     {
-        version = "1.0.0";
         name = "VolumeRestrictionTM";
         title = "Volume Restriction Transfer Manager";
         description = "Manage transfers based on the volume of tokens that needs to be transact";
@@ -31,7 +30,7 @@ contract VolumeRestrictionTMFactory is UpgradableModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes calldata _data) external returns(address) {
-        address volumeRestrictionTransferManager = address(new VolumeRestrictionTMProxy(msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
+        address volumeRestrictionTransferManager = address(new VolumeRestrictionTMProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
         _initializeModule(volumeRestrictionTransferManager, _data);
         return volumeRestrictionTransferManager;
     }

@@ -467,10 +467,45 @@ contract("CountTransferManager", async (accounts) => {
             it("Should upgrade the CTM", async () => {
                 let I_MockCountTransferManagerLogic = await MockCountTransferManager.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: account_polymath });
                 let bytesCM = encodeProxyCall(["uint256"], [11]);
-                await I_CountTransferManagerFactory.setLogicContract("2.0.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath });
+                await catchRevert(
+                    // Fails as no upgrade available
+                    await I_SecurityToken2.upgradeModule(I_CountTransferManager2.address, { from: token_owner })
+                );
+                await catchRevert(
+                    // Fails due to the same version being used
+                    I_CountTransferManagerFactory.setLogicContract("3.0.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath })
+                );
+                await catchRevert(
+                    // Fails due to the wrong contract being used
+                    I_CountTransferManagerFactory.setLogicContract("4.0.0", "0x0000000000000000000000000000000000000000", bytesCM, { from: account_polymath })
+                );
+                await catchRevert(
+                    // Fails due to the wrong owner being used
+                    I_CountTransferManagerFactory.setLogicContract("4.0.0", "0x0000000000000000000000000000000000000000", bytesCM, { from: token_owner })
+                );
+                await I_CountTransferManagerFactory.setLogicContract("4.0.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath });
                 await I_SecurityToken2.upgradeModule(I_CountTransferManager2.address, { from: token_owner });
                 let I_MockCountTransferManager = await MockCountTransferManager.at(I_CountTransferManager2.address);
                 await I_MockCountTransferManager.newFunction();
+            });
+
+            it("Should upgrade the CTM again", async () => {
+                let I_MockCountTransferManagerLogic = await MockCountTransferManager.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: account_polymath });
+                let bytesCM = encodeProxyCall(["uint256"], [11]);
+                await catchRevert(
+                    // Fails as no upgrade available
+                    await I_SecurityToken2.upgradeModule(I_CountTransferManager2.address, { from: token_owner })
+                );
+                await catchRevert(
+                    // Fails due to the same version being used
+                    I_CountTransferManagerFactory.setLogicContract("4.0.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath })
+                );
+                await I_CountTransferManagerFactory.setLogicContract("5.0.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath });
+                await catchRevert(
+                    // Fails due to the same contract being used
+                    await I_CountTransferManagerFactory.setLogicContract("6.0.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath })
+                );
+                await I_SecurityToken2.upgradeModule(I_CountTransferManager2.address, { from: token_owner });
             });
 
             it("Should allow add a new token holder while transfer all the tokens at one go", async () => {
@@ -529,18 +564,6 @@ contract("CountTransferManager", async (accounts) => {
                 assert.equal((await I_CountTransferManagerFactory.usageCost.call()).toString(), new BN(web3.utils.toWei("800")).toString());
             });
 
-            it("Should successfully change the version of the factory -- failed because of bad owner", async () => {
-                await catchRevert(I_CountTransferManagerFactory.changeVersion("5.0.0", { from: account_investor3 }));
-            });
-
-            it("Should successfully change the version of the fatory -- failed because of the 0 string", async () => {
-                await catchRevert(I_CountTransferManagerFactory.changeVersion("", { from: account_polymath }));
-            });
-
-            it("Should successfully change the version of the fatory", async () => {
-                await I_CountTransferManagerFactory.changeVersion("5.0.0", { from: account_polymath });
-                assert.equal(await I_CountTransferManagerFactory.version.call(), "5.0.0");
-            });
         });
 
         describe("Test case for the changeSTVersionBounds", async () => {

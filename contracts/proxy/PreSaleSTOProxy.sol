@@ -18,7 +18,7 @@ contract PreSaleSTOProxy is PreSaleSTOStorage, STOStorage, ModuleStorage, Pausab
     * @param _polyAddress Address of the polytoken
     * @param _implementation representing the address of the new implementation to be set
     */
-    constructor (address _securityToken, address _polyAddress, address _implementation)
+    constructor (string memory _version, address _securityToken, address _polyAddress, address _implementation)
     public
     ModuleStorage(_securityToken, _polyAddress)
     {
@@ -26,7 +26,7 @@ contract PreSaleSTOProxy is PreSaleSTOStorage, STOStorage, ModuleStorage, Pausab
             _implementation != address(0),
             "Implementation address should not be 0x"
         );
-        __implementation = _implementation;
+        _upgradeTo(_version, _implementation);
     }
 
 }

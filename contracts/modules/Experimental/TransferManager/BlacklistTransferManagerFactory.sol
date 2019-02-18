@@ -18,7 +18,7 @@ contract BlacklistTransferManagerFactory is ModuleFactory {
     constructor (uint256 _setupCost, uint256 _usageCost, address _polymathRegistry) public
     ModuleFactory(_setupCost, _usageCost, _polymathRegistry)
     {
-        version = "2.1.0";
+        initialVersion = "2.1.0";
         name = "BlacklistTransferManager";
         title = "Blacklist Transfer Manager";
         description = "Automate blacklist to restrict selling";

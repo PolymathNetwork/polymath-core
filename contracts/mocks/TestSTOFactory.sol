@@ -19,7 +19,6 @@ contract TestSTOFactory is DummySTOFactory {
         public
         DummySTOFactory(_setupCost, _usageCost, _logicContract, _polymathRegistry)
     {
-        version = "1.0.0";
         name = "TestSTO";
         title = "Test STO";
         description = "Test STO";

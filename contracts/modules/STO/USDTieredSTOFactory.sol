@@ -24,9 +24,8 @@ contract USDTieredSTOFactory is UpgradableModuleFactory {
         address _polymathRegistry
     )
         public
-        UpgradableModuleFactory(_setupCost, _usageCost, _logicContract, _polymathRegistry)
+        UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry)
     {
-        version = "2.1.0";
         name = "USDTieredSTO";
         title = "USD Tiered STO";
         /*solium-disable-next-line max-len*/
@@ -40,7 +39,7 @@ contract USDTieredSTOFactory is UpgradableModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes calldata _data) external returns(address) {
-        address usdTieredSTO = address(new USDTieredSTOProxy(msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
+        address usdTieredSTO = address(new USDTieredSTOProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
         _initializeModule(usdTieredSTO, _data);
         return usdTieredSTO;
     }

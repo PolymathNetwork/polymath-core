@@ -22,9 +22,8 @@ contract ManualApprovalTransferManagerFactory is UpgradableModuleFactory {
         address _polymathRegistry
     )
         public
-        UpgradableModuleFactory(_setupCost, _usageCost, _logicContract, _polymathRegistry)
+        UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry)
     {
-        version = "2.1.0";
         name = "ManualApprovalTransferManager";
         title = "Manual Approval Transfer Manager";
         description = "Manage transfers using single approvals";
@@ -42,7 +41,7 @@ contract ManualApprovalTransferManagerFactory is UpgradableModuleFactory {
         external
         returns(address)
     {
-        address manualTransferManager = address(new ManualApprovalTransferManagerProxy(msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
+        address manualTransferManager = address(new ManualApprovalTransferManagerProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
         _initializeModule(manualTransferManager, _data);
         return manualTransferManager;
     }

@@ -22,9 +22,8 @@ contract GeneralPermissionManagerFactory is UpgradableModuleFactory {
         address _polymathRegistry
     )
         public
-        UpgradableModuleFactory(_setupCost, _usageCost, _logicContract, _polymathRegistry)
+        UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry)
     {
-        version = "1.0.0";
         name = "GeneralPermissionManager";
         title = "General Permission Manager";
         description = "Manage permissions within the Security Token and attached modules";
@@ -42,7 +41,7 @@ contract GeneralPermissionManagerFactory is UpgradableModuleFactory {
         external
         returns(address)
     {
-        address permissionManager = address(new GeneralPermissionManagerProxy(msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
+        address permissionManager = address(new GeneralPermissionManagerProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
         _initializeModule(permissionManager, _data);
         return permissionManager;
     }

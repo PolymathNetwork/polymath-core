@@ -14,7 +14,7 @@ contract SignedTransferManagerFactory is ModuleFactory {
     constructor (uint256 _setupCost, uint256 _usageCost, address _polymathRegistry) public
     ModuleFactory(_setupCost, _usageCost, _polymathRegistry)
     {
-        version = "1.0.0";
+        initialVersion = "1.0.0";
         name = "SignedTransferManager";
         title = "Signed Transfer Manager";
         description = "Manage transfers using a signature";

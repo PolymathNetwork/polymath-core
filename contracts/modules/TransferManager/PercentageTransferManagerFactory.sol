@@ -24,9 +24,8 @@ contract PercentageTransferManagerFactory is UpgradableModuleFactory {
         address _polymathRegistry
     )
         public
-        UpgradableModuleFactory(_setupCost, _usageCost, _logicContract, _polymathRegistry)
+        UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry)
     {
-        version = "1.0.0";
         name = "PercentageTransferManager";
         title = "Percentage Transfer Manager";
         description = "Restrict the number of investors";
@@ -40,7 +39,7 @@ contract PercentageTransferManagerFactory is UpgradableModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes calldata _data) external returns(address) {
-        address percentageTransferManager = address(new PercentageTransferManagerProxy(msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
+        address percentageTransferManager = address(new PercentageTransferManagerProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
         _initializeModule(percentageTransferManager, _data);
         return percentageTransferManager;
     }

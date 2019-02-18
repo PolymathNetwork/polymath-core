@@ -21,7 +21,7 @@ contract TrackedRedemptionFactory is ModuleFactory {
         public
         ModuleFactory(_setupCost, _usageCost, _polymathRegistry)
     {
-        version = "1.0.0";
+        initialVersion = "1.0.0";
         name = "TrackedRedemption";
         title = "Tracked Redemption";
         description = "Track token redemptions";

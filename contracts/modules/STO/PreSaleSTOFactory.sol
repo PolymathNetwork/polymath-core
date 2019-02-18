@@ -24,9 +24,8 @@ contract PreSaleSTOFactory is UpgradableModuleFactory {
         address _polymathRegistry
     )
         public
-        UpgradableModuleFactory(_setupCost, _usageCost, _logicContract, _polymathRegistry)
+        UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry)
     {
-        version = "1.0.0";
         name = "PreSaleSTO";
         title = "PreSale STO";
         description = "Allows Issuer to configure pre-sale token allocations";
@@ -40,7 +39,7 @@ contract PreSaleSTOFactory is UpgradableModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes calldata _data) external returns(address) {
-        address preSaleSTO = address(new PreSaleSTOProxy(msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
+        address preSaleSTO = address(new PreSaleSTOProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
         _initializeModule(preSaleSTO, _data);
         return preSaleSTO;
     }

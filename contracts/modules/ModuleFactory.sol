@@ -18,14 +18,13 @@ contract ModuleFactory is IModuleFactory, Ownable {
 
     address public polymathRegistry;
 
-    string public version;
+    string initialVersion;
     bytes32 public name;
     string public title;
     string public description;
 
     uint8[] typesData; // Can't be modified unless using UpgradableModuleFactory
     bytes32[] tagsData;
-
 
     uint256 public usageCost; // Denominated in USD
     uint256 public setupCost; // Denominated in USD
@@ -60,6 +59,13 @@ contract ModuleFactory is IModuleFactory, Ownable {
      */
     function tags() external view returns(bytes32[] memory) {
         return tagsData;
+    }
+
+    /**
+     * @notice Get the version related to the module factory
+     */
+    function version() external view returns(string memory) {
+        return initialVersion;
     }
 
     /**
@@ -105,15 +111,6 @@ contract ModuleFactory is IModuleFactory, Ownable {
     function changeName(bytes32 _name) public onlyOwner {
         require(_name != bytes32(0), "Invalid text");
         name = _name;
-    }
-
-    /**
-     * @notice Updates the version of the ModuleFactory
-     * @param _version New name that will replace the old one.
-     */
-    function changeVersion(string memory _version) public onlyOwner {
-        require(bytes(_version).length > 0, "Invalid text");
-        version = _version;
     }
 
     /**

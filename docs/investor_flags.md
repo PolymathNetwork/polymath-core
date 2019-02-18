@@ -12,7 +12,7 @@
         <tr>
             <td> 0 </td>
             <td> isAccredited </td>
-            <td> Defines if an Investor is Accredited or not. True for Accredited, false for not not Accredited.</td>
+            <td> Defines if an Investor is Accredited or not. True for Accredited, false for not Accredited.</td>
         </tr>
         <tr>
             <td> 1 </td>

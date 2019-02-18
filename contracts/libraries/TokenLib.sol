@@ -73,10 +73,9 @@ library TokenLib {
     * @param _moduleData Storage data
     */
     function upgradeModule(ModuleData storage _moduleData) public {
-        require(!_moduleData.isArchived, "Module archived");
         require(_moduleData.module != address(0), "Module missing");
         // Will revert if module isn't upgradable
-        UpgradableModuleFactory(_moduleData.moduleFactory).upgrade();
+        UpgradableModuleFactory(_moduleData.moduleFactory).upgrade(_moduleData.module);
         emit ModuleUpgraded(_moduleData.moduleTypes, _moduleData.module);
     }
 

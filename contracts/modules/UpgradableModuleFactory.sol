@@ -20,10 +20,16 @@ contract UpgradableModuleFactory is ModuleFactory {
     mapping (uint256 => LogicContract) logicContracts;
 
     // Mapping from Security Token address to module version
-    mapping (address => uint256) moduleVersions;
+    /* mapping (address => uint256) moduleVersions; */
 
     // Mapping from Security Token address to module address
-    mapping (address => address) modules;
+    /* mapping (address => address) modules; */
+
+    // Mapping from Security Token address, to deployed proxy module address, to module version
+    mapping (address => mapping (address => uint256)) modules;
+
+    // Mapping of which security token owns a given module
+    mapping (address => address) moduleToSecurityToken;
 
     // Current version
     uint256 public latestVersion;
@@ -49,6 +55,12 @@ contract UpgradableModuleFactory is ModuleFactory {
         logicContracts[latestVersion].version = _version;
     }
 
+    /**
+     * @notice Used to upgrade the module factory
+     * @param _version Version of upgraded module
+     * @param _logicContract Address of deployed module logic contract referenced from proxy
+     * @param _logicData Data to be passed in call to upgradeToAndCall when a token upgrades its module
+     */
     function setLogicContract(string calldata _version, address _logicContract, bytes calldata _logicData) external onlyOwner {
         require(keccak256(abi.encodePacked(_version)) != keccak256(abi.encodePacked(logicContracts[latestVersion].version)), "Same version");
         require(_logicContract != logicContracts[latestVersion].logicContract, "Same version");
@@ -60,12 +72,19 @@ contract UpgradableModuleFactory is ModuleFactory {
         emit LogicContractSet(_version, _logicContract, _logicData);
     }
 
-    function upgrade() external {
+    /**
+     * @notice Used by a security token to upgrade a given module
+     * @param _module Address of (proxy) module to be upgraded
+     */
+    function upgrade(address _module) external {
+        // Only allow the owner of a module to upgrade it
+        require(moduleToSecurityToken[_module] == msg.sender, "Incorrect caller");
         // Only allow issuers to upgrade in single step verisons to preserve upgradeToAndCall semantics
-        uint256 newVersion = moduleVersions[msg.sender] + 1;
+        uint256 newVersion = modules[msg.sender][_module] + 1;
+        /* uint256 newVersion = moduleVersions[msg.sender] + 1; */
         require(newVersion <= latestVersion, "Incorrect version");
-        OwnedUpgradeabilityProxy(address(uint160(modules[msg.sender]))).upgradeToAndCall(logicContracts[newVersion].version, logicContracts[newVersion].logicContract, logicContracts[newVersion].logicData);
-        moduleVersions[msg.sender] = newVersion;
+        OwnedUpgradeabilityProxy(address(uint160(_module))).upgradeToAndCall(logicContracts[newVersion].version, logicContracts[newVersion].logicContract, logicContracts[newVersion].logicData);
+        modules[msg.sender][_module] = newVersion;
     }
 
     /**
@@ -75,7 +94,9 @@ contract UpgradableModuleFactory is ModuleFactory {
      */
     function _initializeModule(address _module, bytes memory _data) internal {
         super._initializeModule(_module, _data);
-        modules[msg.sender] = _module;
+        moduleToSecurityToken[_module] = msg.sender;
+        modules[msg.sender][_module] = latestVersion;
+        /* modules[msg.sender] = _module; */
     }
 
     /**

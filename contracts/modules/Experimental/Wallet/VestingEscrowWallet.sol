@@ -2,12 +2,12 @@ pragma solidity ^0.5.0;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "../../../storage/VestingEscrowWalletStorage.sol";
-import "./IWallet.sol";
+import "./Wallet.sol";
 
 /**
  * @title Wallet for core vesting escrow functionality
  */
-contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
+contract VestingEscrowWallet is VestingEscrowWalletStorage, Wallet {
     using SafeMath for uint256;
 
     bytes32 public constant ADMIN = "ADMIN";

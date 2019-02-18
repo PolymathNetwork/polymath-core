@@ -7,7 +7,7 @@ import "../../Module.sol";
  * @title Interface to be implemented by all Wallet modules
  * @dev abstract contract
  */
-contract IWallet is Module, Pausable {
+contract Wallet is Module, Pausable {
 
     function unpause() public {
         _onlySecurityTokenOwner();

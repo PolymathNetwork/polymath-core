@@ -48,7 +48,6 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @param _wallet Ethereum account address to receive reclaimed dividends and tax
      */
     function changeWallet(address payable _wallet) external onlyOwner {
-        require(_wallet != address(0));
         emit SetWallet(wallet, _wallet);
         wallet = _wallet;
     }

@@ -198,10 +198,10 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         Dividend storage dividend = dividends[_dividendIndex];
         dividend.reclaimed = true;
         uint256 remainingAmount = dividend.amount.sub(dividend.claimedAmount);
-        address payable _wallet = getTreasuryWallet();
-        require(_wallet != address(0), "Invalid address");
-        _wallet.transfer(remainingAmount);
-        emit EtherDividendReclaimed(_wallet, _dividendIndex, remainingAmount);
+        address payable wallet = getTreasuryWallet();
+        require(wallet != address(0), "Invalid address");
+        wallet.transfer(remainingAmount);
+        emit EtherDividendReclaimed(wallet, _dividendIndex, remainingAmount);
     }
 
     /**
@@ -213,10 +213,10 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         Dividend storage dividend = dividends[_dividendIndex];
         uint256 remainingWithheld = dividend.totalWithheld.sub(dividend.totalWithheldWithdrawn);
         dividend.totalWithheldWithdrawn = dividend.totalWithheld;
-        address payable _wallet = getTreasuryWallet();
-        require(_wallet != address(0), "Invalid address");
-        _wallet.transfer(remainingWithheld);
-        emit EtherDividendWithholdingWithdrawn(_wallet, _dividendIndex, remainingWithheld);
+        address payable wallet = getTreasuryWallet();
+        require(wallet != address(0), "Invalid address");
+        wallet.transfer(remainingWithheld);
+        emit EtherDividendWithholdingWithdrawn(wallet, _dividendIndex, remainingWithheld);
     }
 
 }

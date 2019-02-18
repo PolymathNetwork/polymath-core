@@ -41,7 +41,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         uint256 _rate
     );
     event ReserveTokenMint(address indexed _owner, address indexed _wallet, uint256 _tokens, uint256 _latestTier);
-    event SetAddresses(address indexed _wallet, address indexed _treasuryWallet, address[] _usdTokens);
+    event SetAddresses(address indexed _wallet, address[] _usdTokens);
     event SetLimits(uint256 _nonAccreditedLimitUSD, uint256 _minimumInvestmentUSD);
     event SetTimes(uint256 _startTime, uint256 _endTime);
     event SetTiers(
@@ -50,6 +50,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         uint256[] _tokensPerTierTotal,
         uint256[] _tokensPerTierDiscountPoly
     );
+    event SetTreasuryWallet(address _oldWallet, address _newWallet);
 
     ///////////////
     // Modifiers //
@@ -90,7 +91,6 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @param _minimumInvestmentUSD Minimun investment in USD (* 10**18)
      * @param _fundRaiseTypes Types of currency used to collect the funds
      * @param _wallet Ethereum account address to hold the funds
-     * @param _treasuryWallet Ethereum account address to receive unsold tokens
      * @param _usdTokens Contract address of the stable coins
      */
     function configure(
@@ -104,7 +104,6 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         uint256 _minimumInvestmentUSD,
         FundRaiseType[] memory _fundRaiseTypes,
         address payable _wallet,
-        address _treasuryWallet,
         address[] memory _usdTokens
     )
         public
@@ -117,7 +116,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         _modifyTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
         // NB - _setFundRaiseType must come before modifyAddresses
         _setFundRaiseType(_fundRaiseTypes);
-        _modifyAddresses(_wallet, _treasuryWallet, _usdTokens);
+        _modifyAddresses(_wallet, _usdTokens);
         _modifyLimits(_nonAccreditedLimitUSD, _minimumInvestmentUSD);
     }
 
@@ -170,19 +169,18 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         _modifyTimes(_startTime, _endTime);
     }
 
-    function _isSTOStarted() internal {
+    function _isSTOStarted() internal view {
         /*solium-disable-next-line security/no-block-members*/
-        require(now < startTime, "STO already started");
+        require(now < startTime, "Already started");
     }
 
     /**
      * @dev Modifies addresses used as wallet, treasury wallet and usd token
      * @param _wallet Address of wallet where funds are sent
-     * @param _treasuryWallet Address of wallet where unsold tokens are sent
      * @param _usdTokens Address of usd tokens
      */
-    function modifyAddresses(address payable _wallet, address _treasuryWallet, address[] calldata _usdTokens) external onlyOwner {
-        _modifyAddresses(_wallet, _treasuryWallet, _usdTokens);
+    function modifyAddresses(address payable _wallet, address[] calldata _usdTokens) external onlyOwner {
+        _modifyAddresses(_wallet, _usdTokens);
     }
 
     function _modifyLimits(uint256 _nonAccreditedLimitUSD, uint256 _minimumInvestmentUSD) internal {
@@ -224,10 +222,9 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         emit SetTimes(_startTime, _endTime);
     }
 
-    function _modifyAddresses(address payable _wallet, address _treasuryWallet, address[] memory _usdTokens) internal {
+    function _modifyAddresses(address payable _wallet, address[] memory _usdTokens) internal {
         require(_wallet != address(0), "Invalid wallet");
         wallet = _wallet;
-        treasuryWallet = _treasuryWallet;
         _modifyUSDTokens(_usdTokens);
     }
 
@@ -241,7 +238,16 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
             require(_usdTokens[i] != address(0), "Invalid USD token");
             usdTokenEnabled[_usdTokens[i]] = true;
         }
-        emit SetAddresses(wallet, treasuryWallet, _usdTokens);
+        emit SetAddresses(wallet, _usdTokens);
+    }
+
+    /**
+     * @notice Use to change the treasury wallet 
+     * @param _treasuryWallet Ethereum account address to receive unsold tokens
+     */
+    function modifyTreasuryWallet(address _treasuryWallet) external onlyOwner {
+        emit SetTreasuryWallet(treasuryWallet, _treasuryWallet);
+        treasuryWallet = _treasuryWallet;
     }
 
     ////////////////////
@@ -266,10 +272,10 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
                 tiers[i].mintedTotal = tiers[i].tokenTotal;
             }
         }
-        address _wallet = (treasuryWallet == address(0) ? IDataStore(getDataStore()).getAddress(TREASURY) : treasuryWallet);
-        require(_wallet != address(0));
-        require(ISecurityToken(securityToken).mint(treasuryWallet, tempReturned), "Minting Failed");
-        emit ReserveTokenMint(msg.sender, treasuryWallet, tempReturned, currentTier);
+        address walletAddress = (treasuryWallet == address(0) ? IDataStore(getDataStore()).getAddress(TREASURY) : treasuryWallet);
+        require(walletAddress != address(0));
+        _mintTokens(walletAddress, tempReturned);
+        emit ReserveTokenMint(msg.sender, walletAddress, tempReturned, currentTier);
         finalAmountReturned = tempReturned;
         totalTokensSold = tempSold;
     }
@@ -567,9 +573,13 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
             purchasedTokens = maximumTokens;
         }
         if (purchasedTokens > 0) {
-            require(ISecurityToken(securityToken).mint(_beneficiary, purchasedTokens), "Mint failed");
+            _mintTokens(_beneficiary, purchasedTokens);
             emit TokenPurchase(msg.sender, _beneficiary, purchasedTokens, spentUSD, _tierPrice, _tier);
         }
+    }
+
+    function _mintTokens(address _beneficiary, uint256 _amount) internal {
+        require(ISecurityToken(securityToken).mint(_beneficiary, _amount), "Mint failed");
     }
 
     /////////////

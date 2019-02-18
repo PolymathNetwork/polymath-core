@@ -510,24 +510,24 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         _deployToken(_name, ticker, _tokenDetails, msg.sender, _divisible, _treasuryWallet); 
     }
 
-    function _deployToken(string memory name, string memory ticker, string memory tokenDetails, address issuer, bool divisible, address wallet) internal {
+    function _deployToken(string memory _name, string memory _ticker, string memory _tokenDetails, address _issuer, bool _divisible, address _wallet) internal {
         (uint256 _usdFee, uint256 _polyFee) = _takeFee(STLAUNCHFEE);
         address newSecurityTokenAddress = ISTFactory(getAddressValue(Encoder.getKey("protocolVersionST", getUintValue(Encoder.getKey("latestVersion"))))).deployToken(
-            name,
-            ticker,
+            _name,
+            _ticker,
             18,
-            tokenDetails,
-            issuer,
-            divisible,
-            wallet,
+            _tokenDetails,
+            _issuer,
+            _divisible,
+            _wallet,
             getAddressValue(POLYMATHREGISTRY)
         );
 
         /*solium-disable-next-line security/no-block-members*/
-        _storeSecurityTokenData(newSecurityTokenAddress, ticker, tokenDetails, now);
-        set(Encoder.getKey("tickerToSecurityToken", ticker), newSecurityTokenAddress);
+        _storeSecurityTokenData(newSecurityTokenAddress, _ticker, _tokenDetails, now);
+        set(Encoder.getKey("tickerToSecurityToken", _ticker), newSecurityTokenAddress);
         /*solium-disable-next-line security/no-block-members*/
-        emit NewSecurityToken(ticker, name, newSecurityTokenAddress, msg.sender, now, msg.sender, false, _usdFee, _polyFee);
+        emit NewSecurityToken(_ticker, _name, newSecurityTokenAddress, msg.sender, now, msg.sender, false, _usdFee, _polyFee);
     }
 
     /**

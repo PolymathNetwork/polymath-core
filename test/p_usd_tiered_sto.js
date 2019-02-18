@@ -109,7 +109,6 @@ contract("USDTieredSTO", async (accounts) => {
         uint256 _minimumInvestmentUSD,
         uint8[] _fundRaiseTypes,
         address _wallet,
-        address _treasuryWallet,
         address _usdToken
     ) */
     const functionSignature = {
@@ -155,10 +154,6 @@ contract("USDTieredSTO", async (accounts) => {
             {
                 type: "address",
                 name: "_wallet"
-            },
-            {
-                type: "address",
-                name: "_treasuryWallet"
             },
             {
                 type: "address[]",
@@ -313,7 +308,6 @@ contract("USDTieredSTO", async (accounts) => {
             _minimumInvestmentUSD.push(new BN(5).mul(e18)); // 5 USD
             _fundRaiseTypes.push([0, 1, 2]);
             _wallet.push(WALLET);
-            _treasuryWallet.push(TREASURYWALLET);
             _usdToken.push([I_DaiToken.address]);
 
             let config = [
@@ -327,7 +321,6 @@ contract("USDTieredSTO", async (accounts) => {
                 _minimumInvestmentUSD[stoId],
                 _fundRaiseTypes[stoId],
                 _wallet[stoId],
-                _treasuryWallet[stoId],
                 _usdToken[stoId]
             ];
 
@@ -373,11 +366,6 @@ contract("USDTieredSTO", async (accounts) => {
                 "Incorrect _minimumInvestmentUSD in config"
             );
             assert.equal(await I_USDTieredSTO_Array[stoId].wallet.call(), _wallet[stoId], "Incorrect _wallet in config");
-            assert.equal(
-                await I_USDTieredSTO_Array[stoId].treasuryWallet.call(),
-                _treasuryWallet[stoId],
-                "Incorrect _treasuryWallet in config"
-            );
             assert.equal((await I_USDTieredSTO_Array[stoId].getUsdTokens())[0], _usdToken[stoId][0], "Incorrect _usdToken in config");
             assert.equal(
                 await I_USDTieredSTO_Array[stoId].getNumberOfTiers(),
@@ -400,7 +388,6 @@ contract("USDTieredSTO", async (accounts) => {
                 _minimumInvestmentUSD[stoId],
                 _fundRaiseTypes[stoId],
                 _wallet[stoId],
-                _treasuryWallet[stoId],
                 _usdToken[stoId]
             ];
 
@@ -427,7 +414,6 @@ contract("USDTieredSTO", async (accounts) => {
                 _minimumInvestmentUSD[stoId],
                 _fundRaiseTypes[stoId],
                 _wallet[stoId],
-                _treasuryWallet[stoId],
                 _usdToken[stoId]
             ];
 
@@ -502,7 +488,6 @@ contract("USDTieredSTO", async (accounts) => {
             _minimumInvestmentUSD.push(new BN(0));
             _fundRaiseTypes.push([0, 1, 2]);
             _wallet.push(WALLET);
-            _treasuryWallet.push(TREASURYWALLET);
             _usdToken.push([I_DaiToken.address]);
 
             let config = [
@@ -516,7 +501,6 @@ contract("USDTieredSTO", async (accounts) => {
                 _minimumInvestmentUSD[stoId],
                 _fundRaiseTypes[stoId],
                 _wallet[stoId],
-                _treasuryWallet[stoId],
                 _usdToken[stoId]
             ];
 
@@ -562,11 +546,6 @@ contract("USDTieredSTO", async (accounts) => {
                 "Incorrect _minimumInvestmentUSD in config"
             );
             assert.equal(await I_USDTieredSTO_Array[stoId].wallet.call(), _wallet[stoId], "Incorrect _wallet in config");
-            assert.equal(
-                await I_USDTieredSTO_Array[stoId].treasuryWallet.call(),
-                _treasuryWallet[stoId],
-                "Incorrect _treasuryWallet in config"
-            );
             assert.equal((await I_USDTieredSTO_Array[stoId].getUsdTokens())[0], _usdToken[stoId][0], "Incorrect _usdToken in config");
             assert.equal(
                 await I_USDTieredSTO_Array[stoId].getNumberOfTiers(),
@@ -588,7 +567,6 @@ contract("USDTieredSTO", async (accounts) => {
             _minimumInvestmentUSD.push(new BN(5));
             _fundRaiseTypes.push([0, 1, 2]);
             _wallet.push(WALLET);
-            _treasuryWallet.push(TREASURYWALLET);
             _usdToken.push([I_DaiToken.address]);
             let config = [
                 _startTime[stoId],
@@ -601,7 +579,6 @@ contract("USDTieredSTO", async (accounts) => {
                 _minimumInvestmentUSD[stoId],
                 _fundRaiseTypes[stoId],
                 _wallet[stoId],
-                _treasuryWallet[stoId],
                 _usdToken[stoId]
             ];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
@@ -625,7 +602,6 @@ contract("USDTieredSTO", async (accounts) => {
             _minimumInvestmentUSD.push(new BN(0));
             _fundRaiseTypes.push([0, 1, 2]);
             _wallet.push(WALLET);
-            _treasuryWallet.push(TREASURYWALLET);
             _usdToken.push([I_DaiToken.address]);
 
             let config = [
@@ -639,7 +615,6 @@ contract("USDTieredSTO", async (accounts) => {
                 _minimumInvestmentUSD[stoId],
                 _fundRaiseTypes[stoId],
                 _wallet[stoId],
-                _treasuryWallet[stoId],
                 _usdToken[stoId]
             ];
 
@@ -664,7 +639,6 @@ contract("USDTieredSTO", async (accounts) => {
             _minimumInvestmentUSD.push(new BN(5));
             _fundRaiseTypes.push([0, 1, 2]);
             _wallet.push(WALLET);
-            _treasuryWallet.push(TREASURYWALLET);
             _usdToken.push([I_DaiToken.address]);
 
             let config = [
@@ -678,7 +652,6 @@ contract("USDTieredSTO", async (accounts) => {
                 _minimumInvestmentUSD[stoId],
                 _fundRaiseTypes[stoId],
                 _wallet[stoId],
-                _treasuryWallet[stoId],
                 _usdToken[stoId]
             ];
 
@@ -712,7 +685,6 @@ contract("USDTieredSTO", async (accounts) => {
                     _minimumInvestmentUSD[stoId],
                     _fundRaiseTypes[stoId],
                     _wallet[stoId],
-                    _treasuryWallet[stoId],
                     _usdToken[stoId]
                 ],
                 [
@@ -726,7 +698,6 @@ contract("USDTieredSTO", async (accounts) => {
                     _minimumInvestmentUSD[stoId],
                     _fundRaiseTypes[stoId],
                     _wallet[stoId],
-                    _treasuryWallet[stoId],
                     _usdToken[stoId]
                 ],
                 [
@@ -740,7 +711,6 @@ contract("USDTieredSTO", async (accounts) => {
                     _minimumInvestmentUSD[stoId],
                     _fundRaiseTypes[stoId],
                     _wallet[stoId],
-                    _treasuryWallet[stoId],
                     _usdToken[stoId]
                 ],
                 [
@@ -754,7 +724,6 @@ contract("USDTieredSTO", async (accounts) => {
                     _minimumInvestmentUSD[stoId],
                     _fundRaiseTypes[stoId],
                     _wallet[stoId],
-                    _treasuryWallet[stoId],
                     _usdToken[stoId]
                 ]
             ];
@@ -780,7 +749,6 @@ contract("USDTieredSTO", async (accounts) => {
                 _minimumInvestmentUSD[stoId],
                 _fundRaiseTypes[stoId],
                 _wallet[stoId],
-                _treasuryWallet[stoId],
                 _usdToken[stoId]
             ];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
@@ -803,36 +771,12 @@ contract("USDTieredSTO", async (accounts) => {
                 _minimumInvestmentUSD[stoId],
                 _fundRaiseTypes[stoId],
                 wallet,
-                _treasuryWallet[stoId],
                 _usdToken[stoId]
             ];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
 
             await catchRevert(I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: ISSUER }));
         });
-
-        // it("Should fail because Zero address is not permitted for treasuryWallet", async () => {
-        //     let stoId = 0;
-
-        //     let treasuryWallet = address_zero;
-        //     let config = [
-        //         _startTime[stoId],
-        //         _endTime[stoId],
-        //         _ratePerTier[stoId],
-        //         _ratePerTierDiscountPoly[stoId],
-        //         _tokensPerTierTotal[stoId],
-        //         _tokensPerTierDiscountPoly[stoId],
-        //         _nonAccreditedLimitUSD[stoId],
-        //         _minimumInvestmentUSD[stoId],
-        //         _fundRaiseTypes[stoId],
-        //         _wallet[stoId],
-        //         treasuryWallet,
-        //         _usdToken[stoId]
-        //     ];
-        //     let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
-
-        //     await catchRevert(I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: ISSUER }));
-        // });
 
         it("Should fail because end time before start time", async () => {
             let stoId = 0;
@@ -850,7 +794,6 @@ contract("USDTieredSTO", async (accounts) => {
                 _minimumInvestmentUSD[stoId],
                 _fundRaiseTypes[stoId],
                 _wallet[stoId],
-                _treasuryWallet[stoId],
                 _usdToken[stoId]
             ];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
@@ -874,7 +817,6 @@ contract("USDTieredSTO", async (accounts) => {
                 _minimumInvestmentUSD[stoId],
                 _fundRaiseTypes[stoId],
                 _wallet[stoId],
-                _treasuryWallet[stoId],
                 _usdToken[stoId]
             ];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
@@ -951,18 +893,12 @@ contract("USDTieredSTO", async (accounts) => {
             console.log("HERE");
             await I_USDTieredSTO_Array[stoId].modifyAddresses(
                 "0x0000000000000000000000000400000000000000",
-                "0x0000000000000000000003000000000000000000",
                 [accounts[3]],
                 { from: ISSUER }
             );
             assert.equal(
                 await I_USDTieredSTO_Array[stoId].wallet.call(),
                 "0x0000000000000000000000000400000000000000",
-                "STO Configuration doesn't set as expected"
-            );
-            assert.equal(
-                await I_USDTieredSTO_Array[stoId].treasuryWallet.call(),
-                "0x0000000000000000000003000000000000000000",
                 "STO Configuration doesn't set as expected"
             );
             assert.equal((await I_USDTieredSTO_Array[stoId].getUsdTokens())[0], accounts[3], "STO Configuration doesn't set as expected");
@@ -995,6 +931,54 @@ contract("USDTieredSTO", async (accounts) => {
 
             await revertToSnapshot(snapId);
         });
+
+        it("Should failed to modify the treasury wallet address because of bad owner", async() => {
+            await catchRevert(
+                I_USDTieredSTO_Array[0].modifyTreasuryWallet(TREASURYWALLET, {from: NONACCREDITED1})
+            );
+        });
+
+        it("Should successfully modify the treasury wallet of the multiple STOs", async() => {
+            let stoId = 0;
+            await I_USDTieredSTO_Array[stoId].modifyTreasuryWallet(TREASURYWALLET, {from: ISSUER});
+            assert.equal(
+                await I_USDTieredSTO_Array[stoId].treasuryWallet.call(),
+                TREASURYWALLET,
+                "Incorrect _treasuryWallet in config"
+            ); 
+
+            stoId = 1;
+            await I_USDTieredSTO_Array[stoId].modifyTreasuryWallet(TREASURYWALLET, {from: ISSUER});
+            assert.equal(
+                await I_USDTieredSTO_Array[stoId].treasuryWallet.call(),
+                TREASURYWALLET,
+                "Incorrect _treasuryWallet in config"
+            ); 
+
+            stoId = 2;
+            await I_USDTieredSTO_Array[stoId].modifyTreasuryWallet(TREASURYWALLET, {from: ISSUER});
+            assert.equal(
+                await I_USDTieredSTO_Array[stoId].treasuryWallet.call(),
+                TREASURYWALLET,
+                "Incorrect _treasuryWallet in config"
+            );
+
+            stoId = 3;
+            await I_USDTieredSTO_Array[stoId].modifyTreasuryWallet(TREASURYWALLET, {from: ISSUER});
+            assert.equal(
+                await I_USDTieredSTO_Array[stoId].treasuryWallet.call(),
+                TREASURYWALLET,
+                "Incorrect _treasuryWallet in config"
+            );
+
+            stoId = 4;
+            await I_USDTieredSTO_Array[stoId].modifyTreasuryWallet(TREASURYWALLET, {from: ISSUER});
+            assert.equal(
+                await I_USDTieredSTO_Array[stoId].treasuryWallet.call(),
+                TREASURYWALLET,
+                "Incorrect _treasuryWallet in config"
+            );
+        })
     });
 
     describe("Test buying failure conditions", async () => {
@@ -1255,7 +1239,7 @@ contract("USDTieredSTO", async (accounts) => {
             await I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, I_DaiToken.address, { from: NONACCREDITED1 });
 
             // Change Stable coin address
-            await I_USDTieredSTO_Array[stoId].modifyAddresses(WALLET, TREASURYWALLET, [I_PolyToken.address], { from: ISSUER });
+            await I_USDTieredSTO_Array[stoId].modifyAddresses(WALLET, [I_PolyToken.address], { from: ISSUER });
 
             // NONACCREDITED DAI
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, I_DaiToken.address, { from: NONACCREDITED1 }));
@@ -1264,7 +1248,7 @@ contract("USDTieredSTO", async (accounts) => {
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(ACCREDITED1, investment_DAI, I_DaiToken.address, { from: ACCREDITED1 }));
 
             // Revert stable coin address
-            await I_USDTieredSTO_Array[stoId].modifyAddresses(WALLET, TREASURYWALLET, [I_DaiToken.address], { from: ISSUER });
+            await I_USDTieredSTO_Array[stoId].modifyAddresses(WALLET, [I_DaiToken.address], { from: ISSUER });
 
             // Make sure buying works again
             await I_USDTieredSTO_Array[stoId].buyWithUSD(ACCREDITED1, investment_DAI, I_DaiToken.address, { from: ACCREDITED1 });
@@ -1348,7 +1332,10 @@ contract("USDTieredSTO", async (accounts) => {
             await I_USDTieredSTO_Array[stoId].changeAccredited([ACCREDITED1], [true], { from: ISSUER });
 
             // Finalize STO
+            let preBalance = await I_SecurityToken.balanceOf.call(TREASURYWALLET);
             await I_USDTieredSTO_Array[stoId].finalize({ from: ISSUER });
+            let postBalance = await I_SecurityToken.balanceOf.call(TREASURYWALLET);
+            assert.isAbove(parseInt(postBalance.toString()), parseInt(preBalance.toString()));
             assert.equal(await I_USDTieredSTO_Array[stoId].isFinalized.call(), true, "STO has not been finalized");
             assert.equal(await I_USDTieredSTO_Array[stoId].isOpen(), false, "STO is not showing correct status");
 

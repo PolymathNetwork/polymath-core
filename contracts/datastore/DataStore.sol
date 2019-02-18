@@ -15,11 +15,6 @@ contract DataStore is DataStoreStorage, IDataStore {
 
     event SecurityTokenChanged(address indexed _oldSecurityToken, address indexed _newSecurityToken);
 
-    modifier onlyAuthorized() {
-        _isAuthorized();
-        _;
-    }
-
     function _isAuthorized() internal view {
         require(msg.sender == address(securityToken) ||
             msg.sender == IOwnable(address(securityToken)).owner() ||
@@ -59,27 +54,33 @@ contract DataStore is DataStoreStorage, IDataStore {
      * @param _key Unique key to identify the data
      * @param _data Data to be stored against the key
      */
-    function setUint256(bytes32 _key, uint256 _data) external onlyAuthorized {
+    function setUint256(bytes32 _key, uint256 _data) external {
+        _isAuthorized();
         _setData(_key, _data);
     }
 
-    function setBytes32(bytes32 _key, bytes32 _data) external onlyAuthorized {
+    function setBytes32(bytes32 _key, bytes32 _data) external {
+        _isAuthorized();
         _setData(_key, _data);
     }
 
-    function setAddress(bytes32 _key, address _data) external onlyAuthorized {
+    function setAddress(bytes32 _key, address _data) external {
+        _isAuthorized();
         _setData(_key, _data);
     }
 
-    function setString(bytes32 _key, string calldata _data) external onlyAuthorized {
+    function setString(bytes32 _key, string calldata _data) external {
+        _isAuthorized();
         _setData(_key, _data);
     }
 
-    function setBytes(bytes32 _key, bytes calldata _data) external onlyAuthorized {
+    function setBytes(bytes32 _key, bytes calldata _data) external {
+        _isAuthorized();
         _setData(_key, _data);
     }
 
-    function setBool(bytes32 _key, bool _data) external onlyAuthorized {
+    function setBool(bytes32 _key, bool _data) external {
+        _isAuthorized();
         _setData(_key, _data);
     }
 
@@ -88,19 +89,23 @@ contract DataStore is DataStoreStorage, IDataStore {
      * @param _key Unique key to identify the array
      * @param _data Array to be stored against the key
      */
-    function setUint256Array(bytes32 _key, uint256[] calldata _data) external onlyAuthorized {
+    function setUint256Array(bytes32 _key, uint256[] calldata _data) external {
+        _isAuthorized();
         _setData(_key, _data);
     }
 
-    function setBytes32Array(bytes32 _key, bytes32[] calldata _data) external onlyAuthorized {
+    function setBytes32Array(bytes32 _key, bytes32[] calldata _data) external {
+        _isAuthorized();
         _setData(_key, _data);
     }
 
-    function setAddressArray(bytes32 _key, address[] calldata _data) external onlyAuthorized {
+    function setAddressArray(bytes32 _key, address[] calldata _data) external {
+        _isAuthorized();
         _setData(_key, _data);
     }
 
-    function setBoolArray(bytes32 _key, bool[] calldata _data) external onlyAuthorized {
+    function setBoolArray(bytes32 _key, bool[] calldata _data) external {
+        _isAuthorized();
         _setData(_key, _data);
     }
 
@@ -109,19 +114,23 @@ contract DataStore is DataStoreStorage, IDataStore {
      * @param _key Unique key to identify the array
      * @param _data Element to push into the array
      */
-    function insertUint256(bytes32 _key, uint256 _data) external onlyAuthorized {
+    function insertUint256(bytes32 _key, uint256 _data) external {
+        _isAuthorized();
         _insertData(_key, _data);
     }
 
-    function insertBytes32(bytes32 _key, bytes32 _data) external onlyAuthorized {
+    function insertBytes32(bytes32 _key, bytes32 _data) external {
+        _isAuthorized();
         _insertData(_key, _data);
     }
 
-    function insertAddress(bytes32 _key, address _data) external onlyAuthorized {
+    function insertAddress(bytes32 _key, address _data) external {
+        _isAuthorized();
         _insertData(_key, _data);
     }
 
-    function insertBool(bytes32 _key, bool _data) external onlyAuthorized {
+    function insertBool(bytes32 _key, bool _data) external {
+        _isAuthorized();
         _insertData(_key, _data);
     }
 
@@ -131,19 +140,23 @@ contract DataStore is DataStoreStorage, IDataStore {
      * @param _key Unique key to identify the array
      * @param _index Index of the element to delete
      */
-    function deleteUint256(bytes32 _key, uint256 _index) external onlyAuthorized {
+    function deleteUint256(bytes32 _key, uint256 _index) external {
+        _isAuthorized();
         _deleteUint(_key, _index);
     }
 
-    function deleteBytes32(bytes32 _key, uint256 _index) external onlyAuthorized {
+    function deleteBytes32(bytes32 _key, uint256 _index) external {
+        _isAuthorized();
         _deleteBytes32(_key, _index);
     }
 
-    function deleteAddress(bytes32 _key, uint256 _index) external onlyAuthorized {
+    function deleteAddress(bytes32 _key, uint256 _index) external {
+        _isAuthorized();
         _deleteAddress(_key, _index);
     }
 
-    function deleteBool(bytes32 _key, uint256 _index) external onlyAuthorized {
+    function deleteBool(bytes32 _key, uint256 _index) external {
+        _isAuthorized();
         _deleteBool(_key, _index);
     }
 
@@ -152,25 +165,29 @@ contract DataStore is DataStoreStorage, IDataStore {
      * @param _keys Array of keys to identify the data
      * @param _data Array of data to be stored against the respective keys
      */
-    function setUint256Multi(bytes32[] calldata _keys, uint256[] calldata _data) external onlyAuthorized validArrayLength(_keys.length, _data.length) {
+    function setUint256Multi(bytes32[] calldata _keys, uint256[] calldata _data) external validArrayLength(_keys.length, _data.length) {
+        _isAuthorized();
         for (uint256 i = 0; i < _keys.length; i++) {
             _setData(_keys[i], _data[i]);
         }
     }
 
-    function setBytes32Multi(bytes32[] calldata _keys, bytes32[] calldata _data) external onlyAuthorized validArrayLength(_keys.length, _data.length) {
+    function setBytes32Multi(bytes32[] calldata _keys, bytes32[] calldata _data) external validArrayLength(_keys.length, _data.length) {
+        _isAuthorized();
         for (uint256 i = 0; i < _keys.length; i++) {
             _setData(_keys[i], _data[i]);
         }
     }
 
-    function setAddressMulti(bytes32[] calldata _keys, address[] calldata _data) external onlyAuthorized validArrayLength(_keys.length, _data.length) {
+    function setAddressMulti(bytes32[] calldata _keys, address[] calldata _data) external validArrayLength(_keys.length, _data.length) {
+        _isAuthorized();
         for (uint256 i = 0; i < _keys.length; i++) {
             _setData(_keys[i], _data[i]);
         }
     }
 
-    function setBoolMulti(bytes32[] calldata _keys, bool[] calldata _data) external onlyAuthorized validArrayLength(_keys.length, _data.length) {
+    function setBoolMulti(bytes32[] calldata _keys, bool[] calldata _data) external validArrayLength(_keys.length, _data.length) {
+        _isAuthorized();
         for (uint256 i = 0; i < _keys.length; i++) {
             _setData(_keys[i], _data[i]);
         }
@@ -181,25 +198,29 @@ contract DataStore is DataStoreStorage, IDataStore {
      * @param _keys Array of keys to identify the data
      * @param _data Array of data to be inserted in arrays of the respective keys
      */
-    function insertUint256Multi(bytes32[] calldata _keys, uint256[] calldata _data) external onlyAuthorized validArrayLength(_keys.length, _data.length) {
+    function insertUint256Multi(bytes32[] calldata _keys, uint256[] calldata _data) external validArrayLength(_keys.length, _data.length) {
+        _isAuthorized();
         for (uint256 i = 0; i < _keys.length; i++) {
             _insertData(_keys[i], _data[i]);
         }
     }
 
-    function insertBytes32Multi(bytes32[] calldata _keys, bytes32[] calldata _data) external onlyAuthorized validArrayLength(_keys.length, _data.length) {
+    function insertBytes32Multi(bytes32[] calldata _keys, bytes32[] calldata _data) external validArrayLength(_keys.length, _data.length) {
+        _isAuthorized();
         for (uint256 i = 0; i < _keys.length; i++) {
             _insertData(_keys[i], _data[i]);
         }
     }
 
-    function insertAddressMulti(bytes32[] calldata _keys, address[] calldata _data) external onlyAuthorized validArrayLength(_keys.length, _data.length) {
+    function insertAddressMulti(bytes32[] calldata _keys, address[] calldata _data) external validArrayLength(_keys.length, _data.length) {
+        _isAuthorized();
         for (uint256 i = 0; i < _keys.length; i++) {
             _insertData(_keys[i], _data[i]);
         }
     }
 
-    function insertBoolMulti(bytes32[] calldata _keys, bool[] calldata _data) external onlyAuthorized validArrayLength(_keys.length, _data.length) {
+    function insertBoolMulti(bytes32[] calldata _keys, bool[] calldata _data) external validArrayLength(_keys.length, _data.length) {
+        _isAuthorized();
         for (uint256 i = 0; i < _keys.length; i++) {
             _insertData(_keys[i], _data[i]);
         }

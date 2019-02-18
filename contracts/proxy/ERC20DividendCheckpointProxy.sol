@@ -2,14 +2,14 @@ pragma solidity ^0.5.0;
 
 import "../modules/Checkpoint/ERC20DividendCheckpointStorage.sol";
 import "../modules/Checkpoint/DividendCheckpointStorage.sol";
-import "./OwnedProxy.sol";
+import "./OwnedUpgradeabilityProxy.sol";
 import "../Pausable.sol";
 import "../modules/ModuleStorage.sol";
 
 /**
  * @title Transfer Manager module for core transfer validation functionality
  */
-contract ERC20DividendCheckpointProxy is ERC20DividendCheckpointStorage, DividendCheckpointStorage, ModuleStorage, Pausable, OwnedProxy {
+contract ERC20DividendCheckpointProxy is ERC20DividendCheckpointStorage, DividendCheckpointStorage, ModuleStorage, Pausable, OwnedUpgradeabilityProxy {
     /**
     * @notice Constructor
     * @param _securityToken Address of the security token

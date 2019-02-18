@@ -1,14 +1,14 @@
 pragma solidity ^0.5.0;
 
 import "../modules/TransferManager/PercentageTransferManagerStorage.sol";
-import "./OwnedProxy.sol";
+import "./OwnedUpgradeabilityProxy.sol";
 import "../Pausable.sol";
 import "../modules/ModuleStorage.sol";
 
 /**
  * @title PercentageTransferManager module Proxy
  */
-contract PercentageTransferManagerProxy is PercentageTransferManagerStorage, ModuleStorage, Pausable, OwnedProxy {
+contract PercentageTransferManagerProxy is PercentageTransferManagerStorage, ModuleStorage, Pausable, OwnedUpgradeabilityProxy {
 
     /**
     * @notice Constructor

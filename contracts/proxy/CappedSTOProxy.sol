@@ -1,6 +1,6 @@
 pragma solidity ^0.5.0;
 
-import "./OwnedProxy.sol";
+import "./OwnedUpgradeabilityProxy.sol";
 import "../Pausable.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "../modules/STO/STOStorage.sol";
@@ -10,7 +10,7 @@ import "../modules/STO/CappedSTOStorage.sol";
 /**
  * @title CappedSTO module Proxy
  */
-contract CappedSTOProxy is CappedSTOStorage, STOStorage, ModuleStorage, Pausable, ReentrancyGuard, OwnedProxy {
+contract CappedSTOProxy is CappedSTOStorage, STOStorage, ModuleStorage, Pausable, ReentrancyGuard, OwnedUpgradeabilityProxy {
 
     /**
     * @notice Constructor

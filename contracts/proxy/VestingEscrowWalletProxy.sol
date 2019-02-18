@@ -1,13 +1,13 @@
 pragma solidity ^0.5.0;
 
 import "../storage/VestingEscrowWalletStorage.sol";
-import "./OwnedProxy.sol";
+import "./OwnedUpgradeabilityProxy.sol";
 import "../Pausable.sol";
 import "../modules/ModuleStorage.sol";
  /**
  * @title Escrow wallet module for vesting functionality
  */
-contract VestingEscrowWalletProxy is VestingEscrowWalletStorage, ModuleStorage, Pausable, OwnedProxy {
+contract VestingEscrowWalletProxy is VestingEscrowWalletStorage, ModuleStorage, Pausable, OwnedUpgradeabilityProxy {
      /**
     * @notice Constructor
     * @param _securityToken Address of the security token

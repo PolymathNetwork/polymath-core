@@ -1,7 +1,7 @@
 pragma solidity ^0.5.0;
 
 import "../storage/USDTieredSTOStorage.sol";
-import "./OwnedProxy.sol";
+import "./OwnedUpgradeabilityProxy.sol";
 import "../Pausable.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "../modules/STO/STOStorage.sol";
@@ -10,7 +10,7 @@ import "../modules/ModuleStorage.sol";
 /**
  * @title USDTiered STO module Proxy
  */
-contract USDTieredSTOProxy is USDTieredSTOStorage, STOStorage, ModuleStorage, Pausable, ReentrancyGuard, OwnedProxy {
+contract USDTieredSTOProxy is USDTieredSTOStorage, STOStorage, ModuleStorage, Pausable, ReentrancyGuard, OwnedUpgradeabilityProxy {
     /**
     * @notice Constructor
     * @param _securityToken Address of the security token

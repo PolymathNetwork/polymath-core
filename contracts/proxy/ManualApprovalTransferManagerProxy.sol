@@ -1,14 +1,14 @@
 pragma solidity ^0.5.0;
 
 import "../modules/TransferManager/ManualApprovalTransferManagerStorage.sol";
-import "./OwnedProxy.sol";
+import "./OwnedUpgradeabilityProxy.sol";
 import "../Pausable.sol";
 import "../modules/ModuleStorage.sol";
 
 /**
  @title ManualApprovalTransferManager module Proxy
  */
-contract ManualApprovalTransferManagerProxy is ManualApprovalTransferManagerStorage, ModuleStorage, Pausable, OwnedProxy {
+contract ManualApprovalTransferManagerProxy is ManualApprovalTransferManagerStorage, ModuleStorage, Pausable, OwnedUpgradeabilityProxy {
 
     /**
     * @notice Constructor
@@ -17,7 +17,7 @@ contract ManualApprovalTransferManagerProxy is ManualApprovalTransferManagerStor
     * @param _implementation representing the address of the new implementation to be set
     */
     constructor (
-        string memory _version, 
+        string memory _version,
         address _securityToken,
         address _polyAddress,
         address _implementation

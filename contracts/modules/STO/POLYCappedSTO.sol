@@ -46,7 +46,8 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
         uint256 _spentValue
     );
     event ReserveTokenMint(address indexed _owner, address indexed _treasuryWallet, uint256 _tokens);
-    event SetAddresses(address indexed _wallet, address indexed _treasuryWallet);
+    event SetWallet(address _oldWallet, address _newWallet);
+    event SetTreasuryWallet(address _oldWallet, address _newWallet);
     event SetLimits(uint256 _minimumInvestment, uint256 _nonAccreditedLimit, uint256 _maxNonAccreditedInvestors);
     event SetTimes(uint256 _startTime, uint256 _endTime);
     event SetRate(uint256 _rate);
@@ -81,7 +82,6 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
      * @param _nonAccreditedLimit Limit in fund raise type (* 10**18) for non-accredited investors
      * @param _maxNonAccreditedInvestors Maximum number of non-accredited investors allowed (0 = unlimited)
      * @param _wallet Ethereum account address to hold the funds
-     * @param _treasuryWallet Ethereum account where unsold Tokens will be sent (address 0x = do not mint unsold)
      */
     function configure(
         uint256 _startTime,
@@ -91,8 +91,7 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
         uint256 _minimumInvestment,
         uint256 _nonAccreditedLimit,
         uint256 _maxNonAccreditedInvestors,
-        address payable _wallet,
-        address _treasuryWallet
+        address payable _wallet
     )
         external
         onlyFactory
@@ -104,7 +103,7 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
         _modifyTimes(_startTime, _endTime);
         _modifyCap (_cap);
         _modifyRate (_rate);
-        _modifyAddresses(_wallet, _treasuryWallet);
+        _modifyWalletAddress(_wallet);
         _modifyLimits(_minimumInvestment, _nonAccreditedLimit, _maxNonAccreditedInvestors);
     }
 
@@ -150,11 +149,19 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
     /**
      * @dev Modifies addresses used as wallet and treasury wallet
      * @param _wallet Address of wallet where funds are sent
-     * @param _treasuryWallet Ethereum address where unsold Tokens will be sent (address 0x = do not mint unsold)
      */
-    function modifyAddresses(address payable _wallet, address _treasuryWallet) external onlyOwner {
+    function modifyWalletAddress(address payable _wallet) external onlyOwner {
         //can be modified even when STO started
-        _modifyAddresses(_wallet, _treasuryWallet);
+        _modifyWalletAddress(_wallet);
+    }
+
+    /**
+     * @notice Use to change the treasury wallet
+     * @param _treasuryWallet Ethereum account address to receive unsold tokens
+     */
+    function modifyTreasuryWallet(address _treasuryWallet) external onlyOwner {
+        emit SetTreasuryWallet(treasuryWallet, _treasuryWallet);
+        treasuryWallet = _treasuryWallet;
     }
 
     function _modifyLimits(
@@ -188,11 +195,10 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
         emit SetTimes(_startTime, _endTime);
     }
 
-    function _modifyAddresses(address payable _wallet, address _treasuryWallet) internal {
+    function _modifyWalletAddress(address payable _wallet) internal {
         require(_wallet != address(0), "Invalid wallet");
+        emit SetWallet(wallet, _wallet);
         wallet = _wallet;
-        treasuryWallet = _treasuryWallet;
-        emit SetAddresses(wallet, treasuryWallet);
     }
 
     ////////////////////
@@ -525,9 +531,9 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
 
     /**
      * @notice This function returns the signature of configure function
-     * @return bytes4 Configure function signature = bytes4(keccak256("configure(uint256,uint256,uint256,uint256,uint256,uint256,uint256,address,address)"))
+     * @return bytes4 Configure function signature = bytes4(keccak256("configure(uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)"))
      */
     function getInitFunction() external pure returns (bytes4) {
-        return 0xe7830bae;
+        return 0x3305f269;
     }
 }

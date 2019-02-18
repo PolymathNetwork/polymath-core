@@ -73,7 +73,7 @@ contract POLYCappedSTOFactory is ModuleFactory {
     function getInstructions() external view returns(string memory) {
         /*solium-disable-next-line max-len*/
         // NEED TO UPDATE INSTRUCTIONS
-        return "Initialises a POLY capped STO. Init parameters are _startTime (time STO starts), _endTime (time STO ends), _cap (cap in tokens for STO), _rate (POLY to token rate), _minimumInvestment (required minimum investment), _nonAccreditedLimit (maximum investment for non-accredited investors), _maxNonAccreditedInvestors (maximum number of non accredited investors), _wallet (address which will receive funds), _treasuryWallet (address which will receive unsold tokens)";
+        return "Initialises a POLY capped STO. Init parameters are _startTime (time STO starts), _endTime (time STO ends), _cap (cap in tokens for STO), _rate (POLY to token rate), _minimumInvestment (required minimum investment), _nonAccreditedLimit (maximum investment for non-accredited investors), _maxNonAccreditedInvestors (maximum number of non accredited investors), _wallet (address which will receive funds)";
     }
 
     /**

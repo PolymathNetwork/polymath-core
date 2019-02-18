@@ -5,11 +5,11 @@ const Web3 = require("web3");
 let BN = Web3.utils.BN;
 
 //this, _investor, _fromTime, _toTime, _validTo
-function signData(tmAddress, investorAddress, fromTime, toTime, expiryTime, restricted, validFrom, validTo, nonce, pk) {
+function signData(tmAddress, investorAddress, fromTime, toTime, expiryTime, validFrom, validTo, nonce, pk) {
     let packedData = utils
         .solidityKeccak256(
-            ["address", "address", "uint256", "uint256", "uint256", "bool", "uint256", "uint256", "uint256"],
-            [tmAddress, investorAddress, fromTime, toTime, expiryTime, restricted, validFrom, validTo, nonce]
+            ["address", "address", "uint256", "uint256", "uint256", "uint256", "uint256", "uint256"],
+            [tmAddress, investorAddress, fromTime, toTime, expiryTime, validFrom, validTo, nonce]
         )
         .slice(2);
     packedData = new Buffer(packedData, "hex");
@@ -27,8 +27,8 @@ function getSignSTMData(tmAddress, nonce, expiry, fromAddress, toAddress, amount
     return data;
 }
 
-function getSignGTMData(tmAddress, investorAddress, fromTime, toTime, expiryTime, restricted, accredited, validFrom, validTo, nonce, pk) {
-    let hash = web3.utils.soliditySha3({t: 'address', v: tmAddress}, {t: 'address', v: investorAddress}, {t: 'uint256', v: new BN(fromTime)}, {t: 'uint256', v: new BN(toTime)}, {t: 'uint256', v: new BN(expiryTime)}, {t: 'bool', v: restricted}, {t: 'bool', v: accredited}, {t: 'uint256', v: new BN(validFrom)}, {t: 'uint256', v: new BN(validTo)}, {t: 'uint256', v: new BN(nonce)});
+function getSignGTMData(tmAddress, investorAddress, fromTime, toTime, expiryTime, validFrom, validTo, nonce, pk) {
+    let hash = web3.utils.soliditySha3({t: 'address', v: tmAddress}, {t: 'address', v: investorAddress}, {t: 'uint256', v: new BN(fromTime)}, {t: 'uint256', v: new BN(toTime)}, {t: 'uint256', v: new BN(expiryTime)}, {t: 'uint256', v: new BN(validFrom)}, {t: 'uint256', v: new BN(validTo)}, {t: 'uint256', v: new BN(nonce)});
     let signature = (web3.eth.accounts.sign(hash, pk));
     return signature.signature;
 }

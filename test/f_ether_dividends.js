@@ -207,13 +207,11 @@ contract("EtherDividendCheckpoint", async (accounts) => {
         it("Buy some tokens for account_investor1 (1 ETH)", async () => {
             // Add the Investor in to the whitelist
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
+            let tx = await I_GeneralTransferManager.modifyKYCData(
                 account_investor1,
                 currentTime,
                 currentTime,
                 currentTime.add(new BN(duration.days(300000))),
-                true,
-                false,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -238,13 +236,11 @@ contract("EtherDividendCheckpoint", async (accounts) => {
         it("Buy some tokens for account_investor2 (2 ETH)", async () => {
             // Add the Investor in to the whitelist
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
+            let tx = await I_GeneralTransferManager.modifyKYCData(
                 account_investor2,
                 currentTime,
                 currentTime,
                 currentTime.add(new BN(duration.days(3000000))),
-                true,
-                false,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -373,13 +369,11 @@ contract("EtherDividendCheckpoint", async (accounts) => {
         it("Buy some tokens for account_temp (1 ETH)", async () => {
             // Add the Investor in to the whitelist
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
+            let tx = await I_GeneralTransferManager.modifyKYCData(
                 account_temp,
                 currentTime,
                 currentTime,
                 currentTime.add(new BN(duration.days(200000))),
-                true,
-                false,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -425,13 +419,11 @@ contract("EtherDividendCheckpoint", async (accounts) => {
         it("Buy some tokens for account_investor3 (7 ETH)", async () => {
             // Add the Investor in to the whitelist
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
+            let tx = await I_GeneralTransferManager.modifyKYCData(
                 account_investor3,
                 currentTime,
                 currentTime,
                 currentTime.add(new BN(duration.days(10000))),
-                true,
-                false,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -732,13 +724,11 @@ contract("EtherDividendCheckpoint", async (accounts) => {
         });
 
         it("Assign token balance to an address that can't receive funds", async () => {
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
+            let tx = await I_GeneralTransferManager.modifyKYCData(
                 I_PolyToken.address,
                 currentTime,
                 currentTime,
                 currentTime.add(new BN(duration.days(1000000))),
-                true,
-                false,
                 {
                     from: account_issuer,
                     gas: 500000

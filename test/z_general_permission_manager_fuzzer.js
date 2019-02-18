@@ -357,18 +357,16 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
 
                 console.log("3");
                 if (randomPerms === "WHITELIST") {
-                    let tx = await I_GeneralTransferManager.modifyWhitelist(accounts[j], fromTime, toTime, expiryTime, 1, false, {
+                    let tx = await I_GeneralTransferManager.modifyKYCData(accounts[j], fromTime, toTime, expiryTime, {
                         from: accounts[j]
                     });
                     assert.equal(tx.logs[0].args._investor, accounts[j]);
                     console.log("3.1");
-                    let tx2 = await I_GeneralTransferManager.modifyWhitelistMulti(
+                    let tx2 = await I_GeneralTransferManager.modifyKYCDataMulti(
                         [accounts[3], accounts[4]],
                         [fromTime, fromTime],
                         [toTime, toTime],
                         [expiryTime, expiryTime],
-                        [1, 1],
-                        [false, false],
                         { from: accounts[j] }
                     );
                     console.log(tx2.logs[1].args);
@@ -377,17 +375,15 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                 } else {
                     console.log("3.3");
                     await catchRevert(
-                        I_GeneralTransferManager.modifyWhitelist(accounts[j], fromTime, toTime, expiryTime, 1, false, { from: accounts[j] })
+                        I_GeneralTransferManager.modifyKYCData(accounts[j], fromTime, toTime, expiryTime, { from: accounts[j] })
                     );
                     console.log("3.4");
                     await catchRevert(
-                        I_GeneralTransferManager.modifyWhitelistMulti(
+                        I_GeneralTransferManager.modifyKYCDataMulti(
                             [accounts[3], accounts[4]],
                             [fromTime, fromTime],
                             [toTime, toTime],
                             [expiryTime, expiryTime],
-                            [1, 1],
-                            [false, false],
                             { from: accounts[j] }
                         )
                     );

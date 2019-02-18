@@ -205,13 +205,11 @@ contract("CountTransferManager", async (accounts) => {
         it("Should Buy the tokens", async () => {
             // Add the Investor in to the whitelist
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
+            let tx = await I_GeneralTransferManager.modifyKYCData(
                 account_investor1,
                 currentTime,
                 currentTime,
                 currentTime.add(new BN(duration.days(10))),
-                true,
-                false,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -236,13 +234,11 @@ contract("CountTransferManager", async (accounts) => {
         it("Should Buy some more tokens", async () => {
             // Add the Investor in to the whitelist
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
+            let tx = await I_GeneralTransferManager.modifyKYCData(
                 account_investor2,
                 currentTime,
                 currentTime,
                 currentTime.add(new BN(duration.days(10))),
-                true,
-                false,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -264,13 +260,11 @@ contract("CountTransferManager", async (accounts) => {
         it("Should able to buy some more tokens (more than 2 hoders) -- because CountTransferManager is paused", async () => {
             await I_CountTransferManager.pause({ from: account_issuer });
             let snapId = await takeSnapshot();
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
+            let tx = await I_GeneralTransferManager.modifyKYCData(
                 account_investor3,
                 currentTime,
                 currentTime,
                 currentTime.add(new BN(duration.days(10))),
-                true,
-                false,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -290,13 +284,11 @@ contract("CountTransferManager", async (accounts) => {
         it("Should fail to buy some more tokens (more than 2 holders)", async () => {
             await I_CountTransferManager.unpause({ from: account_issuer });
             // Add the Investor in to the whitelist
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
+            let tx = await I_GeneralTransferManager.modifyKYCData(
                 account_investor3,
                 currentTime,
                 currentTime,
                 currentTime.add(new BN(duration.days(10))),
-                true,
-                false,
                 {
                     from: account_issuer,
                     gas: 500000
@@ -379,52 +371,44 @@ contract("CountTransferManager", async (accounts) => {
             });
 
             it("add 3 holders to the token", async () => {
-                await I_GeneralTransferManager2.modifyWhitelist(
+                await I_GeneralTransferManager2.modifyKYCData(
                     account_investor1,
                     currentTime,
                     currentTime,
                     currentTime.add(new BN(duration.days(10))),
-                    true,
-                    false,
                     {
                         from: account_issuer,
                         gas: 500000
                     }
                 );
 
-                await I_GeneralTransferManager2.modifyWhitelist(
+                await I_GeneralTransferManager2.modifyKYCData(
                     account_investor2,
                     currentTime,
                     currentTime,
                     currentTime.add(new BN(duration.days(10))),
-                    true,
-                    false,
                     {
                         from: account_issuer,
                         gas: 500000
                     }
                 );
 
-                await I_GeneralTransferManager2.modifyWhitelist(
+                await I_GeneralTransferManager2.modifyKYCData(
                     account_investor3,
                     currentTime,
                     currentTime,
                     currentTime.add(new BN(duration.days(10))),
-                    true,
-                    false,
                     {
                         from: account_issuer,
                         gas: 500000
                     }
                 );
 
-                await I_GeneralTransferManager2.modifyWhitelist(
+                await I_GeneralTransferManager2.modifyKYCData(
                     account_investor4,
                     currentTime,
                     currentTime,
                     currentTime.add(new BN(duration.days(10))),
-                    true,
-                    false,
                     {
                         from: account_issuer,
                         gas: 500000
@@ -470,11 +454,11 @@ contract("CountTransferManager", async (accounts) => {
 
             it("Should allow add a new token holder while transfer all the tokens at one go", async () => {
                 let amount = await I_SecurityToken2.balanceOf(account_investor2);
-                let investorCount = await stGetter2.getInvestorCount({ from: account_investor2 });
+                let investorCount = await stGetter2.holderCount({ from: account_investor2 });
                 console.log("current investor count is " + investorCount);
                 await I_SecurityToken2.transfer(account_investor4, amount, { from: account_investor2 });
                 assert((await I_SecurityToken2.balanceOf(account_investor4)).toString(), amount.toString(), { from: account_investor2 });
-                assert(await stGetter2.getInvestorCount({ from: account_investor2 }), investorCount);
+                assert(await stGetter2.holderCount({ from: account_investor2 }), investorCount);
             });
         });
 

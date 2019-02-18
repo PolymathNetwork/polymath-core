@@ -54,7 +54,7 @@ contract CountTransferManager is CountTransferManagerStorage, TransferManager {
         returns(Result, bytes32) 
     {
         if (!paused) {
-            if (maxHolderCount < ISecurityToken(securityToken).getInvestorCount()) {
+            if (maxHolderCount < ISecurityToken(securityToken).holderCount()) {
                 // Allow transfers to existing maxHolders
                 if (ISecurityToken(securityToken).balanceOf(_to) != 0 || ISecurityToken(securityToken).balanceOf(_from) == _amount) {
                     return (Result.NA, bytes32(0));

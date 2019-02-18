@@ -228,13 +228,11 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Transfer some tokens to different account", async() => {
             // Add tokens in to the whitelist
             let newLatestTime = await getLatestTime();
-            await I_GeneralTransferManager.modifyWhitelistMulti(
+            await I_GeneralTransferManager.modifyKYCDataMulti(
                     [account_investor1, account_investor2, account_investor3],
                     [newLatestTime, newLatestTime, newLatestTime],
                     [newLatestTime, newLatestTime, newLatestTime],
                     [newLatestTime.add(new BN(duration.days(60))), newLatestTime.add(new BN(duration.days(60))), newLatestTime.add(new BN(duration.days(60)))],
-                    [true, true, true],
-                    [false,false,false],
                     {
                         from: token_owner
                     }
@@ -1307,13 +1305,11 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
         it("Should add the investor 4 in the whitelist", async() => {
             let newLatestTime = await getLatestTime();
-            await I_GeneralTransferManager.modifyWhitelist(
+            await I_GeneralTransferManager.modifyKYCData(
                 account_investor4,
                 newLatestTime,
                 newLatestTime,
                 newLatestTime.add(new BN(duration.days(30))),
-                true,
-                false,
                 {
                     from: token_owner
                 }

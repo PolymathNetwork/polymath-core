@@ -66,8 +66,8 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     event DisableController();
     
     function _isModule(address _module, uint8 _type) internal view returns(bool) {
-        require(modulesToData[_module].module == _module, "Wrong address");
-        require(!modulesToData[_module].isArchived, "Module archived");
+        if (modulesToData[_module].module != _module || modulesToData[_module].isArchived)
+            return false;
         for (uint256 i = 0; i < modulesToData[_module].moduleTypes.length; i++) {
             if (modulesToData[_module].moduleTypes[i] == _type) {
                 return true;
@@ -292,7 +292,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     * @param _value value of transfer
     */
     function _adjustInvestorCount(address _from, address _to, uint256 _value) internal {
-        TokenLib.adjustInvestorCount(investorData, _from, _to, _value, balanceOf(_to), balanceOf(_from));
+        holderCount = TokenLib.adjustInvestorCount(holderCount, _from, _to, _value, balanceOf(_to), balanceOf(_from), dataStore);
     }
 
     /**
@@ -315,7 +315,6 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         emit FreezeTransfers(false);
     }
 
-    /**
     /**
      * @notice Internal - adjusts token holder balance at checkpoint before a token transfer
      * @param _investor address of the token holder affected
@@ -752,5 +751,4 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         featureRegistry = PolymathRegistry(polymathRegistry).getAddress("FeatureRegistry");
         polyToken = PolymathRegistry(polymathRegistry).getAddress("PolyToken");
     }
-
 }

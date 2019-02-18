@@ -181,13 +181,11 @@ contract("ScheduledCheckpoint", async (accounts) => {
             // Add the Investor in to the whitelist
             console.log("3: " + await latestTime());
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
+            let tx = await I_GeneralTransferManager.modifyKYCData(
                 account_investor1,
                 currentTime,
                 currentTime,
                 currentTime.add(new BN(duration.days(10))),
-                true,
-                false,
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -227,13 +225,11 @@ contract("ScheduledCheckpoint", async (accounts) => {
         it("Should Buy some more tokens for account_investor2", async () => {
             // Add the Investor in to the whitelist
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
+            let tx = await I_GeneralTransferManager.modifyKYCData(
                 account_investor2,
                 currentTime,
                 currentTime,
                 currentTime.add(new BN(duration.days(10))),
-                true,
-                false,
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -264,13 +260,11 @@ contract("ScheduledCheckpoint", async (accounts) => {
         });
 
         it("Add a new token holder - account_investor3", async () => {
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
+            let tx = await I_GeneralTransferManager.modifyKYCData(
                 account_investor3,
                 currentTime,
                 currentTime,
                 currentTime.add(new BN(duration.days(10))),
-                true,
-                false,
                 {
                     from: account_issuer,
                     gas: 6000000

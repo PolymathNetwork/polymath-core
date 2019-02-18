@@ -3,6 +3,7 @@ pragma solidity ^0.5.0;
 import "./OZStorage.sol";
 import "./SecurityTokenStorage.sol";
 import "../libraries/TokenLib.sol";
+import "../interfaces/IDataStore.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "../modules/PermissionManager/IPermissionManager.sol";
 
@@ -42,11 +43,12 @@ contract STGetter is OZStorage, SecurityTokenStorage {
     }
 
     /**
-     * @notice Returns the investor count
+     * @notice Returns the count of address that were added as (potential) investors
      * @return Investor count
      */
     function getInvestorCount() external view returns(uint256) {
-        return investorData.investorCount;
+        IDataStore dataStoreInstance = IDataStore(dataStore);
+        return dataStoreInstance.getAddressArrayLength(INVESTORSKEY);
     }
 
     /**
@@ -54,33 +56,35 @@ contract STGetter is OZStorage, SecurityTokenStorage {
      * NB - this length may differ from investorCount as it contains all investors that ever held tokens
      * @return list of addresses
      */
-    function getInvestors() external view returns(address[] memory) {
-        return investorData.investors;
+    function getInvestors() public view returns(address[] memory investors) {
+        IDataStore dataStoreInstance = IDataStore(dataStore);
+        investors = dataStoreInstance.getAddressArray(INVESTORSKEY);
     }
 
     /**
-     * @notice returns an array of investors at a given checkpoint
-     * NB - this length may differ from investorCount as it contains all investors that ever held tokens
+     * @notice returns an array of investors with non zero balance at a given checkpoint
      * @param _checkpointId Checkpoint id at which investor list is to be populated
      * @return list of investors
      */
     function getInvestorsAt(uint256 _checkpointId) external view returns(address[] memory) {
-        uint256 count = 0;
+        uint256 count;
         uint256 i;
-        for (i = 0; i < investorData.investors.length; i++) {
-            if (balanceOfAt(investorData.investors[i], _checkpointId) > 0) {
+        IDataStore dataStoreInstance = IDataStore(dataStore);
+        address[] memory investors = dataStoreInstance.getAddressArray(INVESTORSKEY);
+        for (i = 0; i < investors.length; i++) {
+            if (balanceOfAt(investors[i], _checkpointId) > 0) {
                 count++;
             }
         }
-        address[] memory investors = new address[](count);
+        address[] memory holders = new address[](count);
         count = 0;
-        for (i = 0; i < investorData.investors.length; i++) {
-            if (balanceOfAt(investorData.investors[i], _checkpointId) > 0) {
-                investors[count] = investorData.investors[i];
+        for (i = 0; i < investors.length; i++) {
+            if (balanceOfAt(investors[i], _checkpointId) > 0) {
+                holders[count] = investors[i];
                 count++;
             }
         }
-        return investors;
+        return holders;
     }
 
     /**
@@ -144,20 +148,14 @@ contract STGetter is OZStorage, SecurityTokenStorage {
 
     /**
      * @notice generates subset of investors
-     * NB - can be used in batches if investor list is large
+     * NB - can be used in batches if investor list is large. start and end both are included in array.
      * @param _start Position of investor to start iteration from
      * @param _end Position of investor to stop iteration at
      * @return list of investors
      */
     function iterateInvestors(uint256 _start, uint256 _end) external view returns(address[] memory) {
-        require(_end <= investorData.investors.length, "Invalid end");
-        address[] memory investors = new address[](_end.sub(_start));
-        uint256 index = 0;
-        for (uint256 i = _start; i < _end; i++) {
-            investors[index] = investorData.investors[i];
-            index++;
-        }
-        return investors;
+        IDataStore dataStoreInstance = IDataStore(dataStore);
+        return dataStoreInstance.getAddressArrayElements(INVESTORSKEY, _start, _end);
     }
 
     /**

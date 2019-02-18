@@ -199,7 +199,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         internal
     {
         require(
-        	_tokensPerTierTotal.length > 0 &&
+            _tokensPerTierTotal.length > 0 &&
             _ratePerTier.length == _tokensPerTierTotal.length &&
             _ratePerTierDiscountPoly.length == _tokensPerTierTotal.length &&
             _tokensPerTierDiscountPoly.length == _tokensPerTierTotal.length,
@@ -273,24 +273,6 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
     }
 
     /**
-     * @notice Modifies the list of accredited addresses
-     * @param _investors Array of investor addresses to modify
-     * @param _accredited Array of bools specifying accreditation status
-     */
-    function changeAccredited(address[] memory _investors, bool[] memory _accredited) public onlyOwner {
-        require(_investors.length == _accredited.length, "Array length mismatch");
-        for (uint256 i = 0; i < _investors.length; i++) {
-            if (_accredited[i]) {
-                investors[_investors[i]].accredited = uint8(1);
-            } else {
-                investors[_investors[i]].accredited = uint8(0);
-            }
-            _addToInvestorsList(_investors[i]);
-            emit SetAccredited(_investors[i], _accredited[i]);
-        }
-    }
-
-    /**
      * @notice Modifies the list of overrides for non-accredited limits in USD
      * @param _investors Array of investor addresses to modify
      * @param _nonAccreditedLimit Array of uints specifying non-accredited limits
@@ -299,34 +281,26 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         //nonAccreditedLimitUSDOverride
         require(_investors.length == _nonAccreditedLimit.length, "Array length mismatch");
         for (uint256 i = 0; i < _investors.length; i++) {
-            investors[_investors[i]].nonAccreditedLimitUSDOverride = _nonAccreditedLimit[i];
-            _addToInvestorsList(_investors[i]);
+            nonAccreditedLimitUSDOverride[_investors[i]] = _nonAccreditedLimit[i];
             emit SetNonAccreditedLimit(_investors[i], _nonAccreditedLimit[i]);
-        }
-    }
-
-    function _addToInvestorsList(address _investor) internal {
-        if (investors[_investor].seen == uint8(0)) {
-            investors[_investor].seen = uint8(1);
-            investorsList.push(_investor);
         }
     }
 
     /**
      * @notice Returns investor accredited & non-accredited override informatiomn
-     * @return address[] list of all configured investors
-     * @return bool[] whether investor is accredited
-     * @return uint256[] any USD overrides for non-accredited limits for the investor
+     * @return investors list of all configured investors
+     * @return accredited whether investor is accredited
+     * @return override any USD overrides for non-accredited limits for the investor
      */
-    function getAccreditedData() external view returns (address[] memory, bool[] memory, uint256[] memory) {
-        bool[] memory accrediteds = new bool[](investorsList.length);
-        uint256[] memory nonAccreditedLimitUSDOverrides = new uint256[](investorsList.length);
-        uint256 i;
-        for (i = 0; i < investorsList.length; i++) {
-            accrediteds[i] = (investors[investorsList[i]].accredited == uint8(0)? false: true);
-            nonAccreditedLimitUSDOverrides[i] = investors[investorsList[i]].nonAccreditedLimitUSDOverride;
+    function getAccreditedData() external view returns (address[] memory investors, bool[] memory accredited, uint256[] memory overrides) {
+        IDataStore dataStore = IDataStore(getDataStore());
+        investors = dataStore.getAddressArray(INVESTORSKEY);
+        accredited = new bool[](investors.length);
+        overrides = new uint256[](investors.length);
+        for (uint256 i = 0; i < investors.length; i++) {
+            accredited[i] = _getIsAccredited(investors[i], dataStore);
+            overrides[i] = nonAccreditedLimitUSDOverride[investors[i]];
         }
-        return (investorsList, accrediteds, nonAccreditedLimitUSDOverrides);
     }
 
     /**
@@ -443,6 +417,8 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
             require(_beneficiary == msg.sender, "Beneficiary != funder");
         }
 
+        require(_canBuy(_beneficiary), "Unauthorized");
+
         uint256 originalUSD = DecimalMath.mul(_rate, _investmentValue);
         uint256 allowedUSD = _buyTokensChecks(_beneficiary, _investmentValue, originalUSD);
 
@@ -489,8 +465,8 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         require(investedUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestmentUSD, "Investment < min");
         netInvestedUSD = investedUSD;
         // Check for non-accredited cap
-        if (investors[_beneficiary].accredited == uint8(0)) {
-            uint256 investorLimitUSD = (investors[_beneficiary].nonAccreditedLimitUSDOverride == 0) ? nonAccreditedLimitUSD : investors[_beneficiary].nonAccreditedLimitUSDOverride;
+        if (!_isAccredited(_beneficiary)) {
+            uint256 investorLimitUSD = (nonAccreditedLimitUSDOverride[_beneficiary] == 0) ? nonAccreditedLimitUSD : nonAccreditedLimitUSDOverride[_beneficiary];
             require(investorInvestedUSD[_beneficiary] < investorLimitUSD, "Over Non-accredited investor limit");
             if (investedUSD.add(investorInvestedUSD[_beneficiary]) > investorLimitUSD)
                 netInvestedUSD = investorLimitUSD.sub(investorInvestedUSD[_beneficiary]);
@@ -568,6 +544,17 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         }
     }
 
+    function _isAccredited(address _investor) internal view returns(bool) {
+        IDataStore dataStore = IDataStore(getDataStore());
+        return _getIsAccredited(_investor, dataStore);
+    }
+
+    function _getIsAccredited(address _investor, IDataStore dataStore) internal view returns(bool) {
+        uint256 flags = dataStore.getUint256(_getKey(INVESTORFLAGS, _investor));
+        uint256 flag = flags & uint256(1); //isAccredited is flag 0 so we don't need to bit shift flags.
+        return flag > 0 ? true : false;
+    }
+
     /////////////
     // Getters //
     /////////////
@@ -577,7 +564,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @return bool Whether the STO is accepting investments
      */
     function isOpen() public view returns(bool) {
-    	/*solium-disable-next-line security/no-block-members*/
+        /*solium-disable-next-line security/no-block-members*/
         if (isFinalized || now < startTime || now >= endTime || capReached())
             return false;
         return true;

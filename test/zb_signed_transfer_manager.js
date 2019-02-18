@@ -160,13 +160,11 @@ contract("SignedTransferManager", accounts => {
         it("Should Buy the tokens", async () => {
             // Add the Investor in to the whitelist
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
+            let tx = await I_GeneralTransferManager.modifyKYCData(
                 account_investor1,
                 currentTime,
                 currentTime,
                 currentTime.add(new BN(duration.days(10))),
-                true,
-                false,
                 {
                     from: account_issuer
                 }

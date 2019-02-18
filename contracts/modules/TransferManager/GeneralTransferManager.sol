@@ -34,15 +34,19 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     // if allowAllWhitelistIssuances is TRUE, then _toTime is ignored when receiving tokens from the issuance address
     // if allowAllWhitelistTransfers is TRUE, then _toTime and _fromTime is ignored when sending or receiving tokens
     // in any case, any investor sending or receiving tokens, must have a _expiryTime in the future
-    event ModifyWhitelist(
+    event ModifyKYCData(
         address indexed _investor,
         uint256 _dateAdded,
         address indexed _addedBy,
         uint256 _fromTime,
         uint256 _toTime,
-        uint256 _expiryTime,
-        bool _canBuyFromSTO,
-        bool _isAccredited
+        uint256 _expiryTime
+    );
+
+    event ModifyInvestorFlag(
+        address indexed _investor,
+        uint8 indexed _flag,
+        bool _value
     );
 
     /**
@@ -158,7 +162,6 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
             uint64 fromExpiry;
             uint64 toExpiry;
             uint64 toTime;
-            uint8 canBuyFromSTO;
             if (allowAllTransfers) {
                 //All transfers allowed, regardless of whitelist
                 return Result.VALID;
@@ -167,7 +170,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
                 return Result.VALID;
             }
 
-            (fromTime, fromExpiry, canBuyFromSTO, toTime, toExpiry) = _getValuesForTransfer(_from, _to);
+            (fromTime, fromExpiry, toTime, toExpiry) = _getValuesForTransfer(_from, _to);
 
             if (allowAllWhitelistTransfers) {
                 //Anyone on the whitelist can transfer, regardless of time
@@ -176,10 +179,6 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
             // Using the local variables to avoid the stack too deep error
             (fromTime, toTime) = _adjustTimes(fromTime, toTime);
             if (_from == issuanceAddress) {
-                // Possible STO transaction, but investor not allowed to purchased from STO
-                if ((canBuyFromSTO == uint8(0)) && _isSTOAttached()) {
-                    return Result.NA;
-                }
                 // if allowAllWhitelistIssuances is true, so time stamp ignored
                 if (allowAllWhitelistIssuances) {
                     return _validExpiry(toExpiry) ? Result.VALID : Result.NA;
@@ -197,84 +196,120 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     }
 
     /**
-    * @notice Adds or removes addresses from the whitelist.
+    * @notice Add or remove KYC info of an investor.
     * @param _investor is the address to whitelist
     * @param _fromTime is the moment when the sale lockup period ends and the investor can freely sell his tokens
     * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
     * @param _expiryTime is the moment till investors KYC will be validated. After that investor need to do re-KYC
-    * @param _canBuyFromSTO is used to know whether the investor is restricted investor or not.
-    * @param _isAccredited is used to differentiate whether the investor is Accredited or not.
     */
-    function modifyWhitelist(
+    function modifyKYCData(
         address _investor,
         uint256 _fromTime,
         uint256 _toTime,
-        uint256 _expiryTime,
-        bool _canBuyFromSTO,
-        bool _isAccredited
+        uint256 _expiryTime
     )
         public
         withPerm(WHITELIST)
     {
-        _modifyWhitelist(_investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO, _isAccredited);
+        _modifyKYCData(_investor, _fromTime, _toTime, _expiryTime);
+    }
+
+    function _modifyKYCData(address _investor, uint256 _fromTime, uint256 _toTime, uint256 _expiryTime) internal {
+        require(_investor != address(0), "Invalid investor");
+        IDataStore dataStore = IDataStore(getDataStore());
+        if (!_isExistingInvestor(_investor, dataStore)) {
+           dataStore.insertAddress(INVESTORSKEY, _investor);
+        }
+        uint256 _data = VersionUtils.packKYC(uint64(_fromTime), uint64(_toTime), uint64(_expiryTime), uint8(1));
+        dataStore.setUint256(_getKey(WHITELIST, _investor), _data);
+        emit ModifyKYCData(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime);
     }
 
     /**
-    * @notice Adds or removes addresses from the whitelist.
-    * @param _investor is the address to whitelist
+    * @notice Add or remove KYC info of an investor.
+    * @param _investors is the address to whitelist
     * @param _fromTime is the moment when the sale lockup period ends and the investor can freely sell his tokens
     * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
     * @param _expiryTime is the moment till investors KYC will be validated. After that investor need to do re-KYC
-    * @param _canBuyFromSTO is used to know whether the investor is restricted investor or not.
-    * @param _isAccredited is used to differentiate whether the investor is Accredited or not.
     */
-    function _modifyWhitelist(address _investor, uint256 _fromTime, uint256 _toTime, uint256 _expiryTime, bool _canBuyFromSTO, bool _isAccredited) internal {
-        require(_investor != address(0), "Invalid investor");
-        uint8 added;
-        uint8 canBuyFromSTO;
-        uint8 isAccredited;
-        IDataStore dataStore = IDataStore(getDataStore());
-        added = _getAddedValue(_investor, dataStore);
-        if (added == uint8(0)) {
-           investors.push(_investor);
-        }
-        canBuyFromSTO = _canBuyFromSTO ? 1 : 0;
-        isAccredited = _isAccredited ? 1 : 0;
-        uint256 _data = VersionUtils.packKYC(uint64(_fromTime), uint64(_toTime), uint64(_expiryTime), canBuyFromSTO, uint8(1), isAccredited);
-        dataStore.setUint256(_getKey(WHITELIST, _investor), _data);
-        emit ModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime, _canBuyFromSTO, _isAccredited);
-    }
-
-    /**
-    * @notice Adds or removes addresses from the whitelist.
-    * @param _investors List of the addresses to whitelist
-    * @param _fromTimes An array of the moment when the sale lockup period ends and the investor can freely sell his tokens
-    * @param _toTimes An array of the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
-    * @param _expiryTimes An array of the moment till investors KYC will be validated. After that investor need to do re-KYC
-    * @param _canBuyFromSTO An array of boolean values.
-    * @param _isAccredited An array of boolean values to differentiate whether the investor is Accredited or not.
-    */
-    function modifyWhitelistMulti(
+    function modifyKYCDataMulti(
         address[] memory _investors,
-        uint256[] memory _fromTimes,
-        uint256[] memory _toTimes,
-        uint256[] memory _expiryTimes,
-        bool[] memory _canBuyFromSTO,
-        bool[] memory _isAccredited
+        uint256[] memory _fromTime,
+        uint256[] memory _toTime,
+        uint256[] memory _expiryTime
     )
         public
         withPerm(WHITELIST)
     {
         require(
-            _investors.length == _fromTimes.length &&
-            _fromTimes.length == _toTimes.length &&
-            _toTimes.length == _expiryTimes.length &&
-            _canBuyFromSTO.length == _toTimes.length &&
-            _canBuyFromSTO.length == _isAccredited.length,
+            _investors.length == _fromTime.length &&
+            _fromTime.length == _toTime.length &&
+            _toTime.length == _expiryTime.length,
             "Mismatched input lengths"
         );
         for (uint256 i = 0; i < _investors.length; i++) {
-            _modifyWhitelist(_investors[i], _fromTimes[i], _toTimes[i], _expiryTimes[i], _canBuyFromSTO[i], _isAccredited[i]);
+            _modifyKYCData(_investors[i], _fromTime[i], _toTime[i], _expiryTime[i]);
+        }
+    }
+
+    /**
+    * @notice Used to modify investor Flag.
+    * @dev Flags are properties about investors that can be true or false like isAccredited
+    * @param _investor is the address of the investor.
+    * @param _flag index of flag to change. flag is used to know specifics about investor like isAccredited.
+    * @param _value value of the flag. a flag can be true or false.
+    */
+    function modifyInvestorFlag(
+        address _investor,
+        uint8 _flag,
+        bool _value
+    )
+        public
+        withPerm(WHITELIST)
+    {
+        _modifyInvestorFlag(_investor, _flag, _value);
+    }
+
+
+    function _modifyInvestorFlag(address _investor, uint8 _flag, bool _value) internal {
+        require(_investor != address(0), "Invalid investor");
+        IDataStore dataStore = IDataStore(getDataStore());
+        if (!_isExistingInvestor(_investor, dataStore)) {
+           dataStore.insertAddress(INVESTORSKEY, _investor);
+           //KYC data can not be present if added is false and hence we can set packed KYC as uint256(1) to set added as true
+           dataStore.setUint256(_getKey(WHITELIST, _investor), uint256(1));
+        }
+        //NB Flags are packed together in a uint256 to save gas. We can have a maximum of 256 flags.
+        uint256 flags = dataStore.getUint256(_getKey(INVESTORFLAGS, _investor));
+        if (_value)
+            flags = flags | (ONE << _flag);
+        else
+            flags = flags & ~(ONE << _flag);
+        dataStore.setUint256(_getKey(INVESTORFLAGS, _investor), flags);
+        emit ModifyInvestorFlag(_investor, _flag, _value);
+    }
+
+    /**
+    * @notice Used to modify investor data.
+    * @param _investors List of the addresses to modify data about.
+    * @param _flag index of flag to change. flag is used to know specifics about investor like isAccredited.
+    * @param _value value of the flag. a flag can be true or false.
+    */
+    function modifyInvestorFlagMulti(
+        address[] memory _investors,
+        uint8[] memory _flag,
+        bool[] memory _value
+    )
+        public
+        withPerm(WHITELIST)
+    {
+        require(
+            _investors.length == _flag.length &&
+            _flag.length == _value.length,
+            "Mismatched input lengths"
+        );
+        for (uint256 i = 0; i < _investors.length; i++) {
+            _modifyInvestorFlag(_investors[i], _flag[i], _value[i]);
         }
     }
 
@@ -284,20 +319,16 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     * @param _fromTime is the moment when the sale lockup period ends and the investor can freely sell his tokens
     * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
     * @param _expiryTime is the moment till investors KYC will be validated. After that investor need to do re-KYC
-    * @param _canBuyFromSTO is used to know whether the investor is restricted investor or not.
-    * @param _isAccredited is used to differentiate whether the investor is Accredited or not.
     * @param _validFrom is the time that this signature is valid from
     * @param _validTo is the time that this signature is valid until
     * @param _nonce nonce of signature (avoid replay attack)
     * @param _signature issuer signature
     */
-    function modifyWhitelistSigned(
+    function modifyKYCDataSigned(
         address _investor,
         uint256 _fromTime,
         uint256 _toTime,
         uint256 _expiryTime,
-        bool _canBuyFromSTO,
-        bool _isAccredited,
         uint256 _validFrom,
         uint256 _validTo,
         uint256 _nonce,
@@ -312,10 +343,10 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         require(!nonceMap[_investor][_nonce], "Already used signature");
         nonceMap[_investor][_nonce] = true;
         bytes32 hash = keccak256(
-            abi.encodePacked(this, _investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO, _isAccredited, _validFrom, _validTo, _nonce)
+            abi.encodePacked(this, _investor, _fromTime, _toTime, _expiryTime, _validFrom, _validTo, _nonce)
         );
         _checkSig(hash, _signature);
-        _modifyWhitelist(_investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO, _isAccredited);
+        _modifyKYCData(_investor, _fromTime, _toTime, _expiryTime);
     }
 
     /**
@@ -345,14 +376,6 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     }
 
     /**
-     * @notice Internal function use to know whether the STO is attached or not
-     */
-    function _isSTOAttached() internal view returns(bool) {
-        bool attached = ISecurityToken(securityToken).getModulesByType(3).length > 0;
-        return attached;
-    }
-
-    /**
      * @notice Internal function to adjust times using default values
      */
     function _adjustTimes(uint64 _fromTime, uint64 _toTime) internal view returns(uint64, uint64) {
@@ -371,87 +394,104 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         return bytes32(keccak256(abi.encodePacked(_key1, _key2)));
     }
 
-    function _getValues(address _investor, IDataStore dataStore) internal view returns(
+    function _getKYCValues(address _investor, IDataStore dataStore) internal view returns(
         uint64 fromTime,
         uint64 toTime,
         uint64 expiryTime,
-        uint8 canBuyFromSTO,
-        uint8 added,
-        uint8 isAccredited
+        uint8 added
     )
     {
-        uint256 _whitelistData = dataStore.getUint256(_getKey(WHITELIST, _investor));
-        (fromTime, toTime, expiryTime, canBuyFromSTO, added, isAccredited)  = VersionUtils.unpackKYC(_whitelistData);
+        uint256 data = dataStore.getUint256(_getKey(WHITELIST, _investor));
+        (fromTime, toTime, expiryTime, added)  = VersionUtils.unpackKYC(data);
     }
 
-    function _getAddedValue(address _investor, IDataStore dataStore) internal view returns(uint8) {
-        uint256 _whitelistData = dataStore.getUint256(_getKey(WHITELIST, _investor));
+    function _isExistingInvestor(address _investor, IDataStore dataStore) internal view returns(bool) {
+        uint256 data = dataStore.getUint256(_getKey(WHITELIST, _investor));
         //extracts `added` from packed `_whitelistData`
-        return uint8(_whitelistData >> 8);
+        return uint8(data) == 0 ? false : true;
     }
 
-    function _getValuesForTransfer(address _from, address _to) internal view returns(uint64 fromTime, uint64 fromExpiry, uint8 canBuyFromSTO, uint64 toTime, uint64 toExpiry) {
+    function _getValuesForTransfer(address _from, address _to) internal view returns(uint64 fromTime, uint64 fromExpiry, uint64 toTime, uint64 toExpiry) {
         IDataStore dataStore = IDataStore(getDataStore());
-        (fromTime,, fromExpiry,,,) = _getValues(_from, dataStore);
-        (, toTime, toExpiry, canBuyFromSTO,,) = _getValues(_to, dataStore);
+        (fromTime, , fromExpiry, ) = _getKYCValues(_from, dataStore);
+        (, toTime, toExpiry, ) = _getKYCValues(_to, dataStore);
     }
 
     /**
      * @dev Returns list of all investors
      */
-    function getInvestors() public view returns(address[] memory) {
-        return investors;
+    function getAllInvestors() public view returns(address[] memory investors) {
+        IDataStore dataStore = IDataStore(getDataStore());
+        investors = dataStore.getAddressArray(INVESTORSKEY);
+    }
+
+    /**
+     * @dev Returns list of investors in a range
+     */
+    function getInvestors(uint256 _fromIndex, uint256 _toIndex) public view returns(address[] memory investors) {
+        IDataStore dataStore = IDataStore(getDataStore());
+        investors = dataStore.getAddressArrayElements(INVESTORSKEY, _fromIndex, _toIndex);
+    }
+
+    function getAllInvestorFlags() public view returns(address[] memory investors, uint256[] memory flags) {
+        investors = getAllInvestors();
+        flags = new uint256[](investors.length);
+        for (uint256 i = 0; i < investors.length; i++) {
+            flags[i] = _getInvestorFlags(investors[i]);
+        }
+    }
+
+    function getInvestorFlag(address _investor, uint8 _flag) public view returns(bool value) {
+        uint256 flag = (_getInvestorFlags(_investor) >> _flag) & ONE;
+        value = flag > 0 ? true : false;
+    }
+
+    function getInvestorFlags(address _investor) public view returns(uint256 flags) {
+        flags = _getInvestorFlags(_investor);
+    }
+
+    function _getInvestorFlags(address _investor) public view returns(uint256 flags) {
+        IDataStore dataStore = IDataStore(getDataStore());
+        flags = dataStore.getUint256(_getKey(INVESTORFLAGS, _investor));
     }
 
     /**
      * @dev Returns list of all investors data
      */
-    function getAllInvestorsData() external view returns(
-        address[] memory,
+    function getAllKYCData() external view returns(
+        address[] memory investors,
         uint256[] memory fromTimes,
         uint256[] memory toTimes,
-        uint256[] memory expiryTimes,
-        bool[] memory canBuyFromSTOs,
-        bool[] memory isAccrediteds
+        uint256[] memory expiryTimes
     ) {
-        (fromTimes, toTimes, expiryTimes, canBuyFromSTOs, isAccrediteds) = _investorsData(getInvestors());
-        return (getInvestors(), fromTimes, toTimes, expiryTimes, canBuyFromSTOs, isAccrediteds);
-
+        investors = getAllInvestors();
+        (fromTimes, toTimes, expiryTimes) = _kycData(investors);
+        return (investors, fromTimes, toTimes, expiryTimes);
     }
 
     /**
      * @dev Returns list of specified investors data
      */
-    function getInvestorsData(address[] calldata _investors) external view returns(
+    function getKYCData(address[] calldata _investors) external view returns(
         uint256[] memory,
         uint256[] memory,
-        uint256[] memory,
-        bool[] memory,
-        bool[] memory
+        uint256[] memory
     ) {
-        return _investorsData(_investors);
+        return _kycData(_investors);
     }
 
-    function _investorsData(address[] memory _investors) internal view returns(
+    function _kycData(address[] memory _investors) internal view returns(
         uint256[] memory,
         uint256[] memory,
-        uint256[] memory,
-        bool[] memory,
-        bool[] memory
+        uint256[] memory
     ) {
         uint256[] memory fromTimes = new uint256[](_investors.length);
         uint256[] memory toTimes = new uint256[](_investors.length);
         uint256[] memory expiryTimes = new uint256[](_investors.length);
-        bool[] memory canBuyFromSTOs = new bool[](_investors.length);
-        bool[] memory isAccrediteds = new bool[](_investors.length);
         for (uint256 i = 0; i < _investors.length; i++) {
-            uint8 canBuyFromSTO;
-            uint8 isAccredited;
-            (fromTimes[i], toTimes[i], expiryTimes[i], canBuyFromSTO,,isAccredited) = _getValues(_investors[i], IDataStore(getDataStore()));
-            canBuyFromSTOs[i] = canBuyFromSTO == 0 ? false : true;
-            isAccrediteds[i] = isAccredited == 0 ? false : true;
+            (fromTimes[i], toTimes[i], expiryTimes[i], ) = _getKYCValues(_investors[i], IDataStore(getDataStore()));
         }
-        return (fromTimes, toTimes, expiryTimes, canBuyFromSTOs, isAccrediteds);
+        return (fromTimes, toTimes, expiryTimes);
     }
 
     /**

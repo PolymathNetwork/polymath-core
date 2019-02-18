@@ -317,6 +317,11 @@ interface ISecurityToken {
     function getInvestorCount() external view returns(uint256);
 
     /**
+     * @notice Gets the holder count (investors with non zero balance)
+     */
+    function holderCount() external view returns(uint256);
+
+    /**
       * @notice Overloaded version of the transfer function
       * @param _to receiver of transfer
       * @param _value value of transfer

@@ -212,13 +212,11 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Transfer some tokens to different account", async() => {
             // Add tokens in to the whitelist
             currentTime = new BN(await latestTime());
-            await I_GeneralTransferManager.modifyWhitelistMulti(
+            await I_GeneralTransferManager.modifyKYCDataMulti(
                     [account_investor1, account_investor2, account_investor3],
                     [currentTime, currentTime, currentTime],
                     [currentTime, currentTime, currentTime],
                     [currentTime.add(new BN(duration.days(60))), currentTime.add(new BN(duration.days(60))), currentTime.add(new BN(duration.days(60)))],
-                    [true, true, true],
-                    [false, false, false],
                     {
                         from: token_owner
                     }

@@ -2,7 +2,7 @@ pragma solidity ^0.5.0;
 
 import "./STO.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "./PreSaleSTOStorage.sol";
+import "../../storage/modules/STO/PreSaleSTOStorage.sol";
 
 /**
  * @title STO module for private presales
@@ -79,7 +79,7 @@ contract PreSaleSTO is PreSaleSTOStorage, STO {
         require(now <= endTime, "Already passed Endtime");
         require(_amount > 0, "No. of tokens provided should be greater the zero");
         require(_canBuy(_investor), "Unauthorized");
-        ISecurityToken(securityToken).mint(_investor, _amount);
+        ISecurityToken(securityToken).issue(_investor, _amount, "");
         if (investors[_investor] == uint256(0)) {
             investorCount = investorCount.add(1);
         }

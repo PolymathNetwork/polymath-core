@@ -9,6 +9,7 @@ const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 const CountTransferManagerFactory = artifacts.require("./CountTransferManagerFactory.sol");
 const CountTransferManager = artifacts.require("./CountTransferManager");
+const STGetter = artifacts.require("./STGetter.sol");
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -50,6 +51,9 @@ contract("CountTransferManager", async (accounts) => {
     let I_PolyToken;
     let I_PolymathRegistry;
     let I_STRGetter;
+    let I_STGetter;
+    let stGetter;
+    let stGetter2;
 
     // SecurityToken Details
     const name = "Team";
@@ -101,7 +105,8 @@ contract("CountTransferManager", async (accounts) => {
             I_SecurityTokenRegistry,
             I_SecurityTokenRegistryProxy,
             I_STRProxied,
-            I_STRGetter
+            I_STRGetter,
+            I_STGetter
         ] = instances;
 
         // STEP 2: Deploy the CountTransferManager
@@ -142,7 +147,7 @@ contract("CountTransferManager", async (accounts) => {
             assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
             I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
-
+            stGetter = await STGetter.at(I_SecurityToken.address);
             const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTransferManager module get added successfully or not
@@ -151,7 +156,7 @@ contract("CountTransferManager", async (accounts) => {
         });
 
         it("Should intialize the auto attached modules", async () => {
-            let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
+            let moduleData = (await stGetter.getModulesByType(2))[0];
             I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
 
@@ -221,7 +226,7 @@ contract("CountTransferManager", async (accounts) => {
             await increaseTime(5000);
 
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner });
+            await I_SecurityToken.issue(account_investor1, new BN(web3.utils.toWei("1", "ether")), "0x0", { from: token_owner });
 
             assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
         });
@@ -247,7 +252,7 @@ contract("CountTransferManager", async (accounts) => {
             );
 
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor2, new BN(web3.utils.toWei("2", "ether")), { from: token_owner });
+            await I_SecurityToken.issue(account_investor2, new BN(web3.utils.toWei("2", "ether")), "0x0", { from: token_owner });
 
             assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toString(), new BN(web3.utils.toWei("2", "ether")).toString());
         });
@@ -272,7 +277,7 @@ contract("CountTransferManager", async (accounts) => {
                 "Failed in adding the investor in whitelist"
             );
 
-            await I_SecurityToken.mint(account_investor3, new BN(web3.utils.toWei("3", "ether")), { from: token_owner });
+            await I_SecurityToken.issue(account_investor3, new BN(web3.utils.toWei("3", "ether")), "0x0", { from: token_owner });
             await revertToSnapshot(snapId);
         });
 
@@ -296,13 +301,13 @@ contract("CountTransferManager", async (accounts) => {
                 "Failed in adding the investor in whitelist"
             );
 
-            await catchRevert(I_SecurityToken.mint(account_investor3, new BN(web3.utils.toWei("3", "ether")), { from: token_owner }));
+            await catchRevert(I_SecurityToken.issue(account_investor3, new BN(web3.utils.toWei("3", "ether")), "0x0", { from: token_owner }));
         });
 
         it("Should still be able to add to original token holders", async () => {
             // Add the Investor in to the whitelist
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor2, new BN(web3.utils.toWei("2", "ether")), { from: token_owner });
+            await I_SecurityToken.issue(account_investor2, new BN(web3.utils.toWei("2", "ether")), "0x0", { from: token_owner });
 
             assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toString(), new BN(web3.utils.toWei("4", "ether")).toString());
         });
@@ -360,8 +365,8 @@ contract("CountTransferManager", async (accounts) => {
                 let tx2 = await I_STRProxied.generateSecurityToken(name, symbol2, tokenDetails, false, { from: token_owner });
 
                 I_SecurityToken2 = await SecurityToken.at(tx2.logs[2].args._securityTokenAddress);
-
-                let moduleData = (await I_SecurityToken2.getModulesByType(2))[0];
+                stGetter2 = await STGetter.at(I_SecurityToken2.address);
+                let moduleData = (await stGetter2.getModulesByType(2))[0];
                 I_GeneralTransferManager2 = await GeneralTransferManager.at(moduleData);
             });
 
@@ -414,14 +419,14 @@ contract("CountTransferManager", async (accounts) => {
                 await increaseTime(5000);
 
                 // Add 3 holders to the token
-                await I_SecurityToken2.mint(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner });
-                await I_SecurityToken2.mint(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: token_owner });
-                await I_SecurityToken2.mint(account_investor3, new BN(web3.utils.toWei("1", "ether")), { from: token_owner });
+                await I_SecurityToken2.issue(account_investor1, new BN(web3.utils.toWei("1", "ether")), "0x0", { from: token_owner });
+                await I_SecurityToken2.issue(account_investor2, new BN(web3.utils.toWei("1", "ether")), "0x0", { from: token_owner });
+                await I_SecurityToken2.issue(account_investor3, new BN(web3.utils.toWei("1", "ether")), "0x0", { from: token_owner });
                 assert.equal((await I_SecurityToken2.balanceOf(account_investor1)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
             });
 
             it("Should intialize the auto attached modules", async () => {
-                let moduleData = (await I_SecurityToken2.getModulesByType(2))[0];
+                let moduleData = (await stGetter2.getModulesByType(2))[0];
                 I_GeneralTransferManager2 = await GeneralTransferManager.at(moduleData);
             });
 
@@ -449,11 +454,11 @@ contract("CountTransferManager", async (accounts) => {
 
             it("Should allow add a new token holder while transfer all the tokens at one go", async () => {
                 let amount = await I_SecurityToken2.balanceOf(account_investor2);
-                let investorCount = await I_SecurityToken2.holderCount({ from: account_investor2 });
+                let investorCount = await stGetter2.holderCount({ from: account_investor2 });
                 console.log("current investor count is " + investorCount);
                 await I_SecurityToken2.transfer(account_investor4, amount, { from: account_investor2 });
                 assert((await I_SecurityToken2.balanceOf(account_investor4)).toString(), amount.toString(), { from: account_investor2 });
-                assert(await I_SecurityToken2.holderCount({ from: account_investor2 }), investorCount);
+                assert(await stGetter2.holderCount({ from: account_investor2 }), investorCount);
             });
         });
 

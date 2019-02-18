@@ -10,6 +10,7 @@ const CappedSTO = artifacts.require("./CappedSTO.sol");
 const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager");
+const STGetter = artifacts.require("./STGetter.sol");
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -60,6 +61,9 @@ contract("CappedSTO", async (accounts) => {
     let I_STRProxied;
     let I_MRProxied;
     let I_STRGetter;
+    let I_STGetter;
+    let stGetter_eth;
+    let stGetter_poly;
     let pauseTime;
 
     // SecurityToken Details for funds raise Type ETH
@@ -129,8 +133,9 @@ contract("CappedSTO", async (accounts) => {
             I_STFactory,
             I_SecurityTokenRegistry,
             I_SecurityTokenRegistryProxy,
-            I_STRProxied,
-            I_STRGetter
+            I_STRProxied, 
+            I_STRGetter,
+            I_STGetter
         ] = instances;
 
         // STEP 5: Deploy the GeneralDelegateManagerFactory
@@ -175,7 +180,7 @@ contract("CappedSTO", async (accounts) => {
             assert.equal(tx.logs[2].args._ticker, symbol, "SecurityToken doesn't get deployed");
 
             I_SecurityToken_ETH = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
-
+            stGetter_eth = await STGetter.at(I_SecurityToken_ETH.address);
             const log = (await I_SecurityToken_ETH.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
             // Verify that GeneralTransferManager module get added successfully or not
             assert.equal(log.args._types[0].toNumber(), transferManagerKey);
@@ -183,12 +188,12 @@ contract("CappedSTO", async (accounts) => {
         });
 
         it("Should intialize the auto attached modules", async () => {
-            let moduleData = (await I_SecurityToken_ETH.getModulesByType(transferManagerKey))[0];
+            let moduleData = (await stGetter_eth.getModulesByType(transferManagerKey))[0];
             I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
 
         it("Should mint the tokens before attaching the STO", async () => {
-            await catchRevert(I_SecurityToken_ETH.mint(address_zero, new BN(new BN(web3.utils.toWei("1"))), { from: token_owner }));
+            await catchRevert(I_SecurityToken_ETH.issue(address_zero, new BN(new BN(web3.utils.toWei("1"))), "0x0", { from: token_owner }));
         });
 
         it("Should fail to launch the STO due to security token doesn't have the sufficient POLY", async () => {
@@ -623,7 +628,7 @@ contract("CappedSTO", async (accounts) => {
                 assert.equal(tx.logs[2].args._ticker, P_symbol, "SecurityToken doesn't get deployed");
 
                 I_SecurityToken_POLY = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
-
+                stGetter_poly = await STGetter.at(I_SecurityToken_POLY.address);
                 const log = (await I_SecurityToken_POLY.getPastEvents('ModuleAdded', {filter: {from: blockNo}}))[0];
 
                 // Verify that GeneralTransferManager module get added successfully or not
@@ -632,7 +637,7 @@ contract("CappedSTO", async (accounts) => {
             });
 
             it("POLY: Should intialize the auto attached modules", async () => {
-                let moduleData = (await I_SecurityToken_POLY.getModulesByType(transferManagerKey))[0];
+                let moduleData = (await stGetter_poly.getModulesByType(transferManagerKey))[0];
                 I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
             });
 

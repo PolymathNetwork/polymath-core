@@ -1,9 +1,9 @@
 pragma solidity ^0.5.0;
 
-import "../storage/VestingEscrowWalletStorage.sol";
+import "../storage/modules/Wallet/VestingEscrowWalletStorage.sol";
 import "./OwnedProxy.sol";
 import "../Pausable.sol";
-import "../modules/ModuleStorage.sol";
+import "../storage/modules/ModuleStorage.sol";
  /**
  * @title Escrow wallet module for vesting functionality
  */

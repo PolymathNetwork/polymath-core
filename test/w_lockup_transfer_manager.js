@@ -9,6 +9,7 @@ const SecurityToken = artifacts.require('./SecurityToken.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager');
 const LockUpTransferManager = artifacts.require('./LockUpTransferManager');
 const GeneralPermissionManager = artifacts.require('./GeneralPermissionManager');
+const STGetter = artifacts.require("./STGetter.sol");
 
 const Web3 = require('web3');
 let BN = Web3.utils.BN;
@@ -49,6 +50,9 @@ contract('LockUpTransferManager', accounts => {
     let I_SecurityToken_div;
     let I_GeneralTransferManager_div;
     let I_LockUpVolumeRestrictionTM_div;
+    let I_STGetter;
+    let stGetter;
+    let stGetter_div;
 
     // SecurityToken Details
     const name = "Team";
@@ -96,7 +100,8 @@ contract('LockUpTransferManager', accounts => {
             I_STFactory,
             I_SecurityTokenRegistry,
             I_SecurityTokenRegistryProxy,
-            I_STRProxied
+            I_STRProxied,
+            I_STGetter
         ] = instances;
 
         // STEP 4(c): Deploy the LockUpVolumeRestrictionTMFactory
@@ -141,7 +146,7 @@ contract('LockUpTransferManager', accounts => {
             assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
             I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
-
+            stGetter = await STGetter.at(I_SecurityToken.address);
             const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTransferManager module get added successfully or not
@@ -154,7 +159,7 @@ contract('LockUpTransferManager', accounts => {
         });
 
         it("Should intialize the auto attached modules", async () => {
-          let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
+          let moduleData = (await stGetter.getModulesByType(2))[0];
           I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
         it("Should register another ticker before the generation of new security token", async () => {
@@ -173,6 +178,7 @@ contract('LockUpTransferManager', accounts => {
             assert.equal(tx.logs[2].args._ticker, symbol2.toUpperCase(), "SecurityToken doesn't get deployed");
 
             I_SecurityToken_div = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+            stGetter_div = await STGetter.at(I_SecurityToken.address);
             const log = (await I_SecurityToken_div.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTransferManager module get added successfully or not
@@ -185,7 +191,7 @@ contract('LockUpTransferManager', accounts => {
         });
 
         it("Should intialize the auto attached modules", async () => {
-          let moduleData = (await I_SecurityToken_div.getModulesByType(2))[0];
+          let moduleData = (await stGetter_div.getModulesByType(2))[0];
           I_GeneralTransferManager_div = GeneralTransferManager.at(moduleData);
         });
 
@@ -212,7 +218,7 @@ contract('LockUpTransferManager', accounts => {
             await increaseTime(5000);
 
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor1, new BN(web3.utils.toWei('2', 'ether')), { from: token_owner });
+            await I_SecurityToken.issue(account_investor1, new BN(web3.utils.toWei('2', 'ether')), "0x0", { from: token_owner });
 
             assert.equal(
                 (await I_SecurityToken.balanceOf(account_investor1)).toString(),
@@ -235,7 +241,7 @@ contract('LockUpTransferManager', accounts => {
             assert.equal(tx.logs[0].args._investor.toLowerCase(), account_investor2.toLowerCase(), "Failed in adding the investor in whitelist");
 
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor2, web3.utils.toWei('10', 'ether'), { from: token_owner });
+            await I_SecurityToken.issue(account_investor2, web3.utils.toWei('10', 'ether'), "0x0", { from: token_owner });
 
             assert.equal(
                 (await I_SecurityToken.balanceOf(account_investor2)).toString(),
@@ -305,7 +311,7 @@ contract('LockUpTransferManager', accounts => {
 
             // Add the Investor in to the whitelist
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor3, web3.utils.toWei('10', 'ether'), { from: token_owner });
+            await I_SecurityToken.issue(account_investor3, web3.utils.toWei('10', 'ether'), "0x0", { from: token_owner });
 
             assert.equal(
                 (await I_SecurityToken.balanceOf(account_investor3)).toString(),
@@ -523,7 +529,7 @@ contract('LockUpTransferManager', accounts => {
 
         it("Buy more tokens from secondary market to investor2", async() => {
              // Mint some tokens
-             await I_SecurityToken.mint(account_investor2, web3.utils.toWei('5', 'ether'), { from: token_owner });
+             await I_SecurityToken.issue(account_investor2, web3.utils.toWei('5', 'ether'), "0x0", { from: token_owner });
 
              assert.equal(
                  (await I_SecurityToken.balanceOf(account_investor2)).toString(),
@@ -662,8 +668,26 @@ contract('LockUpTransferManager', accounts => {
             // increase 20 sec that makes 1 period passed
             // 2 from a period and 1 is already unlocked
             await increaseTime(21);
+            console.log(`\t Total balance: ${web3.utils.fromWei((await I_SecurityToken.balanceOf.call(account_investor3)).toString())}`);
+            console.log(`\t Locked balance: ${web3.utils.fromWei((await stGetter.balanceOfByPartition.call(account_investor3, web3.utils.utf8ToHex(`LOCKED`))).toString())}`);
+            console.log(`\t Unlocked balance: ${web3.utils.fromWei((await stGetter.balanceOfByPartition.call(account_investor3, web3.utils.utf8ToHex(`UNLOCKED`))).toString())}`);
             await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('3'), { from: account_investor3 })
         })
+
+        it("Should check the balance of the locked tokens", async() => {
+            console.log(`\t Total balance: ${web3.utils.fromWei((await I_SecurityToken.balanceOf.call(account_investor3)).toString())}`);
+            console.log(`\t Locked balance: ${web3.utils.fromWei((await stGetter.balanceOfByPartition.call(account_investor3, web3.utils.utf8ToHex(`LOCKED`))).toString())}`);
+            console.log(`\t Unlocked balance: ${web3.utils.fromWei((await stGetter.balanceOfByPartition.call(account_investor3, web3.utils.utf8ToHex(`UNLOCKED`))).toString())}`);
+            assert.equal(
+                web3.utils.fromWei((await I_SecurityToken.balanceOf.call(account_investor3)).toString()),
+                web3.utils.fromWei((await stGetter.balanceOfByPartition.call(account_investor3, web3.utils.utf8ToHex(`LOCKED`))).toString())
+            );
+            console.log(`\t Wrong partition: ${web3.utils.fromWei((await stGetter.balanceOfByPartition.call(account_investor3, web3.utils.toHex(`OCKED`))).toString())}`);
+            assert.equal(
+                web3.utils.fromWei((await stGetter.balanceOfByPartition.call(account_investor3, web3.utils.toHex(`OCKED`))).toString()),
+                0
+            );
+        });
 
         it("Should transfer the tokens after passing another period of the lockup", async() => {
             // increase the 15 sec that makes first period of another lockup get passed
@@ -673,6 +697,15 @@ contract('LockUpTransferManager', accounts => {
             await catchRevert(
                 I_SecurityToken.transfer(account_investor1, web3.utils.toWei('3'), { from: account_investor3 })
             )
+            let lockedBalance = web3.utils.fromWei((await stGetter.balanceOfByPartition.call(account_investor3, web3.utils.utf8ToHex(`LOCKED`))).toString());
+            let unlockedBalance = web3.utils.fromWei((await stGetter.balanceOfByPartition.call(account_investor3, web3.utils.utf8ToHex(`UNLOCKED`))).toString());
+            console.log(`\t Total balance: ${web3.utils.fromWei((await I_SecurityToken.balanceOf.call(account_investor3)).toString())}`);
+            console.log(`\t Locked balance: ${lockedBalance}`);
+            console.log(`\t Unlocked Balance: ${unlockedBalance}`);
+            assert.equal(
+                web3.utils.fromWei((await I_SecurityToken.balanceOf.call(account_investor3)).toString()),
+                parseInt(lockedBalance) + parseInt(unlockedBalance)
+            );
             // second txn will pass because 1 token is in unlocked state
             await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('1'), { from: account_investor3 })
         });
@@ -682,11 +715,27 @@ contract('LockUpTransferManager', accounts => {
             // more token from the lockup 2
             await increaseTime(21);
 
+            let lockedBalance = web3.utils.fromWei((await stGetter.balanceOfByPartition.call(account_investor3, web3.utils.utf8ToHex(`LOCKED`))).toString());
+            let unlockedBalance = web3.utils.fromWei((await stGetter.balanceOfByPartition.call(account_investor3, web3.utils.utf8ToHex(`UNLOCKED`))).toString());
+            console.log(`\t Total balance: ${web3.utils.fromWei((await I_SecurityToken.balanceOf.call(account_investor3)).toString())}`);
+            console.log(`\t Locked balance: ${lockedBalance}`);
+            console.log(` \t Unlocked Amount for lockup 1: ${web3.utils.fromWei(((await I_LockUpTransferManager.getLockUp.call(web3.utils.fromAscii("c_lockup")))[4]).toString())}`)
+            console.log(` \t Unlocked Amount for lockup 2: ${web3.utils.fromWei(((await I_LockUpTransferManager.getLockUp.call(web3.utils.fromAscii("d_lockup")))[4]).toString())}`)
+            console.log(`\t Unlocked Balance: ${unlockedBalance}`);
+
             await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('3'), { from: account_investor3 })
             assert.equal(
                 (await I_SecurityToken.balanceOf(account_investor3)).toString(),
                 web3.utils.toWei('3', 'ether')
             );
+            console.log("After transaction");
+            lockedBalance = web3.utils.fromWei((await stGetter.balanceOfByPartition.call(account_investor3, web3.utils.utf8ToHex(`LOCKED`))).toString());
+            unlockedBalance = web3.utils.fromWei((await stGetter.balanceOfByPartition.call(account_investor3, web3.utils.utf8ToHex(`UNLOCKED`))).toString());
+            console.log(`\t Total balance: ${web3.utils.fromWei((await I_SecurityToken.balanceOf.call(account_investor3)).toString())}`);
+            console.log(`\t Locked balance: ${lockedBalance}`);
+            console.log(` \t Unlocked Amount for lockup 1: ${web3.utils.fromWei(((await I_LockUpTransferManager.getLockUp.call(web3.utils.fromAscii("c_lockup")))[4]).toString())}`)
+            console.log(` \t Unlocked Amount for lockup 2: ${web3.utils.fromWei(((await I_LockUpTransferManager.getLockUp.call(web3.utils.fromAscii("d_lockup")))[4]).toString())}`)
+            console.log(`\t Unlocked Balance: ${unlockedBalance}`);
         });
 
         it("Should remove multiple lockup --failed because of bad owner", async() => {
@@ -726,7 +775,7 @@ contract('LockUpTransferManager', accounts => {
         });
 
         it("Should fail to modify the lockup -- because of bad owner", async() => {
-            await I_SecurityToken.mint(account_investor3, web3.utils.toWei("9"), {from: token_owner});
+            await I_SecurityToken.issue(account_investor3, web3.utils.toWei("9"), "0x0", {from: token_owner});
 
             let tx = await I_LockUpTransferManager.addNewLockUpToUser(
                 account_investor3,

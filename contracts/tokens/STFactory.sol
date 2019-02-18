@@ -9,11 +9,13 @@ import "../datastore/DataStoreFactory.sol";
  */
 contract STFactory is ISTFactory {
     address public transferManagerFactory;
+    address public stDelegate;
     DataStoreFactory public dataStoreFactory;
 
-    constructor(address _transferManagerFactory, address _dataStoreFactory) public {
+    constructor(address _transferManagerFactory, address _dataStoreFactory, address _stDelegate) public {
         transferManagerFactory = _transferManagerFactory;
         dataStoreFactory = DataStoreFactory(_dataStoreFactory);
+        stDelegate = _stDelegate;
     }
 
     /**
@@ -38,7 +40,8 @@ contract STFactory is ISTFactory {
             _decimals,
             _divisible ? 1 : uint256(10) ** _decimals,
             _tokenDetails,
-            _polymathRegistry
+            _polymathRegistry,
+            stDelegate
         );
         //NB When dataStore is generated, the security token address is automatically set via the constructor in DataStoreProxy.
         newSecurityToken.changeDataStore(dataStoreFactory.generateDataStore(address(newSecurityToken)));

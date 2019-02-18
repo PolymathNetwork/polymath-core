@@ -9,7 +9,7 @@ pragma solidity ^0.5.0;
 
 import "./TransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "./PercentageTransferManagerStorage.sol";
+import "../../storage/modules/TransferManager/PercentageTransferManagerStorage.sol";
 
 /**
  * @title Transfer Manager module for limiting percentage of token supply a single address can hold
@@ -25,7 +25,10 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
      * @notice Constructor
      * @param _securityToken Address of the security token
      */
-    constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
+    constructor(address _securityToken, address _polyToken)
+    public
+    Module(_securityToken, _polyToken)
+    {
 
     }
 
@@ -34,31 +37,50 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
      * @param _to Address of the receiver
      * @param _amount The amount of tokens to transfer
      */
-    function verifyTransfer(
+    function executeTransfer(
         address _from,
         address _to,
         uint256 _amount,
-        bytes calldata, /* _data */
-        bool /* _isTransfer */
+        bytes calldata _data
     )
         external
         returns(Result)
     {
+        (Result success,) = verifyTransfer(_from, _to, _amount, _data);
+        return success;
+    }
+
+    /** 
+     * @notice Used to verify the transfer transaction and prevent a given account to end up with more tokens than allowed
+     * @param _from Address of the sender
+     * @param _to Address of the receiver
+     * @param _amount The amount of tokens to transfer
+     */
+    function verifyTransfer(
+        address _from,
+        address _to,
+        uint256 _amount,
+        bytes memory /*_data*/
+    ) 
+        public
+        view 
+        returns(Result, bytes32) 
+    {
         if (!paused) {
             if (_from == address(0) && allowPrimaryIssuance) {
-                return Result.NA;
+                return (Result.NA, bytes32(0));
             }
             // If an address is on the whitelist, it is allowed to hold more than maxHolderPercentage of the tokens.
             if (whitelist[_to]) {
-                return Result.NA;
+                return (Result.NA, bytes32(0));
             }
             uint256 newBalance = IERC20(securityToken).balanceOf(_to).add(_amount);
             if (newBalance.mul(uint256(10) ** 18).div(IERC20(securityToken).totalSupply()) > maxHolderPercentage) {
-                return Result.INVALID;
+                return (Result.INVALID, bytes32(uint256(address(this)) << 96)); 
             }
-            return Result.NA;
+            return (Result.NA, bytes32(0));
         }
-        return Result.NA;
+        return (Result.NA, bytes32(0));
     }
 
     /**
@@ -119,6 +141,13 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
         /*solium-disable-next-line security/no-block-members*/
         emit SetAllowPrimaryIssuance(_allowPrimaryIssuance);
     }
+
+    /**
+     * @notice return the amount of tokens for a given user as per the partition
+     */
+    function getTokensByPartition(address /*_owner*/, bytes32 /*_partition*/) external view returns(uint256){
+        return 0;
+    } 
 
     /**
      * @notice Return the permissions flag that are associated with Percentage transfer Manager

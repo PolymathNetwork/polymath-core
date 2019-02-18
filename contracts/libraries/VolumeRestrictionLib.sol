@@ -1,7 +1,7 @@
 pragma solidity ^0.5.0;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "../storage/VolumeRestrictionTMStorage.sol";
+import "../storage/modules/TransferManager/VolumeRestrictionTMStorage.sol";
 
 library VolumeRestrictionLib {
 

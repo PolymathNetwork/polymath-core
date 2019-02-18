@@ -209,10 +209,10 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
       Observe state and use revert statements to undo rollback when valid conditions are not met.
     */
     function _postValidatePurchase(
-        address, /*_beneficiary*/
+        address _beneficiary,
         uint256 /*_investedAmount*/
-    ) internal pure {
-        // optional override
+    ) internal view {
+        require(_canBuy(_beneficiary), "Unauthorized");
     }
 
     /**

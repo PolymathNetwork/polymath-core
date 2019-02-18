@@ -73,4 +73,13 @@ contract STO is ISTO, STOStorage, Module, Pausable {
         emit SetFundRaiseTypes(_fundRaiseTypes);
     }
 
+    function _canBuy(address _investor) internal view returns(bool) {
+        IDataStore dataStore = IDataStore(getDataStore());
+        uint256 flags = dataStore.getUint256(_getKey(INVESTORFLAGS, _investor));
+        return(flags & (uint256(1) << 1) == 0);
+    }
+
+    function _getKey(bytes32 _key1, address _key2) internal pure returns(bytes32) {
+        return bytes32(keccak256(abi.encodePacked(_key1, _key2)));
+    }
 }

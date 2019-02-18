@@ -197,13 +197,11 @@ contract('LockUpTransferManager', accounts => {
         it("Should Buy the tokens from non-divisible", async() => {
             // Add the Investor in to the whitelist
             console.log(account_investor1);
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
+            let tx = await I_GeneralTransferManager.modifyKYCData(
                 account_investor1,
                 currentTime,
                 currentTime,
                 currentTime.add(new BN(duration.days(10))),
-                true,
-                false,
                 {
                     from: account_issuer
                 });
@@ -225,13 +223,11 @@ contract('LockUpTransferManager', accounts => {
         it("Should Buy some more tokens from non-divisible tokens", async() => {
             // Add the Investor in to the whitelist
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
+            let tx = await I_GeneralTransferManager.modifyKYCData(
                 account_investor2,
                 currentTime,
                 currentTime,
                 currentTime.add(new BN(duration.days(10))),
-                true,
-                false,
                 {
                     from: account_issuer
                 });
@@ -296,13 +292,11 @@ contract('LockUpTransferManager', accounts => {
 
         it("Add a new token holder", async() => {
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
+            let tx = await I_GeneralTransferManager.modifyKYCData(
                 account_investor3,
                 currentTime,
                 currentTime,
                 currentTime.add(new BN(duration.days(10))),
-                true,
-                false,
                 {
                     from: account_issuer
                 });

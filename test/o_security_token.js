@@ -199,7 +199,7 @@ contract("SecurityToken", async (accounts) => {
             let toTime = new BN(currentTime.add(new BN(duration.days(100))));
             let expiryTime = new BN(toTime.add(new BN(duration.days(100))));
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_affiliate1, currentTime, toTime, expiryTime, true, false, {
+            let tx = await I_GeneralTransferManager.modifyKYCData(account_affiliate1, currentTime, toTime, expiryTime, {
                 from: token_owner,
                 gas: 6000000
             });
@@ -218,7 +218,7 @@ contract("SecurityToken", async (accounts) => {
             let toTime = new BN(currentTime.add(new BN(duration.days(100))));
             let expiryTime = new BN(toTime.add(new BN(duration.days(100))));
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_affiliate2, currentTime, toTime, expiryTime, true, false, {
+            let tx = await I_GeneralTransferManager.modifyKYCData(account_affiliate2, currentTime, toTime, expiryTime, {
                 from: token_owner,
                 gas: 6000000
             });
@@ -536,7 +536,7 @@ contract("SecurityToken", async (accounts) => {
             toTime = fromTime + duration.days(100);
             expiryTime = toTime + duration.days(100);
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, fromTime, toTime, expiryTime, true, false, {
+            let tx = await I_GeneralTransferManager.modifyKYCData(account_investor1, fromTime, toTime, expiryTime, {
                 from: token_owner,
                 gas: 6000000
             });
@@ -648,7 +648,7 @@ contract("SecurityToken", async (accounts) => {
         });
 
         it("Should transfer from whitelist investor1 to whitelist investor 2", async () => {
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor2, fromTime, toTime, expiryTime, true, false, {
+            let tx = await I_GeneralTransferManager.modifyKYCData(account_investor2, fromTime, toTime, expiryTime, {
                 from: token_owner,
                 gas: 500000
             });
@@ -670,7 +670,7 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should transferFrom from one investor to other", async () => {
             await I_SecurityToken.approve(account_investor1, new BN(2).mul(new BN(10).pow(new BN(18))), { from: account_investor2 });
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor3, fromTime, toTime, expiryTime, true, false, {
+            let tx = await I_GeneralTransferManager.modifyKYCData(account_investor3, fromTime, toTime, expiryTime, {
                 from: token_owner,
                 gas: 500000
             });
@@ -715,7 +715,7 @@ contract("SecurityToken", async (accounts) => {
         });
 
         it("Should add the investor in the whitelist by the delegate", async () => {
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_temp, fromTime, toTime, expiryTime, true, false, {
+            let tx = await I_GeneralTransferManager.modifyKYCData(account_temp, fromTime, toTime, expiryTime, {
                 from: account_delegate,
                 gas: 6000000
             });
@@ -755,7 +755,7 @@ contract("SecurityToken", async (accounts) => {
         });
 
         it("Should remove investor from the whitelist by the delegate", async () => {
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_temp, new BN(0), new BN(0), new BN(0), true, false, {
+            let tx = await I_GeneralTransferManager.modifyKYCData(account_temp, new BN(0), new BN(0), new BN(0), {
                 from: account_delegate,
                 gas: 6000000
             });
@@ -784,7 +784,7 @@ contract("SecurityToken", async (accounts) => {
         });
 
         it("Should fail in buying to tokens", async () => {
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_temp, fromTime, toTime, expiryTime, true, false, {
+            let tx = await I_GeneralTransferManager.modifyKYCData(account_temp, fromTime, toTime, expiryTime, {
                 from: account_delegate,
                 gas: 6000000
             });
@@ -863,7 +863,6 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should force burn the tokens - value too high", async () => {
             await I_GeneralTransferManager.changeAllowAllBurnTransfers(true, { from: token_owner });
-            let currentInvestorCount = await I_SecurityToken.getInvestorCount.call();
             let currentBalance = await I_SecurityToken.balanceOf(account_temp);
             await catchRevert(
                 I_SecurityToken.forceBurn(account_temp, currentBalance + new BN(web3.utils.toWei("500", "ether")), "0x0", "0x0", {
@@ -873,19 +872,18 @@ contract("SecurityToken", async (accounts) => {
         });
         it("Should force burn the tokens - wrong caller", async () => {
             await I_GeneralTransferManager.changeAllowAllBurnTransfers(true, { from: token_owner });
-            let currentInvestorCount = await I_SecurityToken.getInvestorCount.call();
             let currentBalance = await I_SecurityToken.balanceOf(account_temp);
             await catchRevert(I_SecurityToken.forceBurn(account_temp, currentBalance, "0x0", "0x0", { from: token_owner }));
         });
 
         it("Should burn the tokens", async () => {
-            let currentInvestorCount = await I_SecurityToken.getInvestorCount.call();
+            let currentInvestorCount = await I_SecurityToken.holderCount.call();
             let currentBalance = await I_SecurityToken.balanceOf(account_temp);
             // console.log(currentInvestorCount.toString(), currentBalance.toString());
             let tx = await I_SecurityToken.forceBurn(account_temp, currentBalance, "0x0", "0x0", { from: account_controller });
             // console.log(tx.logs[1].args._value.toNumber(), currentBalance.toNumber());
             assert.equal(tx.logs[1].args._value.toString(), currentBalance.toString());
-            let newInvestorCount = await I_SecurityToken.getInvestorCount.call();
+            let newInvestorCount = await I_SecurityToken.holderCount.call();
             // console.log(newInvestorCount.toString());
             assert.equal(newInvestorCount.toNumber() + 1, currentInvestorCount.toNumber(), "Investor count drops by one");
         });
@@ -928,17 +926,17 @@ contract("SecurityToken", async (accounts) => {
         it("Should get filtered investors", async () => {
             let investors = await I_SecurityToken.getInvestors.call();
             console.log("All Investors: " + investors);
-            let filteredInvestors = await I_SecurityToken.iterateInvestors.call(0, 1);
-            console.log("Filtered Investors (0, 1): " + filteredInvestors);
+            let filteredInvestors = await I_SecurityToken.iterateInvestors.call(0, 0);
+            console.log("Filtered Investors (0, 0): " + filteredInvestors);
             assert.equal(filteredInvestors[0], investors[0]);
             assert.equal(filteredInvestors.length, 1);
-            filteredInvestors = await I_SecurityToken.iterateInvestors.call(2, 4);
-            console.log("Filtered Investors (2, 4): " + filteredInvestors);
+            filteredInvestors = await I_SecurityToken.iterateInvestors.call(2, 3);
+            console.log("Filtered Investors (2, 3): " + filteredInvestors);
             assert.equal(filteredInvestors[0], investors[2]);
             assert.equal(filteredInvestors[1], investors[3]);
             assert.equal(filteredInvestors.length, 2);
-            filteredInvestors = await I_SecurityToken.iterateInvestors.call(0, 4);
-            console.log("Filtered Investors (0, 4): " + filteredInvestors);
+            filteredInvestors = await I_SecurityToken.iterateInvestors.call(0, 3);
+            console.log("Filtered Investors (0, 3): " + filteredInvestors);
             assert.equal(filteredInvestors[0], investors[0]);
             assert.equal(filteredInvestors[1], investors[1]);
             assert.equal(filteredInvestors[2], investors[2]);
@@ -965,13 +963,11 @@ contract("SecurityToken", async (accounts) => {
             I_MockRedemptionManager = await MockRedemptionManager.at(tx.logs[2].args._module);
             // adding the burn module into the GTM
             currentTime = new BN(await latestTime());
-            tx = await I_GeneralTransferManager.modifyWhitelist(
+            tx = await I_GeneralTransferManager.modifyKYCData(
                 I_MockRedemptionManager.address,
                 currentTime,
                 currentTime.add(new BN(duration.seconds(2))),
                 currentTime.add(new BN(duration.days(50))),
-                true, 
-                false,
                 {
                     from: account_delegate,
                     gas: 6000000
@@ -1008,13 +1004,11 @@ contract("SecurityToken", async (accounts) => {
 
             // adding the burn module into the GTM
             currentTime = new BN(await latestTime());
-            tx = await I_GeneralTransferManager.modifyWhitelist(
+            tx = await I_GeneralTransferManager.modifyKYCData(
                 I_MockRedemptionManager.address,
                 currentTime,
                 currentTime.add(new BN(duration.seconds(2))),
                 currentTime.add(new BN(duration.days(50))),
-                true,
-                false,
                 {
                     from: account_delegate,
                     gas: 6000000
@@ -1095,7 +1089,7 @@ contract("SecurityToken", async (accounts) => {
             let sender = account_investor1;
             let receiver = account_investor2;
 
-            let start_investorCount = await I_SecurityToken.getInvestorCount.call();
+            let start_investorCount = await I_SecurityToken.holderCount.call();
             let start_balInv1 = await I_SecurityToken.balanceOf.call(account_investor1);
             let start_balInv2 = await I_SecurityToken.balanceOf.call(account_investor2);
 
@@ -1108,7 +1102,7 @@ contract("SecurityToken", async (accounts) => {
                 { from: account_controller }
             );
 
-            let end_investorCount = await I_SecurityToken.getInvestorCount.call();
+            let end_investorCount = await I_SecurityToken.holderCount.call();
             let end_balInv1 = await I_SecurityToken.balanceOf.call(account_investor1);
             let end_balInv2 = await I_SecurityToken.balanceOf.call(account_investor2);
 

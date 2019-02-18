@@ -14,6 +14,7 @@ import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
 import "../libraries/TokenLib.sol";
+import "../interfaces/IDataStore.sol";
 
 /**
 * @title Security Token contract
@@ -28,7 +29,7 @@ import "../libraries/TokenLib.sol";
 contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater {
     using SafeMath for uint256;
 
-    TokenLib.InvestorDataStorage investorData;
+    bytes32 internal constant INVESTORSKEY = 0xdf3a8dd24acdd05addfc6aeffef7574d2de3f844535ec91e8e0f3e45dba96731; //keccak256(abi.encodePacked("INVESTORS"))
 
     // Used to hold the semantic version data
     struct SemanticVersion {
@@ -68,6 +69,9 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
 
     // Address of the data store used to store shared data
     address public dataStore;
+
+    // Number of investors with non-zero balance
+    uint256 public holderCount;
 
     // Records added modules - module list should be order agnostic!
     mapping(uint8 => address[]) modules;
@@ -126,8 +130,8 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     event DisableController();
 
     function _isModule(address _module, uint8 _type) internal view returns(bool) {
-        require(modulesToData[_module].module == _module, "Wrong address");
-        require(!modulesToData[_module].isArchived, "Module archived");
+        if (modulesToData[_module].module != _module || modulesToData[_module].isArchived)
+            return false;
         for (uint256 i = 0; i < modulesToData[_module].moduleTypes.length; i++) {
             if (modulesToData[_module].moduleTypes[i] == _type) {
                 return true;
@@ -384,7 +388,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     * @param _value value of transfer
     */
     function _adjustInvestorCount(address _from, address _to, uint256 _value) internal {
-        TokenLib.adjustInvestorCount(investorData, _from, _to, _value, balanceOf(_to), balanceOf(_from));
+        holderCount = TokenLib.adjustInvestorCount(holderCount, _from, _to, _value, balanceOf(_to), balanceOf(_from), dataStore);
     }
 
     /**
@@ -392,59 +396,56 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * NB - this length may differ from investorCount as it contains all investors that ever held tokens
      * @return list of addresses
      */
-    function getInvestors() external view returns(address[] memory) {
-        return investorData.investors;
+    function getInvestors() public view returns(address[] memory investors) {
+        IDataStore dataStoreInstance = IDataStore(dataStore);
+        investors = dataStoreInstance.getAddressArray(INVESTORSKEY);
     }
 
     /**
-     * @notice returns an array of investors at a given checkpoint
-     * NB - this length may differ from investorCount as it contains all investors that ever held tokens
+     * @notice returns an array of investors with non zero balance at a given checkpoint
      * @param _checkpointId Checkpoint id at which investor list is to be populated
      * @return list of investors
      */
     function getInvestorsAt(uint256 _checkpointId) external view returns(address[] memory) {
-        uint256 count = 0;
+        uint256 count;
         uint256 i;
-        for (i = 0; i < investorData.investors.length; i++) {
-            if (balanceOfAt(investorData.investors[i], _checkpointId) > 0) {
+        IDataStore dataStoreInstance = IDataStore(dataStore);
+        address[] memory investors = dataStoreInstance.getAddressArray(INVESTORSKEY);
+        for (i = 0; i < investors.length; i++) {
+            if (balanceOfAt(investors[i], _checkpointId) > 0) {
                 count++;
             }
         }
-        address[] memory investors = new address[](count);
+        address[] memory holders = new address[](count);
         count = 0;
-        for (i = 0; i < investorData.investors.length; i++) {
-            if (balanceOfAt(investorData.investors[i], _checkpointId) > 0) {
-                investors[count] = investorData.investors[i];
+        for (i = 0; i < investors.length; i++) {
+            if (balanceOfAt(investors[i], _checkpointId) > 0) {
+                holders[count] = investors[i];
                 count++;
             }
         }
-        return investors;
+        return holders;
     }
 
     /**
      * @notice generates subset of investors
-     * NB - can be used in batches if investor list is large
+     * NB - can be used in batches if investor list is large. start and end both are included in array.
      * @param _start Position of investor to start iteration from
      * @param _end Position of investor to stop iteration at
      * @return list of investors
      */
     function iterateInvestors(uint256 _start, uint256 _end) external view returns(address[] memory) {
-        require(_end <= investorData.investors.length, "Invalid end");
-        address[] memory investors = new address[](_end.sub(_start));
-        uint256 index = 0;
-        for (uint256 i = _start; i < _end; i++) {
-            investors[index] = investorData.investors[i];
-            index++;
-        }
-        return investors;
+        IDataStore dataStoreInstance = IDataStore(dataStore);
+        return dataStoreInstance.getAddressArrayElements(INVESTORSKEY, _start, _end);
     }
 
     /**
-     * @notice Returns the investor count
+     * @notice Returns the count of address that were added as (potential) investors
      * @return Investor count
      */
     function getInvestorCount() external view returns(uint256) {
-        return investorData.investorCount;
+        IDataStore dataStoreInstance = IDataStore(dataStore);
+        return dataStoreInstance.getAddressArrayLength(INVESTORSKEY);
     }
 
     /**
@@ -834,5 +835,4 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         _version[2] = securityTokenVersion.patch;
         return _version;
     }
-
 }

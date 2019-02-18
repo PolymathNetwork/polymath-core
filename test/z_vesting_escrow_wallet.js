@@ -193,13 +193,11 @@ contract('VestingEscrowWallet', accounts => {
 
         it("Should Buy the tokens for token_owner", async() => {
             // Add the Investor in to the whitelist
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
+            let tx = await I_GeneralTransferManager.modifyKYCData(
                 token_owner,
                 currentTime,
                 currentTime,
                 currentTime.add(new BN(durationUtil.days(10))),
-                true,
-                false,
                 {
                     from: token_owner,
                     gas: 6000000
@@ -220,13 +218,11 @@ contract('VestingEscrowWallet', accounts => {
 
         it("Should whitelist investors", async() => {
             // Add the Investor in to the whitelist
-            let tx = await I_GeneralTransferManager.modifyWhitelistMulti(
+            let tx = await I_GeneralTransferManager.modifyKYCDataMulti(
                 [I_VestingEscrowWallet.address, account_beneficiary1, account_beneficiary2, account_beneficiary3],
                 [currentTime, currentTime, currentTime, currentTime],
                 [currentTime, currentTime, currentTime, currentTime],
                 [currentTime.add(new BN(durationUtil.days(10))), currentTime.add(new BN(durationUtil.days(10))), currentTime.add(new BN(durationUtil.days(10))), currentTime.add(new BN(durationUtil.days(10)))],
-                [true, true, true, true],
-                [false, false, false, false],
                 {
                     from: token_owner,
                     gas: 6000000

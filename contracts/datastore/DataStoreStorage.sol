@@ -16,6 +16,6 @@ contract DataStoreStorage {
     mapping (bytes32 => address[]) internal addressArrayData;
     mapping (bytes32 => bool[]) internal boolArrayData;
 
-    uint8 constant DATA_KEY = 6;
-    bytes32 public constant MANAGEDATA = "MANAGEDATA";
+    uint8 internal constant DATA_KEY = 6;
+    bytes32 internal constant MANAGEDATA = "MANAGEDATA";
 }

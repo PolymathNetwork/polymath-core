@@ -204,7 +204,7 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
      * @notice Treasury address must be whitelisted to successfully finalize
      * @param mintUnsoldTokens unsold tokens will be minted to the Treasury wallet if ture
      */
-    function finalize(bool mintUnsoldTokens) public onlyOwner {
+    function finalize(bool mintUnsoldTokens) external onlyOwner {
         require(!isFinalized, "Already finalized");
         isFinalized = true;
         if ((mintUnsoldTokens) && (totalTokensSold < cap)) {
@@ -260,7 +260,7 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
      * @notice Function to set allowBeneficialInvestments (allow beneficiary to be different to funder)
      * @param _allowBeneficialInvestments Boolean to allow or disallow beneficial investments
      */
-    function changeAllowBeneficialInvestments(bool _allowBeneficialInvestments) public onlyOwner {
+    function changeAllowBeneficialInvestments(bool _allowBeneficialInvestments) external onlyOwner {
         require(_allowBeneficialInvestments != allowBeneficialInvestments, "Does not change value");
         allowBeneficialInvestments = _allowBeneficialInvestments;
         emit SetAllowBeneficialInvestments(allowBeneficialInvestments);
@@ -470,7 +470,7 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
     /**
      * @notice Return the permissions flag that are associated with STO
      */
-    function getPermissions() public view returns(bytes32[] memory allPermissions) {
+    function getPermissions() external view returns(bytes32[] memory allPermissions) {
         return allPermissions;
     }
         /**
@@ -527,7 +527,7 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
      * @notice This function returns the signature of configure function
      * @return bytes4 Configure function signature = bytes4(keccak256("configure(uint256,uint256,uint256,uint256,uint256,uint256,uint256,address,address)"))
      */
-    function getInitFunction() public pure returns (bytes4) {
+    function getInitFunction() external pure returns (bytes4) {
         return 0xe7830bae;
     }
 }

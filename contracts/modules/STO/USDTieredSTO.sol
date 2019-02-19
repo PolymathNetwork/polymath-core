@@ -273,7 +273,6 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
             }
         }
         address walletAddress = (treasuryWallet == address(0) ? IDataStore(getDataStore()).getAddress(TREASURY) : treasuryWallet);
-        require(walletAddress != address(0));
         ISecurityToken(securityToken).issue(walletAddress, tempReturned, "");
         emit ReserveTokenMint(msg.sender, walletAddress, tempReturned, currentTier);
         finalAmountReturned = tempReturned;

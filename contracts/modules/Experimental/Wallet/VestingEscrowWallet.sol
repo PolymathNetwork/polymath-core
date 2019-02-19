@@ -98,9 +98,7 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
         require(_amount <= unassignedTokens, "Amount is greater than unassigned tokens");
         uint256 amount = unassignedTokens;
         unassignedTokens = 0;
-        address _wallet = getTreasuryWallet();
-        require(_wallet != address(0), "Invalid address");
-        require(ISecurityToken(securityToken).transfer(_wallet, amount), "Transfer failed");
+        require(ISecurityToken(securityToken).transfer(getTreasuryWallet(), amount), "Transfer failed");
         emit SendToTreasury(amount, msg.sender);
     }
 

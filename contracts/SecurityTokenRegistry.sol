@@ -487,37 +487,20 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @param _ticker is the ticker symbol of the security token
      * @param _tokenDetails is the off-chain details of the token
      * @param _divisible is whether or not the token is divisible
+     * @param _treasuryWallet Ethereum address which will holds the STs.
      */
     function generateSecurityToken(
         string calldata _name,
         string calldata _ticker,
         string calldata _tokenDetails,
-        bool _divisible
-    )
-        external
-    {
-        generateSecurityTokenWithTreasury(_name, _ticker, _tokenDetails, _divisible, address(0));
-    }
-
-    /**
-     * @notice Deploys an instance of a new Security Token and records it to the registry
-     * @param _name is the name of the token
-     * @param _ticker is the ticker symbol of the security token
-     * @param _tokenDetails is the off-chain details of the token
-     * @param _divisible is whether or not the token is divisible
-     * @param _treasuryWallet Ethereum address which will holds the STs.
-     */
-    function generateSecurityTokenWithTreasury(
-        string memory _name,
-        string memory _ticker,
-        string memory _tokenDetails,
         bool _divisible,
         address _treasuryWallet
     )
-        public
+        external
         whenNotPausedOrOwner
     {
         require(bytes(_name).length > 0 && bytes(_ticker).length > 0, "Ticker length > 0");
+        require(_treasuryWallet != address(0), "0x0 not allowed");
         string memory ticker = Util.upper(_ticker);
         bytes32 statusKey = Encoder.getKey("registeredTickers_status", ticker);
         require(!getBoolValue(statusKey), "Already deployed");

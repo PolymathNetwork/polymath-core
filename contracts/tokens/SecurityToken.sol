@@ -77,20 +77,16 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         return false;
     }
 
+    // Require msg.sender to be the specified module type or the owner of the token
+    function _onlyModuleOrOwner(uint8 _type) internal view {
+        if (msg.sender != owner())
+            require(_isModule(msg.sender, _type));
+    }
+
     // Require msg.sender to be the specified module type
     modifier onlyModule(uint8 _type) {
         require(_isModule(msg.sender, _type));
         _;
-    }
-
-    // Require msg.sender to be the specified module type or the owner of the token
-    modifier onlyModuleOrOwner(uint8 _type) {
-        if (msg.sender == owner()) {
-            _;
-        } else {
-            require(_isModule(msg.sender, _type));
-            _;
-        }
     }
 
     modifier isIssuanceAllowed() {
@@ -496,8 +492,8 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     ) 
         public 
         isIssuanceAllowed
-        onlyModuleOrOwner(MINT_KEY) 
-    {
+    {   
+        _onlyModuleOrOwner(MINT_KEY); 
         // Add a function to validate the `_data` parameter
         require(_updateTransfer(address(0), _tokenHolder, _value, _data), "Transfer invalid");
         _mint(_tokenHolder, _value);
@@ -566,7 +562,8 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * @notice Creates a checkpoint that can be used to query historical balances / totalSuppy
      * @return uint256
      */
-    function createCheckpoint() external onlyModuleOrOwner(CHECKPOINT_KEY) returns(uint256) {
+    function createCheckpoint() external returns(uint256) {
+        _onlyModuleOrOwner(CHECKPOINT_KEY);
         require(currentCheckpointId < 2 ** 256 - 1);
         currentCheckpointId = currentCheckpointId + 1;
         /*solium-disable-next-line security/no-block-members*/

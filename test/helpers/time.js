@@ -2,66 +2,39 @@
 // aren’t included within the original RPC specification.
 // See https://github.com/ethereumjs/testrpc#implemented-methods
 
-// async function increaseTime(duration) {
-//     //let currentTime = (await web3.eth.getBlock('latest')).timestamp
-//     await sendIncreaseTime(duration);
-//     return advanceBlock();
-// }
-
-// async function sendIncreaseTime(duration) {
-//     return new Promise(() => 
-//         web3.currentProvider.send({
-//             jsonrpc: '2.0',
-//             method: 'evm_increaseTime',
-//             params: [duration],
-//         })
-//     );
-// }
-
-// async function advanceBlock() {
-//     return new Promise(() => 
-//         web3.currentProvider.send({
-//             jsonrpc: '2.0',
-//             method: 'evm_mine',
-//         })
-//     );
-// }
-
-const pify = require('pify');
-
-function advanceBlock() {
-  return pify(web3.currentProvider.send)({
-    jsonrpc: '2.0',
-    method: 'evm_mine',
+async function advanceBlock() {
+  return new Promise((resolve, reject) => {
+      web3.currentProvider.send({
+        jsonrpc: '2.0',
+        method: 'evm_mine',
+      },
+      (err, result) => {
+        if (err) {
+          return reject(err);
+        }
+        resolve(result.result);
+      }
+    );
   });
 }
 
 // Increases ganache time by the passed duration in seconds
 async function increaseTime(duration) {
-  await pify(web3.currentProvider.send)({
-    jsonrpc: '2.0',
-    method: 'evm_increaseTime',
-    params: [duration],
-  });
-  await advanceBlock();
-}
-
-async function jumpToTime(timestamp) {
-  const id = Date.now();
-
-  return new Promise((resolve, reject) => {
-    web3.currentProvider.send(
-      {
-        jsonrpc: "2.0",
-        method: "evm_mine",
-        params: [timestamp],
-        id: id
+  await new Promise((resolve, reject) => {
+      web3.currentProvider.send({
+        jsonrpc: '2.0',
+        method: 'evm_increaseTime',
+        params: [duration],
       },
-      (err, res) => {
-        return err ? reject(err) : resolve(res);
+      (err, result) => {
+        if (err) {
+          return reject(err);
+        }
+        resolve(result.result);
       }
     );
   });
+  await advanceBlock();
 }
 
 export default function takeSnapshot() {

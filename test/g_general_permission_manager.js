@@ -1,5 +1,4 @@
 import latestTime from "./helpers/latestTime";
-import { signData } from "./helpers/signData";
 import { pk } from "./helpers/testprivateKey";
 import { duration, promisifyLogWatch, latestBlock } from "./helpers/utils";
 import { takeSnapshot, increaseTime, revertToSnapshot } from "./helpers/time";

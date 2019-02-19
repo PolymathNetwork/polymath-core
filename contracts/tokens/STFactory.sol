@@ -2,7 +2,7 @@ pragma solidity ^0.5.0;
 
 import "./SecurityToken.sol";
 import "../interfaces/ISTFactory.sol";
-import "../dataStore/DataStoreFactory.sol";
+import "../datastore/DataStoreFactory.sol";
 
 /**
  * @title Proxy for deploying SecurityToken instances

@@ -64,6 +64,8 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     event CheckpointCreated(uint256 indexed _checkpointId);
     // Events to log controller actions
     event SetController(address indexed _oldController, address indexed _newController);
+    //Event emit when the global treasury wallet address get changed
+    event TreasuryWalletChanged(address _oldTreasuryWallet, address _newTreasuryWallet);
     event DisableController();
     
     function _isModule(address _module, uint8 _type) internal view returns(bool) {
@@ -288,6 +290,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      */
     function changeTreasuryWallet(address _wallet) external onlyOwner {
         require(_wallet != address(0), "Invalid address");
+        emit TreasuryWalletChanged(IDataStore(dataStore).getAddress(TREASURY), _wallet);
         IDataStore(dataStore).setAddress(TREASURY, _wallet);
     }
 

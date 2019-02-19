@@ -17,7 +17,6 @@ let totalGas = BigNumber(0);
 
 let polyToken;
 let securityTokenRegistry;
-let strGetter;
 let securityTokenRegistryAddress;
 
 function Ticker(_owner, _symbol, _name) {
@@ -49,9 +48,6 @@ async function startScript() {
   let securityTokenRegistryABI = abis.securityTokenRegistry();
   securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
   securityTokenRegistry.setProvider(web3.currentProvider);
-  let strGetterABI = abis.strGetter();
-  strGetter = new web3.eth.Contract(strGetterABI, securityTokenRegistryAddress);
-  strGetter.setProvider(web3.currentProvider);
 
   let polytokenAddress = await contracts.polyToken();
   let polytokenABI = abis.polyToken();
@@ -77,7 +73,7 @@ async function readFile() {
 async function registerTickers() {
   // Poly approval for registration fees
   let polyBalance = BigNumber(await polyToken.methods.balanceOf(Issuer.address).call());
-  let fee = web3.utils.fromWei(await strGetter.methods.getTickerRegistrationFee().call());
+  let fee = web3.utils.fromWei(await securityTokenRegistry.methods.getTickerRegistrationFee().call());
   let totalFee = BigNumber(ticker_data.length).mul(fee);
 
   if (totalFee.gt(polyBalance)) {
@@ -104,7 +100,7 @@ async function registerTickers() {
     }
 
     // validate ticker
-    await strGetter.methods.getTickerDetails(ticker_data[i].symbol).call({}, function (error, result) {
+    await securityTokenRegistry.methods.getTickerDetails(ticker_data[i].symbol).call({}, function (error, result) {
       if (result[1] != 0) {
         failed_tickers.push(` ${i} is already registered`);
         valid = false;

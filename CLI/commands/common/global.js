@@ -44,9 +44,9 @@ module.exports = {
           console.log("Invalid remote node")
           process.exit(0)
         }
-        await httpProvider(remoteNetwork, `${__dirname}/../../../privKey`);
+        await httpProvider(remoteNetwork, './privKey');
       } else {
-        await httpProvider("http://localhost:8545", `${__dirname}/../../../privKeyLocal`);
+        await httpProvider("http://localhost:8545", './privKeyLocal');
       }
       defaultGasPrice = getGasPrice(await web3.eth.net.getId());
     }

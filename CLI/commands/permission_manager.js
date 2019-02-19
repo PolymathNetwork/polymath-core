@@ -7,7 +7,7 @@ var abis = require('./helpers/contract_abis');
 
 // App flow
 let tokenSymbol;
-let strGetter;
+let securityTokenRegistry;
 let securityToken;
 let generalPermissionManager;
 let isNewDelegate = false;
@@ -35,9 +35,9 @@ async function executeApp() {
 async function setup(){
   try {
     let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
-    let strGetterABI = abis.strGetter();
-    strGetter = new web3.eth.Contract(strGetterABI, securityTokenRegistryAddress);
-    strGetter.setProvider(web3.currentProvider);
+    let securityTokenRegistryABI = abis.securityTokenRegistry();
+    securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
+    securityTokenRegistry.setProvider(web3.currentProvider);
   } catch (err) {
     console.log(err)
     console.log('\x1b[31m%s\x1b[0m',"There was a problem getting the contracts. Make sure they are deployed to the selected network.");
@@ -49,7 +49,7 @@ async function selectST() {
   if (!tokenSymbol)
     tokenSymbol = readlineSync.question('Enter the token symbol: ');
 
-  let result = await strGetter.methods.getSecurityTokenAddress(tokenSymbol).call();
+  let result = await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call();
   if (result == "0x0000000000000000000000000000000000000000") {
     tokenSymbol = undefined;
     console.log(chalk.red(`Token symbol provided is not a registered Security Token.`));
@@ -118,10 +118,10 @@ async function selectDelegate() {
   let result;
   let delegates = await getDelegates();
   let permissions = await getDelegatesAndPermissions();
-
+  
   let options = ['Add new delegate'];
 
-  options = options.concat(delegates.map(function(d) {
+  options = options.concat(delegates.map(function(d) { 
     let perm = renderTable(permissions, d.address);
 
     return `Account: ${d.address}
@@ -142,7 +142,7 @@ async function selectDelegate() {
 
 async function selectModule() {
   let modules = await getModulesWithPermissions();
-  let options = modules.map(function(m) {
+  let options = modules.map(function(m) { 
     return m.name;
   });
   let index = readlineSync.keyInSelect(options, 'Select a module:', {cancel: false});
@@ -216,14 +216,14 @@ async function addNewDelegate() {
 async function getModulesWithPermissions() {
   let modules = [];
   let moduleABI = abis.moduleInterface();
-
+  
   for (const type in gbl.constants.MODULES_TYPES) {
     let modulesAttached = await securityToken.methods.getModulesByType(gbl.constants.MODULES_TYPES[type]).call();
     for (const m of modulesAttached) {
       let contractTemp = new web3.eth.Contract(moduleABI, m);
       let permissions = await contractTemp.methods.getPermissions().call();
       if (permissions.length > 0) {
-        modules.push({
+        modules.push({ 
           name: web3.utils.hexToAscii((await securityToken.methods.getModule(m).call())[0]),
           address: m,
           permissions: permissions.map(function (p) { return web3.utils.hexToAscii(p) })
@@ -251,7 +251,7 @@ async function getDelegatesAndPermissions() {
           for (delegateAddr of allDelegates) {
             if (result[delegateAddr] == undefined) {
               result[delegateAddr] = []
-            }
+            } 
             if (result[delegateAddr][moduleName + '-' + module] == undefined) {
               result[delegateAddr][moduleName + '-' + module] = [{permission: permissionName}]
             } else {

@@ -14,7 +14,6 @@ let tokenLaunched;
 
 // Artifacts
 let securityTokenRegistry;
-let strGetter;
 let polyToken;
 
 async function executeApp(_ticker, _transferOwnership, _name, _details, _divisible) {
@@ -48,9 +47,6 @@ async function setup() {
     let securityTokenRegistryABI = abis.securityTokenRegistry();
     securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
     securityTokenRegistry.setProvider(web3.currentProvider);
-    let strGetterABI = abis.strGetter();
-    strGetter = new web3.eth.Contract(strGetterABI, securityTokenRegistryAddress);
-    strGetter.setProvider(web3.currentProvider);
 
     let polytokenAddress = await contracts.polyToken();
     let polytokenABI = abis.polyToken();
@@ -66,7 +62,7 @@ async function setup() {
 async function step_ticker_registration(_ticker) {
   console.log(chalk.blue('\nToken Symbol Registration'));
 
-  let regFee = web3.utils.fromWei(await strGetter.methods.getTickerRegistrationFee().call());
+  let regFee = web3.utils.fromWei(await securityTokenRegistry.methods.getTickerRegistrationFee().call());
   let available = false;
 
   while (!available) {
@@ -79,7 +75,7 @@ async function step_ticker_registration(_ticker) {
       tokenSymbol = await selectTicker();
     }
 
-    let details = await strGetter.methods.getTickerDetails(tokenSymbol).call();
+    let details = await securityTokenRegistry.methods.getTickerDetails(tokenSymbol).call();
     if (new BigNumber(details[1]).toNumber() == 0) {
       // If it has no registration date, it is available
       available = true;
@@ -123,7 +119,7 @@ async function step_transfer_ticker_ownership(_transferOwnership) {
 async function step_token_deploy(_name, _details, _divisible) {
   console.log(chalk.blue('\nToken Creation - Token Deployment'));
 
-  let launchFee = web3.utils.fromWei(await strGetter.methods.getSecurityTokenLaunchFee().call());
+  let launchFee = web3.utils.fromWei(await securityTokenRegistry.methods.getSecurityTokenLaunchFee().call());
   console.log(chalk.green(`\nToken deployment requires ${launchFee} POLY & deducted from '${Issuer.address}', Current balance is ${(web3.utils.fromWei(await polyToken.methods.balanceOf(Issuer.address).call()))} POLY\n`));
 
   let tokenName;
@@ -163,12 +159,12 @@ async function step_token_deploy(_name, _details, _divisible) {
 //////////////////////
 async function selectTicker() {
   let result;
-  let userTickers = (await strGetter.methods.getTickersByOwner(Issuer.address).call()).map(t => web3.utils.hexToAscii(t));
+  let userTickers = (await securityTokenRegistry.methods.getTickersByOwner(Issuer.address).call()).map(t => web3.utils.hexToAscii(t));
   let options = await Promise.all(userTickers.map(async function (t) {
-    let tickerDetails = await strGetter.methods.getTickerDetails(t).call();
+    let tickerDetails = await securityTokenRegistry.methods.getTickerDetails(t).call();
     let tickerInfo;
     if (tickerDetails[4]) {
-      tickerInfo = `Token launched at ${(await strGetter.methods.getSecurityTokenAddress(t).call())}`;
+      tickerInfo = `Token launched at ${(await securityTokenRegistry.methods.getSecurityTokenAddress(t).call())}`;
     } else {
       tickerInfo = `Expires at ${moment.unix(tickerDetails[2]).format('MMMM Do YYYY, HH:mm:ss')}`;
     }

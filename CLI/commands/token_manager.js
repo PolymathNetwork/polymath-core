@@ -8,13 +8,13 @@ const gbl = require('./common/global');
 const csvParse = require('./helpers/csv');
 
 // Constants
-const MULTIMINT_DATA_CSV = `${__dirname}/../data/ST/multi_mint_data.csv`;
+const MULTIMINT_DATA_CSV = './CLI/data/ST/multi_mint_data.csv';
 
 // Load contract artifacts
 const contracts = require('./helpers/contract_addresses');
 const abis = require('./helpers/contract_abis');
 
-let strGetter;
+let securityTokenRegistry;
 let polyToken;
 let featureRegistry;
 let securityToken;
@@ -25,9 +25,9 @@ let tokenSymbol
 async function setup() {
   try {
     let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
-    let strGetterABI = abis.strGetter();
-    strGetter = new web3.eth.Contract(strGetterABI, securityTokenRegistryAddress);
-    strGetter.setProvider(web3.currentProvider);
+    let securityTokenRegistryABI = abis.securityTokenRegistry();
+    securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
+    securityTokenRegistry.setProvider(web3.currentProvider);
 
     let polytokenAddress = await contracts.polyToken();
     let polytokenABI = abis.polyToken();
@@ -297,7 +297,7 @@ async function mintTokens() {
       let fromTime = readlineSync.questionInt('Enter the time (Unix Epoch time) when the sale lockup period ends and the investor can freely sell his tokens: ');
       let toTime = readlineSync.questionInt('Enter the time (Unix Epoch time) when the purchase lockup period ends and the investor can freely purchase tokens from others: ');
       let expiryTime = readlineSync.questionInt('Enter the time till investors KYC will be validated (after that investor need to do re-KYC): ');
-      let canBuyFromSTO = readlineSync.keyInYNStrict('Can the investor buy from security token offerings?');
+      let canBuyFromSTO = readlineSync.keyInYNStrict('Is the investor a restricted investor?');
       await modifyWhitelist(investor, fromTime, toTime, expiryTime, canBuyFromSTO);
       break;
     case 'Mint tokens to a single address':
@@ -617,7 +617,7 @@ async function getAllModules() {
         let nameTemp = web3.utils.hexToUtf8(details[0]);
         let pausedTemp = null;
         if (type == gbl.constants.MODULES_TYPES.STO || type == gbl.constants.MODULES_TYPES.TRANSFER) {
-          let abiTemp = JSON.parse(require('fs').readFileSync(`${__dirname}/../../build/contracts/${nameTemp}.json`).toString()).abi;
+          let abiTemp = JSON.parse(require('fs').readFileSync(`./build/contracts/${nameTemp}.json`).toString()).abi;
           let contractTemp = new web3.eth.Contract(abiTemp, details[1]);
           pausedTemp = await contractTemp.methods.paused().call();
         }
@@ -643,7 +643,7 @@ async function initialize(_tokenSymbol) {
   } else {
     tokenSymbol = _tokenSymbol;
   }
-  let securityTokenAddress = await strGetter.methods.getSecurityTokenAddress(tokenSymbol).call();
+  let securityTokenAddress = await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call();
   if (securityTokenAddress == '0x0000000000000000000000000000000000000000') {
     console.log(chalk.red(`Selected Security Token ${tokenSymbol} does not exist.`));
     process.exit(0);
@@ -665,9 +665,9 @@ function welcome() {
 async function selectToken() {
   let result = null;
 
-  let userTokens = await strGetter.methods.getTokensByOwner(Issuer.address).call();
+  let userTokens = await securityTokenRegistry.methods.getTokensByOwner(Issuer.address).call();
   let tokenDataArray = await Promise.all(userTokens.map(async function (t) {
-    let tokenData = await strGetter.methods.getSecurityTokenData(t).call();
+    let tokenData = await securityTokenRegistry.methods.getSecurityTokenData(t).call();
     return { symbol: tokenData[0], address: t };
   }));
   let options = tokenDataArray.map(function (t) {

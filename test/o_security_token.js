@@ -1332,7 +1332,7 @@ contract("SecurityToken", async (accounts) => {
             `)
 
             assert.equal(
-                (await stGetter.controller.call()).substring(0, 3),
+                (await stGetter.controller.call()).substring(0, 4),
                 await readStorage(I_SecurityToken.address, 7)
             );
 

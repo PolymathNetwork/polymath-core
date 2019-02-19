@@ -97,9 +97,6 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
         onlyFactory
     {
         require(endTime == 0, "Already configured");
-        FundRaiseType[] memory _fundRaiseTypes = new FundRaiseType[](1);
-        _fundRaiseTypes[0] = FundRaiseType.POLY;
-        _setFundRaiseType(_fundRaiseTypes);
         _modifyTimes(_startTime, _endTime);
         _modifyCap (_cap);
         _modifyRate (_rate);

@@ -2512,39 +2512,6 @@ contract("POLYCappedSTO", async (accounts) => {
                 "Factory address don't match"
             );
         });
-
-        it("Should get the correct fund raise types", async () => {
-            assert.equal(
-                await I_POLYCappedSTO_Array[0].fundRaiseTypes(ETH),
-                false,
-                "Fund raise type is ETH"
-            );
-            assert.equal(
-                await I_POLYCappedSTO_Array[0].fundRaiseTypes(POLY),
-                true,
-                "Fund raise type is not POLY"
-            );
-            assert.equal(
-                await I_POLYCappedSTO_Array[0].fundRaiseTypes(SC),
-                false,
-                "Fund raise type is Stable Coins"
-            );
-            assert.equal(
-                await I_POLYCappedSTO_Array[1].fundRaiseTypes(ETH),
-                false,
-                "Fund raise type is ETH"
-            );
-            assert.equal(
-                await I_POLYCappedSTO_Array[1].fundRaiseTypes(POLY),
-                true,
-                "Fund raise type is not POLY"
-            );
-            assert.equal(
-                await I_POLYCappedSTO_Array[1].fundRaiseTypes(SC),
-                false,
-                "Fund raise type is Stable Coins"
-            );
-        });
     });
 
     describe("Reclaim POLY sent directly to STO contract in error", async () => {

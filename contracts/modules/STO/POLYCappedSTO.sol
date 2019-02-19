@@ -6,7 +6,7 @@ import "../../RegistryUpdater.sol";
 import "../../libraries/DecimalMath.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "../../storage/POLYCappedSTOStorage.sol";
+import "../../storage/modules/STO/POLYCappedSTOStorage.sol";
 
 /**
  * @title STO module for capped crowdsale that accepts POLY
@@ -218,7 +218,7 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
             address _wallet = treasuryWallet;
             require(_wallet != address(0));
             finalAmountReturned = cap.sub(totalTokensSold);
-            require(ISecurityToken(securityToken).mint(treasuryWallet, finalAmountReturned), "Error minting");
+            ISecurityToken(securityToken).issue(treasuryWallet, finalAmountReturned, "");
             emit ReserveTokenMint(msg.sender, treasuryWallet, finalAmountReturned);
         }
      }
@@ -399,7 +399,7 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
     * @param _tokenAmount Number of tokens to be emitted
     */
     function _deliverTokens(address _beneficiary, uint256 _tokenAmount) internal {
-        require(ISecurityToken(securityToken).mint(_beneficiary, _tokenAmount), "Error minting");
+        ISecurityToken(securityToken).issue(_beneficiary, _tokenAmount, "");
     }
 
     /**

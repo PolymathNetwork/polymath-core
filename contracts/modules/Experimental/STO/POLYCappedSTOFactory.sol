@@ -29,7 +29,7 @@ contract POLYCappedSTOFactory is ModuleFactory {
     {
         require(_logicContract != address(0), "address 0x not allowed");
         logicContract = _logicContract;
-        version = "1.0.0";
+        version = "3.0.0";
         name = "POLYCappedSTO";
         title = "POLY - Capped STO";
         description = "This smart contract creates a maximum number of tokens (i.e. hard cap) which the total aggregate of tokens acquired by all investors cannot exceed. Security tokens are sent to the investor upon reception of the funds (POLY). This STO supports options for a minimum investment limit for all investors, maximum investment limit for non-accredited investors and an option to mint unsold tokens to a treasury wallet upon termination of the offering.";

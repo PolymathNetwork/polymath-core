@@ -1415,8 +1415,8 @@ contract("POLYCappedSTO", async (accounts) => {
 
             // Verify the prePurchaseCheck function
             let prePurchaseCheck = await I_POLYCappedSTO_Array[stoId].prePurchaseChecks(NONACCREDITED1, investment_POLY);
-            let calculatedTokens = prePurchaseCheck._tokens;
-            let calculatedSpentValue = prePurchaseCheck._spentValue;
+            let calculatedTokens = prePurchaseCheck.tokens;
+            let calculatedSpentValue = prePurchaseCheck.spentValue;
             assert.equal(calculatedTokens.toString(), expectedTokens.toString(), "Token amounts don't match");
             assert.equal(calculatedSpentValue, investment_POLY.toString(), "Spent amounts don't match");
 
@@ -1547,8 +1547,8 @@ contract("POLYCappedSTO", async (accounts) => {
 
             // Verify the prePurchaseCheck function
             let prePurchaseCheck = await I_POLYCappedSTO_Array[stoId].prePurchaseChecks(ACCREDITED1, investment_POLY);
-            let calculatedTokens = prePurchaseCheck._tokens;
-            let calculatedSpentValue = prePurchaseCheck._spentValue;
+            let calculatedTokens = prePurchaseCheck.tokens;
+            let calculatedSpentValue = prePurchaseCheck.spentValue;
             assert.equal(calculatedTokens.toString(), expectedTokens.toString(), "Token amounts don't match");
             assert.equal(calculatedSpentValue, investment_POLY.toString(), "Spent amounts don't match");
 
@@ -1701,8 +1701,8 @@ contract("POLYCappedSTO", async (accounts) => {
 
             // Verify the prePurchaseCheck function
             let prePurchaseCheck = await I_POLYCappedSTO_Array[stoId].prePurchaseChecks(NONACCREDITED1, investment_POLY);
-            let calculatedTokens = prePurchaseCheck._tokens;
-            let calculatedSpentValue = prePurchaseCheck._spentValue;
+            let calculatedTokens = prePurchaseCheck.tokens;
+            let calculatedSpentValue = prePurchaseCheck.spentValue;
             assert.equal(calculatedTokens.toString(), expectedTokens.toString(), "Token amounts don't match");
             assert.equal(calculatedSpentValue, investment_POLY.sub(surplus_POLY).toString(), "Spent amounts don't match");
 
@@ -1862,8 +1862,8 @@ contract("POLYCappedSTO", async (accounts) => {
 
             // Verify the prePurchaseCheck function
             let prePurchaseCheck = await I_POLYCappedSTO_Array[stoId].prePurchaseChecks(ACCREDITED1, investment_POLY);
-            let calculatedTokens = prePurchaseCheck._tokens;
-            let calculatedSpentValue = prePurchaseCheck._spentValue;
+            let calculatedTokens = prePurchaseCheck.tokens;
+            let calculatedSpentValue = prePurchaseCheck.spentValue;
             assert.equal(calculatedTokens.toString(), expectedTokens.toString(), "Token amounts don't match");
             assert.equal(calculatedSpentValue, investment_POLY.sub(surplus_POLY).toString(), "Spent amounts don't match");
 
@@ -2030,8 +2030,8 @@ contract("POLYCappedSTO", async (accounts) => {
 
             // Verify the prePurchaseCheck function when called directly
             let prePurchaseCheck = await I_POLYCappedSTO_Array[stoId].prePurchaseChecks(ACCREDITED1, investment_POLY);
-            let calculatedTokens = prePurchaseCheck._tokens;
-            let calculatedSpentValue = prePurchaseCheck._spentValue;
+            let calculatedTokens = prePurchaseCheck.tokens;
+            let calculatedSpentValue = prePurchaseCheck.spentValue;
             assert.equal(calculatedTokens.toString(), expectedTokens.toString(), "Token amounts don't match");
             assert.equal(calculatedSpentValue, investment_POLY.sub(surplus_POLY).toString(), "Spent amounts don't match");
 
@@ -2422,7 +2422,7 @@ contract("POLYCappedSTO", async (accounts) => {
                 5 - nonAccreditedLimit,
                 6 - maxNonAccreditedInvestors,
                 7 - totalTokensSold,
-                8 - _raised,
+                8 - raised,
                 9 - fundsRaisedUSD,
                 10 - investorCount,
                 11 - nonAccreditedCount
@@ -2602,7 +2602,7 @@ contract("POLYCappedSTO", async (accounts) => {
             );
             assert.equal(await I_POLYCappedSTOFactory.title.call(), "POLY - Capped STO", "Wrong Module added");
             assert.equal(await I_POLYCappedSTOFactory.getInstructions.call(), "Initialises a POLY capped STO. Init parameters are _startTime (time STO starts), _endTime (time STO ends), _cap (cap in tokens for STO), _rate (POLY to token rate), _minimumInvestment (required minimum investment), _nonAccreditedLimit (maximum investment for non-accredited investors), _maxNonAccreditedInvestors (maximum number of non accredited investors), _wallet (address which will receive funds)");
-            assert.equal(await I_POLYCappedSTOFactory.version.call(), "1.0.0");
+            assert.equal(await I_POLYCappedSTOFactory.version.call(), "3.0.0");
             let tags = await I_POLYCappedSTOFactory.getTags.call();
             assert.equal(web3.utils.hexToString(tags[0]), "Capped");
             assert.equal(web3.utils.hexToString(tags[1]), "Non-refundable");

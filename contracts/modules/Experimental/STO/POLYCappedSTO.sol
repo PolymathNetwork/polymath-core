@@ -295,8 +295,9 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
         returns(uint256 spentValue)
     {
         uint256 tokens;
-        (tokens, spentValue) = prePurchaseChecks (_beneficiary, _investmentValue);
-        _processPurchase(_beneficiary, tokens);
+        bool accredited;
+        (tokens, spentValue, accredited) = prePurchaseChecks (_beneficiary, _investmentValue);
+        _processPurchase(_beneficiary, tokens, accredited);
         uint256 polyUsdRate = IOracle(PolymathRegistry(RegistryUpdater(securityToken).polymathRegistry()).getAddress(POLY_ORACLE)).getPrice();
         uint256 spentUSD = DecimalMath.mul(spentValue, polyUsdRate);
         emit TokenPurchase(msg.sender, _beneficiary, spentValue, spentUSD, tokens);
@@ -319,40 +320,30 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
       */
     function prePurchaseChecks(address _beneficiary, uint256 _investmentValue) public view returns(
         uint256 tokens,
-        uint256 spentValue
+        uint256 spentValue,
+        bool accredited
     ) {
         //Pre-Purchase checks
         require(isOpen(), "STO not open");
         require(_investmentValue > 0, "No funds were sent");
         require(_beneficiary != address(0), "Beneficiary address should not be 0x");
-        if (!_isAccredited(_beneficiary) && maxNonAccreditedInvestors != 0) {
-            require(nonAccreditedCount < maxNonAccreditedInvestors, "Limit for number of non-accredited investor reached");
-        }
         require(_investmentValue.add(investorInvested[_beneficiary]) >= minimumInvestment, "Less than minimum investment");
-        // Get the maximum allowed investment value
-        uint256 allowedInvestment = _getAllowedInvestment (_beneficiary, _investmentValue);
-        // Get the number of tokens to be minted and value in fund raise type
-        (tokens, spentValue) = _getTokenAmount(allowedInvestment);
-    }
-
-    /**
-      * @notice Gets the amount of the investment value the investor can invest based on accredited status and limits
-      * @param _beneficiary Address where security tokens will be sent
-      * @param _investmentValue Amount of POLY invested
-      * @return _allowedInvestment Amount of the invested value the the beneficiary is allowed to invest
-      */
-    function _getAllowedInvestment (address _beneficiary, uint256 _investmentValue) internal view returns(
-        uint256 allowedInvestment
-    ) {
+        accredited = _isAccredited(_beneficiary);
         // Accredited investors are not limited
-        allowedInvestment = _investmentValue;
-        // Check for non-accredited investment limits
-        if (!_isAccredited(_beneficiary)) {
+        uint256 allowedInvestment = _investmentValue;
+        // Check for non-accredited investor limits
+        if (!accredited) {
             uint256 investorLimit = (nonAccreditedLimitOverride[_beneficiary] == 0) ? nonAccreditedLimit : nonAccreditedLimitOverride[_beneficiary];
             require(investorInvested[_beneficiary] < investorLimit, "Over Non-accredited investor limit");
-            if (_investmentValue.add(investorInvested[_beneficiary]) > investorLimit)
+            if (_investmentValue.add(investorInvested[_beneficiary]) > investorLimit) {
                 allowedInvestment = investorLimit.sub(investorInvested[_beneficiary]);
+            }
+            if (maxNonAccreditedInvestors != 0) {
+                require(nonAccreditedCount < maxNonAccreditedInvestors, "Limit for number of non-accredited investor reached");
+            }
         }
+        // Get the number of tokens to be minted and value in fund raise type
+        (tokens, spentValue) = _getTokenAmount(allowedInvestment);
     }
 
     /**
@@ -379,10 +370,10 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
     * @param _beneficiary Address receiving the tokens
     * @param _tokenAmount Number of tokens to be purchased
     */
-    function _processPurchase(address _beneficiary, uint256 _tokenAmount) internal {
+    function _processPurchase(address _beneficiary, uint256 _tokenAmount, bool _accredited) internal {
         if (investorInvested[_beneficiary] == 0) {
             investorCount = investorCount + 1;
-            if (!_isAccredited(_beneficiary)) {
+            if (!_accredited) {
                 nonAccreditedCount = nonAccreditedCount + 1;
             }
         }

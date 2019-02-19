@@ -3,7 +3,7 @@ pragma solidity ^0.5.0;
 import "../../Pausable.sol";
 import "../Module.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
-import "./STOStorage.sol";
+import "../../storage/modules/STO/STOStorage.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "../../interfaces/ISTO.sol";
 

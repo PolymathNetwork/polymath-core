@@ -5,7 +5,7 @@ import "../../interfaces/IOracle.sol";
 import "../../RegistryUpdater.sol";
 import "../../libraries/DecimalMath.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "../../storage/USDTieredSTOStorage.sol";
+import "../../storage/modules/STO/USDTieredSTOStorage.sol";
 
 /**
  * @title STO module for standard capped crowdsale
@@ -266,7 +266,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
                 tiers[i].mintedTotal = tiers[i].tokenTotal;
             }
         }
-        require(ISecurityToken(securityToken).mint(reserveWallet, tempReturned), "Minting Failed");
+        ISecurityToken(securityToken).issue(reserveWallet, tempReturned, "");
         emit ReserveTokenMint(msg.sender, reserveWallet, tempReturned, currentTier);
         finalAmountReturned = tempReturned;
         totalTokensSold = tempSold;
@@ -539,7 +539,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
             purchasedTokens = maximumTokens;
         }
         if (purchasedTokens > 0) {
-            require(ISecurityToken(securityToken).mint(_beneficiary, purchasedTokens), "Mint failed");
+            ISecurityToken(securityToken).issue(_beneficiary, purchasedTokens, "");
             emit TokenPurchase(msg.sender, _beneficiary, purchasedTokens, spentUSD, _tierPrice, _tier);
         }
     }

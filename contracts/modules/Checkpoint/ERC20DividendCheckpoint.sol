@@ -1,7 +1,7 @@
 pragma solidity ^0.5.0;
 
 import "./DividendCheckpoint.sol";
-import "./ERC20DividendCheckpointStorage.sol";
+import "../../storage/modules/Checkpoint/ERC20DividendCheckpointStorage.sol";
 import "../../interfaces/IOwnable.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 

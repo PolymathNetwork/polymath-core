@@ -6,11 +6,13 @@ const path = require("path");
 const util = require("util");
 const exec = util.promisify(require("child_process").exec);
 
+console.log(`Mandatory: Solc cli tool should be installed globally`);
 prompt.start();
 
 prompt.get(["LogicContract", "ProxyContract"], async (err, result) => {
-    let logicContract;
-    let proxyContract;
+    let temp;
+    let logicFilePath;
+    let proxyFilePath; 
 
     const fileList = walkSync("./contracts", []);
 
@@ -20,26 +22,22 @@ prompt.get(["LogicContract", "ProxyContract"], async (err, result) => {
         console.log("Contracts exists \n");
 
         await flatContracts(paths);
-
+        let temp;
+        let logicFilePath = `./flat/${path.basename(paths[0])}`;
+        let proxyFilePath = `./flat/${path.basename(paths[1])}`;
+        
         if (path.basename(paths[0]) === result.LogicContract) {
-            logicContract = fs.readFileSync(`./flat/${path.basename(paths[0])}`, "utf8");
-        } else {
-            logicContract = fs.readFileSync(`./flat/${path.basename(paths[1])}`, "utf8");
-        }
-        if (path.basename(paths[0]) === result.ProxyContract) {
-            proxyContract = fs.readFileSync(`./flat/${path.basename(paths[0])}`, "utf8");
-        } else {
-            proxyContract = fs.readFileSync(`./flat/${path.basename(paths[1])}`, "utf8");
+            temp = logicFilePath;
+            logicFilePath = proxyFilePath;
+            proxyFilePath = temp;
         }
 
-        let logicInput = {
-            contracts: logicContract
-        };
-        let proxyInput = {
-            contracts: proxyContract
-        };
+        let logicAST = await getAST(logicFilePath);
+        let proxyAST = await getAST(proxyFilePath);
+        // Deleting the temp folder (no longer required)
+        await flushTemp();
 
-        console.log(compareStorageLayouts(parseContract(logicInput), parseContract(proxyInput)));
+        console.log(compareStorageLayouts(parseContract(logicAST), parseContract(proxyAST)));
     } else {
         console.log("Contracts doesn't exists");
     }
@@ -74,10 +72,9 @@ function compareStorageLayouts(logicLayout, proxyLayout) {
 }
 
 function parseContract(input) {
-    var output = solc.compile({ sources: input }, 1, _.noop);
+
     const elements = [];
-    const AST = output.sources.contracts.AST;
-    // console.log(AST);
+    const AST = input;
     traverseAST(AST, elements);
     // console.log(elements);
 
@@ -137,4 +134,13 @@ async function flatContracts(_paths, _logic) {
         promises.push(await exec(`./node_modules/.bin/sol-merger ${_paths[i]} ./flat`));
     }
     await Promise.all(promises);
+}
+
+async function getAST(_filePath) {
+    await exec(`solc -o temp --ast-json ${_filePath}`, {maxBuffer: 1024 * 1000});
+    return JSON.parse(fs.readFileSync(`./temp/${path.basename(_filePath)}_json.ast`, "utf8").toString());
+}
+
+async function flushTemp() {
+    await exec(`rm -rf temp`);
 }

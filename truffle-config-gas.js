@@ -3,7 +3,7 @@ require('babel-polyfill');
 const fs = require('fs');
 const NonceTrackerSubprovider = require("web3-provider-engine/subproviders/nonce-tracker")
 
-const HDWalletProvider = require("truffle-hdwallet-provider-privkey");
+const HDWalletProvider = require("truffle-hdwallet-provider");
 
 module.exports = {
   networks: {

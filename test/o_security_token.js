@@ -1330,10 +1330,14 @@ contract("SecurityToken", async (accounts) => {
                 Controller address from the contract:         ${await stGetter.controller.call()}
                 Controller address from the storage:          ${await readStorage(I_SecurityToken.address, 7)}
             `)
-
-            assert.equal(
-                (await stGetter.controller.call()).substring(0, 4),
-                await readStorage(I_SecurityToken.address, 7)
+            // Different versions of web3 behave differently :/
+            assert.oneOf(
+                await readStorage(I_SecurityToken.address, 7),
+                [
+                    (await stGetter.controller.call()).substring(0, 4),
+                    (await stGetter.controller.call()).substring(0, 3),
+                    await stGetter.controller.call()
+                ]
             );
 
             console.log(`

@@ -198,7 +198,8 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         Dividend storage dividend = dividends[_dividendIndex];
         dividend.reclaimed = true;
         uint256 remainingAmount = dividend.amount.sub(dividend.claimedAmount);
-        (getTreasuryWallet()).transfer(remainingAmount);
+        address payable wallet = getTreasuryWallet();
+        wallet.transfer(remainingAmount);
         emit EtherDividendReclaimed(wallet, _dividendIndex, remainingAmount);
     }
 
@@ -211,7 +212,8 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         Dividend storage dividend = dividends[_dividendIndex];
         uint256 remainingWithheld = dividend.totalWithheld.sub(dividend.totalWithheldWithdrawn);
         dividend.totalWithheldWithdrawn = dividend.totalWithheld;
-        (getTreasuryWallet()).transfer(remainingWithheld);
+        address payable wallet = getTreasuryWallet();
+        wallet.transfer(remainingWithheld);
         emit EtherDividendWithholdingWithdrawn(wallet, _dividendIndex, remainingWithheld);
     }
 

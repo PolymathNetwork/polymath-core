@@ -274,7 +274,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         }
         address walletAddress = (treasuryWallet == address(0) ? IDataStore(getDataStore()).getAddress(TREASURY) : treasuryWallet);
         require(walletAddress != address(0));
-        _mintTokens(walletAddress, tempReturned);
+        ISecurityToken(securityToken).issue(walletAddress, tempReturned, "");
         emit ReserveTokenMint(msg.sender, walletAddress, tempReturned, currentTier);
         finalAmountReturned = tempReturned;
         totalTokensSold = tempSold;
@@ -549,13 +549,9 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
             purchasedTokens = maximumTokens;
         }
         if (purchasedTokens > 0) {
-            _mintTokens(_beneficiary, purchasedTokens);
+            ISecurityToken(securityToken).issue(_beneficiary, purchasedTokens, "");
             emit TokenPurchase(msg.sender, _beneficiary, purchasedTokens, spentUSD, _tierPrice, _tier);
         }
-    }
-
-    function _mintTokens(address _beneficiary, uint256 _amount) internal {
-        require(ISecurityToken(securityToken).issue(_beneficiary, _amount, ""), "Mint failed");
     }
 
     function _isAccredited(address _investor) internal view returns(bool) {

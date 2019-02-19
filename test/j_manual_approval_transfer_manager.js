@@ -158,11 +158,8 @@ contract("ManualApprovalTransferManager", accounts => {
             assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
             I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
-<<<<<<< HEAD
             assert.equal(await I_SecurityToken.getTreasuryWallet.call(), "0x0000000000000000000000000000000000000000", "Incorrect wallet set");
-=======
             stGetter = await STGetter.at(I_SecurityToken.address);
->>>>>>> dev-3.0.0
             const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTransferManager module get added successfully or not

@@ -9,7 +9,7 @@ import { setUpPolymathNetwork, deployVRTMAndVerifyed } from "./helpers/createIns
 const SecurityToken = artifacts.require('./SecurityToken.sol');
 const GeneralTransferManager = artifacts.require('./GeneralTransferManager.sol');
 const VolumeRestrictionTM = artifacts.require('./VolumeRestrictionTM.sol');
-
+const STGetter = artifacts.require("./STGetter.sol");
 const Web3 = require('web3');
 const BN = Web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")) // Hardcoded development port
@@ -54,6 +54,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
     let I_STRProxied;
     let I_PolyToken;
     let I_PolymathRegistry;
+    let I_STGetter;
+    let stGetter;
 
     // SecurityToken Details
     const name = "Team";
@@ -142,7 +144,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
             I_STFactory,
             I_SecurityTokenRegistry,
             I_SecurityTokenRegistryProxy,
-            I_STRProxied
+            I_STRProxied,
+            I_STGetter
         ] = instances;
 
         // STEP 5: Deploy the VolumeRestrictionTMFactory
@@ -186,6 +189,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
             I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
             assert.equal(await I_SecurityToken.getTreasuryWallet.call(), address_zero, "Incorrect wallet set");
+            stGetter = await STGetter.at(I_SecurityToken.address);
             const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTransferManager module get added successfully or not
@@ -194,7 +198,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should intialize the auto attached modules", async () => {
-            let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
+            let moduleData = (await stGetter.getModulesByType(2))[0];
             I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
     });
@@ -213,22 +217,20 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Transfer some tokens to different account", async() => {
             // Add tokens in to the whitelist
             currentTime = new BN(await latestTime());
-            await I_GeneralTransferManager.modifyWhitelistMulti(
+            await I_GeneralTransferManager.modifyKYCDataMulti(
                     [account_investor1, account_investor2, account_investor3],
                     [currentTime, currentTime, currentTime],
                     [currentTime, currentTime, currentTime],
                     [currentTime.add(new BN(duration.days(60))), currentTime.add(new BN(duration.days(60))), currentTime.add(new BN(duration.days(60)))],
-                    [true, true, true],
-                    [false, false, false],
                     {
                         from: token_owner
                     }
             );
 
             // Mint some tokens and transferred to whitelisted addresses
-            await I_SecurityToken.mint(account_investor1, web3.utils.toWei("100", "ether"), {from: token_owner});
-            await I_SecurityToken.mint(account_investor2, web3.utils.toWei("30", "ether"), {from: token_owner});
-            await I_SecurityToken.mint(account_investor3, web3.utils.toWei("30", "ether"), {from: token_owner});
+            await I_SecurityToken.issue(account_investor1, web3.utils.toWei("100", "ether"), "0x0", {from: token_owner});
+            await I_SecurityToken.issue(account_investor2, web3.utils.toWei("30", "ether"), "0x0", {from: token_owner});
+            await I_SecurityToken.issue(account_investor3, web3.utils.toWei("30", "ether"), "0x0", {from: token_owner});
 
         });
 

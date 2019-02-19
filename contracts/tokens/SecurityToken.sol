@@ -1,95 +1,47 @@
 pragma solidity ^0.5.0;
 
-import "openzeppelin-solidity/contracts/math/Math.sol";
-import "../interfaces/IPoly.sol";
+import "../proxy/Proxy.sol";
+import "../PolymathRegistry.sol";
+import "../libraries/KindMath.sol";
 import "../interfaces/IModule.sol";
+import "./SecurityTokenStorage.sol";
+import "../libraries/TokenLib.sol";
+import "../interfaces/IDataStore.sol";
 import "../interfaces/IModuleFactory.sol";
+import "../interfaces/token/IERC1594.sol";
+import "../interfaces/token/IERC1643.sol";
+import "../interfaces/token/IERC1644.sol";
 import "../interfaces/IModuleRegistry.sol";
 import "../interfaces/IFeatureRegistry.sol";
 import "../interfaces/ITransferManager.sol";
-import "../modules/PermissionManager/IPermissionManager.sol";
-import "../RegistryUpdater.sol";
-import "../libraries/Util.sol";
+import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
+import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
-import "../libraries/TokenLib.sol";
-import "../interfaces/IDataStore.sol";
 
 /**
-* @title Security Token contract
-* @notice SecurityToken is an ERC20 token with added capabilities:
-* @notice - Implements the ST-20 Interface
-* @notice - Transfers are restricted
-* @notice - Modules can be attached to it to control its behaviour
-* @notice - ST should not be deployed directly, but rather the SecurityTokenRegistry should be used
-* @notice - ST does not inherit from ISecurityToken due to:
-* @notice - https://github.com/ethereum/solidity/issues/4847
-*/
-contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater {
+ * @title Security Token contract
+ * @notice SecurityToken is an ERC1400 token with added capabilities:
+ * @notice - Implements the ERC1400 Interface
+ * @notice - Transfers are restricted
+ * @notice - Modules can be attached to it to control its behaviour
+ * @notice - ST should not be deployed directly, but rather the SecurityTokenRegistry should be used
+ * @notice - ST does not inherit from ISecurityToken due to:
+ * @notice - https://github.com/ethereum/solidity/issues/4847
+ */
+contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, SecurityTokenStorage, IERC1594, IERC1643, IERC1644, Proxy {
+    
     using SafeMath for uint256;
 
-    TokenLib.InvestorDataStorage investorData;
-
-    // Used to hold the semantic version data
-    struct SemanticVersion {
-        uint8 major;
-        uint8 minor;
-        uint8 patch;
-    }
-
-    SemanticVersion securityTokenVersion;
-
-    // off-chain data
-    string public tokenDetails;
-
-    uint8 constant PERMISSION_KEY = 1;
-    uint8 constant TRANSFER_KEY = 2;
-    uint8 constant MINT_KEY = 3;
-    uint8 constant CHECKPOINT_KEY = 4;
-    uint8 constant BURN_KEY = 5;
-    uint8 constant DATA_KEY = 6;
-
-    uint256 public granularity;
-
-    // Value of current checkpoint
-    uint256 public currentCheckpointId;
-
-    // Used to temporarily halt all transactions
-    bool public transfersFrozen;
-
-    // Used to permanently halt all minting
-    bool public mintingFrozen;
-
-    // Used to permanently halt controller actions
-    bool public controllerDisabled;
-
-    // Address whitelisted by issuer as controller
-    address public controller;
-
-    // Address of the data store used to store shared data
-    address public dataStore;
-
-    // Records added modules - module list should be order agnostic!
-    mapping(uint8 => address[]) modules;
-
-    // Records information about the module
-    mapping(address => TokenLib.ModuleData) modulesToData;
-
-    // Records added module names - module list should be order agnostic!
-    mapping(bytes32 => address[]) names;
-
-    // Map each investor to a series of checkpoints
-    mapping(address => TokenLib.Checkpoint[]) checkpointBalances;
-
-    // Mapping of checkpoints that relate to total supply
-    mapping (uint256 => uint256) checkpointTotalSupply;
-
-    // Times at which each checkpoint was created
-    uint256[] checkpointTimes;
-
-    bytes32 internal constant TREASURY = 0xaae8817359f3dcb67d050f44f3e49f982e0359d90ca4b5f18569926304aaece6;
-
+    // Emit when transfers are frozen or unfrozen
+    event FreezeTransfers(bool _status);
+    // Emit when is permanently frozen by the issuer
+    event FreezeIssuance();
+    // Emit when the token details get updated
+    event UpdateTokenDetails(string _oldDetails, string _newDetails);
+    // Emit when the granularity get changed
+    event GranularityChanged(uint256 _oldGranularity, uint256 _newGranularity);
     // Emit at the time when module get added
     event ModuleAdded(
         uint8[] _types,
@@ -100,11 +52,6 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         uint256 _budget,
         bytes32 _label
     );
-
-    // Emit when the token details get updated
-    event UpdateTokenDetails(string _oldDetails, string _newDetails);
-    // Emit when the granularity get changed
-    event GranularityChanged(uint256 _oldGranularity, uint256 _newGranularity);
     // Emit when Module get archived from the securityToken
     event ModuleArchived(uint8[] _types, address _module);
     // Emit when Module get unarchived from the securityToken
@@ -113,29 +60,12 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     event ModuleRemoved(uint8[] _types, address _module);
     // Emit when the budget allocated to a module is changed
     event ModuleBudgetChanged(uint8[] _moduleTypes, address _module, uint256 _oldBudget, uint256 _budget);
-    // Emit when transfers are frozen or unfrozen
-    event FreezeTransfers(bool _status);
     // Emit when new checkpoint created
     event CheckpointCreated(uint256 indexed _checkpointId);
-    // Emit when is permanently frozen by the issuer
-    event FreezeMinting();
-    // Events to log minting and burning
-    event Minted(address indexed _to, uint256 _value);
-    event Burnt(address indexed _from, uint256 _value);
-
     // Events to log controller actions
     event SetController(address indexed _oldController, address indexed _newController);
-    event ForceTransfer(
-        address indexed _controller,
-        address indexed _from,
-        address indexed _to,
-        uint256 _value,
-        bool _verifyTransfer,
-        bytes _data
-    );
-    event ForceBurn(address indexed _controller, address indexed _from, uint256 _value, bool _verifyTransfer, bytes _data);
     event DisableController();
-
+    
     function _isModule(address _module, uint8 _type) internal view returns(bool) {
         if (modulesToData[_module].module != _module || modulesToData[_module].isArchived)
             return false;
@@ -163,13 +93,19 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         }
     }
 
+    modifier isIssuanceAllowed() {
+        require(issuance, "Issuance frozen");
+        _;
+    }
+
     modifier checkGranularity(uint256 _value) {
         require(_value % granularity == 0, "Invalid granularity");
         _;
     }
-
-    modifier isMintingAllowed() {
-        require(!mintingFrozen, "Minting frozen");
+    
+    // Modifier to check whether the msg.sender is authorised or not 
+    modifier onlyController() {
+        require(msg.sender == controller, "Not Authorised");
         _;
     }
 
@@ -177,24 +113,16 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         require(IFeatureRegistry(featureRegistry).getFeatureStatus(_nameKey));
         _;
     }
-
+    
     /**
-     * @notice Revert if called by an account which is not a controller
-     */
-    modifier onlyController() {
-        require(msg.sender == controller, "Not controller");
-        require(!controllerDisabled, "Controller disabled");
-        _;
-    }
-
-    /**
-     * @notice Constructor
+     * @notice constructor 
      * @param _name Name of the SecurityToken
      * @param _symbol Symbol of the Token
      * @param _decimals Decimals for the securityToken
      * @param _granularity granular level of the token
      * @param _tokenDetails Details of the token that are stored off-chain
      * @param _polymathRegistry Contract address of the polymath registry
+     * @param _delegate Contract address of the delegate
      */
     constructor(
         string memory _name,
@@ -202,13 +130,18 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         uint8 _decimals,
         uint256 _granularity,
         string memory _tokenDetails,
-        address _polymathRegistry
-    )
+        address _polymathRegistry,
+        address _delegate
+    ) 
         public
-        ERC20Detailed(_name, _symbol, _decimals) RegistryUpdater(_polymathRegistry)
+        ERC20Detailed(_name, _symbol, _decimals)
     {
+        require(_polymathRegistry != address(0), "Invalid address");
+        require(_delegate != address(0), "Invalid address");
+        polymathRegistry = _polymathRegistry;
         //When it is created, the owner is the STR
         updateFromRegistry();
+        delegate = _delegate;
         tokenDetails = _tokenDetails;
         granularity = _granularity;
         securityTokenVersion = SemanticVersion(2, 0, 0);
@@ -230,9 +163,10 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         uint256 _maxCost,
         uint256 _budget,
         bytes32 _label
-    )
-        public
-        onlyOwner nonReentrant
+    ) 
+        public 
+        onlyOwner 
+        nonReentrant 
     {
         //Check that the module factory exists in the ModuleRegistry - will throw otherwise
         IModuleRegistry(moduleRegistry).useModule(_moduleFactory);
@@ -255,7 +189,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
             moduleIndexes[i] = modules[moduleTypes[i]].length;
             modules[moduleTypes[i]].push(module);
         }
-        modulesToData[module] = TokenLib.ModuleData(
+        modulesToData[module] = ModuleData(
             moduleName,
             module,
             _moduleFactory,
@@ -300,38 +234,6 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     */
     function removeModule(address _module) external onlyOwner {
         TokenLib.removeModule(_module, modules, modulesToData, names);
-    }
-
-    /**
-     * @notice Returns the data associated to a module
-     * @param _module address of the module
-     * @return bytes32 name
-     * @return address module address
-     * @return address module factory address
-     * @return bool module archived
-     * @return uint8 array of module types
-     * @return bytes32 module label
-     */
-    function getModule(address _module) external view returns(bytes32, address, address, bool, uint8[] memory, bytes32) {
-        return (modulesToData[_module].name, modulesToData[_module].module, modulesToData[_module].moduleFactory, modulesToData[_module].isArchived, modulesToData[_module].moduleTypes, modulesToData[_module].label);
-    }
-
-    /**
-     * @notice Returns a list of modules that match the provided name
-     * @param _name name of the module
-     * @return address[] list of modules with this name
-     */
-    function getModulesByName(bytes32 _name) external view returns(address[] memory) {
-        return names[_name];
-    }
-
-    /**
-     * @notice Returns a list of modules that match the provided module type
-     * @param _type type of the module
-     * @return address[] list of modules with this type
-     */
-    function getModulesByType(uint8 _type) external view returns(address[] memory) {
-        return modules[_type];
     }
 
     /**
@@ -400,67 +302,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     * @param _value value of transfer
     */
     function _adjustInvestorCount(address _from, address _to, uint256 _value) internal {
-        TokenLib.adjustInvestorCount(investorData, _from, _to, _value, balanceOf(_to), balanceOf(_from));
-    }
-
-    /**
-     * @notice returns an array of investors
-     * NB - this length may differ from investorCount as it contains all investors that ever held tokens
-     * @return list of addresses
-     */
-    function getInvestors() external view returns(address[] memory) {
-        return investorData.investors;
-    }
-
-    /**
-     * @notice returns an array of investors at a given checkpoint
-     * NB - this length may differ from investorCount as it contains all investors that ever held tokens
-     * @param _checkpointId Checkpoint id at which investor list is to be populated
-     * @return list of investors
-     */
-    function getInvestorsAt(uint256 _checkpointId) external view returns(address[] memory) {
-        uint256 count = 0;
-        uint256 i;
-        for (i = 0; i < investorData.investors.length; i++) {
-            if (balanceOfAt(investorData.investors[i], _checkpointId) > 0) {
-                count++;
-            }
-        }
-        address[] memory investors = new address[](count);
-        count = 0;
-        for (i = 0; i < investorData.investors.length; i++) {
-            if (balanceOfAt(investorData.investors[i], _checkpointId) > 0) {
-                investors[count] = investorData.investors[i];
-                count++;
-            }
-        }
-        return investors;
-    }
-
-    /**
-     * @notice generates subset of investors
-     * NB - can be used in batches if investor list is large
-     * @param _start Position of investor to start iteration from
-     * @param _end Position of investor to stop iteration at
-     * @return list of investors
-     */
-    function iterateInvestors(uint256 _start, uint256 _end) external view returns(address[] memory) {
-        require(_end <= investorData.investors.length, "Invalid end");
-        address[] memory investors = new address[](_end.sub(_start));
-        uint256 index = 0;
-        for (uint256 i = _start; i < _end; i++) {
-            investors[index] = investorData.investors[i];
-            index++;
-        }
-        return investors;
-    }
-
-    /**
-     * @notice Returns the investor count
-     * @return Investor count
-     */
-    function getInvestorCount() external view returns(uint256) {
-        return investorData.investorCount;
+        holderCount = TokenLib.adjustInvestorCount(holderCount, _from, _to, _value, balanceOf(_to), balanceOf(_from), dataStore);
     }
 
     /**
@@ -484,7 +326,6 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     }
 
     /**
-    /**
      * @notice Internal - adjusts token holder balance at checkpoint before a token transfer
      * @param _investor address of the token holder affected
      */
@@ -499,20 +340,24 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @return bool success
      */
     function transfer(address _to, uint256 _value) public returns(bool success) {
-        return transferWithData(_to, _value, "");
+        transferWithData(_to, _value, "");
+        return true;
     }
-
+    
     /**
-     * @notice Overloaded version of the transfer function
-     * @param _to receiver of transfer
-     * @param _value value of transfer
-     * @param _data data to indicate validation
-     * @return bool success
+     * @notice Transfer restrictions can take many forms and typically involve on-chain rules or whitelists.
+     * However for many types of approved transfers, maintaining an on-chain list of approved transfers can be
+     * cumbersome and expensive. An alternative is the co-signing approach, where in addition to the token holder
+     * approving a token transfer, and authorised entity provides signed data which further validates the transfer.
+     * @param _to address The address which you want to transfer to
+     * @param _value uint256 the amount of tokens to be transferred
+     * @param _data The `bytes _data` allows arbitrary data to be submitted alongside the transfer.
+     * for the token contract to interpret or record. This could be signed data authorising the transfer
+     * (e.g. a dynamic whitelist) but is flexible enough to accomadate other use-cases.
      */
-    function transferWithData(address _to, uint256 _value, bytes memory _data) public returns(bool success) {
+    function transferWithData(address _to, uint256 _value, bytes memory _data) public {
         require(_updateTransfer(msg.sender, _to, _value, _data), "Transfer invalid");
         require(super.transfer(_to, _value));
-        return true;
     }
 
     /**
@@ -523,21 +368,26 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @return bool success
      */
     function transferFrom(address _from, address _to, uint256 _value) public returns(bool) {
-        return transferFromWithData(_from, _to, _value, "");
+        transferFromWithData(_from, _to, _value, "");
+        return true;
     }
 
     /**
-     * @notice Overloaded version of the transferFrom function
-     * @param _from sender of transfer
-     * @param _to receiver of transfer
-     * @param _value value of transfer
-     * @param _data data to indicate validation
-     * @return bool success
+     * @notice Transfer restrictions can take many forms and typically involve on-chain rules or whitelists.
+     * However for many types of approved transfers, maintaining an on-chain list of approved transfers can be
+     * cumbersome and expensive. An alternative is the co-signing approach, where in addition to the token holder
+     * approving a token transfer, and authorised entity provides signed data which further validates the transfer.
+     * @dev `msg.sender` MUST have a sufficient `allowance` set and this `allowance` must be debited by the `_value`.
+     * @param _from address The address which you want to send tokens from
+     * @param _to address The address which you want to transfer to
+     * @param _value uint256 the amount of tokens to be transferred
+     * @param _data The `bytes _data` allows arbitrary data to be submitted alongside the transfer.
+     * for the token contract to interpret or record. This could be signed data authorising the transfer
+     * (e.g. a dynamic whitelist) but is flexible enough to accomadate other use-cases.
      */
-    function transferFromWithData(address _from, address _to, uint256 _value, bytes memory _data) public returns(bool) {
+    function transferFromWithData(address _from, address _to, uint256 _value, bytes memory _data) public {
         require(_updateTransfer(_from, _to, _value, _data), "Transfer invalid");
         require(super.transferFrom(_from, _to, _value));
-        return true;
     }
 
     /**
@@ -557,7 +407,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
         //  - to avoid the situation where a transfer manager transfers tokens, and this function is called recursively,
         //the function is marked as nonReentrant. This means that no TM can transfer (or mint / burn) tokens.
         _adjustInvestorCount(_from, _to, _value);
-        bool verified = _verifyTransfer(_from, _to, _value, _data, true);
+        bool verified = _executeTransfer(_from, _to, _value, _data);
         _adjustBalanceCheckpoints(_from);
         _adjustBalanceCheckpoints(_to);
         return verified;
@@ -566,28 +416,23 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     /**
      * @notice Validate transfer with TransferManager module if it exists
      * @dev TransferManager module has a key of 2
-     * @dev _isTransfer boolean flag is the deciding factor for whether the
-     * state variables gets modified or not within the different modules. i.e isTransfer = true
-     * leads to change in the modules environment otherwise _verifyTransfer() works as a read-only
      * function (no change in the state).
      * @param _from sender of transfer
      * @param _to receiver of transfer
      * @param _value value of transfer
      * @param _data data to indicate validation
-     * @param _isTransfer whether transfer is being executed
      * @return bool
      */
-    function _verifyTransfer(
+    function _executeTransfer(
         address _from,
         address _to,
         uint256 _value,
-        bytes memory _data,
-        bool _isTransfer
-    )
-        internal
-        checkGranularity(_value)
-        returns(bool)
-    {
+        bytes memory _data
+    ) 
+        internal 
+        checkGranularity(_value) 
+        returns(bool) 
+    {   
         if (!transfersFrozen) {
             bool isInvalid = false;
             bool isValid = false;
@@ -598,7 +443,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
                 module = modules[TRANSFER_KEY][i];
                 if (!modulesToData[module].isArchived) {
                     unarchived = true;
-                    ITransferManager.Result valid = ITransferManager(module).verifyTransfer(_from, _to, _value, _data, _isTransfer);
+                    ITransferManager.Result valid = ITransferManager(module).executeTransfer(_from, _to, _value, _data);
                     if (valid == ITransferManager.Result.INVALID) {
                         isInvalid = true;
                     } else if (valid == ITransferManager.Result.VALID) {
@@ -615,96 +460,74 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     }
 
     /**
-     * @notice Validates a transfer with a TransferManager module if it exists
-     * @dev TransferManager module has a key of 2
-     * @param _from sender of transfer
-     * @param _to receiver of transfer
-     * @param _value value of transfer
-     * @param _data data to indicate validation
-     * @return bool
+     * @notice A security token issuer can specify that issuance has finished for the token
+     * (i.e. no new tokens can be minted or issued).
+     * @dev If a token returns FALSE for `isIssuable()` then it MUST always return FALSE in the future.
+     * If a token returns FALSE for `isIssuable()` then it MUST never allow additional tokens to be issued.
+     * @return bool `true` signifies the minting is allowed. While `false` denotes the end of minting
      */
-    function verifyTransfer(address _from, address _to, uint256 _value, bytes memory _data) public returns(bool) {
-        return _verifyTransfer(_from, _to, _value, _data, false);
+    function isIssuable() external view returns (bool) {
+        return issuance;
     }
 
     /**
-     * @notice Permanently freeze minting of this security token.
+     * @notice Permanently freeze issuance of this security token.
      * @dev It MUST NOT be possible to increase `totalSuppy` after this function is called.
      */
-    function freezeMinting() external isMintingAllowed isEnabled("freezeMintingAllowed") onlyOwner {
-        mintingFrozen = true;
+    function freezeIssuance() external isIssuanceAllowed isEnabled("freezeIssuanceAllowed") onlyOwner {
+        issuance = false;
         /*solium-disable-next-line security/no-block-members*/
-        emit FreezeMinting();
+        emit FreezeIssuance();
     }
 
     /**
-     * @notice Mints new tokens and assigns them to the target _investor.
-     * @dev Can only be called by the issuer or STO attached to the token
-     * @param _investor Address where the minted tokens will be delivered
-     * @param _value Number of tokens be minted
-     * @return success
+     * @notice This function must be called to increase the total supply (Corresponds to mint function of ERC20).
+     * @dev It only be called by the token issuer or the operator defined by the issuer. ERC1594 doesn't have
+     * have the any logic related to operator but its superset ERC1400 have the operator logic and this function
+     * is allowed to call by the operator.
+     * @param _tokenHolder The account that will receive the created tokens (account should be whitelisted or KYCed).
+     * @param _value The amount of tokens need to be issued
+     * @param _data The `bytes _data` allows arbitrary data to be submitted alongside the transfer.
      */
-    function mint(address _investor, uint256 _value) public returns(bool success) {
-        return mintWithData(_investor, _value, "");
-    }
-
-    /**
-     * @notice mints new tokens and assigns them to the target _investor.
-     * @dev Can only be called by the issuer or STO attached to the token
-     * @param _investor Address where the minted tokens will be delivered
-     * @param _value Number of tokens be minted
-     * @param _data data to indicate validation
-     * @return success
-     */
-    function mintWithData(
-        address _investor,
+    function issue(
+        address _tokenHolder,
         uint256 _value,
         bytes memory _data
-    )
-        public
-        onlyModuleOrOwner(MINT_KEY)
-        isMintingAllowed
-        returns(bool success)
+    ) 
+        public 
+        isIssuanceAllowed
+        onlyModuleOrOwner(MINT_KEY) 
     {
-        require(_updateTransfer(address(0), _investor, _value, _data), "Transfer invalid");
-        _mint(_investor, _value);
-        emit Minted(_investor, _value);
-        return true;
+        // Add a function to validate the `_data` parameter
+        require(_updateTransfer(address(0), _tokenHolder, _value, _data), "Transfer invalid");
+        _mint(_tokenHolder, _value);
+        emit Issued(msg.sender, _tokenHolder, _value, _data);
     }
 
     /**
-     * @notice Mints new tokens and assigns them to the target _investor.
+     * @notice issue new tokens and assigns them to the target _tokenHolder.
      * @dev Can only be called by the issuer or STO attached to the token.
-     * @param _investors A list of addresses to whom the minted tokens will be dilivered
-     * @param _values A list of number of tokens get minted and transfer to corresponding address of the investor from _investor[] list
+     * @param _tokenHolders A list of addresses to whom the minted tokens will be dilivered
+     * @param _values A list of number of tokens get minted and transfer to corresponding address of the investor from _tokenHolders[] list
      * @return success
      */
-    function mintMulti(address[] calldata _investors, uint256[] calldata _values) external returns(bool success) {
-        require(_investors.length == _values.length, "Incorrect inputs");
-        for (uint256 i = 0; i < _investors.length; i++) {
-            mint(_investors[i], _values[i]);
+    function issueMulti(address[] calldata _tokenHolders, uint256[] calldata _values) external {
+        require(_tokenHolders.length == _values.length, "Incorrect inputs");
+        for (uint256 i = 0; i < _tokenHolders.length; i++) {
+            issue(_tokenHolders[i], _values[i], "");
         }
-        return true;
     }
 
     /**
-     * @notice Validate permissions with PermissionManager if it exists, If no Permission return false
-     * @dev Note that IModule withPerm will allow ST owner all permissions anyway
-     * @dev this allows individual modules to override this logic if needed (to not allow ST owner all permissions)
-     * @param _delegate address of delegate
-     * @param _module address of PermissionManager module
-     * @param _perm the permissions
-     * @return success
+     * @notice This function redeem an amount of the token of a msg.sender. For doing so msg.sender may incentivize
+     * using different ways that could be implemented with in the `redeem` function definition. But those implementations
+     * are out of the scope of the ERC1594. 
+     * @param _value The amount of tokens need to be redeemed
+     * @param _data The `bytes _data` it can be used in the token contract to authenticate the redemption.
      */
-    function checkPermission(address _delegate, address _module, bytes32 _perm) public view returns(bool) {
-        for (uint256 i = 0; i < modules[PERMISSION_KEY].length; i++) {
-            if (!modulesToData[modules[PERMISSION_KEY][i]].isArchived) {
-                if (IPermissionManager(modules[PERMISSION_KEY][i]).checkPermission(_delegate, _module, _perm)) {
-                    return true;
-                }
-            }
-        }
-        return false;
+    function redeem(uint256 _value, bytes calldata _data) external onlyModule(BURN_KEY) {
+        // Add a function to validate the `_data` parameter
+        require(_checkAndBurn(msg.sender, _value, _data), "Invalid redeem");
     }
 
     /**
@@ -719,34 +542,24 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     function _checkAndBurn(address _from, uint256 _value, bytes memory _data) internal returns(bool) {
         bool verified = _updateTransfer(_from, address(0), _value, _data);
         _burn(_from, _value);
-        emit Burnt(_from, _value);
+        emit Redeemed(address(0), msg.sender, _value, _data);
         return verified;
     }
 
     /**
-     * @notice Burn function used to burn the securityToken
-     * @param _value No. of tokens that get burned
-     * @param _data data to indicate validation
+     * @notice This function redeem an amount of the token of a msg.sender. For doing so msg.sender may incentivize
+     * using different ways that could be implemented with in the `redeem` function definition. But those implementations
+     * are out of the scope of the ERC1594. 
+     * @dev It is analogy to `transferFrom`
+     * @param _tokenHolder The account whose tokens gets redeemed.
+     * @param _value The amount of tokens need to be redeemed
+     * @param _data The `bytes _data` it can be used in the token contract to authenticate the redemption.
      */
-    function burnWithData(uint256 _value, bytes memory _data) public onlyModule(BURN_KEY) {
-        require(_checkAndBurn(msg.sender, _value, _data), "Burn invalid");
-    }
-
-    function _checkAndBurnFrom(address _from, uint256 _value, bytes memory _data) internal returns(bool) {
-        bool verified = _updateTransfer(_from, address(0), _value, _data);
-        _burnFrom(_from, _value);
-        emit Burnt(_from, _value);
-        return verified;
-    }
-
-    /**
-     * @notice Burn function used to burn the securityToken on behalf of someone else
-     * @param _from Address for whom to burn tokens
-     * @param _value No. of tokens that get burned
-     * @param _data data to indicate validation
-     */
-    function burnFromWithData(address _from, uint256 _value, bytes memory _data) public onlyModule(BURN_KEY) {
-        require(_checkAndBurnFrom(_from, _value, _data), "Burn invalid");
+    function redeemFrom(address _tokenHolder, uint256 _value, bytes calldata _data) external onlyModule(BURN_KEY) {
+        // Add a function to validate the `_data` parameter
+        require(_updateTransfer(_tokenHolder, address(0), _value, _data), "Invalid redeem");
+        _burnFrom(_tokenHolder, _value);
+        emit Redeemed(msg.sender, _tokenHolder, _value, _data);
     }
 
     /**
@@ -765,39 +578,15 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
     }
 
     /**
-     * @notice Gets list of times that checkpoints were created
-     * @return List of checkpoint times
-     */
-    function getCheckpointTimes() external view returns(uint256[] memory) {
-        return checkpointTimes;
-    }
-
-    /**
-     * @notice Queries totalSupply as of a defined checkpoint
-     * @param _checkpointId Checkpoint ID to query
-     * @return uint256
-     */
-    function totalSupplyAt(uint256 _checkpointId) external view returns(uint256) {
-        require(_checkpointId <= currentCheckpointId);
-        return checkpointTotalSupply[_checkpointId];
-    }
-
-    /**
-     * @notice Queries balances as of a defined checkpoint
-     * @param _investor Investor to query balance for
-     * @param _checkpointId Checkpoint ID to query as of
-     */
-    function balanceOfAt(address _investor, uint256 _checkpointId) public view returns(uint256) {
-        require(_checkpointId <= currentCheckpointId);
-        return TokenLib.getValueAt(checkpointBalances[_investor], _checkpointId, balanceOf(_investor));
-    }
-
-    /**
      * @notice Used by the issuer to set the controller addresses
      * @param _controller address of the controller
      */
     function setController(address _controller) public onlyOwner {
-        require(!controllerDisabled);
+        require(_isControllable());
+        // Below condition is to restrict the owner/issuer to become the controller(In an ideal world).
+        // But for non ideal case issuer could set another address which is not the owner of the token
+        // but issuer holds its private key.
+        require(_controller != msg.sender);
         emit SetController(controller, _controller);
         controller = _controller;
     }
@@ -807,52 +596,169 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, RegistryUpdater
      * @dev enabled via feature switch "disableControllerAllowed"
      */
     function disableController() external isEnabled("disableControllerAllowed") onlyOwner {
-        require(!controllerDisabled);
+        require(_isControllable());
         controllerDisabled = true;
         delete controller;
-        /*solium-disable-next-line security/no-block-members*/
         emit DisableController();
     }
 
     /**
-     * @notice Used by a controller to execute a forced transfer
-     * @param _from address from which to take tokens
-     * @param _to address where to send tokens
-     * @param _value amount of tokens to transfer
-     * @param _data data to indicate validation
-     * @param _log data attached to the transfer by controller to emit in event
+     * @notice Transfers of securities may fail for a number of reasons. So this function will used to understand the
+     * cause of failure by getting the byte value. Which will be the ESC that follows the EIP 1066. ESC can be mapped 
+     * with a reson string to understand the failure cause, table of Ethereum status code will always reside off-chain
+     * @param _to address The address which you want to transfer to
+     * @param _value uint256 the amount of tokens to be transferred
+     * @param _data The `bytes _data` allows arbitrary data to be submitted alongside the transfer.
+     * @return bool It signifies whether the transaction will be executed or not.
+     * @return byte Ethereum status code (ESC)
+     * @return bytes32 Application specific reason code 
      */
-    function forceTransfer(address _from, address _to, uint256 _value, bytes memory _data, bytes memory _log) public onlyController {
-        bool verified = _updateTransfer(_from, _to, _value, _data);
+    function canTransfer(address _to, uint256 _value, bytes calldata _data) external view returns (bool, byte, bytes32) {
+        return _canTransfer(msg.sender, _to, _value, _data);
+    }
+
+    /**
+     * @notice Transfers of securities may fail for a number of reasons. So this function will used to understand the
+     * cause of failure by getting the byte value. Which will be the ESC that follows the EIP 1066. ESC can be mapped 
+     * with a reson string to understand the failure cause, table of Ethereum status code will always reside off-chain
+     * @param _from address The address which you want to send tokens from
+     * @param _to address The address which you want to transfer to
+     * @param _value uint256 the amount of tokens to be transferred
+     * @param _data The `bytes _data` allows arbitrary data to be submitted alongside the transfer.
+     * @return bool It signifies whether the transaction will be executed or not.
+     * @return byte Ethereum status code (ESC)
+     * @return bytes32 Application specific reason code 
+     */
+    function canTransferFrom(address _from, address _to, uint256 _value, bytes calldata _data) external view returns (bool, byte, bytes32) {
+        (bool success, byte reasonCode, bytes32 appCode) = _canTransfer(_from, _to, _value, _data);
+        if (success && _value > allowance(_from, msg.sender)) {
+            return (false, 0x53, bytes32(0));
+        } else 
+            return (success, reasonCode, appCode); 
+    }
+
+    function _canTransfer(address _from, address _to, uint256 _value, bytes memory _data) internal view returns (bool, byte, bytes32) {
+        bytes32 appCode;
+        bool success;
+        if (_value % granularity != 0) {
+            return (false, 0x50, "Invalid granularity");
+        }
+        (success, appCode) = TokenLib.verifyTransfer(modules[TRANSFER_KEY], modulesToData, _from, _to, _value, _data, transfersFrozen);
+        if (!success)
+            return (false, 0x50, appCode);
+
+        else if (balanceOf(_from) < _value)
+            return (false, 0x52, bytes32(0));
+
+        else if (_to == address(0))
+            return (false, 0x57, bytes32(0));
+
+        else if (!KindMath.checkAdd(balanceOf(_to), _value))
+            return (false, 0x50, bytes32(0));
+        return (true, 0x51, bytes32(0));
+    }
+
+    /**
+     * @notice Used to attach a new document to the contract, or update the URI or hash of an existing attached document
+     * @dev Can only be executed by the owner of the contract.
+     * @param _name Name of the document. It should be unique always
+     * @param _uri Off-chain uri of the document from where it is accessible to investors/advisors to read.
+     * @param _documentHash hash (of the contents) of the document.
+     */
+    function setDocument(bytes32 _name, string calldata _uri, bytes32 _documentHash) external onlyOwner {
+        require(_name != bytes32(0), "Zero value is not allowed");
+        require(bytes(_uri).length > 0, "Should not be a empty uri");
+        if (_documents[_name].lastModified == uint256(0)) {
+            _docNames.push(_name);
+            _docIndexes[_name] = _docNames.length;
+        }
+        _documents[_name] = Document(_documentHash, now, _uri);
+        emit DocumentUpdated(_name, _uri, _documentHash);
+    }
+
+    /**
+     * @notice Used to remove an existing document from the contract by giving the name of the document.
+     * @dev Can only be executed by the owner of the contract.
+     * @param _name Name of the document. It should be unique always
+     */
+    function removeDocument(bytes32 _name) external onlyOwner {
+        require(_documents[_name].lastModified != uint256(0), "Document should be existed");
+        uint256 index = _docIndexes[_name] - 1;
+        if (index != _docNames.length - 1) {
+            _docNames[index] = _docNames[_docNames.length - 1];
+            _docIndexes[_docNames[index]] = index + 1; 
+        }
+        _docNames.length--;
+        emit DocumentRemoved(_name, _documents[_name].uri, _documents[_name].docHash);
+        delete _documents[_name];
+    }
+
+    /**
+     * @notice Internal function to know whether the controller functionality
+     * allowed or not.
+     * @return bool `true` when controller address is non-zero otherwise return `false`.
+     */
+    function _isControllable() internal view returns (bool) {
+        return !controllerDisabled;
+    }
+
+    /**
+     * @notice In order to provide transparency over whether `controllerTransfer` / `controllerRedeem` are useable
+     * or not `isControllable` function will be used.
+     * @dev If `isControllable` returns `false` then it always return `false` and
+     * `controllerTransfer` / `controllerRedeem` will always revert.
+     * @return bool `true` when controller address is non-zero otherwise return `false`.
+     */
+    function isControllable() external view returns (bool) {
+        return _isControllable();
+    }
+
+    /**
+     * @notice This function allows an authorised address to transfer tokens between any two token holders.
+     * The transfer must still respect the balances of the token holders (so the transfer must be for at most
+     * `balanceOf(_from)` tokens) and potentially also need to respect other transfer restrictions.
+     * @dev This function can only be executed by the `controller` address.
+     * @param _from Address The address which you want to send tokens from
+     * @param _to Address The address which you want to transfer to
+     * @param _value uint256 the amount of tokens to be transferred
+     * @param _data data to validate the transfer. (It is not used in this reference implementation
+     * because use of `_data` parameter is implementation specific).
+     * @param _operatorData data attached to the transfer by controller to emit in event. (It is more like a reason string 
+     * for calling this function (aka force transfer) which provides the transparency on-chain). 
+     */
+    function controllerTransfer(address _from, address _to, uint256 _value, bytes calldata _data, bytes calldata _operatorData) external onlyController {
+        require(_isControllable());
+        _updateTransfer(_from, _to, _value, _data);
         _transfer(_from, _to, _value);
-        emit ForceTransfer(msg.sender, _from, _to, _value, verified, _log);
+        emit ControllerTransfer(msg.sender, _from, _to, _value, _data, _operatorData);
     }
 
     /**
-     * @notice Used by a controller to execute a forced burn
-     * @param _from address from which to take tokens
-     * @param _value amount of tokens to transfer
-     * @param _data data to indicate validation
-     * @param _log data attached to the transfer by controller to emit in event
+     * @notice This function allows an authorised address to redeem tokens for any token holder.
+     * The redemption must still respect the balances of the token holder (so the redemption must be for at most
+     * `balanceOf(_tokenHolder)` tokens) and potentially also need to respect other transfer restrictions.
+     * @dev This function can only be executed by the `controller` address.
+     * @param _tokenHolder The account whose tokens will be redeemed.
+     * @param _value uint256 the amount of tokens need to be redeemed.
+     * @param _data data to validate the transfer. (It is not used in this reference implementation
+     * because use of `_data` parameter is implementation specific).
+     * @param _operatorData data attached to the transfer by controller to emit in event. (It is more like a reason string 
+     * for calling this function (aka force transfer) which provides the transparency on-chain). 
      */
-    function forceBurn(address _from, uint256 _value, bytes memory _data, bytes memory _log) public onlyController {
-        bool verified = _checkAndBurn(_from, _value, _data);
-        emit ForceBurn(msg.sender, _from, _value, verified, _log);
+    function controllerRedeem(address _tokenHolder, uint256 _value, bytes calldata _data, bytes calldata _operatorData) external onlyController {
+        require(_isControllable());
+        _checkAndBurn(_tokenHolder, _value, _data);
+        emit ControllerRedemption(msg.sender, _tokenHolder, _value, _data, _operatorData);
     }
 
-    /**
-     * @notice Returns the version of the SecurityToken
-     */
-    function getVersion() external view returns(uint8[] memory) {
-        uint8[] memory _version = new uint8[](3);
-        _version[0] = securityTokenVersion.major;
-        _version[1] = securityTokenVersion.minor;
-        _version[2] = securityTokenVersion.patch;
-        return _version;
+    function _implementation() internal view returns(address) {
+        return delegate;
     }
 
-    function getTreasuryWallet() external view returns(address) {
-        return IDataStore(dataStore).getAddress(TREASURY);
+    function updateFromRegistry() public onlyOwner {
+        moduleRegistry = PolymathRegistry(polymathRegistry).getAddress("ModuleRegistry");
+        securityTokenRegistry = PolymathRegistry(polymathRegistry).getAddress("SecurityTokenRegistry");
+        featureRegistry = PolymathRegistry(polymathRegistry).getAddress("FeatureRegistry");
+        polyToken = PolymathRegistry(polymathRegistry).getAddress("PolyToken");
     }
-
 }

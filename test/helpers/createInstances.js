@@ -5,7 +5,6 @@ const MockOracle = artifacts.require("./MockOracle.sol");
 const StableOracle = artifacts.require("./StableOracle.sol");
 const ModuleRegistry = artifacts.require("./ModuleRegistry.sol");
 const ModuleRegistryProxy = artifacts.require("./ModuleRegistryProxy.sol");
-const SecurityToken = artifacts.require("./SecurityToken.sol");
 const CappedSTOFactory = artifacts.require("./CappedSTOFactory.sol");
 const CappedSTO = artifacts.require("./CappedSTO.sol");
 const SecurityTokenRegistryProxy = artifacts.require("./SecurityTokenRegistryProxy.sol");
@@ -42,6 +41,7 @@ const DummySTO = artifacts.require("./DummySTO.sol");
 const MockBurnFactory = artifacts.require("./MockBurnFactory.sol");
 const STRGetter = artifacts.require("./STRGetter.sol");
 const MockWrongTypeFactory = artifacts.require("./MockWrongTypeFactory.sol");
+const STGetter = artifacts.require("./STGetter.sol");
 const DataStoreLogic = artifacts.require('./DataStore.sol');
 const DataStoreFactory = artifacts.require('./DataStoreFactory.sol');
 const SignedTransferManagerFactory = artifacts.require("./SignedTransferManagerFactory");
@@ -101,6 +101,7 @@ let I_VestingEscrowWalletLogic;
 let I_STRProxied;
 let I_MRProxied;
 let I_STRGetter;
+let I_STGetter;
 let I_SignedTransferManagerFactory;
 let I_USDOracle;
 let I_POLYOracle;
@@ -150,6 +151,7 @@ export async function setUpPolymathNetwork(account_polymath, token_owner) {
         I_SecurityTokenRegistryProxy,
         I_STRProxied,
         I_STRGetter,
+        I_STGetter,
         I_USDOracle,
         I_POLYOracle,
         I_StablePOLYOracle
@@ -174,7 +176,8 @@ export async function deployPolyRegistryAndPolyToken(account_polymath, token_own
     I_PolymathRegistry = await PolymathRegistry.new({ from: account_polymath });
 
     // Step 1: Deploy the token Faucet and Mint tokens for token_owner
-    I_PolyToken = await PolyTokenFaucet.new();
+    I_PolyToken = await PolyTokenFaucet.new({ from: account_polymath });
+
     await I_PolyToken.getTokens(new BN(10000).mul(new BN(10).pow(new BN(18))), token_owner);
 
     await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, { from: account_polymath });
@@ -232,13 +235,14 @@ async function deployGTM(account_polymath) {
 }
 
 async function deploySTFactory(account_polymath) {
+    I_STGetter = await STGetter.new({from: account_polymath});
     let I_DataStoreLogic = await DataStoreLogic.new({ from: account_polymath });
     let I_DataStoreFactory = await DataStoreFactory.new(I_DataStoreLogic.address, { from: account_polymath });
-    I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, I_DataStoreFactory.address, { from: account_polymath });
+    I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, I_DataStoreFactory.address, I_STGetter.address, { from: account_polymath });
 
     assert.notEqual(I_STFactory.address.valueOf(), "0x0000000000000000000000000000000000000000", "STFactory contract was not deployed");
 
-    return new Array(I_STFactory);
+    return new Array(I_STFactory, I_STGetter);
 }
 
 async function deploySTR(account_polymath) {

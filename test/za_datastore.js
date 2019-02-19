@@ -218,6 +218,8 @@ contract("Data store", async (accounts) => {
             let arrLen = await I_DataStore.getUint256ArrayLength(key);
             await I_DataStore.insertUint256(key, new BN(10), { from: token_owner });
             let arrElement = await I_DataStore.getUint256ArrayElement(key, arrLen.toNumber());
+            let arrElements = await I_DataStore.getUint256ArrayElements(key, 0, arrLen.toNumber());
+            assert.equal(arrElement.toNumber(), arrElements[arrLen.toNumber()].toNumber());
             assert.equal(arrLen.toNumber() + 1, (await I_DataStore.getUint256ArrayLength(key)).toNumber(), "Incorrect Array Length");
             assert.equal(arrElement.toNumber(), 10, "Incorrect array element");
         });
@@ -226,6 +228,8 @@ contract("Data store", async (accounts) => {
             let arrLen = await I_DataStore.getBytes32ArrayLength(key);
             await I_DataStore.insertBytes32(key, bytes32data, { from: token_owner });
             let arrElement = await I_DataStore.getBytes32ArrayElement(key, arrLen.toNumber());
+            let arrElements = await I_DataStore.getBytes32ArrayElements(key, 0, arrLen.toNumber());
+            assert.equal(arrElement, arrElements[arrLen.toNumber()]);
             assert.equal(arrLen.toNumber() + 1, (await I_DataStore.getBytes32ArrayLength(key)).toNumber(), "Incorrect Array Length");
             assert.equal(arrElement, bytes32data, "Incorrect array element");
         });
@@ -234,6 +238,8 @@ contract("Data store", async (accounts) => {
             let arrLen = await I_DataStore.getAddressArrayLength(key);
             await I_DataStore.insertAddress(key, address_one, { from: token_owner });
             let arrElement = await I_DataStore.getAddressArrayElement(key, arrLen.toNumber());
+            let arrElements = await I_DataStore.getAddressArrayElements(key, 0, arrLen.toNumber());
+            assert.equal(arrElement, arrElements[arrLen.toNumber()]);
             assert.equal(arrLen.toNumber() + 1, (await I_DataStore.getAddressArrayLength(key)).toNumber(), "Incorrect Array Length");
             assert.equal(arrElement, address_one, "Incorrect array element");
         });
@@ -242,6 +248,8 @@ contract("Data store", async (accounts) => {
             let arrLen = await I_DataStore.getBoolArrayLength(key);
             await I_DataStore.insertBool(key, true, { from: token_owner });
             let arrElement = await I_DataStore.getBoolArrayElement(key, arrLen.toNumber());
+            let arrElements = await I_DataStore.getBoolArrayElements(key, 0, arrLen.toNumber());
+            assert.equal(arrElement, arrElements[arrLen.toNumber()]);
             assert.equal(arrLen.toNumber() + 1, (await I_DataStore.getBoolArrayLength(key)).toNumber(), "Incorrect Array Length");
             assert.equal(arrElement, true, "Incorrect array element");
         });

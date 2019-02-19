@@ -3,7 +3,7 @@ pragma solidity ^0.5.0;
 import "./STO.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "./CappedSTOStorage.sol";
+import "../../storage/modules/STO/CappedSTOStorage.sol";
 
 /**
  * @title STO module for standard capped crowdsale
@@ -208,10 +208,10 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
       Observe state and use revert statements to undo rollback when valid conditions are not met.
     */
     function _postValidatePurchase(
-        address, /*_beneficiary*/
+        address _beneficiary,
         uint256 /*_investedAmount*/
-    ) internal pure {
-        // optional override
+    ) internal view {
+        require(_canBuy(_beneficiary), "Unauthorized");
     }
 
     /**
@@ -221,7 +221,7 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
     * @param _tokenAmount Number of tokens to be emitted
     */
     function _deliverTokens(address _beneficiary, uint256 _tokenAmount) internal {
-        require(ISecurityToken(securityToken).mint(_beneficiary, _tokenAmount), "Error in minting the tokens");
+        ISecurityToken(securityToken).issue(_beneficiary, _tokenAmount, "");
     }
 
     /**

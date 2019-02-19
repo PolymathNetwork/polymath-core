@@ -2,7 +2,7 @@ pragma solidity ^0.5.0;
 
 import "./STO.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "./PreSaleSTOStorage.sol";
+import "../../storage/modules/STO/PreSaleSTOStorage.sol";
 
 /**
  * @title STO module for private presales
@@ -71,14 +71,15 @@ contract PreSaleSTO is PreSaleSTOStorage, STO {
         uint256 _amount,
         uint256 _etherContributed,
         uint256 _polyContributed
-    ) 
-        public 
-        withPerm(PRE_SALE_ADMIN) 
+    )
+        public
+        withPerm(PRE_SALE_ADMIN)
     {
         /*solium-disable-next-line security/no-block-members*/
         require(now <= endTime, "Already passed Endtime");
         require(_amount > 0, "No. of tokens provided should be greater the zero");
-        ISecurityToken(securityToken).mint(_investor, _amount);
+        require(_canBuy(_investor), "Unauthorized");
+        ISecurityToken(securityToken).issue(_investor, _amount, "");
         if (investors[_investor] == uint256(0)) {
             investorCount = investorCount.add(1);
         }
@@ -101,9 +102,9 @@ contract PreSaleSTO is PreSaleSTOStorage, STO {
         uint256[] memory _amounts,
         uint256[] memory _etherContributed,
         uint256[] memory _polyContributed
-    ) 
-        public 
-        withPerm(PRE_SALE_ADMIN) 
+    )
+        public
+        withPerm(PRE_SALE_ADMIN)
     {
         require(_investors.length == _amounts.length, "Mis-match in length of the arrays");
         require(_etherContributed.length == _polyContributed.length, "Mis-match in length of the arrays");

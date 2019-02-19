@@ -107,26 +107,82 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
      * whose volume of tokens will voilate the maximum volume transfer restriction
      * @param _from Address of the sender
      * @param _amount The amount of tokens to transfer
-     * @param _isTransfer Whether or not this is an actual transfer or just a test to see if the tokens would be transferrable
      */
-    function verifyTransfer(address _from, address /*_to */, uint256 _amount, bytes memory /*_data*/, bool _isTransfer) public returns (Result) {
+    function executeTransfer(address _from, address /*_to */, uint256 _amount, bytes calldata /*_data*/) external onlySecurityToken returns (Result success) {
+        uint256 fromTimestamp;
+        uint256 sumOfLastPeriod;
+        uint256 daysCovered;
+        uint256 dailyTime;
+        uint256 endTime;
+        bool isGlobal;
+        (success, fromTimestamp, sumOfLastPeriod, daysCovered, dailyTime, endTime, isGlobal) = _verifyTransfer(_from, _amount);
+        if (fromTimestamp != 0 || dailyTime != 0) {
+            _updateStorage(
+                _from,
+                _amount,
+                fromTimestamp,
+                sumOfLastPeriod,
+                daysCovered,
+                dailyTime,
+                endTime,
+                isGlobal
+            );
+        }
+        return success; 
+    }
+
+    /**
+     * @notice Used to verify the transfer/transferFrom transaction and prevent tranaction
+     * whose volume of tokens will voilate the maximum volume transfer restriction
+     * @param _from Address of the sender
+     * @param _amount The amount of tokens to transfer
+     */
+    function verifyTransfer(
+        address _from,
+        address /*_to*/ ,
+        uint256 _amount,
+        bytes memory /*_data*/
+    ) 
+        public
+        view
+        returns (Result, bytes32)
+    {
+       
+        (Result success,,,,,,) = _verifyTransfer(_from, _amount);
+        if (success == Result.INVALID)
+            return (success, bytes32(uint256(address(this)) << 96)); 
+        return (Result.NA, bytes32(0));
+    }
+
+    /**
+     * @notice Used to verify the transfer/transferFrom transaction and prevent tranaction
+     * whose volume of tokens will voilate the maximum volume transfer restriction
+     * @param _from Address of the sender
+     * @param _amount The amount of tokens to transfer
+     */
+    function _verifyTransfer(
+        address _from,
+        uint256 _amount
+    ) 
+        internal
+        view
+        returns (Result, uint256, uint256, uint256, uint256, uint256, bool)
+    {   
         // If `_from` is present in the exemptionList or it is `0x0` address then it will not follow the vol restriction
         if (!paused && _from != address(0) && exemptions.exemptIndex[_from] == 0) {
-            // Function must only be called by the associated security token if _isTransfer == true
-            require(msg.sender == securityToken || !_isTransfer);
             // Checking the individual restriction if the `_from` comes in the individual category
             if ((individualRestrictions.individualRestriction[_from].endTime >= now && individualRestrictions.individualRestriction[_from].startTime <= now)
                 || (individualRestrictions.individualDailyRestriction[_from].endTime >= now && individualRestrictions.individualDailyRestriction[_from].startTime <= now)) {
 
-                return _individualRestrictionCheck(_from, _amount, _isTransfer);
+                return _individualRestrictionCheck(_from, _amount);
                 // If the `_from` doesn't fall under the individual category. It will processed with in the global category automatically
             } else if ((globalRestrictions.defaultRestriction.endTime >= now && globalRestrictions.defaultRestriction.startTime <= now)
                 || (globalRestrictions.defaultDailyRestriction.endTime >= now && globalRestrictions.defaultDailyRestriction.startTime <= now)) {
 
-                return _defaultRestrictionCheck(_from, _amount, _isTransfer);
+                return _defaultRestrictionCheck(_from, _amount);
             }
         }
-        return Result.NA;
+        return (Result.NA, 0, 0, 0, 0, 0, false);
     }
 
     /**
@@ -692,13 +748,18 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
     * @notice Internal function used to validate the transaction for a given address
     * If it validates then it also update the storage corressponds to the default restriction
     */
-    function _defaultRestrictionCheck(address _from, uint256 _amount, bool _isTransfer) internal returns (Result) {
+    function _defaultRestrictionCheck(address _from, uint256 _amount) internal view returns (
+        Result success,
+        uint256 fromTimestamp,
+        uint256 sumOfLastPeriod,
+        uint256 daysCovered,
+        uint256 dailyTime,
+        uint256 endTime,
+        bool isGlobal
+    ) {
         // using the variable to avoid stack too deep error
         BucketDetails storage bucketDetails = bucketData.defaultUserToBucket[_from];
-        uint256 daysCovered = globalRestrictions.defaultRestriction.rollingPeriodInDays;
-        uint256 fromTimestamp = 0;
-        uint256 sumOfLastPeriod = 0;
-        uint256 dailyTime = 0;
+        daysCovered = globalRestrictions.defaultRestriction.rollingPeriodInDays;
         bool allowedDefault = true;
         bool allowedDaily;
         if (globalRestrictions.defaultRestriction.endTime >= now && globalRestrictions.defaultRestriction.startTime <= now) {
@@ -726,36 +787,30 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         }
         (allowedDaily, dailyTime) = _dailyTxCheck(_from, _amount, bucketDetails.dailyLastTradedDayTime, globalRestrictions.defaultDailyRestriction);
 
-        if (_isTransfer) {
-            _updateStorage(
-                _from,
-                _amount,
-                fromTimestamp,
-                sumOfLastPeriod,
-                daysCovered,
-                dailyTime,
-                globalRestrictions.defaultDailyRestriction.endTime,
-                true
-            );
-        }
-        return ((allowedDaily && allowedDefault) == true ? Result.NA : Result.INVALID);
+        success = ((allowedDaily && allowedDefault) == true ? Result.NA : Result.INVALID);
+        endTime = globalRestrictions.defaultDailyRestriction.endTime;
+        isGlobal = true;
     }
 
     /**
      * @notice Internal function used to validate the transaction for a given address
      * If it validates then it also update the storage corressponds to the individual restriction
      */
-    function _individualRestrictionCheck(address _from, uint256 _amount, bool _isTransfer) internal returns (Result) {
+    function _individualRestrictionCheck(address _from, uint256 _amount) internal view returns (
+        Result success,
+        uint256 fromTimestamp,
+        uint256 sumOfLastPeriod,
+        uint256 daysCovered,
+        uint256 dailyTime,
+        uint256 endTime,
+        bool allowedDaily
+    ) {
         // using the variable to avoid stack too deep error
         BucketDetails memory bucketDetails = bucketData.userToBucket[_from];
         VolumeRestriction memory dailyRestriction = individualRestrictions.individualDailyRestriction[_from];
         VolumeRestriction memory restriction = individualRestrictions.individualRestriction[_from];
-        uint256 daysCovered = restriction.rollingPeriodInDays;
-        uint256 fromTimestamp = 0;
-        uint256 sumOfLastPeriod = 0;
-        uint256 dailyTime = 0;
+        daysCovered = restriction.rollingPeriodInDays;
         bool allowedIndividual = true;
-        bool allowedDaily;
         if (restriction.endTime >= now && restriction.startTime <= now) {
             if (bucketDetails.lastTradedDayTime < restriction.startTime) {
                 // It will execute when the txn is performed first time after the addition of individual restriction
@@ -780,20 +835,9 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
             }
         }
         (allowedDaily, dailyTime) = _dailyTxCheck(_from, _amount, bucketDetails.dailyLastTradedDayTime, dailyRestriction);
-        if (_isTransfer) {
-            _updateStorage(
-                _from,
-                _amount,
-                fromTimestamp,
-                sumOfLastPeriod,
-                daysCovered,
-                dailyTime,
-                dailyRestriction.endTime,
-                false
-            );
-        }
-
-        return ((allowedDaily && allowedIndividual) ? Result.NA : Result.INVALID);
+        success = ((allowedDaily && allowedIndividual) ? Result.NA : Result.INVALID);
+        endTime = dailyRestriction.endTime;
+        allowedDaily = false;
     }
 
     function _dailyTxCheck(
@@ -1081,7 +1125,12 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         return VolumeRestrictionLib.getRestrictionData(holderData, individualRestrictions);
     }
 
-
+    /**
+     * @notice return the amount of tokens for a given user as per the partition
+     */
+    function getTokensByPartition(address /*_owner*/, bytes32 /*_partition*/) external view returns(uint256){
+        return 0;
+    } 
 
     /**
      * @notice Returns the permissions flag that are associated with Percentage transfer Manager

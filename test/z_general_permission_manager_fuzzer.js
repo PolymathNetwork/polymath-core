@@ -21,6 +21,7 @@ const CountTransferManager = artifacts.require("./CountTransferManager");
 const VolumeRestrictionTransferManager = artifacts.require("./VolumeRestrictionTM");
 const PercentageTransferManager = artifacts.require("./PercentageTransferManager");
 const ManualApprovalTransferManager = artifacts.require("./ManualApprovalTransferManager");
+const STGetter = artifacts.require("./STGetter.sol");
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -74,6 +75,8 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
     let I_ManualApprovalTransferManagerFactory;
     let I_ManualApprovalTransferManager;
     let I_STRGetter;
+    let I_STGetter;
+    let stGetter;
 
     // SecurityToken Details
     const name = "Team";
@@ -138,7 +141,8 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
             I_SecurityTokenRegistry,
             I_SecurityTokenRegistryProxy,
             I_STRProxied,
-            I_STRGetter
+            I_STRGetter,
+            I_STGetter
         ] = instances;
 
         // STEP 5: Deploy the GeneralDelegateManagerFactory
@@ -190,6 +194,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
 
             I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
             assert.equal(await I_SecurityToken.getTreasuryWallet.call(), address_zero, "Incorrect wallet set");
+            stGetter = await STGetter.at(I_SecurityToken.address);
             const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTransferManager module get added successfully or not
@@ -198,7 +203,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
         });
 
         it("Should intialize the auto attached modules", async () => {
-            let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
+            let moduleData = (await stGetter.getModulesByType(2))[0];
             I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
 
@@ -353,18 +358,16 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
 
                 console.log("3");
                 if (randomPerms === "WHITELIST") {
-                    let tx = await I_GeneralTransferManager.modifyWhitelist(accounts[j], fromTime, toTime, expiryTime, 1, false, {
+                    let tx = await I_GeneralTransferManager.modifyKYCData(accounts[j], fromTime, toTime, expiryTime, {
                         from: accounts[j]
                     });
                     assert.equal(tx.logs[0].args._investor, accounts[j]);
                     console.log("3.1");
-                    let tx2 = await I_GeneralTransferManager.modifyWhitelistMulti(
+                    let tx2 = await I_GeneralTransferManager.modifyKYCDataMulti(
                         [accounts[3], accounts[4]],
                         [fromTime, fromTime],
                         [toTime, toTime],
                         [expiryTime, expiryTime],
-                        [1, 1],
-                        [false, false],
                         { from: accounts[j] }
                     );
                     console.log(tx2.logs[1].args);
@@ -373,17 +376,15 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                 } else {
                     console.log("3.3");
                     await catchRevert(
-                        I_GeneralTransferManager.modifyWhitelist(accounts[j], fromTime, toTime, expiryTime, 1, false, { from: accounts[j] })
+                        I_GeneralTransferManager.modifyKYCData(accounts[j], fromTime, toTime, expiryTime, { from: accounts[j] })
                     );
                     console.log("3.4");
                     await catchRevert(
-                        I_GeneralTransferManager.modifyWhitelistMulti(
+                        I_GeneralTransferManager.modifyKYCDataMulti(
                             [accounts[3], accounts[4]],
                             [fromTime, fromTime],
                             [toTime, toTime],
                             [expiryTime, expiryTime],
-                            [1, 1],
-                            [false, false],
                             { from: accounts[j] }
                         )
                     );

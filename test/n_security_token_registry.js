@@ -12,6 +12,7 @@ const SecurityTokenRegistry = artifacts.require("./SecurityTokenRegistry.sol");
 const SecurityTokenRegistryMock = artifacts.require("./SecurityTokenRegistryMock.sol");
 const STFactory = artifacts.require("./STFactory.sol");
 const STRGetter = artifacts.require('./STRGetter.sol');
+const STGetter = artifacts.require("./STGetter.sol");
 const DataStoreLogic = artifacts.require('./DataStore.sol');
 const DataStoreFactory = artifacts.require('./DataStoreFactory.sol');
 
@@ -61,6 +62,8 @@ contract("SecurityTokenRegistry", async (accounts) => {
     let I_MRProxied;
     let I_STRGetter;
     let I_Getter;
+    let I_STGetter;
+    let stGetter;
     let I_USDOracle;
     let I_POLYOracle;
     let I_StablePOLYOracle;
@@ -125,6 +128,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
             I_SecurityTokenRegistryProxy,
             I_STRProxied,
             I_STRGetter,
+            I_STGetter,
             I_USDOracle,
             I_POLYOracle,
             I_StablePOLYOracle
@@ -572,6 +576,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
             I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
             assert.equal(await I_SecurityToken.getTreasuryWallet.call(), treasury_wallet, "Incorrect wallet set")
+            stGetter = await STGetter.at(I_SecurityToken.address);
             const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTrasnferManager module get added successfully or not
@@ -635,10 +640,11 @@ contract("SecurityTokenRegistry", async (accounts) => {
     describe("Generate SecurityToken v2", async () => {
         it("Should deploy the st version 2", async () => {
             // Step 7: Deploy the STFactory contract
+            I_STGetter = await STGetter.new();
             let I_DataStoreLogic = await DataStoreLogic.new({ from: account_polymath });
             let I_DataStoreFactory = await DataStoreFactory.new(I_DataStoreLogic.address, { from: account_polymath });
 
-            I_STFactory002 = await STFactory.new(I_GeneralTransferManagerFactory.address, I_DataStoreFactory.address, { from: account_polymath });
+            I_STFactory002 = await STFactory.new(I_GeneralTransferManagerFactory.address, I_DataStoreFactory.address, I_STGetter.address, { from: account_polymath });
 
             assert.notEqual(
                 I_STFactory002.address.valueOf(),

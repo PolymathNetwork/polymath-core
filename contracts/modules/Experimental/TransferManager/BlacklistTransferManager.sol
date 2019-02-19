@@ -94,7 +94,29 @@ contract BlacklistTransferManager is TransferManager {
     * if the current time is between the timeframe define for the
     * blacklist type associated with the _from address
     */
-    function verifyTransfer(address _from, address /* _to */, uint256 /* _amount */, bytes  memory/* _data */, bool /* _isTransfer */) public returns(Result) {
+    function executeTransfer(address _from, address _to, uint256 _amount, bytes  calldata _data) external returns(Result) {
+        (Result success, ) = verifyTransfer(_from, _to, _amount, _data);
+        return success;
+    }
+
+
+    /**
+    * @notice Used to verify the transfer transaction (View)
+    * @param _from Address of the sender
+    * @dev Restrict the blacklist address to transfer tokens
+    * if the current time is between the timeframe define for the
+    * blacklist type associated with the _from address
+    */
+    function verifyTransfer(
+        address _from,
+        address /* _to */,
+        uint256 /* _amount */,
+        bytes  memory/* _data */
+    )   
+        public
+        view
+        returns(Result, bytes32)
+    {
         if (!paused) {
             if (investorToBlacklist[_from].length != 0) {
                 for (uint256 i = 0; i < investorToBlacklist[_from].length; i++) {
@@ -109,14 +131,15 @@ contract BlacklistTransferManager is TransferManager {
                         uint256 repeater = (now.sub(startTimeTemp)).div(repeatPeriodTimeTemp);
                         /*solium-disable-next-line security/no-block-members*/
                         if (startTimeTemp.add(repeatPeriodTimeTemp.mul(repeater)) <= now && endTimeTemp.add(repeatPeriodTimeTemp.mul(repeater)) >= now) {
-                            return Result.INVALID;
+                            return (Result.INVALID, bytes32(uint256(address(this)) << 96));
                         }
                     }
                 }
             }
         }
-        return Result.NA;
+        return (Result.NA, bytes32(0));
     }
+
 
     /**
     * @notice Used to add the blacklist type
@@ -387,6 +410,13 @@ contract BlacklistTransferManager is TransferManager {
     function getAllBlacklists() external view returns(bytes32[] memory) {
         return allBlacklists;
     }
+
+    /**
+     * @notice return the amount of tokens for a given user as per the partition
+     */
+    function getTokensByPartition(address /*_owner*/, bytes32 /*_partition*/) external view returns(uint256){
+        return 0;
+    } 
 
     /**
     * @notice Return the permissions flag that are associated with blacklist transfer manager

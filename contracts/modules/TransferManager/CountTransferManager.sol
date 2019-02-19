@@ -1,7 +1,8 @@
 pragma solidity ^0.5.0;
 
 import "./TransferManager.sol";
-import "./CountTransferManagerStorage.sol";
+import "../../storage/modules/TransferManager/CountTransferManagerStorage.sol";
+import "../../interfaces/ISecurityToken.sol";
 
 /**
  * @title Transfer Manager for limiting maximum number of token holders
@@ -23,28 +24,48 @@ contract CountTransferManager is CountTransferManagerStorage, TransferManager {
      * @param _to Address of the receiver
      * @param _amount Amount to send
      */
-    function verifyTransfer(
+    function executeTransfer(
         address _from,
         address _to,
         uint256 _amount,
-        bytes calldata /* _data */,
-        bool /* _isTransfer */
+        bytes calldata _data
     )
         external
         returns(Result)
     {
+        (Result success,) = verifyTransfer(_from, _to, _amount, _data);
+        return success;
+    }
+
+    /** 
+     * @notice Used to verify the transfer transaction and prevent a transfer if it passes the allowed amount of token holders
+     * @param _from Address of the sender
+     * @param _to Address of the receiver
+     * @param _amount Amount to send
+     */
+    function verifyTransfer(
+        address _from,
+        address _to,
+        uint256 _amount,
+        bytes memory /* _data */
+    ) 
+        public
+        view 
+        returns(Result, bytes32) 
+    {
         if (!paused) {
-            if (maxHolderCount < ISecurityToken(securityToken).getInvestorCount()) {
+            if (maxHolderCount < ISecurityToken(securityToken).holderCount()) {
                 // Allow transfers to existing maxHolders
                 if (ISecurityToken(securityToken).balanceOf(_to) != 0 || ISecurityToken(securityToken).balanceOf(_from) == _amount) {
-                    return Result.NA;
+                    return (Result.NA, bytes32(0));
                 }
-                return Result.INVALID;
+                return (Result.INVALID, bytes32(uint256(address(this)) << 96));
             }
-            return Result.NA;
+            return (Result.NA, bytes32(0));
         }
-        return Result.NA;
+        return (Result.NA, bytes32(0));
     }
+
 
     /**
      * @notice Used to initialize the variables of the contract
@@ -69,6 +90,13 @@ contract CountTransferManager is CountTransferManagerStorage, TransferManager {
     function getInitFunction() public pure returns(bytes4) {
         return bytes4(keccak256("configure(uint256)"));
     }
+
+    /**
+     * @notice return the amount of tokens for a given user as per the partition
+     */
+    function getTokensByPartition(address /*_owner*/, bytes32 /*_partition*/) external view returns(uint256){
+        return 0;
+    } 
 
     /**
      * @notice Returns the permissions flag that are associated with CountTransferManager

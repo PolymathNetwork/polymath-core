@@ -2,8 +2,6 @@
 // aren’t included within the original RPC specification.
 // See https://github.com/ethereumjs/testrpc#implemented-methods
 
-const pify = require('pify');
-
 async function advanceBlock() {
   return new Promise((resolve, reject) => {
       web3.currentProvider.send({

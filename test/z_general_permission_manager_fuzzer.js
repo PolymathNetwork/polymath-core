@@ -489,7 +489,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
 
                 // target permission should alaways be false for each test before assigning
                 if (
-                    (await I_GeneralPermissionManager.checkPermission(accounts[j], I_PercentageTransferManager.address, web3.utils.fromAscii("WHITELIST"))) ===
+                    (await I_GeneralPermissionManager.checkPermission(accounts[j], I_PercentageTransferManager.address, web3.utils.fromAscii("ADMIN"))) ===
                     true
                 ) {
                     await I_GeneralPermissionManager.changePermission(

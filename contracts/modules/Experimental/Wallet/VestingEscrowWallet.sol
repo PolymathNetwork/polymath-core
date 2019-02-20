@@ -9,9 +9,6 @@ import "./IWallet.sol";
  */
 contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
     using SafeMath for uint256;
-    
-    // Permission flag
-    bytes32 constant OPERATOR = "OPERATOR";
 
     // States used to represent the status of the schedule
     enum State {CREATED, STARTED, COMPLETED}

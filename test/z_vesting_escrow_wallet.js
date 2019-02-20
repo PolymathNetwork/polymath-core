@@ -239,9 +239,14 @@ contract('VestingEscrowWallet', accounts => {
             assert.equal(tx.logs[3].args._investor, account_beneficiary3);
         });
 
-        it("Should successfully add the delegate", async() => {
+        it("Should successfully add the delegate (wallet_admin)", async() => {
             let tx = await I_GeneralPermissionManager.addDelegate(wallet_admin, delegateDetails, { from: token_owner});
             assert.equal(tx.logs[0].args._delegate, wallet_admin);
+        });
+
+        it("Should successfully add the delegate (wallet_operator)", async() => {
+            let tx = await I_GeneralPermissionManager.addDelegate(wallet_operator, delegateDetails, { from: token_owner});
+            assert.equal(tx.logs[0].args._delegate, wallet_operator);
         });
 
         it("Should provide the permission", async() => {
@@ -349,20 +354,20 @@ contract('VestingEscrowWallet', accounts => {
 
         it("Should not be able to withdraw tokens to a treasury -- fail because of zero amount", async () => {
             await catchRevert(
-                I_VestingEscrowWallet.sendToTreasury(0, {from: wallet_admin})
+                I_VestingEscrowWallet.sendToTreasury(0, {from: wallet_operator})
             );
         });
 
         it("Should not be able to withdraw tokens to a treasury -- fail because amount is greater than unassigned tokens", async () => {
             let numberOfTokens = 25000 * 2;
             await catchRevert(
-                I_VestingEscrowWallet.sendToTreasury(numberOfTokens, {from: wallet_admin})
+                I_VestingEscrowWallet.sendToTreasury(numberOfTokens, {from: wallet_operator})
             );
         });
 
         it("Should withdraw tokens to a treasury", async () => {
             let numberOfTokens = 25000;
-            const tx = await I_VestingEscrowWallet.sendToTreasury(numberOfTokens, {from: wallet_admin});
+            const tx = await I_VestingEscrowWallet.sendToTreasury(numberOfTokens, {from: wallet_operator});
 
             assert.equal(tx.logs[0].args._numberOfTokens, numberOfTokens);
 
@@ -419,7 +424,7 @@ contract('VestingEscrowWallet', accounts => {
             await I_VestingEscrowWallet.revokeAllSchedules(account_beneficiary3, {from: wallet_admin});
             await I_VestingEscrowWallet.removeTemplate(templateName, {from: wallet_admin});
             let unassignedTokens = await I_VestingEscrowWallet.unassignedTokens.call();
-            await I_VestingEscrowWallet.sendToTreasury(unassignedTokens, {from: wallet_admin});
+            await I_VestingEscrowWallet.sendToTreasury(unassignedTokens, {from: wallet_operator});
         });
 
         it("Should fail to modify vesting schedule -- fail because date in the past", async () => {
@@ -615,7 +620,7 @@ contract('VestingEscrowWallet', accounts => {
                 I_VestingEscrowWallet.addSchedule(account_beneficiary1, templateName, numberOfTokens, duration, frequency, startTime, {from: account_beneficiary1})
             );
             let unassignedTokens = await I_VestingEscrowWallet.unassignedTokens.call();
-            await I_VestingEscrowWallet.sendToTreasury(unassignedTokens, {from: wallet_admin});
+            await I_VestingEscrowWallet.sendToTreasury(unassignedTokens, {from: wallet_operator});
         });
 
         it("Should add vesting schedule to the beneficiary address", async () => {
@@ -665,7 +670,7 @@ contract('VestingEscrowWallet', accounts => {
             await I_VestingEscrowWallet.revokeSchedule(account_beneficiary1, templateName, {from: wallet_admin});
             await I_VestingEscrowWallet.removeTemplate(templateName, {from: wallet_admin});
             let unassignedTokens = await I_VestingEscrowWallet.unassignedTokens.call();
-            await I_VestingEscrowWallet.sendToTreasury(unassignedTokens, {from: wallet_admin});
+            await I_VestingEscrowWallet.sendToTreasury(unassignedTokens, {from: wallet_operator});
         });
 
         it("Should fail to modify vesting schedule -- fail because schedule not found", async () => {
@@ -711,7 +716,7 @@ contract('VestingEscrowWallet', accounts => {
             let templateName = web3.utils.toHex("template-2-01");
             const tx = await I_VestingEscrowWallet.revokeSchedule(account_beneficiary1, templateName, {from: wallet_admin});
             let unassignedTokens = await I_VestingEscrowWallet.unassignedTokens.call();
-            await I_VestingEscrowWallet.sendToTreasury(unassignedTokens, {from: wallet_admin});
+            await I_VestingEscrowWallet.sendToTreasury(unassignedTokens, {from: wallet_operator});
 
             assert.equal(tx.logs[0].args._beneficiary, account_beneficiary1);
             assert.equal(web3.utils.hexToUtf8(tx.logs[0].args._templateName), web3.utils.hexToUtf8(templateName));
@@ -779,7 +784,7 @@ contract('VestingEscrowWallet', accounts => {
             let templateName = schedules[1].templateName;
             const tx = await I_VestingEscrowWallet.revokeSchedule(account_beneficiary2, templateName, {from: wallet_admin});
             let unassignedTokens = await I_VestingEscrowWallet.unassignedTokens.call();
-            await I_VestingEscrowWallet.sendToTreasury(unassignedTokens, {from: wallet_admin});
+            await I_VestingEscrowWallet.sendToTreasury(unassignedTokens, {from: wallet_operator});
 
             assert.equal(tx.logs[0].args._beneficiary, account_beneficiary2);
             assert.equal(web3.utils.hexToUtf8(tx.logs[0].args._templateName), web3.utils.hexToUtf8(templateName));
@@ -791,7 +796,7 @@ contract('VestingEscrowWallet', accounts => {
         it("Should revoke 2 vesting schedules from the beneficiary address", async () => {
             const tx = await I_VestingEscrowWallet.revokeAllSchedules(account_beneficiary2, {from: wallet_admin});
             let unassignedTokens = await I_VestingEscrowWallet.unassignedTokens.call();
-            await I_VestingEscrowWallet.sendToTreasury(unassignedTokens, {from: wallet_admin});
+            await I_VestingEscrowWallet.sendToTreasury(unassignedTokens, {from: wallet_operator});
 
             assert.equal(tx.logs[0].args._beneficiary, account_beneficiary2);
 
@@ -861,7 +866,7 @@ contract('VestingEscrowWallet', accounts => {
 
             await I_SecurityToken.transfer(token_owner, balance, {from: account_beneficiary3});
             let unassignedTokens = await I_VestingEscrowWallet.unassignedTokens.call();
-            await I_VestingEscrowWallet.sendToTreasury(unassignedTokens, {from: wallet_admin});
+            await I_VestingEscrowWallet.sendToTreasury(unassignedTokens, {from: wallet_operator});
         });
 
     });
@@ -987,7 +992,7 @@ contract('VestingEscrowWallet', accounts => {
 
             await I_VestingEscrowWallet.revokeSchedule(account_beneficiary1, templateName, {from: wallet_admin});
             let unassignedTokens = await I_VestingEscrowWallet.unassignedTokens.call();
-            await I_VestingEscrowWallet.sendToTreasury(unassignedTokens, {from: wallet_admin});
+            await I_VestingEscrowWallet.sendToTreasury(unassignedTokens, {from: wallet_operator});
         });
 
         it("Should not be able to add vesting schedule from template -- fail because template already added", async () => {
@@ -1038,7 +1043,7 @@ contract('VestingEscrowWallet', accounts => {
                 I_VestingEscrowWallet.addScheduleMulti(beneficiaries, templateNames, [20000, 30000, 10000], [4, 4], [1, 1, 1], startTimes, {from: wallet_admin})
             );
             let unassignedTokens = await I_VestingEscrowWallet.unassignedTokens.call();
-            await I_VestingEscrowWallet.sendToTreasury(unassignedTokens, {from: wallet_admin});
+            await I_VestingEscrowWallet.sendToTreasury(unassignedTokens, {from: wallet_operator});
         });
 
         it("Should add schedules for 3 beneficiaries", async () => {
@@ -1136,7 +1141,7 @@ contract('VestingEscrowWallet', accounts => {
                 await I_VestingEscrowWallet.revokeAllSchedules(beneficiary, {from: wallet_admin});
                 await I_VestingEscrowWallet.removeTemplate(templateNames[i], {from: wallet_admin});
                 let unassignedTokens = await I_VestingEscrowWallet.unassignedTokens.call();
-                await I_VestingEscrowWallet.sendToTreasury(unassignedTokens, {from: wallet_admin});
+                await I_VestingEscrowWallet.sendToTreasury(unassignedTokens, {from: wallet_operator});
             }
         });
 
@@ -1199,7 +1204,7 @@ contract('VestingEscrowWallet', accounts => {
             }
 
             let unassignedTokens = await I_VestingEscrowWallet.unassignedTokens.call();
-            await I_VestingEscrowWallet.sendToTreasury(unassignedTokens, {from: wallet_admin});
+            await I_VestingEscrowWallet.sendToTreasury(unassignedTokens, {from: wallet_operator});
         });
 
     });

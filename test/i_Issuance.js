@@ -9,6 +9,7 @@ const CappedSTO = artifacts.require("./CappedSTO.sol");
 const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager");
+const STGetter = artifacts.require("./STGetter.sol");
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -52,6 +53,8 @@ contract("Issuance", async (accounts) => {
     let I_PolyToken;
     let I_PolymathRegistry;
     let I_STRGetter;
+    let I_STGetter;
+    let stGetter;
 
     // SecurityToken Details (Launched ST on the behalf of the issuer)
     const name = "Demo Token";
@@ -111,7 +114,8 @@ contract("Issuance", async (accounts) => {
             I_SecurityTokenRegistry,
             I_SecurityTokenRegistryProxy,
             I_STRProxied,
-            I_STRGetter
+            I_STRGetter,
+            I_STGetter
         ] = instances;
 
         // STEP 2: Deploy the GeneralDelegateManagerFactory
@@ -157,7 +161,7 @@ contract("Issuance", async (accounts) => {
                 assert.equal(tx.logs[2].args._ticker, symbol, "SecurityToken doesn't get deployed");
 
                 I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
-
+                stGetter = await STGetter.at(I_SecurityToken.address);
                 const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
                 // Verify that GeneralTransferManager module get added successfully or not
@@ -166,7 +170,7 @@ contract("Issuance", async (accounts) => {
             });
 
             it("POLYMATH: Should intialize the auto attached modules", async () => {
-                let moduleData = (await I_SecurityToken.getModulesByType(transferManagerKey))[0];
+                let moduleData = (await stGetter.getModulesByType(transferManagerKey))[0];
                 I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
             });
 
@@ -220,7 +224,7 @@ contract("Issuance", async (accounts) => {
             it("Should add the delegate with permission", async () => {
                 //First attach a permission manager to the token
                 await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x0", new BN(0), new BN(0), { from: account_polymath });
-                let moduleData = (await I_SecurityToken.getModulesByType(permissionManagerKey))[0];
+                let moduleData = (await stGetter.getModulesByType(permissionManagerKey))[0];
                 I_GeneralPermissionManager = await GeneralPermissionManager.at(moduleData);
                 // Add permission to the deletgate (A regesteration process)
                 await I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: account_polymath });

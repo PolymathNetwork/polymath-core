@@ -86,17 +86,33 @@ contract SignedTransferManager is TransferManager {
     * @param _to address transfer to
     * @param _amount transfer amount
     * @param _data signature
-    * @param _isTransfer bool value of isTransfer
     * Sig needs to be valid (not used or deemed as invalid)
     * Signer needs to be in the signers mapping
     */
-    function verifyTransfer(address _from, address _to, uint256 _amount, bytes memory _data , bool _isTransfer) public returns(Result) {
+    function executeTransfer(address _from, address _to, uint256 _amount, bytes calldata _data) external onlySecurityToken returns(Result) {
+        (Result success, ) = verifyTransfer(_from, _to, _amount, _data);
+        if (success == Result.VALID) {
+            bytes memory signature;
+            (,,,signature) = abi.decode(_data, (address, uint256, uint256, bytes));
+            _invalidateSignature(signature);
+        }
+        return success;
+    }
+
+    /**
+    * @notice allow verify transfer with signature
+    * @param _from address transfer from
+    * @param _to address transfer to
+    * @param _amount transfer amount
+    * @param _data signature
+    * Sig needs to be valid (not used or deemed as invalid)
+    * Signer needs to be in the signers mapping
+    */
+    function verifyTransfer(address _from, address _to, uint256 _amount, bytes memory _data) public view returns(Result, bytes32) {
         if (!paused) {
 
-            require (_isTransfer == false || msg.sender == securityToken, "Sender is not ST");
-
             if (_data.length == 0)
-                return Result.NA;
+                return (Result.NA, bytes32(0));
 
             address targetAddress;
             uint256 nonce;
@@ -105,19 +121,16 @@ contract SignedTransferManager is TransferManager {
             (targetAddress, nonce, expiry, signature) = abi.decode(_data, (address, uint256, uint256, bytes));
 
             if (address(this) != targetAddress || signature.length == 0 || _checkSignatureIsInvalid(signature) || expiry < now)
-                return Result.NA;
+                return (Result.NA, bytes32(0));
 
             bytes32 hash = keccak256(abi.encodePacked(targetAddress, nonce, expiry, _from, _to, _amount));
             address signer = hash.toEthSignedMessageHash().recover(signature);
 
-            if (!_checkSigner(signer)) {
-                return Result.NA;
-            } else if(_isTransfer) {
-                _invalidateSignature(signature);
-            }
-            return Result.VALID;
+            if (!_checkSigner(signer))
+                return (Result.NA, bytes32(0));
+            return (Result.VALID, bytes32(uint256(address(this)) << 96));
         }
-        return Result.NA;
+        return (Result.NA, bytes32(0));
     }
 
     /**
@@ -154,6 +167,13 @@ contract SignedTransferManager is TransferManager {
         bytes32[] memory allPermissions = new bytes32[](1);
         allPermissions[0] = ADMIN;
         return allPermissions;
+    }
+
+    /**
+     * @notice return the amount of tokens for a given user as per the partition
+     */
+    function getTokensByPartition(address /*_owner*/, bytes32 /*_partition*/) external view returns(uint256) {
+        return 0;
     }
 
     function _checkSignatureIsInvalid(bytes memory _data) internal view returns(bool) {

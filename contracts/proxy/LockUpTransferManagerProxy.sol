@@ -1,9 +1,9 @@
 pragma solidity ^0.5.0;
 
-import "../modules/Experimental/TransferManager/LockUpTransferManagerStorage.sol";
+import "../storage/modules/TransferManager/LockUpTransferManagerStorage.sol";
 import "./OwnedUpgradeabilityProxy.sol";
 import "../Pausable.sol";
-import "../modules/ModuleStorage.sol";
+import "../storage/modules/ModuleStorage.sol";
 
 /**
  * @title CountTransferManager module Proxy
@@ -17,7 +17,7 @@ contract LockUpTransferManagerProxy is LockUpTransferManagerStorage, ModuleStora
     * @param _implementation representing the address of the new implementation to be set
     */
     constructor (
-        string memory _version, 
+        string memory _version,
         address _securityToken,
         address _polyAddress,
         address _implementation

@@ -3,9 +3,9 @@ pragma solidity ^0.5.0;
 import "./OwnedUpgradeabilityProxy.sol";
 import "../Pausable.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
-import "../modules/STO/STOStorage.sol";
-import "../modules/ModuleStorage.sol";
-import "../modules/STO/CappedSTOStorage.sol";
+import "../storage/modules/STO/STOStorage.sol";
+import "../storage/modules/ModuleStorage.sol";
+import "../storage/modules/STO/CappedSTOStorage.sol";
 
 /**
  * @title CappedSTO module Proxy

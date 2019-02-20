@@ -1,5 +1,4 @@
 import latestTime from "./helpers/latestTime";
-import { signData } from "./helpers/signData";
 import { pk } from "./helpers/testprivateKey";
 import { duration, promisifyLogWatch, latestBlock } from "./helpers/utils";
 import { takeSnapshot, increaseTime, revertToSnapshot } from "./helpers/time";
@@ -9,6 +8,7 @@ import { setUpPolymathNetwork, deployGPMAndVerifyed } from "./helpers/createInst
 const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager");
+const STGetter = artifacts.require("./STGetter");
 
 const Web3 = require("web3");
 const BN = Web3.utils.BN;
@@ -51,6 +51,8 @@ contract("GeneralPermissionManager", async (accounts) => {
     let I_PolyToken;
     let I_PolymathRegistry;
     let I_STRGetter;
+    let I_STGetter;
+    let stGetter;
 
     // SecurityToken Details
     const name = "Team";
@@ -101,7 +103,8 @@ contract("GeneralPermissionManager", async (accounts) => {
             I_SecurityTokenRegistry,
             I_SecurityTokenRegistryProxy,
             I_STRProxied,
-            I_STRGetter
+            I_STRGetter,
+            I_STGetter
         ] = instances;
 
         // STEP 5: Deploy the GeneralDelegateManagerFactory
@@ -143,7 +146,7 @@ contract("GeneralPermissionManager", async (accounts) => {
             assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
             I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
-
+            stGetter = await STGetter.at(I_SecurityToken.address);
             const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTransferManager module get added successfully or not
@@ -152,7 +155,7 @@ contract("GeneralPermissionManager", async (accounts) => {
         });
 
         it("Should intialize the auto attached modules", async () => {
-            let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
+            let moduleData = (await stGetter.getModulesByType(2))[0];
             I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
 
@@ -263,9 +266,9 @@ contract("GeneralPermissionManager", async (accounts) => {
 
         it("Security token should deny all permission if all permission managers are disabled", async () => {
             await I_SecurityToken.archiveModule(I_GeneralPermissionManager.address, { from: token_owner });
-            assert.isFalse(await I_SecurityToken.checkPermission.call(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("WHITELIST")));
+            assert.isFalse(await stGetter.checkPermission.call(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("WHITELIST")));
             await I_SecurityToken.unarchiveModule(I_GeneralPermissionManager.address, { from: token_owner });
-            assert.isTrue(await I_SecurityToken.checkPermission.call(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("WHITELIST")));
+            assert.isTrue(await stGetter.checkPermission.call(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("WHITELIST")));
         });
 
         it("Should fail to remove the delegate -- failed because unauthorized msg.sender", async () => {

@@ -1,9 +1,9 @@
 pragma solidity ^0.5.0;
 
-import "../modules/TransferManager/ManualApprovalTransferManagerStorage.sol";
 import "./OwnedUpgradeabilityProxy.sol";
+import "../storage/modules/TransferManager/ManualApprovalTransferManagerStorage.sol";
 import "../Pausable.sol";
-import "../modules/ModuleStorage.sol";
+import "../storage/modules/ModuleStorage.sol";
 
 /**
  @title ManualApprovalTransferManager module Proxy

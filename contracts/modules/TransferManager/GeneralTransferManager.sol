@@ -3,9 +3,9 @@ pragma solidity ^0.5.0;
 import "./TransferManager.sol";
 import "../../libraries/Encoder.sol";
 import "../../libraries/VersionUtils.sol";
-import "../../storage/GeneralTransferManagerStorage.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
+import "../../storage/modules/TransferManager/GeneralTransferManagerStorage.sol";
 
 /**
  * @title Transfer Manager module for core transfer validation functionality
@@ -150,13 +150,37 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
      * @param _from Address of the sender
      * @param _to Address of the receiver
     */
+    function executeTransfer(
+        address _from,
+        address _to,
+        uint256 _amount,
+        bytes calldata _data
+    ) external returns(Result) {
+       (Result success,) = verifyTransfer(_from, _to, _amount, _data);
+       return success;
+    }
+
+    /**
+     * @notice Default implementation of verifyTransfer used by SecurityToken
+     * If the transfer request comes from the STO, it only checks that the investor is in the whitelist
+     * If the transfer request comes from a token holder, it checks that:
+     * a) Both are on the whitelist
+     * b) Seller's sale lockup period is over
+     * c) Buyer's purchase lockup is over
+     * @param _from Address of the sender
+     * @param _to Address of the receiver
+    */
     function verifyTransfer(
         address _from,
         address _to,
         uint256, /*_amount*/
-        bytes calldata, /* _data */
-        bool /* _isTransfer */
-    ) external returns(Result) {
+        bytes memory /* _data */
+    ) 
+        public
+        view
+        returns(Result, bytes32)
+    {
+        Result success;
         if (!paused) {
             uint64 fromTime;
             uint64 fromExpiry;
@@ -164,36 +188,41 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
             uint64 toTime;
             if (allowAllTransfers) {
                 //All transfers allowed, regardless of whitelist
-                return Result.VALID;
+                return (Result.VALID, getAddressBytes32());
             }
             if (allowAllBurnTransfers && (_to == address(0))) {
-                return Result.VALID;
+                return (Result.VALID, getAddressBytes32());
             }
 
             (fromTime, fromExpiry, toTime, toExpiry) = _getValuesForTransfer(_from, _to);
 
             if (allowAllWhitelistTransfers) {
                 //Anyone on the whitelist can transfer, regardless of time
-                return (_validExpiry(toExpiry) && _validExpiry(fromExpiry)) ? Result.VALID : Result.NA;
+                success = (_validExpiry(toExpiry) && _validExpiry(fromExpiry)) ? Result.VALID : Result.NA;
+                return (success, success == Result.VALID ? getAddressBytes32() : bytes32(0));
             }
             // Using the local variables to avoid the stack too deep error
             (fromTime, toTime) = _adjustTimes(fromTime, toTime);
             if (_from == issuanceAddress) {
                 // if allowAllWhitelistIssuances is true, so time stamp ignored
                 if (allowAllWhitelistIssuances) {
-                    return _validExpiry(toExpiry) ? Result.VALID : Result.NA;
+                    success = _validExpiry(toExpiry) ? Result.VALID : Result.NA;
+                    return (success, success == Result.VALID ? getAddressBytes32() : bytes32(0));
                 } else {
-                    return (_validExpiry(toExpiry) && _validLockTime(toTime)) ? Result.VALID : Result.NA;
+                    success = (_validExpiry(toExpiry) && _validLockTime(toTime)) ? Result.VALID : Result.NA;
+                    return (success, success == Result.VALID ? getAddressBytes32() : bytes32(0));
                 }
             }
 
             //Anyone on the whitelist can transfer provided the blocknumber is large enough
             /*solium-disable-next-line security/no-block-members*/
-            return (_validExpiry(fromExpiry) && _validLockTime(fromTime) && _validExpiry(toExpiry) &&
+            success = (_validExpiry(fromExpiry) && _validLockTime(fromTime) && _validExpiry(toExpiry) &&
                 _validLockTime(toTime)) ? Result.VALID : Result.NA; /*solium-disable-line security/no-block-members*/
+            return (success, success == Result.VALID ? getAddressBytes32() : bytes32(0));
         }
-        return Result.NA;
+        return (Result.NA, bytes32(0));
     }
+
 
     /**
     * @notice Add or remove KYC info of an investor.
@@ -495,6 +524,13 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     }
 
     /**
+     * @notice return the amount of tokens for a given user as per the partition
+     */
+    function getTokensByPartition(address /*_owner*/, bytes32 /*_partition*/) external view returns(uint256){
+        return 0;
+    } 
+
+    /**
      * @notice Return the permissions flag that are associated with general trnasfer manager
      */
     function getPermissions() public view returns(bytes32[] memory) {
@@ -502,6 +538,10 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         allPermissions[0] = WHITELIST;
         allPermissions[1] = FLAGS;
         return allPermissions;
+    }
+
+    function getAddressBytes32() public view returns(bytes32) {
+        return bytes32(uint256(address(this)) << 96); 
     }
 
 }

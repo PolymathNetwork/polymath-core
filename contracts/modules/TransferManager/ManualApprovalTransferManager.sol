@@ -2,7 +2,7 @@ pragma solidity ^0.5.0;
 
 import "./TransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "./ManualApprovalTransferManagerStorage.sol";
+import "../../storage/modules/TransferManager/ManualApprovalTransferManagerStorage.sol";
 
 /**
  * @title Transfer Manager module for manually approving transactions between accounts
@@ -54,33 +54,54 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
      * @param _from Address of the sender
      * @param _to Address of the receiver
      * @param _amount The amount of tokens to transfer
-     * @param _isTransfer Whether or not this is an actual transfer or just a test to see if the tokens would be transferrable
+     */
+    function executeTransfer(
+        address _from,
+        address _to,
+        uint256 _amount,
+        bytes calldata _data
+    )
+        external
+        onlySecurityToken
+        returns(Result)
+    {
+
+       (Result success, bytes32 esc) = verifyTransfer(_from, _to, _amount, _data);
+        if (esc != bytes32(0)) {
+            uint256 index = approvalIndex[_from][_to] - 1;
+            ManualApproval storage approval = approvals[index];
+            approval.allowance = approval.allowance.sub(_amount);
+        }
+        return (success);
+    }
+
+
+    /** 
+     * @notice Used to verify the transfer transaction and allow a manually approved transqaction to bypass other restrictions
+     * @param _from Address of the sender
+     * @param _to Address of the receiver
+     * @param _amount The amount of tokens to transfer
      */
     function verifyTransfer(
         address _from,
         address _to,
         uint256 _amount,
-        bytes calldata, /* _data */
-        bool _isTransfer
-    )
-        external
-        returns(Result)
+        bytes memory /* _data */
+    ) 
+        public
+        view 
+        returns(Result, bytes32) 
     {
-        // function must only be called by the associated security token if _isTransfer == true
-        require(_isTransfer == false || msg.sender == securityToken, "Sender is not the owner");
-
         if (!paused && approvalIndex[_from][_to] != 0) {
             uint256 index = approvalIndex[_from][_to] - 1;
-            ManualApproval storage approval = approvals[index];
+            ManualApproval memory approval = approvals[index];
             if ((approval.expiryTime >= now) && (approval.allowance >= _amount)) {
-                if (_isTransfer) {
-                    approval.allowance = approval.allowance.sub(_amount);
-                }
-                return Result.VALID;
+                return (Result.VALID, bytes32(uint256(address(this)) << 96)); 
             }
         }
-        return Result.NA;
+        return (Result.NA, bytes32(0));
     }
+
 
     /**
     * @notice Adds a pair of addresses to manual approvals
@@ -389,6 +410,13 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
 
         return (from, to, allowance, expiryTime, description);
 
+    }
+
+    /**
+     * @notice return the amount of tokens for a given user as per the partition
+     */
+    function getTokensByPartition(address /*_owner*/, bytes32 /*_partition*/) external view returns(uint256){
+        return 0;
     }
 
     /**

@@ -3,9 +3,8 @@ pragma solidity ^0.5.0;
 import "./OwnedUpgradeabilityProxy.sol";
 import "../Pausable.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
-import "../modules/STO/STOStorage.sol";
-import "../modules/ModuleStorage.sol";
-import "../modules/PermissionManager/GeneralPermissionManagerStorage.sol";
+import "../storage/modules/ModuleStorage.sol";
+import "../storage/modules/PermissionManager/GeneralPermissionManagerStorage.sol";
 
 /**
  * @title GeneralPermissionManager module Proxy

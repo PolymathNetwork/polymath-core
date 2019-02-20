@@ -22,7 +22,7 @@ const CountTransferManager = artifacts.require("./CountTransferManager");
 const ManualApprovalTransferManager = artifacts.require('./ManualApprovalTransferManager');
 const VolumeRestrictionTransferManager = artifacts.require('./LockUpTransferManager');
 const PercentageTransferManager = artifacts.require('./PercentageTransferManager');
-
+const STGetter = artifacts.require("./STGetter.sol");
 
 
 const Web3 = require('web3');
@@ -68,6 +68,8 @@ contract('GeneralPermissionManager', accounts => {
     let I_STRProxied;
     let I_PolyToken;
     let I_PolymathRegistry;
+    let I_STGetter;
+    let stGetter;
 
 
     //Define all modules for test
@@ -145,7 +147,8 @@ contract('GeneralPermissionManager', accounts => {
             I_STFactory,
             I_SecurityTokenRegistry,
             I_SecurityTokenRegistryProxy,
-            I_STRProxied
+            I_STRProxied,
+            I_STGetter
         ] = instances;
 
         // STEP 5: Deploy the GeneralDelegateManagerFactory
@@ -195,7 +198,7 @@ contract('GeneralPermissionManager', accounts => {
             assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
             I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
-
+            stGetter = await STGetter.at(I_SecurityToken.address);
             const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTransferManager module get added successfully or not
@@ -204,7 +207,7 @@ contract('GeneralPermissionManager', accounts => {
         });
 
         it("Should intialize the auto attached modules", async () => {
-            let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
+            let moduleData = (await stGetter.getModulesByType(2))[0];
             I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
 

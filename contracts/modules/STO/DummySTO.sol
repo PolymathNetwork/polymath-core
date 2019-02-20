@@ -1,7 +1,8 @@
 pragma solidity ^0.5.0;
 
 import "./STO.sol";
-import "./DummySTOStorage.sol";
+import "../../interfaces/ISecurityToken.sol";
+import "../../storage/modules/STO/DummySTOStorage.sol";
 
 /**
  * @title STO module for sample implementation of a different crowdsale module
@@ -48,7 +49,7 @@ contract DummySTO is DummySTOStorage, STO {
         require(!paused, "Should not be paused");
         require(_amount > 0, "Amount should be greater than 0");
         require(_canBuy(_investor), "Unauthorized");
-        ISecurityToken(securityToken).mint(_investor, _amount);
+        ISecurityToken(securityToken).issue(_investor, _amount, "");
         if (investors[_investor] == 0) {
             investorCount = investorCount + 1;
         }

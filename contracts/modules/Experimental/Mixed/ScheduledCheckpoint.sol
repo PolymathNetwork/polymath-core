@@ -81,25 +81,39 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
 
     /**
      * @notice Used to create checkpoints that correctly reflect balances
-     * @param _isTransfer whether or not an actual transfer is occuring
+     * @return always returns Result.NA
+     */
+    function executeTransfer(
+        address, /* _from */
+        address, /* _to */
+        uint256, /* _amount */
+        bytes calldata /* _data */
+    )
+        external
+        onlySecurityToken
+        returns(Result)
+    {
+        if (!paused) {
+            _updateAll();
+        }
+        return (Result.NA);
+    }
+
+    /**
+     * @notice Used to create checkpoints that correctly reflect balances
      * @return always returns Result.NA
      */
     function verifyTransfer(
         address, /* _from */
         address, /* _to */
         uint256, /* _amount */
-        bytes calldata, /* _data */
-        bool _isTransfer
+        bytes memory /* _data */
     )
-        external
-        returns(Result)
+        public
+        view
+        returns(Result, bytes32)
     {
-        require(_isTransfer == false || msg.sender == securityToken, "Sender is not owner");
-        if (paused || !_isTransfer) {
-            return Result.NA;
-        }
-        _updateAll();
-        return Result.NA;
+        return (Result.NA, bytes32(0));
     }
 
     /**
@@ -152,6 +166,13 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
         for (i = 0; i < names.length; i++) {
             _update(names[i]);
         }
+    }
+
+    /**
+     * @notice return the amount of tokens for a given user as per the partition
+     */
+    function getTokensByPartition(address /*_owner*/, bytes32 /*_partition*/) external view returns(uint256){
+        return 0;
     }
 
     /**

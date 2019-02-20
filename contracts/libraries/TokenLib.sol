@@ -1,33 +1,19 @@
 pragma solidity ^0.5.0;
 
-import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "../interfaces/IPoly.sol";
 import "../modules/UpgradableModuleFactory.sol";
 import "../interfaces/IDataStore.sol";
+import "../tokens/SecurityTokenStorage.sol";
+import "../interfaces/ITransferManager.sol";
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "../modules/PermissionManager/IPermissionManager.sol";
 
 library TokenLib {
+
     using SafeMath for uint256;
 
     bytes32 internal constant WHITELIST = "WHITELIST";
     bytes32 internal constant INVESTORSKEY = 0xdf3a8dd24acdd05addfc6aeffef7574d2de3f844535ec91e8e0f3e45dba96731; //keccak256(abi.encodePacked("INVESTORS"))
-
-    // Struct for module data
-    struct ModuleData {
-        bytes32 name;
-        address module;
-        address moduleFactory;
-        bool isArchived;
-        uint8[] moduleTypes;
-        uint256[] moduleIndexes;
-        uint256 nameIndex;
-        bytes32 label;
-    }
-
-    // Structures to maintain checkpoints of balances for governance / dividends
-    struct Checkpoint {
-        uint256 checkpointId;
-        uint256 value;
-    }
 
     // Emit when Module get upgraded from the securityToken
     event ModuleUpgraded(uint8[] _types, address _module);
@@ -44,7 +30,7 @@ library TokenLib {
     * @notice Archives a module attached to the SecurityToken
     * @param _moduleData Storage data
     */
-    function archiveModule(ModuleData storage _moduleData) public {
+    function archiveModule(SecurityTokenStorage.ModuleData storage _moduleData) public {
         require(!_moduleData.isArchived, "Module archived");
         require(_moduleData.module != address(0), "Module missing");
         /*solium-disable-next-line security/no-block-members*/
@@ -56,7 +42,7 @@ library TokenLib {
     * @notice Unarchives a module attached to the SecurityToken
     * @param _moduleData Storage data
     */
-    function unarchiveModule(ModuleData storage _moduleData) public {
+    function unarchiveModule(SecurityTokenStorage.ModuleData storage _moduleData) public {
         require(_moduleData.isArchived, "Module unarchived");
         /*solium-disable-next-line security/no-block-members*/
         emit ModuleUnarchived(_moduleData.moduleTypes, _moduleData.module);
@@ -67,7 +53,7 @@ library TokenLib {
     * @notice Upgrades a module attached to the SecurityToken
     * @param _moduleData Storage data
     */
-    function upgradeModule(ModuleData storage _moduleData) public {
+    function upgradeModule(SecurityTokenStorage.ModuleData storage _moduleData) public {
         require(_moduleData.module != address(0), "Module missing");
         // Will revert if module isn't upgradable
         UpgradableModuleFactory(_moduleData.moduleFactory).upgrade(_moduleData.module);
@@ -81,7 +67,7 @@ library TokenLib {
     function removeModule(
         address _module,
         mapping(uint8 => address[]) storage _modules,
-        mapping(address => ModuleData) storage _modulesToData,
+        mapping(address => SecurityTokenStorage.ModuleData) storage _modulesToData,
         mapping(bytes32 => address[]) storage _names
     )
         public
@@ -116,7 +102,7 @@ library TokenLib {
         uint8 _type,
         uint256 _index,
         mapping(uint8 => address[]) storage _modules,
-        mapping(address => ModuleData) storage _modulesToData
+        mapping(address => SecurityTokenStorage.ModuleData) storage _modulesToData
     )
         internal
     {
@@ -146,7 +132,7 @@ library TokenLib {
         uint256 _change,
         bool _increase,
         address _polyToken,
-        mapping(address => ModuleData) storage _modulesToData
+        mapping(address => SecurityTokenStorage.ModuleData) storage _modulesToData
     )
         public
     {
@@ -170,7 +156,7 @@ library TokenLib {
      * @param _currentValue is the Current value of checkpoint
      * @return uint256
      */
-    function getValueAt(Checkpoint[] storage _checkpoints, uint256 _checkpointId, uint256 _currentValue) public view returns(uint256) {
+    function getValueAt(SecurityTokenStorage.Checkpoint[] storage _checkpoints, uint256 _checkpointId, uint256 _currentValue) public view returns(uint256) {
         //Checkpoint id 0 is when the token is first created - everyone has a zero balance
         if (_checkpointId == 0) {
             return 0;
@@ -209,7 +195,7 @@ library TokenLib {
      * @param _checkpoints is the affected checkpoint object array
      * @param _newValue is the new value that needs to be stored
      */
-    function adjustCheckpoints(TokenLib.Checkpoint[] storage _checkpoints, uint256 _newValue, uint256 _currentCheckpointId) public {
+    function adjustCheckpoints(SecurityTokenStorage.Checkpoint[] storage _checkpoints, uint256 _newValue, uint256 _currentCheckpointId) public {
         //No checkpoints set yet
         if (_currentCheckpointId == 0) {
             return;
@@ -219,7 +205,7 @@ library TokenLib {
             return;
         }
         //New checkpoint, so record balance
-        _checkpoints.push(TokenLib.Checkpoint({checkpointId: _currentCheckpointId, value: _newValue}));
+        _checkpoints.push(SecurityTokenStorage.Checkpoint({checkpointId: _currentCheckpointId, value: _newValue}));
     }
 
     /**
@@ -263,6 +249,60 @@ library TokenLib {
         }
 
         return _holderCount;
+    }
+
+    /**
+     * @notice Validate transfer with TransferManager module if it exists
+     * @dev TransferManager module has a key of 2
+     * @param from sender of transfer
+     * @param to receiver of transfer
+     * @param value value of transfer
+     * @param data data to indicate validation
+     * @param modules Array of addresses for transfer managers
+     * @param modulesToData Mapping of the modules details
+     * @param transfersFrozen whether the transfer are frozen or not.
+     * @return bool
+     */
+    function verifyTransfer(
+        address[] storage modules,
+        mapping(address => SecurityTokenStorage.ModuleData) storage modulesToData,
+        address from,
+        address to,
+        uint256 value,
+        bytes memory data,
+        bool transfersFrozen
+    )
+        public
+        view
+        returns(bool, bytes32)
+    {
+        if (!transfersFrozen) {
+            bool isInvalid = false;
+            bool isValid = false;
+            bool isForceValid = false;
+            // Use the local variables to avoid the stack too deep error
+            transfersFrozen = false; // bool unarchived = false;
+            bytes32 appCode;
+            for (uint256 i = 0; i < modules.length; i++) {
+                if (!modulesToData[modules[i]].isArchived) {
+                    transfersFrozen = true;
+                    (ITransferManager.Result valid, bytes32 reason) = ITransferManager(modules[i]).verifyTransfer(from, to, value, data);
+                    if (valid == ITransferManager.Result.INVALID) {
+                        isInvalid = true;
+                        appCode = reason;
+                    } else if (valid == ITransferManager.Result.VALID) {
+                        isValid = true;
+                    } else if (valid == ITransferManager.Result.FORCE_VALID) {
+                        isForceValid = true;
+                    }
+                }
+            }
+            // If no unarchived modules, return true by default
+            // Use the local variables to avoid the stack too deep error
+            isValid = transfersFrozen ? (isForceValid ? true : (isInvalid ? false : isValid)) : true;
+            return (isValid, isValid ? bytes32(hex"51"): appCode);
+        }
+        return (false, bytes32(hex"54"));
     }
 
     function _getKey(bytes32 _key1, address _key2) internal pure returns(bytes32) {

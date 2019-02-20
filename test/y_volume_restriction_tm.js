@@ -791,11 +791,14 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal(tx.logs[0].args._holder, account_investor3);
             assert.equal(tx.logs[0].args._typeOfRestriction, 0);
             assert.equal((tx.logs[0].args._allowedTokens).toString(), new BN(web3.utils.toWei("6")));
+            console.log("HELLO HOW DO you DO");
             let data = await I_VolumeRestrictionTM.getRestrictionData.call();
             await printRestrictedData(data);
+            console.log("HELLO HOW DO you DO12");
             assert.equal(data[0].length, 2);
             assert.equal(data[0][1], account_investor3);
             let dataRestriction = await I_VolumeRestrictionTM.getIndividualDailyRestriction.call(account_investor3);
+            console.log("HELLO HOW DO you DO123");
             console.log(`
                 *** Individual Daily restriction data ***
                 Allowed Tokens:          ${dataRestriction[0].div(new BN(10).pow(new BN(18))).toString()}

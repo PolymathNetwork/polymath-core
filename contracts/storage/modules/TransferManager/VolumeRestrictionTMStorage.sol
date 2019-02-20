@@ -9,22 +9,8 @@ contract VolumeRestrictionTMStorage {
 
     enum TypeOfPeriod { MultipleDays, OneDay, Both }
 
-    struct RestrictedHolder {
-        // 1 represent true & 0 for false
-        uint8 seen;
-        // Type of period will be enum index of TypeOfPeriod enum
-        uint8 typeOfPeriod;
-        // Index of the array where the holder address lives
-        uint128 index;
-    }
-
-    struct RestrictedData {
-        mapping(address => RestrictedHolder) restrictedHolders;
-        address[] restrictedAddresses;
-    }
-
-    // Restricted data (refernce from the VolumeRestrictionLib library )
-    RestrictedData holderData;
+    // Store the type of restriction corresponds to token holder address
+    mapping(address => uint8) holderToRestrictionType;
 
     struct VolumeRestriction {
         // If typeOfRestriction is `Percentage` then allowedTokens will be in

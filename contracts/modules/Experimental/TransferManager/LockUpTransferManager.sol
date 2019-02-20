@@ -89,7 +89,7 @@ contract LockUpTransferManager is TransferManager {
         address /* _to*/,
         uint256  _amount,
         bytes memory /* _data */
-    )   
+    )
         public
         view
         returns(Result, bytes32)
@@ -368,7 +368,7 @@ contract LockUpTransferManager is TransferManager {
      * @notice Get a specific element in a user's lockups array given the user's address and the element index
      * @param _lockupName The name of the lockup
      */
-    function getLockUp(bytes32 _lockupName) external view returns (
+    function getLockUp(bytes32 _lockupName) public view returns (
         uint256 lockupAmount,
         uint256 startTime,
         uint256 lockUpPeriodSeconds,
@@ -385,6 +385,36 @@ contract LockUpTransferManager is TransferManager {
             );
         }
         return (uint256(0), uint256(0), uint256(0), uint256(0), uint256(0));
+    }
+
+    /**
+     * @notice Return the data of the lockups
+     */
+    function getAllLockupData() external view returns(
+        bytes32[] memory,
+        uint256[] memory,
+        uint256[] memory,
+        uint256[] memory,
+        uint256[] memory,
+        uint256[] memory
+    )
+    {
+        uint256[] memory lockupAmounts = new uint256[](lockupArray.length);
+        uint256[] memory startTimes = new uint256[](lockupArray.length);
+        uint256[] memory lockUpPeriodSeconds = new uint256[](lockupArray.length);
+        uint256[] memory releaseFrequencySeconds = new uint256[](lockupArray.length);
+        uint256[] memory unlockedAmounts = new uint256[](lockupArray.length);
+        for (uint256 i = 0; i < lockupArray.length; i++) {
+            (lockupAmounts[i], startTimes[i], lockUpPeriodSeconds[i], releaseFrequencySeconds[i], unlockedAmounts[i]) = getLockUp(lockupArray[i]);
+        }
+        return (
+            lockupArray,
+            lockupAmounts,
+            startTimes,
+            lockUpPeriodSeconds,
+            releaseFrequencySeconds,
+            unlockedAmounts
+        );
     }
 
    /**
@@ -657,7 +687,7 @@ contract LockUpTransferManager is TransferManager {
             return _currentBalance.sub(getLockedTokenToUser(_owner));
         }
         return 0;
-    } 
+    }
 
     /**
      * @notice This function returns the signature of configure function

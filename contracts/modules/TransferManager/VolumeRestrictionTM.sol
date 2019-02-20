@@ -8,9 +8,6 @@ import "./TransferManager.sol";
 contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
     using SafeMath for uint256;
 
-    // permission definition
-    bytes32 public constant ADMIN = "ADMIN";
-
     // Emit when the token holder is added/removed from the exemption list
     event ChangedExemptWalletList(address indexed _wallet, bool _change);
     // Emit when the new individual restriction is added corresponds to new token holders

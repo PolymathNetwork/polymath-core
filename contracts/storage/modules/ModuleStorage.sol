@@ -12,7 +12,9 @@ contract ModuleStorage {
     address public securityToken;
 
     bytes32 public constant FEE_ADMIN = "FEE_ADMIN";
-
+    // Permission flag
+    bytes32 public constant ADMIN = "ADMIN";
+    
     IERC20 public polyToken;
 
     /**

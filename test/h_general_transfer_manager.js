@@ -506,12 +506,12 @@ contract("GeneralTransferManager", async (accounts) => {
             let log = await I_GeneralPermissionManager.addDelegate(account_delegate, web3.utils.fromAscii("My details"), { from: token_owner });
             assert.equal(log.logs[0].args._delegate, account_delegate);
 
-            await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("FLAGS"), true, {
+            await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("ADMIN"), true, {
                 from: token_owner
             });
 
             assert.isTrue(
-                await I_GeneralPermissionManager.checkPermission.call(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("FLAGS"))
+                await I_GeneralPermissionManager.checkPermission.call(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("ADMIN"))
             );
             console.log(JSON.stringify(signer));
             let tx = await I_GeneralTransferManager.changeSigningAddress(signer.address, { from: account_delegate });
@@ -751,8 +751,7 @@ contract("GeneralTransferManager", async (accounts) => {
 
         it("Should get the permission", async () => {
             let perm = await I_GeneralTransferManager.getPermissions.call();
-            assert.equal(web3.utils.toAscii(perm[0]).replace(/\u0000/g, ""), "WHITELIST");
-            assert.equal(web3.utils.toAscii(perm[1]).replace(/\u0000/g, ""), "FLAGS");
+            assert.equal(web3.utils.toAscii(perm[0]).replace(/\u0000/g, ""), "ADMIN");
         });
 
         it("Should fail to pull fees as no budget set", async () => {
@@ -822,7 +821,7 @@ contract("GeneralTransferManager", async (accounts) => {
                     [toTime, toTime],
                     [expiryTime, expiryTime],
                     {
-                        from: account_delegate,
+                        from: account_investor1,
                         gas: 6000000
                     }
                 )

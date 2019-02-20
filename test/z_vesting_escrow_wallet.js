@@ -27,6 +27,7 @@ contract('VestingEscrowWallet', accounts => {
     let account_beneficiary1;
     let account_beneficiary2;
     let account_beneficiary3;
+    let wallet_operator;
 
     let beneficiaries;
 
@@ -78,6 +79,7 @@ contract('VestingEscrowWallet', accounts => {
         account_polymath = accounts[0];
         token_owner = accounts[1];
         wallet_admin = accounts[2];
+        wallet_operator = accounts[3];
 
         account_beneficiary1 = accounts[6];
         account_beneficiary2 = accounts[7];
@@ -253,9 +255,21 @@ contract('VestingEscrowWallet', accounts => {
             assert.equal(tx.logs[0].args._delegate, wallet_admin);
         });
 
+        it("Should provide the permission", async() => {
+            let tx = await I_GeneralPermissionManager.changePermission(
+                wallet_operator,
+                I_VestingEscrowWallet.address,
+                web3.utils.toHex("OPERATOR"),
+                true,
+                {from: token_owner}
+            );
+            assert.equal(tx.logs[0].args._delegate, wallet_operator);
+        });
+
         it("Should get the permission", async () => {
             let perm = await I_VestingEscrowWallet.getPermissions.call();
             assert.equal(web3.utils.toAscii(perm[0]).replace(/\u0000/g, ""), "ADMIN");
+            assert.equal(web3.utils.toAscii(perm[1]).replace(/\u0000/g, ""), "OPERATOR");
         });
 
         it("Should get the tags of the factory", async () => {
@@ -385,7 +399,7 @@ contract('VestingEscrowWallet', accounts => {
 
         it("Should push available tokens to the beneficiary address", async () => {
             let numberOfTokens = 75000;
-            const tx = await I_VestingEscrowWallet.pushAvailableTokens(account_beneficiary3, {from: wallet_admin});
+            const tx = await I_VestingEscrowWallet.pushAvailableTokens(account_beneficiary3, {from: wallet_operator});
             assert.equal(tx.logs[0].args._beneficiary, account_beneficiary3);
             assert.equal(tx.logs[0].args._numberOfTokens.toString(), numberOfTokens / 3);
 
@@ -1097,7 +1111,7 @@ contract('VestingEscrowWallet', accounts => {
 
         it("Should not be able to send available tokens to the beneficiaries addresses -- fail because of array size", async () => {
             await catchRevert(
-                I_VestingEscrowWallet.pushAvailableTokensMulti(new BN(0), new BN(3), {from: wallet_admin})
+                I_VestingEscrowWallet.pushAvailableTokensMulti(new BN(0), new BN(3), {from: wallet_operator})
             );
         });
 
@@ -1108,7 +1122,7 @@ contract('VestingEscrowWallet', accounts => {
         });
 
         it("Should send available tokens to the beneficiaries addresses", async () => {
-            const tx = await I_VestingEscrowWallet.pushAvailableTokensMulti(0, 2, {from: wallet_admin});
+            const tx = await I_VestingEscrowWallet.pushAvailableTokensMulti(0, 2, {from: wallet_operator});
 
             for (let i = 0; i < beneficiaries.length; i++) {
                 let log = tx.logs[i];

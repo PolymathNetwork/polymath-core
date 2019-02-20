@@ -230,7 +230,7 @@ contract("PreSaleSTO", async (accounts) => {
 
         it("Should get the permissions", async () => {
             let perm = await I_PreSaleSTO.getPermissions.call();
-            assert.equal(web3.utils.toAscii(perm[0]).replace(/\u0000/g, ""), "PRE_SALE_ADMIN");
+            assert.equal(web3.utils.toAscii(perm[0]).replace(/\u0000/g, ""), "ADMIN");
         });
     });
 

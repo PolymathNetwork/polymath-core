@@ -119,7 +119,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
         bytes32 _description
     )
         external
-        withPerm(TRANSFER_APPROVAL)
+        withPerm(ADMIN)
     {
         _addManualApproval(_from, _to, _allowance, _expiryTime, _description);
     }
@@ -154,7 +154,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
         bytes32[] calldata _descriptions
     )
         external
-        withPerm(TRANSFER_APPROVAL)
+        withPerm(ADMIN)
     {
         _checkInputLengthArray(_from, _to, _allowances, _expiryTimes, _descriptions);
         for (uint256 i = 0; i < _from.length; i++){
@@ -181,7 +181,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
         uint8 _change
     )
         external
-        withPerm(TRANSFER_APPROVAL)
+        withPerm(ADMIN)
     {
         _modifyManualApproval(_from, _to, _expiryTime, _changedAllowance, _description, _change);
     }
@@ -251,7 +251,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
         uint8[] memory _changes
     )
         public
-        withPerm(TRANSFER_APPROVAL)
+        withPerm(ADMIN)
     {
         _checkInputLengthArray(_from, _to, _changedAllowances, _expiryTimes, _descriptions);
         require(_changes.length == _changedAllowances.length, "Input length array mismatch");
@@ -265,7 +265,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
     * @param _from is the address from which transfers are approved
     * @param _to is the address to which transfers are approved
     */
-    function revokeManualApproval(address _from, address _to) external withPerm(TRANSFER_APPROVAL) {
+    function revokeManualApproval(address _from, address _to) external withPerm(ADMIN) {
         _revokeManualApproval(_from, _to);
     }
 
@@ -288,7 +288,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
     * @param _from is the address array from which transfers are approved
     * @param _to is the address array to which transfers are approved
     */
-    function revokeManualApprovalMulti(address[] calldata _from, address[] calldata _to) external withPerm(TRANSFER_APPROVAL) {
+    function revokeManualApprovalMulti(address[] calldata _from, address[] calldata _to) external withPerm(ADMIN) {
         require(_from.length == _to.length, "Input array length mismatch");
         for(uint256 i = 0; i < _from.length; i++){
             _revokeManualApproval(_from[i], _to[i]);
@@ -424,7 +424,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
      */
     function getPermissions() public view returns(bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](1);
-        allPermissions[0] = TRANSFER_APPROVAL;
+        allPermissions[0] = ADMIN;
         return allPermissions;
     }
 }

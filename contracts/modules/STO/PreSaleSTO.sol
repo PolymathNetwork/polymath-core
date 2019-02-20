@@ -33,7 +33,7 @@ contract PreSaleSTO is PreSaleSTOStorage, STO {
      * @notice This function returns the signature of the configure function
      */
     function getInitFunction() public pure returns(bytes4) {
-        return bytes4(keccak256("configure(uint256)"));
+        return this.configure.selector;
     }
 
     /**
@@ -55,7 +55,7 @@ contract PreSaleSTO is PreSaleSTOStorage, STO {
      */
     function getPermissions() public view returns(bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](1);
-        allPermissions[0] = PRE_SALE_ADMIN;
+        allPermissions[0] = ADMIN;
         return allPermissions;
     }
 
@@ -73,7 +73,7 @@ contract PreSaleSTO is PreSaleSTOStorage, STO {
         uint256 _polyContributed
     )
         public
-        withPerm(PRE_SALE_ADMIN)
+        withPerm(ADMIN)
     {
         /*solium-disable-next-line security/no-block-members*/
         require(now <= endTime, "Already passed Endtime");
@@ -104,7 +104,7 @@ contract PreSaleSTO is PreSaleSTOStorage, STO {
         uint256[] memory _polyContributed
     )
         public
-        withPerm(PRE_SALE_ADMIN)
+        withPerm(ADMIN)
     {
         require(_investors.length == _amounts.length, "Mis-match in length of the arrays");
         require(_etherContributed.length == _polyContributed.length, "Mis-match in length of the arrays");

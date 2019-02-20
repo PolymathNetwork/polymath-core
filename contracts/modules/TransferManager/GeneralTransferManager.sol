@@ -156,36 +156,29 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         uint256 _amount,
         bytes calldata _data
     ) external returns(Result) {
-        if (_data.length > 0) {
-            _processTransferSignature(_data);
+        if (_data.length > 32) {
+            address target;
+            uint256 nonce;
+            uint256 validTo;
+            bytes memory data;
+            (target, nonce, validTo, data) = abi.decode(_data, (address, uint256, uint256, bytes));
+            if (target == address(this))
+                _processTransferSignature(nonce, validTo, data);
         }
-       (Result success,) = verifyTransfer(_from, _to, _amount, _data);
-       return success;
+        (Result success,) = verifyTransfer(_from, _to, _amount, _data);
+        return success;
     }
 
-    // address(this) is part of signature and hence not required here.
-    // We might want to update signature contents as well.
-    // function _checkTransferSignature(bytes memory _data) internal {
-    //     address target;
-    //     bytes memory data;
-    //     (target, data) = abi.decode(_data, (address, bytes));
-    //     if(target == address(this)) {
-    //         //Had to split function to avoid stack too deep
-    //         _processTransferSignature(data);
-    //     }
-    // }
-    function _processTransferSignature(bytes memory _data) internal {
+    function _processTransferSignature(uint256 _nonce, uint256 _validTo, bytes memory _data) internal {
         address investor;
         uint256 fromTime;
         uint256 toTime;
         uint256 expiryTime;
         uint256 validFrom;
-        uint256 validTo;
-        uint256 nonce;
         bytes memory signature;
-        (investor, fromTime, toTime, expiryTime, validFrom, validTo, nonce, signature) =
-            abi.decode(_data, (address, uint256, uint256, uint256, uint256, uint256, uint256, bytes));
-        _modifyKYCDataSigned(investor, fromTime, toTime, expiryTime, validFrom, validTo, nonce, signature);
+        (investor, fromTime, toTime, expiryTime, validFrom, signature) =
+            abi.decode(_data, (address, uint256, uint256, uint256, uint256, bytes));
+        _modifyKYCDataSigned(investor, fromTime, toTime, expiryTime, validFrom, _validTo, _nonce, signature);
     }
 
 
@@ -419,6 +412,8 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
             return false;
         /*solium-disable-next-line security/no-block-members*/
         if(_validTo < now)
+            return false;
+        if(_investor == address(0))
             return false;
         if(nonceMap[_investor][_nonce])
             return false;

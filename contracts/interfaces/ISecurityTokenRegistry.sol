@@ -4,14 +4,6 @@ pragma solidity ^0.5.0;
  * @title Interface for the Polymath Security Token Registry contract
  */
 interface ISecurityTokenRegistry {
-    /**
-     * @notice Creates a new Security Token and saves it to the registry
-     * @param _name Name of the token
-     * @param _ticker Ticker ticker of the security token
-     * @param _tokenDetails Off-chain details of the token
-     * @param _divisible Whether the token is divisible or not
-     */
-    function generateSecurityToken(string calldata _name, string calldata _ticker, string calldata _tokenDetails, bool _divisible) external;
 
     /**
      * @notice Deploys an instance of a new Security Token and records it to the registry
@@ -21,7 +13,7 @@ interface ISecurityTokenRegistry {
      * @param _divisible is whether or not the token is divisible
      * @param _treasuryWallet Ethereum address which will holds the STs.
      */
-    function generateSecurityTokenWithTreasury(
+    function generateSecurityToken(
         string calldata _name,
         string calldata _ticker,
         string calldata _tokenDetails,

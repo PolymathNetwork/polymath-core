@@ -1,7 +1,7 @@
 import latestTime from "./helpers/latestTime";
 import { duration, promisifyLogWatch, latestBlock } from "./helpers/utils";
 import takeSnapshot, { increaseTime, revertToSnapshot } from "./helpers/time";
-import { getSignGTMData } from "./helpers/signData";
+import { getSignGTMData, getSignGTMTransferData } from "./helpers/signData";
 import { pk } from "./helpers/testprivateKey";
 import { encodeProxyCall, encodeModuleCall } from "./helpers/encodeCall";
 import { catchRevert } from "./helpers/exceptions";
@@ -624,6 +624,34 @@ contract("GeneralTransferManager", async (accounts) => {
                     }
                 )
             );
+        });
+
+        it("Should Transfer with Signed KYC data", async () => {
+            let snap_id = await takeSnapshot();
+            // Add the Investor in to the whitelist
+            //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
+            let validFrom = await latestTime();
+            let validTo = await latestTime() + duration.days(5);
+            let nonce = 5;
+            const sig = getSignGTMTransferData(
+                I_GeneralTransferManager.address,
+                account_investor2,
+                currentTime.toNumber(),
+                currentTime.toNumber(),
+                expiryTime + duration.days(200),
+                validFrom,
+                validTo,
+                nonce,
+                signer.privateKey
+            );
+
+            // Jump time
+            await increaseTime(10000);
+            await catchRevert(I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), {from: account_investor1}));
+            await I_SecurityToken.transferWithData(account_investor2, new BN(web3.utils.toWei("1", "ether")), sig, {from: account_investor1});
+
+            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
+            await revertToSnapshot(snap_id);
         });
 
         it("Should Buy the tokens with signers signature", async () => {

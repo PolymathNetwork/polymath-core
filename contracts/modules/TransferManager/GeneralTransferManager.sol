@@ -156,9 +156,39 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         uint256 _amount,
         bytes calldata _data
     ) external returns(Result) {
+        if (_data.length > 0) {
+            _processTransferSignature(_data);
+        }
        (Result success,) = verifyTransfer(_from, _to, _amount, _data);
        return success;
     }
+
+    // address(this) is part of signature and hence not required here.
+    // We might want to update signature contents as well.
+    // function _checkTransferSignature(bytes memory _data) internal {
+    //     address target;
+    //     bytes memory data;
+    //     (target, data) = abi.decode(_data, (address, bytes));
+    //     if(target == address(this)) {
+    //         //Had to split function to avoid stack too deep
+    //         _processTransferSignature(data);
+    //     }
+    // }
+    function _processTransferSignature(bytes memory _data) internal {
+        address investor;
+        uint256 fromTime;
+        uint256 toTime;
+        uint256 expiryTime;
+        uint256 validFrom;
+        uint256 validTo;
+        uint256 nonce;
+        bytes memory signature;
+        (investor, fromTime, toTime, expiryTime, validFrom, validTo, nonce, signature) =
+            abi.decode(_data, (address, uint256, uint256, uint256, uint256, uint256, uint256, bytes));
+        _modifyKYCDataSigned(investor, fromTime, toTime, expiryTime, validFrom, validTo, nonce, signature);
+    }
+
+
 
     /**
      * @notice Default implementation of verifyTransfer used by SecurityToken
@@ -175,7 +205,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         address _to,
         uint256, /*_amount*/
         bytes memory /* _data */
-    ) 
+    )
         public
         view
         returns(Result, bytes32)
@@ -365,27 +395,56 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     )
         public
     {
+        require(
+            _modifyKYCDataSigned(_investor, _fromTime, _toTime, _expiryTime, _validFrom, _validTo, _nonce, _signature),
+            "Invalid signature or data"
+        );
+    }
+
+    function _modifyKYCDataSigned(
+        address _investor,
+        uint256 _fromTime,
+        uint256 _toTime,
+        uint256 _expiryTime,
+        uint256 _validFrom,
+        uint256 _validTo,
+        uint256 _nonce,
+        bytes memory _signature
+    )
+        internal
+        returns(bool)
+    {
         /*solium-disable-next-line security/no-block-members*/
-        require(_validFrom <= now, "ValidFrom is too early");
+        if(_validFrom > now)
+            return false;
         /*solium-disable-next-line security/no-block-members*/
-        require(_validTo >= now, "ValidTo is too late");
-        require(!nonceMap[_investor][_nonce], "Already used signature");
+        if(_validTo < now)
+            return false;
+        if(nonceMap[_investor][_nonce])
+            return false;
         nonceMap[_investor][_nonce] = true;
         bytes32 hash = keccak256(
             abi.encodePacked(this, _investor, _fromTime, _toTime, _expiryTime, _validFrom, _validTo, _nonce)
         );
-        _checkSig(hash, _signature);
-        _modifyKYCData(_investor, _fromTime, _toTime, _expiryTime);
+        if (_checkSig(hash, _signature)) {
+            _modifyKYCData(_investor, _fromTime, _toTime, _expiryTime);
+            return true;
+        }
+        return false;
     }
 
     /**
      * @notice Used to verify the signature
      */
-    function _checkSig(bytes32 _hash, bytes memory _signature) internal view {
+    function _checkSig(bytes32 _hash, bytes memory _signature) internal view returns(bool) {
         //Check that the signature is valid
         //sig should be signing - _investor, _fromTime, _toTime & _expiryTime and be signed by the issuer address
         address signer = _hash.toEthSignedMessageHash().recover(_signature);
-        require(signer == Ownable(securityToken).owner() || signer == signingAddress, "Incorrect signer");
+        if (signer == Ownable(securityToken).owner())
+            return true;
+        if (signer == signingAddress)
+            return true;
+        return false;
     }
 
     /**
@@ -528,7 +587,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
      */
     function getTokensByPartition(address /*_owner*/, bytes32 /*_partition*/) external view returns(uint256){
         return 0;
-    } 
+    }
 
     /**
      * @notice Return the permissions flag that are associated with general trnasfer manager
@@ -541,7 +600,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     }
 
     function getAddressBytes32() public view returns(bytes32) {
-        return bytes32(uint256(address(this)) << 96); 
+        return bytes32(uint256(address(this)) << 96);
     }
 
 }

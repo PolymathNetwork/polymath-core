@@ -14,7 +14,15 @@ function getSignGTMData(tmAddress, investorAddress, fromTime, toTime, expiryTime
     return signature.signature;
 }
 
+function getSignGTMTransferData(tmAddress, investorAddress, fromTime, toTime, expiryTime, validFrom, validTo, nonce, pk) {
+    let hash = web3.utils.soliditySha3({t: 'address', v: tmAddress}, {t: 'address', v: investorAddress}, {t: 'uint256', v: new BN(fromTime)}, {t: 'uint256', v: new BN(toTime)}, {t: 'uint256', v: new BN(expiryTime)}, {t: 'uint256', v: new BN(validFrom)}, {t: 'uint256', v: new BN(validTo)}, {t: 'uint256', v: new BN(nonce)});
+    let signature = (web3.eth.accounts.sign(hash, pk)).signature;
+    let data = web3.eth.abi.encodeParameters(['address', 'uint256', 'uint256', 'uint256', 'uint256', 'uint256', 'uint256', 'bytes'], [investorAddress, new BN(fromTime).toString(), new BN(toTime).toString(), new BN(expiryTime).toString(), new BN(validFrom).toString(), new BN(validTo).toString(), new BN(nonce).toString(), signature]);
+    return data;
+}
+
 module.exports = {
     getSignSTMData,
-    getSignGTMData
+    getSignGTMData,
+    getSignGTMTransferData
 };

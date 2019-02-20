@@ -91,7 +91,7 @@ contract SignedTransferManager is TransferManager {
     */
     function executeTransfer(address _from, address _to, uint256 _amount, bytes calldata _data) external onlySecurityToken returns(Result) {
         (Result success, ) = verifyTransfer(_from, _to, _amount, _data);
-        if (success == Result.VALID) {
+        if (success == Result.VALID && _data.length > 0) {
             bytes memory signature;
             (,,,signature) = abi.decode(_data, (address, uint256, uint256, bytes));
             _invalidateSignature(signature);

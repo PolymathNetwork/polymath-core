@@ -10,8 +10,6 @@ import "../../../storage/modules/Wallet/VestingEscrowWalletStorage.sol";
 contract VestingEscrowWallet is VestingEscrowWalletStorage, Wallet {
     using SafeMath for uint256;
 
-    bytes32 public constant ADMIN = "ADMIN";
-
     // States used to represent the status of the schedule
     enum State {CREATED, STARTED, COMPLETED}
 
@@ -104,7 +102,7 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, Wallet {
      * @notice Sends unassigned tokens to the treasury wallet
      * @param _amount Amount of tokens that should be send to the treasury wallet
      */
-    function sendToTreasury(uint256 _amount) external withPerm(ADMIN) {
+    function sendToTreasury(uint256 _amount) external withPerm(OPERATOR) {
         require(_amount > 0, "Amount cannot be zero");
         require(_amount <= unassignedTokens, "Amount is greater than unassigned tokens");
         uint256 amount = unassignedTokens;
@@ -117,7 +115,7 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, Wallet {
      * @notice Pushes available tokens to the beneficiary's address
      * @param _beneficiary Address of the beneficiary who will receive tokens
      */
-    function pushAvailableTokens(address _beneficiary) public withPerm(ADMIN) {
+    function pushAvailableTokens(address _beneficiary) public withPerm(OPERATOR) {
         _sendTokens(_beneficiary);
     }
 
@@ -421,7 +419,7 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, Wallet {
      * @param _fromIndex Start index of array of beneficiary's addresses
      * @param _toIndex End index of array of beneficiary's addresses
      */
-    function pushAvailableTokensMulti(uint256 _fromIndex, uint256 _toIndex) external withPerm(ADMIN) {
+    function pushAvailableTokensMulti(uint256 _fromIndex, uint256 _toIndex) external withPerm(OPERATOR) {
         require(_toIndex <= beneficiaries.length - 1, "Array out of bound");
         for (uint256 i = _fromIndex; i <= _toIndex; i++) {
             if (schedules[beneficiaries[i]].length !=0)
@@ -558,8 +556,9 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, Wallet {
      * @notice Return the permissions flag that are associated with VestingEscrowWallet
      */
     function getPermissions() public view returns(bytes32[] memory) {
-        bytes32[] memory allPermissions = new bytes32[](1);
+        bytes32[] memory allPermissions = new bytes32[](2);
         allPermissions[0] = ADMIN;
+        allPermissions[1] = OPERATOR;
         return allPermissions;
     }
 

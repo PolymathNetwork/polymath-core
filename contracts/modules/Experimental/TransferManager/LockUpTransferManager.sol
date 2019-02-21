@@ -8,9 +8,6 @@ import "openzeppelin-solidity/contracts/math/Math.sol";
 contract LockUpTransferManager is LockUpTransferManagerStorage, TransferManager {
     using SafeMath for uint256;
 
-    // permission definition
-    bytes32 public constant ADMIN = "ADMIN";
-
     event AddLockUpToUser(
         address indexed _userAddress,
         bytes32 indexed _lockupName

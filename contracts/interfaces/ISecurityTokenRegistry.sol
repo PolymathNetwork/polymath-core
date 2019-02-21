@@ -79,9 +79,10 @@ interface ISecurityTokenRegistry {
      * @return string Symbol of the Security Token.
      * @return address Address of the issuer of Security Token.
      * @return string Details of the Token.
-     * @return uint256 Timestamp at which Security Token get launched on Polymath platform.
+     * @return uint256 Timestamp at which Security Token get launched on Polymath platform
+     * @return version of the securityToken
      */
-    function getSecurityTokenData(address _securityToken) external view returns(string memory, address, string memory, uint256);
+    function getSecurityTokenData(address _securityToken) external view returns(string memory, address, string memory, uint256, uint8[] memory);
 
     /**
      * @notice Get the current STFactory Address

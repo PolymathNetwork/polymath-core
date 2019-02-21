@@ -37,7 +37,7 @@ async function increaseTime(duration) {
   await advanceBlock();
 }
 
-export default function takeSnapshot() {
+async function takeSnapshot() {
     return new Promise((resolve, reject) => {
         web3.currentProvider.send(
             {

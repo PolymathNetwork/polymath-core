@@ -96,7 +96,7 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
      * @notice This function returns the signature of configure function
      */
     function getInitFunction() public pure returns(bytes4) {
-        return bytes4(keccak256("configure(uint256,bool)"));
+        return this.configure.selector;
     }
 
     /**
@@ -113,7 +113,7 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
     * @param _investor is the address to whitelist
     * @param _valid whether or not the address it to be added or removed from the whitelist
     */
-    function modifyWhitelist(address _investor, bool _valid) public withPerm(WHITELIST) {
+    function modifyWhitelist(address _investor, bool _valid) public withPerm(ADMIN) {
         whitelist[_investor] = _valid;
         /*solium-disable-next-line security/no-block-members*/
         emit ModifyWhitelist(_investor, now, msg.sender, _valid);
@@ -124,7 +124,7 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
     * @param _investors Array of the addresses to whitelist
     * @param _valids Array of boolean value to decide whether or not the address it to be added or removed from the whitelist
     */
-    function modifyWhitelistMulti(address[] memory _investors, bool[] memory _valids) public withPerm(WHITELIST) {
+    function modifyWhitelistMulti(address[] memory _investors, bool[] memory _valids) public withPerm(ADMIN) {
         require(_investors.length == _valids.length, "Input array length mis-match");
         for (uint i = 0; i < _investors.length; i++) {
             modifyWhitelist(_investors[i], _valids[i]);
@@ -154,7 +154,6 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
      */
     function getPermissions() public view returns(bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](2);
-        allPermissions[0] = WHITELIST;
         allPermissions[1] = ADMIN;
         return allPermissions;
     }

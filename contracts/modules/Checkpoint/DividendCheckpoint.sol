@@ -79,7 +79,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @notice Creates a checkpoint on the security token
      * @return Checkpoint ID
      */
-    function createCheckpoint() public withPerm(CHECKPOINT) returns(uint256) {
+    function createCheckpoint() public withPerm(OPERATOR) returns(uint256) {
         return ISecurityToken(securityToken).createCheckpoint();
     }
 
@@ -87,7 +87,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @notice Function to clear and set list of excluded addresses used for future dividends
      * @param _excluded Addresses of investors
      */
-    function setDefaultExcluded(address[] memory _excluded) public withPerm(MANAGE) {
+    function setDefaultExcluded(address[] memory _excluded) public withPerm(ADMIN) {
         require(_excluded.length <= EXCLUDED_ADDRESS_LIMIT, "Too many excluded addresses");
         for (uint256 j = 0; j < _excluded.length; j++) {
             require(_excluded[j] != address(0), "Invalid address");
@@ -105,7 +105,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @param _investors Addresses of investors
      * @param _withholding Withholding tax for individual investors (multiplied by 10**16)
      */
-    function setWithholding(address[] memory _investors, uint256[] memory _withholding) public withPerm(MANAGE) {
+    function setWithholding(address[] memory _investors, uint256[] memory _withholding) public withPerm(ADMIN) {
         require(_investors.length == _withholding.length, "Mismatched input lengths");
         /*solium-disable-next-line security/no-block-members*/
         emit SetWithholding(_investors, _withholding);
@@ -120,7 +120,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @param _investors Addresses of investor
      * @param _withholding Withholding tax for all investors (multiplied by 10**16)
      */
-    function setWithholdingFixed(address[] memory _investors, uint256 _withholding) public withPerm(MANAGE) {
+    function setWithholdingFixed(address[] memory _investors, uint256 _withholding) public withPerm(ADMIN) {
         require(_withholding <= 10 ** 18, "Incorrect withholding tax");
         /*solium-disable-next-line security/no-block-members*/
         emit SetWithholdingFixed(_investors, _withholding);
@@ -139,7 +139,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
         address payable[] memory _payees
     )
         public
-        withPerm(DISTRIBUTE)
+        withPerm(OPERATOR)
     {
         _validDividendIndex(_dividendIndex);
         Dividend storage dividend = dividends[_dividendIndex];
@@ -161,8 +161,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
         uint256 _start,
         uint256 _iterations
     ) public
-      withPerm(DISTRIBUTE)
-
+      withPerm(OPERATOR)
     {
         _validDividendIndex(_dividendIndex);
         Dividend storage dividend = dividends[_dividendIndex];
@@ -393,8 +392,8 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      */
     function getPermissions() public view returns(bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](2);
-        allPermissions[0] = DISTRIBUTE;
-        allPermissions[1] = MANAGE;
+        allPermissions[0] = ADMIN;
+        allPermissions[1] = OPERATOR;
         return allPermissions;
     }
 

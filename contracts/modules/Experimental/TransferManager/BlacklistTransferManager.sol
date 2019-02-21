@@ -9,8 +9,6 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 contract BlacklistTransferManager is TransferManager {
     using SafeMath for uint256;
 
-    bytes32 public constant ADMIN = "ADMIN";
-
     struct BlacklistsDetails {
         uint256 startTime;
         uint256 endTime;

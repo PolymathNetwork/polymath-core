@@ -96,8 +96,8 @@ contract("SecurityToken", async (accounts) => {
 
     // delagate details
     const delegateDetails = web3.utils.fromAscii("I am delegate ..");
-    const TM_Perm = web3.utils.fromAscii("FLAGS");
-    const TM_Perm_Whitelist = web3.utils.fromAscii("WHITELIST");
+    const TM_Perm = web3.utils.fromAscii("ADMIN");
+    const TM_Perm_Whitelist = web3.utils.fromAscii("ADMIN");
 
     // Capped STO details
     let startTime;

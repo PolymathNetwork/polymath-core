@@ -12,7 +12,4 @@ contract GeneralPermissionManagerStorage {
     // Array to track all delegates
     address[] public allDelegates;
 
-    // Permission flag
-    bytes32 public constant CHANGE_PERMISSION = "CHANGE_PERMISSION";
-
 }

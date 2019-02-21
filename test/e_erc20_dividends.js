@@ -1083,10 +1083,10 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
         });
 
         it("should give permission to manager", async () => {
-            await I_GeneralPermissionManager.changePermission(account_manager, I_ERC20DividendCheckpoint.address, web3.utils.fromAscii("CHECKPOINT"), true, {
+            await I_GeneralPermissionManager.changePermission(account_manager, I_ERC20DividendCheckpoint.address, web3.utils.fromAscii("OPERATOR"), true, {
                 from: token_owner
             });
-            let tx = await I_GeneralPermissionManager.changePermission(account_manager, I_ERC20DividendCheckpoint.address, web3.utils.fromAscii("MANAGE"), true, {
+            let tx = await I_GeneralPermissionManager.changePermission(account_manager, I_ERC20DividendCheckpoint.address, web3.utils.fromAscii("ADMIN"), true, {
                 from: token_owner
             });
             assert.equal(tx.logs[0].args._delegate, account_manager);

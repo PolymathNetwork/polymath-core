@@ -27,7 +27,7 @@ contract("Issuance", async (accounts) => {
     let blockNo;
     let balanceOfReceiver;
     let message = "Transaction Should Fail!";
-    const TM_Perm = web3.utils.fromAscii("WHITELIST");
+    const TM_Perm = web3.utils.fromAscii("ADMIN");
     const delegateDetails = web3.utils.fromAscii("I am delegate");
     // investor Details
     let fromTime;

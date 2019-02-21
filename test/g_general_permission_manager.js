@@ -6,6 +6,7 @@ import { catchRevert } from "./helpers/exceptions";
 import { setUpPolymathNetwork, deployGPMAndVerifyed } from "./helpers/createInstances";
 
 const SecurityToken = artifacts.require("./SecurityToken.sol");
+const SecurityTokenRegistryInterface = artifacts.require("./ISecurityTokenRegistry.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager");
 const STGetter = artifacts.require("./STGetter");
@@ -52,6 +53,7 @@ contract("GeneralPermissionManager", async (accounts) => {
     let I_PolymathRegistry;
     let I_STRGetter;
     let I_STGetter;
+    let I_SecurityTokenRegistryInterface;
     let stGetter;
 
     // SecurityToken Details
@@ -111,7 +113,7 @@ contract("GeneralPermissionManager", async (accounts) => {
         [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
         // STEP 6: Deploy the GeneralDelegateManagerFactory
         [P_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, new BN(web3.utils.toWei("500")));
-
+        I_SecurityTokenRegistryInterface = await SecurityTokenRegistryInterface.at(I_SecurityTokenRegistryProxy.address);
         // Printing all the contract addresses
         console.log(`
         --------------------- Polymath Network Smart Contracts: ---------------------
@@ -304,11 +306,64 @@ contract("GeneralPermissionManager", async (accounts) => {
         });
 
         it("Should return all delegates", async () => {
+            assert.equal((await I_SecurityTokenRegistryInterface.getTokensByDelegate.call(account_delegate))[0], I_SecurityToken.address);
+            assert.equal((await I_SecurityTokenRegistryInterface.getTokensByDelegate.call(account_delegate)).length, 1);
+            assert.equal((await I_SecurityTokenRegistryInterface.getTokensByDelegate.call(account_delegate2)).length, 0);
             await I_GeneralPermissionManager.addDelegate(account_delegate2, delegateDetails, { from: token_owner });
+            assert.equal((await I_SecurityTokenRegistryInterface.getTokensByDelegate.call(account_delegate))[0], I_SecurityToken.address);
+            assert.equal((await I_SecurityTokenRegistryInterface.getTokensByDelegate.call(account_delegate)).length, 1);
+            assert.equal((await I_SecurityTokenRegistryInterface.getTokensByDelegate.call(account_delegate2))[0], I_SecurityToken.address);
+            assert.equal((await I_SecurityTokenRegistryInterface.getTokensByDelegate.call(account_delegate2)).length, 1);
             let tx = await I_GeneralPermissionManager.getAllDelegates.call();
             assert.equal(tx.length, 2);
             assert.equal(tx[0], account_delegate);
             assert.equal(tx[1], account_delegate2);
+        });
+
+        it("Should create a new token and add some more delegates, then get them", async() => {
+            await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
+            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
+            let tx1 = await I_STRProxied.registerTicker(token_owner, "DEL", contact, { from: token_owner });
+            assert.equal(tx1.logs[0].args._owner, token_owner);
+            assert.equal(tx1.logs[0].args._ticker, "DEL");
+
+            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
+            let _blockNo = latestBlock();
+            let tx2 = await I_STRProxied.generateSecurityToken(name, "DEL", tokenDetails, false, { from: token_owner });
+
+            // Verify the successful generation of the security token
+            assert.equal(tx2.logs[2].args._ticker, "DEL", "SecurityToken doesn't get deployed");
+
+            let I_SecurityToken_DEL = await SecurityToken.at(tx2.logs[2].args._securityTokenAddress);
+
+            const tx = await I_SecurityToken_DEL.addModule(I_GeneralPermissionManagerFactory.address, "0x", 0, 0, { from: token_owner });
+            assert.equal(tx.logs[2].args._types[0].toNumber(), delegateManagerKey, "General Permission Manager doesn't get deployed");
+            assert.equal(
+                web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
+                "GeneralPermissionManager",
+                "GeneralPermissionManagerFactory module was not added"
+            );
+
+            let I_GeneralPermissionManager_DEL = await GeneralPermissionManager.at(tx.logs[2].args._module);
+            await I_GeneralPermissionManager_DEL.addDelegate(account_delegate3, delegateDetails, { from: token_owner});
+
+            assert.equal((await I_SecurityTokenRegistryInterface.getTokensByDelegate.call(account_delegate))[0], I_SecurityToken.address);
+            assert.equal((await I_SecurityTokenRegistryInterface.getTokensByDelegate.call(account_delegate2))[0], I_SecurityToken.address);
+            assert.equal((await I_SecurityTokenRegistryInterface.getTokensByDelegate.call(account_delegate3))[0], I_SecurityToken_DEL.address);
+            assert.equal((await I_SecurityTokenRegistryInterface.getTokensByDelegate.call(account_delegate)).length, 1);
+            assert.equal((await I_SecurityTokenRegistryInterface.getTokensByDelegate.call(account_delegate2)).length, 1);
+            assert.equal((await I_SecurityTokenRegistryInterface.getTokensByDelegate.call(account_delegate3)).length, 1);
+            await I_GeneralPermissionManager_DEL.addDelegate(account_delegate2, delegateDetails, { from: token_owner});
+            assert.equal((await I_SecurityTokenRegistryInterface.getTokensByDelegate.call(account_delegate))[0], I_SecurityToken.address);
+            assert.equal((await I_SecurityTokenRegistryInterface.getTokensByDelegate.call(account_delegate2))[0], I_SecurityToken.address);
+            assert.equal((await I_SecurityTokenRegistryInterface.getTokensByDelegate.call(account_delegate2))[1], I_SecurityToken_DEL.address);
+            assert.equal((await I_SecurityTokenRegistryInterface.getTokensByDelegate.call(account_delegate3))[0], I_SecurityToken_DEL.address);
+            assert.equal((await I_SecurityTokenRegistryInterface.getTokensByDelegate.call(account_delegate)).length, 1);
+            assert.equal((await I_SecurityTokenRegistryInterface.getTokensByDelegate.call(account_delegate2)).length, 2);
+            assert.equal((await I_SecurityTokenRegistryInterface.getTokensByDelegate.call(account_delegate3)).length, 1);
+            let tx4 = await I_GeneralPermissionManager_DEL.getAllDelegates.call();
+            assert.equal(tx4.length, 2);
+            assert.equal(tx4[0], account_delegate3, account_delegate2);
         });
 
         it("Should check is delegate for 0x address - failed 0x address is not allowed", async () => {

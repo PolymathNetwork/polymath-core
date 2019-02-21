@@ -1,6 +1,6 @@
 import latestTime from "./helpers/latestTime";
 import {duration, promisifyLogWatch} from "./helpers/utils";
-import takeSnapshot, {increaseTime, revertToSnapshot} from "./helpers/time";
+import { takeSnapshot,increaseTime, revertToSnapshot} from "./helpers/time";
 import {catchRevert} from "./helpers/exceptions";
 import {deployRedemptionAndVerifyed, setUpPolymathNetwork} from "./helpers/createInstances";
 

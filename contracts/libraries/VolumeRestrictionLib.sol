@@ -128,29 +128,21 @@ library VolumeRestrictionLib {
         counter = 0;
         for (i = 0; i < investors.length; i++) {
             if (_isVolRestricted(IDataStore(_dataStore).getUint256(_getKey(INVESTORFLAGS, investors[i])))) {
-                uint256 typeValue = (holderToRestrictionType[investors[i]] == uint8(2) ? 2 : 1);
-                if (typeValue == 2) {
-                    allAddresses[counter] = investors[i];
-                    counter++;
-                }
                 allAddresses[counter] = investors[i];
+                if (holderToRestrictionType[investors[i]] == uint8(VolumeRestrictionTMStorage.TypeOfPeriod.MultipleDays)) {
+                    _setValues(_individualRestrictions.individualRestriction[investors[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
+                } 
+                else if (holderToRestrictionType[investors[i]] == uint8(VolumeRestrictionTMStorage.TypeOfPeriod.OneDay)) {
+                    _setValues(_individualRestrictions.individualDailyRestriction[investors[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
+                } 
+                else if (holderToRestrictionType[investors[i]] == uint8(VolumeRestrictionTMStorage.TypeOfPeriod.Both)) {
+                    _setValues(_individualRestrictions.individualRestriction[investors[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
+                    counter++;
+                    allAddresses[counter] = investors[i];
+                    _setValues(_individualRestrictions.individualDailyRestriction[investors[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
+                }
                 counter++;
             }
-        }
-        counter = 0;
-        for (i = 0; i < allAddresses.length; i++) {
-            if (holderToRestrictionType[allAddresses[i]] == uint8(VolumeRestrictionTMStorage.TypeOfPeriod.MultipleDays)) {
-                _setValues(_individualRestrictions.individualRestriction[allAddresses[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
-            } 
-            else if (holderToRestrictionType[allAddresses[i]] == uint8(VolumeRestrictionTMStorage.TypeOfPeriod.OneDay)) {
-                _setValues(_individualRestrictions.individualDailyRestriction[allAddresses[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
-            } 
-            else if (holderToRestrictionType[allAddresses[i]] == uint8(VolumeRestrictionTMStorage.TypeOfPeriod.Both)) {
-                _setValues(_individualRestrictions.individualRestriction[allAddresses[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
-                counter++;
-                _setValues(_individualRestrictions.individualDailyRestriction[allAddresses[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
-            }
-            counter++;
         }
     }
 

@@ -304,7 +304,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
                 holderToRestrictionType,
                 _holder,
                 uint8(TypeOfPeriod.OneDay),
-                individualRestrictions.individualDailyRestriction[_holder].endTime,
+                individualRestrictions.individualRestriction[_holder].endTime,
                 getDataStore()
             );
         emit AddIndividualDailyRestriction(
@@ -314,7 +314,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
             1,
             _endTime,
             _restrictionType
-      );
+        );
     }
 
     /**

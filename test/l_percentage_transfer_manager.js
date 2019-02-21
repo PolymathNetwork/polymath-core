@@ -420,10 +420,10 @@ contract("PercentageTransferManager", async (accounts) => {
 
     describe("Percentage Transfer Manager Factory test cases", async () => {
         it("Should get the exact details of the factory", async () => {
-            assert.equal(await I_PercentageTransferManagerFactory.getSetupCost.call(), 0);
-            assert.equal((await I_PercentageTransferManagerFactory.getTypes.call())[0], 2);
+            assert.equal(await I_PercentageTransferManagerFactory.setupCost.call(), 0);
+            assert.equal((await I_PercentageTransferManagerFactory.types.call())[0], 2);
             assert.equal(
-                web3.utils.toAscii(await I_PercentageTransferManagerFactory.getName.call()).replace(/\u0000/g, ""),
+                web3.utils.toAscii(await I_PercentageTransferManagerFactory.name.call()).replace(/\u0000/g, ""),
                 "PercentageTransferManager",
                 "Wrong Module added"
             );
@@ -433,16 +433,11 @@ contract("PercentageTransferManager", async (accounts) => {
                 "Wrong Module added"
             );
             assert.equal(await I_PercentageTransferManagerFactory.title.call(), "Percentage Transfer Manager", "Wrong Module added");
-            assert.equal(
-                await I_PercentageTransferManagerFactory.getInstructions.call(),
-                "Allows an issuer to restrict the total number of non-zero token holders",
-                "Wrong Module added"
-            );
-            assert.equal(await I_PercentageTransferManagerFactory.version.call(), "1.0.0");
+            assert.equal(await I_PercentageTransferManagerFactory.version.call(), "3.0.0");
         });
 
         it("Should get the tags of the factory", async () => {
-            let tags = await I_PercentageTransferManagerFactory.getTags.call();
+            let tags = await I_PercentageTransferManagerFactory.tags.call();
             assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ""), "Percentage");
         });
     });

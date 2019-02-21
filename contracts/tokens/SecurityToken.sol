@@ -30,17 +30,9 @@ import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
  * @notice - https://github.com/ethereum/solidity/issues/4847
  */
 contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, SecurityTokenStorage, IERC1594, IERC1643, IERC1644, Proxy {
-    
+
     using SafeMath for uint256;
 
-    // Emit when transfers are frozen or unfrozen
-    event FreezeTransfers(bool _status);
-    // Emit when is permanently frozen by the issuer
-    event FreezeIssuance();
-    // Emit when the token details get updated
-    event UpdateTokenDetails(string _oldDetails, string _newDetails);
-    // Emit when the granularity get changed
-    event GranularityChanged(uint256 _oldGranularity, uint256 _newGranularity);
     // Emit at the time when module get added
     event ModuleAdded(
         uint8[] _types,
@@ -51,6 +43,15 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         uint256 _budget,
         bytes32 _label
     );
+
+    // Emit when the token details get updated
+    event UpdateTokenDetails(string _oldDetails, string _newDetails);
+    // Emit when the granularity get changed
+    event GranularityChanged(uint256 _oldGranularity, uint256 _newGranularity);
+    // Emit when is permanently frozen by the issuer
+    event FreezeIssuance();
+    // Emit when transfers are frozen or unfrozen
+    event FreezeTransfers(bool _status);
     // Emit when Module get archived from the securityToken
     event ModuleArchived(uint8[] _types, address _module);
     // Emit when Module get unarchived from the securityToken
@@ -64,7 +65,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     // Events to log controller actions
     event SetController(address indexed _oldController, address indexed _newController);
     event DisableController();
-    
+
     function _isModule(address _module, uint8 _type) internal view returns(bool) {
         if (modulesToData[_module].module != _module || modulesToData[_module].isArchived)
             return false;
@@ -101,8 +102,8 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         require(_value % granularity == 0, "Invalid granularity");
         _;
     }
-    
-    // Modifier to check whether the msg.sender is authorised or not 
+
+    // Modifier to check whether the msg.sender is authorised or not
     modifier onlyController() {
         require(msg.sender == controller, "Not Authorised");
         _;
@@ -112,9 +113,9 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         require(IFeatureRegistry(featureRegistry).getFeatureStatus(_nameKey));
         _;
     }
-    
+
     /**
-     * @notice constructor 
+     * @notice constructor
      * @param _name Name of the SecurityToken
      * @param _symbol Symbol of the Token
      * @param _decimals Decimals for the securityToken
@@ -131,7 +132,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         string memory _tokenDetails,
         address _polymathRegistry,
         address _delegate
-    ) 
+    )
         public
         ERC20Detailed(_name, _symbol, _decimals)
     {
@@ -162,16 +163,16 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         uint256 _maxCost,
         uint256 _budget,
         bytes32 _label
-    ) 
-        public 
-        onlyOwner 
-        nonReentrant 
+    )
+        public
+        onlyOwner
+        nonReentrant
     {
         //Check that the module factory exists in the ModuleRegistry - will throw otherwise
         IModuleRegistry(moduleRegistry).useModule(_moduleFactory);
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
-        uint8[] memory moduleTypes = moduleFactory.getTypes();
-        uint256 moduleCost = moduleFactory.getSetupCostInPoly();
+        uint8[] memory moduleTypes = moduleFactory.types();
+        uint256 moduleCost = moduleFactory.setupCostInPoly();
         require(moduleCost <= _maxCost, "Invalid cost");
         //Approve fee for module
         ERC20(polyToken).approve(_moduleFactory, moduleCost);
@@ -181,7 +182,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         //Approve ongoing budget
         ERC20(polyToken).approve(module, _budget);
         //Add to SecurityToken module map
-        bytes32 moduleName = moduleFactory.getName();
+        bytes32 moduleName = moduleFactory.name();
         uint256[] memory moduleIndexes = new uint256[](moduleTypes.length);
         uint256 i;
         for (i = 0; i < moduleTypes.length; i++) {
@@ -216,7 +217,11 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     * @param _module address of module to archive
     */
     function archiveModule(address _module) external onlyOwner {
-        TokenLib.archiveModule(modulesToData[_module], _module);
+        TokenLib.archiveModule(modulesToData[_module]);
+    }
+
+    function upgradeModule(address _module) external onlyOwner {
+        TokenLib.upgradeModule(modulesToData[_module]);
     }
 
     /**
@@ -224,7 +229,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     * @param _module address of module to unarchive
     */
     function unarchiveModule(address _module) external onlyOwner {
-        TokenLib.unarchiveModule(modulesToData[_module], _module);
+        TokenLib.unarchiveModule(modulesToData[_module]);
     }
 
     /**
@@ -333,7 +338,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         transferWithData(_to, _value, "");
         return true;
     }
-    
+
     /**
      * @notice Transfer restrictions can take many forms and typically involve on-chain rules or whitelists.
      * However for many types of approved transfers, maintaining an on-chain list of approved transfers can be
@@ -418,11 +423,11 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         address _to,
         uint256 _value,
         bytes memory _data
-    ) 
-        internal 
-        checkGranularity(_value) 
-        returns(bool) 
-    {   
+    )
+        internal
+        checkGranularity(_value)
+        returns(bool)
+    {
         if (!transfersFrozen) {
             bool isInvalid = false;
             bool isValid = false;
@@ -483,10 +488,10 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         address _tokenHolder,
         uint256 _value,
         bytes memory _data
-    ) 
-        public 
+    )
+        public
         isIssuanceAllowed
-        onlyModuleOrOwner(MINT_KEY) 
+        onlyModuleOrOwner(MINT_KEY)
     {
         // Add a function to validate the `_data` parameter
         require(_updateTransfer(address(0), _tokenHolder, _value, _data), "Transfer invalid");
@@ -511,7 +516,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     /**
      * @notice This function redeem an amount of the token of a msg.sender. For doing so msg.sender may incentivize
      * using different ways that could be implemented with in the `redeem` function definition. But those implementations
-     * are out of the scope of the ERC1594. 
+     * are out of the scope of the ERC1594.
      * @param _value The amount of tokens need to be redeemed
      * @param _data The `bytes _data` it can be used in the token contract to authenticate the redemption.
      */
@@ -539,7 +544,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     /**
      * @notice This function redeem an amount of the token of a msg.sender. For doing so msg.sender may incentivize
      * using different ways that could be implemented with in the `redeem` function definition. But those implementations
-     * are out of the scope of the ERC1594. 
+     * are out of the scope of the ERC1594.
      * @dev It is analogy to `transferFrom`
      * @param _tokenHolder The account whose tokens gets redeemed.
      * @param _value The amount of tokens need to be redeemed
@@ -594,14 +599,14 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
 
     /**
      * @notice Transfers of securities may fail for a number of reasons. So this function will used to understand the
-     * cause of failure by getting the byte value. Which will be the ESC that follows the EIP 1066. ESC can be mapped 
+     * cause of failure by getting the byte value. Which will be the ESC that follows the EIP 1066. ESC can be mapped
      * with a reson string to understand the failure cause, table of Ethereum status code will always reside off-chain
      * @param _to address The address which you want to transfer to
      * @param _value uint256 the amount of tokens to be transferred
      * @param _data The `bytes _data` allows arbitrary data to be submitted alongside the transfer.
      * @return bool It signifies whether the transaction will be executed or not.
      * @return byte Ethereum status code (ESC)
-     * @return bytes32 Application specific reason code 
+     * @return bytes32 Application specific reason code
      */
     function canTransfer(address _to, uint256 _value, bytes calldata _data) external view returns (bool, byte, bytes32) {
         return _canTransfer(msg.sender, _to, _value, _data);
@@ -609,7 +614,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
 
     /**
      * @notice Transfers of securities may fail for a number of reasons. So this function will used to understand the
-     * cause of failure by getting the byte value. Which will be the ESC that follows the EIP 1066. ESC can be mapped 
+     * cause of failure by getting the byte value. Which will be the ESC that follows the EIP 1066. ESC can be mapped
      * with a reson string to understand the failure cause, table of Ethereum status code will always reside off-chain
      * @param _from address The address which you want to send tokens from
      * @param _to address The address which you want to transfer to
@@ -617,14 +622,14 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * @param _data The `bytes _data` allows arbitrary data to be submitted alongside the transfer.
      * @return bool It signifies whether the transaction will be executed or not.
      * @return byte Ethereum status code (ESC)
-     * @return bytes32 Application specific reason code 
+     * @return bytes32 Application specific reason code
      */
     function canTransferFrom(address _from, address _to, uint256 _value, bytes calldata _data) external view returns (bool, byte, bytes32) {
         (bool success, byte reasonCode, bytes32 appCode) = _canTransfer(_from, _to, _value, _data);
         if (success && _value > allowance(_from, msg.sender)) {
             return (false, 0x53, bytes32(0));
-        } else 
-            return (success, reasonCode, appCode); 
+        } else
+            return (success, reasonCode, appCode);
     }
 
     function _canTransfer(address _from, address _to, uint256 _value, bytes memory _data) internal view returns (bool, byte, bytes32) {
@@ -676,7 +681,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         uint256 index = _docIndexes[_name] - 1;
         if (index != _docNames.length - 1) {
             _docNames[index] = _docNames[_docNames.length - 1];
-            _docIndexes[_docNames[index]] = index + 1; 
+            _docIndexes[_docNames[index]] = index + 1;
         }
         _docNames.length--;
         emit DocumentRemoved(_name, _documents[_name].uri, _documents[_name].docHash);
@@ -713,8 +718,8 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * @param _value uint256 the amount of tokens to be transferred
      * @param _data data to validate the transfer. (It is not used in this reference implementation
      * because use of `_data` parameter is implementation specific).
-     * @param _operatorData data attached to the transfer by controller to emit in event. (It is more like a reason string 
-     * for calling this function (aka force transfer) which provides the transparency on-chain). 
+     * @param _operatorData data attached to the transfer by controller to emit in event. (It is more like a reason string
+     * for calling this function (aka force transfer) which provides the transparency on-chain).
      */
     function controllerTransfer(address _from, address _to, uint256 _value, bytes calldata _data, bytes calldata _operatorData) external onlyController {
         require(_isControllable());
@@ -732,8 +737,8 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * @param _value uint256 the amount of tokens need to be redeemed.
      * @param _data data to validate the transfer. (It is not used in this reference implementation
      * because use of `_data` parameter is implementation specific).
-     * @param _operatorData data attached to the transfer by controller to emit in event. (It is more like a reason string 
-     * for calling this function (aka force transfer) which provides the transparency on-chain). 
+     * @param _operatorData data attached to the transfer by controller to emit in event. (It is more like a reason string
+     * for calling this function (aka force transfer) which provides the transparency on-chain).
      */
     function controllerRedeem(address _tokenHolder, uint256 _value, bytes calldata _data, bytes calldata _operatorData) external onlyController {
         require(_isControllable());

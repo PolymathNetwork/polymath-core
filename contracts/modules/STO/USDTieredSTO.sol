@@ -125,7 +125,8 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @dev Modifies fund raise types
      * @param _fundRaiseTypes Array of fund raise types to allow
      */
-    function modifyFunding(FundRaiseType[] calldata _fundRaiseTypes) external onlyOwner {
+    function modifyFunding(FundRaiseType[] calldata _fundRaiseTypes) external {
+        _onlySecurityTokenOwner();
         /*solium-disable-next-line security/no-block-members*/
         require(now < startTime, "STO already started");
         _setFundRaiseType(_fundRaiseTypes);
@@ -136,7 +137,8 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @param _nonAccreditedLimitUSD max non accredited invets limit
      * @param _minimumInvestmentUSD overall minimum investment limit
      */
-    function modifyLimits(uint256 _nonAccreditedLimitUSD, uint256 _minimumInvestmentUSD) external onlyOwner {
+    function modifyLimits(uint256 _nonAccreditedLimitUSD, uint256 _minimumInvestmentUSD) external {
+        _onlySecurityTokenOwner();
         /*solium-disable-next-line security/no-block-members*/
         require(now < startTime, "STO already started");
         _modifyLimits(_nonAccreditedLimitUSD, _minimumInvestmentUSD);
@@ -156,8 +158,8 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         uint256[] calldata _tokensPerTierDiscountPoly
     )
         external
-        onlyOwner
     {
+        _onlySecurityTokenOwner();
         /*solium-disable-next-line security/no-block-members*/
         require(now < startTime, "STO already started");
         _modifyTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
@@ -168,7 +170,8 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @param _startTime start time of sto
      * @param _endTime end time of sto
      */
-    function modifyTimes(uint256 _startTime, uint256 _endTime) external onlyOwner {
+    function modifyTimes(uint256 _startTime, uint256 _endTime) external {
+        _onlySecurityTokenOwner();
         /*solium-disable-next-line security/no-block-members*/
         require(now < startTime, "STO already started");
         _modifyTimes(_startTime, _endTime);
@@ -180,7 +183,8 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @param _reserveWallet Address of wallet where unsold tokens are sent
      * @param _usdTokens Address of usd tokens
      */
-    function modifyAddresses(address payable _wallet, address _reserveWallet, address[] calldata _usdTokens) external onlyOwner {
+    function modifyAddresses(address payable _wallet, address _reserveWallet, address[] calldata _usdTokens) external {
+        _onlySecurityTokenOwner();
         _modifyAddresses(_wallet, _reserveWallet, _usdTokens);
     }
 
@@ -252,7 +256,8 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @notice Finalizes the STO and mint remaining tokens to reserve address
      * @notice Reserve address must be whitelisted to successfully finalize
      */
-    function finalize() public onlyOwner {
+    function finalize() public {
+        _onlySecurityTokenOwner();
         require(!isFinalized, "STO already finalized");
         isFinalized = true;
         uint256 tempReturned;
@@ -277,7 +282,8 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @param _investors Array of investor addresses to modify
      * @param _nonAccreditedLimit Array of uints specifying non-accredited limits
      */
-    function changeNonAccreditedLimit(address[] memory _investors, uint256[] memory _nonAccreditedLimit) public onlyOwner {
+    function changeNonAccreditedLimit(address[] memory _investors, uint256[] memory _nonAccreditedLimit) public {
+        _onlySecurityTokenOwner();
         //nonAccreditedLimitUSDOverride
         require(_investors.length == _nonAccreditedLimit.length, "Array length mismatch");
         for (uint256 i = 0; i < _investors.length; i++) {
@@ -307,7 +313,8 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @notice Function to set allowBeneficialInvestments (allow beneficiary to be different to funder)
      * @param _allowBeneficialInvestments Boolean to allow or disallow beneficial investments
      */
-    function changeAllowBeneficialInvestments(bool _allowBeneficialInvestments) public onlyOwner {
+    function changeAllowBeneficialInvestments(bool _allowBeneficialInvestments) public {
+        _onlySecurityTokenOwner();
         require(_allowBeneficialInvestments != allowBeneficialInvestments, "Value unchanged");
         allowBeneficialInvestments = _allowBeneficialInvestments;
         emit SetAllowBeneficialInvestments(allowBeneficialInvestments);

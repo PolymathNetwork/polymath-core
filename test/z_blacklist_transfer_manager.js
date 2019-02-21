@@ -966,8 +966,8 @@ contract('BlacklistTransferManager', accounts => {
     describe("Test cases for the factory", async() => {
         it("Should get the exact details of the factory", async() => {
             assert.equal(await I_BlacklistTransferManagerFactory.setupCost.call(),0);
-            assert.equal((await I_BlacklistTransferManagerFactory.getTypes.call())[0],2);
-            assert.equal(web3.utils.toAscii(await I_BlacklistTransferManagerFactory.getName.call())
+            assert.equal((await I_BlacklistTransferManagerFactory.types.call())[0],2);
+            assert.equal(web3.utils.toAscii(await I_BlacklistTransferManagerFactory.name.call())
                         .replace(/\u0000/g, ''),
                         "BlacklistTransferManager",
                         "Wrong Module added");
@@ -977,17 +977,14 @@ contract('BlacklistTransferManager', accounts => {
             assert.equal(await I_BlacklistTransferManagerFactory.title.call(),
                         "Blacklist Transfer Manager",
                         "Wrong Module added");
-            assert.equal(await I_BlacklistTransferManagerFactory.getInstructions.call(),
-                        "Allows an issuer to blacklist the addresses.",
-                        "Wrong Module added");
             assert.equal(await I_BlacklistTransferManagerFactory.version.call(),
-                        "2.1.0",
+                        "3.0.0",
                         "Wrong Module added");
 
         });
 
         it("Should get the tags of the factory", async() => {
-            let tags = await I_BlacklistTransferManagerFactory.getTags.call();
+            let tags = await I_BlacklistTransferManagerFactory.tags.call();
                 assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ''),"Blacklist");
             });
     });

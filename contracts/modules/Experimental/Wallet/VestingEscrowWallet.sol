@@ -1,13 +1,13 @@
 pragma solidity ^0.5.0;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "./Wallet.sol";
 import "../../../storage/modules/Wallet/VestingEscrowWalletStorage.sol";
-import "./IWallet.sol";
 
 /**
  * @title Wallet for core vesting escrow functionality
  */
-contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
+contract VestingEscrowWallet is VestingEscrowWalletStorage, Wallet {
     using SafeMath for uint256;
 
     // States used to represent the status of the schedule
@@ -73,7 +73,8 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
      * @notice Used to change the treasury wallet address
      * @param _newTreasuryWallet Address of the treasury wallet
      */
-    function changeTreasuryWallet(address _newTreasuryWallet) public onlyOwner {
+    function changeTreasuryWallet(address _newTreasuryWallet) public {
+        _onlySecurityTokenOwner();
         require(_newTreasuryWallet != address(0));
         emit TreasuryWalletChanged(_newTreasuryWallet, treasuryWallet);
         treasuryWallet = _newTreasuryWallet;

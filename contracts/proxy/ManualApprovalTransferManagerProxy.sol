@@ -1,14 +1,14 @@
 pragma solidity ^0.5.0;
 
+import "./OwnedUpgradeabilityProxy.sol";
 import "../storage/modules/TransferManager/ManualApprovalTransferManagerStorage.sol";
-import "./OwnedProxy.sol";
 import "../Pausable.sol";
 import "../storage/modules/ModuleStorage.sol";
 
 /**
  @title ManualApprovalTransferManager module Proxy
  */
-contract ManualApprovalTransferManagerProxy is ManualApprovalTransferManagerStorage, ModuleStorage, Pausable, OwnedProxy {
+contract ManualApprovalTransferManagerProxy is ManualApprovalTransferManagerStorage, ModuleStorage, Pausable, OwnedUpgradeabilityProxy {
 
     /**
     * @notice Constructor
@@ -17,8 +17,9 @@ contract ManualApprovalTransferManagerProxy is ManualApprovalTransferManagerStor
     * @param _implementation representing the address of the new implementation to be set
     */
     constructor (
-        address _securityToken, 
-        address _polyAddress, 
+        string memory _version,
+        address _securityToken,
+        address _polyAddress,
         address _implementation
     )
         public
@@ -28,7 +29,7 @@ contract ManualApprovalTransferManagerProxy is ManualApprovalTransferManagerStor
             _implementation != address(0),
             "Implementation address should not be 0x"
         );
-        __implementation = _implementation;
+        _upgradeTo(_version, _implementation);
     }
 
 }

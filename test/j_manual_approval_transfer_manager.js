@@ -815,25 +815,19 @@ contract("ManualApprovalTransferManager", accounts => {
 
     describe("ManualApproval Transfer Manager Factory test cases", async () => {
         it("Should get the exact details of the factory", async () => {
-            assert.equal(await I_ManualApprovalTransferManagerFactory.getSetupCost.call(), 0);
-            assert.equal((await I_ManualApprovalTransferManagerFactory.getTypes.call())[0], 2);
-            let name = web3.utils.toUtf8(await I_ManualApprovalTransferManagerFactory.getName.call());
+            assert.equal(await I_ManualApprovalTransferManagerFactory.setupCost.call(), 0);
+            assert.equal((await I_ManualApprovalTransferManagerFactory.types.call())[0], 2);
+            let name = web3.utils.toUtf8(await I_ManualApprovalTransferManagerFactory.name.call());
             assert.equal(name, "ManualApprovalTransferManager", "Wrong Module added");
             let desc = await I_ManualApprovalTransferManagerFactory.description.call();
             assert.equal(desc, "Manage transfers using single approvals", "Wrong Module added");
             let title = await I_ManualApprovalTransferManagerFactory.title.call();
             assert.equal(title, "Manual Approval Transfer Manager", "Wrong Module added");
-            let inst = await I_ManualApprovalTransferManagerFactory.getInstructions.call();
-            assert.equal(
-                inst,
-                "Allows an issuer to set manual approvals for specific pairs of addresses and amounts. Init function takes no parameters.",
-                "Wrong Module added"
-            );
-            assert.equal(await I_ManualApprovalTransferManagerFactory.version.call(), "2.1.0");
+            assert.equal(await I_ManualApprovalTransferManagerFactory.version.call(), "3.0.0");
         });
 
         it("Should get the tags of the factory", async () => {
-            let tags = await I_ManualApprovalTransferManagerFactory.getTags.call();
+            let tags = await I_ManualApprovalTransferManagerFactory.tags.call();
             assert.equal(web3.utils.toUtf8(tags[0]), "ManualApproval");
         });
     });

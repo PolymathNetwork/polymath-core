@@ -25,14 +25,13 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
     event SetWithholdingFixed(address[] _investors, uint256 _withholding);
     event SetWallet(address indexed _oldWallet, address indexed _newWallet);
 
-    modifier validDividendIndex(uint256 _dividendIndex) {
+    function _validDividendIndex(uint256 _dividendIndex) internal view {
         require(_dividendIndex < dividends.length, "Invalid dividend");
         require(!dividends[_dividendIndex].reclaimed, "Dividend reclaimed");
         /*solium-disable-next-line security/no-block-members*/
         require(now >= dividends[_dividendIndex].maturity, "Dividend maturity in future");
         /*solium-disable-next-line security/no-block-members*/
         require(now < dividends[_dividendIndex].expiry, "Dividend expiry in past");
-        _;
     }
 
     /**
@@ -57,7 +56,8 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @notice Function used to change wallet address
      * @param _wallet Ethereum account address to receive reclaimed dividends and tax
      */
-    function changeWallet(address payable _wallet) external onlyOwner {
+    function changeWallet(address payable _wallet) external {
+        _onlySecurityTokenOwner();
         _setWallet(_wallet);
     }
 
@@ -140,8 +140,8 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
     )
         public
         withPerm(OPERATOR)
-        validDividendIndex(_dividendIndex)
     {
+        _validDividendIndex(_dividendIndex);
         Dividend storage dividend = dividends[_dividendIndex];
         for (uint256 i = 0; i < _payees.length; i++) {
             if ((!dividend.claimed[_payees[i]]) && (!dividend.dividendExcluded[_payees[i]])) {
@@ -162,8 +162,8 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
         uint256 _iterations
     ) public
       withPerm(OPERATOR)
-      validDividendIndex(_dividendIndex)
     {
+        _validDividendIndex(_dividendIndex);
         Dividend storage dividend = dividends[_dividendIndex];
         uint256 checkpointId = dividend.checkpointId;
         address[] memory investors = ISecurityToken(securityToken).getInvestorsAt(checkpointId);
@@ -180,7 +180,8 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @notice Investors can pull their own dividends
      * @param _dividendIndex Dividend to pull
      */
-    function pullDividendPayment(uint256 _dividendIndex) public validDividendIndex(_dividendIndex) {
+    function pullDividendPayment(uint256 _dividendIndex) public {
+        _validDividendIndex(_dividendIndex);
         Dividend storage dividend = dividends[_dividendIndex];
         require(!dividend.claimed[msg.sender], "Dividend already claimed");
         require(!dividend.dividendExcluded[msg.sender], "msg.sender excluded from Dividend");

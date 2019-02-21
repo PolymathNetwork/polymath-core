@@ -137,8 +137,8 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
 
     function _isCompatibleModule(address _moduleFactory, address _securityToken) internal view returns(bool) {
         uint8[] memory _latestVersion = ISecurityToken(_securityToken).getVersion();
-        uint8[] memory _lowerBound = IModuleFactory(_moduleFactory).getLowerSTVersionBounds();
-        uint8[] memory _upperBound = IModuleFactory(_moduleFactory).getUpperSTVersionBounds();
+        uint8[] memory _lowerBound = IModuleFactory(_moduleFactory).lowerSTVersionBounds();
+        uint8[] memory _upperBound = IModuleFactory(_moduleFactory).upperSTVersionBounds();
         bool _isLowerAllowed = VersionUtils.compareLowerBound(_lowerBound, _latestVersion);
         bool _isUpperAllowed = VersionUtils.compareUpperBound(_upperBound, _latestVersion);
         return (_isLowerAllowed && _isUpperAllowed);
@@ -162,7 +162,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         //Enforce type uniqueness
         uint256 i;
         uint256 j;
-        uint8[] memory moduleTypes = moduleFactory.getTypes();
+        uint8[] memory moduleTypes = moduleFactory.types();
         for (i = 1; i < moduleTypes.length; i++) {
             for (j = 0; j < i; j++) {
                 require(moduleTypes[i] != moduleTypes[j], "Type mismatch");
@@ -170,7 +170,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         }
         require(moduleTypes.length != 0, "Factory must have type");
         // NB - here we index by the first type of the module.
-        uint8 moduleType = moduleFactory.getTypes()[0];
+        uint8 moduleType = moduleFactory.types()[0];
         set(Encoder.getKey("registry", _moduleFactory), uint256(moduleType));
         set(
             Encoder.getKey("moduleListIndex", _moduleFactory),
@@ -263,14 +263,14 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         uint256 i;
         uint256 j;
         for (i = 0; i < _modules.length; i++) {
-            counter = counter + IModuleFactory(_modules[i]).getTags().length;
+            counter = counter + IModuleFactory(_modules[i]).tags().length;
         }
         bytes32[] memory tags = new bytes32[](counter);
         address[] memory modules = new address[](counter);
         bytes32[] memory tempTags;
         counter = 0;
         for (i = 0; i < _modules.length; i++) {
-            tempTags = IModuleFactory(_modules[i]).getTags();
+            tempTags = IModuleFactory(_modules[i]).tags();
             for (j = 0; j < tempTags.length; j++) {
                 tags[counter] = tempTags[j];
                 modules[counter] = _modules[i];

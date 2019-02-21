@@ -39,7 +39,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
      * @param _expiry Time until dividend can no longer be paid, and can be reclaimed by issuer
      * @param _name Name/title for identification
      */
-    function createDividend(uint256 _maturity, uint256 _expiry, bytes32 _name) external payable withPerm(MANAGE) {
+    function createDividend(uint256 _maturity, uint256 _expiry, bytes32 _name) external payable withPerm(ADMIN) {
         createDividendWithExclusions(_maturity, _expiry, excluded, _name);
     }
 
@@ -58,7 +58,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
     )
         external
         payable
-        withPerm(MANAGE)
+        withPerm(ADMIN)
     {
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, _checkpointId, excluded, _name);
     }
@@ -78,7 +78,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
     )
         public
         payable
-        withPerm(MANAGE)
+        withPerm(ADMIN)
     {
         uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, checkpointId, _excluded, _name);
@@ -101,7 +101,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
     )
         public
         payable
-        withPerm(MANAGE)
+        withPerm(ADMIN)
     {
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, _checkpointId, _excluded, _name);
     }
@@ -190,7 +190,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
      * @notice Issuer can reclaim remaining unclaimed dividend amounts, for expired dividends
      * @param _dividendIndex Dividend to reclaim
      */
-    function reclaimDividend(uint256 _dividendIndex) external withPerm(MANAGE) {
+    function reclaimDividend(uint256 _dividendIndex) external withPerm(OPERATOR) {
         require(_dividendIndex < dividends.length, "Incorrect dividend index");
         /*solium-disable-next-line security/no-block-members*/
         require(now >= dividends[_dividendIndex].expiry, "Dividend expiry is in the future");
@@ -206,7 +206,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
      * @notice Allows issuer to withdraw withheld tax
      * @param _dividendIndex Dividend to withdraw from
      */
-    function withdrawWithholding(uint256 _dividendIndex) external withPerm(MANAGE) {
+    function withdrawWithholding(uint256 _dividendIndex) external withPerm(OPERATOR) {
         require(_dividendIndex < dividends.length, "Incorrect dividend index");
         Dividend storage dividend = dividends[_dividendIndex];
         uint256 remainingWithheld = dividend.totalWithheld.sub(dividend.totalWithheldWithdrawn);

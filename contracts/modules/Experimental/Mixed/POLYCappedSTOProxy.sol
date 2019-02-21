@@ -1,6 +1,6 @@
 pragma solidity ^0.5.0;
 
-import "../../../proxy/OwnedProxy.sol";
+import "../../../proxy/OwnedUpgradeabilityProxy.sol";
 import "../../../Pausable.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "../../../storage/modules/STO/STOStorage.sol";
@@ -10,7 +10,7 @@ import "./POLYCappedSTOStorage.sol";
 /**
  * @title POLYCappedSTO module Proxy
  */
-contract POLYCappedSTOProxy is POLYCappedSTOStorage, STOStorage, ModuleStorage, Pausable, ReentrancyGuard, OwnedProxy {
+contract POLYCappedSTOProxy is POLYCappedSTOStorage, STOStorage, ModuleStorage, Pausable, ReentrancyGuard, OwnedUpgradeabilityProxy {
 
     /**
     * @notice Constructor
@@ -19,6 +19,7 @@ contract POLYCappedSTOProxy is POLYCappedSTOStorage, STOStorage, ModuleStorage, 
     * @param _implementation representing the address of the new implementation to be set
     */
     constructor(
+        string memory _version,
         address _securityToken,
         address _polyAddress,
         address _implementation
@@ -30,7 +31,7 @@ contract POLYCappedSTOProxy is POLYCappedSTOStorage, STOStorage, ModuleStorage, 
             _implementation != address(0),
             "Implementation address should not be 0x"
         );
-        __implementation = _implementation;
+        _upgradeTo(_version, _implementation);
     }
 
 }

@@ -114,7 +114,8 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
         uint256 _minimumInvestment,
         uint256 _nonAccreditedLimit,
         uint256 _maxNonAccreditedInvestors
-    ) external onlyOwner notStarted {
+    ) external notStarted {
+        _onlySecurityTokenOwner();
         _modifyLimits(_minimumInvestment, _nonAccreditedLimit, _maxNonAccreditedInvestors);
     }
 
@@ -122,7 +123,8 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
      * @dev Modifies fund raise rate per token
      * @param _rate rate per token invested by 10^18 per base unit
      */
-    function modifyRate(uint256 _rate) external onlyOwner notStarted {
+    function modifyRate(uint256 _rate) external notStarted {
+        _onlySecurityTokenOwner();
         _modifyRate(_rate);
     }
 
@@ -130,7 +132,8 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
      * @dev Modifies how many token base units this STO will be allowed to sell to investors
      * @param _cap Max number of token that can be sold by 10^18 per base unit
      */
-    function modifyCap(uint256 _cap) external onlyOwner notStarted {
+    function modifyCap(uint256 _cap) external notStarted {
+        _onlySecurityTokenOwner();
         _modifyCap(_cap);
     }
 
@@ -139,7 +142,8 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
      * @param _startTime start time of sto
      * @param _endTime end time of sto
      */
-    function modifyTimes(uint256 _startTime, uint256 _endTime) external onlyOwner notStarted {
+    function modifyTimes(uint256 _startTime, uint256 _endTime) external notStarted {
+        _onlySecurityTokenOwner();
         _modifyTimes(_startTime, _endTime);
     }
 
@@ -147,8 +151,9 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
      * @dev Modifies addresses used as wallet and treasury wallet
      * @param _wallet Address of wallet where funds are sent
      */
-    function modifyWalletAddress(address payable _wallet) external onlyOwner {
+    function modifyWalletAddress(address payable _wallet) external {
         //can be modified even when STO started
+        _onlySecurityTokenOwner();
         _modifyWalletAddress(_wallet);
     }
 
@@ -156,7 +161,9 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
      * @notice Use to change the treasury wallet
      * @param _treasuryWallet Ethereum account address to receive unsold tokens
      */
-    function modifyTreasuryWallet(address _treasuryWallet) external onlyOwner {
+    function modifyTreasuryWallet(address _treasuryWallet) external {
+        //can be modified even when STO started
+        _onlySecurityTokenOwner();
         emit SetTreasuryWallet(treasuryWallet, _treasuryWallet);
         treasuryWallet = _treasuryWallet;
     }
@@ -207,7 +214,8 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
      * @notice Treasury address must be whitelisted to successfully finalize
      * @param _mintUnsoldTokens unsold tokens will be minted to the Treasury wallet if ture
      */
-    function finalize(bool _mintUnsoldTokens) external onlyOwner {
+    function finalize(bool _mintUnsoldTokens) external {
+        _onlySecurityTokenOwner();
         require(!isFinalized, "Already finalized");
         isFinalized = true;
         if ((_mintUnsoldTokens) && (totalTokensSold < cap)) {
@@ -225,7 +233,8 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
      * @param _investors Array of investor addresses to modify
      * @param _nonAccreditedLimit Array of uints specifying non-accredited limits
      */
-    function changeNonAccreditedLimit(address[] memory _investors, uint256[] memory _nonAccreditedLimit) public onlyOwner {
+    function changeNonAccreditedLimit(address[] memory _investors, uint256[] memory _nonAccreditedLimit) public {
+        _onlySecurityTokenOwner();
         require(_investors.length == _nonAccreditedLimit.length, "Length mismatch");
         for (uint256 i = 0; i < _investors.length; i++) {
             nonAccreditedLimitOverride[_investors[i]] = _nonAccreditedLimit[i];
@@ -237,7 +246,8 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
      * @notice Function to set allowBeneficialInvestments (allow beneficiary to be different to funder)
      * @param _allowBeneficialInvestments Boolean to allow or disallow beneficial investments
      */
-    function changeAllowBeneficialInvestments(bool _allowBeneficialInvestments) external onlyOwner {
+    function changeAllowBeneficialInvestments(bool _allowBeneficialInvestments) external {
+        _onlySecurityTokenOwner();
         require(_allowBeneficialInvestments != allowBeneficialInvestments, "Does not change value");
         allowBeneficialInvestments = _allowBeneficialInvestments;
         emit SetAllowBeneficialInvestments(allowBeneficialInvestments);
@@ -506,9 +516,8 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
 
     /**
      * @notice This function returns the signature of configure function
-     * @return bytes4 Configure function signature = bytes4(keccak256("configure(uint256,uint256,uint256,uint256,uint256,uint256,uint256,address)"))
      */
     function getInitFunction() external pure returns (bytes4) {
-        return 0x3305f269;
+        return this.configure.selector;
     }
 }

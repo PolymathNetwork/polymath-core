@@ -118,7 +118,7 @@ contract LockUpTransferManager is TransferManager {
         uint256 _releaseFrequencySeconds,
         bytes32 _lockupName
     )
-        public
+        external
         withPerm(ADMIN)
     {
         _addNewLockUpType(
@@ -175,7 +175,7 @@ contract LockUpTransferManager is TransferManager {
         address _userAddress,
         bytes32 _lockupName
     )
-        public
+        external
         withPerm(ADMIN)
     {
         _addLockUpByName(_userAddress, _lockupName);
@@ -193,7 +193,7 @@ contract LockUpTransferManager is TransferManager {
         external
         withPerm(ADMIN)
     {
-        require(_userAddresses.length == _lockupNames.length, "Length mismatch");
+        _checkLengthOfArray(_userAddresses.length, _lockupNames.length);
         for (uint256 i = 0; i < _userAddresses.length; i++) {
             _addLockUpByName(_userAddresses[i], _lockupNames[i]);
         }
@@ -219,7 +219,7 @@ contract LockUpTransferManager is TransferManager {
         external
         withPerm(ADMIN)
     {
-       _addNewLockUpToUser(
+        _addNewLockUpToUser(
             _userAddress,
             _lockupAmount,
             _startTime,
@@ -295,7 +295,7 @@ contract LockUpTransferManager is TransferManager {
      * @param _lockupNames Array of the names of the lockup that needs to be removed.
      */
     function removeLockUpFromUserMulti(address[] calldata _userAddresses, bytes32[] calldata _lockupNames) external withPerm(ADMIN) {
-        require(_userAddresses.length == _lockupNames.length, "Length mismatch");
+        _checkLengthOfArray(_userAddresses.length, _lockupNames.length);
         for (uint256 i = 0; i < _userAddresses.length; i++) {
             _removeLockUpFromUser(_userAddresses[i], _lockupNames[i]);
         }
@@ -391,39 +391,34 @@ contract LockUpTransferManager is TransferManager {
      * @notice Return the data of the lockups
      */
     function getAllLockupData() external view returns(
-        bytes32[] memory,
-        uint256[] memory,
-        uint256[] memory,
-        uint256[] memory,
-        uint256[] memory,
-        uint256[] memory
+        bytes32[] memory lockupNames,
+        uint256[] memory lockupAmounts,
+        uint256[] memory startTimes,
+        uint256[] memory lockUpPeriodSeconds,
+        uint256[] memory releaseFrequencySeconds,
+        uint256[] memory unlockedAmounts
     )
-    {
-        uint256[] memory lockupAmounts = new uint256[](lockupArray.length);
-        uint256[] memory startTimes = new uint256[](lockupArray.length);
-        uint256[] memory lockUpPeriodSeconds = new uint256[](lockupArray.length);
-        uint256[] memory releaseFrequencySeconds = new uint256[](lockupArray.length);
-        uint256[] memory unlockedAmounts = new uint256[](lockupArray.length);
-        for (uint256 i = 0; i < lockupArray.length; i++) {
+    {   
+        uint256 length = lockupArray.length;
+        lockupAmounts = new uint256[](length);
+        startTimes = new uint256[](length);
+        lockUpPeriodSeconds = new uint256[](length);
+        releaseFrequencySeconds = new uint256[](length);
+        unlockedAmounts = new uint256[](length);
+        lockupNames = new bytes32[](length);
+        for (uint256 i = 0; i < length; i++) {
             (lockupAmounts[i], startTimes[i], lockUpPeriodSeconds[i], releaseFrequencySeconds[i], unlockedAmounts[i]) = getLockUp(lockupArray[i]);
+            lockupNames[i] = lockupArray[i];
         }
-        return (
-            lockupArray,
-            lockupAmounts,
-            startTimes,
-            lockUpPeriodSeconds,
-            releaseFrequencySeconds,
-            unlockedAmounts
-        );
     }
 
    /**
     * @notice get the list of the users of a lockup type
     * @param _lockupName Name of the lockup type
-    * @return address List of users associated with the blacklist
+    * @return address List of users associated with the given lockup name
     */
     function getListOfAddresses(bytes32 _lockupName) external view returns(address[] memory) {
-        require(lockups[_lockupName].startTime != 0, "Invalid blacklist");
+        _validLockUpCheck(_lockupName);
         return lockupToUsers[_lockupName];
     }
 
@@ -450,10 +445,9 @@ contract LockUpTransferManager is TransferManager {
      * @return uint256 Total locked tokens amount
      */
     function getLockedTokenToUser(address _userAddress) public view returns(uint256) {
-        require(_userAddress != address(0), "Invalid address");
+        _checkZeroAddress(_userAddress);
         bytes32[] memory userLockupNames = userToLockups[_userAddress];
         uint256 totalRemainingLockedAmount = 0;
-
         for (uint256 i = 0; i < userLockupNames.length; i++) {
             // Find out the remaining locked amount for a given lockup
             uint256 remainingLockedAmount = lockups[userLockupNames[i]].lockupAmount.sub(_getUnlockedAmountForLockup(userLockupNames[i]));
@@ -500,8 +494,8 @@ contract LockUpTransferManager is TransferManager {
     }
 
     function _removeLockupType(bytes32 _lockupName) internal {
-        require(lockups[_lockupName].startTime != 0, "Invalid lockup");
-        require(lockupToUsers[_lockupName].length == 0, "Not empty");
+        _validLockUpCheck(_lockupName);
+        require(lockupToUsers[_lockupName].length == 0);
         // delete lockup type
         delete(lockups[_lockupName]);
         uint256 i = 0;
@@ -527,14 +521,11 @@ contract LockUpTransferManager is TransferManager {
         internal
     {
         /*solium-disable-next-line security/no-block-members*/
-        uint256 startTime = _startTime;
-
         if (_startTime == 0) {
-            startTime = now;
+            _startTime = now;
         }
-        require(startTime >= now, "Invalid start time");
-        require(lockups[_lockupName].lockupAmount != 0, "Doesn't exist");
-
+        _checkValidStartTime(_startTime);
+        _validLockUpCheck(_lockupName);
         _checkLockUpParams(
             _lockupAmount,
             _lockUpPeriodSeconds,
@@ -543,14 +534,14 @@ contract LockUpTransferManager is TransferManager {
 
         lockups[_lockupName] =  LockUp(
             _lockupAmount,
-            startTime,
+            _startTime,
             _lockUpPeriodSeconds,
             _releaseFrequencySeconds
         );
 
         emit ModifyLockUpType(
             _lockupAmount,
-            startTime,
+            _startTime,
             _lockUpPeriodSeconds,
             _releaseFrequencySeconds,
             _lockupName
@@ -558,11 +549,10 @@ contract LockUpTransferManager is TransferManager {
     }
 
     function _removeLockUpFromUser(address _userAddress, bytes32 _lockupName) internal {
-        require(_userAddress != address(0), "Invalid address");
-        require(_lockupName != bytes32(0), "Invalid lockup name");
+        _checkZeroAddress(_userAddress);
+        _checkValidName(_lockupName);
         require(
-            userToLockups[_userAddress][userToLockupIndex[_userAddress][_lockupName]] == _lockupName,
-            "Not empty"
+            userToLockups[_userAddress][userToLockupIndex[_userAddress][_lockupName]] == _lockupName
         );
 
         // delete the user from the lockup type
@@ -598,7 +588,7 @@ contract LockUpTransferManager is TransferManager {
     )
         internal
     {
-        require(_userAddress != address(0), "Invalid address");
+        _checkZeroAddress(_userAddress);
         _addNewLockUpType(
             _lockupAmount,
             _startTime,
@@ -615,8 +605,8 @@ contract LockUpTransferManager is TransferManager {
     )
         internal
     {
-        require(_userAddress != address(0), "Invalid address");
-        require(lockups[_lockupName].startTime >= now, "Lockup expired");
+        _checkZeroAddress(_userAddress);
+        _checkValidStartTime(lockups[_lockupName].startTime);
 
         userToLockupIndex[_userAddress][_lockupName] = userToLockups[_userAddress].length;
         lockupToUserIndex[_lockupName][_userAddress] = lockupToUsers[_lockupName].length;
@@ -634,18 +624,17 @@ contract LockUpTransferManager is TransferManager {
     )
         internal
     {
-        uint256 startTime = _startTime;
-        require(_lockupName != bytes32(0), "Invalid name");
-        require(lockups[_lockupName].lockupAmount == 0, "Already exist");
         /*solium-disable-next-line security/no-block-members*/
         if (_startTime == 0) {
-            startTime = now;
+            _startTime = now;
         }
-        require(startTime >= now, "Invalid start time");
+        _checkValidName(_lockupName);
+        require(lockups[_lockupName].lockupAmount == 0, "Already exist");
+        _checkValidStartTime(_startTime);
         _checkLockUpParams(_lockupAmount, _lockUpPeriodSeconds, _releaseFrequencySeconds);
-        lockups[_lockupName] = LockUp(_lockupAmount, startTime, _lockUpPeriodSeconds, _releaseFrequencySeconds);
+        lockups[_lockupName] = LockUp(_lockupAmount, _startTime, _lockUpPeriodSeconds, _releaseFrequencySeconds);
         lockupArray.push(_lockupName);
-        emit AddNewLockUpType(_lockupName, _lockupAmount, startTime, _lockUpPeriodSeconds, _releaseFrequencySeconds);
+        emit AddNewLockUpType(_lockupName, _lockupAmount, _startTime, _lockUpPeriodSeconds, _releaseFrequencySeconds);
     }
 
     /**
@@ -669,6 +658,26 @@ contract LockUpTransferManager is TransferManager {
             _lockupAmount != 0,
             "Cannot be zero"
         );
+    }
+
+    function _checkValidStartTime(uint256 _startTime) internal view {
+        require(_startTime >= now, "Invalid startTime or expired");
+    }
+
+    function _checkZeroAddress(address _userAddress) internal pure {
+        require(_userAddress != address(0), "Invalid address");
+    }
+
+    function _validLockUpCheck(bytes32 _lockupName) internal view {
+        require(lockups[_lockupName].startTime != 0, "Doesn't exist");
+    }
+
+    function _checkValidName(bytes32 _name) internal pure {
+        require(_name != bytes32(0), "Invalid name");
+    }
+
+    function _checkLengthOfArray(uint256 _length1, uint256 _length2) internal pure {
+        require(_length1 == _length2, "Length mismatch");
     }
 
     /**

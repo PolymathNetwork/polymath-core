@@ -164,7 +164,7 @@ contract STRGetter is EternalStorage {
     /**
      * @notice Gets Protocol version
      */
-    function getProtocolVersion() public view returns(uint8[] memory) {
+    function getCurrentProtocolVersion() public view returns(uint8[] memory) {
         return VersionUtils.unpack(uint24(getUintValue(Encoder.getKey("latestVersion"))));
     }
 

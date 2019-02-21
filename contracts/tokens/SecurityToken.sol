@@ -16,7 +16,6 @@ import "../interfaces/ITransferManager.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
-import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
 
 /**
@@ -143,7 +142,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         delegate = _delegate;
         tokenDetails = _tokenDetails;
         granularity = _granularity;
-        securityTokenVersion = SemanticVersion(2, 0, 0);
+        securityTokenVersion = SemanticVersion(3, 0, 0);
     }
 
     /**

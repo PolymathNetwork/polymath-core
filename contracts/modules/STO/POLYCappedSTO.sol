@@ -1,12 +1,12 @@
 pragma solidity ^0.5.0;
 
-import "../../STO/STO.sol";
-import "../../../interfaces/IOracle.sol";
-import "../../../RegistryUpdater.sol";
-import "../../../libraries/DecimalMath.sol";
+import "./STO.sol";
+import "../../interfaces/IOracle.sol";
+import "../../RegistryUpdater.sol";
+import "../../libraries/DecimalMath.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "./POLYCappedSTOStorage.sol";
+import "../../storage/modules/STO/POLYCappedSTOStorage.sol";
 
 /**
  * @title STO module for capped crowdsale that accepts POLY

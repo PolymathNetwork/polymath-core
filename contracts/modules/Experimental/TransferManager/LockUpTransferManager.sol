@@ -8,9 +8,6 @@ contract LockUpTransferManager is TransferManager {
 
     using SafeMath for uint256;
 
-    // permission definition
-    bytes32 public constant ADMIN = "ADMIN";
-
     // a per-user lockup
     struct LockUp {
         uint256 lockupAmount; // Amount to be locked

@@ -21,7 +21,7 @@ contract Module is IModule, ModuleStorage {
     ModuleStorage(_securityToken, _polyAddress)
     {
     }
-
+    
     //Allows owner, factory or permissioned delegate
     modifier withPerm(bytes32 _perm) {
         bool isOwner = msg.sender == Ownable(securityToken).owner();
@@ -61,6 +61,9 @@ contract Module is IModule, ModuleStorage {
         return true;
     }
 
+    /**
+     * @notice used to return the data store address of securityToken
+     */
     function getDataStore() public view returns(address) {
         return ISecurityToken(securityToken).dataStore();
     }

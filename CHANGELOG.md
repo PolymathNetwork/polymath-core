@@ -35,11 +35,14 @@ All notable changes to this project will be documented in this file.
 
 [__2.1.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-09-18__
 
-## CappedSTO 2.0.1
+
+## CappedSTO 2.1.0
 * `rate` is now accepted as multiplied by 10^18 to allow settting higher price than 1ETH/POLY per token.
 * Indivisble tokens are now supported. When trying to buy partial tokens, allowed full units of tokens will be purchased and remaining funds will be returned.
 
 ## USDTieredSTO 2.1.0
+* Added `stableCoinsRaised` function that returns amount of individual stable coin raised when address of that stable coin is passed.
+* Added support for multiple stable coins in USDTSTO.
 * Added `buyTokensView` and `getTokensMintedByTier` to USDTSTO.
 * Added `getSTODetails` to USDTSTO.
 * Added an Array of Tiers that will hold data about every tier in USDTSTO.
@@ -48,26 +51,67 @@ All notable changes to this project will be documented in this file.
 * Removed individual mappings for tier data removed in UDSTSTO.
 * Removed the old Proxy deployment method of USDTieredSTO and adopt the new inherited proxy deployment approach.
 * Bump the version to `2.1.0`
+* Added `getAccreditedData` to return accredited & non-accredited investor data.
+* Event `TokenPurchase` has uint256 tier instead of uint8 tier.  
+* Event `SetAddresses` has non-indexed array of address of `_usdTokens` rather than single indexed address.
+* Added `getUsdTokens()` function that returns array of accepted stable coin (usd token) addresses.
+* Pass an array of `_usdToken` address in `configure` function instead of singleton address. This will require changes in bytes data generation when deploying a usdtsto through factory.
 
 ## GeneralTransferManager
 * `getInvestors`, `getAllInvestorsData`, `getInvestorsData` added to GTM to allow easy data queries.
-* `modifyDefaults(uint64 _defaultFromTime, uint64 _defaultToTime)` added which sets a default timestamp used when `fromTime` or `toTime` are 0
+* `changeDefaults(uint64 _defaultFromTime, uint64 _defaultToTime)` added which sets a default timestamp used when `fromTime` or `toTime` are 0.
 * Add `address[] public investors` to record a list of all addresses that have been added to the whitelist (`getInvestors`).
-* General Transfer Manager: Fix for when `allowAllWhitelistIssuances` is FALSE
-* General Transfer Manager: Make GTM a Proxy based implementation to reduce deployment gas costs
+* Fix for when `allowAllWhitelistIssuances` is FALSE
+* Make GTM a Proxy based implementation to reduce deployment gas costs
 * Changed the version of `GeneralTransferManagerFactory` from `1.0.0` to `2.1.0`.
+* `_investor` and `_addedBy` is now indexed in the `ModifyWhitelist` event.
+* Add public variable `defaults` to get the offset timing.
 
 ## Manual Approval TransferManager
 * Removed `0x0` check for the `_from` address to `ManualApprovalTransferManager`. This allows for the Issuer/Transfer Agent to approve a one-off mint of tokens that otherwise would not be possible.
 * Changed the version of `ManualApprovalTransferManagerFactory` from `1.0.0` to `2.1.0`.   
 * Deployed 2.0.1 `ManualApprovalTransferManagerFactory` to address 0x6af2afad53cb334e62b90ddbdcf3a086f654c298
+* Add `getActiveApprovalsToUser()` function to access all the active approvals for a user whether user is in the `from` or in `to`.  
+* Add `getApprovalDetails()` to get the details of the approval corresponds to `_from` and `_to` address.
+* Add feature to modify the details of the active approval using `modifyApproval()` & `modifyApprovalMulti()`.
+* Add `addManualApprovalMulti()` and `revokeManualApprovalMulti()` batch function for adding and revoking the manual approval respectively.
+* Add `_description` parameter during the `addManualApproval()` function call. It will be a `bytes32` variable which depicts the cause of manual approval.
+* Remove `addManualBlocking()` , `revokeManualBlocking()` functions.
+* Add `getTotalApprovalsLength()` to get the number of active approvals.
+* Add `getAllApprovals()` to get the details of all approvals.
 
 ## Dividends
 * Changed the version of `ERC20DividendCheckpointFactory` & `EtherDividendCheckpointFactory` from `1.0.0` to `2.1.0`.
-* Applied proxy pattern to Dividends modules
+* Applied proxy pattern to Dividends modules.
+* During the launch of dividend module issuer need to pass the reclaimed wallet that receive the left over funds from the module.
+i.e pass `_wallet` in `configure()` function of dividend module. It emits `SetWallet` event for the confirmation of the same.
+* Add `changeWallet()` function to change the reclaimed wallet address (only be called by the owner).
+* Add `getDividendsData()` getter to receive the details about all the dividend.
+* Add `getDividendData()` getter to receive the details about the particular dividend by passing a corresponding dividend index.
+* Add `getDividendProgress()` getter to retrieves the list of investors and their details corresponds to particular dividend.
+* Add `getCheckpointData()` use to retrieves list of investors, their balances, and their current withholding tax percentage corresponds to checkpointId.
+* `isExcluded()` a view function added to check whether an address is excluded from claming a dividend or not.
+* `isClaimed()` a view function added to checks whether an address has claimed a dividend or not.
+*  DividendIndex is indexed in the events `ERC20DividendClaimed`, `ERC20DividendReclaimed`, `ERC20DividendWithholdingWithdrawn`. Similarly for the Ether dividend module `EtherDividendClaimed`, `EtherDividendReclaimed`, `EtherDividendClaimFailed`, `EtherDividendWithholdingWithdrawn`.
+* `EXCLUDED_ADDRESS_LIMIT` changed from 50 to 150.
+
+## Experimental modules
+* Remove the `SingleTradeVolumeRestrictionTMFactory.sol` and its corresponding module `SingleTradeVolumeRestrictionTM.sol`.
+* Add the new TM called `BlacklistTransferManager.sol` and its corresponding factory `BlacklistTransferManagerFactory.sol`.
+* Chnage the name of module from `LockupVolumeRestrictionTM.sol` to `LockUpTransferManager.sol`, similarly factory become `LockUpTransferManagerFactory.sol`.
+* Add new module called `VestingEscrowWallet.sol` and its corresponding factory `VestingEscrowWalletFactory.sol`.
+
+## STR & MR
+* `getArrayAddress(), getArrayBytes32(), getArrayUint()` are now public getters.
+*  `getUintValues(), getBoolValues(), getStringValues(), getAddressValues(), getBytes32Values(), getBytesValues()` rename to `getUintValue(), getBoolValue(), getStringValue(), getAddressValue(), getBytes32Value(), getBytesValue()`. #488
+
+## Added
+* Add new module called `VolumeRestrictionTM.sol` under the TransferManager modules list. It will be used to restrict the token
+volume traded in a given rolling period.
 
 ## Changed
 * `getAllModulesAndPermsFromTypes()` does not take securityToken address as a parameter anymore.
+
 
 # v1.5.0 - Release Candidate
 
@@ -107,7 +151,7 @@ All notable changes to this project will be documented in this file.
 * 0x0 and duplicate address in exclusions are no longer allowed in dividend modules.
 * All permissions are denied if no permission manager is active.
 * Generalize the STO varaible names and added them in `ISTO.sol` to use the common standard in all STOs.
-* Generalize the event when any new token get registered with the polymath ecosystem. `LogNewSecurityToken` should emit _ticker, _name, _securityTokenAddress, _owner, _addedAt, _registrant respectively. #230  
+* Generalize the event when any new token get registered with the polymath ecosystem. `LogNewSecurityToken` should emit _ticker_, _name_, _securityTokenAddress_, _owner_, _addedAt_, _registrant_ respectively. #230  
 * Change the function name of `withdraPoly` to `withdrawERC20` and make the function generalize to extract tokens from the ST contract. parmeters are contract address and the value need to extract from the securityToken.     
 
 ## Removed
@@ -339,7 +383,7 @@ allowed)
 * __buyTokensWithPoly__ has only one argument called `_investedPoly` only. Beneficiary Address should be its msg.sender.    
 * __getRaiseEther()__ function name changed to __getRaisedEther()__.   
 * __getRaisePoly()__ function name changed to __getRaisedPoly()__.   
-* `LogModuleAdded` emit one more variable called ___budget__.   
+* `LogModuleAdded` emit one more variable called __budget__.   
 * `modules` mapping in the securityToken contract now returns __the array of ModuleData__.    
 
 ## Removed
@@ -351,7 +395,7 @@ allowed)
 
 ## Added      
 * ModuleRegistry contract will provide the list of modules by there types.  
-* `SecurityTokenRegistry` is now working on the basis of the proxy version of the securitytoken contract. For that SecurityTokenRegistry has one more variable in the constructor called _STVersionProxy .   
+* `SecurityTokenRegistry` is now working on the basis of the proxy version of the securitytoken contract. For that SecurityTokenRegistry has one more variable in the constructor called _STVersionProxy_ .   
 * `setProtocolVersion` new function added in the SecurityTokenRegistry to set the protocol version followed to generate the securityToken. Only be called by the `polymath admin`.   
 * `SecurityToken` now have the integration with polyToken. At the time of `addModule()` SecurityToken approve the cost of the module to moduleFactory as the spender.   
 * New function `withdrawPoly(uint256 _amount)` is added to withdrawal the unused POLY from the securityToken contract. Called only by the owner of the contract.   
@@ -378,7 +422,7 @@ allowed)
 * Deployment of the securityToken is now performed by the proxy contracts and call being generated form the SecurityTokenRegistry.
 * `TickerRegistrar` renamed as `TickerRegistry`.   
 * TickerRegistry is now Ownable contract.
-* `setTokenRegistrar` functio of TickerRegistry renamed to `setTokenRegistry`.   
+* `setTokenRegistrar` function of TickerRegistry renamed to `setTokenRegistry`.   
 * SecurityToken constructor has one change in the variable. i.e `_moduleRegistry` contract address is replaced by the `_owner` address.   
 * Their is no `_perm` parameter in the `addModule()` function of the securityToken contract. Now only 4 parameters left.
 * Type of Mudules changed    

@@ -1,9 +1,9 @@
 pragma solidity ^0.5.0;
 
-import "../../UpgradableModuleFactory.sol";
+import "./UpgradableModuleFactory.sol";
 import "./POLYCappedSTOProxy.sol";
-import "../../../libraries/Util.sol";
-import "../../../interfaces/IBoot.sol";
+import "../libraries/Util.sol";
+import "../interfaces/IBoot.sol";
 
 /**
  * @title Factory for deploying POLYCappedSTO module

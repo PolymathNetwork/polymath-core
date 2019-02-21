@@ -2558,27 +2558,26 @@ contract("POLYCappedSTO", async (accounts) => {
     ///////////////////
     describe("Test cases for the POLYCappedSTOFactory", async () => {
         it("Should get the exact details of the factory", async () => {
-            assert.equal((await I_POLYCappedSTOFactory.getSetupCost.call()).toString(), STOSetupCost);
-            assert.equal((await I_POLYCappedSTOFactory.getSetupCostInPoly.call()).toString(), STOSetupCost);
-            assert.equal((await I_POLYCappedSTOFactory.getTypes.call())[0], 3);
-            assert.equal(web3.utils.hexToString(await I_POLYCappedSTOFactory.getName.call()), "POLYCappedSTO", "Wrong Module added");
+            assert.equal((await I_POLYCappedSTOFactory.setupCost.call()).toString(), STOSetupCost);
+            assert.equal((await I_POLYCappedSTOFactory.setupCostInPoly.call()).toString(), STOSetupCost);
+            assert.equal((await I_POLYCappedSTOFactory.types.call())[0], 3);
+            assert.equal(web3.utils.hexToString(await I_POLYCappedSTOFactory.name.call()), "POLYCappedSTO", "Wrong Module added");
             assert.equal(
                 await I_POLYCappedSTOFactory.description.call(),
                 "This smart contract creates a maximum number of tokens (i.e. hard cap) which the total aggregate of tokens acquired by all investors cannot exceed. Security tokens are sent to the investor upon reception of the funds (POLY). This STO supports options for a minimum investment limit for all investors, maximum investment limit for non-accredited investors and an option to mint unsold tokens to a treasury wallet upon termination of the offering.",
                 "Wrong Module added"
             );
             assert.equal(await I_POLYCappedSTOFactory.title.call(), "POLY - Capped STO", "Wrong Module added");
-            assert.equal(await I_POLYCappedSTOFactory.getInstructions.call(), "Initialises a POLY capped STO. Init parameters are _startTime (time STO starts), _endTime (time STO ends), _cap (cap in tokens for STO), _rate (POLY to token rate), _minimumInvestment (required minimum investment), _nonAccreditedLimit (maximum investment for non-accredited investors), _maxNonAccreditedInvestors (maximum number of non accredited investors), _wallet (address which will receive funds)");
             assert.equal(await I_POLYCappedSTOFactory.version.call(), "3.0.0");
-            let tags = await I_POLYCappedSTOFactory.getTags.call();
+            let tags = await I_POLYCappedSTOFactory.tags.call();
             assert.equal(web3.utils.hexToString(tags[0]), "Capped");
             assert.equal(web3.utils.hexToString(tags[1]), "Non-refundable");
             assert.equal(web3.utils.hexToString(tags[2]), "POLY");
-            let lower = await I_POLYCappedSTOFactory.getLowerSTVersionBounds.call();
+            let lower = await I_POLYCappedSTOFactory.lowerSTVersionBounds.call();
             assert.equal(lower[0], 0, "Wrong lower bound");
             assert.equal(lower[1], 0, "Wrong lower bound");
             assert.equal(lower[2], 0, "Wrong lower bound");
-            let upper = await I_POLYCappedSTOFactory.getUpperSTVersionBounds.call();
+            let upper = await I_POLYCappedSTOFactory.upperSTVersionBounds.call();
             assert.equal(upper[0], 0, "Wrong upper bound");
             assert.equal(upper[1], 0, "Wrong upper bound");
             assert.equal(upper[2], 0, "Wrong upper bound");
@@ -2593,8 +2592,8 @@ contract("POLYCappedSTO", async (accounts) => {
             let newSetupCost = new BN(web3.utils.toWei("500"));
             let newSetupCostPOLY = newSetupCost.mul(e18).div(await I_POLYOracle.getPrice.call());
             await I_POLYCappedSTOFactory.changeSetupCost(newSetupCost, { from: POLYMATH });
-            assert.equal((await I_POLYCappedSTOFactory.getSetupCost.call()).toString(), newSetupCost.toString(), "Setup Cost mismatch");
-            assert.equal((await I_POLYCappedSTOFactory.getSetupCostInPoly.call()).toString(), newSetupCostPOLY.toString(), "Setup Cost POLY mismatch");
+            assert.equal((await I_POLYCappedSTOFactory.setupCost.call()).toString(), newSetupCost.toString(), "Setup Cost mismatch");
+            assert.equal((await I_POLYCappedSTOFactory.setupCostInPoly.call()).toString(), newSetupCostPOLY.toString(), "Setup Cost POLY mismatch");
         });
 
         it("Should fail to change the title -- bad owner", async () => {
@@ -2633,20 +2632,7 @@ contract("POLYCappedSTO", async (accounts) => {
 
         it("Should successfully change the name", async () => {
             await I_POLYCappedSTOFactory.changeName(web3.utils.stringToHex("STOCapped"), { from: POLYMATH });
-            assert.equal(web3.utils.hexToString(await I_POLYCappedSTOFactory.getName.call()), "STOCapped", "Name doesn't get changed");
-        });
-
-        it("Should fail to change the version -- bad owner", async () => {
-            await catchRevert(I_POLYCappedSTOFactory.changeVersion("1.33.7", { from: ISSUER }));
-        });
-
-        it("Should fail to change the version -- zero length", async () => {
-            await catchRevert(I_POLYCappedSTOFactory.changeVersion("", { from: POLYMATH }));
-        });
-
-        it("Should successfully change the version", async () => {
-            await I_POLYCappedSTOFactory.changeVersion("1.33.7", { from: POLYMATH });
-            assert.equal(await I_POLYCappedSTOFactory.version.call(), "1.33.7", "Version doesn't get changed");
+            assert.equal(web3.utils.hexToString(await I_POLYCappedSTOFactory.name.call()), "STOCapped", "Name doesn't get changed");
         });
 
         it("Should fail to change lower and upper Security Token Version Bounds -- bad owner", async () => {
@@ -2657,11 +2643,11 @@ contract("POLYCappedSTO", async (accounts) => {
         it("Should successfully change lower and upper Security Token Version Bounds", async () => {
             await I_POLYCappedSTOFactory.changeSTVersionBounds("lowerBound", [1,2,3], { from: POLYMATH });
             await I_POLYCappedSTOFactory.changeSTVersionBounds("upperBound", [4,5,6], { from: POLYMATH });
-            let lower = await I_POLYCappedSTOFactory.getLowerSTVersionBounds.call();
+            let lower = await I_POLYCappedSTOFactory.lowerSTVersionBounds.call();
             assert.equal(lower[0], 1, "Wrong lower bound");
             assert.equal(lower[1], 2, "Wrong lower bound");
             assert.equal(lower[2], 3, "Wrong lower bound");
-            let upper = await I_POLYCappedSTOFactory.getUpperSTVersionBounds.call();
+            let upper = await I_POLYCappedSTOFactory.upperSTVersionBounds.call();
             assert.equal(upper[0], 4, "Wrong upper bound");
             assert.equal(upper[1], 5, "Wrong upper bound");
             assert.equal(upper[2], 6, "Wrong upper bound");

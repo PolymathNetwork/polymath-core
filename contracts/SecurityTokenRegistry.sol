@@ -506,6 +506,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         if (_protocolVersion == 0) {
             protocolVersion = getUintValue(Encoder.getKey("latestVersion"));
         }
+        require(protocolVersion != uint256(0), "Invalid version");
         string memory ticker = Util.upper(_ticker);
         bytes32 statusKey = Encoder.getKey("registeredTickers_status", ticker);
         require(!getBoolValue(statusKey), "Already deployed");

@@ -1,14 +1,14 @@
 pragma solidity ^0.5.0;
 
+import "./OwnedUpgradeabilityProxy.sol";
 import "../storage/modules/TransferManager/VolumeRestrictionTMStorage.sol";
-import "./OwnedProxy.sol";
 import "../Pausable.sol";
 import "../storage/modules/ModuleStorage.sol";
 
 /**
  * @title Transfer Manager module for core transfer validation functionality
  */
-contract VolumeRestrictionTMProxy is VolumeRestrictionTMStorage, ModuleStorage, Pausable, OwnedProxy {
+contract VolumeRestrictionTMProxy is VolumeRestrictionTMStorage, ModuleStorage, Pausable, OwnedUpgradeabilityProxy {
 
     /**
     * @notice Constructor
@@ -16,7 +16,7 @@ contract VolumeRestrictionTMProxy is VolumeRestrictionTMStorage, ModuleStorage, 
     * @param _polyAddress Address of the polytoken
     * @param _implementation representing the address of the new implementation to be set
     */
-    constructor (address _securityToken, address _polyAddress, address _implementation)
+    constructor (string memory _version, address _securityToken, address _polyAddress, address _implementation)
     public
     ModuleStorage(_securityToken, _polyAddress)
     {
@@ -24,7 +24,7 @@ contract VolumeRestrictionTMProxy is VolumeRestrictionTMStorage, ModuleStorage, 
             _implementation != address(0),
             "Implementation address should not be 0x"
         );
-        __implementation = _implementation;
+        _upgradeTo(_version, _implementation);
     }
 
 }

@@ -1,14 +1,12 @@
 pragma solidity ^0.5.0;
 
-import "../ModuleFactory.sol";
+import "../UpgradableModuleFactory.sol";
 import "../../proxy/ManualApprovalTransferManagerProxy.sol";
 
 /**
  * @title Factory for deploying ManualApprovalTransferManager module
  */
-contract ManualApprovalTransferManagerFactory is ModuleFactory {
-
-    address public logicContract;
+contract ManualApprovalTransferManagerFactory is UpgradableModuleFactory {
 
     /**
      * @notice Constructor
@@ -24,16 +22,13 @@ contract ManualApprovalTransferManagerFactory is ModuleFactory {
         address _polymathRegistry
     )
         public
-        ModuleFactory(_setupCost, _usageCost, _polymathRegistry)
+        UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry)
     {
-        require(_logicContract != address(0), "Invalid address");
-        version = "2.1.0";
         name = "ManualApprovalTransferManager";
         title = "Manual Approval Transfer Manager";
         description = "Manage transfers using single approvals";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-        logicContract = _logicContract;
     }
 
     /**
@@ -41,39 +36,29 @@ contract ManualApprovalTransferManagerFactory is ModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(
-        bytes calldata /* _data */
+        bytes calldata _data
     )
         external
         returns(address)
     {
-        address polyToken = _takeFee();
-        ManualApprovalTransferManagerProxy manualTransferManager = new ManualApprovalTransferManagerProxy(msg.sender, polyToken, logicContract);
-        /*solium-disable-next-line security/no-block-members*/
-        emit GenerateModuleFromFactory(address(manualTransferManager), getName(), address(this), msg.sender, getSetupCost(), getSetupCostInPoly(), now);
-        return address(manualTransferManager);
+        address manualTransferManager = address(new ManualApprovalTransferManagerProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
+        _initializeModule(manualTransferManager, _data);
+        return manualTransferManager;
     }
 
     /**
      * @notice Type of the Module factory
      */
-    function getTypes() external view returns(uint8[] memory) {
+    function types() external view returns(uint8[] memory) {
         uint8[] memory res = new uint8[](1);
         res[0] = 2;
         return res;
     }
 
     /**
-     * @notice Returns the instructions associated with the module
-     */
-    function getInstructions() external view returns(string memory) {
-        /*solium-disable-next-line max-len*/
-        return "Allows an issuer to set manual approvals for specific pairs of addresses and amounts. Init function takes no parameters.";
-    }
-
-    /**
      * @notice Get the tags related to the module factory
      */
-    function getTags() external view returns(bytes32[] memory) {
+    function tags() external view returns(bytes32[] memory) {
         bytes32[] memory availableTags = new bytes32[](2);
         availableTags[0] = "ManualApproval";
         availableTags[1] = "Transfer Restriction";

@@ -141,7 +141,7 @@ contract("PreSaleSTO", async (accounts) => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            
+
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
 
             // Verify the successful generation of the security token
@@ -230,7 +230,7 @@ contract("PreSaleSTO", async (accounts) => {
 
         it("Should get the permissions", async () => {
             let perm = await I_PreSaleSTO.getPermissions.call();
-            assert.equal(web3.utils.toAscii(perm[0]).replace(/\u0000/g, ""), "PRE_SALE_ADMIN");
+            assert.equal(web3.utils.toAscii(perm[0]).replace(/\u0000/g, ""), "ADMIN");
         });
     });
 
@@ -424,10 +424,10 @@ contract("PreSaleSTO", async (accounts) => {
 
     describe("Test cases for the PresaleSTOFactory", async () => {
         it("should get the exact details of the factory", async () => {
-            assert.equal(await I_PreSaleSTOFactory.getSetupCost.call(), 0);
-            assert.equal((await I_PreSaleSTOFactory.getTypes.call())[0], 3);
+            assert.equal(await I_PreSaleSTOFactory.setupCost.call(), 0);
+            assert.equal((await I_PreSaleSTOFactory.types.call())[0], 3);
             assert.equal(
-                web3.utils.toAscii(await I_PreSaleSTOFactory.getName.call()).replace(/\u0000/g, ""),
+                web3.utils.toAscii(await I_PreSaleSTOFactory.name.call()).replace(/\u0000/g, ""),
                 "PreSaleSTO",
                 "Wrong Module added"
             );
@@ -437,12 +437,7 @@ contract("PreSaleSTO", async (accounts) => {
                 "Wrong Module added"
             );
             assert.equal(await I_PreSaleSTOFactory.title.call(), "PreSale STO", "Wrong Module added");
-            assert.equal(
-                await I_PreSaleSTOFactory.getInstructions.call(),
-                "Configure and track pre-sale token allocations",
-                "Wrong Module added"
-            );
-            let tags = await I_PreSaleSTOFactory.getTags.call();
+            let tags = await I_PreSaleSTOFactory.tags.call();
             assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ""), "Presale");
         });
     });

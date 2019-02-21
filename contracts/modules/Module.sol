@@ -1,6 +1,7 @@
 pragma solidity ^0.5.0;
 
 import "../interfaces/IModule.sol";
+import "../interfaces/IModuleFactory.sol";
 import "../interfaces/IDataStore.sol";
 import "../interfaces/ISecurityToken.sol";
 import "../interfaces/ICheckPermission.sol";
@@ -21,7 +22,7 @@ contract Module is IModule, ModuleStorage {
     ModuleStorage(_securityToken, _polyAddress)
     {
     }
-
+    
     //Allows owner, factory or permissioned delegate
     modifier withPerm(bytes32 _perm) {
         bool isOwner = msg.sender == Ownable(securityToken).owner();
@@ -33,9 +34,8 @@ contract Module is IModule, ModuleStorage {
         _;
     }
 
-    modifier onlyOwner() {
+    function _onlySecurityTokenOwner() internal view {
         require(msg.sender == Ownable(securityToken).owner(), "Sender is not owner");
-        _;
     }
 
     modifier onlyFactory() {
@@ -56,11 +56,14 @@ contract Module is IModule, ModuleStorage {
     /**
      * @notice used to withdraw the fee by the factory owner
      */
-    function takeFee(uint256 _amount) public withPerm(FEE_ADMIN) returns(bool) {
-        require(polyToken.transferFrom(securityToken, Ownable(factory).owner(), _amount), "Unable to take fee");
+    function takeUsageFee() public withPerm(FEE_ADMIN) returns(bool) {
+        require(polyToken.transferFrom(securityToken, Ownable(factory).owner(), IModuleFactory(factory).usageCostInPoly()), "Unable to take fee");
         return true;
     }
 
+    /**
+     * @notice used to return the data store address of securityToken
+     */
     function getDataStore() public view returns(address) {
         return ISecurityToken(securityToken).dataStore();
     }

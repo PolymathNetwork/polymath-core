@@ -1,14 +1,14 @@
 pragma solidity ^0.5.0;
 
+import "./OwnedUpgradeabilityProxy.sol";
 import "../storage/modules/TransferManager/GeneralTransferManagerStorage.sol";
-import "./OwnedProxy.sol";
 import "../Pausable.sol";
 import "../storage/modules/ModuleStorage.sol";
 
 /**
  * @title Transfer Manager module for core transfer validation functionality
  */
-contract GeneralTransferManagerProxy is GeneralTransferManagerStorage, ModuleStorage, Pausable, OwnedProxy {
+contract GeneralTransferManagerProxy is GeneralTransferManagerStorage, ModuleStorage, Pausable, OwnedUpgradeabilityProxy {
     /**
     * @notice Constructor
     * @param _securityToken Address of the security token
@@ -16,6 +16,7 @@ contract GeneralTransferManagerProxy is GeneralTransferManagerStorage, ModuleSto
     * @param _implementation representing the address of the new implementation to be set
     */
     constructor(
+        string memory _version,
         address _securityToken,
         address _polyAddress,
         address _implementation
@@ -24,7 +25,7 @@ contract GeneralTransferManagerProxy is GeneralTransferManagerStorage, ModuleSto
         ModuleStorage(_securityToken, _polyAddress)
     {
         require(_implementation != address(0), "Implementation address should not be 0x");
-        __implementation = _implementation;
+        _upgradeTo(_version, _implementation);
     }
 
 }

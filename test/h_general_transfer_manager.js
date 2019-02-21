@@ -1,6 +1,6 @@
 import latestTime from "./helpers/latestTime";
 import { duration, promisifyLogWatch, latestBlock } from "./helpers/utils";
-import takeSnapshot, { increaseTime, revertToSnapshot } from "./helpers/time";
+import { takeSnapshot, increaseTime, revertToSnapshot } from "./helpers/time";
 import { getSignGTMData } from "./helpers/signData";
 import { pk } from "./helpers/testprivateKey";
 import { encodeProxyCall, encodeModuleCall } from "./helpers/encodeCall";
@@ -506,12 +506,12 @@ contract("GeneralTransferManager", async (accounts) => {
             let log = await I_GeneralPermissionManager.addDelegate(account_delegate, web3.utils.fromAscii("My details"), { from: token_owner });
             assert.equal(log.logs[0].args._delegate, account_delegate);
 
-            await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("FLAGS"), true, {
+            await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("ADMIN"), true, {
                 from: token_owner
             });
 
             assert.isTrue(
-                await I_GeneralPermissionManager.checkPermission.call(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("FLAGS"))
+                await I_GeneralPermissionManager.checkPermission.call(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("ADMIN"))
             );
             console.log(JSON.stringify(signer));
             let tx = await I_GeneralTransferManager.changeSigningAddress(signer.address, { from: account_delegate });
@@ -751,24 +751,28 @@ contract("GeneralTransferManager", async (accounts) => {
 
         it("Should get the permission", async () => {
             let perm = await I_GeneralTransferManager.getPermissions.call();
-            assert.equal(web3.utils.toAscii(perm[0]).replace(/\u0000/g, ""), "WHITELIST");
-            assert.equal(web3.utils.toAscii(perm[1]).replace(/\u0000/g, ""), "FLAGS");
+            assert.equal(web3.utils.toAscii(perm[0]).replace(/\u0000/g, ""), "ADMIN");
+        });
+
+        it("Should set a usage fee for the GTM", async () => {
+            // Fail due to wrong owner
+            await catchRevert(I_GeneralTransferManagerFactory.changeUsageCost(new BN(web3.utils.toWei("1", "ether")), { from: token_owner}));
+            await I_GeneralTransferManagerFactory.changeUsageCost(new BN(web3.utils.toWei("1", "ether")), { from: account_polymath });
         });
 
         it("Should fail to pull fees as no budget set", async () => {
-            await catchRevert(I_GeneralTransferManager.takeFee(new BN(web3.utils.toWei("1", "ether")), { from: account_polymath }));
+            await catchRevert(I_GeneralTransferManager.takeUsageFee( { from: account_polymath }));
         });
 
         it("Should set a budget for the GeneralTransferManager", async () => {
             await I_SecurityToken.changeModuleBudget(I_GeneralTransferManager.address, new BN(10).pow(new BN(19)), true, { from: token_owner });
-
-            await catchRevert(I_GeneralTransferManager.takeFee(new BN(web3.utils.toWei("1", "ether")), { from: token_owner }));
+            await catchRevert(I_GeneralTransferManager.takeUsageFee({ from: token_owner }));
             await I_PolyToken.getTokens(new BN(10).pow(new BN(19)), token_owner);
             await I_PolyToken.transfer(I_SecurityToken.address, new BN(10).pow(new BN(19)), { from: token_owner });
         });
 
         it("Factory owner should pull fees - fails as not permissioned by issuer", async () => {
-            await catchRevert(I_GeneralTransferManager.takeFee(new BN(web3.utils.toWei("1", "ether")), { from: account_delegate }));
+            await catchRevert(I_GeneralTransferManager.takeUsageFee({ from: account_delegate }));
         });
 
         it("Factory owner should pull fees", async () => {
@@ -776,9 +780,9 @@ contract("GeneralTransferManager", async (accounts) => {
                 from: token_owner
             });
             let balanceBefore = await I_PolyToken.balanceOf(account_polymath);
-            await I_GeneralTransferManager.takeFee(new BN(web3.utils.toWei("1", "ether")), { from: account_delegate });
+            await I_GeneralTransferManager.takeUsageFee({ from: account_delegate });
             let balanceAfter = await I_PolyToken.balanceOf(account_polymath);
-            assert.equal(balanceBefore.add(new BN(web3.utils.toWei("1", "ether"))).toString(), balanceAfter.toString(), "Fee is transferred");
+            assert.equal(balanceBefore.add(new BN(web3.utils.toWei("4", "ether"))).toString(), balanceAfter.toString(), "Fee is transferred");
         });
 
         it("Should change the white list transfer variable", async () => {
@@ -822,7 +826,7 @@ contract("GeneralTransferManager", async (accounts) => {
                     [toTime, toTime],
                     [expiryTime, expiryTime],
                     {
-                        from: account_delegate,
+                        from: account_investor1,
                         gas: 6000000
                     }
                 )
@@ -907,10 +911,10 @@ contract("GeneralTransferManager", async (accounts) => {
 
     describe("General Transfer Manager Factory test cases", async () => {
         it("Should get the exact details of the factory", async () => {
-            assert.equal(await I_GeneralTransferManagerFactory.getSetupCost.call(), 0);
-            assert.equal((await I_GeneralTransferManagerFactory.getTypes.call())[0], 2);
+            assert.equal(await I_GeneralTransferManagerFactory.setupCost.call(), 0);
+            assert.equal((await I_GeneralTransferManagerFactory.types.call())[0], 2);
             assert.equal(
-                web3.utils.toAscii(await I_GeneralTransferManagerFactory.getName.call()).replace(/\u0000/g, ""),
+                web3.utils.toAscii(await I_GeneralTransferManagerFactory.name.call()).replace(/\u0000/g, ""),
                 "GeneralTransferManager",
                 "Wrong Module added"
             );
@@ -920,43 +924,33 @@ contract("GeneralTransferManager", async (accounts) => {
                 "Wrong Module added"
             );
             assert.equal(await I_GeneralTransferManagerFactory.title.call(), "General Transfer Manager", "Wrong Module added");
-            assert.equal(
-                await I_GeneralTransferManagerFactory.getInstructions.call(),
-                "Allows an issuer to maintain a time based whitelist of authorised token holders.Addresses are added via modifyWhitelist and take a fromTime (the time from which they can send tokens) and a toTime (the time from which they can receive tokens). There are additional flags, allowAllWhitelistIssuances, allowAllWhitelistTransfers & allowAllTransfers which allow you to set corresponding contract level behaviour. Init function takes no parameters.",
-                "Wrong Module added"
-            );
-            assert.equal(await I_GeneralTransferManagerFactory.version.call(), "2.1.0");
+            assert.equal(await I_GeneralTransferManagerFactory.version.call(), "3.0.0");
         });
 
         it("Should get the tags of the factory", async () => {
-            let tags = await I_GeneralTransferManagerFactory.getTags.call();
+            let tags = await I_GeneralTransferManagerFactory.tags.call();
             assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ""), "General");
         });
     });
 
     describe("Dummy STO Factory test cases", async () => {
         it("should get the exact details of the factory", async () => {
-            assert.equal(await I_DummySTOFactory.getSetupCost.call(), 0);
-            assert.equal((await I_DummySTOFactory.getTypes.call())[0], 3);
+            assert.equal(await I_DummySTOFactory.setupCost.call(), 0);
+            assert.equal((await I_DummySTOFactory.types.call())[0], 3);
             assert.equal(
-                web3.utils.toAscii(await I_DummySTOFactory.getName.call()).replace(/\u0000/g, ""),
+                web3.utils.toAscii(await I_DummySTOFactory.name.call()).replace(/\u0000/g, ""),
                 "DummySTO",
                 "Wrong Module added"
             );
             assert.equal(await I_DummySTOFactory.description.call(), "Dummy STO", "Wrong Module added");
             assert.equal(await I_DummySTOFactory.title.call(), "Dummy STO", "Wrong Module added");
-            assert.equal(await I_DummySTOFactory.getInstructions.call(), "Dummy STO - you can mint tokens at will", "Wrong Module added");
         });
 
         it("Should get the tags of the factory", async () => {
-            let tags = await I_DummySTOFactory.getTags.call();
+            let tags = await I_DummySTOFactory.tags.call();
             assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ""), "Dummy");
         });
 
-        it("Should get the version of factory", async () => {
-            let version = await I_DummySTOFactory.version.call();
-            assert.equal(version, "1.0.0");
-        });
     });
 
     describe("Test cases for the get functions of the dummy sto", async () => {

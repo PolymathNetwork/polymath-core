@@ -55,7 +55,8 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
      * @param _interval interval at which checkpoints should be created
      * @param _timeUnit unit of time at which checkpoints should be created
      */
-    function addSchedule(bytes32 _name, uint256 _startTime, uint256 _interval, TimeUnit _timeUnit) external onlyOwner {
+    function addSchedule(bytes32 _name, uint256 _startTime, uint256 _interval, TimeUnit _timeUnit) external {
+        _onlySecurityTokenOwner();
         require(_startTime > now, "Start time must be in the future");
         require(schedules[_name].name == bytes32(0), "Name already in use");
         schedules[_name].name = _name;
@@ -72,7 +73,8 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
      * @notice removes a schedule for checkpoints
      * @param _name name of the schedule to be removed
      */
-    function removeSchedule(bytes32 _name) external onlyOwner {
+    function removeSchedule(bytes32 _name) external {
+        _onlySecurityTokenOwner();
         require(schedules[_name].name == _name, "Name does not exist");
         uint256 index = schedules[_name].index;
         names[index] = names[names.length - 1];
@@ -144,7 +146,8 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
      * @notice manually triggers update outside of transfer request for named schedule (can be used to reduce user gas costs)
      * @param _name name of the schedule
      */
-    function update(bytes32 _name) external onlyOwner {
+    function update(bytes32 _name) external {
+        _onlySecurityTokenOwner();
         _update(_name);
     }
 
@@ -180,7 +183,8 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
     /**
      * @notice manually triggers update outside of transfer request for all schedules (can be used to reduce user gas costs)
      */
-    function updateAll() external onlyOwner {
+    function updateAll() external {
+        _onlySecurityTokenOwner();
         _updateAll();
     }
 

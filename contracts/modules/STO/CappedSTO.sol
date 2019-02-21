@@ -73,14 +73,15 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
      * @notice This function returns the signature of configure function
      */
     function getInitFunction() public pure returns(bytes4) {
-        return bytes4(keccak256("configure(uint256,uint256,uint256,uint256,uint8[],address)"));
+        return this.configure.selector;
     }
 
     /**
      * @notice Function to set allowBeneficialInvestments (allow beneficiary to be different to funder)
      * @param _allowBeneficialInvestments Boolean to allow or disallow beneficial investments
      */
-    function changeAllowBeneficialInvestments(bool _allowBeneficialInvestments) public onlyOwner {
+    function changeAllowBeneficialInvestments(bool _allowBeneficialInvestments) public {
+        _onlySecurityTokenOwner();
         require(_allowBeneficialInvestments != allowBeneficialInvestments, "Does not change value");
         allowBeneficialInvestments = _allowBeneficialInvestments;
         emit SetAllowBeneficialInvestments(allowBeneficialInvestments);

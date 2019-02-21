@@ -11,8 +11,6 @@ contract ManualApprovalTransferManagerStorage {
     //Address which can sign whitelist changes
     address public signingAddress = address(0);
 
-    bytes32 public constant TRANSFER_APPROVAL = "TRANSFER_APPROVAL";
-
     //Manual approval is an allowance (that has been approved) with an expiry time
     struct ManualApproval {
         address from;

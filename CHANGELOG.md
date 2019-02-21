@@ -21,6 +21,7 @@ All notable changes to this project will be documented in this file.
 * Replaced `updatePolyTokenAddress()` function with `updateFromRegistry()` in `SecurityTokenRegistry`.  
 * Migrate all the getters of `SecurityTokenRegsitry.sol` to `STRGetter.sol` contract.
 * Removed `_polyToken` parameter from `initialize` function in `SecurityTokenRegistry`.
+* Return SecurityToken version in the `getSecurityTokenData()` function.
 
 ## GeneralTransferManager
 * `modifyWhitelist()` function renamed to `modifyKYCData()`.

@@ -14,7 +14,6 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
     event ERC20DividendDeposited(
         address indexed _depositor,
         uint256 _checkpointId,
-        uint256 _created,
         uint256 _maturity,
         uint256 _expiry,
         address indexed _token,
@@ -214,8 +213,7 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
         /*solium-disable-next-line security/no-block-members*/
         emit ERC20DividendDeposited(
             msg.sender,
-            _checkpointId,
-            now,
+            _checkpointId
             _maturity,
             _expiry,
             _token,

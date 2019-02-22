@@ -36,7 +36,6 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     // in any case, any investor sending or receiving tokens, must have a _expiryTime in the future
     event ModifyKYCData(
         address indexed _investor,
-        uint256 _dateAdded,
         address indexed _addedBy,
         uint256 _fromTime,
         uint256 _toTime,
@@ -251,7 +250,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         }
         uint256 _data = VersionUtils.packKYC(uint64(_fromTime), uint64(_toTime), uint64(_expiryTime), uint8(1));
         dataStore.setUint256(_getKey(WHITELIST, _investor), _data);
-        emit ModifyKYCData(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime);
+        emit ModifyKYCData(_investor, msg.sender, _fromTime, _toTime, _expiryTime);
     }
 
     /**

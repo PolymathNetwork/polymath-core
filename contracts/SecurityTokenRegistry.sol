@@ -489,7 +489,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @param _divisible is whether or not the token is divisible
      * @param _protocolVersion Version of securityToken contract
      * - `_protocolVersion` is the packed value of uin8[3] array (it will be calculated offchain)
-     * - if _protocolVersion == 0 then latest version of securityToken will generated
+     * - if _protocolVersion == 0 then latest version of securityToken will be generated
      */
     function generateSecurityToken(
         string calldata _name,

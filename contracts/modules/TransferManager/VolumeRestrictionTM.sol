@@ -8,9 +8,6 @@ import "./TransferManager.sol";
 contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
     using SafeMath for uint256;
 
-    // permission definition
-    bytes32 public constant ADMIN = "ADMIN";
-
     // Emit when the token holder is added/removed from the exemption list
     event ChangedExemptWalletList(address indexed _wallet, bool _change);
     // Emit when the new individual restriction is added corresponds to new token holders
@@ -245,7 +242,14 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
             _endTime,
             RestrictionType(_restrictionType)
         );
-        VolumeRestrictionLib.addRestrictionData(holderData, _holder, uint8(TypeOfPeriod.MultipleDays), individualRestrictions.individualRestriction[_holder].endTime);
+        VolumeRestrictionLib
+            .addRestrictionData(
+                holderToRestrictionType,
+                _holder,
+                uint8(TypeOfPeriod.MultipleDays),
+                individualRestrictions.individualRestriction[_holder].endTime,
+                getDataStore()
+            );
         emit AddIndividualRestriction(
             _holder,
             _allowedTokens,
@@ -292,7 +296,14 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
             _endTime,
             RestrictionType(_restrictionType)
         );
-        VolumeRestrictionLib.addRestrictionData(holderData, _holder, uint8(TypeOfPeriod.OneDay), individualRestrictions.individualRestriction[_holder].endTime);
+        VolumeRestrictionLib
+            .addRestrictionData(
+                holderToRestrictionType,
+                _holder,
+                uint8(TypeOfPeriod.OneDay),
+                individualRestrictions.individualRestriction[_holder].endTime,
+                getDataStore()
+            );
         emit AddIndividualDailyRestriction(
             _holder,
             _allowedTokens,
@@ -300,7 +311,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
             1,
             _endTime,
             _restrictionType
-      );
+        );
     }
 
     /**
@@ -457,7 +468,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         require(_holder != address(0));
         require(individualRestrictions.individualRestriction[_holder].endTime != 0);
         individualRestrictions.individualRestriction[_holder] = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
-        VolumeRestrictionLib.deleteHolderFromList(holderData, _holder, uint8(TypeOfPeriod.OneDay));
+        VolumeRestrictionLib.deleteHolderFromList(holderToRestrictionType, _holder, getDataStore(), uint8(TypeOfPeriod.OneDay));
         bucketData.userToBucket[_holder].lastTradedDayTime = 0;
         bucketData.userToBucket[_holder].sumOfLastPeriod = 0;
         bucketData.userToBucket[_holder].daysCovered = 0;
@@ -482,7 +493,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         require(_holder != address(0));
         require(individualRestrictions.individualDailyRestriction[_holder].endTime != 0);
         individualRestrictions.individualDailyRestriction[_holder] = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
-        VolumeRestrictionLib.deleteHolderFromList(holderData, _holder, uint8(TypeOfPeriod.MultipleDays));
+        VolumeRestrictionLib.deleteHolderFromList(holderToRestrictionType, _holder, getDataStore(), uint8(TypeOfPeriod.MultipleDays));
         bucketData.userToBucket[_holder].dailyLastTradedDayTime = 0;
         emit IndividualDailyRestrictionRemoved(_holder);
     }
@@ -1122,7 +1133,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         uint256[] memory endTime,
         uint8[] memory typeOfRestriction
     ) {
-        return VolumeRestrictionLib.getRestrictionData(holderData, individualRestrictions);
+        return VolumeRestrictionLib.getRestrictionData(holderToRestrictionType, individualRestrictions, getDataStore());
     }
 
     /**

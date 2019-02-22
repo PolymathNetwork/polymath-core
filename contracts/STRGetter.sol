@@ -1,6 +1,7 @@
 pragma solidity ^0.5.0;
 
 import "./storage/EternalStorage.sol";
+import "./interfaces/ISecurityToken.sol";
 import "./libraries/Util.sol";
 import "./libraries/Encoder.sol";
 import "./interfaces/IOwnable.sol";
@@ -199,13 +200,15 @@ contract STRGetter is EternalStorage {
     * @return address is the issuer of the security Token.
     * @return string is the details of the security token.
     * @return uint256 is the timestamp at which security Token was deployed.
+    * @return version of the securityToken
     */
-    function getSecurityTokenData(address _securityToken) external view returns (string memory, address, string memory, uint256) {
+    function getSecurityTokenData(address _securityToken) external view returns (string memory, address, string memory, uint256, uint8[] memory) {
         return (
             getStringValue(Encoder.getKey("securityTokens_ticker", _securityToken)),
             IOwnable(_securityToken).owner(),
             getStringValue(Encoder.getKey("securityTokens_tokenDetails", _securityToken)),
-            getUintValue(Encoder.getKey("securityTokens_deployedAt", _securityToken))
+            getUintValue(Encoder.getKey("securityTokens_deployedAt", _securityToken)),
+            ISecurityToken(_securityToken).getVersion()
         );
     }
 

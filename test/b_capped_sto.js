@@ -721,7 +721,7 @@ contract("CappedSTO", async (accounts) => {
                     (await I_SecurityToken_POLY.balanceOf(account_investor1)).div(new BN(10).pow(new BN(18))).toNumber(),
                     5000
                 );
-                
+
             });
 
             it("Verification of the event Token Purchase", async () => {
@@ -826,24 +826,19 @@ contract("CappedSTO", async (accounts) => {
 
         describe("Test cases for the CappedSTOFactory", async () => {
             it("should get the exact details of the factory", async () => {
-                assert.equal((await I_CappedSTOFactory.getSetupCost.call()).toString(), cappedSTOSetupCost.toString());
-                assert.equal((await I_CappedSTOFactory.getSetupCostInPoly.call()).toString(), cappedSTOSetupCostPOLY.toString());
-                assert.equal((await I_CappedSTOFactory.getTypes.call())[0], 3);
-                assert.equal(web3.utils.hexToString(await I_CappedSTOFactory.getName.call()), "CappedSTO", "Wrong Module added");
+                assert.equal((await I_CappedSTOFactory.setupCost.call()).toString(), cappedSTOSetupCost.toString());
+                assert.equal((await I_CappedSTOFactory.setupCostInPoly.call()).toString(), cappedSTOSetupCostPOLY.toString());
+                assert.equal((await I_CappedSTOFactory.types.call())[0], 3);
+                assert.equal(web3.utils.hexToString(await I_CappedSTOFactory.name.call()), "CappedSTO", "Wrong Module added");
                 assert.equal(
                     await I_CappedSTOFactory.description.call(),
                     "This smart contract creates a maximum number of tokens (i.e. hard cap) which the total aggregate of tokens acquired by all investors cannot exceed. Security tokens are sent to the investor upon reception of the funds (ETH or POLY), and any security tokens left upon termination of the offering will not be minted.",
                     "Wrong Module added"
                 );
                 assert.equal(await I_CappedSTOFactory.title.call(), "Capped STO", "Wrong Module added");
-                assert.equal(
-                    await I_CappedSTOFactory.getInstructions.call(),
-                    "Initialises a capped STO. Init parameters are _startTime (time STO starts), _endTime (time STO ends), _cap (cap in tokens for STO), _rate (POLY/ETH to token rate), _fundRaiseType (whether you are raising in POLY or ETH), _polyToken (address of POLY token), _fundsReceiver (address which will receive funds)",
-                    "Wrong Module added"
-                );
-                let tags = await I_CappedSTOFactory.getTags.call();
+                let tags = await I_CappedSTOFactory.tags.call();
                 assert.equal(web3.utils.hexToString(tags[0]), "Capped");
-                assert.equal(await I_CappedSTOFactory.version.call(), "2.1.0");
+                assert.equal(await I_CappedSTOFactory.version.call(), "3.0.0");
             });
 
             it("Should fail to change the title -- bad owner", async () => {
@@ -882,12 +877,12 @@ contract("CappedSTO", async (accounts) => {
 
             it("Should successfully change the name", async () => {
                 await I_CappedSTOFactory.changeName(web3.utils.stringToHex("STOCapped"), { from: account_polymath });
-                assert.equal(web3.utils.hexToString(await I_CappedSTOFactory.getName.call()), "STOCapped", "Name doesn't get changed");
+                assert.equal(web3.utils.hexToString(await I_CappedSTOFactory.name.call()), "STOCapped", "Name doesn't get changed");
             });
 
             it("Should successfully change the name", async () => {
                 await I_CappedSTOFactory.changeName(web3.utils.stringToHex("CappedSTO"), { from: account_polymath });
-                assert.equal(web3.utils.hexToString(await I_CappedSTOFactory.getName.call()), "CappedSTO", "Name doesn't get changed");
+                assert.equal(web3.utils.hexToString(await I_CappedSTOFactory.name.call()), "CappedSTO", "Name doesn't get changed");
             });
         });
 

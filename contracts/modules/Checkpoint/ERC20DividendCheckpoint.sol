@@ -56,7 +56,7 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
         bytes32 _name
     )
         external
-        withPerm(MANAGE)
+        withPerm(ADMIN)
     {
         createDividendWithExclusions(_maturity, _expiry, _token, _amount, excluded, _name);
     }
@@ -79,7 +79,7 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
         bytes32 _name
     )
         external
-        withPerm(MANAGE)
+        withPerm(ADMIN)
     {
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, _token, _amount, _checkpointId, excluded, _name);
     }
@@ -102,7 +102,7 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
         bytes32 _name
     )
         public
-        withPerm(MANAGE)
+        withPerm(ADMIN)
     {
         uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, _token, _amount, checkpointId, _excluded, _name);
@@ -128,7 +128,7 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
         bytes32 _name
     )
         public
-        withPerm(MANAGE)
+        withPerm(ADMIN)
     {
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, _token, _amount, _checkpointId, _excluded, _name);
     }
@@ -251,7 +251,7 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
      * @notice Issuer can reclaim remaining unclaimed dividend amounts, for expired dividends
      * @param _dividendIndex Dividend to reclaim
      */
-    function reclaimDividend(uint256 _dividendIndex) external withPerm(MANAGE) {
+    function reclaimDividend(uint256 _dividendIndex) external withPerm(OPERATOR) {
         require(_dividendIndex < dividends.length, "Invalid dividend");
         /*solium-disable-next-line security/no-block-members*/
         require(now >= dividends[_dividendIndex].expiry, "Dividend expiry in future");
@@ -267,7 +267,7 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
      * @notice Allows issuer to withdraw withheld tax
      * @param _dividendIndex Dividend to withdraw from
      */
-    function withdrawWithholding(uint256 _dividendIndex) external withPerm(MANAGE) {
+    function withdrawWithholding(uint256 _dividendIndex) external withPerm(OPERATOR) {
         require(_dividendIndex < dividends.length, "Invalid dividend");
         Dividend storage dividend = dividends[_dividendIndex];
         uint256 remainingWithheld = dividend.totalWithheld.sub(dividend.totalWithheldWithdrawn);

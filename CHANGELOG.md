@@ -23,6 +23,7 @@ All notable changes to this project will be documented in this file.
 * Removed `_polyToken` parameter from `initialize` function in `SecurityTokenRegistry`.
 * Allows an explicit token factory version to be used during creation of securityToken.
 * Rename the `getProtocolVersion()` to `getCurrentProtocolVersion()`.
+* Return SecurityToken version in the `getSecurityTokenData()` function.
 
 ## GeneralTransferManager
 * `modifyWhitelist()` function renamed to `modifyKYCData()`.

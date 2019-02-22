@@ -1,6 +1,6 @@
 import latestTime from "./helpers/latestTime";
 import {duration, promisifyLogWatch} from "./helpers/utils";
-import takeSnapshot, {increaseTime, revertToSnapshot} from "./helpers/time";
+import { takeSnapshot,increaseTime, revertToSnapshot} from "./helpers/time";
 import {catchRevert} from "./helpers/exceptions";
 import {deployRedemptionAndVerifyed, setUpPolymathNetwork} from "./helpers/createInstances";
 
@@ -269,22 +269,17 @@ contract("TrackedRedemption", async (accounts) => {
 
         describe("Test cases for the TrackedRedemptionFactory", async () => {
             it("should get the exact details of the factory", async () => {
-                assert.equal((await I_TrackedRedemptionFactory.getSetupCost.call()).toNumber(), 0);
-                assert.equal((await I_TrackedRedemptionFactory.getTypes.call())[0], 5);
-                assert.equal(await I_TrackedRedemptionFactory.version.call(), "1.0.0");
+                assert.equal((await I_TrackedRedemptionFactory.setupCost.call()).toNumber(), 0);
+                assert.equal((await I_TrackedRedemptionFactory.types.call())[0], 5);
+                assert.equal(await I_TrackedRedemptionFactory.version.call(), "3.0.0");
                 assert.equal(
-                    web3.utils.toAscii(await I_TrackedRedemptionFactory.getName.call()).replace(/\u0000/g, ""),
+                    web3.utils.toAscii(await I_TrackedRedemptionFactory.name.call()).replace(/\u0000/g, ""),
                     "TrackedRedemption",
                     "Wrong Module added"
                 );
                 assert.equal(await I_TrackedRedemptionFactory.description.call(), "Track token redemptions", "Wrong Module added");
                 assert.equal(await I_TrackedRedemptionFactory.title.call(), "Tracked Redemption", "Wrong Module added");
-                assert.equal(
-                    await I_TrackedRedemptionFactory.getInstructions.call(),
-                    "Allows an investor to redeem security tokens which are tracked by this module",
-                    "Wrong Module added"
-                );
-                let tags = await I_TrackedRedemptionFactory.getTags.call();
+                let tags = await I_TrackedRedemptionFactory.tags.call();
                 assert.equal(tags.length, 2);
             });
         });

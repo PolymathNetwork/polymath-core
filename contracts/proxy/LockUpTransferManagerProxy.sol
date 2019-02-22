@@ -1,14 +1,14 @@
 pragma solidity ^0.5.0;
 
+import "../storage/modules/TransferManager/LockUpTransferManagerStorage.sol";
 import "./OwnedUpgradeabilityProxy.sol";
-import "../storage/modules/TransferManager/CountTransferManagerStorage.sol";
 import "../Pausable.sol";
 import "../storage/modules/ModuleStorage.sol";
 
 /**
  * @title CountTransferManager module Proxy
  */
-contract CountTransferManagerProxy is CountTransferManagerStorage, ModuleStorage, Pausable, OwnedUpgradeabilityProxy {
+contract LockUpTransferManagerProxy is LockUpTransferManagerStorage, ModuleStorage, Pausable, OwnedUpgradeabilityProxy {
 
     /**
     * @notice Constructor

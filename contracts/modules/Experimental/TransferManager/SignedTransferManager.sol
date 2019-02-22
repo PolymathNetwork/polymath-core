@@ -11,8 +11,6 @@ contract SignedTransferManager is TransferManager {
     using SafeMath for uint256;
     using ECDSA for bytes32;
 
-    bytes32 constant public ADMIN = "ADMIN";
-
     //Keeps track of if the signature has been used or invalidated
     //mapping(bytes => bool) invalidSignatures;
     bytes32 constant public INVALID_SIG = "INVALIDSIG";

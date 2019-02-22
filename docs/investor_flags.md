@@ -19,5 +19,10 @@
             <td> canNotBuyFromSto </td>
             <td> Defines if an Investor is restricted from participating in STOs</td>
         </tr>
+        <tr>
+            <td> 2 </td>
+            <td> isVolRestricted </td>
+            <td> Defines if an Investor has the trade volume restriction (VRTM) or not </td>
+        </tr>
     </tbody>
 </table>

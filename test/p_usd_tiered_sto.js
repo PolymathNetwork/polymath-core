@@ -4603,18 +4603,17 @@ contract("USDTieredSTO", async (accounts) => {
 
     describe("Test cases for the USDTieredSTOFactory", async () => {
         it("should get the exact details of the factory", async () => {
-            assert.equal((await I_USDTieredSTOFactory.getSetupCost.call()).toString(), STOSetupCost);
-            assert.equal((await I_USDTieredSTOFactory.getTypes.call())[0], 3);
-            assert.equal(web3.utils.hexToString(await I_USDTieredSTOFactory.getName.call()), "USDTieredSTO", "Wrong Module added");
+            assert.equal((await I_USDTieredSTOFactory.setupCost.call()).toString(), STOSetupCost);
+            assert.equal((await I_USDTieredSTOFactory.types.call())[0], 3);
+            assert.equal(web3.utils.hexToString(await I_USDTieredSTOFactory.name.call()), "USDTieredSTO", "Wrong Module added");
             assert.equal(
                 await I_USDTieredSTOFactory.description.call(),
                 "It allows both accredited and non-accredited investors to contribute into the STO. Non-accredited investors will be capped at a maximum investment limit (as a default or specific to their jurisdiction). Tokens will be sold according to tiers sequentially & each tier has its own price and volume of tokens to sell. Upon receipt of funds (ETH, POLY or DAI), security tokens will automatically transfer to investor’s wallet address",
                 "Wrong Module added"
             );
             assert.equal(await I_USDTieredSTOFactory.title.call(), "USD Tiered STO", "Wrong Module added");
-            assert.equal(await I_USDTieredSTOFactory.getInstructions.call(), "Initialises a USD tiered STO.", "Wrong Module added");
-            assert.equal(await I_USDTieredSTOFactory.version.call(), "2.1.0");
-            let tags = await I_USDTieredSTOFactory.getTags.call();
+            assert.equal(await I_USDTieredSTOFactory.version.call(), "3.0.0");
+            let tags = await I_USDTieredSTOFactory.tags.call();
             assert.equal(web3.utils.hexToString(tags[0]), "USD");
             assert.equal(web3.utils.hexToString(tags[1]), "Tiered");
             assert.equal(web3.utils.hexToString(tags[2]), "POLY");

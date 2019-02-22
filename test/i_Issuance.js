@@ -1,6 +1,6 @@
 import latestTime from "./helpers/latestTime";
 import { duration, ensureException, promisifyLogWatch, latestBlock } from "./helpers/utils";
-import takeSnapshot, { increaseTime, revertToSnapshot } from "./helpers/time";
+import { takeSnapshot, increaseTime, revertToSnapshot } from "./helpers/time";
 import { encodeProxyCall, encodeModuleCall } from "./helpers/encodeCall";
 import { setUpPolymathNetwork, deployCappedSTOAndVerifyed, deployGPMAndVerifyed } from "./helpers/createInstances";
 
@@ -27,7 +27,7 @@ contract("Issuance", async (accounts) => {
     let blockNo;
     let balanceOfReceiver;
     let message = "Transaction Should Fail!";
-    const TM_Perm = web3.utils.fromAscii("WHITELIST");
+    const TM_Perm = web3.utils.fromAscii("ADMIN");
     const delegateDetails = web3.utils.fromAscii("I am delegate");
     // investor Details
     let fromTime;

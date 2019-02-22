@@ -302,7 +302,7 @@ contract("GeneralPermissionManager", async (accounts) => {
 
         it("Should get the permission of the general permission manager contract", async () => {
             let tx = await I_GeneralPermissionManager.getPermissions.call();
-            assert.equal(web3.utils.toAscii(tx[0]).replace(/\u0000/g, ""), "CHANGE_PERMISSION", "Wrong permissions");
+            assert.equal(web3.utils.toAscii(tx[0]).replace(/\u0000/g, ""), "ADMIN", "Wrong permissions");
         });
 
         it("Should return all delegates", async () => {
@@ -381,7 +381,7 @@ contract("GeneralPermissionManager", async (accounts) => {
         it("Should successfully provide the permissions in batch -- failed because of array length is 0", async () => {
             await I_GeneralPermissionManager.addDelegate(account_delegate3, delegateDetails, { from: token_owner });
             await catchRevert(
-                I_GeneralPermissionManager.changePermissionMulti(account_delegate3, [], [web3.utils.fromAscii("WHITELIST"), web3.utils.fromAscii("CHANGE_PERMISSION")], [true, true], {
+                I_GeneralPermissionManager.changePermissionMulti(account_delegate3, [], [web3.utils.fromAscii("ADMIN"), web3.utils.fromAscii("ADMIN")], [true, true], {
                     from: token_owner
                 })
             );
@@ -404,7 +404,7 @@ contract("GeneralPermissionManager", async (accounts) => {
                 I_GeneralPermissionManager.changePermissionMulti(
                     account_delegate3,
                     [I_GeneralTransferManager.address],
-                    [web3.utils.fromAscii("WHITELIST"), web3.utils.fromAscii("CHANGE_PERMISSION")],
+                    [web3.utils.fromAscii("ADMIN"), web3.utils.fromAscii("ADMIN")],
                     [true, true],
                     { from: token_owner }
                 )
@@ -416,7 +416,7 @@ contract("GeneralPermissionManager", async (accounts) => {
                 I_GeneralPermissionManager.changePermissionMulti(
                     account_delegate3,
                     [I_GeneralTransferManager.address, I_GeneralPermissionManager.address],
-                    [web3.utils.fromAscii("WHITELIST"), web3.utils.fromAscii("CHANGE_PERMISSION")],
+                    [web3.utils.fromAscii("ADMIN"), web3.utils.fromAscii("ADMIN")],
                     [true],
                     { from: token_owner }
                 )
@@ -427,36 +427,36 @@ contract("GeneralPermissionManager", async (accounts) => {
             let tx = await I_GeneralPermissionManager.changePermissionMulti(
                 account_delegate3,
                 [I_GeneralTransferManager.address, I_GeneralPermissionManager.address],
-                [web3.utils.fromAscii("WHITELIST"), web3.utils.fromAscii("CHANGE_PERMISSION")],
+                [web3.utils.fromAscii("ADMIN"), web3.utils.fromAscii("ADMIN")],
                 [true, true],
                 { from: token_owner }
             );
             assert.equal(tx.logs[0].args._delegate, account_delegate3);
 
             assert.isTrue(
-                await I_GeneralPermissionManager.checkPermission.call(account_delegate3, I_GeneralTransferManager.address, web3.utils.fromAscii("WHITELIST"))
+                await I_GeneralPermissionManager.checkPermission.call(account_delegate3, I_GeneralTransferManager.address, web3.utils.fromAscii("ADMIN"))
             );
             assert.isTrue(
                 await I_GeneralPermissionManager.checkPermission.call(
                     account_delegate3,
                     I_GeneralPermissionManager.address,
-                    web3.utils.fromAscii("CHANGE_PERMISSION")
+                    web3.utils.fromAscii("ADMIN")
                 )
             );
         });
 
         it("Should provide all delegates with specified permission", async () => {
-            await I_GeneralPermissionManager.changePermission(account_delegate2, I_GeneralTransferManager.address, web3.utils.fromAscii("WHITELIST"), true, {
+            await I_GeneralPermissionManager.changePermission(account_delegate2, I_GeneralTransferManager.address, web3.utils.fromAscii("ADMIN"), true, {
                 from: token_owner
             });
-            let tx = await I_GeneralPermissionManager.getAllDelegatesWithPerm.call(I_GeneralTransferManager.address, web3.utils.fromAscii("WHITELIST"));
-            assert.equal(tx.length, 3);
-            assert.equal(tx[0], account_delegate);
-            assert.equal(tx[1], account_delegate2);
+            let tx = await I_GeneralPermissionManager.getAllDelegatesWithPerm.call(I_GeneralTransferManager.address, web3.utils.fromAscii("ADMIN"));
+            assert.equal(tx.length, 2);
+            assert.equal(tx[0], account_delegate2);
+            assert.equal(tx[1], account_delegate3);
         });
 
         it("Should get all delegates for the permission manager", async () => {
-            let tx = await I_GeneralPermissionManager.getAllDelegatesWithPerm.call(I_GeneralPermissionManager.address, web3.utils.fromAscii("CHANGE_PERMISSION"));
+            let tx = await I_GeneralPermissionManager.getAllDelegatesWithPerm.call(I_GeneralPermissionManager.address, web3.utils.fromAscii("ADMIN"));
             assert.equal(tx.length, 1);
             assert.equal(tx[0], account_delegate3);
         });
@@ -464,19 +464,19 @@ contract("GeneralPermissionManager", async (accounts) => {
         it("Should return all modules and all permission", async () => {
             let tx = await I_GeneralPermissionManager.getAllModulesAndPermsFromTypes.call(account_delegate3, [2, 1]);
             assert.equal(tx[0][0], I_GeneralTransferManager.address);
-            assert.equal(tx[1][0], "0x57484954454c4953540000000000000000000000000000000000000000000000");
+            assert.equal(web3.utils.hexToUtf8(tx[1][0]), "ADMIN");
             assert.equal(tx[0][1], I_GeneralPermissionManager.address);
-            assert.equal(tx[1][1], "0x4348414e47455f5045524d495353494f4e000000000000000000000000000000");
+            assert.equal(web3.utils.hexToUtf8(tx[1][1]), "ADMIN");
         });
     });
 
     describe("General Permission Manager Factory test cases", async () => {
         it("should get the exact details of the factory", async () => {
-            assert.equal(await I_GeneralPermissionManagerFactory.getSetupCost.call(), 0);
-            assert.equal((await I_GeneralPermissionManagerFactory.getTypes.call())[0], 1);
-            assert.equal(await I_GeneralPermissionManagerFactory.version.call(), "1.0.0");
+            assert.equal(await I_GeneralPermissionManagerFactory.setupCost.call(), 0);
+            assert.equal((await I_GeneralPermissionManagerFactory.types.call())[0], 1);
+            assert.equal(await I_GeneralPermissionManagerFactory.version.call(), "3.0.0");
             assert.equal(
-                web3.utils.toAscii(await I_GeneralPermissionManagerFactory.getName.call()).replace(/\u0000/g, ""),
+                web3.utils.toAscii(await I_GeneralPermissionManagerFactory.name.call()).replace(/\u0000/g, ""),
                 "GeneralPermissionManager",
                 "Wrong Module added"
             );
@@ -486,21 +486,12 @@ contract("GeneralPermissionManager", async (accounts) => {
                 "Wrong Module added"
             );
             assert.equal(await I_GeneralPermissionManagerFactory.title.call(), "General Permission Manager", "Wrong Module added");
-            assert.equal(
-                await I_GeneralPermissionManagerFactory.getInstructions.call(),
-                "Add and remove permissions for the SecurityToken and associated modules. Permission types should be encoded as bytes32 values and attached using withPerm modifier to relevant functions. No initFunction required.",
-                "Wrong Module added"
-            );
         });
 
         it("Should get the tags of the factory", async () => {
-            let tags = await I_GeneralPermissionManagerFactory.getTags.call();
+            let tags = await I_GeneralPermissionManagerFactory.tags.call();
             assert.equal(tags.length, 0);
         });
 
-        it("Should ge the version of the factory", async () => {
-            let version = await I_GeneralPermissionManagerFactory.version.call();
-            assert.equal(version, "1.0.0");
-        });
     });
 });

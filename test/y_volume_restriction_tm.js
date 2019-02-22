@@ -1671,9 +1671,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
     describe("VolumeRestriction Transfer Manager Factory test cases", async() => {
 
         it("Should get the exact details of the factory", async() => {
-            assert.equal(await I_VolumeRestrictionTMFactory.getSetupCost.call(),0);
-            assert.equal((await I_VolumeRestrictionTMFactory.getTypes.call())[0],2);
-            assert.equal(web3.utils.toAscii(await I_VolumeRestrictionTMFactory.getName.call())
+            assert.equal(await I_VolumeRestrictionTMFactory.setupCost.call(),0);
+            assert.equal((await I_VolumeRestrictionTMFactory.types.call())[0],2);
+            assert.equal(web3.utils.toAscii(await I_VolumeRestrictionTMFactory.name.call())
                         .replace(/\u0000/g, ''),
                         "VolumeRestrictionTM",
                         "Wrong Module added");
@@ -1683,14 +1683,11 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal(await I_VolumeRestrictionTMFactory.title.call(),
                         "Volume Restriction Transfer Manager",
                         "Wrong Module added");
-            assert.equal(await I_VolumeRestrictionTMFactory.getInstructions.call(),
-                        "Module used to restrict the volume of tokens traded by the token holders",
-                        "Wrong Module added");
-            assert.equal(await I_VolumeRestrictionTMFactory.version.call(), "1.0.0");
+            assert.equal(await I_VolumeRestrictionTMFactory.version.call(), "3.0.0");
         });
 
         it("Should get the tags of the factory", async() => {
-            let tags = await I_VolumeRestrictionTMFactory.getTags.call();
+            let tags = await I_VolumeRestrictionTMFactory.tags.call();
             assert.equal(tags.length, 5);
             assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ''), "Maximum Volume");
         });

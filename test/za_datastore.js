@@ -1,6 +1,6 @@
 import latestTime from "./helpers/latestTime";
 import { catchRevert } from "./helpers/exceptions";
-import takeSnapshot, { increaseTime, revertToSnapshot } from "./helpers/time";
+import { takeSnapshot, increaseTime, revertToSnapshot } from "./helpers/time";
 import { setUpPolymathNetwork } from "./helpers/createInstances";
 const SecurityToken = artifacts.require("./SecurityToken.sol");
 const DataStore = artifacts.require("./DataStore.sol");

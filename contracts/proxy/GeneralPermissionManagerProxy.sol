@@ -1,6 +1,6 @@
 pragma solidity ^0.5.0;
 
-import "./OwnedProxy.sol";
+import "./OwnedUpgradeabilityProxy.sol";
 import "../Pausable.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "../storage/modules/ModuleStorage.sol";
@@ -9,7 +9,7 @@ import "../storage/modules/PermissionManager/GeneralPermissionManagerStorage.sol
 /**
  * @title GeneralPermissionManager module Proxy
  */
-contract GeneralPermissionManagerProxy is GeneralPermissionManagerStorage, ModuleStorage, Pausable, ReentrancyGuard, OwnedProxy {
+contract GeneralPermissionManagerProxy is GeneralPermissionManagerStorage, ModuleStorage, Pausable, ReentrancyGuard, OwnedUpgradeabilityProxy {
 
     /**
     * @notice Constructor
@@ -18,8 +18,9 @@ contract GeneralPermissionManagerProxy is GeneralPermissionManagerStorage, Modul
     * @param _implementation representing the address of the new implementation to be set
     */
     constructor (
-        address _securityToken, 
-        address _polyAddress, 
+        string memory _version,
+        address _securityToken,
+        address _polyAddress,
         address _implementation
     )
         public
@@ -29,7 +30,7 @@ contract GeneralPermissionManagerProxy is GeneralPermissionManagerStorage, Modul
             _implementation != address(0),
             "Implementation address should not be 0x"
         );
-        __implementation = _implementation;
+        _upgradeTo(_version, _implementation);
     }
 
 }

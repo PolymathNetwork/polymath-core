@@ -5,6 +5,9 @@ pragma solidity ^0.5.0;
  */
 contract VestingEscrowWalletStorage {
     
+    // Permission flag
+    bytes32 constant OPERATOR = "OPERATOR";
+    
     struct Schedule {
         // Name of the template
         bytes32 templateName;

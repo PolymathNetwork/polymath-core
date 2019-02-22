@@ -1119,7 +1119,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
             let data = await I_Getter.getSecurityTokenData.call(I_SecurityToken.address);
             assert.equal(data[0], symbol);
             assert.equal(data[1], token_owner);
-            assert.equal(data[4][0], 2);
+            assert.equal(data[4][0], 3);
             assert.equal(data[4][1], 0);
             assert.equal(data[4][2], 0);
         });

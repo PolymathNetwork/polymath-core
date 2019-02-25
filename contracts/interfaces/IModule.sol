@@ -17,6 +17,6 @@ interface IModule {
     /**
      * @notice Used to withdraw the fee by the factory owner
      */
-    function takeFee(uint256 _amount) external returns(bool);
+    function takeUsageFee() external returns(bool);
 
 }

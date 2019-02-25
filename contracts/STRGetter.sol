@@ -1,10 +1,13 @@
 pragma solidity ^0.5.0;
 
 import "./storage/EternalStorage.sol";
+import "./interfaces/ISecurityToken.sol";
 import "./libraries/Util.sol";
 import "./libraries/Encoder.sol";
 import "./interfaces/IOwnable.sol";
 import "./libraries/VersionUtils.sol";
+import "./interfaces/ISecurityToken.sol";
+import "./modules/PermissionManager/IPermissionManager.sol";
 
 contract STRGetter is EternalStorage {
 
@@ -17,28 +20,33 @@ contract STRGetter is EternalStorage {
      * @param _owner is the address which owns the list of tickers
      */
     function getTickersByOwner(address _owner) external view returns(bytes32[] memory) {
-        uint counter = 0;
+        uint256 count = 0;
         // accessing the data structure userTotickers[_owner].length
         bytes32[] memory tickers = getArrayBytes32(Encoder.getKey("userToTickers", _owner));
         uint i;
         for (i = 0; i < tickers.length; i++) {
-            string memory ticker = Util.bytes32ToString(tickers[i]);
-            /*solium-disable-next-line security/no-block-members*/
-            if (getUintValue(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now || getTickerStatus(ticker)) {
-                counter ++;
+            if (_ownerInTicker(tickers[i])) {
+                count++;
             }
         }
-        bytes32[] memory tempList = new bytes32[](counter);
-        counter = 0;
+        bytes32[] memory result = new bytes32[](count);
+        count = 0;
         for (i = 0; i < tickers.length; i++) {
-            string memory ticker = Util.bytes32ToString(tickers[i]);
-            /*solium-disable-next-line security/no-block-members*/
-            if (getUintValue(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now || getTickerStatus(ticker)) {
-                tempList[counter] = tickers[i];
-                counter ++;
+            if (_ownerInTicker(tickers[i])) {
+                result[count] = tickers[i];
+                count++;
             }
         }
-        return tempList;
+        return result;
+    }
+
+    function _ownerInTicker(bytes32 _ticker) internal view returns (bool) {
+        string memory ticker = Util.bytes32ToString(_ticker);
+        /*solium-disable-next-line security/no-block-members*/
+        if (getUintValue(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now || getBoolValue(Encoder.getKey("registeredTickers_status", ticker))) {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -54,7 +62,7 @@ contract STRGetter is EternalStorage {
      * @notice Returns the list of all tokens
      * @dev Intention is that this is called off-chain so block gas limit is not relevant
      */
-    function getTokens() external view returns(address[] memory) {
+    function getTokens() public view returns(address[] memory) {
         return _getTokens(true, address(0));
     }
     /**
@@ -67,36 +75,84 @@ contract STRGetter is EternalStorage {
         // This ensures we find tokens, even if their owner has been modified
         address[] memory activeUsers = getArrayAddress(Encoder.getKey("activeUsers"));
         bytes32[] memory tickers;
-        address token;
         uint256 count = 0;
         uint256 i = 0;
         uint256 j = 0;
         for (i = 0; i < activeUsers.length; i++) {
             tickers = getArrayBytes32(Encoder.getKey("userToTickers", activeUsers[i]));
             for (j = 0; j < tickers.length; j++) {
-                token = getAddressValue(Encoder.getKey("tickerToSecurityToken", Util.bytes32ToString(tickers[j])));
-                if (token != address(0)) {
-                    if (_allTokens || IOwnable(token).owner() == _owner) {
-                        count = count + 1;
-                    }
+                if (address(0) != _ownerInToken(tickers[j], _allTokens, _owner)) {
+                    count++;
                 }
             }
         }
-        uint256 index = 0;
         address[] memory result = new address[](count);
+        count = 0;
+        address token;
         for (i = 0; i < activeUsers.length; i++) {
             tickers = getArrayBytes32(Encoder.getKey("userToTickers", activeUsers[i]));
             for (j = 0; j < tickers.length; j++) {
-                token = getAddressValue(Encoder.getKey("tickerToSecurityToken", Util.bytes32ToString(tickers[j])));
-                if (token != address(0)) {
-                    if (_allTokens || IOwnable(token).owner() == _owner) {
-                        result[index] = token;
-                        index = index + 1;
-                    }
+                token = _ownerInToken(tickers[j], _allTokens, _owner);
+                if (address(0) != token) {
+                    result[count] = token;
+                    count++;
                 }
             }
         }
         return result;
+    }
+
+    function _ownerInToken(bytes32 _ticker, bool _allTokens, address _owner) internal view returns(address) {
+        address token = getAddressValue(Encoder.getKey("tickerToSecurityToken", Util.bytes32ToString(_ticker)));
+        if (token != address(0)) {
+            if (_allTokens || IOwnable(token).owner() == _owner) {
+                return token;
+            }
+        }
+        return address(0);
+    }
+
+    /**
+     * @notice Returns the list of tokens to which the delegate has some access
+     * @param _delegate is the address for the delegate
+     * @dev Intention is that this is called off-chain so block gas limit is not relevant
+     */
+    function getTokensByDelegate(address _delegate) external view returns(address[] memory) {
+        // Loop over all active users, then all associated tickers of those users
+        // This ensures we find tokens, even if their owner has been modified
+        address[] memory tokens = getTokens();
+        uint256 count = 0;
+        uint256 i = 0;
+        for (i = 0; i < tokens.length; i++) {
+            if (_delegateInToken(tokens[i], _delegate)) {
+                count++;
+            }
+        }
+        address[] memory result = new address[](count);
+        count = 0;
+        for (i = 0; i < tokens.length; i++) {
+            if (_delegateInToken(tokens[i], _delegate)) {
+                result[count] = tokens[i];
+                count++;
+            }
+        }
+        return result;
+    }
+
+    function _delegateInToken(address _token, address _delegate) internal view returns(bool) {
+        uint256 j = 0;
+        address[] memory permissionManagers;
+        bool isArchived;
+        permissionManagers = ISecurityToken(_token).getModulesByType(1);
+        for (j = 0; j < permissionManagers.length; j++) {
+            (,,, isArchived,,) = ISecurityToken(_token).getModule(permissionManagers[j]);
+            if (!isArchived) {
+                if (IPermissionManager(permissionManagers[j]).checkDelegate(_delegate)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -144,13 +200,15 @@ contract STRGetter is EternalStorage {
     * @return address is the issuer of the security Token.
     * @return string is the details of the security token.
     * @return uint256 is the timestamp at which security Token was deployed.
+    * @return version of the securityToken
     */
-    function getSecurityTokenData(address _securityToken) external view returns (string memory, address, string memory, uint256) {
+    function getSecurityTokenData(address _securityToken) external view returns (string memory, address, string memory, uint256, uint8[] memory) {
         return (
             getStringValue(Encoder.getKey("securityTokens_ticker", _securityToken)),
             IOwnable(_securityToken).owner(),
             getStringValue(Encoder.getKey("securityTokens_tokenDetails", _securityToken)),
-            getUintValue(Encoder.getKey("securityTokens_deployedAt", _securityToken))
+            getUintValue(Encoder.getKey("securityTokens_deployedAt", _securityToken)),
+            ISecurityToken(_securityToken).getVersion()
         );
     }
 

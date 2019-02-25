@@ -23,7 +23,8 @@ contract STO is ISTO, STOStorage, Module, Pausable {
     * @dev We duplicate here due to the overriden owner & onlyOwner
     * @param _tokenContract The address of the token contract
     */
-    function reclaimERC20(address _tokenContract) external onlyOwner {
+    function reclaimERC20(address _tokenContract) external {
+        _onlySecurityTokenOwner();
         require(_tokenContract != address(0), "Invalid address");
         IERC20 token = IERC20(_tokenContract);
         uint256 balance = token.balanceOf(address(this));
@@ -45,7 +46,8 @@ contract STO is ISTO, STOStorage, Module, Pausable {
     /**
      * @notice Pause (overridden function)
      */
-    function pause() public onlyOwner {
+    function pause() public {
+        _onlySecurityTokenOwner();
         /*solium-disable-next-line security/no-block-members*/
         require(now < endTime, "STO has been finalized");
         super._pause();
@@ -54,7 +56,8 @@ contract STO is ISTO, STOStorage, Module, Pausable {
     /**
      * @notice Unpause (overridden function)
      */
-    function unpause() public onlyOwner {
+    function unpause() public {
+        _onlySecurityTokenOwner();
         super._unpause();
     }
 

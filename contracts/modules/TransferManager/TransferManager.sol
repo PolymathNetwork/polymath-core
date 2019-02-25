@@ -8,20 +8,22 @@ import "../../interfaces/ITransferManager.sol";
  * @title Base abstract contract to be implemented by all Transfer Manager modules
  */
 contract TransferManager is ITransferManager, Module, Pausable {
-    
-    bytes32 public constant LOCKED = "LOCKED";
-    bytes32 public constant UNLOCKED = "UNLOCKED";
 
-    modifier onlySecurityToken() {
-        require(msg.sender == securityToken, "Sender is not owner");
-        _;
-    }
-    
-    function unpause() public onlyOwner {
+  bytes32 public constant LOCKED = "LOCKED";
+  bytes32 public constant UNLOCKED = "UNLOCKED";
+
+  modifier onlySecurityToken() {
+      require(msg.sender == securityToken, "Sender is not owner");
+      _;
+  }
+
+  function unpause() public {
+        _onlySecurityTokenOwner();
         super._unpause();
     }
 
-    function pause() public onlyOwner {
+    function pause() public {
+        _onlySecurityTokenOwner();
         super._pause();
     }
 }

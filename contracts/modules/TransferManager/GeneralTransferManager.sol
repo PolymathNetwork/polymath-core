@@ -72,7 +72,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
      * @param _defaultFromTime default for zero fromTime
      * @param _defaultToTime default for zero toTime
      */
-    function changeDefaults(uint64 _defaultFromTime, uint64 _defaultToTime) public withPerm(FLAGS) {
+    function changeDefaults(uint64 _defaultFromTime, uint64 _defaultToTime) public withPerm(ADMIN) {
         defaults.fromTime = _defaultFromTime;
         defaults.toTime = _defaultToTime;
         emit ChangeDefaults(_defaultFromTime, _defaultToTime);
@@ -82,7 +82,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
      * @notice Used to change the Issuance Address
      * @param _issuanceAddress new address for the issuance
      */
-    function changeIssuanceAddress(address _issuanceAddress) public withPerm(FLAGS) {
+    function changeIssuanceAddress(address _issuanceAddress) public withPerm(ADMIN) {
         issuanceAddress = _issuanceAddress;
         emit ChangeIssuanceAddress(_issuanceAddress);
     }
@@ -91,7 +91,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
      * @notice Used to change the Sigining Address
      * @param _signingAddress new address for the signing
      */
-    function changeSigningAddress(address _signingAddress) public withPerm(FLAGS) {
+    function changeSigningAddress(address _signingAddress) public withPerm(ADMIN) {
         signingAddress = _signingAddress;
         emit ChangeSigningAddress(_signingAddress);
     }
@@ -102,7 +102,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
             false - It refers transfers are restricted for all addresses.
      * @param _allowAllTransfers flag value
      */
-    function changeAllowAllTransfers(bool _allowAllTransfers) public withPerm(FLAGS) {
+    function changeAllowAllTransfers(bool _allowAllTransfers) public withPerm(ADMIN) {
         allowAllTransfers = _allowAllTransfers;
         emit AllowAllTransfers(_allowAllTransfers);
     }
@@ -113,7 +113,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
             false - It refers transfers are restricted for all addresses.
      * @param _allowAllWhitelistTransfers flag value
      */
-    function changeAllowAllWhitelistTransfers(bool _allowAllWhitelistTransfers) public withPerm(FLAGS) {
+    function changeAllowAllWhitelistTransfers(bool _allowAllWhitelistTransfers) public withPerm(ADMIN) {
         allowAllWhitelistTransfers = _allowAllWhitelistTransfers;
         emit AllowAllWhitelistTransfers(_allowAllWhitelistTransfers);
     }
@@ -124,7 +124,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
             false - It refers transfers are restricted for all addresses.
      * @param _allowAllWhitelistIssuances flag value
      */
-    function changeAllowAllWhitelistIssuances(bool _allowAllWhitelistIssuances) public withPerm(FLAGS) {
+    function changeAllowAllWhitelistIssuances(bool _allowAllWhitelistIssuances) public withPerm(ADMIN) {
         allowAllWhitelistIssuances = _allowAllWhitelistIssuances;
         emit AllowAllWhitelistIssuances(_allowAllWhitelistIssuances);
     }
@@ -135,7 +135,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
             false - It deactivate the burning mechanism.
      * @param _allowAllBurnTransfers flag value
      */
-    function changeAllowAllBurnTransfers(bool _allowAllBurnTransfers) public withPerm(FLAGS) {
+    function changeAllowAllBurnTransfers(bool _allowAllBurnTransfers) public withPerm(ADMIN) {
         allowAllBurnTransfers = _allowAllBurnTransfers;
         emit AllowAllBurnTransfers(_allowAllBurnTransfers);
     }
@@ -261,7 +261,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         uint256 _expiryTime
     )
         public
-        withPerm(WHITELIST)
+        withPerm(ADMIN)
     {
         _modifyKYCData(_investor, _fromTime, _toTime, _expiryTime);
     }
@@ -291,7 +291,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         uint256[] memory _expiryTime
     )
         public
-        withPerm(WHITELIST)
+        withPerm(ADMIN)
     {
         require(
             _investors.length == _fromTime.length &&
@@ -317,7 +317,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         bool _value
     )
         public
-        withPerm(WHITELIST)
+        withPerm(ADMIN)
     {
         _modifyInvestorFlag(_investor, _flag, _value);
     }
@@ -353,7 +353,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         bool[] memory _value
     )
         public
-        withPerm(WHITELIST)
+        withPerm(ADMIN)
     {
         require(
             _investors.length == _flag.length &&
@@ -588,9 +588,8 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
      * @notice Return the permissions flag that are associated with general trnasfer manager
      */
     function getPermissions() public view returns(bytes32[] memory) {
-        bytes32[] memory allPermissions = new bytes32[](2);
-        allPermissions[0] = WHITELIST;
-        allPermissions[1] = FLAGS;
+        bytes32[] memory allPermissions = new bytes32[](1);
+        allPermissions[0] = ADMIN;
         return allPermissions;
     }
 

@@ -5,8 +5,6 @@ pragma solidity ^0.5.0;
  */
 contract DummySTOStorage {
 
-    bytes32 public constant ADMIN = "ADMIN";
-
     uint256 public investorCount;
 
     uint256 public cap;

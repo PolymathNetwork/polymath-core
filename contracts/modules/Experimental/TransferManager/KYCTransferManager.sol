@@ -13,8 +13,6 @@ contract KYCTransferManager is TransferManager {
     
     bytes32 public constant KYC_NUMBER = "KYC_NUMBER"; //We will standardize what key to use for what.
 
-    bytes32 public constant KYC_PROVIDER = "KYC_PROVIDER";
-
     bytes32 public constant KYC_ARRAY = "KYC_ARRAY";
 
     /**
@@ -50,7 +48,7 @@ contract KYCTransferManager is TransferManager {
         return (Result.NA, bytes32(0));
     } 
 
-    function modifyKYC( address _investor, bool _kycStatus) public withPerm(KYC_PROVIDER) {
+    function modifyKYC( address _investor, bool _kycStatus) public withPerm(ADMIN) {
         _modifyKYC(_investor, _kycStatus);
     }
 
@@ -75,15 +73,6 @@ contract KYCTransferManager is TransferManager {
         //I am maintaining the array to showcase how it can be done in cases where it might be needed.
     }
 
-    /**
-     * @notice Return the permissions flag that are associated with general trnasfer manager
-     */
-    function getPermissions() public view returns(bytes32[] memory) {
-        bytes32[] memory allPermissions = new bytes32[](1);
-        allPermissions[0] = KYC_PROVIDER;
-        return allPermissions;
-    }
-
     function getKYCAddresses() public view returns(address[] memory) {
         IDataStore dataStore = IDataStore(ISecurityToken(securityToken).dataStore());
         return dataStore.getAddressArray(KYC_ARRAY);
@@ -98,6 +87,16 @@ contract KYCTransferManager is TransferManager {
 
     function _getKYCKey(address _identity) internal pure returns(bytes32) {
         return bytes32(keccak256(abi.encodePacked(KYC_NUMBER, _identity)));
+    }
+
+    /**
+     * @notice Return the permissions flag that are associated with this module
+     * @return bytes32 array
+     */
+    function getPermissions() public view returns(bytes32[] memory) {
+        bytes32[] memory allPermissions = new bytes32[](1);
+        allPermissions[0] = ADMIN;
+        return allPermissions;
     }
 
     /**

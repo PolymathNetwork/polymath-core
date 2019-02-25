@@ -83,7 +83,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     // Emit when network becomes unpaused
     event Unpause(address account);
     // Emit when the ticker is removed from the registry
-    event TickerRemoved(string _ticker, uint256 _removedAt, address _removedBy);
+    event TickerRemoved(string _ticker, address _removedBy);
     // Emit when the token ticker expiry is changed
     event ChangeExpiryLimit(uint256 _oldExpiry, uint256 _newExpiry);
     // Emit when changeSecurityLaunchFee is called
@@ -367,7 +367,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         set(Encoder.getKey("tickerToSecurityToken", ticker), address(0));
         _storeTickerDetails(ticker, address(0), 0, 0, "", false);
         /*solium-disable-next-line security/no-block-members*/
-        emit TickerRemoved(ticker, now, msg.sender);
+        emit TickerRemoved(ticker, msg.sender);
     }
 
     /**

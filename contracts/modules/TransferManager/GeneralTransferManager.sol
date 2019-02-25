@@ -159,26 +159,26 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         if (_data.length > 32) {
             address target;
             uint256 nonce;
+            uint256 validFrom;
             uint256 validTo;
             bytes memory data;
-            (target, nonce, validTo, data) = abi.decode(_data, (address, uint256, uint256, bytes));
+            (target, nonce, validFrom, validTo, data) = abi.decode(_data, (address, uint256, uint256, uint256, bytes));
             if (target == address(this))
-                _processTransferSignature(nonce, validTo, data);
+                _processTransferSignature(nonce, validFrom, validTo, data);
         }
         (Result success,) = verifyTransfer(_from, _to, _amount, _data);
         return success;
     }
 
-    function _processTransferSignature(uint256 _nonce, uint256 _validTo, bytes memory _data) internal {
+    function _processTransferSignature(uint256 _nonce, uint256 _validFrom, uint256 _validTo, bytes memory _data) internal {
         address investor;
         uint256 fromTime;
         uint256 toTime;
         uint256 expiryTime;
-        uint256 validFrom;
         bytes memory signature;
-        (investor, fromTime, toTime, expiryTime, validFrom, signature) =
-            abi.decode(_data, (address, uint256, uint256, uint256, uint256, bytes));
-        _modifyKYCDataSigned(investor, fromTime, toTime, expiryTime, validFrom, _validTo, _nonce, signature);
+        (investor, fromTime, toTime, expiryTime, signature) =
+            abi.decode(_data, (address, uint256, uint256, uint256, bytes));
+        _modifyKYCDataSigned(investor, fromTime, toTime, expiryTime, _validFrom, _validTo, _nonce, signature);
     }
 
 

@@ -51,10 +51,11 @@ contract SignedTransferManager is TransferManager {
     function checkSignatureValidity(bytes calldata _data) external view returns(bool) {
         address targetAddress;
         uint256 nonce;
+        uint256 validFrom;
         uint256 expiry;
         bytes memory signature;
-        (targetAddress, nonce, expiry, signature) = abi.decode(_data, (address, uint256, uint256, bytes));
-        if (targetAddress != address(this) || expiry < now || signature.length == 0 || _checkSignatureIsInvalid(signature))
+        (targetAddress, nonce, validFrom, expiry, signature) = abi.decode(_data, (address, uint256, uint256, uint256, bytes));
+        if (targetAddress != address(this) || expiry < now || validFrom > now || signature.length == 0 || _checkSignatureIsInvalid(signature))
             return false;
         return true;
     }
@@ -91,7 +92,7 @@ contract SignedTransferManager is TransferManager {
         (Result success, ) = verifyTransfer(_from, _to, _amount, _data);
         if (success == Result.VALID && _data.length > 32) {
             bytes memory signature;
-            (,,,signature) = abi.decode(_data, (address, uint256, uint256, bytes));
+            (,,,,signature) = abi.decode(_data, (address, uint256, uint256, uint256, bytes));
             _invalidateSignature(signature);
         }
         return success;
@@ -109,19 +110,20 @@ contract SignedTransferManager is TransferManager {
     function verifyTransfer(address _from, address _to, uint256 _amount, bytes memory _data) public view returns(Result, bytes32) {
         if (!paused) {
 
-            if (_data.length == 0)
+            if (_data.length <= 32)
                 return (Result.NA, bytes32(0));
 
             address targetAddress;
             uint256 nonce;
+            uint256 validFrom;
             uint256 expiry;
             bytes memory signature;
-            (targetAddress, nonce, expiry, signature) = abi.decode(_data, (address, uint256, uint256, bytes));
+            (targetAddress, nonce, validFrom, expiry, signature) = abi.decode(_data, (address, uint256, uint256, uint256, bytes));
 
-            if (address(this) != targetAddress || signature.length == 0 || _checkSignatureIsInvalid(signature) || expiry < now)
+            if (address(this) != targetAddress || signature.length == 0 || _checkSignatureIsInvalid(signature) || expiry < now || validFrom > now)
                 return (Result.NA, bytes32(0));
 
-            bytes32 hash = keccak256(abi.encodePacked(targetAddress, nonce, expiry, _from, _to, _amount));
+            bytes32 hash = keccak256(abi.encodePacked(targetAddress, nonce, validFrom, expiry, _from, _to, _amount));
             address signer = hash.toEthSignedMessageHash().recover(signature);
 
             if (!_checkSigner(signer))
@@ -145,14 +147,15 @@ contract SignedTransferManager is TransferManager {
 
         address targetAddress;
         uint256 nonce;
+        uint256 validFrom;
         uint256 expiry;
         bytes memory signature;
-        (targetAddress, nonce, expiry, signature) = abi.decode(_data, (address, uint256, uint256, bytes));
+        (targetAddress, nonce, validFrom, expiry, signature) = abi.decode(_data, (address, uint256, uint256, uint256, bytes));
 
         require(!_checkSignatureIsInvalid(signature), "Signature already invalid");
         require(targetAddress == address(this), "Signature not for this module");
 
-        bytes32 hash = keccak256(abi.encodePacked(targetAddress, nonce, expiry, _from, _to, _amount));
+        bytes32 hash = keccak256(abi.encodePacked(targetAddress, nonce, validFrom, expiry, _from, _to, _amount));
         require(hash.toEthSignedMessageHash().recover(signature) == msg.sender, "Incorrect Signer");
 
         _invalidateSignature(signature);

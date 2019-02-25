@@ -69,6 +69,7 @@ contract("SignedTransferManager", accounts => {
     const initRegFee = web3.utils.toWei("1000");
 
     let currentTime;
+    let validFrom = new BN(0);
 
     before(async () => {
         // Accounts setup
@@ -231,6 +232,7 @@ contract("SignedTransferManager", accounts => {
             let data = await getSignSTMData(
                 I_SignedTransferManager.address,
                 nonce,
+                validFrom,
                 expiry,
                 account_investor1,
                 account_investor2,
@@ -252,6 +254,7 @@ contract("SignedTransferManager", accounts => {
             let data = await getSignSTMData(
                 I_SignedTransferManager.address,
                 nonce,
+                validFrom,
                 expiry,
                 account_investor1,
                 account_investor2,
@@ -283,6 +286,7 @@ contract("SignedTransferManager", accounts => {
             let data = await getSignSTMData(
                 I_SignedTransferManager.address,
                 nonce,
+                validFrom,
                 expiry,
                 account_investor1,
                 account_investor2,

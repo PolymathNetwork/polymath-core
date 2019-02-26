@@ -18,7 +18,7 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
     using SafeMath for uint256;
 
     event ModifyHolderPercentage(uint256 _oldHolderPercentage, uint256 _newHolderPercentage);
-    event ModifyWhitelist(address _investor, uint256 _dateAdded, address _addedBy, bool _valid);
+    event ModifyWhitelist(address _investor, address _addedBy, bool _valid);
     event SetAllowPrimaryIssuance(bool _allowPrimaryIssuance);
 
     /**
@@ -116,7 +116,7 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
     function modifyWhitelist(address _investor, bool _valid) public withPerm(ADMIN) {
         whitelist[_investor] = _valid;
         /*solium-disable-next-line security/no-block-members*/
-        emit ModifyWhitelist(_investor, now, msg.sender, _valid);
+        emit ModifyWhitelist(_investor, msg.sender, _valid);
     }
 
     /**

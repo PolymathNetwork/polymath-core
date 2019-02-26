@@ -12,7 +12,6 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
     event EtherDividendDeposited(
         address indexed _depositor,
         uint256 _checkpointId,
-        uint256 _created,
         uint256 _maturity,
         uint256 _expiry,
         uint256 _amount,
@@ -157,7 +156,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         }
         dividends[dividendIndex].totalSupply = currentSupply.sub(excludedSupply);
         /*solium-disable-next-line security/no-block-members*/
-        emit EtherDividendDeposited(msg.sender, _checkpointId, now, _maturity, _expiry, msg.value, currentSupply, dividendIndex, _name);
+        emit EtherDividendDeposited(msg.sender, _checkpointId, _maturity, _expiry, msg.value, currentSupply, dividendIndex, _name);
     }
 
     /**

@@ -103,6 +103,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
      * @param _allowAllTransfers flag value
      */
     function changeAllowAllTransfers(bool _allowAllTransfers) public withPerm(ADMIN) {
+        //set all requirements accross all tx type to 0 to do this.
         allowAllTransfers = _allowAllTransfers;
         emit AllowAllTransfers(_allowAllTransfers);
     }
@@ -175,52 +176,58 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         address _to,
         uint256, /*_amount*/
         bytes memory /* _data */
-    ) 
+    )
         public
         view
         returns(Result, bytes32)
     {
-        Result success;
         if (!paused) {
+            uint256 transactionType; //default is 0. i.e. general tx.
             uint64 fromTime;
             uint64 fromExpiry;
             uint64 toExpiry;
             uint64 toTime;
-            if (allowAllTransfers) {
-                //All transfers allowed, regardless of whitelist
-                return (Result.VALID, getAddressBytes32());
+
+            if (_from == issuanceAddress) {
+                transactionType = 1;
+            } else if (_to == address(0)) {
+                transactionType = 2;
             }
-            if (allowAllBurnTransfers && (_to == address(0))) {
-                return (Result.VALID, getAddressBytes32());
-            }
+
+            TransferRequirements memory txReq = transferRequirements[transactionType];
 
             (fromTime, fromExpiry, toTime, toExpiry) = _getValuesForTransfer(_from, _to);
 
-            if (allowAllWhitelistTransfers) {
-                //Anyone on the whitelist can transfer, regardless of time
-                success = (_validExpiry(toExpiry) && _validExpiry(fromExpiry)) ? Result.VALID : Result.NA;
-                return (success, success == Result.VALID ? getAddressBytes32() : bytes32(0));
-            }
-            // Using the local variables to avoid the stack too deep error
-            (fromTime, toTime) = _adjustTimes(fromTime, toTime);
-            if (_from == issuanceAddress) {
-                // if allowAllWhitelistIssuances is true, so time stamp ignored
-                if (allowAllWhitelistIssuances) {
-                    success = _validExpiry(toExpiry) ? Result.VALID : Result.NA;
-                    return (success, success == Result.VALID ? getAddressBytes32() : bytes32(0));
-                } else {
-                    success = (_validExpiry(toExpiry) && _validLockTime(toTime)) ? Result.VALID : Result.NA;
-                    return (success, success == Result.VALID ? getAddressBytes32() : bytes32(0));
-                }
+            if ((txReq.fromValidKYC && !_validExpiry(fromExpiry)) || (txReq.toValidKYC && !_validExpiry(toExpiry))) {
+                return (Result.NA, bytes32(0));
             }
 
-            //Anyone on the whitelist can transfer provided the blocknumber is large enough
-            /*solium-disable-next-line security/no-block-members*/
-            success = (_validExpiry(fromExpiry) && _validLockTime(fromTime) && _validExpiry(toExpiry) &&
-                _validLockTime(toTime)) ? Result.VALID : Result.NA; /*solium-disable-line security/no-block-members*/
-            return (success, success == Result.VALID ? getAddressBytes32() : bytes32(0));
+            (fromTime, toTime) = _adjustTimes(fromTime, toTime);
+
+            if ((txReq.fromRestricted && !_validLockTime(fromTime)) || (txReq.toRestricted && !_validLockTime(toTime))) {
+                return (Result.NA, bytes32(0));
+            }
+
+            return (Result.VALID, getAddressBytes32());
         }
         return (Result.NA, bytes32(0));
+    }
+
+    function modifyTransferRequirements(
+        uint256 _transferType,
+        bool _fromValidKYC,
+        bool _toValidKYC,
+        bool _fromRestricted,
+        bool _toRestricted
+    ) public withPerm(ADMIN) {
+        // TODO: Add multi function for this.
+        transferRequirements[_transferType] =
+            TransferRequirements(
+                _fromValidKYC,
+                _toValidKYC,
+                _fromRestricted,
+                _toRestricted
+            );
     }
 
 
@@ -528,7 +535,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
      */
     function getTokensByPartition(address /*_owner*/, bytes32 /*_partition*/) external view returns(uint256){
         return 0;
-    } 
+    }
 
     /**
      * @notice Return the permissions flag that are associated with general trnasfer manager
@@ -540,7 +547,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     }
 
     function getAddressBytes32() public view returns(bytes32) {
-        return bytes32(uint256(address(this)) << 96); 
+        return bytes32(uint256(address(this)) << 96);
     }
 
 }

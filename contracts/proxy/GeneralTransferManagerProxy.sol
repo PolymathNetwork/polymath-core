@@ -26,6 +26,7 @@ contract GeneralTransferManagerProxy is GeneralTransferManagerStorage, ModuleSto
     {
         require(_implementation != address(0), "Implementation address should not be 0x");
         _upgradeTo(_version, _implementation);
+        _setDefaults();
     }
 
 }

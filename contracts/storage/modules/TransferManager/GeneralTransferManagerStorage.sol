@@ -47,4 +47,23 @@ contract GeneralTransferManagerStorage {
     //If true, time lock is ignored for burn transactions
     bool public allowAllBurnTransfers = false;
 
+    struct TransferRequirements {
+        bool fromValidKYC;
+        bool toValidKYC;
+        bool fromRestricted;
+        bool toRestricted;
+    }
+
+    mapping(uint256 => TransferRequirements) public transferRequirements;
+    // General = 0, Issuance = 1, Redemption = 2
+
+    /**
+    * @dev This function sets the default transfer requirements.
+    * It is defined here becuase it is used in the proxy as well.
+    */
+    function _setDefaults() internal {
+        transferRequirements[0] = TransferRequirements(true, true, true, true);
+        transferRequirements[1] = TransferRequirements(false, true, false, true);
+        transferRequirements[0] = TransferRequirements(true, false, false, false);
+    }
 }

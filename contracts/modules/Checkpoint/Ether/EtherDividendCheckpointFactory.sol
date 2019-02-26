@@ -1,12 +1,14 @@
 pragma solidity ^0.5.0;
 
-import "../UpgradableModuleFactory.sol";
-import "./GeneralPermissionManagerProxy.sol";
+import "./EtherDividendCheckpointProxy.sol";
+import "../../../libraries/Util.sol";
+import "../../../interfaces/IBoot.sol";
+import "../../UpgradableModuleFactory.sol";
 
 /**
- * @title Factory for deploying GeneralPermissionManager module
+ * @title Factory for deploying EtherDividendCheckpoint module
  */
-contract GeneralPermissionManagerFactory is UpgradableModuleFactory {
+contract EtherDividendCheckpointFactory is UpgradableModuleFactory {
 
     /**
      * @notice Constructor
@@ -24,9 +26,9 @@ contract GeneralPermissionManagerFactory is UpgradableModuleFactory {
         public
         UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry)
     {
-        name = "GeneralPermissionManager";
-        title = "General Permission Manager";
-        description = "Manage permissions within the Security Token and attached modules";
+        name = "EtherDividendCheckpoint";
+        title = "Ether Dividend Checkpoint";
+        description = "Create ETH dividends for token holders at a specific checkpoint";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
@@ -35,15 +37,10 @@ contract GeneralPermissionManagerFactory is UpgradableModuleFactory {
      * @notice Used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
-    function deploy(
-        bytes calldata _data
-    )
-        external
-        returns(address)
-    {
-        address permissionManager = address(new GeneralPermissionManagerProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
-        _initializeModule(permissionManager, _data);
-        return permissionManager;
+    function deploy(bytes calldata _data) external returns(address) {
+        address ethDividendCheckpoint = address(new EtherDividendCheckpointProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
+        _initializeModule(ethDividendCheckpoint, _data);
+        return ethDividendCheckpoint;
     }
 
     /**
@@ -51,7 +48,7 @@ contract GeneralPermissionManagerFactory is UpgradableModuleFactory {
      */
     function types() external view returns(uint8[] memory) {
         uint8[] memory res = new uint8[](1);
-        res[0] = 1;
+        res[0] = 4;
         return res;
     }
 
@@ -59,7 +56,10 @@ contract GeneralPermissionManagerFactory is UpgradableModuleFactory {
      * @notice Get the tags related to the module factory
      */
     function tags() external view returns(bytes32[] memory) {
-        bytes32[] memory availableTags = new bytes32[](0);
+        bytes32[] memory availableTags = new bytes32[](3);
+        availableTags[0] = "ETH";
+        availableTags[1] = "Checkpoint";
+        availableTags[2] = "Dividend";
         return availableTags;
     }
 }

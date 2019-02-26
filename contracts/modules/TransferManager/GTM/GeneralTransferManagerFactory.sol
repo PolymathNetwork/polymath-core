@@ -1,12 +1,12 @@
 pragma solidity ^0.5.0;
 
-import "../UpgradableModuleFactory.sol";
-import "./GeneralPermissionManagerProxy.sol";
+import "./GeneralTransferManagerProxy.sol";
+import "../../UpgradableModuleFactory.sol";
 
 /**
- * @title Factory for deploying GeneralPermissionManager module
+ * @title Factory for deploying GeneralTransferManager module
  */
-contract GeneralPermissionManagerFactory is UpgradableModuleFactory {
+contract GeneralTransferManagerFactory is UpgradableModuleFactory {
 
     /**
      * @notice Constructor
@@ -24,9 +24,9 @@ contract GeneralPermissionManagerFactory is UpgradableModuleFactory {
         public
         UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry)
     {
-        name = "GeneralPermissionManager";
-        title = "General Permission Manager";
-        description = "Manage permissions within the Security Token and attached modules";
+        name = "GeneralTransferManager";
+        title = "General Transfer Manager";
+        description = "Manage transfers using a time based whitelist";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
@@ -41,25 +41,29 @@ contract GeneralPermissionManagerFactory is UpgradableModuleFactory {
         external
         returns(address)
     {
-        address permissionManager = address(new GeneralPermissionManagerProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
-        _initializeModule(permissionManager, _data);
-        return permissionManager;
+        address generalTransferManager = address(new GeneralTransferManagerProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
+        _initializeModule(generalTransferManager, _data);
+        return generalTransferManager;
     }
 
     /**
      * @notice Type of the Module factory
      */
     function types() external view returns(uint8[] memory) {
-        uint8[] memory res = new uint8[](1);
-        res[0] = 1;
+        uint8[] memory res = new uint8[](2);
+        res[0] = 2;
+        res[1] = 6;
         return res;
     }
 
     /**
      * @notice Get the tags related to the module factory
      */
-    function tags() external view returns(bytes32[] memory) {
-        bytes32[] memory availableTags = new bytes32[](0);
+    function tags() public view returns(bytes32[] memory) {
+        bytes32[] memory availableTags = new bytes32[](2);
+        availableTags[0] = "General";
+        availableTags[1] = "Transfer Restriction";
         return availableTags;
     }
+
 }

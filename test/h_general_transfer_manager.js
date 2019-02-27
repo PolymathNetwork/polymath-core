@@ -642,6 +642,8 @@ contract("GeneralTransferManager", async (accounts) => {
                 validFrom,
                 validTo,
                 nonce,
+                false,
+                web3.eth.abi.encodeParameter('bytes', '0x00'),
                 signer.privateKey
             );
 

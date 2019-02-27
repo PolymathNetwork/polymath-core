@@ -38,9 +38,9 @@ library VolumeRestrictionLib {
     function deleteHolderFromList(
         mapping(address => uint8) storage holderToRestrictionType,
         address _holder,
-        address _dataStore,
+        IDataStore _dataStore,
         uint8 _typeOfPeriod
-    ) 
+    )
         public
     {
         // Deleting the holder if holder's type of Period is `Both` type otherwise
@@ -50,10 +50,9 @@ library VolumeRestrictionLib {
         // in uint8 its value is 1. if removing restriction is daily individual then typeOfPeriod
         // is TypeOfPeriod.MultipleDays in uint8 its value is 0.
         if (holderToRestrictionType[_holder] != uint8(VolumeRestrictionTMStorage.TypeOfPeriod.Both)) {
-            IDataStore dataStore = IDataStore(_dataStore);
-            uint256 flags = dataStore.getUint256(_getKey(INVESTORFLAGS, _holder));
+            uint256 flags = _dataStore.getUint256(_getKey(INVESTORFLAGS, _holder));
             flags = flags & ~(ONE << INDEX);
-            dataStore.setUint256(_getKey(INVESTORFLAGS, _holder), flags);
+            _dataStore.setUint256(_getKey(INVESTORFLAGS, _holder), flags);
         } else {
             holderToRestrictionType[_holder] = _typeOfPeriod;
         }
@@ -64,21 +63,19 @@ library VolumeRestrictionLib {
         address _holder,
         uint8 _callFrom,
         uint256 _endTime,
-        address _dataStore
-    ) 
-        public 
+        IDataStore _dataStore
+    )
+        public
     {
-        IDataStore dataStore = IDataStore(_dataStore);
-
-        uint256 flags = dataStore.getUint256(_getKey(INVESTORFLAGS, _holder));
-        if (!_isExistingInvestor(_holder, dataStore)) {
-            dataStore.insertAddress(INVESTORSKEY, _holder);
+        uint256 flags = _dataStore.getUint256(_getKey(INVESTORFLAGS, _holder));
+        if (!_isExistingInvestor(_holder, _dataStore)) {
+            _dataStore.insertAddress(INVESTORSKEY, _holder);
             //KYC data can not be present if added is false and hence we can set packed KYC as uint256(1) to set added as true
-            dataStore.setUint256(_getKey(WHITELIST, _holder), uint256(1));
+            _dataStore.setUint256(_getKey(WHITELIST, _holder), uint256(1));
         }
         if (!_isVolRestricted(flags)) {
             flags = flags | (ONE << INDEX);
-            dataStore.setUint256(_getKey(INVESTORFLAGS, _holder), flags);
+            _dataStore.setUint256(_getKey(INVESTORFLAGS, _holder), flags);
         }
         uint8 _type = _getTypeOfPeriod(holderToRestrictionType[_holder], _callFrom, _endTime);
         holderToRestrictionType[_holder] = _type;
@@ -98,10 +95,10 @@ library VolumeRestrictionLib {
     function getRestrictionData(
         mapping(address => uint8) storage holderToRestrictionType,
         VolumeRestrictionTMStorage.IndividualRestrictions storage _individualRestrictions,
-        address _dataStore
-    )   
+        IDataStore _dataStore
+    )
         public
-        view 
+        view
         returns(
             address[] memory allAddresses,
             uint256[] memory allowedTokens,
@@ -111,11 +108,11 @@ library VolumeRestrictionLib {
             uint8[] memory typeOfRestriction
             )
     {
-        address[] memory investors = IDataStore(_dataStore).getAddressArray(INVESTORSKEY);
+        address[] memory investors = _dataStore.getAddressArray(INVESTORSKEY);
         uint256 counter;
         uint256 i;
         for (i = 0; i < investors.length; i++) {
-            if (_isVolRestricted(IDataStore(_dataStore).getUint256(_getKey(INVESTORFLAGS, investors[i])))) {
+            if (_isVolRestricted(_dataStore.getUint256(_getKey(INVESTORFLAGS, investors[i])))) {
                 counter = counter + (holderToRestrictionType[investors[i]] == uint8(2) ? 2 : 1);
             }
         }
@@ -127,14 +124,14 @@ library VolumeRestrictionLib {
         typeOfRestriction = new uint8[](counter);
         counter = 0;
         for (i = 0; i < investors.length; i++) {
-            if (_isVolRestricted(IDataStore(_dataStore).getUint256(_getKey(INVESTORFLAGS, investors[i])))) {
+            if (_isVolRestricted(_dataStore.getUint256(_getKey(INVESTORFLAGS, investors[i])))) {
                 allAddresses[counter] = investors[i];
                 if (holderToRestrictionType[investors[i]] == uint8(VolumeRestrictionTMStorage.TypeOfPeriod.MultipleDays)) {
                     _setValues(_individualRestrictions.individualRestriction[investors[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
-                } 
+                }
                 else if (holderToRestrictionType[investors[i]] == uint8(VolumeRestrictionTMStorage.TypeOfPeriod.OneDay)) {
                     _setValues(_individualRestrictions.individualDailyRestriction[investors[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
-                } 
+                }
                 else if (holderToRestrictionType[investors[i]] == uint8(VolumeRestrictionTMStorage.TypeOfPeriod.Both)) {
                     _setValues(_individualRestrictions.individualRestriction[investors[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
                     counter++;
@@ -177,8 +174,8 @@ library VolumeRestrictionLib {
             return _callFrom;
     }
 
-    function _isExistingInvestor(address _investor, IDataStore dataStore) internal view returns(bool) {
-        uint256 data = dataStore.getUint256(_getKey(WHITELIST, _investor));
+    function _isExistingInvestor(address _investor, IDataStore _dataStore) internal view returns(bool) {
+        uint256 data = _dataStore.getUint256(_getKey(WHITELIST, _investor));
         //extracts `added` from packed `_whitelistData`
         return uint8(data) == 0 ? false : true;
     }

@@ -4,10 +4,7 @@ pragma solidity ^0.5.0;
  * @title Wallet for core vesting escrow functionality
  */
 contract VestingEscrowWalletStorage {
-    
-    // Permission flag
-    bytes32 constant OPERATOR = "OPERATOR";
-    
+        
     struct Schedule {
         // Name of the template
         bytes32 templateName;
@@ -41,7 +38,7 @@ contract VestingEscrowWalletStorage {
     mapping(address => Schedule[]) public schedules;
     // Holds template names array corresponds to the affiliate/employee address
     mapping(address => bytes32[]) internal userToTemplates;
-    // Mapping use to store the indexes for different template names for a user. 
+    // Mapping use to store the indexes for different template names for a user.
     // affiliate/employee address => template name => index
     mapping(address => mapping(bytes32 => uint256)) internal userToTemplateIndex;
     // Holds affiliate/employee addresses coressponds to the template name

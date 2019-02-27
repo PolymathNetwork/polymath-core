@@ -297,9 +297,6 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                     await I_GeneralTransferManager.changeIssuanceAddress(accounts[j], { from: accounts[j] });
                     assert.equal(await I_GeneralTransferManager.issuanceAddress(), accounts[j]);
 
-                    await I_GeneralTransferManager.changeSigningAddress(accounts[j], { from: accounts[j] });
-                    assert.equal(await I_GeneralTransferManager.signingAddress(), accounts[j]);
-
                     await I_GeneralTransferManager.changeAllowAllTransfers(!currentAllowAllTransferStats, { from: accounts[j] });
                     assert.equal(await I_GeneralTransferManager.allowAllTransfers(), !currentAllowAllTransferStats);
 

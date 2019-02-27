@@ -223,7 +223,7 @@ contract("GeneralTransferManager", async (accounts) => {
         });
 
         it("Should whitelist the affiliates before the STO attached", async () => {
-            console.log(`Estimate gas of one Whitelist: 
+            console.log(`Estimate gas of one Whitelist:
                 ${await I_GeneralTransferManager.modifyKYCData.estimateGas(
                     account_affiliates1,
                     currentTime + currentTime.add(new BN(duration.days(30))),
@@ -513,9 +513,14 @@ contract("GeneralTransferManager", async (accounts) => {
             assert.isTrue(
                 await I_GeneralPermissionManager.checkPermission.call(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("ADMIN"))
             );
-            console.log(JSON.stringify(signer));
-            let tx = await I_GeneralTransferManager.changeSigningAddress(signer.address, { from: account_delegate });
-            assert.equal(tx.logs[0].args._signingAddress, signer.address);
+
+            await I_GeneralPermissionManager.changePermission(signer.address, I_GeneralTransferManager.address, web3.utils.fromAscii("OPERATOR"), true, {
+                from: token_owner
+            });
+
+            assert.isTrue(
+                await I_GeneralPermissionManager.checkPermission.call(signer.address, I_GeneralTransferManager.address, web3.utils.fromAscii("OPERATOR"))
+            );
         });
 
         it("Should buy the tokens -- Failed due to incorrect signature input", async () => {

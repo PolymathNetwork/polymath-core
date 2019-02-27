@@ -22,16 +22,17 @@ contract Module is IModule, ModuleStorage {
     ModuleStorage(_securityToken, _polyAddress)
     {
     }
-    
+
     //Allows owner, factory or permissioned delegate
     modifier withPerm(bytes32 _perm) {
-        bool isOwner = msg.sender == Ownable(securityToken).owner();
-        bool isFactory = msg.sender == factory;
-        require(
-            isOwner || isFactory || ICheckPermission(securityToken).checkPermission(msg.sender, address(this), _perm),
-            "Permission check failed"
-        );
+        require(_checkPerm(_perm, msg.sender), "Invalid permission");
         _;
+    }
+
+    function _checkPerm(bytes32 _perm, address _caller) internal view returns (bool) {
+        bool isOwner = _caller == Ownable(securityToken).owner();
+        bool isFactory = _caller == factory;
+        return isOwner || isFactory || ICheckPermission(securityToken).checkPermission(_caller, address(this), _perm);
     }
 
     function _onlySecurityTokenOwner() internal view {
@@ -56,7 +57,7 @@ contract Module is IModule, ModuleStorage {
     /**
      * @notice used to withdraw the fee by the factory owner
      */
-    function takeUsageFee() public withPerm(FEE_ADMIN) returns(bool) {
+    function takeUsageFee() public withPerm(ADMIN) returns(bool) {
         require(polyToken.transferFrom(securityToken, Ownable(factory).owner(), IModuleFactory(factory).usageCostInPoly()), "Unable to take fee");
         return true;
     }
@@ -64,7 +65,7 @@ contract Module is IModule, ModuleStorage {
     /**
      * @notice used to return the data store address of securityToken
      */
-    function getDataStore() public view returns(address) {
-        return ISecurityToken(securityToken).dataStore();
+    function getDataStore() public view returns(IDataStore) {
+        return IDataStore(ISecurityToken(securityToken).dataStore());
     }
 }

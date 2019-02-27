@@ -204,18 +204,40 @@ contract("SignedTransferManager", accounts => {
             await catchRevert(I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), { from: account_investor1 }));
         });
 
+        it("Should successfully attach the permission manager factory with the security token", async () => {
+            const tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x0", new BN(0), new BN(0), { from: token_owner });
+            assert.equal(tx.logs[2].args._types[0].toNumber(), delegateManagerKey, "GeneralPermissionManager doesn't get deployed");
+            assert.equal(
+                web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
+                "GeneralPermissionManager",
+                "GeneralPermissionManager module was not added"
+            );
+            I_GeneralPermissionManager = await GeneralPermissionManager.at(tx.logs[2].args._module);
+        });
+
         it("should successfully add multiple signers to signersList", async () => {
-            await I_SignedTransferManager.updateSigners([account_investor3, account_investor4, token_owner], [true, true, true], {from: token_owner});
 
-            assert.equal(await I_SignedTransferManager.checkSigner(account_investor3), true);
-            assert.equal(await I_SignedTransferManager.checkSigner(account_investor4), true);
-            assert.equal(await I_SignedTransferManager.checkSigner(token_owner), true);
+            await I_GeneralPermissionManager.changePermission(account_investor3, I_GeneralTransferManager.address, web3.utils.fromAscii("OPERATOR"), true, {
+                from: token_owner
+            });
+            await I_GeneralPermissionManager.changePermission(account_investor4, I_GeneralTransferManager.address, web3.utils.fromAscii("OPERATOR"), true, {
+                from: token_owner
+            });
+            await I_GeneralPermissionManager.changePermission(token_owner, I_GeneralTransferManager.address, web3.utils.fromAscii("OPERATOR"), true, {
+                from: token_owner
+            });
+
+            assert.isTrue(
+                await I_GeneralPermissionManager.checkPermission.call(account_investor3, I_GeneralTransferManager.address, web3.utils.fromAscii("OPERATOR"))
+            );
+            assert.isTrue(
+                await I_GeneralPermissionManager.checkPermission.call(account_investor4, I_GeneralTransferManager.address, web3.utils.fromAscii("OPERATOR"))
+            );
+            assert.isTrue(
+                await I_GeneralPermissionManager.checkPermission.call(token_owner, I_GeneralTransferManager.address, web3.utils.fromAscii("OPERATOR"))
+            );
+
         });
-
-        it("should fail to change signers stats without permission", async () => {
-            await catchRevert(I_SignedTransferManager.updateSigners([account_investor3], [false], {from: account_investor2}));
-        });
-
 
         it("should allow to invalidate siganture if sender is the signer and is in the signer list", async () => {
             let oneeth = new BN(web3.utils.toWei("1", "ether"));
@@ -224,7 +246,9 @@ contract("SignedTransferManager", accounts => {
             await web3.eth.personal.unlockAccount(signer.address, "", 6000);
             await web3.eth.sendTransaction({ from: token_owner, to: signer.address, value: oneeth });
 
-            await I_SignedTransferManager.updateSigners([signer.address], [true], {from: token_owner});
+            await I_GeneralPermissionManager.changePermission(signer.address, I_GeneralTransferManager.address, web3.utils.fromAscii("OPERATOR"), true, {
+                from: token_owner
+            });
 
             let nonce = new BN(10);
             let expiry = new BN(currentTime.add(new BN(duration.days(100))));
@@ -245,7 +269,9 @@ contract("SignedTransferManager", accounts => {
 
         it("should allow transfer with valid sig", async () => {
             let signer = web3.eth.accounts.create();
-            await I_SignedTransferManager.updateSigners([signer.address], [true], {from: token_owner});
+            await I_GeneralPermissionManager.changePermission(signer.address, I_GeneralTransferManager.address, web3.utils.fromAscii("OPERATOR"), true, {
+                from: token_owner
+            });
             let oneeth = new BN(web3.utils.toWei("1", "ether"));
             let nonce = new BN(10);
             let expiry = new BN(currentTime.add(new BN(duration.days(100))));

@@ -17,11 +17,11 @@ function getSignGTMData(tmAddress, investorAddress, fromTime, toTime, expiryTime
 function getSignGTMTransferData(tmAddress, investorAddress, fromTime, toTime, expiryTime, validFrom, validTo, nonce, hasMoreSig, nextSig, pk) {
     let hash = web3.utils.soliditySha3({t: 'address', v: tmAddress}, {t: 'address', v: investorAddress}, {t: 'uint256', v: new BN(fromTime)}, {t: 'uint256', v: new BN(toTime)}, {t: 'uint256', v: new BN(expiryTime)}, {t: 'uint256', v: new BN(validFrom)}, {t: 'uint256', v: new BN(validTo)}, {t: 'uint256', v: new BN(nonce)});
     let signature = (web3.eth.accounts.sign(hash, pk)).signature;
-    let kycTimes = [];
-    kycTimes.push(new BN(fromTime).toString());
-    kycTimes.push(new BN(toTime).toString());
-    kycTimes.push(new BN(expiryTime).toString());
-    let packedData = web3.eth.abi.encodeParameters(['address', 'uint256[]', 'bytes', 'bool', 'bytes'], [investorAddress, kycTimes, signature, hasMoreSig, nextSig]);
+    // let kycTimes = [];
+    // kycTimes.push(new BN(fromTime).toString());
+    // kycTimes.push(new BN(toTime).toString());
+    // kycTimes.push(new BN(expiryTime).toString());
+    let packedData = web3.eth.abi.encodeParameters(['address', 'uint256', 'uint256', 'uint256', 'bytes', 'bool', 'bytes'], [investorAddress, new BN(fromTime).toString(), new BN(toTime).toString(), new BN(expiryTime).toString(), signature, hasMoreSig, nextSig]);
     let data = web3.eth.abi.encodeParameters(['address', 'uint256', 'uint256', 'uint256', 'bytes'], [tmAddress, new BN(nonce).toString(), new BN(validFrom).toString(), new BN(validTo).toString(), packedData]);
     return data;
 }

@@ -176,8 +176,8 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         bytes memory signature;
         bool moreSignaturesAvailable; //Using a bool becuase decoding and checking of empty bytes is inconsistent.
         bytes memory nextData;
-        (investor, kycTimes, signature, moreSignaturesAvailable, nextData) =
-            abi.decode(_data, (address, uint256[], bytes, bool, bytes));
+        (investor, kycTimes[0], kycTimes[1], kycTimes[2], signature, moreSignaturesAvailable, nextData) =
+            abi.decode(_data, (address, uint256, uint256, uint256, bytes, bool, bytes));
         _modifyKYCDataSigned(investor, kycTimes[0], kycTimes[1], kycTimes[2], _validFrom, _validTo, _nonce, signature);
         if (moreSignaturesAvailable)
            _processTransferSignature(_nonce, _validFrom, _validTo, nextData);

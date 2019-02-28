@@ -223,7 +223,7 @@ contract("GeneralTransferManager", async (accounts) => {
         });
 
         it("Should whitelist the affiliates before the STO attached", async () => {
-            console.log(`Estimate gas of one Whitelist: 
+            console.log(`Estimate gas of one Whitelist:
                 ${await I_GeneralTransferManager.modifyKYCData.estimateGas(
                     account_affiliates1,
                     currentTime + currentTime.add(new BN(duration.days(30))),
@@ -503,19 +503,17 @@ contract("GeneralTransferManager", async (accounts) => {
         });
 
         it("Should provide the permission and change the signing address", async () => {
-            let log = await I_GeneralPermissionManager.addDelegate(account_delegate, web3.utils.fromAscii("My details"), { from: token_owner });
-            assert.equal(log.logs[0].args._delegate, account_delegate);
 
-            await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("ADMIN"), true, {
+            let log2 = await I_GeneralPermissionManager.addDelegate(signer.address, web3.utils.fromAscii("My details"), { from: token_owner });
+            assert.equal(log2.logs[0].args._delegate, signer.address);
+
+            await I_GeneralPermissionManager.changePermission(signer.address, I_GeneralTransferManager.address, web3.utils.fromAscii("OPERATOR"), true, {
                 from: token_owner
             });
 
             assert.isTrue(
-                await I_GeneralPermissionManager.checkPermission.call(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("ADMIN"))
+                await I_GeneralPermissionManager.checkPermission.call(signer.address, I_GeneralTransferManager.address, web3.utils.fromAscii("OPERATOR"))
             );
-            console.log(JSON.stringify(signer));
-            let tx = await I_GeneralTransferManager.changeSigningAddress(signer.address, { from: account_delegate });
-            assert.equal(tx.logs[0].args._signingAddress, signer.address);
         });
 
         it("Should buy the tokens -- Failed due to incorrect signature input", async () => {
@@ -745,10 +743,6 @@ contract("GeneralTransferManager", async (accounts) => {
 
         });
 
-        it("Should fail in changing the signing address", async () => {
-            await catchRevert(I_GeneralTransferManager.changeSigningAddress(account_polymath, { from: account_investor4 }));
-        });
-
         it("Should get the permission", async () => {
             let perm = await I_GeneralTransferManager.getPermissions.call();
             assert.equal(web3.utils.toAscii(perm[0]).replace(/\u0000/g, ""), "ADMIN");
@@ -776,7 +770,10 @@ contract("GeneralTransferManager", async (accounts) => {
         });
 
         it("Factory owner should pull fees", async () => {
-            await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("FEE_ADMIN"), true, {
+            let log = await I_GeneralPermissionManager.addDelegate(account_delegate, web3.utils.fromAscii("My details"), { from: token_owner });
+            assert.equal(log.logs[0].args._delegate, account_delegate);
+
+            await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("ADMIN"), true, {
                 from: token_owner
             });
             let balanceBefore = await I_PolyToken.balanceOf(account_polymath);

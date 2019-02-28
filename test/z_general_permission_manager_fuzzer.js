@@ -249,7 +249,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
     });
 
     describe("fuzz test for general transfer manager", async () => {
-        it("should pass fuzz test for changeIssuanceAddress(), changeSigningAddress() ", async () => {
+        it("should pass fuzz test for changeIssuanceAddress() ", async () => {
             console.log("1");
             // fuzz test loop over total times of testRepeat, inside each loop, we use a variable j to randomly choose an account out of the 10 default accounts
             for (var i = 2; i < testRepeat; i++) {
@@ -297,9 +297,6 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                     await I_GeneralTransferManager.changeIssuanceAddress(accounts[j], { from: accounts[j] });
                     assert.equal(await I_GeneralTransferManager.issuanceAddress(), accounts[j]);
 
-                    await I_GeneralTransferManager.changeSigningAddress(accounts[j], { from: accounts[j] });
-                    assert.equal(await I_GeneralTransferManager.signingAddress(), accounts[j]);
-
                     await I_GeneralTransferManager.changeAllowAllTransfers(!currentAllowAllTransferStats, { from: accounts[j] });
                     assert.equal(await I_GeneralTransferManager.allowAllTransfers(), !currentAllowAllTransferStats);
 
@@ -327,7 +324,6 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                     );
                 } else {
                     await catchRevert(I_GeneralTransferManager.changeIssuanceAddress(accounts[j], { from: accounts[j] }));
-                    await catchRevert(I_GeneralTransferManager.changeSigningAddress(accounts[j], { from: accounts[j] }));
                     await catchRevert(
                         I_GeneralTransferManager.changeAllowAllTransfers(!currentAllowAllTransferStats, { from: accounts[j] })
                     );

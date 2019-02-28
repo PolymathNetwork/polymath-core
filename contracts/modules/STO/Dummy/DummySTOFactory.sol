@@ -1,12 +1,14 @@
 pragma solidity ^0.5.0;
 
-import "../UpgradableModuleFactory.sol";
-import "./GeneralPermissionManagerProxy.sol";
+import "../../UpgradableModuleFactory.sol";
+import "../../../libraries/Util.sol";
+import "./DummySTOProxy.sol";
+import "../../../interfaces/IBoot.sol";
 
 /**
- * @title Factory for deploying GeneralPermissionManager module
+ * @title Factory for deploying DummySTO module
  */
-contract GeneralPermissionManagerFactory is UpgradableModuleFactory {
+contract DummySTOFactory is UpgradableModuleFactory {
 
     /**
      * @notice Constructor
@@ -24,26 +26,22 @@ contract GeneralPermissionManagerFactory is UpgradableModuleFactory {
         public
         UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry)
     {
-        name = "GeneralPermissionManager";
-        title = "General Permission Manager";
-        description = "Manage permissions within the Security Token and attached modules";
+        name = "DummySTO";
+        title = "Dummy STO";
+        description = "Dummy STO";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
 
     /**
      * @notice Used to launch the Module with the help of factory
+     * @param _data Data used for the intialization of the module factory variables
      * @return address Contract address of the Module
      */
-    function deploy(
-        bytes calldata _data
-    )
-        external
-        returns(address)
-    {
-        address permissionManager = address(new GeneralPermissionManagerProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
-        _initializeModule(permissionManager, _data);
-        return permissionManager;
+    function deploy(bytes calldata _data) external returns(address) {
+        address dummySTO = address(new DummySTOProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
+        _initializeModule(dummySTO, _data);
+        return dummySTO;
     }
 
     /**
@@ -51,7 +49,7 @@ contract GeneralPermissionManagerFactory is UpgradableModuleFactory {
      */
     function types() external view returns(uint8[] memory) {
         uint8[] memory res = new uint8[](1);
-        res[0] = 1;
+        res[0] = 3;
         return res;
     }
 
@@ -59,7 +57,10 @@ contract GeneralPermissionManagerFactory is UpgradableModuleFactory {
      * @notice Get the tags related to the module factory
      */
     function tags() external view returns(bytes32[] memory) {
-        bytes32[] memory availableTags = new bytes32[](0);
+        bytes32[] memory availableTags = new bytes32[](4);
+        availableTags[0] = "Dummy";
+        availableTags[1] = "Non-refundable";
+        availableTags[2] = "ETH";
         return availableTags;
     }
 }

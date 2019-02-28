@@ -782,13 +782,15 @@ contract("GeneralTransferManager", async (accounts) => {
             assert.equal(balanceBefore.add(new BN(web3.utils.toWei("4", "ether"))).toString(), balanceAfter.toString(), "Fee is transferred");
         });
 
-        it("Should change the white list transfer variable", async () => {
-            let tx = await I_GeneralTransferManager.changeAllowAllWhitelistIssuances(true, { from: token_owner });
-            assert.isTrue(tx.logs[0].args._allowAllWhitelistIssuances);
-        });
-
         it("should failed in trasfering the tokens", async () => {
-            let tx = await I_GeneralTransferManager.changeAllowAllWhitelistTransfers(true, { from: token_owner });
+            await I_GeneralTransferManager.modifyTransferRequirementsMulti(
+                [0, 1, 2], 
+                [true, false, true],
+                [true, true, false],
+                [false, false, false],
+                [false, false, false],
+                { from: token_owner }
+            );
             await I_GeneralTransferManager.pause({ from: token_owner });
             await catchRevert(I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("2", "ether")), { from: account_investor2 }));
         });

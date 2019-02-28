@@ -365,6 +365,38 @@ contract("GeneralTransferManager", async (accounts) => {
             );
             I_GeneralPermissionManager = await GeneralPermissionManager.at(tx.logs[2].args._module);
         });
+
+        it("should have transfer requirements initialized", async () => {
+            let transferRestrions = await I_GeneralTransferManager.transferRequirements(0);
+            assert.equal(transferRestrions[0], true);
+            assert.equal(transferRestrions[1], true);
+            assert.equal(transferRestrions[2], true);
+            assert.equal(transferRestrions[3], true);
+            transferRestrions = await I_GeneralTransferManager.transferRequirements(1);
+            assert.equal(transferRestrions[0], false);
+            assert.equal(transferRestrions[1], true);
+            assert.equal(transferRestrions[2], false);
+            assert.equal(transferRestrions[3], false);
+            transferRestrions = await I_GeneralTransferManager.transferRequirements(2);
+            assert.equal(transferRestrions[0], true);
+            assert.equal(transferRestrions[1], false);
+            assert.equal(transferRestrions[2], false);
+            assert.equal(transferRestrions[3], false);
+        });
+
+        it("should not allow unauthorized people to change transfer requirements", async () => {
+            await catchRevert(
+                I_GeneralTransferManager.modifyTransferRequirementsMulti(
+                    [0, 1, 2], 
+                    [true, false, true],
+                    [true, true, false],
+                    [false, false, false],
+                    [false, false, false],
+                    { from: account_investor1 }
+                )
+            );
+            await catchRevert(I_GeneralTransferManager.modifyTransferRequirements(0, false, false, false, false, { from: account_investor1 }));
+        });
     });
 
     describe("Buy tokens using on-chain whitelist", async () => {

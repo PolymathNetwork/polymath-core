@@ -5,12 +5,6 @@ pragma solidity ^0.5.0;
  */
 contract ManualApprovalTransferManagerStorage {
 
-    //Address from which issuances come
-    address public issuanceAddress = address(0);
-
-    //Address which can sign whitelist changes
-    address public signingAddress = address(0);
-
     //Manual approval is an allowance (that has been approved) with an expiry time
     struct ManualApproval {
         address from;

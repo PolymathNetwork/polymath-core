@@ -76,7 +76,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
     }
 
 
-    /** 
+    /**
      * @notice Used to verify the transfer transaction and allow a manually approved transqaction to bypass other restrictions
      * @param _from Address of the sender
      * @param _to Address of the receiver
@@ -87,16 +87,16 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
         address _to,
         uint256 _amount,
         bytes memory /* _data */
-    ) 
+    )
         public
-        view 
-        returns(Result, bytes32) 
+        view
+        returns(Result, bytes32)
     {
         if (!paused && approvalIndex[_from][_to] != 0) {
             uint256 index = approvalIndex[_from][_to] - 1;
             ManualApproval memory approval = approvals[index];
             if ((approval.expiryTime >= now) && (approval.allowance >= _amount)) {
-                return (Result.VALID, bytes32(uint256(address(this)) << 96)); 
+                return (Result.VALID, bytes32(uint256(address(this)) << 96));
             }
         }
         return (Result.NA, bytes32(0));
@@ -125,7 +125,6 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
     }
 
     function _addManualApproval(address _from, address _to, uint256 _allowance, uint256 _expiryTime, bytes32 _description) internal {
-        require(_to != address(0), "Invalid to address");
         require(_expiryTime > now, "Invalid expiry time");
         require(_allowance > 0, "Invalid allowance");
         if (approvalIndex[_from][_to] != 0) {
@@ -196,7 +195,6 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
     )
         internal
     {
-        require(_to != address(0), "Invalid to address");
         /*solium-disable-next-line security/no-block-members*/
         require(_expiryTime > now, "Invalid expiry time");
         require(approvalIndex[_from][_to] != 0, "Approval not present");

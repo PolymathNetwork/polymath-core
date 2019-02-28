@@ -24,8 +24,6 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     event AllowAllWhitelistIssuances(bool _allowAllWhitelistIssuances);
     // Emit when there is change in the flag variable called allowAllBurnTransfers
     event AllowAllBurnTransfers(bool _allowAllBurnTransfers);
-    // Emit when there is change in the flag variable called signingAddress
-    event ChangeSigningAddress(address _signingAddress);
     // Emit when investor details get modified related to their whitelisting
     event ChangeDefaults(uint64 _defaultFromTime, uint64 _defaultToTime);
 
@@ -36,7 +34,6 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     // in any case, any investor sending or receiving tokens, must have a _expiryTime in the future
     event ModifyKYCData(
         address indexed _investor,
-        uint256 _dateAdded,
         address indexed _addedBy,
         uint256 _fromTime,
         uint256 _toTime,
@@ -85,15 +82,6 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     function changeIssuanceAddress(address _issuanceAddress) public withPerm(ADMIN) {
         issuanceAddress = _issuanceAddress;
         emit ChangeIssuanceAddress(_issuanceAddress);
-    }
-
-    /**
-     * @notice Used to change the Sigining Address
-     * @param _signingAddress new address for the signing
-     */
-    function changeSigningAddress(address _signingAddress) public withPerm(ADMIN) {
-        signingAddress = _signingAddress;
-        emit ChangeSigningAddress(_signingAddress);
     }
 
     /**
@@ -252,13 +240,13 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
 
     function _modifyKYCData(address _investor, uint256 _fromTime, uint256 _toTime, uint256 _expiryTime) internal {
         require(_investor != address(0), "Invalid investor");
-        IDataStore dataStore = IDataStore(getDataStore());
+        IDataStore dataStore = getDataStore();
         if (!_isExistingInvestor(_investor, dataStore)) {
            dataStore.insertAddress(INVESTORSKEY, _investor);
         }
         uint256 _data = VersionUtils.packKYC(uint64(_fromTime), uint64(_toTime), uint64(_expiryTime), uint8(1));
         dataStore.setUint256(_getKey(WHITELIST, _investor), _data);
-        emit ModifyKYCData(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime);
+        emit ModifyKYCData(_investor, msg.sender, _fromTime, _toTime, _expiryTime);
     }
 
     /**
@@ -309,7 +297,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
 
     function _modifyInvestorFlag(address _investor, uint8 _flag, bool _value) internal {
         require(_investor != address(0), "Invalid investor");
-        IDataStore dataStore = IDataStore(getDataStore());
+        IDataStore dataStore = getDataStore();
         if (!_isExistingInvestor(_investor, dataStore)) {
            dataStore.insertAddress(INVESTORSKEY, _investor);
            //KYC data can not be present if added is false and hence we can set packed KYC as uint256(1) to set added as true
@@ -392,7 +380,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         //Check that the signature is valid
         //sig should be signing - _investor, _fromTime, _toTime & _expiryTime and be signed by the issuer address
         address signer = _hash.toEthSignedMessageHash().recover(_signature);
-        require(signer == Ownable(securityToken).owner() || signer == signingAddress, "Incorrect signer");
+        require(_checkPerm(OPERATOR, signer), "Incorrect signer");
     }
 
     /**
@@ -448,7 +436,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     }
 
     function _getValuesForTransfer(address _from, address _to) internal view returns(uint64 fromTime, uint64 fromExpiry, uint64 toTime, uint64 toExpiry) {
-        IDataStore dataStore = IDataStore(getDataStore());
+        IDataStore dataStore = getDataStore();
         (fromTime, , fromExpiry, ) = _getKYCValues(_from, dataStore);
         (, toTime, toExpiry, ) = _getKYCValues(_to, dataStore);
     }
@@ -457,7 +445,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
      * @dev Returns list of all investors
      */
     function getAllInvestors() public view returns(address[] memory investors) {
-        IDataStore dataStore = IDataStore(getDataStore());
+        IDataStore dataStore = getDataStore();
         investors = dataStore.getAddressArray(INVESTORSKEY);
     }
 
@@ -465,7 +453,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
      * @dev Returns list of investors in a range
      */
     function getInvestors(uint256 _fromIndex, uint256 _toIndex) public view returns(address[] memory investors) {
-        IDataStore dataStore = IDataStore(getDataStore());
+        IDataStore dataStore = getDataStore();
         investors = dataStore.getAddressArrayElements(INVESTORSKEY, _fromIndex, _toIndex);
     }
 
@@ -487,7 +475,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     }
 
     function _getInvestorFlags(address _investor) public view returns(uint256 flags) {
-        IDataStore dataStore = IDataStore(getDataStore());
+        IDataStore dataStore = getDataStore();
         flags = dataStore.getUint256(_getKey(INVESTORFLAGS, _investor));
     }
 
@@ -525,7 +513,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         uint256[] memory toTimes = new uint256[](_investors.length);
         uint256[] memory expiryTimes = new uint256[](_investors.length);
         for (uint256 i = 0; i < _investors.length; i++) {
-            (fromTimes[i], toTimes[i], expiryTimes[i], ) = _getKYCValues(_investors[i], IDataStore(getDataStore()));
+            (fromTimes[i], toTimes[i], expiryTimes[i], ) = _getKYCValues(_investors[i], getDataStore());
         }
         return (fromTimes, toTimes, expiryTimes);
     }

@@ -13,10 +13,6 @@ contract GeneralTransferManagerStorage {
     //Address from which issuances come
     address public issuanceAddress;
 
-    //Address which can sign whitelist changes
-    address public signingAddress;
-
-
     // //from and to timestamps that an investor can send / receive tokens respectively
     // // Now Stored in DataStore
     // struct TimeRestriction {

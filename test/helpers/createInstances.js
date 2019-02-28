@@ -580,7 +580,7 @@ export async function deployMockWrongTypeRedemptionAndVerifyed(accountPolymath, 
     return Promise.all(new Array(I_MockWrongTypeBurnFactory));
 }
 
-export async function deploySignedTMAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+export async function deploySignedTMAndVerifyed(accountPolymath, MRProxyInstance, setupCost) {
     I_SignedTransferManagerFactory = await SignedTransferManagerFactory.new(setupCost, new BN(0), I_PolymathRegistry.address, { from: accountPolymath });
     assert.notEqual(
         I_SignedTransferManagerFactory.address.valueOf(),

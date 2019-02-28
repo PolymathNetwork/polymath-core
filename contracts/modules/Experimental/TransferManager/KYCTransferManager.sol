@@ -10,7 +10,7 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 contract KYCTransferManager is TransferManager {
 
     using SafeMath for uint256;
-    
+
     bytes32 public constant KYC_NUMBER = "KYC_NUMBER"; //We will standardize what key to use for what.
 
     bytes32 public constant KYC_ARRAY = "KYC_ARRAY";
@@ -33,9 +33,9 @@ contract KYCTransferManager is TransferManager {
         return bytes4(0);
     }
 
-    function executeTransfer(address _from, address _to, uint256 _amount, bytes calldata _data) 
-        external 
-        returns (Result) 
+    function executeTransfer(address _from, address _to, uint256 _amount, bytes calldata _data)
+        external
+        returns (Result)
     {
         (Result success,)= verifyTransfer(_from, _to, _amount, _data);
         return success;
@@ -46,14 +46,14 @@ contract KYCTransferManager is TransferManager {
             return (Result.VALID, bytes32(uint256(address(this)) << 96));
         }
         return (Result.NA, bytes32(0));
-    } 
+    }
 
     function modifyKYC( address _investor, bool _kycStatus) public withPerm(ADMIN) {
         _modifyKYC(_investor, _kycStatus);
     }
 
     function _modifyKYC(address _investor, bool _kycStatus) internal {
-        IDataStore dataStore = IDataStore(ISecurityToken(securityToken).dataStore());
+        IDataStore dataStore = getDataStore();
         bytes32 key = _getKYCKey(_investor);
         uint256 kycNumber = dataStore.getUint256(key); //index in address array + 1
         uint256 kycTotal = dataStore.getAddressArrayLength(KYC_ARRAY);
@@ -67,20 +67,20 @@ contract KYCTransferManager is TransferManager {
             dataStore.deleteAddress(KYC_ARRAY, kycNumber - 1);
 
             //Corrects the index of last element as delete fucntions move last element to index.
-            dataStore.setUint256(_getKYCKey(lastAddress), kycNumber); 
+            dataStore.setUint256(_getKYCKey(lastAddress), kycNumber);
         }
-        //Alternatively, we can just emit an event and not maintain the KYC array on chain. 
+        //Alternatively, we can just emit an event and not maintain the KYC array on chain.
         //I am maintaining the array to showcase how it can be done in cases where it might be needed.
     }
 
     function getKYCAddresses() public view returns(address[] memory) {
-        IDataStore dataStore = IDataStore(ISecurityToken(securityToken).dataStore());
+        IDataStore dataStore = getDataStore();
         return dataStore.getAddressArray(KYC_ARRAY);
     }
 
     function checkKYC(address _investor) public view returns (bool kyc) {
         bytes32 key = _getKYCKey(_investor);
-        IDataStore dataStore = IDataStore(ISecurityToken(securityToken).dataStore());
+        IDataStore dataStore = getDataStore();
         if (dataStore.getUint256(key) > 0)
             kyc = true;
     }
@@ -104,6 +104,6 @@ contract KYCTransferManager is TransferManager {
      */
     function getTokensByPartition(address /*_owner*/, bytes32 /*_partition*/) external view returns(uint256){
         return 0;
-    } 
+    }
 
 }

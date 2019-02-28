@@ -299,7 +299,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @return override any USD overrides for non-accredited limits for the investor
      */
     function getAccreditedData() external view returns (address[] memory investors, bool[] memory accredited, uint256[] memory overrides) {
-        IDataStore dataStore = IDataStore(getDataStore());
+        IDataStore dataStore = getDataStore();
         investors = dataStore.getAddressArray(INVESTORSKEY);
         accredited = new bool[](investors.length);
         overrides = new uint256[](investors.length);
@@ -552,7 +552,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
     }
 
     function _isAccredited(address _investor) internal view returns(bool) {
-        IDataStore dataStore = IDataStore(getDataStore());
+        IDataStore dataStore = getDataStore();
         return _getIsAccredited(_investor, dataStore);
     }
 

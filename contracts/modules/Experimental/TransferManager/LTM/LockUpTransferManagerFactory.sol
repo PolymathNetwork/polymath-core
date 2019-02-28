@@ -1,18 +1,18 @@
 pragma solidity ^0.5.0;
 
-import "../UpgradableModuleFactory.sol";
-import "./GeneralPermissionManagerProxy.sol";
+import "./LockUpTransferManagerProxy.sol";
+import "../../../UpgradableModuleFactory.sol";
+import "./LockUpTransferManager.sol";
 
 /**
- * @title Factory for deploying GeneralPermissionManager module
+ * @title Factory for deploying LockUpTransferManager module
  */
-contract GeneralPermissionManagerFactory is UpgradableModuleFactory {
+contract LockUpTransferManagerFactory is UpgradableModuleFactory {
 
     /**
      * @notice Constructor
      * @param _setupCost Setup cost of the module
      * @param _usageCost Usage cost of the module
-     * @param _logicContract Contract address that contains the logic related to `description`
      * @param _polymathRegistry Address of the Polymath registry
      */
     constructor(
@@ -24,9 +24,9 @@ contract GeneralPermissionManagerFactory is UpgradableModuleFactory {
         public
         UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry)
     {
-        name = "GeneralPermissionManager";
-        title = "General Permission Manager";
-        description = "Manage permissions within the Security Token and attached modules";
+        name = "LockUpTransferManager";
+        title = "LockUp Transfer Manager";
+        description = "Manage transfers using lock ups over time";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
@@ -41,17 +41,18 @@ contract GeneralPermissionManagerFactory is UpgradableModuleFactory {
         external
         returns(address)
     {
-        address permissionManager = address(new GeneralPermissionManagerProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
-        _initializeModule(permissionManager, _data);
-        return permissionManager;
+        address lockUpTransferManager = address(new LockUpTransferManagerProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
+        _initializeModule(lockUpTransferManager, _data);
+        return lockUpTransferManager;
     }
 
     /**
      * @notice Type of the Module factory
+     * @return uint8
      */
     function types() external view returns(uint8[] memory) {
         uint8[] memory res = new uint8[](1);
-        res[0] = 1;
+        res[0] = 2;
         return res;
     }
 
@@ -59,7 +60,10 @@ contract GeneralPermissionManagerFactory is UpgradableModuleFactory {
      * @notice Get the tags related to the module factory
      */
     function tags() external view returns(bytes32[] memory) {
-        bytes32[] memory availableTags = new bytes32[](0);
+        bytes32[] memory availableTags = new bytes32[](2);
+        availableTags[0] = "LockUp";
+        availableTags[1] = "Transfer Restriction";
         return availableTags;
     }
+
 }

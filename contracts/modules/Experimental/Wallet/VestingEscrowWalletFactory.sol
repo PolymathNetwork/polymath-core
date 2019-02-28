@@ -1,6 +1,6 @@
 pragma solidity ^0.5.0;
 
-import "../../../proxy/VestingEscrowWalletProxy.sol";
+import "./VestingEscrowWalletProxy.sol";
 import "../../../interfaces/IBoot.sol";
 import "../../UpgradableModuleFactory.sol";
 import "../../../libraries/Util.sol";

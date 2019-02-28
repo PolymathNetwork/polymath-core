@@ -16,14 +16,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
 
     // Emit when Issuance address get changed
     event ChangeIssuanceAddress(address _issuanceAddress);
-    // Emit when there is change in the flag variable called allowAllTransfers
-    event AllowAllTransfers(bool _allowAllTransfers);
-    // Emit when there is change in the flag variable called allowAllWhitelistTransfers
-    event AllowAllWhitelistTransfers(bool _allowAllWhitelistTransfers);
-    // Emit when there is change in the flag variable called allowAllWhitelistIssuances
-    event AllowAllWhitelistIssuances(bool _allowAllWhitelistIssuances);
-    // Emit when there is change in the flag variable called allowAllBurnTransfers
-    event AllowAllBurnTransfers(bool _allowAllBurnTransfers);
+
     // Emit when investor details get modified related to their whitelisting
     event ChangeDefaults(uint64 _defaultFromTime, uint64 _defaultToTime);
 
@@ -44,6 +37,14 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         address indexed _investor,
         uint8 indexed _flag,
         bool _value
+    );
+
+    event ModifyTransferRequirements(
+        uint256 indexed _transferType,
+        bool _fromValidKYC,
+        bool _toValidKYC,
+        bool _fromRestricted,
+        bool _toRestricted
     );
 
     /**
@@ -85,51 +86,6 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     }
 
     /**
-     * @notice Used to change the flag
-            true - It refers there are no transfer restrictions, for any addresses
-            false - It refers transfers are restricted for all addresses.
-     * @param _allowAllTransfers flag value
-     */
-    function changeAllowAllTransfers(bool _allowAllTransfers) public withPerm(ADMIN) {
-        //set all requirements accross all tx type to 0 to do this.
-        allowAllTransfers = _allowAllTransfers;
-        emit AllowAllTransfers(_allowAllTransfers);
-    }
-
-    /**
-     * @notice Used to change the flag
-            true - It refers that time lock is ignored for transfers (address must still be on whitelist)
-            false - It refers transfers are restricted for all addresses.
-     * @param _allowAllWhitelistTransfers flag value
-     */
-    function changeAllowAllWhitelistTransfers(bool _allowAllWhitelistTransfers) public withPerm(ADMIN) {
-        allowAllWhitelistTransfers = _allowAllWhitelistTransfers;
-        emit AllowAllWhitelistTransfers(_allowAllWhitelistTransfers);
-    }
-
-    /**
-     * @notice Used to change the flag
-            true - It refers that time lock is ignored for issuances (address must still be on whitelist)
-            false - It refers transfers are restricted for all addresses.
-     * @param _allowAllWhitelistIssuances flag value
-     */
-    function changeAllowAllWhitelistIssuances(bool _allowAllWhitelistIssuances) public withPerm(ADMIN) {
-        allowAllWhitelistIssuances = _allowAllWhitelistIssuances;
-        emit AllowAllWhitelistIssuances(_allowAllWhitelistIssuances);
-    }
-
-    /**
-     * @notice Used to change the flag
-            true - It allow to burn the tokens
-            false - It deactivate the burning mechanism.
-     * @param _allowAllBurnTransfers flag value
-     */
-    function changeAllowAllBurnTransfers(bool _allowAllBurnTransfers) public withPerm(ADMIN) {
-        allowAllBurnTransfers = _allowAllBurnTransfers;
-        emit AllowAllBurnTransfers(_allowAllBurnTransfers);
-    }
-
-    /**
      * @notice Default implementation of verifyTransfer used by SecurityToken
      * If the transfer request comes from the STO, it only checks that the investor is in the whitelist
      * If the transfer request comes from a token holder, it checks that:
@@ -151,18 +107,13 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
 
     /**
      * @notice Default implementation of verifyTransfer used by SecurityToken
-     * If the transfer request comes from the STO, it only checks that the investor is in the whitelist
-     * If the transfer request comes from a token holder, it checks that:
-     * a) Both are on the whitelist
-     * b) Seller's sale lockup period is over
-     * c) Buyer's purchase lockup is over
      * @param _from Address of the sender
      * @param _to Address of the receiver
     */
     function verifyTransfer(
         address _from,
         address _to,
-        uint256, /*_amount*/
+        uint256 /*_amount*/,
         bytes memory /* _data */
     )
         public
@@ -170,19 +121,19 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         returns(Result, bytes32)
     {
         if (!paused) {
-            uint256 transactionType; //default is 0. i.e. general tx.
+            TransferRequirements memory txReq;
             uint64 fromTime;
             uint64 fromExpiry;
             uint64 toExpiry;
             uint64 toTime;
 
             if (_from == issuanceAddress) {
-                transactionType = 1;
+                txReq = transferRequirements[1]; //Issuance
             } else if (_to == address(0)) {
-                transactionType = 2;
+                txReq = transferRequirements[2]; //Redemption
+            } else {
+                txReq = transferRequirements[0]; //General Transfer
             }
-
-            TransferRequirements memory txReq = transferRequirements[transactionType];
 
             (fromTime, fromExpiry, toTime, toExpiry) = _getValuesForTransfer(_from, _to);
 
@@ -201,6 +152,14 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         return (Result.NA, bytes32(0));
     }
 
+    /**
+    * @notice Modifies the successful checks required for a transfer to be deemed valid.
+    * @param _transferType Type of transfer (0 = General, 1 = Issuance, 2 = Redemption)
+    * @param _fromValidKYC Defines if KYC is required for the sender
+    * @param _toValidKYC Defines if KYC is required for the receiver
+    * @param _fromRestricted Defines if transfer time restriction is checked for the sender
+    * @param _toRestricted Defines if transfer time restriction is checked for the receiver
+    */
     function modifyTransferRequirements(
         uint256 _transferType,
         bool _fromValidKYC,
@@ -208,7 +167,56 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         bool _fromRestricted,
         bool _toRestricted
     ) public withPerm(ADMIN) {
-        // TODO: Add multi function for this.
+        _modifyTransferRequirements(
+            _transferType,
+            _fromValidKYC,
+            _toValidKYC,
+            _fromRestricted,
+            _toRestricted
+        );
+    }
+
+    /**
+    * @notice Modifies the successful checks required for transfers.
+    * @param _transferType Type of transfer (0 = General, 1 = Issuance, 2 = Redemption)
+    * @param _fromValidKYC Defines if KYC is required for the sender
+    * @param _toValidKYC Defines if KYC is required for the receiver
+    * @param _fromRestricted Defines if transfer time restriction is checked for the sender
+    * @param _toRestricted Defines if transfer time restriction is checked for the receiver
+    */
+    function modifyTransferRequirementsMulti(
+        uint256[] memory _transferType,
+        bool[] memory _fromValidKYC,
+        bool[] memory _toValidKYC,
+        bool[] memory _fromRestricted,
+        bool[] memory _toRestricted
+    ) public withPerm(ADMIN) {
+        require(
+            _transferType.length == _fromValidKYC.length &&
+            _fromValidKYC.length == _toValidKYC.length &&
+            _toValidKYC.length == _fromRestricted.length &&
+            _fromRestricted.length == _toRestricted.length,
+            "Mismatched input lengths"
+        );
+
+        for (uint256 i = 0; i <  _transferType.length; i++) {
+            _modifyTransferRequirements(
+                _transferType[i],
+                _fromValidKYC[i],
+                _toValidKYC[i],
+                _fromRestricted[i],
+                _toRestricted[i]
+            );
+        }
+    }
+
+    function _modifyTransferRequirements(
+        uint256 _transferType,
+        bool _fromValidKYC,
+        bool _toValidKYC,
+        bool _fromRestricted,
+        bool _toRestricted
+    ) internal {
         transferRequirements[_transferType] =
             TransferRequirements(
                 _fromValidKYC,
@@ -216,6 +224,14 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
                 _fromRestricted,
                 _toRestricted
             );
+
+        emit ModifyTransferRequirements(
+            _transferType,
+            _fromValidKYC,
+            _toValidKYC,
+            _fromRestricted,
+            _toRestricted
+        );
     }
 
 
@@ -387,31 +403,31 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
      * @notice Internal function used to check whether the KYC of investor is valid
      * @param _expiryTime Expiry time of the investor
      */
-    function _validExpiry(uint64 _expiryTime) internal view returns(bool) {
-        return (_expiryTime >= uint64(now)); /*solium-disable-line security/no-block-members*/
+    function _validExpiry(uint64 _expiryTime) internal view returns(bool valid) {
+        if (_expiryTime >= uint64(now)) /*solium-disable-line security/no-block-members*/
+            valid = true;
     }
 
     /**
      * @notice Internal function used to check whether the lock time of investor is valid
      * @param _lockTime Lock time of the investor
      */
-    function _validLockTime(uint64 _lockTime) internal view returns(bool) {
-        return (_lockTime <= uint64(now)); /*solium-disable-line security/no-block-members*/
+    function _validLockTime(uint64 _lockTime) internal view returns(bool valid) {
+        if (_lockTime <= uint64(now)) /*solium-disable-line security/no-block-members*/
+            valid = true;
     }
 
     /**
      * @notice Internal function to adjust times using default values
      */
     function _adjustTimes(uint64 _fromTime, uint64 _toTime) internal view returns(uint64, uint64) {
-        uint64 adjustedFromTime = _fromTime;
-        uint64 adjustedToTime = _toTime;
         if (_fromTime == 0) {
-            adjustedFromTime = defaults.fromTime;
+            _fromTime = defaults.fromTime;
         }
         if (_toTime == 0) {
-            adjustedToTime = defaults.toTime;
+            _toTime = defaults.toTime;
         }
-        return (adjustedFromTime, adjustedToTime);
+        return (_fromTime, _toTime);
     }
 
     function _getKey(bytes32 _key1, address _key2) internal pure returns(bytes32) {

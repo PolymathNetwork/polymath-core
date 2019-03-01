@@ -1,6 +1,6 @@
 pragma solidity ^0.5.0;
 
-import "../modules/TransferManager/CountTransferManager.sol";
+import "../modules/TransferManager/CTM/CountTransferManager.sol";
 
 /**
  * @title Transfer Manager for limiting maximum number of token holders

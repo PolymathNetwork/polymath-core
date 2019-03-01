@@ -74,7 +74,7 @@ contract STO is ISTO, STOStorage, Module, Pausable {
     }
 
     function _canBuy(address _investor) internal view returns(bool) {
-        IDataStore dataStore = IDataStore(getDataStore());
+        IDataStore dataStore = getDataStore();
         uint256 flags = dataStore.getUint256(_getKey(INVESTORFLAGS, _investor));
         return(flags & (uint256(1) << 1) == 0);
     }

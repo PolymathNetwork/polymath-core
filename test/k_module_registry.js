@@ -257,7 +257,7 @@ contract("ModuleRegistry", async (accounts) => {
             });
 
             it("Should fail in registering the module-- type = 0", async () => {
-                I_MockFactory = await MockFactory.new(new BN(0), new BN(0), address_zero, I_PolymathRegistry.address, { from: account_polymath });
+                I_MockFactory = await MockFactory.new(new BN(0), new BN(0), one_address, I_PolymathRegistry.address, { from: account_polymath });
 
                 catchRevert(I_MRProxied.registerModule(I_MockFactory.address, { from: account_polymath }));
             });
@@ -269,7 +269,7 @@ contract("ModuleRegistry", async (accounts) => {
             });
 
             it("Should successfully register the module -- fail because no module type uniqueness", async () => {
-                await I_MockFactory.changeTypes({ from: account_polymath });
+                await I_MockFactory.switchTypes({ from: account_polymath });
                 catchRevert(I_MRProxied.registerModule(I_MockFactory.address, { from: account_polymath }));
             });
         });
@@ -377,13 +377,13 @@ contract("ModuleRegistry", async (accounts) => {
             });
 
             it("Should failed in adding the TestSTOFactory module because not compatible with the current protocol version --lower", async () => {
-                I_TestSTOFactory = await TestSTOFactory.new(new BN(0), new BN(0), address_zero, I_PolymathRegistry.address, { from: account_polymath });
+                I_TestSTOFactory = await TestSTOFactory.new(new BN(0), new BN(0), one_address, I_PolymathRegistry.address, { from: account_polymath });
                 await I_MRProxied.registerModule(I_TestSTOFactory.address, { from: account_polymath });
                 await I_MRProxied.verifyModule(I_TestSTOFactory.address, true, { from: account_polymath });
                 // Taking the snapshot the revert the changes from here
                 let id = await takeSnapshot();
                 await I_TestSTOFactory.changeSTVersionBounds("lowerBound", [2, 1, 0], { from: account_polymath });
-                let _lstVersion = await I_TestSTOFactory.getLowerSTVersionBounds.call();
+                let _lstVersion = await I_TestSTOFactory.lowerSTVersionBounds.call();
                 assert.equal(_lstVersion[2], 0);
                 assert.equal(_lstVersion[1], 1);
                 let bytesData = encodeModuleCall(
@@ -397,7 +397,7 @@ contract("ModuleRegistry", async (accounts) => {
 
             it("Should failed in adding the TestSTOFactory module because not compatible with the current protocol version --upper", async () => {
                 await I_TestSTOFactory.changeSTVersionBounds("upperBound", [0, new BN(0), 1], { from: account_polymath });
-                let _ustVersion = await I_TestSTOFactory.getUpperSTVersionBounds.call();
+                let _ustVersion = await I_TestSTOFactory.upperSTVersionBounds.call();
                 assert.equal(_ustVersion[0], 0);
                 assert.equal(_ustVersion[2], 1);
                 await I_STRProxied.setProtocolVersion(I_STFactory.address, 2, new BN(0), 1);

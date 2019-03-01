@@ -1,13 +1,13 @@
 pragma solidity ^0.5.0;
 
-import "../modules/STO/DummySTOFactory.sol";
+import "../modules/STO/Dummy/DummySTOFactory.sol";
 
 /**
  * @title Mock Contract Not fit for production environment
  */
 
 contract MockFactory is DummySTOFactory {
-    bool public switchTypes = false;
+    bool public typesSwitch = false;
 
     /**
      * @notice Constructor
@@ -30,10 +30,10 @@ contract MockFactory is DummySTOFactory {
     /**
      * @notice Type of the Module factory
      */
-    function getTypes() external view returns(uint8[] memory) {
-        if (!switchTypes) {
-            uint8[] memory types = new uint8[](0);
-            return types;
+    function types() external view returns(uint8[] memory) {
+        if (!typesSwitch) {
+            uint8[] memory res = new uint8[](0);
+            return res;
         } else {
             uint8[] memory res = new uint8[](2);
             res[0] = 1;
@@ -43,8 +43,8 @@ contract MockFactory is DummySTOFactory {
 
     }
 
-    function changeTypes() external onlyOwner {
-        switchTypes = !switchTypes;
+    function switchTypes() external onlyOwner {
+        typesSwitch = !typesSwitch;
     }
 
 }

@@ -108,6 +108,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
         uint256 _minimumInvestmentUSD,
         uint8[] _fundRaiseTypes,
         address _wallet,
+        address _treasuryWallet,
         address _usdToken
     ) */
     const functionSignature = {
@@ -153,6 +154,10 @@ contract("USDTieredSTO Sim", async (accounts) => {
             {
                 type: "address",
                 name: "_wallet"
+            },
+            {
+                type: "address",
+                name: "_treasuryWallet"
             },
             {
                 type: "address[]",
@@ -287,6 +292,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
             _minimumInvestmentUSD.push(new BN(0)); // 1 wei USD
             _fundRaiseTypes.push([0, 1, 2]);
             _wallet.push(WALLET);
+            _treasuryWallet.push(TREASURYWALLET);
             _usdToken.push(I_DaiToken.address);
 
             let config = [
@@ -300,6 +306,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
                 _minimumInvestmentUSD[stoId],
                 _fundRaiseTypes[stoId],
                 _wallet[stoId],
+                _treasuryWallet[stoId],
                 [_usdToken[stoId]]
             ];
 
@@ -345,6 +352,11 @@ contract("USDTieredSTO Sim", async (accounts) => {
                 "Incorrect _minimumInvestmentUSD in config"
             );
             assert.equal(await I_USDTieredSTO_Array[stoId].wallet.call(), _wallet[stoId], "Incorrect _wallet in config");
+            assert.equal(
+                await I_USDTieredSTO_Array[stoId].treasuryWallet.call(),
+                _treasuryWallet[stoId],
+                "Incorrect _reserveWallet in config"
+            );
             assert.equal(
                 await I_USDTieredSTO_Array[stoId].getNumberOfTiers(),
                 _tokensPerTierTotal[stoId].length,

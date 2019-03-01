@@ -25,14 +25,23 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
     event SetWithholdingFixed(address[] _investors, uint256 _withholding);
     event SetWallet(address indexed _oldWallet, address indexed _newWallet);
 
-    modifier validDividendIndex(uint256 _dividendIndex) {
+    function _validDividendIndex(uint256 _dividendIndex) internal view {
         require(_dividendIndex < dividends.length, "Invalid dividend");
         require(!dividends[_dividendIndex].reclaimed, "Dividend reclaimed");
         /*solium-disable-next-line security/no-block-members*/
         require(now >= dividends[_dividendIndex].maturity, "Dividend maturity in future");
         /*solium-disable-next-line security/no-block-members*/
         require(now < dividends[_dividendIndex].expiry, "Dividend expiry in past");
-        _;
+    }
+
+    /**
+     * @notice Function used to intialize the contract variables
+     * @param _wallet Ethereum account address to receive reclaimed dividends and tax
+     */
+    function configure(
+        address payable _wallet
+    ) public onlyFactory {
+        _setWallet(_wallet);
     }
 
     /**
@@ -40,14 +49,19 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
     * @return bytes4
     */
     function getInitFunction() public pure returns(bytes4) {
-        return bytes4(0);
+        return this.configure.selector;
     }
 
     /**
      * @notice Function used to change wallet address
      * @param _wallet Ethereum account address to receive reclaimed dividends and tax
      */
-    function changeWallet(address payable _wallet) external onlyOwner {
+    function changeWallet(address payable _wallet) external {
+        _onlySecurityTokenOwner();
+        _setWallet(_wallet);
+    }
+
+    function _setWallet(address payable _wallet) internal {
         emit SetWallet(wallet, _wallet);
         wallet = _wallet;
     }
@@ -74,7 +88,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @notice Creates a checkpoint on the security token
      * @return Checkpoint ID
      */
-    function createCheckpoint() public withPerm(CHECKPOINT) returns(uint256) {
+    function createCheckpoint() public withPerm(OPERATOR) returns(uint256) {
         return ISecurityToken(securityToken).createCheckpoint();
     }
 
@@ -82,7 +96,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @notice Function to clear and set list of excluded addresses used for future dividends
      * @param _excluded Addresses of investors
      */
-    function setDefaultExcluded(address[] memory _excluded) public withPerm(MANAGE) {
+    function setDefaultExcluded(address[] memory _excluded) public withPerm(ADMIN) {
         require(_excluded.length <= EXCLUDED_ADDRESS_LIMIT, "Too many excluded addresses");
         for (uint256 j = 0; j < _excluded.length; j++) {
             require(_excluded[j] != address(0), "Invalid address");
@@ -100,7 +114,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @param _investors Addresses of investors
      * @param _withholding Withholding tax for individual investors (multiplied by 10**16)
      */
-    function setWithholding(address[] memory _investors, uint256[] memory _withholding) public withPerm(MANAGE) {
+    function setWithholding(address[] memory _investors, uint256[] memory _withholding) public withPerm(ADMIN) {
         require(_investors.length == _withholding.length, "Mismatched input lengths");
         /*solium-disable-next-line security/no-block-members*/
         emit SetWithholding(_investors, _withholding);
@@ -115,7 +129,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @param _investors Addresses of investor
      * @param _withholding Withholding tax for all investors (multiplied by 10**16)
      */
-    function setWithholdingFixed(address[] memory _investors, uint256 _withholding) public withPerm(MANAGE) {
+    function setWithholdingFixed(address[] memory _investors, uint256 _withholding) public withPerm(ADMIN) {
         require(_withholding <= 10 ** 18, "Incorrect withholding tax");
         /*solium-disable-next-line security/no-block-members*/
         emit SetWithholdingFixed(_investors, _withholding);
@@ -134,9 +148,9 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
         address payable[] memory _payees
     )
         public
-        withPerm(DISTRIBUTE)
-        validDividendIndex(_dividendIndex)
+        withPerm(OPERATOR)
     {
+        _validDividendIndex(_dividendIndex);
         Dividend storage dividend = dividends[_dividendIndex];
         for (uint256 i = 0; i < _payees.length; i++) {
             if ((!dividend.claimed[_payees[i]]) && (!dividend.dividendExcluded[_payees[i]])) {
@@ -156,9 +170,9 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
         uint256 _start,
         uint256 _iterations
     ) public
-      withPerm(DISTRIBUTE)
-      validDividendIndex(_dividendIndex)
+      withPerm(OPERATOR)
     {
+        _validDividendIndex(_dividendIndex);
         Dividend storage dividend = dividends[_dividendIndex];
         uint256 checkpointId = dividend.checkpointId;
         address[] memory investors = ISecurityToken(securityToken).getInvestorsAt(checkpointId);
@@ -175,7 +189,8 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @notice Investors can pull their own dividends
      * @param _dividendIndex Dividend to pull
      */
-    function pullDividendPayment(uint256 _dividendIndex) public validDividendIndex(_dividendIndex) {
+    function pullDividendPayment(uint256 _dividendIndex) public {
+        _validDividendIndex(_dividendIndex);
         Dividend storage dividend = dividends[_dividendIndex];
         require(!dividend.claimed[msg.sender], "Dividend already claimed");
         require(!dividend.dividendExcluded[msg.sender], "msg.sender excluded from Dividend");
@@ -386,8 +401,8 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      */
     function getPermissions() public view returns(bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](2);
-        allPermissions[0] = DISTRIBUTE;
-        allPermissions[1] = MANAGE;
+        allPermissions[0] = ADMIN;
+        allPermissions[1] = OPERATOR;
         return allPermissions;
     }
 

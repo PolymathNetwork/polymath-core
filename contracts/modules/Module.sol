@@ -1,6 +1,7 @@
 pragma solidity ^0.5.0;
 
 import "../interfaces/IModule.sol";
+import "../interfaces/IModuleFactory.sol";
 import "../interfaces/IDataStore.sol";
 import "../interfaces/ISecurityToken.sol";
 import "../interfaces/ICheckPermission.sol";
@@ -24,18 +25,18 @@ contract Module is IModule, ModuleStorage {
 
     //Allows owner, factory or permissioned delegate
     modifier withPerm(bytes32 _perm) {
-        bool isOwner = msg.sender == Ownable(securityToken).owner();
-        bool isFactory = msg.sender == factory;
-        require(
-            isOwner || isFactory || ICheckPermission(securityToken).checkPermission(msg.sender, address(this), _perm),
-            "Permission check failed"
-        );
+        require(_checkPerm(_perm, msg.sender), "Invalid permission");
         _;
     }
 
-    modifier onlyOwner() {
+    function _checkPerm(bytes32 _perm, address _caller) internal view returns (bool) {
+        bool isOwner = _caller == Ownable(securityToken).owner();
+        bool isFactory = _caller == factory;
+        return isOwner || isFactory || ICheckPermission(securityToken).checkPermission(_caller, address(this), _perm);
+    }
+
+    function _onlySecurityTokenOwner() internal view {
         require(msg.sender == Ownable(securityToken).owner(), "Sender is not owner");
-        _;
     }
 
     modifier onlyFactory() {
@@ -56,12 +57,15 @@ contract Module is IModule, ModuleStorage {
     /**
      * @notice used to withdraw the fee by the factory owner
      */
-    function takeFee(uint256 _amount) public withPerm(FEE_ADMIN) returns(bool) {
-        require(polyToken.transferFrom(securityToken, Ownable(factory).owner(), _amount), "Unable to take fee");
+    function takeUsageFee() public withPerm(ADMIN) returns(bool) {
+        require(polyToken.transferFrom(securityToken, Ownable(factory).owner(), IModuleFactory(factory).usageCostInPoly()), "Unable to take fee");
         return true;
     }
 
-    function getDataStore() public view returns(address) {
-        return ISecurityToken(securityToken).dataStore();
+    /**
+     * @notice used to return the data store address of securityToken
+     */
+    function getDataStore() public view returns(IDataStore) {
+        return IDataStore(ISecurityToken(securityToken).dataStore());
     }
 }

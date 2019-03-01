@@ -1,6 +1,6 @@
 import latestTime from "./helpers/latestTime";
 import { duration, ensureException, promisifyLogWatch, latestBlock } from "./helpers/utils";
-import takeSnapshot, { increaseTime, revertToSnapshot } from "./helpers/time";
+import { takeSnapshot, increaseTime, revertToSnapshot } from "./helpers/time";
 import { encodeProxyCall } from "./helpers/encodeCall";
 import { catchRevert } from "./helpers/exceptions";
 import { setUpPolymathNetwork, deployEtherDividendAndVerifyed, deployGPMAndVerifyed } from "./helpers/createInstances";
@@ -71,7 +71,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
     const transferManagerKey = 2;
     const stoKey = 3;
     const checkpointKey = 4;
-    //const DividendParameters = ["address"];
+    const DividendParameters = ["address"];
 
     // Initial fee for ticker registry and security token registry
     const initRegFee = new BN(web3.utils.toWei("1000"));
@@ -167,9 +167,9 @@ contract("EtherDividendCheckpoint", async (accounts) => {
 
         it("Should successfully attach the ERC20DividendCheckpoint with the security token", async () => {
             await I_PolyToken.getTokens(new BN(web3.utils.toWei("2000", "ether")), token_owner);
-            //let bytesDividend = encodeModuleCall(DividendParameters, [wallet]);
+            let bytesDividend = encodeModuleCall(DividendParameters, [wallet]);
             await catchRevert(
-                I_SecurityToken.addModule(P_EtherDividendCheckpointFactory.address, "0x0", new BN(web3.utils.toWei("2000", "ether")), new BN(0), {
+                I_SecurityToken.addModule(P_EtherDividendCheckpointFactory.address, bytesDividend, new BN(web3.utils.toWei("2000", "ether")), new BN(0), {
                     from: token_owner
                 })
             );
@@ -178,8 +178,8 @@ contract("EtherDividendCheckpoint", async (accounts) => {
         it("Should successfully attach the EtherDividendCheckpoint with the security token", async () => {
             let snapId = await takeSnapshot();
             await I_PolyToken.transfer(I_SecurityToken.address, new BN(web3.utils.toWei("2000", "ether")), { from: token_owner });
-            //let bytesDividend = encodeModuleCall(DividendParameters, [wallet]);
-            const tx = await I_SecurityToken.addModule(P_EtherDividendCheckpointFactory.address, "0x0", new BN(web3.utils.toWei("2000", "ether")), new BN(0), {
+            let bytesDividend = encodeModuleCall(DividendParameters, [wallet]);
+            const tx = await I_SecurityToken.addModule(P_EtherDividendCheckpointFactory.address, bytesDividend, new BN(web3.utils.toWei("2000", "ether")), new BN(0), {
                 from: token_owner
             });
             assert.equal(tx.logs[3].args._types[0].toNumber(), checkpointKey, "EtherDividendCheckpoint doesn't get deployed");
@@ -193,8 +193,8 @@ contract("EtherDividendCheckpoint", async (accounts) => {
         });
 
         it("Should successfully attach the EtherDividendCheckpoint with the security token", async () => {
-            //let bytesDividend = encodeModuleCall(DividendParameters, [wallet]);
-            const tx = await I_SecurityToken.addModule(I_EtherDividendCheckpointFactory.address, "0x0", new BN(0), new BN(0), { from: token_owner });
+            let bytesDividend = encodeModuleCall(DividendParameters, [address_zero]);
+            const tx = await I_SecurityToken.addModule(I_EtherDividendCheckpointFactory.address, bytesDividend, new BN(0), new BN(0), { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), checkpointKey, "EtherDividendCheckpoint doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
@@ -873,10 +873,10 @@ contract("EtherDividendCheckpoint", async (accounts) => {
         });
 
         it("should give permission to manager", async () => {
-            await I_GeneralPermissionManager.changePermission(account_manager, I_EtherDividendCheckpoint.address, web3.utils.fromAscii("CHECKPOINT"), true, {
+            await I_GeneralPermissionManager.changePermission(account_manager, I_EtherDividendCheckpoint.address, web3.utils.fromAscii("OPERATOR"), true, {
                 from: token_owner
             });
-            let tx = await I_GeneralPermissionManager.changePermission(account_manager, I_EtherDividendCheckpoint.address, web3.utils.fromAscii("MANAGE"), true, {
+            let tx = await I_GeneralPermissionManager.changePermission(account_manager, I_EtherDividendCheckpoint.address, web3.utils.fromAscii("ADMIN"), true, {
                 from: token_owner
             });
             assert.equal(tx.logs[0].args._delegate, account_manager);
@@ -942,11 +942,11 @@ contract("EtherDividendCheckpoint", async (accounts) => {
 
         describe("Test cases for the EtherDividendCheckpointFactory", async () => {
             it("should get the exact details of the factory", async () => {
-                assert.equal((await I_EtherDividendCheckpointFactory.getSetupCost.call()).toNumber(), 0);
-                assert.equal((await I_EtherDividendCheckpointFactory.getTypes.call())[0], 4);
-                assert.equal(await I_EtherDividendCheckpointFactory.version.call(), "2.1.0");
+                assert.equal((await I_EtherDividendCheckpointFactory.setupCost.call()).toNumber(), 0);
+                assert.equal((await I_EtherDividendCheckpointFactory.types.call())[0], 4);
+                assert.equal(await I_EtherDividendCheckpointFactory.version.call(), "3.0.0");
                 assert.equal(
-                    web3.utils.toAscii(await I_EtherDividendCheckpointFactory.getName.call()).replace(/\u0000/g, ""),
+                    web3.utils.toAscii(await I_EtherDividendCheckpointFactory.name.call()).replace(/\u0000/g, ""),
                     "EtherDividendCheckpoint",
                     "Wrong Module added"
                 );
@@ -956,12 +956,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
                     "Wrong Module added"
                 );
                 assert.equal(await I_EtherDividendCheckpointFactory.title.call(), "Ether Dividend Checkpoint", "Wrong Module added");
-                assert.equal(
-                    await I_EtherDividendCheckpointFactory.getInstructions.call(),
-                    "Create a dividend which will be paid out to token holders proportionally according to their balances at the point the dividend is created",
-                    "Wrong Module added"
-                );
-                let tags = await I_EtherDividendCheckpointFactory.getTags.call();
+                let tags = await I_EtherDividendCheckpointFactory.tags.call();
                 assert.equal(tags.length, 3);
             });
         });

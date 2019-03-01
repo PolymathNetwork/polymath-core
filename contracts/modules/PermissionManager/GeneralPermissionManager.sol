@@ -2,7 +2,7 @@ pragma solidity ^0.5.0;
 
 import "./IPermissionManager.sol";
 import "../Module.sol";
-import "../../storage/modules/PermissionManager/GeneralPermissionManagerStorage.sol";
+import "./GeneralPermissionManagerStorage.sol";
 import "../../interfaces/ISecurityToken.sol";
 
 /**
@@ -46,7 +46,7 @@ contract GeneralPermissionManager is GeneralPermissionManagerStorage, IPermissio
      * @param _delegate Ethereum address of the delegate
      * @param _details Details about the delegate i.e `Belongs to financial firm`
      */
-    function addDelegate(address _delegate, bytes32 _details) external withPerm(CHANGE_PERMISSION) {
+    function addDelegate(address _delegate, bytes32 _details) external withPerm(ADMIN) {
         require(_delegate != address(0), "Invalid address");
         require(_details != bytes32(0), "0 value not allowed");
         require(delegateDetails[_delegate] == bytes32(0), "Already present");
@@ -60,7 +60,7 @@ contract GeneralPermissionManager is GeneralPermissionManagerStorage, IPermissio
      * @notice Used to delete a delegate
      * @param _delegate Ethereum address of the delegate
      */
-    function deleteDelegate(address _delegate) external withPerm(CHANGE_PERMISSION) {
+    function deleteDelegate(address _delegate) external withPerm(ADMIN) {
         require(delegateDetails[_delegate] != bytes32(0), "delegate does not exist");
         for (uint256 i = 0; i < allDelegates.length; i++) {
             if (allDelegates[i] == _delegate) {
@@ -92,7 +92,7 @@ contract GeneralPermissionManager is GeneralPermissionManagerStorage, IPermissio
      * @param _valid Bool flag use to switch on/off the permission
      * @return bool
      */
-    function changePermission(address _delegate, address _module, bytes32 _perm, bool _valid) public withPerm(CHANGE_PERMISSION) {
+    function changePermission(address _delegate, address _module, bytes32 _perm, bool _valid) public withPerm(ADMIN) {
         require(_delegate != address(0), "invalid address");
         _changePermission(_delegate, _module, _perm, _valid);
     }
@@ -112,7 +112,7 @@ contract GeneralPermissionManager is GeneralPermissionManagerStorage, IPermissio
         bool[] calldata _valids
     )
         external
-        withPerm(CHANGE_PERMISSION)
+        withPerm(ADMIN)
     {
         require(_delegate != address(0), "invalid address");
         require(_modules.length > 0, "0 length is not allowed");
@@ -225,7 +225,7 @@ contract GeneralPermissionManager is GeneralPermissionManagerStorage, IPermissio
     */
     function getPermissions() public view returns(bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](1);
-        allPermissions[0] = CHANGE_PERMISSION;
+        allPermissions[0] = ADMIN;
         return allPermissions;
     }
 

@@ -1,6 +1,7 @@
 pragma solidity ^0.5.0;
 
 import "../interfaces/IPoly.sol";
+import "../modules/UpgradableModuleFactory.sol";
 import "../interfaces/IDataStore.sol";
 import "../tokens/SecurityTokenStorage.sol";
 import "../interfaces/ITransferManager.sol";
@@ -14,6 +15,8 @@ library TokenLib {
     bytes32 internal constant WHITELIST = "WHITELIST";
     bytes32 internal constant INVESTORSKEY = 0xdf3a8dd24acdd05addfc6aeffef7574d2de3f844535ec91e8e0f3e45dba96731; //keccak256(abi.encodePacked("INVESTORS"))
 
+    // Emit when Module get upgraded from the securityToken
+    event ModuleUpgraded(uint8[] _types, address _module);
     // Emit when Module is archived from the SecurityToken
     event ModuleArchived(uint8[] _types, address _module);
     // Emit when Module is unarchived from the SecurityToken
@@ -26,26 +29,35 @@ library TokenLib {
     /**
     * @notice Archives a module attached to the SecurityToken
     * @param _moduleData Storage data
-    * @param _module Address of module to archive
     */
-    function archiveModule(SecurityTokenStorage.ModuleData storage _moduleData, address _module) public {
+    function archiveModule(SecurityTokenStorage.ModuleData storage _moduleData) public {
         require(!_moduleData.isArchived, "Module archived");
         require(_moduleData.module != address(0), "Module missing");
         /*solium-disable-next-line security/no-block-members*/
-        emit ModuleArchived(_moduleData.moduleTypes, _module);
+        emit ModuleArchived(_moduleData.moduleTypes, _moduleData.module);
         _moduleData.isArchived = true;
     }
 
     /**
     * @notice Unarchives a module attached to the SecurityToken
     * @param _moduleData Storage data
-    * @param _module Address of module to unarchive
     */
-    function unarchiveModule(SecurityTokenStorage.ModuleData storage _moduleData, address _module) public {
+    function unarchiveModule(SecurityTokenStorage.ModuleData storage _moduleData) public {
         require(_moduleData.isArchived, "Module unarchived");
         /*solium-disable-next-line security/no-block-members*/
-        emit ModuleUnarchived(_moduleData.moduleTypes, _module);
+        emit ModuleUnarchived(_moduleData.moduleTypes, _moduleData.module);
         _moduleData.isArchived = false;
+    }
+
+    /**
+    * @notice Upgrades a module attached to the SecurityToken
+    * @param _moduleData Storage data
+    */
+    function upgradeModule(SecurityTokenStorage.ModuleData storage _moduleData) public {
+        require(_moduleData.module != address(0), "Module missing");
+        // Will revert if module isn't upgradable
+        UpgradableModuleFactory(_moduleData.moduleFactory).upgrade(_moduleData.module);
+        emit ModuleUpgraded(_moduleData.moduleTypes, _moduleData.module);
     }
 
     /**
@@ -259,11 +271,11 @@ library TokenLib {
         uint256 value,
         bytes memory data,
         bool transfersFrozen
-    ) 
-        public 
+    )
+        public
         view
-        returns(bool, bytes32) 
-    {   
+        returns(bool, bytes32)
+    {
         if (!transfersFrozen) {
             bool isInvalid = false;
             bool isValid = false;

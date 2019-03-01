@@ -37,7 +37,7 @@ interface ISecurityTokenRegistry {
         address _securityToken,
         string calldata _tokenDetails,
         uint256 _deployedAt
-    ) 
+    )
     external;
 
     /**
@@ -87,9 +87,10 @@ interface ISecurityTokenRegistry {
      * @return string Symbol of the Security Token.
      * @return address Address of the issuer of Security Token.
      * @return string Details of the Token.
-     * @return uint256 Timestamp at which Security Token get launched on Polymath platform.
+     * @return uint256 Timestamp at which Security Token get launched on Polymath platform
+     * @return version of the securityToken
      */
-    function getSecurityTokenData(address _securityToken) external view returns(string memory, address, string memory, uint256);
+    function getSecurityTokenData(address _securityToken) external view returns(string memory, address, string memory, uint256, uint8[] memory);
 
     /**
      * @notice Get the current STFactory Address
@@ -148,7 +149,7 @@ interface ISecurityTokenRegistry {
         uint256 _registrationDate,
         uint256 _expiryDate,
         bool _status
-    ) 
+    )
     external;
 
     /**
@@ -193,6 +194,13 @@ interface ISecurityTokenRegistry {
      * @return Fee amount
      */
     function getTickerRegistrationFee() external view returns(uint256);
+
+    /**
+     * @notice Returns the list of tokens to which the delegate has some access
+     * @param _delegate is the address for the delegate
+     * @dev Intention is that this is called off-chain so block gas limit is not relevant
+     */
+    function getTokensByDelegate(address _delegate) external view returns(address[] memory);
 
     /**
      * @notice Gets the expiry limit

@@ -11,7 +11,9 @@ contract ModuleStorage {
 
     address public securityToken;
 
-    bytes32 public constant FEE_ADMIN = "FEE_ADMIN";
+    // Permission flag
+    bytes32 public constant ADMIN = "ADMIN";
+    bytes32 public constant OPERATOR = "OPERATOR";
 
     bytes32 internal constant TREASURY = 0xaae8817359f3dcb67d050f44f3e49f982e0359d90ca4b5f18569926304aaece6; // keccak256(abi.encodePacked("TREASURY_WALLET"))
 

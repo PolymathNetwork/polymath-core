@@ -1,12 +1,12 @@
 pragma solidity ^0.5.0;
 
-import "../UpgradableModuleFactory.sol";
-import "./GeneralPermissionManagerProxy.sol";
+import "../../UpgradableModuleFactory.sol";
+import "./ManualApprovalTransferManagerProxy.sol";
 
 /**
- * @title Factory for deploying GeneralPermissionManager module
+ * @title Factory for deploying ManualApprovalTransferManager module
  */
-contract GeneralPermissionManagerFactory is UpgradableModuleFactory {
+contract ManualApprovalTransferManagerFactory is UpgradableModuleFactory {
 
     /**
      * @notice Constructor
@@ -24,15 +24,15 @@ contract GeneralPermissionManagerFactory is UpgradableModuleFactory {
         public
         UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry)
     {
-        name = "GeneralPermissionManager";
-        title = "General Permission Manager";
-        description = "Manage permissions within the Security Token and attached modules";
+        name = "ManualApprovalTransferManager";
+        title = "Manual Approval Transfer Manager";
+        description = "Manage transfers using single approvals";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
 
     /**
-     * @notice Used to launch the Module with the help of factory
+     * @notice used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
     function deploy(
@@ -41,9 +41,9 @@ contract GeneralPermissionManagerFactory is UpgradableModuleFactory {
         external
         returns(address)
     {
-        address permissionManager = address(new GeneralPermissionManagerProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
-        _initializeModule(permissionManager, _data);
-        return permissionManager;
+        address manualTransferManager = address(new ManualApprovalTransferManagerProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
+        _initializeModule(manualTransferManager, _data);
+        return manualTransferManager;
     }
 
     /**
@@ -51,7 +51,7 @@ contract GeneralPermissionManagerFactory is UpgradableModuleFactory {
      */
     function types() external view returns(uint8[] memory) {
         uint8[] memory res = new uint8[](1);
-        res[0] = 1;
+        res[0] = 2;
         return res;
     }
 
@@ -59,7 +59,10 @@ contract GeneralPermissionManagerFactory is UpgradableModuleFactory {
      * @notice Get the tags related to the module factory
      */
     function tags() external view returns(bytes32[] memory) {
-        bytes32[] memory availableTags = new bytes32[](0);
+        bytes32[] memory availableTags = new bytes32[](2);
+        availableTags[0] = "ManualApproval";
+        availableTags[1] = "Transfer Restriction";
         return availableTags;
     }
+
 }

@@ -30,7 +30,6 @@ interface ISecurityTokenRegistry {
      * @param _securityToken Address of the securityToken
      * @param _tokenDetails Off-chain details of the token
      * @param _deployedAt Timestamp at which security token comes deployed on the ethereum blockchain
-     * @param _protocolVersion Version of the protocol
      */
     function modifySecurityToken(
         string calldata _name,
@@ -38,8 +37,7 @@ interface ISecurityTokenRegistry {
         address _owner,
         address _securityToken,
         string calldata _tokenDetails,
-        uint256 _deployedAt,
-        uint256 _protocolVersion
+        uint256 _deployedAt
     )
     external;
 

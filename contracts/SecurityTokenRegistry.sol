@@ -543,7 +543,9 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         _storeSecurityTokenData(newSecurityTokenAddress, _ticker, _tokenDetails, now);
         set(Encoder.getKey("tickerToSecurityToken", _ticker), newSecurityTokenAddress);
         /*solium-disable-next-line security/no-block-members*/
-        _emitSecurityTokenEvent(_ticker, _name, newSecurityTokenAddress, msg.sender, now, msg.sender, false, _usdFee, _polyFee, _protocolVersion);
+        emit NewSecurityToken(
+            _ticker, _name, newSecurityTokenAddress, msg.sender, now, msg.sender, false, _usdFee, _polyFee, _protocolVersion
+        );
     }
 
     /**
@@ -554,7 +556,6 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @param _securityToken is the address of the securityToken
      * @param _tokenDetails is the off-chain details of the token
      * @param _deployedAt is the timestamp at which the security token is deployed
-     * @param _protocolVersion Version of securityToken contract
      */
     function modifySecurityToken(
         string calldata _name,
@@ -562,8 +563,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         address _owner,
         address _securityToken,
         string calldata _tokenDetails,
-        uint256 _deployedAt,
-        uint256 _protocolVersion
+        uint256 _deployedAt
     )
         external
         onlyOwner
@@ -583,28 +583,8 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         set(Encoder.getKey("tickerToSecurityToken", ticker), _securityToken);
         _modifyTicker(_owner, ticker, _name, registrationTime, expiryTime, true);
         _storeSecurityTokenData(_securityToken, ticker, _tokenDetails, _deployedAt);
-        _emitSecurityTokenEvent(
-            ticker, _name, _securityToken, _owner, _deployedAt, msg.sender, true, uint256(0), uint256(0), 
-            (_protocolVersion == uint256(0) ? getUintValue(Encoder.getKey("latestVersion")) : _protocolVersion)
-        );
-    }
-
-    function _emitSecurityTokenEvent(
-        string memory _ticker,
-        string memory _name,
-        address _securityToken,
-        address _owner,
-        uint256 _addedAt,
-        address _registrant,
-        bool _fromAdmin,
-        uint256 _usdFee,
-        uint256 _polyFee,
-        uint256 _protocolVersion 
-    ) 
-        internal
-    {
         emit NewSecurityToken(
-            _ticker, _name, _securityToken, _owner, _addedAt, _registrant, _fromAdmin, _usdFee, _polyFee, _protocolVersion
+            ticker, _name, _securityToken, _owner, _deployedAt, msg.sender, true, uint256(0), uint256(0), 0
         );
     }
 

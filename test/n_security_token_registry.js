@@ -666,7 +666,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
                 address_zero,
                 "STFactory002 contract was not deployed"
             );
-            let _protocol = await I_Getter.getCurrentProtocolVersion.call();
+            let _protocol = await I_Getter.getLatestProtocolVersion.call();
             assert.equal(_protocol[0], 2);
             assert.equal(_protocol[1], 0);
             assert.equal(_protocol[2], 0);
@@ -681,12 +681,12 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should change the protocol version", async() => {
             await I_STRProxied.setProtocolVersion(I_STFactory002.address, new BN(2), new BN(2), new BN(0), { from: account_polymath });
-            let _protocol = await I_Getter.getCurrentProtocolVersion.call();
+            let _protocol = await I_Getter.getLatestProtocolVersion.call();
             assert.equal(_protocol[0], 2);
             assert.equal(_protocol[1], 2);
             assert.equal(_protocol[2], 0);
             await I_STRProxied.setProtocolVersion(I_STFactory.address, new BN(3), new BN(0), new BN(0), { from: account_polymath});
-            _protocol = await I_Getter.getCurrentProtocolVersion.call();
+            _protocol = await I_Getter.getLatestProtocolVersion.call();
             assert.equal(_protocol[0], 3);
             assert.equal(_protocol[1], 0);
             assert.equal(_protocol[2], 0);
@@ -755,7 +755,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
     describe("Generate custom tokens", async () => {
         it("Should fail if msg.sender is not polymath", async () => {
             await catchRevert(
-                I_STRProxied.modifySecurityToken("LOGAN", "LOG", account_temp, dummy_token, "I am custom ST", currentTime, 0, {
+                I_STRProxied.modifySecurityToken("LOGAN", "LOG", account_temp, dummy_token, "I am custom ST", currentTime, {
                     from: account_delegate
                 }),
                 "tx revert -> msg.sender is not polymath account"
@@ -764,7 +764,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should fail to genrate the custom security token -- ticker length is greater than 10 chars", async () => {
             await catchRevert(
-                I_STRProxied.modifySecurityToken("LOGAN", "LOGLOGLOGLOG", account_temp, dummy_token, "I am custom ST", currentTime, 0, {
+                I_STRProxied.modifySecurityToken("LOGAN", "LOGLOGLOGLOG", account_temp, dummy_token, "I am custom ST", currentTime, {
                     from: account_polymath
                 }),
                 "tx revert -> ticker length is greater than 10 chars"
@@ -773,7 +773,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should fail to generate the custom security token -- name should not be 0 length ", async () => {
             await catchRevert(
-                I_STRProxied.modifySecurityToken("", "LOG", account_temp, dummy_token, "I am custom ST", currentTime, 0, {
+                I_STRProxied.modifySecurityToken("", "LOG", account_temp, dummy_token, "I am custom ST", currentTime, {
                     from: account_polymath
                 }),
                 "tx revert -> name should not be 0 length"
@@ -782,7 +782,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should fail if ST address is 0 address", async () => {
             await catchRevert(
-                I_STRProxied.modifySecurityToken("LOGAN", "LOG", account_temp, address_zero, "I am custom ST", currentTime, 0, {
+                I_STRProxied.modifySecurityToken("LOGAN", "LOG", account_temp, address_zero, "I am custom ST", currentTime, {
                     from: account_polymath
                 }),
                 "tx revert -> Security token address is 0"
@@ -791,7 +791,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should fail if symbol length is 0", async () => {
             await catchRevert(
-                I_STRProxied.modifySecurityToken("", "0x0", account_temp, dummy_token, "I am custom ST", currentTime, 0, {
+                I_STRProxied.modifySecurityToken("", "0x0", account_temp, dummy_token, "I am custom ST", currentTime, {
                     from: account_polymath
                 }),
                 "tx revert -> zero length of the symbol is not allowed"
@@ -800,7 +800,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should fail to generate the custom ST -- deployedAt param is 0", async () => {
             await catchRevert(
-                I_STRProxied.modifySecurityToken(name2, symbol2, token_owner, dummy_token, "I am custom ST", new BN(0), 0, { from: account_polymath }),
+                I_STRProxied.modifySecurityToken(name2, symbol2, token_owner, dummy_token, "I am custom ST", new BN(0), { from: account_polymath }),
                 "tx revert -> because deployedAt param is 0"
             );
         });
@@ -815,7 +815,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
             tickersListArray = await I_Getter.getTickersByOwner.call(account_temp);
             console.log(tickersListArray);
             // Generating the ST
-            let tx = await I_STRProxied.modifySecurityToken("LOGAN", "LOG", account_temp, dummy_token, "I am custom ST", currentTime, 0, {
+            let tx = await I_STRProxied.modifySecurityToken("LOGAN", "LOG", account_temp, dummy_token, "I am custom ST", currentTime, {
                 from: account_polymath
             });
             tickersListArray = await I_Getter.getTickersByOwner.call(account_temp);
@@ -837,7 +837,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
             // await catchRevert(I_STRProxied.modifySecurityToken("LOGAN2", "LOG2", account_temp, dummy_token, "I am custom ST", await latestTime(), {from: account_polymath}));
             // await I_STRProxied.modifyTicker(account_temp, "LOG2", "LOGAN2", await latestTime(), currentTime.add(new BN(duration.days(10))), false, {from: account_polymath});
             // await increaseTime(duration.days(1));
-            let tx = await I_STRProxied.modifySecurityToken("LOGAN2", "LOG2", account_temp, dummy_token, "I am custom ST", currentTime, 0, {
+            let tx = await I_STRProxied.modifySecurityToken("LOGAN2", "LOG2", account_temp, dummy_token, "I am custom ST", currentTime, {
                 from: account_polymath
             });
             assert.equal(tx.logs[1].args._ticker, "LOG2", "Symbol should match with the registered symbol");

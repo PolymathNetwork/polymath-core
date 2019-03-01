@@ -22,7 +22,7 @@ All notable changes to this project will be documented in this file.
 * Migrate all the getters of `SecurityTokenRegsitry.sol` to `STRGetter.sol` contract.
 * Removed `_polyToken` parameter from `initialize` function in `SecurityTokenRegistry`.
 * Allows an explicit token factory version to be used during creation of securityToken.
-* Rename the `getProtocolVersion()` to `getCurrentProtocolVersion()`.
+* Rename the `getProtocolVersion()` to `getLatestProtocolVersion()`.
 * Return SecurityToken version in the `getSecurityTokenData()` function.
 
 ## GeneralTransferManager

@@ -353,35 +353,6 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         }
     }
 
-    /**
-    * @notice Adds or removes addresses from the whitelist - can be called by anyone with a valid signature
-    * @param _investor is the address to whitelist
-    * @param _fromTime is the moment when the sale lockup period ends and the investor can freely sell his tokens
-    * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
-    * @param _expiryTime is the moment till investors KYC will be validated. After that investor need to do re-KYC
-    * @param _validFrom is the time that this signature is valid from
-    * @param _validTo is the time that this signature is valid until
-    * @param _nonce nonce of signature (avoid replay attack)
-    * @param _signature issuer signature
-    */
-    function modifyKYCDataSigned(
-        address _investor,
-        uint256 _fromTime,
-        uint256 _toTime,
-        uint256 _expiryTime,
-        uint256 _validFrom,
-        uint256 _validTo,
-        uint256 _nonce,
-        bytes memory _signature
-    )
-        public
-    {
-        require(
-            _modifyKYCDataSigned(_investor, _fromTime, _toTime, _expiryTime, _validFrom, _validTo, _nonce, _signature),
-            "Invalid signature or data"
-        );
-    }
-
     function _modifyKYCDataSigned(
         address _investor,
         uint256 _fromTime,
@@ -403,14 +374,77 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
             return false;
         if(_investor == address(0))
             return false;
-        if(nonceMap[_investor][_nonce])
-            return false;
-        nonceMap[_investor][_nonce] = true;
         bytes32 hash = keccak256(
             abi.encodePacked(this, _investor, _fromTime, _toTime, _expiryTime, _validFrom, _validTo, _nonce)
         );
-        if (_checkSig(hash, _signature)) {
+        if (_checkSig(hash, _signature, _nonce)) {
             _modifyKYCData(_investor, _fromTime, _toTime, _expiryTime);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+    * @notice Adds or removes addresses from the whitelist - can be called by anyone with a valid signature
+    * @param _investor is the address to whitelist
+    * @param _fromTime is the moment when the sale lockup period ends and the investor can freely sell his tokens
+    * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
+    * @param _expiryTime is the moment till investors KYC will be validated. After that investor need to do re-KYC
+    * @param _validFrom is the time that this signature is valid from
+    * @param _validTo is the time that this signature is valid until
+    * @param _nonce nonce of signature (avoid replay attack)
+    * @param _signature issuer signature
+    */
+    function modifyKYCDataSignedMulti(
+        address[] memory _investor,
+        uint256[] memory _fromTime,
+        uint256[] memory _toTime,
+        uint256[] memory _expiryTime,
+        uint256 _validFrom,
+        uint256 _validTo,
+        uint256 _nonce,
+        bytes memory _signature
+    )
+        public
+    {
+        require(
+            _modifyKYCDataSignedMulti(_investor, _fromTime, _toTime, _expiryTime, _validFrom, _validTo, _nonce, _signature),
+            "Invalid signature or data"
+        );
+    }
+
+    function _modifyKYCDataSignedMulti(
+        address[] memory _investor,
+        uint256[] memory _fromTime,
+        uint256[] memory _toTime,
+        uint256[] memory _expiryTime,
+        uint256 _validFrom,
+        uint256 _validTo,
+        uint256 _nonce,
+        bytes memory _signature
+    )
+        internal
+        returns(bool)
+    {
+        if (_investor.length != _fromTime.length ||
+            _fromTime.length != _toTime.length ||
+            _toTime.length != _expiryTime.length
+        ) {
+            return false;
+        }
+
+        if (_validFrom > now || _validTo < now) {
+            return false;
+        }
+
+        bytes32 hash = keccak256(
+            abi.encodePacked(this, _investor, _fromTime, _toTime, _expiryTime, _validFrom, _validTo, _nonce)
+        );
+
+        if (_checkSig(hash, _signature, _nonce)) {
+            for (uint256 i = 0; i < _investor.length; i++) {
+                _modifyKYCData(_investor[i], _fromTime[i], _toTime[i], _expiryTime[i]);
+            }
             return true;
         }
         return false;
@@ -419,11 +453,15 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     /**
      * @notice Used to verify the signature
      */
-    function _checkSig(bytes32 _hash, bytes memory _signature) internal view returns(bool) {
+    function _checkSig(bytes32 _hash, bytes memory _signature, uint256 _nonce) internal returns(bool) {
         //Check that the signature is valid
         //sig should be signing - _investor, _fromTime, _toTime & _expiryTime and be signed by the issuer address
         address signer = _hash.toEthSignedMessageHash().recover(_signature);
-        require(_checkPerm(OPERATOR, signer), "Incorrect signer");
+        if (nonceMap[signer][_nonce] || !_checkPerm(OPERATOR, signer)) {
+            return false;
+        }
+        nonceMap[signer][_nonce] = true;
+        return true;
     }
 
     /**

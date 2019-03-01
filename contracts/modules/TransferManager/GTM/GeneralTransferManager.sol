@@ -353,6 +353,35 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         }
     }
 
+    /**
+    * @notice Adds or removes addresses from the whitelist - can be called by anyone with a valid signature
+    * @param _investor is the address to whitelist
+    * @param _fromTime is the moment when the sale lockup period ends and the investor can freely sell his tokens
+    * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
+    * @param _expiryTime is the moment till investors KYC will be validated. After that investor need to do re-KYC
+    * @param _validFrom is the time that this signature is valid from
+    * @param _validTo is the time that this signature is valid until
+    * @param _nonce nonce of signature (avoid replay attack)
+    * @param _signature issuer signature
+    */
+    function modifyKYCDataSigned(
+        address _investor,
+        uint256 _fromTime,
+        uint256 _toTime,
+        uint256 _expiryTime,
+        uint256 _validFrom,
+        uint256 _validTo,
+        uint256 _nonce,
+        bytes memory _signature
+    )
+        public
+    {
+        require(
+            _modifyKYCDataSigned(_investor, _fromTime, _toTime, _expiryTime, _validFrom, _validTo, _nonce, _signature),
+            "Invalid signature or data"
+        );
+    }
+
     function _modifyKYCDataSigned(
         address _investor,
         uint256 _fromTime,

@@ -1,7 +1,7 @@
 pragma solidity ^0.5.0;
 
 import "../UpgradableModuleFactory.sol";
-import "../../proxy/GeneralPermissionManagerProxy.sol";
+import "./GeneralPermissionManagerProxy.sol";
 
 /**
  * @title Factory for deploying GeneralPermissionManager module

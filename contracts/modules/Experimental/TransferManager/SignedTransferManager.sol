@@ -15,16 +15,8 @@ contract SignedTransferManager is TransferManager {
     //mapping(bytes => bool) invalidSignatures;
     bytes32 constant public INVALID_SIG = "INVALIDSIG";
 
-    //keep tracks of the address that allows to sign messages
-    //mapping(address => bool) public signers;
-    bytes32 constant public SIGNER = "SIGNER";
-
-    // Emit when signer stats was changed
-    event SignersUpdated(address[] _signers, bool[] _signersStats);
-
     // Emit when a signature has been deemed invalid
     event SignatureUsed(bytes _data);
-
 
     /**
      * @notice Constructor
@@ -62,21 +54,6 @@ contract SignedTransferManager is TransferManager {
 
     function checkSigner(address _signer) external view returns(bool) {
         return _checkSigner(_signer);
-    }
-
-    /**
-    * @notice function to remove or add signer(s) onto the signer mapping
-    * @param _signers address array of signers
-    * @param _signersStats bool array of signers stats
-    */
-    function updateSigners(address[] calldata _signers, bool[] calldata _signersStats) external withPerm(ADMIN) {
-        require(_signers.length == _signersStats.length, "Array length mismatch");
-        IDataStore dataStore = IDataStore(ISecurityToken(securityToken).dataStore());
-        for(uint256 i=0; i<_signers.length; i++) {
-            require(_signers[i] != address(0), "Invalid address");
-            dataStore.setBool(keccak256(abi.encodePacked(SIGNER, _signers[i])), _signersStats[i]);
-        }
-        emit SignersUpdated(_signers, _signersStats);
     }
 
     /**
@@ -178,17 +155,16 @@ contract SignedTransferManager is TransferManager {
     }
 
     function _checkSignatureIsInvalid(bytes memory _data) internal view returns(bool) {
-        IDataStore dataStore = IDataStore(ISecurityToken(securityToken).dataStore());
+        IDataStore dataStore = getDataStore();
         return dataStore.getBool(keccak256(abi.encodePacked(INVALID_SIG, _data)));
     }
 
     function _checkSigner(address _signer) internal view returns(bool) {
-        IDataStore dataStore = IDataStore(ISecurityToken(securityToken).dataStore());
-        return dataStore.getBool(keccak256(abi.encodePacked(SIGNER, _signer)));
+        return _checkPerm(OPERATOR, _signer);
     }
 
     function _invalidateSignature(bytes memory _data) internal {
-        IDataStore dataStore = IDataStore(ISecurityToken(securityToken).dataStore());
+        IDataStore dataStore = getDataStore();
         dataStore.setBool(keccak256(abi.encodePacked(INVALID_SIG, _data)), true);
         emit SignatureUsed(_data);
     }

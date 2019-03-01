@@ -178,30 +178,30 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
 
     /**
     * @notice Modifies the successful checks required for transfers.
-    * @param _transferType Type of transfer (0 = General, 1 = Issuance, 2 = Redemption)
+    * @param _transferTypes Types of transfer (0 = General, 1 = Issuance, 2 = Redemption)
     * @param _fromValidKYC Defines if KYC is required for the sender
     * @param _toValidKYC Defines if KYC is required for the receiver
     * @param _fromRestricted Defines if transfer time restriction is checked for the sender
     * @param _toRestricted Defines if transfer time restriction is checked for the receiver
     */
     function modifyTransferRequirementsMulti(
-        uint256[] memory _transferType,
+        uint256[] memory _transferTypes,
         bool[] memory _fromValidKYC,
         bool[] memory _toValidKYC,
         bool[] memory _fromRestricted,
         bool[] memory _toRestricted
     ) public withPerm(ADMIN) {
         require(
-            _transferType.length == _fromValidKYC.length &&
+            _transferTypes.length == _fromValidKYC.length &&
             _fromValidKYC.length == _toValidKYC.length &&
             _toValidKYC.length == _fromRestricted.length &&
             _fromRestricted.length == _toRestricted.length,
             "Mismatched input lengths"
         );
 
-        for (uint256 i = 0; i <  _transferType.length; i++) {
+        for (uint256 i = 0; i <  _transferTypes.length; i++) {
             _modifyTransferRequirements(
-                _transferType[i],
+                _transferTypes[i],
                 _fromValidKYC[i],
                 _toValidKYC[i],
                 _fromRestricted[i],
@@ -217,6 +217,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         bool _fromRestricted,
         bool _toRestricted
     ) internal {
+        require(_transferType < 3, "Invalid TransferType");
         transferRequirements[_transferType] =
             TransferRequirements(
                 _fromValidKYC,

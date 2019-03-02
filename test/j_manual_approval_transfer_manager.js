@@ -267,7 +267,7 @@ contract("ManualApprovalTransferManager", accounts => {
             );
             I_ManualApprovalTransferManager = await ManualApprovalTransferManager.at(tx.logs[2].args._module);
         });
-        
+
         it("Cannot call executeTransfer on the TM directly", async () => {
             await catchRevert(
                 I_ManualApprovalTransferManager.executeTransfer(
@@ -324,19 +324,6 @@ contract("ManualApprovalTransferManager", accounts => {
             await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), { from: account_investor2 });
 
             assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), web3.utils.toWei("31", "ether"));
-        });
-
-        it("Should fail to add a manual approval because invalid _to address", async () => {
-            await catchRevert(
-                I_ManualApprovalTransferManager.addManualApproval(
-                    account_investor1,
-                    "0x0000000000000000000000000000000000000000",
-                    web3.utils.toWei("2", "ether"),
-                    currentTime.add(new BN(duration.days(1))),
-                    web3.utils.fromAscii("DESCRIPTION"),
-                    { from: token_owner }
-                )
-            );
         });
 
         it("Should fail to add a manual approval because invalid expiry time", async () => {

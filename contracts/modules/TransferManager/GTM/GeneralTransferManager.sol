@@ -159,16 +159,14 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     }
 
     function _processTransferSignature(uint256 _nonce, uint256 _validFrom, uint256 _validTo, bytes memory _data) internal {
-        address investor;
-        uint256[] memory kycTimes = new uint256[](3); //[fromTime, toTime, expiryTime]. Created array to avoid stack too deep error.
+        address[] memory investor;
+        uint256[] memory fromTime;
+        uint256[] memory toTime;
+        uint256[] memory expiryTime;
         bytes memory signature;
-        bool moreSignaturesAvailable; //Using a bool becuase decoding and checking of empty bytes is inconsistent.
-        bytes memory nextData;
-        (investor, kycTimes[0], kycTimes[1], kycTimes[2], signature, moreSignaturesAvailable, nextData) =
-            abi.decode(_data, (address, uint256, uint256, uint256, bytes, bool, bytes));
-        _modifyKYCDataSigned(investor, kycTimes[0], kycTimes[1], kycTimes[2], _validFrom, _validTo, _nonce, signature);
-        if (moreSignaturesAvailable)
-           _processTransferSignature(_nonce, _validFrom, _validTo, nextData);
+        (investor, fromTime, toTime, expiryTime, signature) =
+            abi.decode(_data, (address[], uint256[], uint256[], uint256[], bytes));
+        _modifyKYCDataSignedMulti(investor, fromTime, toTime, expiryTime, _validFrom, _validTo, _nonce, signature);
     }
 
     /**

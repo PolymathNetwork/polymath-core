@@ -633,15 +633,13 @@ contract("GeneralTransferManager", async (accounts) => {
             let nonce = 5;
             const sig = getSignGTMTransferData(
                 I_GeneralTransferManager.address,
-                account_investor2,
-                currentTime.toNumber(),
-                currentTime.toNumber(),
-                expiryTime + duration.days(200),
+                [account_investor2],
+                [currentTime.toNumber()],
+                [currentTime.toNumber()],
+                [expiryTime + duration.days(200)],
                 validFrom,
                 validTo,
                 nonce,
-                false,
-                web3.eth.abi.encodeParameter('bytes', '0x00'),
                 signer.privateKey
             );
 

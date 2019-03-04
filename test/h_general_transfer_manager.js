@@ -1,6 +1,6 @@
 import latestTime from "./helpers/latestTime";
 import { duration, promisifyLogWatch, latestBlock } from "./helpers/utils";
-import { getSignGTMData, getSignGTMTransferData } from "./helpers/signData";
+import { getSignGTMData, getSignGTMTransferData, getMultiSignGTMData } from "./helpers/signData";
 import { takeSnapshot, increaseTime, revertToSnapshot } from "./helpers/time";
 import { pk } from "./helpers/testprivateKey";
 import { encodeProxyCall, encodeModuleCall } from "./helpers/encodeCall";
@@ -595,11 +595,23 @@ contract("GeneralTransferManager", async (accounts) => {
             let validTo = await latestTime() + 60 * 60;
             let nonce = 5;
             const sig = getSignGTMData(
-                account_investor2,
+                I_GeneralTransferManager.address,
                 account_investor2,
                 fromTime,
                 toTime,
                 expiryTime,
+                validFrom,
+                validTo,
+                nonce,
+                "2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200"
+            );
+
+            const sig2 = getMultiSignGTMData(
+                I_GeneralTransferManager.address,
+                [account_investor2],
+                [fromTime],
+                [toTime],
+                [expiryTime],
                 validFrom,
                 validTo,
                 nonce,
@@ -616,6 +628,23 @@ contract("GeneralTransferManager", async (accounts) => {
                     validTo,
                     nonce,
                     sig,
+                    {
+                        from: account_investor2,
+                        gas: 6000000
+                    }
+                )
+            );
+
+            await catchRevert(
+                I_GeneralTransferManager.modifyKYCDataSignedMulti(
+                    [account_investor2],
+                    [fromTime],
+                    [toTime],
+                    [expiryTime],
+                    validFrom,
+                    validTo,
+                    nonce,
+                    sig2,
                     {
                         from: account_investor2,
                         gas: 6000000
@@ -649,6 +678,67 @@ contract("GeneralTransferManager", async (accounts) => {
             await I_SecurityToken.transferWithData(account_investor2, new BN(web3.utils.toWei("1", "ether")), sig, {from: account_investor1});
 
             assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
+            await revertToSnapshot(snap_id);
+        });
+
+        it("Should do multiple signed whitelist in a signle transaction", async () => {
+            let snap_id = await takeSnapshot();
+            await I_GeneralTransferManager.modifyKYCDataMulti(
+                [account_investor1, account_investor2],
+                [currentTime, currentTime],
+                [currentTime, currentTime],
+                [1, 1],
+                {
+                    from: account_issuer,
+                    gas: 6000000
+                }
+            );
+
+            let kycData = await I_GeneralTransferManager.getKYCData([account_investor1, account_investor2]);
+
+            assert.equal(new BN(kycData[2][0]).toNumber(), 1, "KYC data not modified correctly");
+            assert.equal(new BN(kycData[2][1]).toNumber(), 1, "KYC data not modified correctly");
+
+            let validFrom = await latestTime();
+            let validTo = await latestTime() + duration.days(5);
+            let nonce = 5;
+            
+            let newExpiryTime =  new BN(expiryTime).add(new BN(duration.days(200)));
+            const sig = getMultiSignGTMData(
+                I_GeneralTransferManager.address,
+                [account_investor1, account_investor2],
+                [fromTime, fromTime],
+                [toTime, toTime],
+                [newExpiryTime, newExpiryTime],
+                validFrom,
+                validTo,
+                nonce,
+                signer.privateKey
+            );
+
+            await increaseTime(10000);
+            
+            
+            I_GeneralTransferManager.modifyKYCDataSignedMulti(
+                [account_investor1, account_investor2],
+                [fromTime, fromTime],
+                [toTime, toTime],
+                [newExpiryTime, newExpiryTime],
+                validFrom,
+                validTo,
+                nonce,
+                sig,
+                {
+                    from: account_investor2,
+                    gas: 6000000
+                }
+            );
+            
+            kycData = await I_GeneralTransferManager.getKYCData([account_investor1, account_investor2]);
+
+            assert.equal(new BN(kycData[2][0]).toString(), newExpiryTime.toString(), "KYC data not modified correctly");
+            assert.equal(new BN(kycData[2][1]).toString(), newExpiryTime.toString(), "KYC data not modified correctly");
+
             await revertToSnapshot(snap_id);
         });
 

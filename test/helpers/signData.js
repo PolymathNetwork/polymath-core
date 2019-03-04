@@ -63,6 +63,19 @@ function getSignGTMData(tmAddress, investorAddress, fromTime, toTime, expiryTime
 }
 
 function getSignGTMTransferData(tmAddress, investorAddress, fromTime, toTime, expiryTime, validFrom, validTo, nonce, pk) {
+    let signature = getMultiSignGTMData(tmAddress, investorAddress, fromTime, toTime, expiryTime, validFrom, validTo, nonce, pk);
+    let packedData = web3.eth.abi.encodeParameters(
+        ['address[]', 'uint256[]', 'uint256[]', 'uint256[]', 'bytes'], 
+        [investorAddress, fromTime, toTime, expiryTime, signature]
+    );
+    let data = web3.eth.abi.encodeParameters(
+        ['address', 'uint256', 'uint256', 'uint256', 'bytes'], 
+        [tmAddress, new BN(nonce).toString(), new BN(validFrom).toString(), new BN(validTo).toString(), packedData]
+    );
+    return data;
+}
+
+function getMultiSignGTMData(tmAddress, investorAddress, fromTime, toTime, expiryTime, validFrom, validTo, nonce, pk) {
     let hash = web3.utils.soliditySha3({
         t: 'address',
         v: tmAddress
@@ -89,19 +102,12 @@ function getSignGTMTransferData(tmAddress, investorAddress, fromTime, toTime, ex
         v: new BN(nonce)
     });
     let signature = (web3.eth.accounts.sign(hash, pk)).signature;
-    let packedData = web3.eth.abi.encodeParameters(
-        ['address[]', 'uint256[]', 'uint256[]', 'uint256[]', 'bytes'], 
-        [investorAddress, fromTime, toTime, expiryTime, signature]
-    );
-    let data = web3.eth.abi.encodeParameters(
-        ['address', 'uint256', 'uint256', 'uint256', 'bytes'], 
-        [tmAddress, new BN(nonce).toString(), new BN(validFrom).toString(), new BN(validTo).toString(), packedData]
-    );
-    return data;
+    return signature;
 }
 
 module.exports = {
     getSignSTMData,
     getSignGTMData,
-    getSignGTMTransferData
+    getSignGTMTransferData,
+    getMultiSignGTMData
 };

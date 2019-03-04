@@ -303,7 +303,7 @@ contract("ModuleRegistry", async (accounts) => {
                 await I_PolyToken.getTokens(new BN(web3.utils.toWei("2000")), account_issuer);
                 await I_PolyToken.approve(I_STRProxied.address, new BN(web3.utils.toWei("2000")), { from: account_issuer });
                 await I_STRProxied.registerTicker(account_issuer, symbol, name, { from: account_issuer });
-                let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, true, { from: account_issuer });
+                let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, true, 0, { from: account_issuer });
                 assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase());
                 I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
             });
@@ -405,7 +405,7 @@ contract("ModuleRegistry", async (accounts) => {
                 await I_PolyToken.getTokens(new BN(web3.utils.toWei("2000")), account_issuer);
                 await I_PolyToken.approve(I_STRProxied.address, new BN(web3.utils.toWei("2000")), { from: account_issuer });
                 await I_STRProxied.registerTicker(account_issuer, newSymbol, name, { from: account_issuer });
-                let tx = await I_STRProxied.generateSecurityToken(name, newSymbol, tokenDetails, true, { from: account_issuer });
+                let tx = await I_STRProxied.generateSecurityToken(name, newSymbol, tokenDetails, true, 0, { from: account_issuer });
                 assert.equal(tx.logs[2].args._ticker, newSymbol.toUpperCase());
                 I_SecurityToken2 = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
 

@@ -155,7 +155,7 @@ contract("Issuance", async (accounts) => {
             it("POLYMATH: Should generate the new security token with the same symbol as registered above", async () => {
                 await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: account_polymath });
 
-                let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, account_polymath, { from: account_polymath });
+                let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, account_polymath, 0, { from: account_polymath });
 
                 // Verify the successful generation of the security token
                 assert.equal(tx.logs[2].args._ticker, symbol, "SecurityToken doesn't get deployed");

@@ -148,7 +148,7 @@ contract("Concurrent STO", async (accounts) => {
             await I_PolyToken.getTokens(initRegFee, account_issuer);
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: account_issuer });
 
-            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, account_issuer, { from: account_issuer });
+            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, account_issuer, 0, { from: account_issuer });
             assert.equal(tx.logs[2].args._ticker, symbol, "SecurityToken doesn't get deployed");
 
             I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);

@@ -12,13 +12,17 @@ interface ISecurityTokenRegistry {
      * @param _tokenDetails is the off-chain details of the token
      * @param _divisible is whether or not the token is divisible
      * @param _treasuryWallet Ethereum address which will holds the STs.
+     * @param _protocolVersion Version of securityToken contract
+     * - `_protocolVersion` is the packed value of uin8[3] array (it will be calculated offchain)
+     * - if _protocolVersion == 0 then latest version of securityToken will be generated
      */
     function generateSecurityToken(
         string calldata _name,
         string calldata _ticker,
         string calldata _tokenDetails,
         bool _divisible,
-        address _treasuryWallet
+        address _treasuryWallet,
+        uint256 _protocolVersion
     ) external;
 
     /**

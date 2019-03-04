@@ -104,7 +104,8 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         address _registrant,
         bool _fromAdmin,
         uint256 _usdFee,
-        uint256 _polyFee
+        uint256 _polyFee,
+        uint256 _protocolVersion
     );
     // Emit after ticker registration
     event RegisterTicker(
@@ -488,32 +489,51 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @param _tokenDetails is the off-chain details of the token
      * @param _divisible is whether or not the token is divisible
      * @param _treasuryWallet Ethereum address which will holds the STs.
+     * @param _protocolVersion Version of securityToken contract
+     * - `_protocolVersion` is the packed value of uin8[3] array (it will be calculated offchain)
+     * - if _protocolVersion == 0 then latest version of securityToken will be generated
      */
     function generateSecurityToken(
         string calldata _name,
         string calldata _ticker,
         string calldata _tokenDetails,
         bool _divisible,
-        address _treasuryWallet
+        address _treasuryWallet,
+        uint256 _protocolVersion
     )
         external
         whenNotPausedOrOwner
     {
+        uint256 protocolVersion = _protocolVersion;
         require(bytes(_name).length > 0 && bytes(_ticker).length > 0, "Bad ticker");
         require(_treasuryWallet != address(0), "0x0 not allowed");
+        if (_protocolVersion == 0) {
+            protocolVersion = getUintValue(Encoder.getKey("latestVersion"));
+        }
+        require(protocolVersion != uint256(0), "Invalid version");
         string memory ticker = Util.upper(_ticker);
         bytes32 statusKey = Encoder.getKey("registeredTickers_status", ticker);
         require(!getBoolValue(statusKey), "Already deployed");
         set(statusKey, true);
         require(_tickerOwner(ticker) == msg.sender, "Not authorised");
         /*solium-disable-next-line security/no-block-members*/
-        require(getUintValue(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now,  "Ticker expired");
-        _deployToken(_name, ticker, _tokenDetails, msg.sender, _divisible, _treasuryWallet); 
+        require(getUintValue(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now, "Ticker expired");
+        _deployToken(_name, ticker, _tokenDetails, msg.sender, _divisible, _treasuryWallet, protocolVersion); 
     }
 
-    function _deployToken(string memory _name, string memory _ticker, string memory _tokenDetails, address _issuer, bool _divisible, address _wallet) internal {
+    function _deployToken(
+        string memory _name,
+        string memory _ticker,
+        string memory _tokenDetails,
+        address _issuer,
+        bool _divisible,
+        address _wallet,
+        uint256 _protocolVersion
+    ) 
+        internal
+    {
         (uint256 _usdFee, uint256 _polyFee) = _takeFee(STLAUNCHFEE);
-        address newSecurityTokenAddress = ISTFactory(getAddressValue(Encoder.getKey("protocolVersionST", getUintValue(Encoder.getKey("latestVersion"))))).deployToken(
+        address newSecurityTokenAddress = ISTFactory(getAddressValue(Encoder.getKey("protocolVersionST", _protocolVersion))).deployToken(
             _name,
             _ticker,
             18,
@@ -528,7 +548,9 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         _storeSecurityTokenData(newSecurityTokenAddress, _ticker, _tokenDetails, now);
         set(Encoder.getKey("tickerToSecurityToken", _ticker), newSecurityTokenAddress);
         /*solium-disable-next-line security/no-block-members*/
-        emit NewSecurityToken(_ticker, _name, newSecurityTokenAddress, msg.sender, now, msg.sender, false, _usdFee, _polyFee);
+        emit NewSecurityToken(
+            _ticker, _name, newSecurityTokenAddress, msg.sender, now, msg.sender, false, _usdFee, _polyFee, _protocolVersion
+        );
     }
 
     /**
@@ -550,7 +572,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     )
         external
         onlyOwner
-    {
+    {   
         require(bytes(_name).length > 0 && bytes(_ticker).length > 0, "Bad data");
         require(bytes(_ticker).length <= 10, "Bad ticker");
         require(_deployedAt != 0 && _owner != address(0), "Bad data");
@@ -566,7 +588,9 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         set(Encoder.getKey("tickerToSecurityToken", ticker), _securityToken);
         _modifyTicker(_owner, ticker, _name, registrationTime, expiryTime, true);
         _storeSecurityTokenData(_securityToken, ticker, _tokenDetails, _deployedAt);
-        emit NewSecurityToken(ticker, _name, _securityToken, _owner, _deployedAt, msg.sender, true, uint256(0), uint256(0));
+        emit NewSecurityToken(
+            ticker, _name, _securityToken, _owner, _deployedAt, msg.sender, true, uint256(0), uint256(0), 0
+        );
     }
 
     /**

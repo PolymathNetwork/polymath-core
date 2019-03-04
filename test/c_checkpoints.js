@@ -140,13 +140,7 @@ contract("Checkpoints", async function(accounts) {
             assert.equal(web3.utils.toAscii(log.args._name).replace(/\u0000/g, ""), "GeneralTransferManager");
         });
 
-        it("Should set controller to token owner --failed not allowed", async () => {
-            await catchRevert(
-                I_SecurityToken.setController(token_owner, { from: token_owner })
-            );
-        });
-
-        it("Should set the tcontroller", async() => {
+        it("Should set the controller", async() => {
             await I_SecurityToken.setController(account_controller, {from: token_owner});
         })
 

@@ -595,10 +595,6 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      */
     function setController(address _controller) public onlyOwner {
         require(_isControllable());
-        // Below condition is to restrict the owner/issuer to become the controller(In an ideal world).
-        // But for non ideal case issuer could set another address which is not the owner of the token
-        // but issuer holds its private key.
-        require(_controller != msg.sender);
         emit SetController(controller, _controller);
         controller = _controller;
     }

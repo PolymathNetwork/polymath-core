@@ -21,12 +21,15 @@ All notable changes to this project will be documented in this file.
 * Replaced `updatePolyTokenAddress()` function with `updateFromRegistry()` in `SecurityTokenRegistry`.  
 * Migrate all the getters of `SecurityTokenRegsitry.sol` to `STRGetter.sol` contract.
 * Removed `_polyToken` parameter from `initialize` function in `SecurityTokenRegistry`.
+* Allows an explicit token factory version to be used during creation of securityToken.
+* Rename the `getProtocolVersion()` to `getLatestProtocolVersion()`.
 * Return SecurityToken version in the `getSecurityTokenData()` function.
 
 ## GeneralTransferManager
 * `modifyWhitelist()` function renamed to `modifyKYCData()`.
 * Added functions to modify and get flags
 * `canBuyFromSto` is now `canNotBuyFromSto` and it is the flag `1`
+* GTM logic reworked. Now, instead of flags like allowAllTransfers, there is a matrix of transfer requirements that must be fulfilled based on type of transfer.
 
 ## Generalize
 * Removed `_polyAddress` parameter from constructors of all modules and module factories.

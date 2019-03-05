@@ -180,7 +180,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
 
-            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, true, { from: token_owner });
+            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, true, 0, { from: token_owner });
             console.log(tx.logs);
 
             // Verify the successful generation of the security token

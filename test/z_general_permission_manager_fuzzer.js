@@ -187,7 +187,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
 
-            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
+            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, 0, { from: token_owner });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
@@ -286,32 +286,12 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                     from: token_owner
                 });
 
-                let currentAllowAllTransferStats = await I_GeneralTransferManager.allowAllTransfers();
-                let currentAllowAllWhitelistTransfersStats = await I_GeneralTransferManager.allowAllWhitelistTransfers();
-                let currentAllowAllWhitelistIssuancesStats = await I_GeneralTransferManager.allowAllWhitelistIssuances();
-                let currentAllowAllBurnTransfersStats = await I_GeneralTransferManager.allowAllBurnTransfers();
                 console.log("2");
                 // let userPerm = await I_GeneralPermissionManager.checkPermission(accounts[j], I_GeneralTransferManager.address, 'FLAGS');
                 if (randomPerms === "ADMIN") {
                     console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " about to start");
                     await I_GeneralTransferManager.changeIssuanceAddress(accounts[j], { from: accounts[j] });
                     assert.equal(await I_GeneralTransferManager.issuanceAddress(), accounts[j]);
-
-                    await I_GeneralTransferManager.changeAllowAllTransfers(!currentAllowAllTransferStats, { from: accounts[j] });
-                    assert.equal(await I_GeneralTransferManager.allowAllTransfers(), !currentAllowAllTransferStats);
-
-                    await I_GeneralTransferManager.changeAllowAllWhitelistTransfers(!currentAllowAllWhitelistTransfersStats, {
-                        from: accounts[j]
-                    });
-                    assert.equal(await I_GeneralTransferManager.allowAllWhitelistTransfers(), !currentAllowAllWhitelistTransfersStats);
-
-                    await I_GeneralTransferManager.changeAllowAllWhitelistIssuances(!currentAllowAllWhitelistIssuancesStats, {
-                        from: accounts[j]
-                    });
-                    assert.equal(await I_GeneralTransferManager.allowAllWhitelistIssuances(), !currentAllowAllWhitelistIssuancesStats);
-
-                    await I_GeneralTransferManager.changeAllowAllBurnTransfers(!currentAllowAllBurnTransfersStats, { from: accounts[j] });
-                    assert.equal(await I_GeneralTransferManager.allowAllBurnTransfers(), !currentAllowAllBurnTransfersStats);
 
                     console.log(
                         "Test number " +
@@ -324,22 +304,6 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                     );
                 } else {
                     await catchRevert(I_GeneralTransferManager.changeIssuanceAddress(accounts[j], { from: accounts[j] }));
-                    await catchRevert(
-                        I_GeneralTransferManager.changeAllowAllTransfers(!currentAllowAllTransferStats, { from: accounts[j] })
-                    );
-                    await catchRevert(
-                        I_GeneralTransferManager.changeAllowAllWhitelistTransfers(!currentAllowAllWhitelistTransfersStats, {
-                            from: accounts[j]
-                        })
-                    );
-                    await catchRevert(
-                        I_GeneralTransferManager.changeAllowAllWhitelistIssuances(!currentAllowAllWhitelistIssuancesStats, {
-                            from: accounts[j]
-                        })
-                    );
-                    await catchRevert(
-                        I_GeneralTransferManager.changeAllowAllBurnTransfers(!currentAllowAllBurnTransfersStats, { from: accounts[j] })
-                    );
                     console.log(
                         "Test number " +
                             i +

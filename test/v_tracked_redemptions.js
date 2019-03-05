@@ -140,7 +140,7 @@ contract("TrackedRedemption", async (accounts) => {
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
 
-            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
+            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, 0, { from: token_owner });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
@@ -244,7 +244,14 @@ contract("TrackedRedemption", async (accounts) => {
         });
 
         it("Redeem some tokens - fail insufficient allowance", async () => {
-            await I_GeneralTransferManager.changeAllowAllBurnTransfers(true, { from: token_owner });
+            await I_GeneralTransferManager.modifyTransferRequirementsMulti(
+                [0, 1, 2], 
+                [true, false, false],
+                [true, true, false],
+                [false, false, false],
+                [false, false, false],
+                { from: token_owner }
+            );
 
             await catchRevert(I_TrackedRedemption.redeemTokens(new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 }));
         });

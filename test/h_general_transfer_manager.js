@@ -774,6 +774,132 @@ contract("GeneralTransferManager", async (accounts) => {
             await revertToSnapshot(snap_id);
         });
 
+        it("Should not do multiple signed whitelist if sig has expired", async () => {
+            let snap_id = await takeSnapshot();
+            await I_GeneralTransferManager.modifyKYCDataMulti(
+                [account_investor1, account_investor2],
+                [currentTime, currentTime],
+                [currentTime, currentTime],
+                [1, 1],
+                {
+                    from: account_issuer,
+                    gas: 6000000
+                }
+            );
+
+            let kycData = await I_GeneralTransferManager.getKYCData([account_investor1, account_investor2]);
+
+            assert.equal(new BN(kycData[2][0]).toNumber(), 1, "KYC data not modified correctly");
+            assert.equal(new BN(kycData[2][1]).toNumber(), 1, "KYC data not modified correctly");
+
+            let validFrom = await latestTime();
+            let validTo = await latestTime() + duration.days(5);
+            let nonce = 5;
+            
+            let newExpiryTime =  new BN(expiryTime).add(new BN(duration.days(200)));
+            const sig = getMultiSignGTMData(
+                I_GeneralTransferManager.address,
+                [account_investor1, account_investor2],
+                [fromTime, fromTime],
+                [toTime, toTime],
+                [newExpiryTime, newExpiryTime],
+                1,
+                1,
+                nonce,
+                signer.privateKey
+            );
+
+            await increaseTime(10000);
+            
+            
+            await catchRevert(
+                I_GeneralTransferManager.modifyKYCDataSignedMulti(
+                    [account_investor1, account_investor2],
+                    [fromTime, fromTime],
+                    [toTime, toTime],
+                    [newExpiryTime, newExpiryTime],
+                    validFrom,
+                    validTo,
+                    nonce,
+                    sig,
+                    {
+                        from: account_investor2,
+                        gas: 6000000
+                    }
+                )
+            );
+            
+            kycData = await I_GeneralTransferManager.getKYCData([account_investor1, account_investor2]);
+
+            assert.equal(new BN(kycData[2][0]).toString(), newExpiryTime.toString(), "KYC data not modified correctly");
+            assert.equal(new BN(kycData[2][1]).toString(), newExpiryTime.toString(), "KYC data not modified correctly");
+
+            await revertToSnapshot(snap_id);
+        });
+
+        it("Should not do multiple signed whitelist if array length mismatch", async () => {
+            let snap_id = await takeSnapshot();
+            await I_GeneralTransferManager.modifyKYCDataMulti(
+                [account_investor1, account_investor2],
+                [currentTime, currentTime],
+                [currentTime, currentTime],
+                [1, 1],
+                {
+                    from: account_issuer,
+                    gas: 6000000
+                }
+            );
+
+            let kycData = await I_GeneralTransferManager.getKYCData([account_investor1, account_investor2]);
+
+            assert.equal(new BN(kycData[2][0]).toNumber(), 1, "KYC data not modified correctly");
+            assert.equal(new BN(kycData[2][1]).toNumber(), 1, "KYC data not modified correctly");
+
+            let validFrom = await latestTime();
+            let validTo = await latestTime() + duration.days(5);
+            let nonce = 5;
+            
+            let newExpiryTime =  new BN(expiryTime).add(new BN(duration.days(200)));
+            const sig = getMultiSignGTMData(
+                I_GeneralTransferManager.address,
+                [account_investor1, account_investor2],
+                [fromTime, fromTime],
+                [toTime, toTime],
+                [newExpiryTime],
+                validFrom,
+                validTo,
+                nonce,
+                signer.privateKey
+            );
+
+            await increaseTime(10000);
+            
+            
+            await catchRevert(
+                I_GeneralTransferManager.modifyKYCDataSignedMulti(
+                    [account_investor1, account_investor2],
+                    [fromTime, fromTime],
+                    [toTime, toTime],
+                    [newExpiryTime, newExpiryTime],
+                    validFrom,
+                    validTo,
+                    nonce,
+                    sig,
+                    {
+                        from: account_investor2,
+                        gas: 6000000
+                    }
+                )
+            );
+            
+            kycData = await I_GeneralTransferManager.getKYCData([account_investor1, account_investor2]);
+
+            assert.equal(new BN(kycData[2][0]).toString(), newExpiryTime.toString(), "KYC data not modified correctly");
+            assert.equal(new BN(kycData[2][1]).toString(), newExpiryTime.toString(), "KYC data not modified correctly");
+
+            await revertToSnapshot(snap_id);
+        });
+
         it("Should Buy the tokens with signers signature", async () => {
             // Add the Investor in to the whitelist
             //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk

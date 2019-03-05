@@ -418,12 +418,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         returns(bool)
     {
         /*solium-disable-next-line security/no-block-members*/
-        if(_validFrom > now)
-            return false;
-        /*solium-disable-next-line security/no-block-members*/
-        if(_validTo < now)
-            return false;
-        if(_investor == address(0))
+        if(_validFrom > now || _validTo < now || _investor == address(0))
             return false;
         bytes32 hash = keccak256(
             abi.encodePacked(this, _investor, _fromTime, _toTime, _expiryTime, _validFrom, _validTo, _nonce)

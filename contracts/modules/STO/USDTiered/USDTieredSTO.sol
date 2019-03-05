@@ -41,7 +41,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         uint256 _rate
     );
     event ReserveTokenMint(address indexed _owner, address indexed _wallet, uint256 _tokens, uint256 _latestTier);
-    event SetAddresses(address indexed _wallet, address indexed treasuryWallet, address[] _usdTokens);
+    event SetAddresses(address indexed _wallet, address[] _usdTokens);
     event SetLimits(uint256 _nonAccreditedLimitUSD, uint256 _minimumInvestmentUSD);
     event SetTimes(uint256 _startTime, uint256 _endTime);
     event SetTiers(
@@ -91,7 +91,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @param _minimumInvestmentUSD Minimun investment in USD (* 10**18)
      * @param _fundRaiseTypes Types of currency used to collect the funds
      * @param _wallet Ethereum account address to hold the funds
-     * @param _reserveWallet Ethereum account address to receive unsold tokens
+     * @param _treasuryWallet Ethereum account address to receive unsold tokens
      * @param _usdTokens Contract address of the stable coins
      */
     function configure(
@@ -105,7 +105,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         uint256 _minimumInvestmentUSD,
         FundRaiseType[] memory _fundRaiseTypes,
         address payable _wallet,
-        address _reserveWallet,
+        address _treasuryWallet,
         address[] memory _usdTokens
     )
         public
@@ -118,7 +118,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         _modifyTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
         // NB - _setFundRaiseType must come before modifyAddresses
         _setFundRaiseType(_fundRaiseTypes);
-        _modifyAddresses(_wallet, _reserveWallet, _usdTokens);
+        _modifyAddresses(_wallet, _treasuryWallet, _usdTokens);
         _modifyLimits(_nonAccreditedLimitUSD, _minimumInvestmentUSD);
     }
 
@@ -232,6 +232,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
     function _modifyAddresses(address payable _wallet, address _treasuryWallet, address[] memory _usdTokens) internal {
         require(_wallet != address(0), "Invalid wallet");
         wallet = _wallet;
+        emit SetTreasuryWallet(treasuryWallet, _treasuryWallet);
         treasuryWallet = _treasuryWallet;
         _modifyUSDTokens(_usdTokens);
     }
@@ -246,7 +247,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
             require(_usdTokens[i] != address(0), "Invalid USD token");
             usdTokenEnabled[_usdTokens[i]] = true;
         }
-        emit SetAddresses(wallet, treasuryWallet, _usdTokens);
+        emit SetAddresses(wallet, _usdTokens);
     } 
 
     ////////////////////
@@ -273,6 +274,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
             }
         }
         address walletAddress = (treasuryWallet == address(0) ? IDataStore(getDataStore()).getAddress(TREASURY) : treasuryWallet);
+        require(walletAddress != address(0), "Invalid address");
         ISecurityToken(securityToken).issue(walletAddress, tempReturned, "");
         emit ReserveTokenMint(msg.sender, walletAddress, tempReturned, currentTier);
         finalAmountReturned = tempReturned;

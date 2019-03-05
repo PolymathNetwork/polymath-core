@@ -78,8 +78,11 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @notice Returns the treasury wallet address
      */
     function getTreasuryWallet() public view returns(address payable) {
-        if (wallet == address(0)) 
-            return address(uint160(IDataStore(getDataStore()).getAddress(TREASURY)));
+        if (wallet == address(0)) {
+            address payable treasuryWallet = address(uint160(IDataStore(getDataStore()).getAddress(TREASURY)));
+            require(address(treasuryWallet) != address(0), "Invalid address");
+            return treasuryWallet; 
+        }
         else
             return wallet;
     }

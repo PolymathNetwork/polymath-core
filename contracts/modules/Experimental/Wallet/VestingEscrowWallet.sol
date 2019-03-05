@@ -117,9 +117,11 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, Wallet {
      * @notice Returns the treasury wallet address
      */
     function getTreasuryWallet() public view returns(address) {
-        if (treasuryWallet == address(0)) 
-            return IDataStore(getDataStore()).getAddress(TREASURY);
-        else
+        if (treasuryWallet == address(0)) {
+            address wallet = IDataStore(getDataStore()).getAddress(TREASURY);
+            require(wallet != address(0), "Invalid address");
+            return wallet;
+        } else
             return treasuryWallet;
     }
 

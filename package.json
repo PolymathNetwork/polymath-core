@@ -73,7 +73,7 @@
     "request-promise": "^4.2.2",
     "shelljs": "^0.8.2",
     "solc": "^0.4.24",
-    "truffle-contract": "^3.0.4",
+    "truffle-contract": "^4.0.8",
     "truffle-hdwallet-provider-privkey": "0.2.0",
     "web3": "1.0.0-beta.34"
   },

@@ -686,6 +686,26 @@ contract("GeneralTransferManager", async (accounts) => {
             );
         });
 
+        it("Should Not Transfer with expired Signed KYC data", async () => {
+            let nonce = 5;
+            const sig = getSignGTMTransferData(
+                I_GeneralTransferManager.address,
+                [account_investor2],
+                [currentTime.toNumber()],
+                [currentTime.toNumber()],
+                [expiryTime + duration.days(200)],
+                1,
+                1,
+                nonce,
+                signer.privateKey
+            );
+
+            // Jump time
+            await increaseTime(10000);
+            await catchRevert(I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), {from: account_investor1}));
+            await catchRevert(I_SecurityToken.transferWithData(account_investor2, new BN(web3.utils.toWei("1", "ether")), sig, {from: account_investor1}));
+        });
+
         it("Should Transfer with Signed KYC data", async () => {
             let snap_id = await takeSnapshot();
             // Add the Investor in to the whitelist
@@ -709,8 +729,9 @@ contract("GeneralTransferManager", async (accounts) => {
             await increaseTime(10000);
             await catchRevert(I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), {from: account_investor1}));
             await I_SecurityToken.transferWithData(account_investor2, new BN(web3.utils.toWei("1", "ether")), sig, {from: account_investor1});
-
             assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
+            //Should transfer even with invalid sig data when kyc not required
+            await I_SecurityToken.transferWithData(account_investor1, new BN(web3.utils.toWei("1", "ether")), sig, {from: account_investor2});
             await revertToSnapshot(snap_id);
         });
 
@@ -732,8 +753,6 @@ contract("GeneralTransferManager", async (accounts) => {
             assert.equal(new BN(kycData[2][0]).toNumber(), 1, "KYC data not modified correctly");
             assert.equal(new BN(kycData[2][1]).toNumber(), 1, "KYC data not modified correctly");
 
-            let validFrom = await latestTime();
-            let validTo = await latestTime() + duration.days(5);
             let nonce = 5;
             
             let newExpiryTime =  new BN(expiryTime).add(new BN(duration.days(200)));
@@ -758,8 +777,8 @@ contract("GeneralTransferManager", async (accounts) => {
                     [fromTime, fromTime],
                     [toTime, toTime],
                     [newExpiryTime, newExpiryTime],
-                    validFrom,
-                    validTo,
+                    1,
+                    1,
                     nonce,
                     sig,
                     {
@@ -801,7 +820,7 @@ contract("GeneralTransferManager", async (accounts) => {
                     [account_investor1, account_investor2],
                     [fromTime, fromTime],
                     [toTime, toTime],
-                    [newExpiryTime, newExpiryTime],
+                    [newExpiryTime],
                     validFrom,
                     validTo,
                     nonce,
@@ -1019,6 +1038,15 @@ contract("GeneralTransferManager", async (accounts) => {
             await I_GeneralTransferManager.takeUsageFee({ from: account_delegate });
             let balanceAfter = await I_PolyToken.balanceOf(account_polymath);
             assert.equal(balanceBefore.add(new BN(web3.utils.toWei("4", "ether"))).toString(), balanceAfter.toString(), "Fee is transferred");
+        });
+
+        it("should allow authorized people to modify transfer requirements", async () => {
+            await I_GeneralTransferManager.modifyTransferRequirements(0, false, true, false, false, { from: token_owner });
+            let transferRestrions = await I_GeneralTransferManager.transferRequirements(0);
+            assert.equal(transferRestrions[0], false);
+            assert.equal(transferRestrions[1], true);
+            assert.equal(transferRestrions[2], false);
+            assert.equal(transferRestrions[3], false);
         });
 
         it("should failed in trasfering the tokens", async () => {

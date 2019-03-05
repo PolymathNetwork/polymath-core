@@ -831,8 +831,8 @@ contract("GeneralTransferManager", async (accounts) => {
             
             kycData = await I_GeneralTransferManager.getKYCData([account_investor1, account_investor2]);
 
-            assert.equal(new BN(kycData[2][0]).toString(), newExpiryTime.toString(), "KYC data not modified correctly");
-            assert.equal(new BN(kycData[2][1]).toString(), newExpiryTime.toString(), "KYC data not modified correctly");
+            assert.equal(new BN(kycData[2][0]).toNumber(), 1, "KYC data not modified correctly");
+            assert.equal(new BN(kycData[2][1]).toNumber(), 1, "KYC data not modified correctly");
 
             await revertToSnapshot(snap_id);
         });
@@ -894,8 +894,8 @@ contract("GeneralTransferManager", async (accounts) => {
             
             kycData = await I_GeneralTransferManager.getKYCData([account_investor1, account_investor2]);
 
-            assert.equal(new BN(kycData[2][0]).toString(), newExpiryTime.toString(), "KYC data not modified correctly");
-            assert.equal(new BN(kycData[2][1]).toString(), newExpiryTime.toString(), "KYC data not modified correctly");
+            assert.equal(new BN(kycData[2][0]).toNumber(), 1, "KYC data not modified correctly");
+            assert.equal(new BN(kycData[2][1]).toNumber(), 1, "KYC data not modified correctly");
 
             await revertToSnapshot(snap_id);
         });

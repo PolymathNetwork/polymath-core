@@ -41,7 +41,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         uint256 _rate
     );
     event ReserveTokenMint(address indexed _owner, address indexed _wallet, uint256 _tokens, uint256 _latestTier);
-    event SetAddresses(address indexed _wallet, address indexed _reserveWallet, address[] _usdTokens);
+    event SetAddresses(address indexed _wallet, address[] _usdTokens);
     event SetLimits(uint256 _nonAccreditedLimitUSD, uint256 _minimumInvestmentUSD);
     event SetTimes(uint256 _startTime, uint256 _endTime);
     event SetTiers(
@@ -50,6 +50,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         uint256[] _tokensPerTierTotal,
         uint256[] _tokensPerTierDiscountPoly
     );
+    event SetTreasuryWallet(address _oldWallet, address _newWallet);
 
     ///////////////
     // Modifiers //
@@ -90,7 +91,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @param _minimumInvestmentUSD Minimun investment in USD (* 10**18)
      * @param _fundRaiseTypes Types of currency used to collect the funds
      * @param _wallet Ethereum account address to hold the funds
-     * @param _reserveWallet Ethereum account address to receive unsold tokens
+     * @param _treasuryWallet Ethereum account address to receive unsold tokens
      * @param _usdTokens Contract address of the stable coins
      */
     function configure(
@@ -104,7 +105,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         uint256 _minimumInvestmentUSD,
         FundRaiseType[] memory _fundRaiseTypes,
         address payable _wallet,
-        address _reserveWallet,
+        address _treasuryWallet,
         address[] memory _usdTokens
     )
         public
@@ -117,7 +118,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         _modifyTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
         // NB - _setFundRaiseType must come before modifyAddresses
         _setFundRaiseType(_fundRaiseTypes);
-        _modifyAddresses(_wallet, _reserveWallet, _usdTokens);
+        _modifyAddresses(_wallet, _treasuryWallet, _usdTokens);
         _modifyLimits(_nonAccreditedLimitUSD, _minimumInvestmentUSD);
     }
 
@@ -127,8 +128,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      */
     function modifyFunding(FundRaiseType[] calldata _fundRaiseTypes) external {
         _onlySecurityTokenOwner();
-        /*solium-disable-next-line security/no-block-members*/
-        require(now < startTime, "STO already started");
+        _isSTOStarted();
         _setFundRaiseType(_fundRaiseTypes);
     }
 
@@ -139,8 +139,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      */
     function modifyLimits(uint256 _nonAccreditedLimitUSD, uint256 _minimumInvestmentUSD) external {
         _onlySecurityTokenOwner();
-        /*solium-disable-next-line security/no-block-members*/
-        require(now < startTime, "STO already started");
+        _isSTOStarted();
         _modifyLimits(_nonAccreditedLimitUSD, _minimumInvestmentUSD);
     }
 
@@ -160,8 +159,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         external
     {
         _onlySecurityTokenOwner();
-        /*solium-disable-next-line security/no-block-members*/
-        require(now < startTime, "STO already started");
+        _isSTOStarted();
         _modifyTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
     }
 
@@ -172,20 +170,24 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      */
     function modifyTimes(uint256 _startTime, uint256 _endTime) external {
         _onlySecurityTokenOwner();
-        /*solium-disable-next-line security/no-block-members*/
-        require(now < startTime, "STO already started");
+        _isSTOStarted();
         _modifyTimes(_startTime, _endTime);
+    }
+
+    function _isSTOStarted() internal view {
+        /*solium-disable-next-line security/no-block-members*/
+        require(now < startTime, "Already started");
     }
 
     /**
      * @dev Modifies addresses used as wallet, reserve wallet and usd token
      * @param _wallet Address of wallet where funds are sent
-     * @param _reserveWallet Address of wallet where unsold tokens are sent
+     * @param _treasuryWallet Address of wallet where unsold tokens are sent
      * @param _usdTokens Address of usd tokens
      */
-    function modifyAddresses(address payable _wallet, address _reserveWallet, address[] calldata _usdTokens) external {
+    function modifyAddresses(address payable _wallet, address _treasuryWallet, address[] calldata _usdTokens) external {
         _onlySecurityTokenOwner();
-        _modifyAddresses(_wallet, _reserveWallet, _usdTokens);
+        _modifyAddresses(_wallet, _treasuryWallet, _usdTokens);
     }
 
     function _modifyLimits(uint256 _nonAccreditedLimitUSD, uint256 _minimumInvestmentUSD) internal {
@@ -211,8 +213,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         );
         delete tiers;
         for (uint256 i = 0; i < _ratePerTier.length; i++) {
-            require(_ratePerTier[i] > 0, "Invalid rate");
-            require(_tokensPerTierTotal[i] > 0, "Invalid token amount");
+            require(_ratePerTier[i] > 0 && _tokensPerTierTotal[i] > 0, "Invalid value");
             require(_tokensPerTierDiscountPoly[i] <= _tokensPerTierTotal[i], "Too many discounted tokens");
             require(_ratePerTierDiscountPoly[i] <= _ratePerTier[i], "Invalid discount");
             tiers.push(Tier(_ratePerTier[i], _ratePerTierDiscountPoly[i], _tokensPerTierTotal[i], _tokensPerTierDiscountPoly[i], 0, 0));
@@ -228,10 +229,11 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         emit SetTimes(_startTime, _endTime);
     }
 
-    function _modifyAddresses(address payable _wallet, address _reserveWallet, address[] memory _usdTokens) internal {
-        require(_wallet != address(0) && _reserveWallet != address(0), "Invalid wallet");
+    function _modifyAddresses(address payable _wallet, address _treasuryWallet, address[] memory _usdTokens) internal {
+        require(_wallet != address(0), "Invalid wallet");
         wallet = _wallet;
-        reserveWallet = _reserveWallet;
+        emit SetTreasuryWallet(treasuryWallet, _treasuryWallet);
+        treasuryWallet = _treasuryWallet;
         _modifyUSDTokens(_usdTokens);
     }
 
@@ -245,16 +247,16 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
             require(_usdTokens[i] != address(0), "Invalid USD token");
             usdTokenEnabled[_usdTokens[i]] = true;
         }
-        emit SetAddresses(wallet, reserveWallet, _usdTokens);
-    }
+        emit SetAddresses(wallet, _usdTokens);
+    } 
 
     ////////////////////
     // STO Management //
     ////////////////////
 
     /**
-     * @notice Finalizes the STO and mint remaining tokens to reserve address
-     * @notice Reserve address must be whitelisted to successfully finalize
+     * @notice Finalizes the STO and mint remaining tokens to treasury address
+     * @notice Treasury wallet address must be whitelisted to successfully finalize
      */
     function finalize() public {
         _onlySecurityTokenOwner();
@@ -271,8 +273,10 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
                 tiers[i].mintedTotal = tiers[i].tokenTotal;
             }
         }
-        ISecurityToken(securityToken).issue(reserveWallet, tempReturned, "");
-        emit ReserveTokenMint(msg.sender, reserveWallet, tempReturned, currentTier);
+        address walletAddress = (treasuryWallet == address(0) ? IDataStore(getDataStore()).getAddress(TREASURY) : treasuryWallet);
+        require(walletAddress != address(0), "Invalid address");
+        ISecurityToken(securityToken).issue(walletAddress, tempReturned, "");
+        emit ReserveTokenMint(msg.sender, walletAddress, tempReturned, currentTier);
         finalAmountReturned = tempReturned;
         totalTokensSold = tempSold;
     }
@@ -285,7 +289,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
     function changeNonAccreditedLimit(address[] memory _investors, uint256[] memory _nonAccreditedLimit) public {
         _onlySecurityTokenOwner();
         //nonAccreditedLimitUSDOverride
-        require(_investors.length == _nonAccreditedLimit.length, "Array length mismatch");
+        require(_investors.length == _nonAccreditedLimit.length, "Length mismatch");
         for (uint256 i = 0; i < _investors.length; i++) {
             nonAccreditedLimitUSDOverride[_investors[i]] = _nonAccreditedLimit[i];
             emit SetNonAccreditedLimit(_investors[i], _nonAccreditedLimit[i]);
@@ -350,10 +354,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
       * @param _minTokens Minumum number of tokens to buy or else revert
       */
     function buyWithETHRateLimited(address _beneficiary, uint256 _minTokens) public payable validETH returns (uint256, uint256, uint256) {
-        uint256 rate = getRate(FundRaiseType.ETH);
-        uint256 initialMinted = getTokensMinted();
-        (uint256 spentUSD, uint256 spentValue) = _buyTokens(_beneficiary, msg.value, rate, FundRaiseType.ETH);
-        require(getTokensMinted().sub(initialMinted) >= _minTokens, "Insufficient tokens minted");
+        (uint256 rate, uint256 spentUSD, uint256 spentValue, uint256 initialMinted) = _getSpentvalues(_beneficiary,  msg.value, FundRaiseType.ETH, _minTokens);
         // Modify storage
         investorInvested[_beneficiary][uint8(FundRaiseType.ETH)] = investorInvested[_beneficiary][uint8(FundRaiseType.ETH)].add(spentValue);
         fundsRaised[uint8(FundRaiseType.ETH)] = fundsRaised[uint8(FundRaiseType.ETH)].add(spentValue);
@@ -389,10 +390,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
     }
 
     function _buyWithTokens(address _beneficiary, uint256 _tokenAmount, FundRaiseType _fundRaiseType, uint256 _minTokens, IERC20 _token) internal returns (uint256, uint256, uint256) {
-        uint256 initialMinted = getTokensMinted();
-        uint256 rate = getRate(_fundRaiseType);
-        (uint256 spentUSD, uint256 spentValue) = _buyTokens(_beneficiary, _tokenAmount, rate, _fundRaiseType);
-        require(getTokensMinted().sub(initialMinted) >= _minTokens, "Insufficient tokens minted");
+        (uint256 rate, uint256 spentUSD, uint256 spentValue, uint256 initialMinted) = _getSpentvalues(_beneficiary, _tokenAmount, _fundRaiseType, _minTokens);
         // Modify storage
         investorInvested[_beneficiary][uint8(_fundRaiseType)] = investorInvested[_beneficiary][uint8(_fundRaiseType)].add(spentValue);
         fundsRaised[uint8(_fundRaiseType)] = fundsRaised[uint8(_fundRaiseType)].add(spentValue);
@@ -403,6 +401,14 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         emit FundsReceived(msg.sender, _beneficiary, spentUSD, _fundRaiseType, _tokenAmount, spentValue, rate);
         return (spentUSD, spentValue, getTokensMinted().sub(initialMinted));
     }
+
+    function _getSpentvalues(address _beneficiary, uint256 _amount, FundRaiseType _fundRaiseType, uint256 _minTokens) internal returns(uint256 rate, uint256 spentUSD, uint256 spentValue, uint256 initialMinted) {
+        initialMinted = getTokensMinted();
+        rate = getRate(_fundRaiseType);
+        (spentUSD, spentValue) = _buyTokens(_beneficiary, _amount, rate, _fundRaiseType);
+        require(getTokensMinted().sub(initialMinted) >= _minTokens, "Insufficient tokens minted");
+    }
+
 
     /**
       * @notice Low level token purchase

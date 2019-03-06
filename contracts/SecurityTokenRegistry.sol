@@ -488,6 +488,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @param _ticker is the ticker symbol of the security token
      * @param _tokenDetails is the off-chain details of the token
      * @param _divisible is whether or not the token is divisible
+     * @param _treasuryWallet Ethereum address which will holds the STs.
      * @param _protocolVersion Version of securityToken contract
      * - `_protocolVersion` is the packed value of uin8[3] array (it will be calculated offchain)
      * - if _protocolVersion == 0 then latest version of securityToken will be generated
@@ -497,6 +498,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         string calldata _ticker,
         string calldata _tokenDetails,
         bool _divisible,
+        address _treasuryWallet,
         uint256 _protocolVersion
     )
         external
@@ -504,6 +506,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     {
         uint256 protocolVersion = _protocolVersion;
         require(bytes(_name).length > 0 && bytes(_ticker).length > 0, "Bad ticker");
+        require(_treasuryWallet != address(0), "0x0 not allowed");
         if (_protocolVersion == 0) {
             protocolVersion = getUintValue(Encoder.getKey("latestVersion"));
         }
@@ -515,7 +518,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         require(_tickerOwner(ticker) == msg.sender, "Not authorised");
         /*solium-disable-next-line security/no-block-members*/
         require(getUintValue(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now, "Ticker expired");
-        _deployToken(_name, ticker, _tokenDetails, msg.sender, _divisible, protocolVersion); 
+        _deployToken(_name, ticker, _tokenDetails, msg.sender, _divisible, _treasuryWallet, protocolVersion); 
     }
 
     function _deployToken(
@@ -524,6 +527,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         string memory _tokenDetails,
         address _issuer,
         bool _divisible,
+        address _wallet,
         uint256 _protocolVersion
     ) 
         internal
@@ -536,6 +540,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
             _tokenDetails,
             _issuer,
             _divisible,
+            _wallet,
             getAddressValue(POLYMATHREGISTRY)
         );
 

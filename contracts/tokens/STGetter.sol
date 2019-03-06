@@ -127,6 +127,13 @@ contract STGetter is OZStorage, SecurityTokenStorage {
     }
 
     /**
+     * @notice use to return the global treasury wallet 
+     */
+    function getTreasuryWallet() external view returns(address) {
+        return IDataStore(dataStore).getAddress(TREASURY);
+    }
+
+    /**
      * @notice Queries balances as of a defined checkpoint
      * @param _investor Investor to query balance for
      * @param _checkpointId Checkpoint ID to query as of

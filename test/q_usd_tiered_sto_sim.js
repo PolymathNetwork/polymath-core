@@ -25,7 +25,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
     let POLYMATH;
     let ISSUER;
     let WALLET;
-    let RESERVEWALLET;
+    let TREASURYWALLET;
     let INVESTOR1;
     let ACCREDITED1;
     let ACCREDITED2;
@@ -91,7 +91,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
     let _minimumInvestmentUSD = [];
     let _fundRaiseTypes = [];
     let _wallet = [];
-    let _reserveWallet = [];
+    let _treasuryWallet = [];
     let _usdToken = [];
 
     const address_zero = "0x0000000000000000000000000000000000000000";
@@ -108,7 +108,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
         uint256 _minimumInvestmentUSD,
         uint8[] _fundRaiseTypes,
         address _wallet,
-        address _reserveWallet,
+        address _treasuryWallet,
         address _usdToken
     ) */
     const functionSignature = {
@@ -157,7 +157,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
             },
             {
                 type: "address",
-                name: "_reserveWallet"
+                name: "_treasuryWallet"
             },
             {
                 type: "address[]",
@@ -187,7 +187,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
         POLYMATH = accounts[0];
         ISSUER = accounts[1];
         WALLET = accounts[2];
-        RESERVEWALLET = WALLET;
+        TREASURYWALLET = WALLET;
         ACCREDITED1 = accounts[3];
         ACCREDITED2 = accounts[4];
         NONACCREDITED1 = accounts[5];
@@ -261,11 +261,12 @@ contract("USDTieredSTO Sim", async (accounts) => {
             await I_PolyToken.getTokens(REGFEE, ISSUER);
             await I_PolyToken.approve(I_STRProxied.address, REGFEE, { from: ISSUER });
 
-            let tx = await I_STRProxied.generateSecurityToken(NAME, SYMBOL, TOKENDETAILS, true, 0, { from: ISSUER });
+            let tx = await I_STRProxied.generateSecurityToken(NAME, SYMBOL, TOKENDETAILS, true, ISSUER, 0, { from: ISSUER });
             assert.equal(tx.logs[2].args._ticker, SYMBOL, "SecurityToken doesn't get deployed");
 
             I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
             stGetter = await STGetter.at(I_SecurityToken.address);
+            assert.equal(await stGetter.getTreasuryWallet.call(), ISSUER, "Incorrect wallet set");
             const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTransferManager module get added successfully or not
@@ -291,7 +292,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
             _minimumInvestmentUSD.push(new BN(0)); // 1 wei USD
             _fundRaiseTypes.push([0, 1, 2]);
             _wallet.push(WALLET);
-            _reserveWallet.push(RESERVEWALLET);
+            _treasuryWallet.push(TREASURYWALLET);
             _usdToken.push(I_DaiToken.address);
 
             let config = [
@@ -305,7 +306,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
                 _minimumInvestmentUSD[stoId],
                 _fundRaiseTypes[stoId],
                 _wallet[stoId],
-                _reserveWallet[stoId],
+                _treasuryWallet[stoId],
                 [_usdToken[stoId]]
             ];
 
@@ -352,8 +353,8 @@ contract("USDTieredSTO Sim", async (accounts) => {
             );
             assert.equal(await I_USDTieredSTO_Array[stoId].wallet.call(), _wallet[stoId], "Incorrect _wallet in config");
             assert.equal(
-                await I_USDTieredSTO_Array[stoId].reserveWallet.call(),
-                _reserveWallet[stoId],
+                await I_USDTieredSTO_Array[stoId].treasuryWallet.call(),
+                _treasuryWallet[stoId],
                 "Incorrect _reserveWallet in config"
             );
             assert.equal(

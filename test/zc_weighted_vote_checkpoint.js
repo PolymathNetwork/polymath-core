@@ -24,8 +24,6 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
     let account_investor4;
     let account_temp;
 
-    let message = "Transaction Should Fail!";
-
     // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;
     let I_SecurityTokenRegistryProxy;
@@ -53,8 +51,6 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
     const symbol = "SAP";
     const tokenDetails = "This is equity type of issuance";
     const decimals = 18;
-    const contact = "team@polymath.network";
-    let snapId;
     
     // Module key
     const delegateManagerKey = 1;
@@ -158,9 +154,241 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
                 let moduleData = (await stGetter.getModulesByType(transferManagerKey))[0];
                 I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
             });
-        })
 
-    })
+            it("\t\t Should attach the voting module with the ST \n", async() => {
+                let tx = await I_SecurityToken.addModule(I_WeightedVoteCheckpointFactory.address, "0x0", 0, 0, {from: token_owner});
+                assert.equal(tx.logs[2].args._types[0], checkpointKey, "Checkpoint doesn't get deployed");
+                assert.equal(web3.utils.hexToString(tx.logs[2].args._name), "WeightedVoteCheckpoint", "WeightedVoteCheckpoint module was not added");
+                I_WeightedVoteCheckpoint = await WeightedVoteCheckpoint.at(tx.logs[2].args._module);
+            });
 
+            it("\t\t Should fail to attach the voting module because allowance is unsufficent \n", async() => {
+                await catchRevert(
+                    I_SecurityToken.addModule(P_WeightedVoteCheckpointFactory.address, "0x0", new BN(web3.utils.toWei("500")), 0, {from: token_owner})
+                );
+            });
 
+            it("\t\t Should attach the voting module with the ST \n", async() => {
+                let id = await takeSnapshot();
+                await I_PolyToken.transfer(I_SecurityToken.address, new BN(web3.utils.toWei("2000", "ether")), { from: token_owner });
+                let tx = await I_SecurityToken.addModule(P_WeightedVoteCheckpointFactory.address, "0x0", new BN(web3.utils.toWei("2000")), 0, {from: token_owner});
+                assert.equal(tx.logs[3].args._types[0], checkpointKey, "Checkpoint doesn't get deployed");
+                assert.equal(web3.utils.hexToString(tx.logs[3].args._name), "WeightedVoteCheckpoint", "WeightedVoteCheckpoint module was not added");
+                await revertToSnapshot(id);
+            });
+        });
+
+        describe("\t\t Test for createBallot \n", async() => {
+
+            it("\t\t Should fail to create ballot -- bad owner \n", async() => {
+                await catchRevert(
+                    I_WeightedVoteCheckpoint.createBallot(new BN(duration.days(5)), new BN(5), {from: account_polymath})
+                ); 
+            });
+
+            it("\t\t Should fail to create ballot -- bad duration \n", async() => {
+                await catchRevert(
+                    I_WeightedVoteCheckpoint.createBallot(new BN(0), new BN(5), {from: token_owner})
+                ); 
+            });
+
+            it("\t\t Should fail to create ballot -- bad no of proposals \n", async() => {
+                await catchRevert(
+                    I_WeightedVoteCheckpoint.createBallot(new BN(duration.days(5)), new BN(1), {from: token_owner})
+                ); 
+            });
+
+            it("\t\t Mint some tokens and transfer to whitelisted investors \n", async() => {
+                // Whitelist multiple investors
+                let time = new BN(await latestTime());
+                await I_GeneralTransferManager.modifyKYCDataMulti(
+                    [account_investor1, account_investor2, account_investor3, account_investor4],
+                    [time, time, time, time],
+                    [time, time, time, time],
+                    [time + duration.days(200), time + duration.days(200), time + duration.days(200), time + duration.days(200)],
+                    {
+                        from: token_owner
+                    }
+                );
+
+                // mint tokens to whitelisted investors
+
+                await I_SecurityToken.issueMulti(
+                    [account_investor1, account_investor2, account_investor3],
+                    [new BN(web3.utils.toWei("500")), new BN(web3.utils.toWei("1000")), new BN(web3.utils.toWei("5000"))],
+                    {
+                        from: token_owner
+                    }
+                );
+
+                assert.equal(web3.utils.fromWei((await I_SecurityToken.balanceOf.call(account_investor1)).toString()), 500);
+                assert.equal(web3.utils.fromWei((await I_SecurityToken.balanceOf.call(account_investor2)).toString()), 1000);
+                assert.equal(web3.utils.fromWei((await I_SecurityToken.balanceOf.call(account_investor3)).toString()), 5000);
+            });
+
+            it("\t\t Should create the ballot successfully \n", async() => {
+                let tx = await I_WeightedVoteCheckpoint.createBallot(new BN(duration.days(5)), 3, {from: token_owner});
+                assert.equal((tx.logs[0].args._noOfProposals).toString(), 3);
+                assert.equal((tx.logs[0].args._checkpointId).toString(), 1);
+                assert.equal((tx.logs[0].args._ballotId).toString(), 0);
+            });
+        });
+
+        describe("\t\t Test case for castVote \n", async() => {
+            
+            it("\t\t Should fail to caste vote -- bad ballot id \n", async() => {
+                await catchRevert(
+                    I_WeightedVoteCheckpoint.castVote(new BN(2), new BN(1), {from: account_investor1})
+                );
+            });
+
+            it("\t\t Should fail to caste vote -- bad proposal id \n", async() => {
+                await catchRevert(
+                    I_WeightedVoteCheckpoint.castVote(new BN(0), new BN(4), {from: account_investor1})
+                );
+            });
+
+            it("\t\t Should fail to caste vote -- weight is 0 \n", async() => {
+                await catchRevert(
+                    I_WeightedVoteCheckpoint.castVote(new BN(0), new BN(1), {from: account_investor4})
+                );
+            });
+
+            it("\t\t Should successfully vote by account investor1 \n", async() => {
+                let tx = await I_WeightedVoteCheckpoint.castVote(new BN(0), new BN(1), {from: account_investor1});
+                assert.equal(tx.logs[0].args._ballotId, 0);
+                assert.equal(tx.logs[0].args._proposalId, 1);
+                assert.equal(tx.logs[0].args._investor, account_investor1);  
+                
+                let data = await I_WeightedVoteCheckpoint.getBallotStats.call(new BN(0));
+                assert.equal(data[4], 1);
+                assert.equal(data[5], 3);
+                assert.equal(data[6], true);
+            });
+
+            it("\t\t Should successfully vote by account investor2 \n", async() => {
+                let tx = await I_WeightedVoteCheckpoint.castVote(new BN(0), new BN(2), {from: account_investor2});
+                assert.equal(tx.logs[0].args._ballotId, 0);
+                assert.equal(tx.logs[0].args._proposalId, 2);
+                assert.equal(tx.logs[0].args._investor, account_investor2);  
+                
+                let data = await I_WeightedVoteCheckpoint.getBallotStats.call(new BN(0));
+                assert.equal(data[4], 2);
+                assert.equal(data[5], 3);
+                assert.equal(data[6], true);
+            });
+
+            it("\t\t Should fail to vote again \n", async() => {
+                await catchRevert(
+                    I_WeightedVoteCheckpoint.castVote(new BN(0), new BN(2), {from: account_investor2})
+                );
+            })
+
+            it("\t\t Should fail to change the ballot status-- bad owner \n", async() => {
+                await catchRevert(
+                    I_WeightedVoteCheckpoint.changeBallotStatus(new BN(0), false, {from: account_polymath})
+                );
+            });
+
+            it("\t\t Should fail to change the ballot status-- no change in the state \n", async() => {
+                await catchRevert(
+                    I_WeightedVoteCheckpoint.changeBallotStatus(new BN(0), true, {from: account_polymath})
+                );
+            });
+
+            it("\t\t Should change the status of the ballot with the help of changeBallotStatus \n", async() => {
+                let tx = await I_WeightedVoteCheckpoint.changeBallotStatus(new BN(0), false, {from: token_owner});
+                assert.equal(tx.logs[0].args._ballotId, 0);
+                assert.equal(tx.logs[0].args._isActive, false);
+            });
+
+            it("\t\t Should fail to vote because ballot is disabled \n", async() => {
+                await catchRevert(
+                    I_WeightedVoteCheckpoint.castVote(new BN(0), new BN(2), {from: account_investor3})
+                );
+            });
+
+            it("\t\t Should turn on the ballot \n", async() => {
+                let tx = await I_WeightedVoteCheckpoint.changeBallotStatus(new BN(0), true, {from: token_owner});
+                assert.equal(tx.logs[0].args._ballotId, 0);
+                assert.equal(tx.logs[0].args._isActive, true);
+            });
+
+            it("\t\t Should successfully vote \n", async() => {
+                let tx = await I_WeightedVoteCheckpoint.castVote(new BN(0), new BN(1), {from: account_investor3});
+                assert.equal(tx.logs[0].args._ballotId, 0);
+                assert.equal(tx.logs[0].args._proposalId, 1);
+                assert.equal(tx.logs[0].args._investor, account_investor3);  
+                
+                let data = await I_WeightedVoteCheckpoint.getBallotStats.call(new BN(0));
+                assert.equal(data[4], 3);
+                assert.equal(data[5], 3);
+                assert.equal(data[6], true);
+            });
+
+            it("\t\t Should fail to vote when the duration of vote is complete \n", async() => {
+                await increaseTime(duration.days(6));
+
+                // transfer some funds to account_investor4
+                await I_SecurityToken.issue(
+                    account_investor4,
+                    new BN(web3.utils.toWei("500")),
+                    "0x0",
+                    {
+                        from: token_owner
+                    }
+                );
+                await catchRevert(
+                    I_WeightedVoteCheckpoint.castVote(new BN(0), new BN(2), {from: account_investor4})
+                );
+            });
+
+            it("\t\t Should fail to change the status of the ballot -- already ended \n", async() => {
+                await catchRevert(
+                    I_WeightedVoteCheckpoint.changeBallotStatus(new BN(0), false, {from: token_owner})
+                );
+            });
+
+            it("\t\t Should get the result of the ballot \n", async() => {
+                let data = await I_WeightedVoteCheckpoint.getResults.call(new BN(0));
+                assert.equal(data[2], 3);
+                assert.equal(web3.utils.fromWei((data[0][0]).toString()), 5500);
+                assert.equal(web3.utils.fromWei((data[0][1]).toString()), 1000);
+                assert.equal(data[1], 0);
+            });
+        });
+
+        describe("\t\t General function test \n", async() => {
+
+            it("\t\t Should check the permission \n", async() => {
+                let data = await I_WeightedVoteCheckpoint.getPermissions.call();
+                assert.equal(data.length, 0);
+            });
+
+            it("\t\t Should check the init function \n", async() => {
+                assert.equal(await I_WeightedVoteCheckpoint.getInitFunction.call(), "0x00000000");
+            });
+        });
+
+        describe("\t\t Factory test cases \n", async() => {
+            it("\t\t Should get the exact details of the factory \n", async () => {
+                assert.equal((await I_WeightedVoteCheckpointFactory.setupCost.call()).toNumber(), 0);
+                assert.equal((await I_WeightedVoteCheckpointFactory.types.call())[0], 4);
+                assert.equal(await I_WeightedVoteCheckpointFactory.version.call(), "3.0.0");
+                assert.equal(
+                    web3.utils.toAscii(await I_WeightedVoteCheckpointFactory.name.call()).replace(/\u0000/g, ""),
+                    "WeightedVoteCheckpoint",
+                    "Wrong Module added"
+                );
+                assert.equal(
+                    await I_WeightedVoteCheckpointFactory.description.call(),
+                    "Weighted votes based on token amount",
+                    "Wrong Module added"
+                );
+                assert.equal(await I_WeightedVoteCheckpointFactory.title.call(), "Weighted Vote Checkpoint", "Wrong Module added");
+                let tags = await I_WeightedVoteCheckpointFactory.tags.call();
+                assert.equal(tags.length, 3);
+            });
+        });
+    });
 });

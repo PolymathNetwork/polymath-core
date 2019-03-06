@@ -35,7 +35,7 @@ contract WeightedVoteCheckpoint is ICheckpoint, Module {
 
     event BallotCreated(uint256 _startTime, uint256 _endTime, uint256 _ballotId, uint256 _checkpointId, uint256 _noOfProposals);
     event VoteCasted(uint256 indexed _ballotId, uint256 indexed _proposalId, address indexed _investor, uint256 _weight);
-    event BallotActiveStatsChanged(uint256 _ballotId, bool _isActive);
+    event BallotStatusChanged(uint256 _ballotId, bool _isActive);
 
     /**
      * @notice Constructor
@@ -54,56 +54,6 @@ contract WeightedVoteCheckpoint is ICheckpoint, Module {
      */
     function getInitFunction() external pure returns(bytes4) {
         return bytes4(0);
-    }
-
-    /**
-     * @notice Queries the result of a given ballot
-     * @param _ballotId Id of the target ballot
-     * @return uint256 abstain
-     * @return uint256 remainingTime
-     * @return uint256 totalVotes
-     */
-    function getResults(uint256 _ballotId) external view returns (
-        uint256[] memory,
-        uint256 remainingTime,
-        uint256 totalVotes
-    ) {
-        if (_ballotId < ballots.length) {
-            Ballot storage ballot = ballots[_ballotId];
-            uint256[] memory abstain = new uint256[](ballot.totalProposals);
-            for (uint256 i = 1; i <= ballot.totalProposals; i++) {
-                abstain[i] = ballot.proposalToVote[i];
-            }
-            remainingTime = ballot.endTime.sub(now);
-            totalVotes = ballot.totalNumVotes;
-            return (abstain, remainingTime, totalVotes);
-        }
-        return (new uint256[](0), remainingTime, totalVotes);
-    }
-
-    /**
-     * @notice Allows a token holder to cast their vote on a specific ballot
-     * @param _ballotId The index of the target ballot
-     * @param _proposalId Id of the proposal which investor want to vote for proposal
-     */
-    function castVote(uint256 _ballotId, uint256 _proposalId) external {
-        require(_ballotId < ballots.length, "Incorrect ballot Id");
-        Ballot storage ballot = ballots[_ballotId];
-
-        uint256 weight = ISecurityToken(securityToken).balanceOfAt(msg.sender, ballot.checkpointId);
-        require(weight > 0, "weight should be > 0");
-        require(ballot.totalProposals >= _proposalId && _proposalId > 0, "Incorrect proposals Id");
-        require(now >= ballot.startTime && now <= ballot.endTime, "Voting period is not active");
-        require(ballot.voteByAddress[msg.sender].voteTime == 0, "Token holder has already voted");
-        require(ballot.isActive == true, "Ballot is not active");
-
-        
-        ballot.voteByAddress[msg.sender].voteTime = now;
-        ballot.voteByAddress[msg.sender].weight = weight;
-        ballot.voteByAddress[msg.sender].vote = _proposalId;
-        ballot.totalNumVotes = ballot.totalNumVotes.add(1);
-        ballot.proposalToVote[_proposalId] = ballot.proposalToVote[_proposalId].add(weight);
-        emit VoteCasted(_ballotId, _proposalId, msg.sender, weight);
     }
 
     /**
@@ -145,17 +95,68 @@ contract WeightedVoteCheckpoint is ICheckpoint, Module {
     }
 
     /**
+     * @notice Allows a token holder to cast their vote on a specific ballot
+     * @param _ballotId The index of the target ballot
+     * @param _proposalId Id of the proposal which investor want to vote for proposal
+     */
+    function castVote(uint256 _ballotId, uint256 _proposalId) external {
+        require(_ballotId < ballots.length, "Incorrect ballot Id");
+        Ballot storage ballot = ballots[_ballotId];
+
+        uint256 weight = ISecurityToken(securityToken).balanceOfAt(msg.sender, ballot.checkpointId);
+        require(weight > 0, "weight should be > 0");
+        require(ballot.totalProposals >= _proposalId && _proposalId > 0, "Incorrect proposals Id");
+        require(now >= ballot.startTime && now <= ballot.endTime, "Voting period is not active");
+        require(ballot.voteByAddress[msg.sender].voteTime == 0, "Token holder has already voted");
+        require(ballot.isActive == true, "Ballot is not active");
+
+        
+        ballot.voteByAddress[msg.sender].voteTime = now;
+        ballot.voteByAddress[msg.sender].weight = weight;
+        ballot.voteByAddress[msg.sender].vote = _proposalId;
+        ballot.totalNumVotes = ballot.totalNumVotes.add(1);
+        ballot.proposalToVote[_proposalId] = ballot.proposalToVote[_proposalId].add(weight);
+        emit VoteCasted(_ballotId, _proposalId, msg.sender, weight);
+    }
+
+    /**
      * @notice Allows the token issuer to set the active stats of a ballot
      * @param _ballotId The index of the target ballot
      * @param _isActive The bool value of the active stats of the ballot
      * @return bool success
      */
-    function setActiveStatsBallot(uint256 _ballotId, bool _isActive) external {
+    function changeBallotStatus(uint256 _ballotId, bool _isActive) external {
         _onlySecurityTokenOwner();
         require(now < ballots[_ballotId].endTime, "Already ended");
         require(ballots[_ballotId].isActive != _isActive, "Active state unchanged");
         ballots[_ballotId].isActive = _isActive;
-        emit BallotActiveStatsChanged(_ballotId, _isActive);
+        emit BallotStatusChanged(_ballotId, _isActive);
+    }
+
+    /**
+     * @notice Queries the result of a given ballot
+     * @param _ballotId Id of the target ballot
+     * @return uint256 abstain
+     * @return uint256 remainingTime
+     * @return uint256 totalVotes
+     */
+    function getResults(uint256 _ballotId) external view returns (
+        uint256[] memory,
+        uint256 remainingTime,
+        uint256 totalVotes
+    ) {
+        if (_ballotId < ballots.length) {
+            Ballot storage ballot = ballots[_ballotId];
+            uint256[] memory abstain = new uint256[](ballot.totalProposals);
+            for (uint256 i = 0; i < ballot.totalProposals; i++) {
+                abstain[i] = ballot.proposalToVote[i+1];
+            }
+            if (ballot.endTime >= now)
+                remainingTime = ballot.endTime.sub(now);
+            totalVotes = ballot.totalNumVotes;
+            return (abstain, remainingTime, totalVotes);
+        }
+        return (new uint256[](0), remainingTime, totalVotes);
     }
 
     /**

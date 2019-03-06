@@ -3,17 +3,17 @@ pragma solidity ^0.4.24;
 import "../../Pausable.sol";
 import "../Module.sol";
 import "../../interfaces/IERC20.sol";
-import "./ISTOStorage.sol";
+import "./STOStorage.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
  * @title Interface to be implemented by all STO modules
  */
-contract ISTO is ISTOStorage, Module, Pausable  {
+contract STO is STOStorage, Module, Pausable  {
     using SafeMath for uint256;
 
     enum FundRaiseType { ETH, POLY, SC }
-    
+
     // Event
     event SetFundRaiseTypes(FundRaiseType[] _fundRaiseTypes);
 
@@ -59,7 +59,7 @@ contract ISTO is ISTOStorage, Module, Pausable  {
 
     function _setFundRaiseType(FundRaiseType[] _fundRaiseTypes) internal {
         // FundRaiseType[] parameter type ensures only valid values for _fundRaiseTypes
-        require(_fundRaiseTypes.length > 0, "Raise type is not specified");
+        require(_fundRaiseTypes.length > 0 && _fundRaiseTypes.length < 3, "Raise type is not specified");
         fundRaiseTypes[uint8(FundRaiseType.ETH)] = false;
         fundRaiseTypes[uint8(FundRaiseType.POLY)] = false;
         fundRaiseTypes[uint8(FundRaiseType.SC)] = false;

@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "./ISTO.sol";
+import "./STO.sol";
 import "../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
@@ -8,7 +8,7 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 /**
  * @title STO module for standard capped crowdsale
  */
-contract CappedSTO is ISTO, ReentrancyGuard {
+contract CappedSTO is STO, ReentrancyGuard {
     using SafeMath for uint256;
 
     // Determine whether users can invest on behalf of a beneficiary
@@ -51,7 +51,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
      * @param _startTime Unix timestamp at which offering get started
      * @param _endTime Unix timestamp at which offering get ended
      * @param _cap Maximum No. of token base units for sale
-     * @param _rate Token units a buyer gets multiplied by 10^18 per wei / base unit of POLY 
+     * @param _rate Token units a buyer gets multiplied by 10^18 per wei / base unit of POLY
      * @param _fundRaiseTypes Type of currency used to collect the funds
      * @param _fundsReceiver Ethereum account address to hold the funds
      */
@@ -115,7 +115,6 @@ contract CappedSTO is ISTO, ReentrancyGuard {
         weiAmount = weiAmount.sub(refund);
 
         _forwardFunds(refund);
-        _postValidatePurchase(_beneficiary, weiAmount);
     }
 
     /**
@@ -127,7 +126,6 @@ contract CappedSTO is ISTO, ReentrancyGuard {
         require(fundRaiseTypes[uint8(FundRaiseType.POLY)], "Mode of investment is not POLY");
         uint256 refund = _processTx(msg.sender, _investedPOLY);
         _forwardPoly(msg.sender, wallet, _investedPOLY.sub(refund));
-        _postValidatePurchase(msg.sender, _investedPOLY.sub(refund));
     }
 
     /**
@@ -161,7 +159,7 @@ contract CappedSTO is ISTO, ReentrancyGuard {
      * @return Token units a buyer gets(multiplied by 10^18) per wei / base unit of POLY
      * @return Amount of funds raised
      * @return Number of individual investors this STO have.
-     * @return Amount of tokens get sold. 
+     * @return Amount of tokens get sold.
      * @return Boolean value to justify whether the fund raise type is POLY or not, i.e true for POLY.
      */
     function getSTODetails() public view returns(uint256, uint256, uint256, uint256, uint256, uint256, uint256, bool) {
@@ -203,8 +201,6 @@ contract CappedSTO is ISTO, ReentrancyGuard {
 
         _processPurchase(_beneficiary, tokens);
         emit TokenPurchase(msg.sender, _beneficiary, _investedAmount, tokens);
-
-        _updatePurchasingState(_beneficiary, _investedAmount);
     }
 
     /**
@@ -221,14 +217,6 @@ contract CappedSTO is ISTO, ReentrancyGuard {
         require(totalTokensSold.add(tokens) <= cap, "Investment more than cap is not allowed");
         /*solium-disable-next-line security/no-block-members*/
         require(now >= startTime && now <= endTime, "Offering is closed/Not yet started");
-    }
-
-    /**
-    * @notice Validation of an executed purchase.
-      Observe state and use revert statements to undo rollback when valid conditions are not met.
-    */
-    function _postValidatePurchase(address /*_beneficiary*/, uint256 /*_investedAmount*/) internal pure {
-      // optional override
     }
 
     /**
@@ -253,14 +241,6 @@ contract CappedSTO is ISTO, ReentrancyGuard {
         investors[_beneficiary] = investors[_beneficiary].add(_tokenAmount);
 
         _deliverTokens(_beneficiary, _tokenAmount);
-    }
-
-    /**
-    * @notice Overrides for extensions that require an internal state to check for validity
-      (current user contributions, etc.)
-    */
-    function _updatePurchasingState(address /*_beneficiary*/, uint256 /*_investedAmount*/) internal pure {
-      // optional override
     }
 
     /**

@@ -262,7 +262,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
         }
         usdTokens = _usdTokens;
         for(i = 0; i < _usdTokens.length; i++) {
-            require(_usdTokens[i] != address(0) && _usdTokens[i] != address(0), "Invalid USD token");
+            require(_usdTokens[i] != address(0) && _usdTokens[i] != address(polyToken), "Invalid USD token");
             usdTokenEnabled[_usdTokens[i]] = true;
         }
         emit SetAddresses(wallet, reserveWallet, _usdTokens);

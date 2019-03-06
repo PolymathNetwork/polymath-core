@@ -6,6 +6,7 @@ import "../libraries/KindMath.sol";
 import "../interfaces/IModule.sol";
 import "./SecurityTokenStorage.sol";
 import "../libraries/TokenLib.sol";
+import "../interfaces/IDataStore.sol";
 import "../interfaces/IModuleFactory.sol";
 import "../interfaces/token/IERC1594.sol";
 import "../interfaces/token/IERC1643.sol";
@@ -63,6 +64,8 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     event CheckpointCreated(uint256 indexed _checkpointId);
     // Events to log controller actions
     event SetController(address indexed _oldController, address indexed _newController);
+    //Event emit when the global treasury wallet address get changed
+    event TreasuryWalletChanged(address _oldTreasuryWallet, address _newTreasuryWallet);
     event DisableController();
 
     function _isModule(address _module, uint8 _type) internal view returns(bool) {
@@ -76,20 +79,24 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         return false;
     }
 
+    // Require msg.sender to be the specified module type or the owner of the token
+    function _onlyModuleOrOwner(uint8 _type) internal view {
+        if (msg.sender != owner())
+            require(_isModule(msg.sender, _type));
+    }
+
+    function _zeroAddressCheck(address _entity) internal pure {
+        require(_entity != address(0), "Invalid address");
+    }
+
+    function _isValidTransfer(bool _isTransfer) internal pure {
+        require(_isTransfer, "Transfer Invalid");
+    }
+
     // Require msg.sender to be the specified module type
     modifier onlyModule(uint8 _type) {
         require(_isModule(msg.sender, _type));
         _;
-    }
-
-    // Require msg.sender to be the specified module type or the owner of the token
-    modifier onlyModuleOrOwner(uint8 _type) {
-        if (msg.sender == owner()) {
-            _;
-        } else {
-            require(_isModule(msg.sender, _type));
-            _;
-        }
     }
 
     modifier isIssuanceAllowed() {
@@ -134,9 +141,9 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     )
         public
         ERC20Detailed(_name, _symbol, _decimals)
-    {
-        require(_polymathRegistry != address(0), "Invalid address");
-        require(_delegate != address(0), "Invalid address");
+    {   
+        _zeroAddressCheck(_polymathRegistry);
+        _zeroAddressCheck(_delegate);
         polymathRegistry = _polymathRegistry;
         //When it is created, the owner is the STR
         updateFromRegistry();
@@ -285,8 +292,18 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     * @param _dataStore Address of the token data store
     */
     function changeDataStore(address _dataStore) external onlyOwner {
-        require(_dataStore != address(0), "Invalid address");
+        _zeroAddressCheck(_dataStore);
         dataStore = _dataStore;
+    }
+
+    /**
+     * @notice Allows to change the treasury wallet address
+     * @param _wallet Ethereum address of the treasury wallet 
+     */
+    function changeTreasuryWallet(address _wallet) external onlyOwner {
+        _zeroAddressCheck(_wallet);
+        emit TreasuryWalletChanged(IDataStore(dataStore).getAddress(TREASURY), _wallet);
+        IDataStore(dataStore).setAddress(TREASURY, _wallet);
     }
 
     /**
@@ -350,7 +367,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * (e.g. a dynamic whitelist) but is flexible enough to accomadate other use-cases.
      */
     function transferWithData(address _to, uint256 _value, bytes memory _data) public {
-        require(_updateTransfer(msg.sender, _to, _value, _data), "Transfer invalid");
+        _isValidTransfer(_updateTransfer(msg.sender, _to, _value, _data));
         require(super.transfer(_to, _value));
     }
 
@@ -380,7 +397,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * (e.g. a dynamic whitelist) but is flexible enough to accomadate other use-cases.
      */
     function transferFromWithData(address _from, address _to, uint256 _value, bytes memory _data) public {
-        require(_updateTransfer(_from, _to, _value, _data), "Transfer invalid");
+        _isValidTransfer(_updateTransfer(_from, _to, _value, _data));
         require(super.transferFrom(_from, _to, _value));
     }
 
@@ -490,10 +507,10 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     )
         public
         isIssuanceAllowed
-        onlyModuleOrOwner(MINT_KEY)
-    {
+    {   
+        _onlyModuleOrOwner(MINT_KEY); 
         // Add a function to validate the `_data` parameter
-        require(_updateTransfer(address(0), _tokenHolder, _value, _data), "Transfer invalid");
+        _isValidTransfer(_updateTransfer(address(0), _tokenHolder, _value, _data));
         _mint(_tokenHolder, _value);
         emit Issued(msg.sender, _tokenHolder, _value, _data);
     }
@@ -560,7 +577,8 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * @notice Creates a checkpoint that can be used to query historical balances / totalSuppy
      * @return uint256
      */
-    function createCheckpoint() external onlyModuleOrOwner(CHECKPOINT_KEY) returns(uint256) {
+    function createCheckpoint() external returns(uint256) {
+        _onlyModuleOrOwner(CHECKPOINT_KEY);
         require(currentCheckpointId < 2 ** 256 - 1);
         currentCheckpointId = currentCheckpointId + 1;
         /*solium-disable-next-line security/no-block-members*/
@@ -656,8 +674,8 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * @param _documentHash hash (of the contents) of the document.
      */
     function setDocument(bytes32 _name, string calldata _uri, bytes32 _documentHash) external onlyOwner {
-        require(_name != bytes32(0), "Zero value is not allowed");
-        require(bytes(_uri).length > 0, "Should not be a empty uri");
+        require(_name != bytes32(0), "Bad name");
+        require(bytes(_uri).length > 0, "Bad uri");
         if (_documents[_name].lastModified == uint256(0)) {
             _docNames.push(_name);
             _docIndexes[_name] = _docNames.length;
@@ -672,7 +690,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * @param _name Name of the document. It should be unique always
      */
     function removeDocument(bytes32 _name) external onlyOwner {
-        require(_documents[_name].lastModified != uint256(0), "Document should be existed");
+        require(_documents[_name].lastModified != uint256(0), "Not existed");
         uint256 index = _docIndexes[_name] - 1;
         if (index != _docNames.length - 1) {
             _docNames[index] = _docNames[_docNames.length - 1];

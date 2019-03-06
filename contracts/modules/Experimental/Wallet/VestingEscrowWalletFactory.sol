@@ -39,7 +39,7 @@ contract VestingEscrowWalletFactory is UpgradableModuleFactory {
      */
     function types() external view returns(uint8[] memory)  {
         uint8[] memory res = new uint8[](1);
-        res[0] = 6;
+        res[0] = 7;
         return res;
     }
 

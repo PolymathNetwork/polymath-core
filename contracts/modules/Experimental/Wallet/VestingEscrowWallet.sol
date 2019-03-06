@@ -57,7 +57,7 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, Wallet {
      * @notice This function returns the signature of the configure function
      */
     function getInitFunction() public pure returns (bytes4) {
-        return bytes4(keccak256("configure(address)"));
+        return this.configure.selector;
     }
 
     /**
@@ -65,8 +65,7 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, Wallet {
      * @param _treasuryWallet Address of the treasury wallet
      */
     function configure(address _treasuryWallet) public onlyFactory {
-        require(_treasuryWallet != address(0), "Invalid address");
-        treasuryWallet = _treasuryWallet;
+        _setWallet(_treasuryWallet);
     }
 
     /**
@@ -75,7 +74,10 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, Wallet {
      */
     function changeTreasuryWallet(address _newTreasuryWallet) public {
         _onlySecurityTokenOwner();
-        require(_newTreasuryWallet != address(0));
+        _setWallet(_newTreasuryWallet);
+    }
+
+    function _setWallet(address _newTreasuryWallet) internal {
         emit TreasuryWalletChanged(_newTreasuryWallet, treasuryWallet);
         treasuryWallet = _newTreasuryWallet;
     }
@@ -107,8 +109,20 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, Wallet {
         require(_amount <= unassignedTokens, "Amount is greater than unassigned tokens");
         uint256 amount = unassignedTokens;
         unassignedTokens = 0;
-        require(ISecurityToken(securityToken).transfer(treasuryWallet, amount), "Transfer failed");
+        require(ISecurityToken(securityToken).transfer(getTreasuryWallet(), amount), "Transfer failed");
         emit SendToTreasury(amount, msg.sender);
+    }
+
+    /**
+     * @notice Returns the treasury wallet address
+     */
+    function getTreasuryWallet() public view returns(address) {
+        if (treasuryWallet == address(0)) {
+            address wallet = IDataStore(getDataStore()).getAddress(TREASURY);
+            require(wallet != address(0), "Invalid address");
+            return wallet;
+        } else
+            return treasuryWallet;
     }
 
     /**

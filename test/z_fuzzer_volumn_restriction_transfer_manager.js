@@ -64,6 +64,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
     const decimals = 18;
     const contact = "team@polymath.network";
     const delegateDetails = "Hello I am legit delegate";
+    const address_zero = "0x0000000000000000000000000000000000000000";
 
     // Module key
     const delegateManagerKey = 1;
@@ -180,7 +181,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
 
-            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, true, 0, { from: token_owner });
+            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, true, token_owner, 0, { from: token_owner });
             console.log(tx.logs);
 
             // Verify the successful generation of the security token
@@ -188,6 +189,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
             I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
             stGetter = await STGetter.at(I_SecurityToken.address);
+            assert.equal(await stGetter.getTreasuryWallet.call(), token_owner, "Incorrect wallet set");
             const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTransferManager module get added successfully or not

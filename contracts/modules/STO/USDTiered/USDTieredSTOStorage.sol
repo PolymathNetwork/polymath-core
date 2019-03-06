@@ -38,8 +38,8 @@ contract USDTieredSTOStorage {
     // Whether or not the STO has been finalized
     bool public isFinalized;
 
-    // Address of issuer reserve wallet for unsold tokens
-    address public reserveWallet;
+    // Address of issuer treasury wallet for unsold tokens
+    address public treasuryWallet;
 
     // List of stable coin addresses
     address[] internal usdTokens;

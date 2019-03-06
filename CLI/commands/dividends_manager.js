@@ -586,14 +586,18 @@ to account ${ event._claimer} `
 
 async function addDividendsModule() {
   let availableModules = await moduleRegistry.methods.getModulesByTypeAndToken(gbl.constants.MODULES_TYPES.DIVIDENDS, securityToken.options.address).call();
-  let options = await Promise.all(availableModules.map(async function (m) {
+  let moduleList = await Promise.all(availableModules.map(async function (m) {
     let moduleFactoryABI = abis.moduleFactory();
     let moduleFactory = new web3.eth.Contract(moduleFactoryABI, m);
-    return web3.utils.hexToUtf8(await moduleFactory.methods.name().call());
+    let moduleName = web3.utils.hexToUtf8(await moduleFactory.methods.name().call());
+    let moduleVersion = await moduleFactory.methods.version().call();
+    return { name: moduleName, version: moduleVersion, factoryAddress: m };
   }));
 
+  let options = moduleList.map(m => `${m.name} - ${m.version} (${m.factoryAddress})`);
+
   let index = readlineSync.keyInSelect(options, 'Which dividends module do you want to add? ', { cancel: 'Return' });
-  if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]} module? `)) {
+  if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]}? `)) {
     let wallet = readlineSync.question('Enter the account address to receive reclaimed dividends and tax: ', {
       limit: function (input) {
         return web3.utils.isAddress(input);
@@ -603,7 +607,7 @@ async function addDividendsModule() {
     let configureFunction = abis.erc20DividendCheckpoint().find(o => o.name === 'configure' && o.type === 'function');
     let bytes = web3.eth.abi.encodeFunctionCall(configureFunction, [wallet]);
 
-    let selectedDividendFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, gbl.constants.MODULES_TYPES.DIVIDENDS, options[index]);
+    let selectedDividendFactoryAddress = moduleList[index].factoryAddress;
     let addModuleAction = securityToken.methods.addModule(selectedDividendFactoryAddress, bytes, 0, 0);
     let receipt = await common.sendTransaction(addModuleAction);
     let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');

@@ -33,8 +33,9 @@ create_docs() {
     fi
 
     echo "Fetching solc binary"
+    rm -f solidity-ubuntu-trusty.zip
     curl -L -o solidity-ubuntu-trusty.zip https://github.com/ethereum/solidity/releases/download/v0.4.24/solidity-ubuntu-trusty.zip
-    unzip solidity-ubuntu-trusty.zip
+    unzip -o solidity-ubuntu-trusty.zip
     CWD=$(pwd)
     OLD_SOLC_PATH=$SOLC_PATH
     export SOLC_PATH=$CWD/solc

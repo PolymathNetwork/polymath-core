@@ -29,6 +29,7 @@ All notable changes to this project will be documented in this file.
 * `modifyWhitelist()` function renamed to `modifyKYCData()`.
 * Added functions to modify and get flags
 * `canBuyFromSto` is now `canNotBuyFromSto` and it is the flag `1`
+* GTM logic reworked. Now, instead of flags like allowAllTransfers, there is a matrix of transfer requirements that must be fulfilled based on type of transfer.
 
 ## Generalize
 * Removed `_polyAddress` parameter from constructors of all modules and module factories.

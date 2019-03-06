@@ -3,13 +3,14 @@ pragma solidity ^0.4.24;
 import "../../Pausable.sol";
 import "../Module.sol";
 import "../../interfaces/IERC20.sol";
+import "../../interfaces/ISTO.sol";
 import "./STOStorage.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
  * @title Interface to be implemented by all STO modules
  */
-contract STO is STOStorage, Module, Pausable  {
+contract STO is ISTO, STOStorage, Module, Pausable  {
     using SafeMath for uint256;
 
     enum FundRaiseType { ETH, POLY, SC }
@@ -35,11 +36,6 @@ contract STO is STOStorage, Module, Pausable  {
     function getRaised(FundRaiseType _fundRaiseType) public view returns (uint256) {
         return fundsRaised[uint8(_fundRaiseType)];
     }
-
-    /**
-     * @notice Returns the total no. of tokens sold
-     */
-    function getTokensSold() public view returns (uint256);
 
     /**
      * @notice Pause (overridden function)

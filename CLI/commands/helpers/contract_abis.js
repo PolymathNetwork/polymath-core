@@ -140,5 +140,17 @@ module.exports = {
     },
     erc20: function () {
         return erc20ABI;
+    },
+    alternativeErc20: function () {
+        let alternativeErc20 = [{
+            "constant": true,
+            "inputs": [],
+            "name": "symbol",
+            "outputs": [{ "name": "", "type": "bytes32" }],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        }];
+        return alternativeErc20;
     }
 }

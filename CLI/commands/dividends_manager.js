@@ -240,8 +240,7 @@ async function manageExistingDividend(dividendIndex) {
   let dividendTokenSymbol = 'ETH';
   if (dividendsType === 'ERC20') {
     dividendTokenAddress = await currentDividendsModule.methods.dividendTokens(dividendIndex).call();
-    let erc20token = new web3.eth.Contract(abis.erc20(), dividendTokenAddress);
-    dividendTokenSymbol = await erc20token.methods.symbol().call();
+    dividendTokenSymbol = await getERC20TokenSymbol(dividendTokenAddress);
   }
   let progress = await currentDividendsModule.methods.getDividendProgress(dividendIndex).call();
   let investorArray = progress[0];
@@ -387,10 +386,11 @@ async function createDividends() {
         limitMessage: "Must be a valid ERC20 address",
         defaultInput: polyToken.options.address
       });
-      token = new web3.eth.Contract(abis.erc20(), dividendToken);
-      try {
-        dividendSymbol = await token.methods.symbol().call();
-      } catch (err) {
+      let erc20Symbol = await getERC20TokenSymbol(dividendToken);
+      if (erc20Symbol != null) {
+        token = new web3.eth.Contract(abis.erc20(), dividendToken);
+        dividendSymbol = erc20Symbol;
+      } else {
         console.log(chalk.red(`${dividendToken} is not a valid ERC20 token address!!`));
       }
     } while (dividendSymbol === 'ETH');
@@ -738,8 +738,7 @@ async function getDividends() {
     let tokenSymbol = 'ETH';
     if (dividendsType === 'ERC20') {
       let tokenAddress = await currentDividendsModule.methods.dividendTokens(i).call();
-      let erc20token = new web3.eth.Contract(abis.erc20(), tokenAddress);
-      tokenSymbol = await erc20token.methods.symbol().call();
+      tokenSymbol = await getERC20TokenSymbol(tokenAddress);
     }
     dividends.push(
       new DividendData(
@@ -883,6 +882,22 @@ async function selectToken() {
   }
 
   return result;
+}
+
+async function getERC20TokenSymbol(tokenAddress) {
+  let tokenSymbol = null;
+  try {
+    let erc20token = new web3.eth.Contract(abis.erc20(), tokenAddress);
+    tokenSymbol = await erc20token.methods.symbol().call();
+  } catch (err) {
+    try {
+      // Some ERC20 tokens use bytes32 for symbol instead of string
+      let erc20token = new web3.eth.Contract(abis.alternativeErc20(), tokenAddress);
+      tokenSymbol = web3.utils.hexToUtf8(await erc20token.methods.symbol().call());
+    } catch (err) {
+    }
+  }
+  return tokenSymbol;
 }
 
 module.exports = {

@@ -240,8 +240,7 @@ async function manageExistingDividend(dividendIndex) {
   let dividendTokenSymbol = 'ETH';
   if (dividendsType === 'ERC20') {
     dividendTokenAddress = await currentDividendsModule.methods.dividendTokens(dividendIndex).call();
-    let erc20token = new web3.eth.Contract(abis.erc20(), dividendTokenAddress);
-    dividendTokenSymbol = await erc20token.methods.symbol().call();
+    dividendTokenSymbol = await getERC20TokenSymbol(dividendTokenAddress);
   }
   let progress = await currentDividendsModule.methods.getDividendProgress(dividendIndex).call();
   let investorArray = progress[0];
@@ -387,10 +386,11 @@ async function createDividends() {
         limitMessage: "Must be a valid ERC20 address",
         defaultInput: polyToken.options.address
       });
-      token = new web3.eth.Contract(abis.erc20(), dividendToken);
-      try {
-        dividendSymbol = await token.methods.symbol().call();
-      } catch (err) {
+      let erc20Symbol = await getERC20TokenSymbol(dividendToken);
+      if (erc20Symbol != null) {
+        token = new web3.eth.Contract(abis.erc20(), dividendToken);
+        dividendSymbol = erc20Symbol;
+      } else {
         console.log(chalk.red(`${dividendToken} is not a valid ERC20 token address!!`));
       }
     } while (dividendSymbol === 'ETH');
@@ -586,14 +586,18 @@ to account ${ event._claimer} `
 
 async function addDividendsModule() {
   let availableModules = await moduleRegistry.methods.getModulesByTypeAndToken(gbl.constants.MODULES_TYPES.DIVIDENDS, securityToken.options.address).call();
-  let options = await Promise.all(availableModules.map(async function (m) {
+  let moduleList = await Promise.all(availableModules.map(async function (m) {
     let moduleFactoryABI = abis.moduleFactory();
     let moduleFactory = new web3.eth.Contract(moduleFactoryABI, m);
-    return web3.utils.hexToUtf8(await moduleFactory.methods.name().call());
+    let moduleName = web3.utils.hexToUtf8(await moduleFactory.methods.name().call());
+    let moduleVersion = await moduleFactory.methods.version().call();
+    return { name: moduleName, version: moduleVersion, factoryAddress: m };
   }));
 
+  let options = moduleList.map(m => `${m.name} - ${m.version} (${m.factoryAddress})`);
+
   let index = readlineSync.keyInSelect(options, 'Which dividends module do you want to add? ', { cancel: 'Return' });
-  if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]} module? `)) {
+  if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]}? `)) {
     let wallet = readlineSync.question('Enter the account address to receive reclaimed dividends and tax: ', {
       limit: function (input) {
         return web3.utils.isAddress(input);
@@ -603,7 +607,7 @@ async function addDividendsModule() {
     let configureFunction = abis.erc20DividendCheckpoint().find(o => o.name === 'configure' && o.type === 'function');
     let bytes = web3.eth.abi.encodeFunctionCall(configureFunction, [wallet]);
 
-    let selectedDividendFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, gbl.constants.MODULES_TYPES.DIVIDENDS, options[index]);
+    let selectedDividendFactoryAddress = moduleList[index].factoryAddress;
     let addModuleAction = securityToken.methods.addModule(selectedDividendFactoryAddress, bytes, 0, 0);
     let receipt = await common.sendTransaction(addModuleAction);
     let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
@@ -734,8 +738,7 @@ async function getDividends() {
     let tokenSymbol = 'ETH';
     if (dividendsType === 'ERC20') {
       let tokenAddress = await currentDividendsModule.methods.dividendTokens(i).call();
-      let erc20token = new web3.eth.Contract(abis.erc20(), tokenAddress);
-      tokenSymbol = await erc20token.methods.symbol().call();
+      tokenSymbol = await getERC20TokenSymbol(tokenAddress);
     }
     dividends.push(
       new DividendData(
@@ -879,6 +882,22 @@ async function selectToken() {
   }
 
   return result;
+}
+
+async function getERC20TokenSymbol(tokenAddress) {
+  let tokenSymbol = null;
+  try {
+    let erc20token = new web3.eth.Contract(abis.erc20(), tokenAddress);
+    tokenSymbol = await erc20token.methods.symbol().call();
+  } catch (err) {
+    try {
+      // Some ERC20 tokens use bytes32 for symbol instead of string
+      let erc20token = new web3.eth.Contract(abis.alternativeErc20(), tokenAddress);
+      tokenSymbol = web3.utils.hexToUtf8(await erc20token.methods.symbol().call());
+    } catch (err) {
+    }
+  }
+  return tokenSymbol;
 }
 
 module.exports = {

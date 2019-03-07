@@ -290,6 +290,9 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
                 tiers[i].mintedTotal = tiers[i].tokenTotal;
             }
         }
+        uint256 granularity = ISecurityToken(securityToken).granularity();
+        tempReturned = tempReturned.div(granularity);
+        tempReturned = tempReturned.mul(granularity);
         require(ISecurityToken(securityToken).mint(reserveWallet, tempReturned), "Error in minting");
         emit ReserveTokenMint(msg.sender, reserveWallet, tempReturned, currentTier);
         finalAmountReturned = tempReturned;

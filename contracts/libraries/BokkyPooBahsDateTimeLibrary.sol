@@ -1,7 +1,7 @@
 pragma solidity ^0.5.0;
 
 // ----------------------------------------------------------------------------
-// BokkyPooBah's DateTime Library v1.00
+// BokkyPooBah's DateTime Library v1.01
 //
 // A gas-efficient Solidity date and time library
 //
@@ -22,13 +22,11 @@ pragma solidity ^0.5.0;
 // dayOfWeek | 1 ... 7       | 1 = Monday, ..., 7 = Sunday
 //
 //
-// Enjoy. (c) BokkyPooBah / Bok Consulting Pty Ltd 2018.
-//
-// GNU Lesser General Public License 3.0
-// https://www.gnu.org/licenses/lgpl-3.0.en.html
+// Enjoy. (c) BokkyPooBah / Bok Consulting Pty Ltd 2018-2019. The MIT Licence.
 // ----------------------------------------------------------------------------
 
 library BokkyPooBahsDateTimeLibrary {
+
     uint constant SECONDS_PER_DAY = 24 * 60 * 60;
     uint constant SECONDS_PER_HOUR = 60 * 60;
     uint constant SECONDS_PER_MINUTE = 60;
@@ -61,7 +59,12 @@ library BokkyPooBahsDateTimeLibrary {
         int _month = int(month);
         int _day = int(day);
 
-        int __days = _day - 32075 + 1461 * (_year + 4800 + (_month - 14) / 12) / 4 + 367 * (_month - 2 - (_month - 14) / 12 * 12) / 12 - 3 * ((_year + 4900 + (_month - 14) / 12) / 100) / 4 - OFFSET19700101;
+        int __days = _day
+          - 32075
+          + 1461 * (_year + 4800 + (_month - 14) / 12) / 4
+          + 367 * (_month - 2 - (_month - 14) / 12 * 12) / 12
+          - 3 * ((_year + 4900 + (_month - 14) / 12) / 100) / 4
+          - OFFSET19700101;
 
         _days = uint(__days);
     }
@@ -102,26 +105,16 @@ library BokkyPooBahsDateTimeLibrary {
         day = uint(_day);
     }
 
-    function timestampFromDate(uint year, uint month, uint day) internal pure returns(uint timestamp) {
+    function timestampFromDate(uint year, uint month, uint day) internal pure returns (uint timestamp) {
         timestamp = _daysFromDate(year, month, day) * SECONDS_PER_DAY;
     }
-    function timestampFromDateTime(uint year, uint month, uint day, uint hour, uint minute, uint second) internal pure returns(
-        uint timestamp
-    ) {
+    function timestampFromDateTime(uint year, uint month, uint day, uint hour, uint minute, uint second) internal pure returns (uint timestamp) {
         timestamp = _daysFromDate(year, month, day) * SECONDS_PER_DAY + hour * SECONDS_PER_HOUR + minute * SECONDS_PER_MINUTE + second;
     }
-    function timestampToDate(uint timestamp) internal pure returns(uint year, uint month, uint day) {
+    function timestampToDate(uint timestamp) internal pure returns (uint year, uint month, uint day) {
         (year, month, day) = _daysToDate(timestamp / SECONDS_PER_DAY);
     }
-    function timestampToDateTime(uint timestamp) internal pure returns(
-        uint year,
-        uint month,
-        uint day,
-        uint hour,
-        uint minute,
-        uint second
-    )
-    {
+    function timestampToDateTime(uint timestamp) internal pure returns (uint year, uint month, uint day, uint hour, uint minute, uint second) {
         (year, month, day) = _daysToDate(timestamp / SECONDS_PER_DAY);
         uint secs = timestamp % SECONDS_PER_DAY;
         hour = secs / SECONDS_PER_HOUR;
@@ -152,16 +145,16 @@ library BokkyPooBahsDateTimeLibrary {
         (year, month, day) = _daysToDate(timestamp / SECONDS_PER_DAY);
         leapYear = _isLeapYear(year);
     }
-    function _isLeapYear(uint year) internal pure returns(bool leapYear) {
+    function _isLeapYear(uint year) internal pure returns (bool leapYear) {
         leapYear = ((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0);
     }
-    function isWeekDay(uint timestamp) internal pure returns(bool weekDay) {
+    function isWeekDay(uint timestamp) internal pure returns (bool weekDay) {
         weekDay = getDayOfWeek(timestamp) <= DOW_FRI;
     }
-    function isWeekEnd(uint timestamp) internal pure returns(bool weekEnd) {
+    function isWeekEnd(uint timestamp) internal pure returns (bool weekEnd) {
         weekEnd = getDayOfWeek(timestamp) >= DOW_SAT;
     }
-    function getDaysInMonth(uint timestamp) internal pure returns(uint daysInMonth) {
+    function getDaysInMonth(uint timestamp) internal pure returns (uint daysInMonth) {
         uint year;
         uint month;
         uint day;
@@ -198,19 +191,19 @@ library BokkyPooBahsDateTimeLibrary {
         uint month;
         (year, month, day) = _daysToDate(timestamp / SECONDS_PER_DAY);
     }
-    function getHour(uint timestamp) internal pure returns(uint hour) {
+    function getHour(uint timestamp) internal pure returns (uint hour) {
         uint secs = timestamp % SECONDS_PER_DAY;
         hour = secs / SECONDS_PER_HOUR;
     }
-    function getMinute(uint timestamp) internal pure returns(uint minute) {
+    function getMinute(uint timestamp) internal pure returns (uint minute) {
         uint secs = timestamp % SECONDS_PER_HOUR;
         minute = secs / SECONDS_PER_MINUTE;
     }
-    function getSecond(uint timestamp) internal pure returns(uint second) {
+    function getSecond(uint timestamp) internal pure returns (uint second) {
         second = timestamp % SECONDS_PER_MINUTE;
     }
 
-    function addYears(uint timestamp, uint _years) internal pure returns(uint newTimestamp) {
+    function addYears(uint timestamp, uint _years) internal pure returns (uint newTimestamp) {
         uint year;
         uint month;
         uint day;
@@ -223,8 +216,7 @@ library BokkyPooBahsDateTimeLibrary {
         newTimestamp = _daysFromDate(year, month, day) * SECONDS_PER_DAY + timestamp % SECONDS_PER_DAY;
         require(newTimestamp >= timestamp);
     }
-
-    function addMonths(uint timestamp, uint _months) internal pure returns(uint newTimestamp) {
+    function addMonths(uint timestamp, uint _months) internal pure returns (uint newTimestamp) {
         uint year;
         uint month;
         uint day;
@@ -239,23 +231,19 @@ library BokkyPooBahsDateTimeLibrary {
         newTimestamp = _daysFromDate(year, month, day) * SECONDS_PER_DAY + timestamp % SECONDS_PER_DAY;
         require(newTimestamp >= timestamp);
     }
-
-    function addDays(uint timestamp, uint _days) internal pure returns(uint newTimestamp) {
+    function addDays(uint timestamp, uint _days) internal pure returns (uint newTimestamp) {
         newTimestamp = timestamp + _days * SECONDS_PER_DAY;
         require(newTimestamp >= timestamp);
     }
-
-    function addHours(uint timestamp, uint _hours) internal pure returns(uint newTimestamp) {
+    function addHours(uint timestamp, uint _hours) internal pure returns (uint newTimestamp) {
         newTimestamp = timestamp + _hours * SECONDS_PER_HOUR;
         require(newTimestamp >= timestamp);
     }
-
-    function addMinutes(uint timestamp, uint _minutes) internal pure returns(uint newTimestamp) {
+    function addMinutes(uint timestamp, uint _minutes) internal pure returns (uint newTimestamp) {
         newTimestamp = timestamp + _minutes * SECONDS_PER_MINUTE;
         require(newTimestamp >= timestamp);
     }
-
-    function addSeconds(uint timestamp, uint _seconds) internal pure returns(uint newTimestamp) {
+    function addSeconds(uint timestamp, uint _seconds) internal pure returns (uint newTimestamp) {
         newTimestamp = timestamp + _seconds;
         require(newTimestamp >= timestamp);
     }
@@ -273,8 +261,7 @@ library BokkyPooBahsDateTimeLibrary {
         newTimestamp = _daysFromDate(year, month, day) * SECONDS_PER_DAY + timestamp % SECONDS_PER_DAY;
         require(newTimestamp <= timestamp);
     }
-
-    function subMonths(uint timestamp, uint _months) internal pure returns(uint newTimestamp) {
+    function subMonths(uint timestamp, uint _months) internal pure returns (uint newTimestamp) {
         uint year;
         uint month;
         uint day;
@@ -289,8 +276,7 @@ library BokkyPooBahsDateTimeLibrary {
         newTimestamp = _daysFromDate(year, month, day) * SECONDS_PER_DAY + timestamp % SECONDS_PER_DAY;
         require(newTimestamp <= timestamp);
     }
-
-    function subDays(uint timestamp, uint _days) internal pure returns(uint newTimestamp) {
+    function subDays(uint timestamp, uint _days) internal pure returns (uint newTimestamp) {
         newTimestamp = timestamp - _days * SECONDS_PER_DAY;
         require(newTimestamp <= timestamp);
     }
@@ -302,7 +288,7 @@ library BokkyPooBahsDateTimeLibrary {
         newTimestamp = timestamp - _minutes * SECONDS_PER_MINUTE;
         require(newTimestamp <= timestamp);
     }
-    function subSeconds(uint timestamp, uint _seconds) internal pure returns(uint newTimestamp) {
+    function subSeconds(uint timestamp, uint _seconds) internal pure returns (uint newTimestamp) {
         newTimestamp = timestamp - _seconds;
         require(newTimestamp <= timestamp);
     }
@@ -319,8 +305,7 @@ library BokkyPooBahsDateTimeLibrary {
         (toYear, toMonth, toDay) = _daysToDate(toTimestamp / SECONDS_PER_DAY);
         _years = toYear - fromYear;
     }
-
-    function diffMonths(uint fromTimestamp, uint toTimestamp) internal pure returns(uint _months) {
+    function diffMonths(uint fromTimestamp, uint toTimestamp) internal pure returns (uint _months) {
         require(fromTimestamp <= toTimestamp);
         uint fromYear;
         uint fromMonth;
@@ -332,23 +317,19 @@ library BokkyPooBahsDateTimeLibrary {
         (toYear, toMonth, toDay) = _daysToDate(toTimestamp / SECONDS_PER_DAY);
         _months = toYear * 12 + toMonth - fromYear * 12 - fromMonth;
     }
-
-    function diffDays(uint fromTimestamp, uint toTimestamp) internal pure returns(uint _days) {
+    function diffDays(uint fromTimestamp, uint toTimestamp) internal pure returns (uint _days) {
         require(fromTimestamp <= toTimestamp);
         _days = (toTimestamp - fromTimestamp) / SECONDS_PER_DAY;
     }
-
-    function diffHours(uint fromTimestamp, uint toTimestamp) internal pure returns(uint _hours) {
+    function diffHours(uint fromTimestamp, uint toTimestamp) internal pure returns (uint _hours) {
         require(fromTimestamp <= toTimestamp);
         _hours = (toTimestamp - fromTimestamp) / SECONDS_PER_HOUR;
     }
-
-    function diffMinutes(uint fromTimestamp, uint toTimestamp) internal pure returns(uint _minutes) {
+    function diffMinutes(uint fromTimestamp, uint toTimestamp) internal pure returns (uint _minutes) {
         require(fromTimestamp <= toTimestamp);
         _minutes = (toTimestamp - fromTimestamp) / SECONDS_PER_MINUTE;
     }
-
-    function diffSeconds(uint fromTimestamp, uint toTimestamp) internal pure returns(uint _seconds) {
+    function diffSeconds(uint fromTimestamp, uint toTimestamp) internal pure returns (uint _seconds) {
         require(fromTimestamp <= toTimestamp);
         _seconds = toTimestamp - fromTimestamp;
     }

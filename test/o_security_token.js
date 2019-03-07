@@ -186,12 +186,13 @@ contract("SecurityToken", async (accounts) => {
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
 
-            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
+            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, token_owner, 0, { from: token_owner });
             // Verify the successful generation of the security token
             assert.equal(tx.logs[2].args._ticker, symbol, "SecurityToken doesn't get deployed");
 
             I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
             stGetter = await STGetter.at(I_SecurityToken.address);
+            assert.equal(await stGetter.getTreasuryWallet.call(), token_owner, "Incorrect wallet set")
             const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTransferManager module get added successfully or not
@@ -206,12 +207,23 @@ contract("SecurityToken", async (accounts) => {
             assert.notEqual(I_GeneralTransferManager.address.valueOf(), address_zero, "GeneralTransferManager contract was not deployed");
         });
 
-        it("Should issue the tokens before attaching the STO -- fail only be called by the owner", async () => {
+        it("Should failed to change the treasury wallet address -- because of wrong owner", async() => {
+            await catchRevert(
+                I_SecurityToken.changeTreasuryWallet(account_fundsReceiver, {from: account_temp})
+            )
+        });
+
+        it("Should successfully change the treasury wallet address", async() => {
+            await I_SecurityToken.changeTreasuryWallet(account_fundsReceiver, {from: token_owner});
+            assert.equal(await stGetter.getTreasuryWallet.call(), account_fundsReceiver, "Incorrect wallet set")
+        });
+
+        it("Should mint the tokens before attaching the STO -- fail only be called by the owner", async () => {
             currentTime = new BN(await latestTime());
             let toTime = new BN(currentTime.add(new BN(duration.days(100))));
             let expiryTime = new BN(toTime.add(new BN(duration.days(100))));
 
-            let tx = await I_GeneralTransferManager.modifyKYCData(account_affiliate1, currentTime, toTime, expiryTime, {
+            let tx = await I_GeneralTransferManager.modifyKYCData(account_affiliate1, currentTime, currentTime, expiryTime, {
                 from: token_owner,
                 gas: 6000000
             });
@@ -230,7 +242,7 @@ contract("SecurityToken", async (accounts) => {
             let toTime = new BN(currentTime.add(new BN(duration.days(100))));
             let expiryTime = new BN(toTime.add(new BN(duration.days(100))));
 
-            let tx = await I_GeneralTransferManager.modifyKYCData(account_affiliate2, currentTime, toTime, expiryTime, {
+            let tx = await I_GeneralTransferManager.modifyKYCData(account_affiliate2, currentTime, currentTime, expiryTime, {
                 from: token_owner,
                 gas: 6000000
             });
@@ -575,7 +587,7 @@ contract("SecurityToken", async (accounts) => {
             // Add the Investor in to the whitelist
 
             fromTime = await latestTime();
-            toTime = fromTime + duration.days(100);
+            toTime = fromTime;
             expiryTime = toTime + duration.days(100);
 
             let tx = await I_GeneralTransferManager.modifyKYCData(account_investor1, fromTime, toTime, expiryTime, {
@@ -628,10 +640,23 @@ contract("SecurityToken", async (accounts) => {
             });
         });
 
-        it("Should activate the bool allowAllTransfer", async () => {
+        it("Should activate allow All Transfer", async () => {
             ID_snap = await takeSnapshot();
-            let tx = await I_GeneralTransferManager.changeAllowAllTransfers(true, { from: account_delegate });
-            assert.isTrue(tx.logs[0].args._allowAllTransfers, "AllowTransfer variable is not successfully updated");
+            await I_GeneralTransferManager.modifyTransferRequirementsMulti(
+                [0, 1, 2], 
+                [false, false, false],
+                [false, false, false],
+                [false, false, false],
+                [false, false, false],
+                { from: account_delegate }
+            );
+            for (let i = 0; i < 3; i++) {
+                let transferRestrions = await I_GeneralTransferManager.transferRequirements(i);
+                assert.equal(transferRestrions[0], false);
+                assert.equal(transferRestrions[1], false);
+                assert.equal(transferRestrions[2], false);
+                assert.equal(transferRestrions[3], false);
+            }
         });
 
         it("Should fail to send tokens with the wrong granularity", async () => {
@@ -682,15 +707,21 @@ contract("SecurityToken", async (accounts) => {
             await revertToSnapshot(ID_snap);
         });
 
-        it("Should bool allowAllTransfer value is false", async () => {
-            assert.isFalse(await I_GeneralTransferManager.allowAllTransfers.call(), "reverting of snapshot doesn't works properly");
-        });
-
-        it("Should change the bool allowAllWhitelistTransfers to true", async () => {
+        it("Should activate allow All Whitelist Transfers", async () => {
             ID_snap = await takeSnapshot();
-            let tx = await I_GeneralTransferManager.changeAllowAllWhitelistTransfers(true, { from: account_delegate });
-
-            assert.isTrue(tx.logs[0].args._allowAllWhitelistTransfers, "allowAllWhitelistTransfers variable is not successfully updated");
+            await I_GeneralTransferManager.modifyTransferRequirementsMulti(
+                [0, 1, 2], 
+                [true, false, true],
+                [true, true, false],
+                [false, false, false],
+                [false, false, false],
+                { from: account_delegate }
+            );
+            let transferRestrions = await I_GeneralTransferManager.transferRequirements(0);
+            assert.equal(transferRestrions[0], true);
+            assert.equal(transferRestrions[1], true);
+            assert.equal(transferRestrions[2], false);
+            assert.equal(transferRestrions[3], false);
         });
 
         it("Should transfer from whitelist investor1 to whitelist investor 2", async () => {
@@ -849,9 +880,6 @@ contract("SecurityToken", async (accounts) => {
         });
 
         it("Should fail in trasfering the tokens from one user to another", async () => {
-            await I_GeneralTransferManager.changeAllowAllWhitelistTransfers(true, { from: token_owner });
-            console.log(await I_SecurityToken.balanceOf(account_investor1));
-
             await catchRevert(I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: account_temp }));
         });
 
@@ -913,7 +941,14 @@ contract("SecurityToken", async (accounts) => {
         });
 
         it("Should force burn the tokens - value too high", async () => {
-            await I_GeneralTransferManager.changeAllowAllBurnTransfers(true, { from: token_owner });
+            await I_GeneralTransferManager.modifyTransferRequirementsMulti(
+                [0, 1, 2], 
+                [true, false, false],
+                [true, true, false],
+                [true, false, false],
+                [true, false, false],
+                { from: account_delegate }
+            );
             let currentBalance = await I_SecurityToken.balanceOf(account_temp);
             await catchRevert(
                 I_SecurityToken.controllerRedeem(account_temp, currentBalance + new BN(web3.utils.toWei("500", "ether")), "0x0", "0x0", {
@@ -922,7 +957,6 @@ contract("SecurityToken", async (accounts) => {
             );
         });
         it("Should force burn the tokens - wrong caller", async () => {
-            await I_GeneralTransferManager.changeAllowAllBurnTransfers(true, { from: token_owner });
             let currentBalance = await I_SecurityToken.balanceOf(account_temp);
             let investors = await stGetter.getInvestors.call();
             for (let i = 0; i < investors.length; i++) {
@@ -1022,7 +1056,7 @@ contract("SecurityToken", async (accounts) => {
             tx = await I_GeneralTransferManager.modifyKYCData(
                 I_MockRedemptionManager.address,
                 currentTime,
-                currentTime.add(new BN(duration.seconds(2))),
+                currentTime,
                 currentTime.add(new BN(duration.days(50))),
                 {
                     from: account_delegate,
@@ -1033,13 +1067,10 @@ contract("SecurityToken", async (accounts) => {
         });
 
         it("Should successfully burn tokens", async () => {
-            await I_GeneralTransferManager.changeAllowAllWhitelistTransfers(false, { from: token_owner });
             // Minting some tokens
             await I_SecurityToken.issue(account_investor1, new BN(web3.utils.toWei("1000")), "0x0", { from: token_owner });
             // Provide approval to trnafer the tokens to Module
             await I_SecurityToken.approve(I_MockRedemptionManager.address, new BN(web3.utils.toWei("500")), { from: account_investor1 });
-            // Allow all whitelist transfer
-            await I_GeneralTransferManager.changeAllowAllWhitelistTransfers(true, { from: token_owner });
             // Transfer the tokens to module (Burn)
             await I_MockRedemptionManager.transferToRedeem(new BN(web3.utils.toWei("500")), { from: account_investor1 });
             // Redeem tokens
@@ -1063,8 +1094,8 @@ contract("SecurityToken", async (accounts) => {
             currentTime = new BN(await latestTime());
             tx = await I_GeneralTransferManager.modifyKYCData(
                 I_MockRedemptionManager.address,
-                currentTime,
-                currentTime.add(new BN(duration.seconds(2))),
+                1,
+                1,
                 currentTime.add(new BN(duration.days(50))),
                 {
                     from: account_delegate,

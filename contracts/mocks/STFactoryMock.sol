@@ -1,13 +1,13 @@
 pragma solidity ^0.5.0;
 
-import "./SecurityToken.sol";
+import "./SecurityTokenMock.sol";
 import "../interfaces/ISTFactory.sol";
 import "../datastore/DataStoreFactory.sol";
 
 /**
  * @title Proxy for deploying SecurityToken instances
  */
-contract STFactory is ISTFactory {
+contract STFactoryMock is ISTFactory {
     address public transferManagerFactory;
     address public stDelegate;
     DataStoreFactory public dataStoreFactory;
@@ -35,7 +35,7 @@ contract STFactory is ISTFactory {
         external 
         returns(address) 
     {
-        SecurityToken newSecurityToken = new SecurityToken(
+        SecurityTokenMock newSecurityToken = new SecurityTokenMock(
             _name,
             _symbol,
             _decimals,

@@ -37,7 +37,6 @@ const LockUpTransferManager = artifacts.require("./LockUpTransferManager");
 const LockUpTransferManagerFactory = artifacts.require("./LockUpTransferManagerFactory");
 const PreSaleSTOFactory = artifacts.require("./PreSaleSTOFactory.sol");
 const PreSaleSTO = artifacts.require("./PreSaleSTO.sol");
-const PolyToken = artifacts.require("./PolyToken.sol");
 const PolyTokenFaucet = artifacts.require("./PolyTokenFaucet.sol");
 const DummySTOFactory = artifacts.require("./DummySTOFactory.sol");
 const DummySTO = artifacts.require("./DummySTO.sol");

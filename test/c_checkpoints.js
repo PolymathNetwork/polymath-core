@@ -126,7 +126,7 @@ contract("Checkpoints", async function(accounts) {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
+            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, token_owner, 0, { from: token_owner });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
@@ -140,13 +140,7 @@ contract("Checkpoints", async function(accounts) {
             assert.equal(web3.utils.toAscii(log.args._name).replace(/\u0000/g, ""), "GeneralTransferManager");
         });
 
-        it("Should set controller to token owner --failed not allowed", async () => {
-            await catchRevert(
-                I_SecurityToken.setController(token_owner, { from: token_owner })
-            );
-        });
-
-        it("Should set the tcontroller", async() => {
+        it("Should set the controller", async() => {
             await I_SecurityToken.setController(account_controller, {from: token_owner});
         })
 

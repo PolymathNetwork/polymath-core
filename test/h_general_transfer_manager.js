@@ -1,7 +1,7 @@
 import latestTime from "./helpers/latestTime";
 import { duration, promisifyLogWatch, latestBlock } from "./helpers/utils";
+import { getSignGTMData, getSignGTMTransferData, getMultiSignGTMData } from "./helpers/signData";
 import { takeSnapshot, increaseTime, revertToSnapshot } from "./helpers/time";
-import { getSignGTMData } from "./helpers/signData";
 import { pk } from "./helpers/testprivateKey";
 import { encodeProxyCall, encodeModuleCall } from "./helpers/encodeCall";
 import { catchRevert } from "./helpers/exceptions";
@@ -88,6 +88,7 @@ contract("GeneralTransferManager", async (accounts) => {
     const address_zero = "0x0000000000000000000000000000000000000000";
     const one_address = "0x0000000000000000000000000000000000000001";
     let signer;
+    let snapid;
 
     before(async () => {
         currentTime = new BN(await latestTime());
@@ -172,7 +173,7 @@ contract("GeneralTransferManager", async (accounts) => {
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
 
-            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
+            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, token_owner, 0, { from: token_owner });
             // Verify the successful generation of the security token
             assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
@@ -364,6 +365,38 @@ contract("GeneralTransferManager", async (accounts) => {
                 "GeneralPermissionManager module was not added"
             );
             I_GeneralPermissionManager = await GeneralPermissionManager.at(tx.logs[2].args._module);
+        });
+
+        it("should have transfer requirements initialized", async () => {
+            let transferRestrions = await I_GeneralTransferManager.transferRequirements(0);
+            assert.equal(transferRestrions[0], true);
+            assert.equal(transferRestrions[1], true);
+            assert.equal(transferRestrions[2], true);
+            assert.equal(transferRestrions[3], true);
+            transferRestrions = await I_GeneralTransferManager.transferRequirements(1);
+            assert.equal(transferRestrions[0], false);
+            assert.equal(transferRestrions[1], true);
+            assert.equal(transferRestrions[2], false);
+            assert.equal(transferRestrions[3], false);
+            transferRestrions = await I_GeneralTransferManager.transferRequirements(2);
+            assert.equal(transferRestrions[0], true);
+            assert.equal(transferRestrions[1], false);
+            assert.equal(transferRestrions[2], false);
+            assert.equal(transferRestrions[3], false);
+        });
+
+        it("should not allow unauthorized people to change transfer requirements", async () => {
+            await catchRevert(
+                I_GeneralTransferManager.modifyTransferRequirementsMulti(
+                    [0, 1, 2], 
+                    [true, false, true],
+                    [true, true, false],
+                    [false, false, false],
+                    [false, false, false],
+                    { from: account_investor1 }
+                )
+            );
+            await catchRevert(I_GeneralTransferManager.modifyTransferRequirements(0, false, false, false, false, { from: account_investor1 }));
         });
     });
 
@@ -595,11 +628,23 @@ contract("GeneralTransferManager", async (accounts) => {
             let validTo = await latestTime() + 60 * 60;
             let nonce = 5;
             const sig = getSignGTMData(
-                account_investor2,
+                I_GeneralTransferManager.address,
                 account_investor2,
                 fromTime,
                 toTime,
                 expiryTime,
+                validFrom,
+                validTo,
+                nonce,
+                "2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501200"
+            );
+
+            const sig2 = getMultiSignGTMData(
+                I_GeneralTransferManager.address,
+                [account_investor2],
+                [fromTime],
+                [toTime],
+                [expiryTime],
                 validFrom,
                 validTo,
                 nonce,
@@ -622,6 +667,219 @@ contract("GeneralTransferManager", async (accounts) => {
                     }
                 )
             );
+
+            await catchRevert(
+                I_GeneralTransferManager.modifyKYCDataSignedMulti(
+                    [account_investor2],
+                    [fromTime],
+                    [toTime],
+                    [expiryTime],
+                    validFrom,
+                    validTo,
+                    nonce,
+                    sig2,
+                    {
+                        from: account_investor2,
+                        gas: 6000000
+                    }
+                )
+            );
+        });
+
+        it("Should Not Transfer with expired Signed KYC data", async () => {
+            let nonce = 5;
+            const sig = getSignGTMTransferData(
+                I_GeneralTransferManager.address,
+                [account_investor2],
+                [currentTime.toNumber()],
+                [currentTime.toNumber()],
+                [expiryTime + duration.days(200)],
+                1,
+                1,
+                nonce,
+                signer.privateKey
+            );
+
+            // Jump time
+            await increaseTime(10000);
+            await catchRevert(I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), {from: account_investor1}));
+            await catchRevert(I_SecurityToken.transferWithData(account_investor2, new BN(web3.utils.toWei("1", "ether")), sig, {from: account_investor1}));
+        });
+
+        it("Should Transfer with Signed KYC data", async () => {
+            let snap_id = await takeSnapshot();
+            // Add the Investor in to the whitelist
+            //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
+            let validFrom = await latestTime();
+            let validTo = await latestTime() + duration.days(5);
+            let nonce = 5;
+            const sig = getSignGTMTransferData(
+                I_GeneralTransferManager.address,
+                [account_investor2],
+                [currentTime.toNumber()],
+                [currentTime.toNumber()],
+                [expiryTime + duration.days(200)],
+                validFrom,
+                validTo,
+                nonce,
+                signer.privateKey
+            );
+
+            // Jump time
+            await increaseTime(10000);
+            await catchRevert(I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), {from: account_investor1}));
+            await I_SecurityToken.transferWithData(account_investor2, new BN(web3.utils.toWei("1", "ether")), sig, {from: account_investor1});
+            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
+            //Should transfer even with invalid sig data when kyc not required
+            await I_SecurityToken.transferWithData(account_investor1, new BN(web3.utils.toWei("1", "ether")), sig, {from: account_investor2});
+            await revertToSnapshot(snap_id);
+        });
+
+        it("Should not do multiple signed whitelist if sig has expired", async () => {
+            snapid = await takeSnapshot();
+            await I_GeneralTransferManager.modifyKYCDataMulti(
+                [account_investor1, account_investor2],
+                [currentTime, currentTime],
+                [currentTime, currentTime],
+                [1, 1],
+                {
+                    from: account_issuer,
+                    gas: 6000000
+                }
+            );
+
+            let kycData = await I_GeneralTransferManager.getKYCData([account_investor1, account_investor2]);
+
+            assert.equal(new BN(kycData[2][0]).toNumber(), 1, "KYC data not modified correctly");
+            assert.equal(new BN(kycData[2][1]).toNumber(), 1, "KYC data not modified correctly");
+
+            let nonce = 5;
+            
+            let newExpiryTime =  new BN(expiryTime).add(new BN(duration.days(200)));
+            const sig = getMultiSignGTMData(
+                I_GeneralTransferManager.address,
+                [account_investor1, account_investor2],
+                [fromTime, fromTime],
+                [toTime, toTime],
+                [newExpiryTime, newExpiryTime],
+                1,
+                1,
+                nonce,
+                signer.privateKey
+            );
+
+            await increaseTime(10000);
+            
+            
+            await catchRevert(
+                I_GeneralTransferManager.modifyKYCDataSignedMulti(
+                    [account_investor1, account_investor2],
+                    [fromTime, fromTime],
+                    [toTime, toTime],
+                    [newExpiryTime, newExpiryTime],
+                    1,
+                    1,
+                    nonce,
+                    sig,
+                    {
+                        from: account_investor2,
+                        gas: 6000000
+                    }
+                )
+            );
+            
+            kycData = await I_GeneralTransferManager.getKYCData([account_investor1, account_investor2]);
+
+            assert.equal(new BN(kycData[2][0]).toNumber(), 1, "KYC data modified incorrectly");
+            assert.equal(new BN(kycData[2][1]).toNumber(), 1, "KYC data modified incorrectly");
+        });
+
+        it("Should not do multiple signed whitelist if array length mismatch", async () => {
+            let validFrom = await latestTime();
+            let validTo = await latestTime() + duration.days(5);
+            let nonce = 5;
+            
+            let newExpiryTime =  new BN(expiryTime).add(new BN(duration.days(200)));
+            const sig = getMultiSignGTMData(
+                I_GeneralTransferManager.address,
+                [account_investor1, account_investor2],
+                [fromTime, fromTime],
+                [toTime, toTime],
+                [newExpiryTime],
+                validFrom,
+                validTo,
+                nonce,
+                signer.privateKey
+            );
+
+            await increaseTime(10000);
+            
+            
+            await catchRevert(
+                I_GeneralTransferManager.modifyKYCDataSignedMulti(
+                    [account_investor1, account_investor2],
+                    [fromTime, fromTime],
+                    [toTime, toTime],
+                    [newExpiryTime],
+                    validFrom,
+                    validTo,
+                    nonce,
+                    sig,
+                    {
+                        from: account_investor2,
+                        gas: 6000000
+                    }
+                )
+            );
+            
+            let kycData = await I_GeneralTransferManager.getKYCData([account_investor1, account_investor2]);
+
+            assert.equal(new BN(kycData[2][0]).toNumber(), 1, "KYC data modified incorrectly");
+            assert.equal(new BN(kycData[2][1]).toNumber(), 1, "KYC data modified incorrectly");
+        });
+
+        it("Should do multiple signed whitelist in a signle transaction", async () => {
+            let validFrom = await latestTime();
+            let validTo = await latestTime() + duration.days(5);
+            let nonce = 5;
+            
+            let newExpiryTime =  new BN(expiryTime).add(new BN(duration.days(200)));
+            const sig = getMultiSignGTMData(
+                I_GeneralTransferManager.address,
+                [account_investor1, account_investor2],
+                [fromTime, fromTime],
+                [toTime, toTime],
+                [newExpiryTime, newExpiryTime],
+                validFrom,
+                validTo,
+                nonce,
+                signer.privateKey
+            );
+
+            await increaseTime(10000);
+            
+            
+            I_GeneralTransferManager.modifyKYCDataSignedMulti(
+                [account_investor1, account_investor2],
+                [fromTime, fromTime],
+                [toTime, toTime],
+                [newExpiryTime, newExpiryTime],
+                validFrom,
+                validTo,
+                nonce,
+                sig,
+                {
+                    from: account_investor2,
+                    gas: 6000000
+                }
+            );
+            
+            let kycData = await I_GeneralTransferManager.getKYCData([account_investor1, account_investor2]);
+
+            assert.equal(new BN(kycData[2][0]).toString(), newExpiryTime.toString(), "KYC data not modified correctly");
+            assert.equal(new BN(kycData[2][1]).toString(), newExpiryTime.toString(), "KYC data not modified correctly");
+
+            await revertToSnapshot(snapid);
         });
 
         it("Should Buy the tokens with signers signature", async () => {
@@ -782,13 +1040,24 @@ contract("GeneralTransferManager", async (accounts) => {
             assert.equal(balanceBefore.add(new BN(web3.utils.toWei("4", "ether"))).toString(), balanceAfter.toString(), "Fee is transferred");
         });
 
-        it("Should change the white list transfer variable", async () => {
-            let tx = await I_GeneralTransferManager.changeAllowAllWhitelistIssuances(true, { from: token_owner });
-            assert.isTrue(tx.logs[0].args._allowAllWhitelistIssuances);
+        it("should allow authorized people to modify transfer requirements", async () => {
+            await I_GeneralTransferManager.modifyTransferRequirements(0, false, true, false, false, { from: token_owner });
+            let transferRestrions = await I_GeneralTransferManager.transferRequirements(0);
+            assert.equal(transferRestrions[0], false);
+            assert.equal(transferRestrions[1], true);
+            assert.equal(transferRestrions[2], false);
+            assert.equal(transferRestrions[3], false);
         });
 
         it("should failed in trasfering the tokens", async () => {
-            let tx = await I_GeneralTransferManager.changeAllowAllWhitelistTransfers(true, { from: token_owner });
+            await I_GeneralTransferManager.modifyTransferRequirementsMulti(
+                [0, 1, 2], 
+                [true, false, true],
+                [true, true, false],
+                [false, false, false],
+                [false, false, false],
+                { from: token_owner }
+            );
             await I_GeneralTransferManager.pause({ from: token_owner });
             await catchRevert(I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("2", "ether")), { from: account_investor2 }));
         });

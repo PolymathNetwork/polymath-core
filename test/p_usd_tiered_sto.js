@@ -1246,7 +1246,8 @@ contract("USDTieredSTO", accounts => {
             await I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, I_DaiToken.address, { from: NONACCREDITED1 });
 
             // Change Stable coin address
-            await I_USDTieredSTO_Array[stoId].modifyAddresses(WALLET, RESERVEWALLET, [I_PolyToken.address], { from: ISSUER });
+            let I_DaiToken2 = await PolyTokenFaucet.new({from: POLYMATH});
+            await I_USDTieredSTO_Array[stoId].modifyAddresses(WALLET, RESERVEWALLET, [I_DaiToken2.address], { from: ISSUER });
 
             // NONACCREDITED DAI
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, I_DaiToken.address, { from: NONACCREDITED1 }));

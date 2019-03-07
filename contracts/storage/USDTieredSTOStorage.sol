@@ -51,9 +51,6 @@ contract USDTieredSTOStorage {
     // Whether or not the STO has been finalized
     bool public isFinalized;
 
-    // Address where ETH, POLY & Stable Coin funds are delivered
-    address public wallet;
-
     // Address of issuer reserve wallet for unsold tokens
     address public reserveWallet;
 

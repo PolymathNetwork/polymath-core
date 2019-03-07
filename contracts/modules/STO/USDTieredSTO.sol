@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "./ISTO.sol";
+import "./STO.sol";
 import "../../interfaces/ISecurityToken.sol";
 import "../../interfaces/IOracle.sol";
 import "../../RegistryUpdater.sol";
@@ -12,7 +12,7 @@ import "../../storage/USDTieredSTOStorage.sol";
 /**
  * @title STO module for standard capped crowdsale
  */
-contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
+contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
     using SafeMath for uint256;
 
     string public constant POLY_ORACLE = "PolyUsdOracle";
@@ -262,7 +262,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
         }
         usdTokens = _usdTokens;
         for(i = 0; i < _usdTokens.length; i++) {
-            require(_usdTokens[i] != address(0), "Invalid USD token");
+            require(_usdTokens[i] != address(0) && _usdTokens[i] != address(polyToken), "Invalid USD token");
             usdTokenEnabled[_usdTokens[i]] = true;
         }
         emit SetAddresses(wallet, reserveWallet, _usdTokens);
@@ -276,7 +276,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
      * @notice Finalizes the STO and mint remaining tokens to reserve address
      * @notice Reserve address must be whitelisted to successfully finalize
      */
-    function finalize() public onlyOwner {
+    function finalize() external onlyOwner {
         require(!isFinalized, "STO is already finalized");
         isFinalized = true;
         uint256 tempReturned;
@@ -304,7 +304,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
      * @param _investors Array of investor addresses to modify
      * @param _accredited Array of bools specifying accreditation status
      */
-    function changeAccredited(address[] _investors, bool[] _accredited) public onlyOwner {
+    function changeAccredited(address[] _investors, bool[] _accredited) external onlyOwner {
         require(_investors.length == _accredited.length, "Array length mismatch");
         for (uint256 i = 0; i < _investors.length; i++) {
             if (_accredited[i]) {
@@ -322,7 +322,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
      * @param _investors Array of investor addresses to modify
      * @param _nonAccreditedLimit Array of uints specifying non-accredited limits
      */
-    function changeNonAccreditedLimit(address[] _investors, uint256[] _nonAccreditedLimit) public onlyOwner {
+    function changeNonAccreditedLimit(address[] _investors, uint256[] _nonAccreditedLimit) external onlyOwner {
         //nonAccreditedLimitUSDOverride
         require(_investors.length == _nonAccreditedLimit.length, "Array length mismatch");
         for (uint256 i = 0; i < _investors.length; i++) {
@@ -360,7 +360,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
      * @notice Function to set allowBeneficialInvestments (allow beneficiary to be different to funder)
      * @param _allowBeneficialInvestments Boolean to allow or disallow beneficial investments
      */
-    function changeAllowBeneficialInvestments(bool _allowBeneficialInvestments) public onlyOwner {
+    function changeAllowBeneficialInvestments(bool _allowBeneficialInvestments) external onlyOwner {
         require(_allowBeneficialInvestments != allowBeneficialInvestments, "Value unchanged");
         allowBeneficialInvestments = _allowBeneficialInvestments;
         emit SetAllowBeneficialInvestments(allowBeneficialInvestments);
@@ -511,7 +511,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
         uint256 _investmentValue,
         FundRaiseType _fundRaiseType
     )
-        public
+        external
         view
         returns(uint256 spentUSD, uint256 spentValue, uint256 tokensMinted)
     {
@@ -735,7 +735,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
      * @param _amount Value to convert to USD
      * @return uint256 Value in USD
      */
-    function convertToUSD(FundRaiseType _fundRaiseType, uint256 _amount) public view returns(uint256) {
+    function convertToUSD(FundRaiseType _fundRaiseType, uint256 _amount) external view returns(uint256) {
         uint256 rate = getRate(_fundRaiseType);
         return DecimalMath.mul(_amount, rate);
     }
@@ -746,7 +746,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
      * @param _amount Value to convert from USD
      * @return uint256 Value in ETH or POLY
      */
-    function convertFromUSD(FundRaiseType _fundRaiseType, uint256 _amount) public view returns(uint256) {
+    function convertFromUSD(FundRaiseType _fundRaiseType, uint256 _amount) external view returns(uint256) {
         uint256 rate = getRate(_fundRaiseType);
         return DecimalMath.div(_amount, rate);
     }
@@ -779,7 +779,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
      * param _fundRaiseType The fund raising currency (e.g. ETH, POLY, SC) to calculate sold tokens for
      * @return uint256 Total number of tokens sold for ETH
      */
-    function getTokensSoldFor(FundRaiseType _fundRaiseType) public view returns (uint256) {
+    function getTokensSoldFor(FundRaiseType _fundRaiseType) external view returns (uint256) {
         uint256 tokensSold;
         for (uint256 i = 0; i < tiers.length; i++) {
             tokensSold = tokensSold.add(tiers[i].minted[uint8(_fundRaiseType)]);
@@ -792,7 +792,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
      * param _tier The tier to return minted tokens for
      * @return uint256[] array of minted tokens in each fund raise type
      */
-    function getTokensMintedByTier(uint256 _tier) public view returns (uint256[]) {
+    function getTokensMintedByTier(uint256 _tier) external view returns (uint256[]) {
         require(_tier < tiers.length, "Invalid tier");
         uint256[] memory tokensMinted = new uint256[](3);
         tokensMinted[0] = tiers[_tier].minted[uint8(FundRaiseType.ETH)];
@@ -806,7 +806,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
      * param _tier The tier to calculate sold tokens for
      * @return uint256 Total number of tokens sold in the tier
      */
-    function getTokensSoldByTier(uint256 _tier) public view returns (uint256) {
+    function getTokensSoldByTier(uint256 _tier) external view returns (uint256) {
         require(_tier < tiers.length, "Incorrect tier");
         uint256 tokensSold;
         tokensSold = tokensSold.add(tiers[_tier].minted[uint8(FundRaiseType.ETH)]);
@@ -819,7 +819,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
      * @notice Return the total no. of tiers
      * @return uint256 Total number of tiers
      */
-    function getNumberOfTiers() public view returns (uint256) {
+    function getNumberOfTiers() external view returns (uint256) {
         return tiers.length;
     }
 
@@ -827,7 +827,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
      * @notice Return the usd tokens accepted by the STO
      * @return address[] usd tokens
      */
-    function getUsdTokens() public view returns (address[]) {
+    function getUsdTokens() external view returns (address[]) {
         return usdTokens;
     }
 
@@ -851,7 +851,7 @@ contract USDTieredSTO is USDTieredSTOStorage, ISTO, ReentrancyGuard {
      * @return Amount of tokens sold.
      * @return Array of bools to show if funding is allowed in ETH, POLY, SC respectively
      */
-    function getSTODetails() public view returns(uint256, uint256, uint256, uint256[], uint256[], uint256, uint256, uint256, bool[]) {
+    function getSTODetails() external view returns(uint256, uint256, uint256, uint256[], uint256[], uint256, uint256, uint256, bool[]) {
         uint256[] memory cap = new uint256[](tiers.length);
         uint256[] memory rate = new uint256[](tiers.length);
         for(uint256 i = 0; i < tiers.length; i++) {

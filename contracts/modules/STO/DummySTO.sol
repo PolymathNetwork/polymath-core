@@ -1,12 +1,12 @@
 pragma solidity ^0.4.24;
 
-import "./ISTO.sol";
+import "./STO.sol";
 import "../../interfaces/ISecurityToken.sol";
 
 /**
  * @title STO module for sample implementation of a different crowdsale module
  */
-contract DummySTO is ISTO {
+contract DummySTO is STO {
 
     bytes32 public constant ADMIN = "ADMIN";
 

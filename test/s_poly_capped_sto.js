@@ -102,6 +102,7 @@ contract("POLYCappedSTO", async (accounts) => {
         uint256 _nonAccreditedLimit,
         uint256 _maxNonAccreditedInvestors,
         address payable _wallet,
+        address _treasuryWallet
     )*/
     const functionSignature = {
         name: "configure",
@@ -138,6 +139,10 @@ contract("POLYCappedSTO", async (accounts) => {
             {
                 type: "address",
                 name: "_wallet"
+            },
+            {
+                type: "address",
+                name: "_treasuryWallet"
             }
         ]
     };
@@ -223,6 +228,7 @@ contract("POLYCappedSTO", async (accounts) => {
             await I_PolyToken.getTokens(REGFEE, ISSUER);
             await I_PolyToken.approve(I_STRProxied.address, REGFEE, { from: ISSUER });
 
+//            let tx = await I_STRProxied.generateSecurityToken(NAME, SYMBOL, TOKENDETAILS, true, TREASURYWALLET { from: ISSUER });
             let tx = await I_STRProxied.generateSecurityToken(NAME, SYMBOL, TOKENDETAILS, true, { from: ISSUER });
             assert.equal(tx.logs[2].args._ticker, SYMBOL, "SecurityToken doesn't get deployed");
 
@@ -251,8 +257,9 @@ contract("POLYCappedSTO", async (accounts) => {
             _rate.push(new BN(10).mul(e16)); // 0.10 POLY/Token
             _minimumInvestment.push(new BN(50).mul(e18)); // 50 POLY
             _nonAccreditedLimit.push(new BN(10000).mul(e18)); // 10k POLY
-            _maxNonAccreditedInvestors.push(new BN(50))
+            _maxNonAccreditedInvestors.push(new BN(50));
             _wallet.push(WALLET);
+            _treasuryWallet.push(TREASURYWALLET);
 
             let config = [
                 _startTime[stoId],
@@ -262,7 +269,8 @@ contract("POLYCappedSTO", async (accounts) => {
                 _minimumInvestment[stoId],
                 _nonAccreditedLimit[stoId],
                 _maxNonAccreditedInvestors[stoId],
-                _wallet[stoId]
+                _wallet[stoId],
+                _treasuryWallet[stoId]
             ];
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
@@ -293,7 +301,7 @@ contract("POLYCappedSTO", async (accounts) => {
             assert.equal(await I_POLYCappedSTO_Array[stoId].wallet.call(), _wallet[stoId], "Incorrect _wallet in config");
             assert.equal(
                 await I_POLYCappedSTO_Array[stoId].treasuryWallet.call(),
-                address_zero,
+                _treasuryWallet[stoId],
                 "Incorrect _treasuryWallet in config"
             );
             assert.equal((await I_POLYCappedSTO_Array[stoId].getPermissions()).length, new BN(0), "Incorrect number of permissions");
@@ -309,7 +317,8 @@ contract("POLYCappedSTO", async (accounts) => {
                 _minimumInvestment[stoId],
                 _nonAccreditedLimit[stoId],
                 _maxNonAccreditedInvestors[stoId],
-                _wallet[stoId]
+                _wallet[stoId],
+                _treasuryWallet[stoId]
             ];
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
@@ -332,7 +341,8 @@ contract("POLYCappedSTO", async (accounts) => {
                 _minimumInvestment[stoId],
                 _nonAccreditedLimit[stoId],
                 _maxNonAccreditedInvestors[stoId],
-                _wallet[stoId]
+                _wallet[stoId],
+                _treasuryWallet[stoId]
             ];
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
@@ -355,6 +365,7 @@ contract("POLYCappedSTO", async (accounts) => {
             _nonAccreditedLimit.push(new BN(10000).mul(e18)); // 10000 POLY
             _maxNonAccreditedInvestors.push(new BN(4)) // 0 = Unlimited
             _wallet.push(WALLET);
+            _treasuryWallet.push(address_zero);
 
             let config = [
                 _startTime[stoId],
@@ -364,7 +375,8 @@ contract("POLYCappedSTO", async (accounts) => {
                 _minimumInvestment[stoId],
                 _nonAccreditedLimit[stoId],
                 _maxNonAccreditedInvestors[stoId],
-                _wallet[stoId]
+                _wallet[stoId],
+                _treasuryWallet[stoId]
             ];
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
@@ -393,12 +405,11 @@ contract("POLYCappedSTO", async (accounts) => {
                 "Incorrect _maxNonAccreditedInvestors in config"
             );
             assert.equal(await I_POLYCappedSTO_Array[stoId].wallet.call(), _wallet[stoId], "Incorrect _wallet in config");
-/*            assert.equal(
+            assert.equal(
                 await I_POLYCappedSTO_Array[stoId].treasuryWallet.call(),
                 _treasuryWallet[stoId],
                 "Incorrect _treasuryWallet in config"
             );
-            */
             assert.equal((await I_POLYCappedSTO_Array[stoId].getPermissions()).length, new BN(0), "Incorrect number of permissions");
         });
 
@@ -415,7 +426,8 @@ contract("POLYCappedSTO", async (accounts) => {
                 _minimumInvestment[stoId],
                 _nonAccreditedLimit[stoId],
                 _maxNonAccreditedInvestors[stoId],
-                _wallet[stoId]
+                _wallet[stoId],
+                _treasuryWallet[stoId]
             ];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
 
@@ -434,7 +446,8 @@ contract("POLYCappedSTO", async (accounts) => {
                 _minimumInvestment[stoId],
                 _nonAccreditedLimit[stoId],
                 _maxNonAccreditedInvestors[stoId],
-                _wallet[stoId]
+                _wallet[stoId],
+                _treasuryWallet[stoId]
             ];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
 
@@ -453,7 +466,8 @@ contract("POLYCappedSTO", async (accounts) => {
                 _minimumInvestment[stoId],
                 _nonAccreditedLimit[stoId],
                 _maxNonAccreditedInvestors[stoId],
-                wallet
+                wallet,
+                _treasuryWallet[stoId]
             ];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
 
@@ -473,7 +487,8 @@ contract("POLYCappedSTO", async (accounts) => {
                 _minimumInvestment[stoId],
                 _nonAccreditedLimit[stoId],
                 _maxNonAccreditedInvestors[stoId],
-                _wallet[stoId]
+                _wallet[stoId],
+                _treasuryWallet[stoId]
             ];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
 
@@ -493,7 +508,8 @@ contract("POLYCappedSTO", async (accounts) => {
                 _minimumInvestment[stoId],
                 _nonAccreditedLimit[stoId],
                 _maxNonAccreditedInvestors[stoId],
-                _wallet[stoId]
+                _wallet[stoId],
+                _treasuryWallet[stoId]
             ];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
 
@@ -517,6 +533,7 @@ contract("POLYCappedSTO", async (accounts) => {
                 _nonAccreditedLimit[stoId],
                 _maxNonAccreditedInvestors[stoId],
                 _wallet[stoId],
+                _treasuryWallet[stoId],
                 { from: ISSUER }
             ));
         });
@@ -718,19 +735,20 @@ contract("POLYCappedSTO", async (accounts) => {
         });
 
         // TREASURY ADDRESS //
-        it("Should failed to modify the treasury wallet address because of bad owner", async() => {
+        it("Should successfully modify the treasury wallet address -- failed because of bad owner", async() => {
             await catchRevert(
-                I_POLYCappedSTO_Array[0].modifyTreasuryWallet(TREASURYWALLET, {from: NONACCREDITED1})
+                I_POLYCappedSTO_Array[0].modifyTreasuryWallet(ISSUER, {from: NONACCREDITED1})
             );
         });
 
         it("Should successfully modify the treasury wallet of the multiple STOs", async() => {
+            let snapId = await takeSnapshot();
             let stoId = 0;
-            await I_POLYCappedSTO_Array[stoId].modifyTreasuryWallet(TREASURYWALLET, {from: ISSUER});
+            await I_POLYCappedSTO_Array[stoId].modifyTreasuryWallet(address_zero, {from: ISSUER});
             assert.equal(
                 await I_POLYCappedSTO_Array[stoId].treasuryWallet.call(),
-                TREASURYWALLET,
-                "Incorrect _treasuryWallet in config"
+                address_zero,
+                "Incorrect treasuryWallet"
             );
 
             stoId = 1;
@@ -738,9 +756,27 @@ contract("POLYCappedSTO", async (accounts) => {
             assert.equal(
                 await I_POLYCappedSTO_Array[stoId].treasuryWallet.call(),
                 TREASURYWALLET,
-                "Incorrect _treasuryWallet in config"
+                "Incorrect treasuryWallet"
             );
-        })
+            await revertToSnapshot(snapId);
+        });
+
+        it("Should successfully modify the treasury wallet after startTime", async () => {
+            let stoId = 0;
+            let snapId = await takeSnapshot();
+
+            // Advance time to after STO start
+            await increaseTime(duration.days(3));
+            assert.equal(await I_POLYCappedSTO_Array[stoId].isOpen(), true, "STO is not Open");
+
+            await I_POLYCappedSTO_Array[stoId].modifyTreasuryWallet(address_zero, {from: ISSUER});
+            assert.equal(
+                await I_POLYCappedSTO_Array[stoId].treasuryWallet.call(),
+                address_zero,
+                "Incorrect treasuryWallet"
+            );
+            await revertToSnapshot(snapId);
+        });
 
         //ALLOW BENEFICIAL INVESTMENTS //
         it("Should allow non-matching beneficiary -- failed because of bad owner", async () => {
@@ -2237,8 +2273,8 @@ contract("POLYCappedSTO", async (accounts) => {
         it("Should successfully finalize and minting unsold tokens to the treasury wallet -- fail treasury wallet is address zero", async () => {
             let stoId = 1;
             // Set Treasury to Address zero
-            await I_POLYCappedSTO_Array[stoId].modifyTreasuryWallet(address_zero, {from: ISSUER});
-            assert.equal(
+//            await I_POLYCappedSTO_Array[stoId].modifyTreasuryWallet(address_zero, {from: ISSUER});
+           assert.equal(
                 await I_POLYCappedSTO_Array[stoId].treasuryWallet.call(),
                 address_zero,
                 "Incorrect _treasuryWallet in config"
@@ -2588,7 +2624,7 @@ contract("POLYCappedSTO", async (accounts) => {
             await catchRevert(I_POLYCappedSTOFactory.changeSetupCost(newSetupCost, { from: ISSUER }));
         });
 
-        it("Should sucessfully change the setup cost for STO Factory", async () => {
+        it("Should successfully change the setup cost for STO Factory", async () => {
             let newSetupCost = new BN(web3.utils.toWei("500"));
             let newSetupCostPOLY = newSetupCost.mul(e18).div(await I_POLYOracle.getPrice.call());
             await I_POLYCappedSTOFactory.changeSetupCost(newSetupCost, { from: POLYMATH });

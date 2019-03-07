@@ -78,10 +78,11 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
      * @param _endTime Unix timestamp at which offering get ended
      * @param _cap Maximum No. of token base units for sale
      * @param _rate Token units a buyer gets multiplied by 10^18 per wei / base unit of POLY
-     * @param _minimumInvestment Minimun investment in fund raise type (* 10**18)
-     * @param _nonAccreditedLimit Limit in fund raise type (* 10**18) for non-accredited investors
+     * @param _minimumInvestment Minimun investment in POLY (* 10**18)
+     * @param _nonAccreditedLimit Limit in POLY (* 10**18) for non-accredited investors
      * @param _maxNonAccreditedInvestors Maximum number of non-accredited investors allowed (0 = unlimited)
      * @param _wallet Ethereum account address to hold the funds
+     * @param _treasuryWallet Ethereum account where unsold Tokens will be sent
      */
     function configure(
         uint256 _startTime,
@@ -91,7 +92,8 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
         uint256 _minimumInvestment,
         uint256 _nonAccreditedLimit,
         uint256 _maxNonAccreditedInvestors,
-        address payable _wallet
+        address payable _wallet,
+        address _treasuryWallet
     )
         external
         onlyFactory
@@ -101,13 +103,14 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
         _modifyCap (_cap);
         _modifyRate (_rate);
         _modifyWalletAddress(_wallet);
+        _modifyTreasuryWallet(_treasuryWallet);
         _modifyLimits(_minimumInvestment, _nonAccreditedLimit, _maxNonAccreditedInvestors);
     }
 
     /**
      * @dev modifies max non accredited investment limit and overall minimum investment limit
-     * @param _minimumInvestment overall minimum investment limit in selected fund raise type
-     * @param _nonAccreditedLimit max non accredited investment limit in selected fund raise type
+     * @param _minimumInvestment overall minimum investment limit in selected POLY
+     * @param _nonAccreditedLimit max non accredited investment limit in selected POLY
      * @param _maxNonAccreditedInvestors Maximum number of non-accredited investors allowed (0 = unlimited)
      */
     function modifyLimits(
@@ -164,8 +167,7 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
     function modifyTreasuryWallet(address _treasuryWallet) external {
         //can be modified even when STO started
         _onlySecurityTokenOwner();
-        emit SetTreasuryWallet(treasuryWallet, _treasuryWallet);
-        treasuryWallet = _treasuryWallet;
+        _modifyTreasuryWallet(_treasuryWallet);
     }
 
     function _modifyLimits(
@@ -205,6 +207,11 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
         wallet = _wallet;
     }
 
+    function _modifyTreasuryWallet(address _treasuryWallet) internal {
+        emit SetTreasuryWallet(treasuryWallet, _treasuryWallet);
+        treasuryWallet = _treasuryWallet;
+    }
+
     ////////////////////
     // STO Management //
     ////////////////////
@@ -219,17 +226,19 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
         require(!isFinalized, "Already finalized");
         isFinalized = true;
         if ((_mintUnsoldTokens) && (totalTokensSold < cap)) {
-//            address _wallet = (treasuryWallet == address(0) ? IDataStore(getDataStore()).getAddress(TREASURY) : treasuryWallet);
-            address _wallet = treasuryWallet;
-            require(_wallet != address(0));
+//            address treasury = (treasuryWallet == address(0) ? IDataStore(getDataStore()).getAddress(TREASURY) : treasuryWallet);
+            address treasury = treasuryWallet;
+            uint256 granularity = ISecurityToken(securityToken).granularity();
             finalAmountReturned = cap.sub(totalTokensSold);
-            ISecurityToken(securityToken).issue(treasuryWallet, finalAmountReturned, "");
-            emit ReserveTokenMint(msg.sender, treasuryWallet, finalAmountReturned);
+            finalAmountReturned = finalAmountReturned.div(granularity);
+            finalAmountReturned = finalAmountReturned.mul(granularity);
+            ISecurityToken(securityToken).issue(treasury, finalAmountReturned, "");
+            emit ReserveTokenMint(msg.sender, treasury, finalAmountReturned);
         }
      }
 
     /**
-     * @notice Modifies the list of overrides for non-accredited limits in fund raise type
+     * @notice Modifies the list of overrides for non-accredited limits in POLY
      * @param _investors Array of investor addresses to modify
      * @param _nonAccreditedLimit Array of uints specifying non-accredited limits
      */
@@ -285,7 +294,6 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
         // Forward coins to issuer wallet
         require(_token.transferFrom(msg.sender, wallet, spentValue), "Transfer failed");
         emit FundsReceived(msg.sender, _beneficiary, _fundRaiseType, _tokenAmount, spentValue);
-        _postValidatePurchase(_beneficiary, spentValue);
     }
 
     /**
@@ -311,7 +319,6 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
         uint256 polyUsdRate = IOracle(PolymathRegistry(RegistryUpdater(securityToken).polymathRegistry()).getAddress(POLY_ORACLE)).getPrice();
         uint256 spentUSD = DecimalMath.mul(spentValue, polyUsdRate);
         emit TokenPurchase(msg.sender, _beneficiary, spentValue, spentUSD, tokens);
-        _updatePurchasingState(_beneficiary, _investmentValue);
         // Modify storage
         investorInvested[_beneficiary] = investorInvested[_beneficiary].add(spentValue);
         fundsRaised[uint8(_fundRaiseType)] = fundsRaised[uint8(_fundRaiseType)].add(spentValue);
@@ -326,7 +333,7 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
       * @param _beneficiary Address where security tokens will be sent
       * @param _investmentValue Amount of POLY invested
       * @return tokens Number of tokens the _beneficiary will recieve
-      * @return spentValue Number of POLY that will be spent
+      * @return spentValue Number of POLY that will be spent to buy the number of tokens
       */
     function prePurchaseChecks(address _beneficiary, uint256 _investmentValue) public view returns(
         uint256 tokens,
@@ -335,8 +342,8 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
     ) {
         //Pre-Purchase checks
         require(isOpen(), "STO not open");
-        require(_investmentValue > 0, "No funds were sent");
-        require(_beneficiary != address(0), "Beneficiary address should not be 0x");
+        require(_investmentValue > 0, "No funds sent");
+        require(_beneficiary != address(0), "Beneficiary is 0x0");
         require(_investmentValue.add(investorInvested[_beneficiary]) >= minimumInvestment, "Less than minimum investment");
         accredited = _isAccredited(_beneficiary);
         // Accredited investors are not limited
@@ -344,35 +351,34 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
         // Check for non-accredited investor limits
         if (!accredited) {
             uint256 investorLimit = (nonAccreditedLimitOverride[_beneficiary] == 0) ? nonAccreditedLimit : nonAccreditedLimitOverride[_beneficiary];
-            require(investorInvested[_beneficiary] < investorLimit, "Over Non-accredited investor limit");
+            require(investorInvested[_beneficiary] < investorLimit, "Investment limit reached");
             if (_investmentValue.add(investorInvested[_beneficiary]) > investorLimit) {
                 allowedInvestment = investorLimit.sub(investorInvested[_beneficiary]);
             }
             if (maxNonAccreditedInvestors != 0) {
-                require(nonAccreditedCount < maxNonAccreditedInvestors, "Limit for number of non-accredited investor reached");
+                require(nonAccreditedCount < maxNonAccreditedInvestors, "Max Non-accredited investors");
             }
         }
-        // Get the number of tokens to be minted and value in fund raise type
-        (tokens, spentValue) = _getTokenAmount(allowedInvestment);
+        // Get the number of tokens to be minted and value in POLY
+        tokens = _getTokenAmount(allowedInvestment);
+        spentValue = (tokens.mul(uint256(10) ** 18)).div(rate);
     }
 
     /**
-    * @notice Gets the number of tokens and cost that will be issued based on rate and granularity
+    * @notice Gets the number of tokens that will be issued based on rate and granularity
     * @param _investedAmount Value in wei to be converted into tokens
     * @return tokens Number of tokens that can be purchased with the specified _investedAmount
-    * @return spentValue Cost in POLY to buy the number of tokens
     */
-    function _getTokenAmount(uint256 _investedAmount) internal view returns (uint256 tokens, uint256 spentValue) {
+    function _getTokenAmount(uint256 _investedAmount) internal view returns (uint256 tokens) {
         tokens = _investedAmount.mul(rate);
         tokens = tokens.div(uint256(10) ** 18);
+        if (totalTokensSold.add(tokens) > cap) {
+            tokens = cap.sub(totalTokensSold);
+        }
         uint256 granularity = ISecurityToken(securityToken).granularity();
         tokens = tokens.div(granularity);
         tokens = tokens.mul(granularity);
-        uint256 remainingTokens = cap.sub(totalTokensSold);
-        if (totalTokensSold.add(tokens) > cap) {
-            tokens = remainingTokens;
-        }
-        spentValue = (tokens.mul(uint256(10) ** 18)).div(rate);
+        require(tokens > 0, "No tokens");
     }
 
     /**
@@ -400,24 +406,8 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
         ISecurityToken(securityToken).issue(_beneficiary, _tokenAmount, "");
     }
 
-    /**
-    * @notice Overrides for extensions that require an internal state to check for validity
-      (current user contributions, etc.)
-    */
-    function _updatePurchasingState(address /*_beneficiary*/, uint256 _investedAmount) internal pure {
-        _investedAmount = 0; //yolo
-    }
-
-    /**
-    * @notice Validation of an executed purchase.
-      Observe state and use revert statements to undo rollback when valid conditions are not met.
-    */
-    function _postValidatePurchase(address /*_beneficiary*/, uint256 /*_investedAmount*/) internal pure {
-      // optional override
-    }
-
     function _isAccredited(address _investor) internal view returns(bool) {
-        IDataStore dataStore = IDataStore(getDataStore());
+        IDataStore dataStore = getDataStore();
         return _getIsAccredited(_investor, dataStore);
     }
 
@@ -471,7 +461,7 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
      * @return override any overrides for non-accredited limits for the investor
      */
     function getAccreditedData() external view returns (address[] memory investors, bool[] memory accredited, uint256[] memory overrides) {
-        IDataStore dataStore = IDataStore(getDataStore());
+        IDataStore dataStore = getDataStore();
         investors = dataStore.getAddressArray(INVESTORSKEY);
         accredited = new bool[](investors.length);
         overrides = new uint256[](investors.length);
@@ -486,12 +476,12 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
      * @return startTime - Unixtimestamp at which offering gets start.
      * @return endTime - Unixtimestamp at which offering ends.
      * @return cap - Number of token base units this STO will be allowed to sell to investors.
-     * @return rate - Token units a buyer gets(multiplied by 10^18) base unit of fund raise type
-     * @return minimumInvestment - minimum investment in fund raise type
+     * @return rate - Token units a buyer gets(multiplied by 10^18) base unit of POLY
+     * @return minimumInvestment - minimum investment in POLY
      * @return nonAccreditedLimit - default non accredited investor limit
      * @return maxNonAccreditedInvestors - maximum number of non-accredited investors that can invest in the offering
      * @return totalTokensSold - Amount of tokens get sold.
-     * @return _raised - Amount of funds raised in Fund Raise Type
+     * @return _raised - Amount of funds raised in POLY
      * @return fundsRaisedUSD - Amount of funds raised converted to USD at time of investment
      * @return investorCount - Number of individual investors this STO have.
      * @return nonAccreditedCount - Number of non-accredited investor that have invested in the offering

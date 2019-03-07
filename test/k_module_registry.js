@@ -303,9 +303,11 @@ contract("ModuleRegistry", async (accounts) => {
                 await I_PolyToken.getTokens(new BN(web3.utils.toWei("2000")), account_issuer);
                 await I_PolyToken.approve(I_STRProxied.address, new BN(web3.utils.toWei("2000")), { from: account_issuer });
                 await I_STRProxied.registerTicker(account_issuer, symbol, name, { from: account_issuer });
-                let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, true, 0, { from: account_issuer });
+                let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, true, account_issuer, 0, { from: account_issuer });
                 assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase());
                 I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+                stGetter = await STGetter.at(I_SecurityToken.address);
+                assert.equal(await stGetter.getTreasuryWallet.call(), account_issuer, "Incorrect wallet set")
             });
 
             it("Should fail in adding module. Because module is un-verified", async () => {
@@ -405,10 +407,11 @@ contract("ModuleRegistry", async (accounts) => {
                 await I_PolyToken.getTokens(new BN(web3.utils.toWei("2000")), account_issuer);
                 await I_PolyToken.approve(I_STRProxied.address, new BN(web3.utils.toWei("2000")), { from: account_issuer });
                 await I_STRProxied.registerTicker(account_issuer, newSymbol, name, { from: account_issuer });
-                let tx = await I_STRProxied.generateSecurityToken(name, newSymbol, tokenDetails, true, 0, { from: account_issuer });
+                let tx = await I_STRProxied.generateSecurityToken(name, newSymbol, tokenDetails, true, account_issuer, 0, { from: account_issuer });
                 assert.equal(tx.logs[2].args._ticker, newSymbol.toUpperCase());
                 I_SecurityToken2 = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
-
+                stGetter = await STGetter.at(I_SecurityToken2.address);
+                assert.equal(await stGetter.getTreasuryWallet.call(), account_issuer, "Incorrect wallet set")
                 let bytesData = encodeModuleCall(
                     ["uint256", "uint256", "uint256", "string"],
                     [await latestTime(), currentTime.add(new BN(duration.days(1))), cap, "Test STO"]

@@ -65,6 +65,7 @@ contract("CappedSTO", async (accounts) => {
     let stGetter_eth;
     let stGetter_poly;
     let pauseTime;
+    let treasury_wallet;
 
     // SecurityToken Details for funds raise Type ETH
     const name = "Team";
@@ -119,6 +120,7 @@ contract("CappedSTO", async (accounts) => {
         account_investor2 = accounts[3];
         account_investor3 = accounts[5];
         account_fundsReceiver = accounts[2];
+        treasury_wallet = accounts[6];
         token_owner = account_issuer;
 
         let instances = await setUpPolymathNetwork(account_polymath, token_owner);
@@ -174,13 +176,14 @@ contract("CappedSTO", async (accounts) => {
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
 
-            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, 0, { from: token_owner });
+            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, treasury_wallet, 0, { from: token_owner });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[2].args._ticker, symbol, "SecurityToken doesn't get deployed");
 
             I_SecurityToken_ETH = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
             stGetter_eth = await STGetter.at(I_SecurityToken_ETH.address);
+            assert.equal(await stGetter_eth.getTreasuryWallet.call(), treasury_wallet, "Incorrect wallet set")
             const log = (await I_SecurityToken_ETH.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
             // Verify that GeneralTransferManager module get added successfully or not
             assert.equal(log.args._types[0].toNumber(), transferManagerKey);
@@ -619,16 +622,26 @@ contract("CappedSTO", async (accounts) => {
                 assert.equal(tx.logs[0].args._ticker, P_symbol);
             });
 
+            it("Failed to generate the ST - Treasury wallet 0x0 is not allowed", async() => {
+                await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
+
+                await catchRevert(
+                    I_STRProxied.generateSecurityToken(P_name, P_symbol, P_tokenDetails, false,  "0x0000000000000000000000000000000000000000", 0, { from: token_owner })
+                );
+            });
+
             it("POLY: Should generate the new security token with the same symbol as registered above", async () => {
                 await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
 
-                let tx = await I_STRProxied.generateSecurityToken(P_name, P_symbol, P_tokenDetails, false, 0, { from: token_owner });
+                let tx = await I_STRProxied.generateSecurityToken(P_name, P_symbol, P_tokenDetails, false, treasury_wallet, 0, { from: token_owner });
 
                 // Verify the successful generation of the security token
                 assert.equal(tx.logs[2].args._ticker, P_symbol, "SecurityToken doesn't get deployed");
 
                 I_SecurityToken_POLY = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
                 stGetter_poly = await STGetter.at(I_SecurityToken_POLY.address);
+                assert.equal(await stGetter_poly.getTreasuryWallet.call(), treasury_wallet, "Incorrect wallet set")
+                
                 const log = (await I_SecurityToken_POLY.getPastEvents('ModuleAdded', {filter: {from: blockNo}}))[0];
 
                 // Verify that GeneralTransferManager module get added successfully or not

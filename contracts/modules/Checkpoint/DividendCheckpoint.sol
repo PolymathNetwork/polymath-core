@@ -62,7 +62,6 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
     }
 
     function _setWallet(address payable _wallet) internal {
-        require(_wallet != address(0));
         emit SetWallet(wallet, _wallet);
         wallet = _wallet;
     }
@@ -73,6 +72,19 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      */
     function getDefaultExcluded() external view returns(address[] memory) {
         return excluded;
+    }
+
+    /**
+     * @notice Returns the treasury wallet address
+     */
+    function getTreasuryWallet() public view returns(address payable) {
+        if (wallet == address(0)) {
+            address payable treasuryWallet = address(uint160(IDataStore(getDataStore()).getAddress(TREASURY)));
+            require(address(treasuryWallet) != address(0), "Invalid address");
+            return treasuryWallet; 
+        }
+        else
+            return wallet;
     }
 
     /**

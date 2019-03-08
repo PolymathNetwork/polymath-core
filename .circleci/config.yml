@@ -68,6 +68,8 @@ jobs:
       - run: wget -O node_modules/solidity-docgen/lib/index.js https://raw.githubusercontent.com/maxsam4/solidity-docgen/build/lib/index.js
       - run: node --version
       - run: truffle version
+      - run: git config --global user.email "contact@mudit.blog"
+      - run: git config --global user.name "Docs Bot"
       - run: npm run docs
       - save_cache:
           key: dependency-cache-{{ checksum "package.json" }}

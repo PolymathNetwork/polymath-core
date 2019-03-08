@@ -93,7 +93,7 @@
     "prettier": "^1.14.3",
     "sol-merger": "^0.1.2",
     "solidity-coverage": "^0.5.11",
-    "solidity-docgen": "^0.1.0",
+    "solidity-docgen": "^0.1.1",
     "solium": "^1.1.6",
     "truffle": "4.1.14",
     "truffle-wallet-provider": "0.0.5"

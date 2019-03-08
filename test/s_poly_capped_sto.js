@@ -228,8 +228,7 @@ contract("POLYCappedSTO", async (accounts) => {
             await I_PolyToken.getTokens(REGFEE, ISSUER);
             await I_PolyToken.approve(I_STRProxied.address, REGFEE, { from: ISSUER });
 
-//            let tx = await I_STRProxied.generateSecurityToken(NAME, SYMBOL, TOKENDETAILS, true, TREASURYWALLET { from: ISSUER });
-            let tx = await I_STRProxied.generateSecurityToken(NAME, SYMBOL, TOKENDETAILS, true, { from: ISSUER });
+            let tx = await I_STRProxied.generateSecurityToken(NAME, SYMBOL, TOKENDETAILS, true, ISSUER, 0, { from: ISSUER });
             assert.equal(tx.logs[2].args._ticker, SYMBOL, "SecurityToken doesn't get deployed");
 
             I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
@@ -2270,11 +2269,27 @@ contract("POLYCappedSTO", async (accounts) => {
             await revertToSnapshot(snapId);
         });
 
-        it("Should successfully finalize and minting unsold tokens to the treasury wallet -- fail treasury wallet is address zero", async () => {
+        it("Should successfully finalize and mint unsold tokens to the treasury wallet -- fail local treasury wallet not whitelisted", async () => {
+            let stoId = 0;
+            assert.equal(
+                await I_POLYCappedSTO_Array[stoId].treasuryWallet.call(),
+                TREASURYWALLET,
+                "Incorrect _treasuryWallet in config"
+            );
+
+            assert.equal(await I_POLYCappedSTO_Array[stoId].capReached(), false, "STO cap has been reached");
+            assert.equal(await I_POLYCappedSTO_Array[stoId].isOpen(), true, "STO is not Open");
+
+            // Finalize STO without minting
+            await catchRevert(I_POLYCappedSTO_Array[stoId].finalize(true, { from: ISSUER }));
+
+            assert.equal(await I_POLYCappedSTO_Array[stoId].isFinalized.call(), false, "STO has been finalized");
+            assert.equal(await I_POLYCappedSTO_Array[stoId].isOpen(), true, "STO not Open");
+        });
+
+        it("Should successfully finalize and mint unsold tokens to the treasury wallet -- fail dataStore treasury wallet (ISSUER) not whitelisted", async () => {
             let stoId = 1;
-            // Set Treasury to Address zero
-//            await I_POLYCappedSTO_Array[stoId].modifyTreasuryWallet(address_zero, {from: ISSUER});
-           assert.equal(
+            assert.equal(
                 await I_POLYCappedSTO_Array[stoId].treasuryWallet.call(),
                 address_zero,
                 "Incorrect _treasuryWallet in config"
@@ -2289,28 +2304,9 @@ contract("POLYCappedSTO", async (accounts) => {
             assert.equal(await I_POLYCappedSTO_Array[stoId].isFinalized.call(), false, "STO has been finalized");
             assert.equal(await I_POLYCappedSTO_Array[stoId].isOpen(), true, "STO not Open");
 
-            await I_POLYCappedSTO_Array[stoId].modifyTreasuryWallet(TREASURYWALLET, {from: ISSUER});
-            assert.equal(
-                await I_POLYCappedSTO_Array[stoId].treasuryWallet.call(),
-                TREASURYWALLET,
-                "Incorrect _treasuryWallet in config"
-            );
         });
 
-        it("Should successfully finalize and minting unsold tokens to the treasury wallet -- fail treasury wallet not whitelisted", async () => {
-            let stoId = 0;
-
-            assert.equal(await I_POLYCappedSTO_Array[stoId].capReached(), false, "STO cap has been reached");
-            assert.equal(await I_POLYCappedSTO_Array[stoId].isOpen(), true, "STO is not Open");
-
-            // Finalize STO without minting
-            await catchRevert(I_POLYCappedSTO_Array[stoId].finalize(true, { from: ISSUER }));
-
-            assert.equal(await I_POLYCappedSTO_Array[stoId].isFinalized.call(), false, "STO has been finalized");
-            assert.equal(await I_POLYCappedSTO_Array[stoId].isOpen(), true, "STO not Open");
-        });
-
-        it("Should successfully finalize and minting unsold tokens to the treasury wallet -- fail because of bad owner", async () => {
+        it("Should successfully finalize and mint unsold tokens to the treasury wallet -- fail because of bad owner", async () => {
             let stoId = 0;
 
             assert.equal(await I_POLYCappedSTO_Array[stoId].capReached(), false, "STO cap has been reached");
@@ -2331,7 +2327,7 @@ contract("POLYCappedSTO", async (accounts) => {
             assert.equal(await I_POLYCappedSTO_Array[stoId].isOpen(), true, "STO not Open");
         });
 
-        it("Should successfully finalize and minting unsold tokens to the treasury wallet", async () => {
+        it("Should successfully finalize and mint unsold tokens to the local treasury wallet", async () => {
             let stoId = 0;
             let snapId = await takeSnapshot();
 
@@ -2340,9 +2336,7 @@ contract("POLYCappedSTO", async (accounts) => {
             let toTime = await latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(100);
 
-            const tx1 = await I_GeneralTransferManager.modifyKYCData(TREASURYWALLET, fromTime, toTime, expiryTime, {
-                from: ISSUER
-            });
+            const tx1 = await I_GeneralTransferManager.modifyKYCData(TREASURYWALLET, fromTime, toTime, expiryTime, {from: ISSUER});
             assert.equal(tx1.logs[0].args._investor, TREASURYWALLET, "Failed in adding the treasury wallet to whitelist");
 
             // Calculate the remaing number of tokens
@@ -2386,7 +2380,7 @@ contract("POLYCappedSTO", async (accounts) => {
             console.log("          Final tokens Returned: ".grey + final_TokensReturned.toString().grey);
 
             assert.equal(final_TokensReturned.toString(), remainingTokens, "unsold Tokens were not minted");
-            assert.equal(final_TokenSupply.toString(), cap.toString(), "Token Supply not changed as expected");
+            assert.equal(final_TokenSupply.toString(), (init_TokenSupply.add(remainingTokens)).toString(), "Token Supply not changed as expected");
             assert.equal(final_TreasuryTokenBal.toString(), remainingTokens.toString(), "Treasury Balance increased");
             assert.equal(final_STOTokenSold.toString(), init_STOTokenSold.toString(), "STO Token Sold not changed as expected");
             assert.equal(final_RaisedETH.toString(), init_RaisedETH.toString(), "Raised ETH not changed as expected");
@@ -2396,6 +2390,74 @@ contract("POLYCappedSTO", async (accounts) => {
 
             await revertToSnapshot(snapId);
         });
+
+        it("Should successfully finalize and mint unsold tokens to the dataStore treasury wallet (ISSUER)", async () => {
+            let stoId = 1;
+            let snapId = await takeSnapshot();
+
+            //Whitelist Treasury wallet
+            let fromTime = await latestTime();
+            let toTime = await latestTime() + duration.days(15);
+            let expiryTime = toTime + duration.days(100);
+
+            const tx1 = await I_GeneralTransferManager.modifyKYCData(ISSUER, fromTime, toTime, expiryTime, {from: ISSUER});
+            assert.equal(tx1.logs[0].args._investor, ISSUER, "Failed in adding the treasury wallet to whitelist");
+
+            // Calculate the remaing number of tokens
+            let cap = await I_POLYCappedSTO_Array[stoId].cap.call();
+            let init_STOTokenSold = await I_POLYCappedSTO_Array[stoId].getTokensSold();
+            let remainingTokens = cap.sub(init_STOTokenSold);
+            console.log("          Cap: ".grey + cap.toString().grey);
+            console.log("          Initial tokens sold: ".grey + init_STOTokenSold.toString().grey);
+            console.log("          Remaining tokens: ".grey + remainingTokens.toString().grey);
+
+            let init_TokenSupply = await I_SecurityToken.totalSupply();
+            console.log("          Initial token supply: ".grey + init_TokenSupply.toString().grey);
+
+            // Additional checks on getters
+            let init_TreasuryTokenBal = await I_SecurityToken.balanceOf(ISSUER);
+            let init_RaisedETH = await I_POLYCappedSTO_Array[stoId].fundsRaised.call(ETH);
+            let init_RaisedPOLY = await I_POLYCappedSTO_Array[stoId].fundsRaised.call(POLY);
+            let init_RaisedSC = await I_POLYCappedSTO_Array[stoId].fundsRaised.call(SC);
+            let init_RaisedUSD = await I_POLYCappedSTO_Array[stoId].fundsRaisedUSD.call();
+            let init_InvestorCount = await I_POLYCappedSTO_Array[stoId].investorCount.call();
+            let init_nonAccreditedCount = await I_POLYCappedSTO_Array[stoId].nonAccreditedCount.call();
+
+            assert.equal(await I_POLYCappedSTO_Array[stoId].capReached(), false, "STO cap has been reached");
+            assert.equal(await I_POLYCappedSTO_Array[stoId].isOpen(), true, "STO is not Open");
+
+            // Finalize STO without minting
+            await I_POLYCappedSTO_Array[stoId].finalize(true, { from: ISSUER });
+            assert.equal(await I_POLYCappedSTO_Array[stoId].isFinalized.call(), true, "STO has not been finalized");
+            assert.equal(await I_POLYCappedSTO_Array[stoId].isOpen(), false, "STO is Open");
+
+            let final_TokenSupply = await I_SecurityToken.totalSupply();
+            let final_TreasuryTokenBal = await I_SecurityToken.balanceOf(ISSUER);
+            let final_STOTokenSold = await I_POLYCappedSTO_Array[stoId].getTokensSold();
+            let final_RaisedETH = await I_POLYCappedSTO_Array[stoId].fundsRaised.call(ETH);
+            let final_RaisedPOLY = await I_POLYCappedSTO_Array[stoId].fundsRaised.call(POLY);
+            let final_RaisedSC = await I_POLYCappedSTO_Array[stoId].fundsRaised.call(SC);
+            let final_RaisedUSD = await I_POLYCappedSTO_Array[stoId].fundsRaisedUSD.call();
+            let final_InvestorCount = await I_POLYCappedSTO_Array[stoId].investorCount.call();
+            let final_nonAccreditedCount = await I_POLYCappedSTO_Array[stoId].nonAccreditedCount.call();
+            let final_TokensReturned = await I_POLYCappedSTO_Array[stoId].finalAmountReturned.call();
+
+            console.log("          Final tokens sold: ".grey + final_STOTokenSold.toString().grey);
+            console.log("          Final tokens Returned: ".grey + final_TokensReturned.toString().grey);
+            console.log("          Final token supply: ".grey + final_TokenSupply.toString().grey);
+
+            assert.equal(final_TokensReturned.toString(), remainingTokens.toString(), "unsold Tokens were not minted");
+            assert.equal(final_TokenSupply.toString(), (init_TokenSupply.add(remainingTokens)).toString(), "Token Supply not changed as expected");
+            assert.equal(final_TreasuryTokenBal.toString(), remainingTokens.toString(), "Treasury Balance increased");
+            assert.equal(final_STOTokenSold.toString(), init_STOTokenSold.toString(), "STO Token Sold not changed as expected");
+            assert.equal(final_RaisedETH.toString(), init_RaisedETH.toString(), "Raised ETH not changed as expected");
+            assert.equal(final_RaisedPOLY.toString(), init_RaisedPOLY.toString(), "Raised POLY not changed as expected");
+            assert.equal(final_InvestorCount.toString(), init_InvestorCount.toString(), "Investor count increased");
+            assert.equal(final_nonAccreditedCount.toString(), init_nonAccreditedCount.toString(), "non-accredited Investor count increased");
+
+            await revertToSnapshot(snapId);
+        });
+
 
         it("Should successfully finalize without minting unsold tokens to the treasury wallet (treasury wallet = address zero)", async () => {
             let stoId = 1;

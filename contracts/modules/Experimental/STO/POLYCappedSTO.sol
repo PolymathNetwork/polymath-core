@@ -226,8 +226,7 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
         require(!isFinalized, "Already finalized");
         isFinalized = true;
         if ((_mintUnsoldTokens) && (totalTokensSold < cap)) {
-//            address treasury = (treasuryWallet == address(0) ? IDataStore(getDataStore()).getAddress(TREASURY) : treasuryWallet);
-            address treasury = treasuryWallet;
+            address treasury = (treasuryWallet == address(0) ? IDataStore(getDataStore()).getAddress(TREASURY) : treasuryWallet);
             uint256 granularity = ISecurityToken(securityToken).granularity();
             finalAmountReturned = cap.sub(totalTokensSold);
             finalAmountReturned = finalAmountReturned.div(granularity);

@@ -104,7 +104,6 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
         weiAmount = weiAmount.sub(refund);
 
         _forwardFunds(refund);
-        _postValidatePurchase(_beneficiary, weiAmount);
     }
 
     /**
@@ -116,7 +115,6 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
         require(fundRaiseTypes[uint8(FundRaiseType.POLY)], "Mode of investment is not POLY");
         uint256 refund = _processTx(msg.sender, _investedPOLY);
         _forwardPoly(msg.sender, wallet, _investedPOLY.sub(refund));
-        _postValidatePurchase(msg.sender, _investedPOLY.sub(refund));
     }
 
     /**
@@ -185,7 +183,6 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
         _processPurchase(_beneficiary, tokens);
         emit TokenPurchase(msg.sender, _beneficiary, _investedAmount, tokens);
 
-        _updatePurchasingState(_beneficiary, _investedAmount);
     }
 
     /**
@@ -197,22 +194,8 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
     function _preValidatePurchase(address _beneficiary, uint256 _investedAmount) internal view {
         require(_beneficiary != address(0), "Beneficiary address should not be 0x");
         require(_investedAmount != 0, "Amount invested should not be equal to 0");
-        uint256 tokens;
-        (tokens, ) = _getTokenAmount(_investedAmount);
-        require(totalTokensSold.add(tokens) <= cap, "Investment more than cap is not allowed");
         /*solium-disable-next-line security/no-block-members*/
         require(now >= startTime && now <= endTime, "Offering is closed/Not yet started");
-    }
-
-    /**
-    * @notice Validation of an executed purchase.
-      Observe state and use revert statements to undo rollback when valid conditions are not met.
-    */
-    function _postValidatePurchase(
-        address _beneficiary,
-        uint256 /*_investedAmount*/
-    ) internal view {
-        require(_canBuy(_beneficiary), "Unauthorized");
     }
 
     /**
@@ -240,29 +223,21 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
     }
 
     /**
-    * @notice Overrides for extensions that require an internal state to check for validity
-      (current user contributions, etc.)
-    */
-    function _updatePurchasingState(
-        address, /*_beneficiary*/
-        uint256 _investedAmount
-    ) internal pure {
-        _investedAmount = 0; //yolo
-    }
-
-    /**
     * @notice Overrides to extend the way in which ether is converted to tokens.
     * @param _investedAmount Value in wei to be converted into tokens
     * @return Number of tokens that can be purchased with the specified _investedAmount
     * @return Remaining amount that should be refunded to the investor
     */
-    function _getTokenAmount(uint256 _investedAmount) internal view returns(uint256 _tokens, uint256 _refund) {
-        _tokens = _investedAmount.mul(rate);
-        _tokens = _tokens.div(uint256(10) ** 18);
+    function _getTokenAmount(uint256 _investedAmount) internal view returns(uint256 tokens, uint256 refund) {
+        tokens = _investedAmount.mul(rate);
+        tokens = tokens.div(uint256(10) ** 18);
+        if (totalTokensSold.add(tokens) > cap) {
+            tokens = cap.sub(totalTokensSold);
+        }
         uint256 granularity = ISecurityToken(securityToken).granularity();
-        _tokens = _tokens.div(granularity);
-        _tokens = _tokens.mul(granularity);
-        _refund = _investedAmount.sub((_tokens.mul(uint256(10) ** 18)).div(rate));
+        tokens = tokens.div(granularity);
+        tokens = tokens.mul(granularity);
+        refund = _investedAmount.sub((tokens.mul(uint256(10) ** 18)).div(rate));
     }
 
     /**

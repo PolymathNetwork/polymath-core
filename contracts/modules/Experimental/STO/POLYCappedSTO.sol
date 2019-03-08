@@ -241,7 +241,7 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
      * @param _investors Array of investor addresses to modify
      * @param _nonAccreditedLimit Array of uints specifying non-accredited limits
      */
-    function changeNonAccreditedLimit(address[] memory _investors, uint256[] memory _nonAccreditedLimit) public {
+    function changeNonAccreditedLimit(address[] calldata _investors, uint256[] calldata _nonAccreditedLimit) external {
         _onlySecurityTokenOwner();
         require(_investors.length == _nonAccreditedLimit.length, "Length mismatch");
         for (uint256 i = 0; i < _investors.length; i++) {

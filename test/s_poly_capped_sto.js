@@ -2458,7 +2458,6 @@ contract("POLYCappedSTO", async (accounts) => {
             await revertToSnapshot(snapId);
         });
 
-
         it("Should successfully finalize without minting unsold tokens to the treasury wallet (treasury wallet = address zero)", async () => {
             let stoId = 1;
 

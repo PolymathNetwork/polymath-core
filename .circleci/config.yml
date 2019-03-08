@@ -79,7 +79,7 @@ workflows:
   version: 2
   commit:
     jobs:
-      - docs
+      - coverage
   daily-builds:
     triggers:
       - schedule:

@@ -65,6 +65,7 @@ jobs:
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
       - run: yarn install
+      - run: sudo apt install libz3-dev
       - run: sudo npm i truffle -g
       - run: node --version
       - run: truffle version
@@ -77,7 +78,7 @@ workflows:
   version: 2
   commit:
     jobs:
-      - coverage
+      - docs
   daily-builds:
     triggers:
       - schedule:

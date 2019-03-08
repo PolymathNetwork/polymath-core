@@ -59,14 +59,12 @@ jobs:
           path: ./coverage/lcov.info
   docs:
     docker:
-      - image: circleci/node:8
+      - image: maxsam4/solidity-kit:0.4.24
     steps:
       - checkout
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
       - run: yarn install
-      - run: sudo apt install libz3-dev
-      - run: sudo npm i truffle -g
       - run: node --version
       - run: truffle version
       - run: npm run docs

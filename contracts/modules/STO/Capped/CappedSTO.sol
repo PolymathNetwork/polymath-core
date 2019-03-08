@@ -237,6 +237,7 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
         uint256 granularity = ISecurityToken(securityToken).granularity();
         tokens = tokens.div(granularity);
         tokens = tokens.mul(granularity);
+        require(tokens > 0, "Cap reached");
         refund = _investedAmount.sub((tokens.mul(uint256(10) ** 18)).div(rate));
     }
 

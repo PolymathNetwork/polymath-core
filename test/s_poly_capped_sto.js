@@ -11,6 +11,8 @@ const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 const PolyTokenFaucet = artifacts.require("./PolyTokenFaucet.sol");
 const STGetter = artifacts.require("./STGetter.sol");
+const POLYCappedSTOFactory = artifacts.require("./POLYCappedSTOFactory.sol");
+const POLYCappedSTOProxy = artifacts.require("./POLYCappedSTOProxy.sol");
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -256,7 +258,7 @@ contract("POLYCappedSTO", async (accounts) => {
             _rate.push(new BN(10).mul(e16)); // 0.10 POLY/Token
             _minimumInvestment.push(new BN(50).mul(e18)); // 50 POLY
             _nonAccreditedLimit.push(new BN(10000).mul(e18)); // 10k POLY
-            _maxNonAccreditedInvestors.push(new BN(50));
+            _maxNonAccreditedInvestors.push(new BN(0)); // 0 = unlimited
             _wallet.push(WALLET);
             _treasuryWallet.push(TREASURYWALLET);
 
@@ -362,7 +364,7 @@ contract("POLYCappedSTO", async (accounts) => {
             _rate.push(new BN(10).mul(e16)); // 0.10 POLY/Token
             _minimumInvestment.push(new BN(0)); // 0 POLY
             _nonAccreditedLimit.push(new BN(10000).mul(e18)); // 10000 POLY
-            _maxNonAccreditedInvestors.push(new BN(4)) // 0 = Unlimited
+            _maxNonAccreditedInvestors.push(new BN(4))
             _wallet.push(WALLET);
             _treasuryWallet.push(address_zero);
 
@@ -1349,7 +1351,7 @@ contract("POLYCappedSTO", async (accounts) => {
 
             // First buy up all tokens - should succeed
             await I_POLYCappedSTO_Array[stoId].buyWithPOLY(ACCREDITED1, max_investment, { from: ACCREDITED1 });
-            assert.equal(await I_POLYCappedSTO_Array[stoId].isOpen(), false, "STO is not Closed");
+            assert.equal(await I_POLYCappedSTO_Array[stoId].isOpen(), false, "STO is Open");
             assert.equal(await I_POLYCappedSTO_Array[stoId].capReached(), true, "STO cap has not been reached");
 
             // try to buy more tokens should fail for both accredited and non accredited investors
@@ -1421,7 +1423,7 @@ contract("POLYCappedSTO", async (accounts) => {
             assert.equal(tx2.logs[0].args._investor, ACCREDITED1, "Failed in adding the investor in whitelist");
         });
 
-        it("should successfully modify accredited addresses for the STOs", async () => {
+        it("Should successfully get investor accredited status for the STOs", async () => {
              let stoId = 0;
              let totalStatus = await I_POLYCappedSTO_Array[stoId].getAccreditedData.call();
              console.log(totalStatus);
@@ -1702,6 +1704,14 @@ contract("POLYCappedSTO", async (accounts) => {
             );
         });
 
+        it("Should successfully modify NONACCREDITED cap for NONACCREDITED1 and NONACCREDITED2 -- failed array length mismatch", async () => {
+            let stoId = 0;
+
+            await catchRevert(I_POLYCappedSTO_Array[stoId].changeNonAccreditedLimit([NONACCREDITED1, NONACCREDITED2], [_nonAccreditedLimit[stoId].mul(new BN(2))], {
+                from: ISSUER
+            }));
+        });
+
         it("Should successfully modify NONACCREDITED cap for NONACCREDITED1", async () => {
             let stoId = 0;
             console.log("          Current investment: ".grey + (await I_POLYCappedSTO_Array[stoId].investorInvested.call(NONACCREDITED1)).toString().grey);
@@ -1879,7 +1889,7 @@ contract("POLYCappedSTO", async (accounts) => {
             );
         });
 
-        it("Should successfully buy a granular amount and refund balance when buying indivisible token with POLY", async () => {
+        it("Should successfully buy a granular amount and refund balance when buying a indivisible token with POLY", async () => {
             let stoId = 0;
 
             await I_SecurityToken.changeGranularity(e18, { from: ISSUER });
@@ -2043,6 +2053,80 @@ contract("POLYCappedSTO", async (accounts) => {
             await I_SecurityToken.changeGranularity(1, { from: ISSUER });
         });
 
+        it("Should fail due to calculated number of tokens being less than the granularity when buying a indivisible token", async () => {
+            let stoId = 0;
+
+            await I_SecurityToken.changeGranularity(e18, { from: ISSUER });
+            // check minimum investment has already been met
+            let investorInvested = await I_POLYCappedSTO_Array[stoId].investorInvested(ACCREDITED1);
+            let minimumInvestment = await I_POLYCappedSTO_Array[stoId].minimumInvestment.call();
+            let minInvested = investorInvested.gte(minimumInvestment);
+            assert.equal(minInvested, true, "minimum investment not met")
+
+            let investment_POLY = new BN(50).mul(e16); // Invest 0.5 POLY
+
+            console.log("          Investment: ".grey + investment_POLY.toString().grey + " POLY".grey);
+
+            await I_PolyToken.getTokens(investment_POLY, ACCREDITED1);
+            await I_PolyToken.approve(I_POLYCappedSTO_Array[stoId].address, investment_POLY, { from: ACCREDITED1 });
+
+            // Buy With POLY
+            await catchRevert(I_POLYCappedSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, {
+                from: ACCREDITED1,
+                gasPrice: GAS_PRICE
+            }));
+            await I_SecurityToken.changeGranularity(1, { from: ISSUER });
+        });
+
+
+        it("Should fail to buy if granularity prevents buying remaining tokens when buying up to the cap", async () => {
+            let stoId = 0;
+            let snapId = await takeSnapshot();
+
+            // Calculate the remaing number of tokens
+            let cap = await I_POLYCappedSTO_Array[stoId].cap.call();
+            let init_STOTokenSold = await I_POLYCappedSTO_Array[stoId].getTokensSold();
+            let remainingTokens = cap.sub(init_STOTokenSold);
+
+            let rate = await I_POLYCappedSTO_Array[stoId].rate.call();
+
+            let remainingPOLY = remainingTokens.mul(e18).div(rate); // Calculate investment amount
+            let investment_POLY1 = remainingPOLY.sub(new BN(50).mul(e16)); // Calculate investment amount 1
+            let investment_POLY2 = new BN(10).mul(e18); // Calculate investment amount 2
+
+            await I_PolyToken.getTokens(investment_POLY1.add(investment_POLY2), ACCREDITED1);
+            await I_PolyToken.approve(I_POLYCappedSTO_Array[stoId].address, investment_POLY1.add(investment_POLY2), { from: ACCREDITED1 });
+
+            // Buy first batch With POLY
+            let tx1 = await I_POLYCappedSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY1, {
+                from: ACCREDITED1,
+                gasPrice: GAS_PRICE
+            });
+            let gasCost2 = new BN(GAS_PRICE).mul(new BN(tx1.receipt.gasUsed));
+            console.log("          Gas buyWithPOLY: ".grey + new BN(tx1.receipt.gasUsed).toString().grey);
+
+            assert.equal(await I_POLYCappedSTO_Array[stoId].capReached(), false, "STO cap has been reached");
+            assert.equal(await I_POLYCappedSTO_Array[stoId].isOpen(), true, "STO is not Open");
+
+            let new_STOTokenSold = await I_POLYCappedSTO_Array[stoId].getTokensSold();
+            let newRemainingTokens = cap.sub(new_STOTokenSold);
+            console.log("          Remaining Tokens: ".grey + newRemainingTokens.toString().grey);
+
+            // change granularity to make indivisible
+            await I_SecurityToken.changeGranularity(e18, { from: ISSUER });
+
+            // Buy second batch With POLY (should fail due to granularity)
+            await catchRevert(I_POLYCappedSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY2, {
+                from: ACCREDITED1,
+                gasPrice: GAS_PRICE
+            }));
+
+            assert.equal(await I_POLYCappedSTO_Array[stoId].capReached(), false, "STO cap has been reached");
+            assert.equal(await I_POLYCappedSTO_Array[stoId].isOpen(), true, "STO is not Open");
+
+            await revertToSnapshot(snapId);
+        });
+
         it("Should successfully buy a partial amount and refund balance when reaching the cap", async () => {
             let stoId = 0;
             let snapId = await takeSnapshot();
@@ -2125,7 +2209,7 @@ contract("POLYCappedSTO", async (accounts) => {
             console.log("          Final tokens sold: ".grey + final_STOTokenSold.toString().grey);
 
             assert.equal(await I_POLYCappedSTO_Array[stoId].capReached(), true, "STO cap has not been reached");
-            assert.equal(await I_POLYCappedSTO_Array[stoId].isOpen(), false, "STO is not Open");
+            assert.equal(await I_POLYCappedSTO_Array[stoId].isOpen(), false, "STO is Open");
             assert.equal(
                 final_TokenSupply.toString(),
                 init_TokenSupply
@@ -2650,6 +2734,34 @@ contract("POLYCappedSTO", async (accounts) => {
         });
     });
 
+    describe("Miscelanious tests", async () => {
+        it("Should pause before end time and fail to pause after end time", async () => {
+            let stoId = 0;
+            let snapId = await takeSnapshot();
+            // Pause the STO
+            await I_POLYCappedSTO_Array[stoId].pause({ from: ISSUER });
+            assert.equal(await I_POLYCappedSTO_Array[stoId].paused.call(), true, "STO did not pause successfully");
+            // Unpause the STO
+            await I_POLYCappedSTO_Array[stoId].unpause({ from: ISSUER });
+            assert.equal(await I_POLYCappedSTO_Array[stoId].paused.call(), false, "STO did not unpause successfully");
+            // Advance time to after STO end
+            await increaseTime(duration.days(120));
+            // Pause the STO --Should fail STO has ended
+            await catchRevert(I_POLYCappedSTO_Array[stoId].pause({ from: ISSUER }));
+            assert.equal(await I_POLYCappedSTO_Array[stoId].paused.call(), false, "STO paused");
+
+            await revertToSnapshot(snapId);
+        });
+
+        it("Should fail to deploy a new POLYCappedSTOFactory -- logic contract is address zero", async () => {
+        await catchRevert(POLYCappedSTOFactory.new(STOSetupCost, new BN(0), address_zero, I_PolymathRegistry.address, { from: POLYMATH }));
+        });
+
+        it("Should fail to deploy a new POLYCappedSTOProxy -- logic contract is address zero", async () => {
+        await catchRevert(POLYCappedSTOProxy.new("3.0.0", I_SecurityToken.address, I_PolyToken.address, address_zero, { from: POLYMATH }));
+        });
+    });
+
     ///////////////////
     // FACTORY TESTS //
     ///////////////////
@@ -2748,6 +2860,31 @@ contract("POLYCappedSTO", async (accounts) => {
             assert.equal(upper[0], 4, "Wrong upper bound");
             assert.equal(upper[1], 5, "Wrong upper bound");
             assert.equal(upper[2], 6, "Wrong upper bound");
+        });
+
+        it("Should fail to change tags -- bad owner", async () => {
+            let newTags = [];
+            newTags[0] = web3.utils.stringToHex("Tag1");
+            newTags[1] = web3.utils.stringToHex("Tag2");
+            newTags[2] = web3.utils.stringToHex("Tag3");
+            await catchRevert(I_POLYCappedSTOFactory.changeTags(newTags, { from: ISSUER }));
+        });
+
+        it("Should fail to change tags -- tags length = 0", async () => {
+            let newTags = [];
+            await catchRevert(I_POLYCappedSTOFactory.changeTags(newTags, { from: POLYMATH }));
+        });
+
+        it("Should successfully change tags", async () => {
+            let newTags = [];
+            newTags[0] = web3.utils.stringToHex("Tag1");
+            newTags[1] = web3.utils.stringToHex("Tag2");
+            newTags[2] = web3.utils.stringToHex("Tag3");
+            await I_POLYCappedSTOFactory.changeTags(newTags, { from: POLYMATH });
+            let tags = await I_POLYCappedSTOFactory.tags.call();
+            assert.equal(web3.utils.hexToString(tags[0]), "Tag1", "Incorrect tag 1");
+            assert.equal(web3.utils.hexToString(tags[1]), "Tag2", "Incorrect tag 2");
+            assert.equal(web3.utils.hexToString(tags[2]), "Tag3", "Incorrect tag 3");
         });
 
         it("Should fail to transfer Ownership -- bad owner", async () => {

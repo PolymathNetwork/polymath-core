@@ -194,6 +194,7 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
     function _preValidatePurchase(address _beneficiary, uint256 _investedAmount) internal view {
         require(_beneficiary != address(0), "Beneficiary address should not be 0x");
         require(_investedAmount != 0, "Amount invested should not be equal to 0");
+        require(_canBuy(_beneficiary), "Unauthorized");
         /*solium-disable-next-line security/no-block-members*/
         require(now >= startTime && now <= endTime, "Offering is closed/Not yet started");
     }

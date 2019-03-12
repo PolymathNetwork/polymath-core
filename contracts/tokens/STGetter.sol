@@ -127,7 +127,7 @@ contract STGetter is OZStorage, SecurityTokenStorage {
     }
 
     /**
-     * @notice use to return the global treasury wallet 
+     * @notice use to return the global treasury wallet
      */
     function getTreasuryWallet() external view returns(address) {
         return IDataStore(dataStore).getAddress(TREASURY);
@@ -187,20 +187,82 @@ contract STGetter is OZStorage, SecurityTokenStorage {
 
     /**
      * @notice Get the balance according to the provided partitions
-     * @param _owner Whom balance need to queried
      * @param _partition Partition which differentiate the tokens.
+     * @param _tokenHolder Whom balance need to queried
      * @return Amount of tokens as per the given partitions
      */
-    function balanceOfByPartition(address _owner, bytes32 _partition) external view returns(uint256) {
+    function balanceOfByPartition(bytes32 _partition, address _tokenHolder) external view returns(uint256) {
         address[] memory tms = modules[TRANSFER_KEY];
-        uint256 _amount = 0;
+        uint256 max;
+        uint256 amount;
         for (uint256 i = 0; i < tms.length; i++) {
-            _amount += ITransferManager(tms[i]).getTokensByPartition(_owner, _partition);
+            amount = ITransferManager(tms[i]).getTokensByPartition(_partition, _tokenHolder);
+            if (max < amount) {
+                max = amount;
+            }
         }
-        if (_amount == 0 && _partition == "UNLOCKED") {
-            return balanceOf(_owner);
+        return max;
+    }
+
+    /**
+     * @notice Return all partitions
+     * @param _tokenHolder Whom balance need to queried
+     * @return List of partitions
+     */
+    function partitionsOf(address _tokenHolder) external view returns (bytes32[] memory) {
+        address[] memory tms = modules[TRANSFER_KEY];
+        /* uint256 count; */
+        bytes32[] memory partitions;
+        bytes32[] memory tmPartitions;
+        // First determine the total number of non-distinct partitions
+        for (uint256 i = 0; i < tms.length; i++) {
+            tmPartitions = ITransferManager(tms[i]).getPartitions(_tokenHolder);
+            for (uint256 j = 0 ; j < tmPartitions.length; j++) {
+                partitions = _appendPartition(partitions, tmPartitions[j]);
+            }
         }
-        return _amount;
+        partitions = _appendPartition(partitions, "DEFAULT");
+        /* bytes32[] memory partitions = new bytes32[](count + 1);
+        count = 0;
+        for (uint256 i = 0; i < tms.length; i++) {
+            tmPartitions = ITransferManager(tms[i]).getPartitions(_tokenHolder);
+            for (uint256 j = 0; j < tmPartitions.length; j++) {
+                partitions[count + j] = tmPartitions[j];
+            }
+            count += tmPartitions.length;
+        }
+        partitions[count] = "DEFAULT";
+        uint256[] memory index = new uint256[](count);
+        count = 0;
+        for (uint256 i = 0; i < partitions.length; i++) {
+            for (uint256 j = 0; j < partitions.length; j++) {
+                if (partitions[i] == partitions[j]) {
+                    index[i] = j;
+                }
+            }
+        }
+        // Create distinct list
+        bytes32[] memory result */
+        return partitions;
+    }
+
+    function _appendPartition(bytes32[] memory partitions, bytes32 partition) internal pure returns (bytes32[] memory) {
+        bool duplicate = false;
+        for (uint256 i = 0; i < partitions.length; i++) {
+            if (partition == partitions[i]) {
+                duplicate = true;
+                break;
+            }
+        }
+        if (duplicate) {
+            bytes32[] memory result = new bytes32[](1 + partitions.length);
+            for (uint256 i = 0; i < partitions.length; i++) {
+                result[i] = partitions[i];
+            }
+            result[partitions.length] = partition;
+            return result;
+        }
+        return partitions;
     }
 
     /**

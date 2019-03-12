@@ -198,7 +198,7 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
     /**
      * @notice return the amount of tokens for a given user as per the partition
      */
-    function getTokensByPartition(address /*_owner*/, bytes32 /*_partition*/) external view returns(uint256){
+    function getTokensByPartition(bytes32 /*_partition*/, address /*_tokenHolder*/) external view returns(uint256){
         return 0;
     }
 

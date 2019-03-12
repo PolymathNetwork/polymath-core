@@ -110,7 +110,7 @@ contract BlacklistTransferManager is TransferManager {
         address /* _to */,
         uint256 /* _amount */,
         bytes  memory/* _data */
-    )   
+    )
         public
         view
         returns(Result, bytes32)
@@ -408,13 +408,6 @@ contract BlacklistTransferManager is TransferManager {
     function getAllBlacklists() external view returns(bytes32[] memory) {
         return allBlacklists;
     }
-
-    /**
-     * @notice return the amount of tokens for a given user as per the partition
-     */
-    function getTokensByPartition(address /*_owner*/, bytes32 /*_partition*/) external view returns(uint256){
-        return 0;
-    } 
 
     /**
     * @notice Return the permissions flag that are associated with blacklist transfer manager

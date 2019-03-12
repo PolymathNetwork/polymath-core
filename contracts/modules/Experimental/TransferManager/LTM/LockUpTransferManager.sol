@@ -374,7 +374,7 @@ contract LockUpTransferManager is LockUpTransferManagerStorage, TransferManager 
         uint256[] memory releaseFrequencySeconds,
         uint256[] memory unlockedAmounts
     )
-    {   
+    {
         uint256 length = lockupArray.length;
         lockupAmounts = new uint256[](length);
         startTimes = new uint256[](length);
@@ -658,20 +658,28 @@ contract LockUpTransferManager is LockUpTransferManagerStorage, TransferManager 
 
     /**
      * @notice return the amount of tokens for a given user as per the partition
-     * @param _owner Whom token amount need to query
      * @param _partition Identifier
+     * @param _tokenHolder Whom token amount need to query
      */
-    function getTokensByPartition(address _owner, bytes32 _partition) external view returns(uint256){
-        uint256 _currentBalance = IERC20(securityToken).balanceOf(_owner);
+    function getTokensByPartition(bytes32 _partition, address _tokenHolder) external view returns(uint256){
+        uint256 currentBalance = IERC20(securityToken).balanceOf(_tokenHolder);
+        uint256 lockedBalance = Math.min(getLockedTokenToUser(_tokenHolder), currentBalance);
         if (_partition == LOCKED) {
-            return Math.min(getLockedTokenToUser(_owner), _currentBalance);
+            return lockedBalance;
         } else if (_partition == UNLOCKED) {
-            if (_currentBalance < getLockedTokenToUser(_owner)) {
-                return 0;
-            }
-            return _currentBalance.sub(getLockedTokenToUser(_owner));
+            return currentBalance.sub(lockedBalance);
         }
         return 0;
+    }
+
+    /**
+     * @notice return the amount of tokens for a given user as per the partition
+     */
+    function getPartitions(address /*_tokenHolder*/) external view returns(bytes32[] memory) {
+        bytes32[] memory result = new bytes32[](2);
+        result[0] = UNLOCKED;
+        result[1] = LOCKED;
+        return result;
     }
 
     /**

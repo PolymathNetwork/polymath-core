@@ -29,6 +29,10 @@ contract DummySTOFactory is UpgradableModuleFactory {
         name = "DummySTO";
         title = "Dummy STO";
         description = "Dummy STO";
+        typesData.push(3);
+        tagsData.push("Dummy");
+        tagsData.push("ETH");
+        tagsData.push("STO");
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
@@ -44,23 +48,4 @@ contract DummySTOFactory is UpgradableModuleFactory {
         return dummySTO;
     }
 
-    /**
-     * @notice Type of the Module factory
-     */
-    function types() external view returns(uint8[] memory) {
-        uint8[] memory res = new uint8[](1);
-        res[0] = 3;
-        return res;
-    }
-
-    /**
-     * @notice Get the tags related to the module factory
-     */
-    function tags() external view returns(bytes32[] memory) {
-        bytes32[] memory availableTags = new bytes32[](4);
-        availableTags[0] = "Dummy";
-        availableTags[1] = "Non-refundable";
-        availableTags[2] = "ETH";
-        return availableTags;
-    }
 }

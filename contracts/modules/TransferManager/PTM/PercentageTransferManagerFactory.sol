@@ -29,6 +29,9 @@ contract PercentageTransferManagerFactory is UpgradableModuleFactory {
         name = "PercentageTransferManager";
         title = "Percentage Transfer Manager";
         description = "Restrict the number of investors";
+        typesData.push(2);
+        tagsData.push("Percentage");
+        tagsData.push("Transfer Restriction");
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
@@ -44,23 +47,4 @@ contract PercentageTransferManagerFactory is UpgradableModuleFactory {
         return percentageTransferManager;
     }
 
-    /**
-     * @notice Type of the Module factory
-     * @return uint8
-     */
-    function types() external view returns(uint8[] memory) {
-        uint8[] memory res = new uint8[](1);
-        res[0] = 2;
-        return res;
-    }
-
-    /**
-     * @notice Get the tags related to the module factory
-     */
-    function tags() external view returns(bytes32[] memory) {
-        bytes32[] memory availableTags = new bytes32[](2);
-        availableTags[0] = "Percentage";
-        availableTags[1] = "Transfer Restriction";
-        return availableTags;
-    }
 }

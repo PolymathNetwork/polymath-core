@@ -27,6 +27,10 @@ contract GeneralTransferManagerFactory is UpgradableModuleFactory {
         name = "GeneralTransferManager";
         title = "General Transfer Manager";
         description = "Manage transfers using a time based whitelist";
+        typesData.push(2);
+        typesData.push(6);
+        tagsData.push("General");
+        tagsData.push("Transfer Restriction");
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
@@ -44,26 +48,6 @@ contract GeneralTransferManagerFactory is UpgradableModuleFactory {
         address generalTransferManager = address(new GeneralTransferManagerProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
         _initializeModule(generalTransferManager, _data);
         return generalTransferManager;
-    }
-
-    /**
-     * @notice Type of the Module factory
-     */
-    function types() external view returns(uint8[] memory) {
-        uint8[] memory res = new uint8[](2);
-        res[0] = 2;
-        res[1] = 6;
-        return res;
-    }
-
-    /**
-     * @notice Get the tags related to the module factory
-     */
-    function tags() public view returns(bytes32[] memory) {
-        bytes32[] memory availableTags = new bytes32[](2);
-        availableTags[0] = "General";
-        availableTags[1] = "Transfer Restriction";
-        return availableTags;
     }
 
 }

@@ -27,6 +27,9 @@ contract LockUpTransferManagerFactory is UpgradableModuleFactory {
         name = "LockUpTransferManager";
         title = "LockUp Transfer Manager";
         description = "Manage transfers using lock ups over time";
+        typesData.push(2);
+        tagsData.push("Lockup");
+        tagsData.push("Transfer Restriction");
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
@@ -44,26 +47,6 @@ contract LockUpTransferManagerFactory is UpgradableModuleFactory {
         address lockUpTransferManager = address(new LockUpTransferManagerProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
         _initializeModule(lockUpTransferManager, _data);
         return lockUpTransferManager;
-    }
-
-    /**
-     * @notice Type of the Module factory
-     * @return uint8
-     */
-    function types() external view returns(uint8[] memory) {
-        uint8[] memory res = new uint8[](1);
-        res[0] = 2;
-        return res;
-    }
-
-    /**
-     * @notice Get the tags related to the module factory
-     */
-    function tags() external view returns(bytes32[] memory) {
-        bytes32[] memory availableTags = new bytes32[](2);
-        availableTags[0] = "LockUp";
-        availableTags[1] = "Transfer Restriction";
-        return availableTags;
     }
 
 }

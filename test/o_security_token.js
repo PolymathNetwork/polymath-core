@@ -2,6 +2,7 @@ import latestTime from "./helpers/latestTime";
 import { duration, ensureException, promisifyLogWatch, latestBlock } from "./helpers/utils";
 import { takeSnapshot, increaseTime, revertToSnapshot } from "./helpers/time";
 import { encodeProxyCall, encodeModuleCall } from "./helpers/encodeCall";
+import { pk } from "./helpers/testprivateKey";
 import { catchRevert } from "./helpers/exceptions";
 import {
     setUpPolymathNetwork,
@@ -29,6 +30,9 @@ contract("SecurityToken", async (accounts) => {
     let account_investor1;
     let account_issuer;
     let token_owner;
+    let token_owner_pk;
+    let disableControllerAckHash;
+    let freezeIssuanceAckHash;
     let account_investor2;
     let account_investor3;
     let account_affiliate1;
@@ -130,6 +134,10 @@ contract("SecurityToken", async (accounts) => {
         account_investor1 = accounts[9];
 
         token_owner = account_issuer;
+        token_owner_pk = pk.account_1;
+        disableControllerAckHash = "0x6c33f5d82a4088dba7f7969350798c7a2900b5a3689f123d0630d513d05e5611"; //without prefix
+        freezeIssuanceAckHash =  "0xfb587c87f76761d656905891c2a6b65a7e364703852e964d8e914be92d02fa28"; //with prefix
+
         account_controller = account_temp;
 
         // Step:1 Create the polymath ecosystem contract instances
@@ -300,30 +308,21 @@ contract("SecurityToken", async (accounts) => {
             assert.isTrue(await I_SecurityToken.isIssuable.call());
         })
 
-        it("Should finish the minting -- fail because feature is not activated", async () => {
-            await catchRevert(I_SecurityToken.freezeIssuance({ from: token_owner }));
-        });
-
-        it("Should finish the minting -- fail to activate the feature because msg.sender is not polymath", async () => {
-            await catchRevert(I_FeatureRegistry.setFeatureStatus("freezeIssuanceAllowed", true, { from: token_owner }));
-        });
-
-        it("Should finish the minting -- successfully activate the feature", async () => {
-            await catchRevert(I_FeatureRegistry.setFeatureStatus("freezeIssuanceAllowed", false, { from: account_polymath }));
-            assert.equal(false, await I_FeatureRegistry.getFeatureStatus("freezeIssuanceAllowed", { from: account_temp }));
-            await I_FeatureRegistry.setFeatureStatus("freezeIssuanceAllowed", true, { from: account_polymath });
-            assert.equal(true, await I_FeatureRegistry.getFeatureStatus("freezeIssuanceAllowed", { from: account_temp }));
-
-            await catchRevert(I_FeatureRegistry.setFeatureStatus("freezeIssuanceAllowed", true, { from: account_polymath }));
+        it("Should finish the minting -- fail because owner didn't sign correct acknowledegement", async () => {
+            let signature = (web3.eth.accounts.sign("F O'Brien is the best", token_owner_pk)).signature;
+            await catchRevert(I_SecurityToken.freezeIssuance(signature, { from: token_owner }));
         });
 
         it("Should finish the minting -- fail because msg.sender is not the owner", async () => {
-            await catchRevert(I_SecurityToken.freezeIssuance({ from: account_temp }));
+            let signature = (web3.eth.accounts.sign(freezeIssuanceAckHash, token_owner_pk)).signature;
+            await catchRevert(I_SecurityToken.freezeIssuance(signature, { from: account_temp }));
         });
 
         it("Should finish minting & restrict the further minting", async () => {
             let id = await takeSnapshot();
-            await I_SecurityToken.freezeIssuance({ from: token_owner });
+            let signature = (web3.eth.accounts.sign(freezeIssuanceAckHash, token_owner_pk)).signature;
+            console.log(signature);
+            await I_SecurityToken.freezeIssuance(signature, { from: token_owner });
             assert.isFalse(await I_SecurityToken.isIssuable.call());
             await catchRevert(I_SecurityToken.issue(account_affiliate1, new BN(100).mul(new BN(10).pow(new BN(18))), "0x0", { from: token_owner, gas: 500000 }));
             await revertToSnapshot(id);
@@ -392,7 +391,8 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should fail to issue tokens while STO attached after freezeMinting called", async () => {
             let id = await takeSnapshot();
-            await I_SecurityToken.freezeIssuance({ from: token_owner });
+            let signature = (web3.eth.accounts.sign(freezeIssuanceAckHash, token_owner_pk)).signature;
+            await I_SecurityToken.freezeIssuance(signature, { from: token_owner });
 
             await catchRevert(I_SecurityToken.issue(account_affiliate1, new BN(100).mul(new BN(10).pow(new BN(18))), "0x0", { from: token_owner }));
             await revertToSnapshot(id);
@@ -819,7 +819,8 @@ contract("SecurityToken", async (accounts) => {
 
         it("STO should fail to issue tokens after minting is frozen", async () => {
             let id = await takeSnapshot();
-            await I_SecurityToken.freezeIssuance({ from: token_owner });
+            let signature = (web3.eth.accounts.sign(freezeIssuanceAckHash, token_owner_pk)).signature;
+            await I_SecurityToken.freezeIssuance(signature, { from: token_owner });
 
             await catchRevert(
                 web3.eth.sendTransaction({
@@ -1217,23 +1218,19 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(new BN(web3.utils.toWei("10", "ether")).toString(), eventTransfer.args.value.toString(), "Event not emitted as expected");
         });
 
-        it("Should fail to freeze controller functionality because not owner", async () => {
-            await catchRevert(I_SecurityToken.disableController({ from: account_investor1 }));
+        it("Should fail to freeze controller functionality because not owner", async () => { 
+            let signature = (web3.eth.accounts.sign(disableControllerAckHash, token_owner_pk)).signature;
+            await catchRevert(I_SecurityToken.disableController(signature, { from: account_investor1 }));
         });
 
-        it("Should fail to freeze controller functionality because disableControllerAllowed not activated", async () => {
-            await catchRevert(I_SecurityToken.disableController({ from: token_owner }));
+        it("Should fail to freeze controller functionality because proper acknowledgement not signed by owner", async () => {
+            let signature = (web3.eth.accounts.sign("He truely is", token_owner_pk)).signature;
+            await catchRevert(I_SecurityToken.disableController(signature, { from: token_owner }));
         });
 
         it("Should successfully freeze controller functionality", async () => {
-            let tx1 = await I_FeatureRegistry.setFeatureStatus("disableControllerAllowed", true, { from: account_polymath });
-
-            // check event
-            assert.equal("disableControllerAllowed", tx1.logs[0].args._nameKey, "Event not emitted as expected");
-            assert.equal(true, tx1.logs[0].args._newStatus, "Event not emitted as expected");
-
-            let tx2 = await I_SecurityToken.disableController({ from: token_owner });
-
+            let signature = (web3.eth.accounts.sign(disableControllerAckHash, token_owner_pk)).signature;
+            await I_SecurityToken.disableController(signature, { from: token_owner });
             // check state
             assert.equal(address_zero, await I_SecurityToken.controller.call(), "State not changed");
             assert.equal(true, await I_SecurityToken.controllerDisabled.call(), "State not changed");
@@ -1244,7 +1241,8 @@ contract("SecurityToken", async (accounts) => {
         });
 
         it("Should fail to freeze controller functionality because already frozen", async () => {
-            await catchRevert(I_SecurityToken.disableController({ from: token_owner }));
+            let signature = (web3.eth.accounts.sign(disableControllerAckHash, token_owner_pk)).signature;
+            await catchRevert(I_SecurityToken.disableController(signature, { from: token_owner }));
         });
 
         it("Should fail to set controller because controller functionality frozen", async () => {

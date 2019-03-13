@@ -136,7 +136,7 @@ contract("SecurityToken", async (accounts) => {
         token_owner = account_issuer;
         token_owner_pk = pk.account_1;
         disableControllerAckHash = "0x6c33f5d82a4088dba7f7969350798c7a2900b5a3689f123d0630d513d05e5611"; //without prefix
-        freezeIssuanceAckHash =  "0xfb587c87f76761d656905891c2a6b65a7e364703852e964d8e914be92d02fa28"; //with prefix
+        freezeIssuanceAckHash =  "0x3cebd417af2bef7b3e07b77448684b22aedaf0f43dbc106b1eda6599190f6a6d"; //with prefix
 
         account_controller = account_temp;
 
@@ -301,7 +301,7 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(balance1.div(new BN(10).pow(new BN(18))).toNumber(), 200);
             let balance2 = await I_SecurityToken.balanceOf(account_affiliate2);
             assert.equal(balance2.div(new BN(10).pow(new BN(18))).toNumber(), 110);
-            
+
         });
 
         it("Should ST be issuable", async() => {
@@ -309,22 +309,23 @@ contract("SecurityToken", async (accounts) => {
         })
 
         it("Should finish the minting -- fail because owner didn't sign correct acknowledegement", async () => {
-            let signature = (web3.eth.accounts.sign("F O'Brien is the best", token_owner_pk)).signature;
+            let signature = (web3.eth.accounts.sign("F O'Brien is the best", "0x" + token_owner_pk)).signature;
             await catchRevert(I_SecurityToken.freezeIssuance(signature, { from: token_owner }));
         });
 
         it("Should finish the minting -- fail because msg.sender is not the owner", async () => {
-            let signature = (web3.eth.accounts.sign(freezeIssuanceAckHash, token_owner_pk)).signature;
+            let signature = (web3.eth.accounts.sign(freezeIssuanceAckHash, "0x" + token_owner_pk)).signature;
             await catchRevert(I_SecurityToken.freezeIssuance(signature, { from: account_temp }));
         });
 
         it("Should finish minting & restrict the further minting", async () => {
             let id = await takeSnapshot();
-            let signature = (web3.eth.accounts.sign(freezeIssuanceAckHash, token_owner_pk)).signature;
+            let signature = (web3.eth.accounts.sign(freezeIssuanceAckHash, "0x" + token_owner_pk)).signature;
             console.log(signature);
             await I_SecurityToken.freezeIssuance(signature, { from: token_owner });
             assert.isFalse(await I_SecurityToken.isIssuable.call());
             await catchRevert(I_SecurityToken.issue(account_affiliate1, new BN(100).mul(new BN(10).pow(new BN(18))), "0x0", { from: token_owner, gas: 500000 }));
+            // assert.isTrue(false);
             await revertToSnapshot(id);
         });
 
@@ -384,14 +385,14 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should successfully issue tokens while STO attached", async () => {
             await I_SecurityToken.issue(account_affiliate1, new BN(100).mul(new BN(10).pow(new BN(18))), "0x0", { from: token_owner });
-            
+
             let balance = await I_SecurityToken.balanceOf(account_affiliate1);
             assert.equal(balance.div(new BN(10).pow(new BN(18))).toNumber(), 300);
         });
 
         it("Should fail to issue tokens while STO attached after freezeMinting called", async () => {
             let id = await takeSnapshot();
-            let signature = (web3.eth.accounts.sign(freezeIssuanceAckHash, token_owner_pk)).signature;
+            let signature = (web3.eth.accounts.sign(freezeIssuanceAckHash, "0x" + token_owner_pk)).signature;
             await I_SecurityToken.freezeIssuance(signature, { from: token_owner });
 
             await catchRevert(I_SecurityToken.issue(account_affiliate1, new BN(100).mul(new BN(10).pow(new BN(18))), "0x0", { from: token_owner }));
@@ -463,13 +464,13 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(tx.logs[0].args._module, I_GeneralTransferManager.address);
             await I_SecurityToken.issue(account_investor1, new BN(web3.utils.toWei("500")), "0x0", { from: token_owner });
             let _canTransfer = await I_SecurityToken.canTransfer.call(account_investor2, new BN(web3.utils.toWei("200")), "0x0", {from: account_investor1});
-            
+
             assert.isTrue(_canTransfer[0]);
             assert.equal(_canTransfer[1], 0x51);
             assert.equal(_canTransfer[2], empty_hash);
-            
+
             await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("200")), { from: account_investor1 });
-            
+
             assert.equal((await I_SecurityToken.balanceOf(account_investor2)).div(new BN(10).pow(new BN(18))).toNumber(), 200);
             await revertToSnapshot(key);
         });
@@ -615,7 +616,7 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should Fail in transferring the token from one whitelist investor 1 to non whitelist investor 2", async () => {
             let _canTransfer = await I_SecurityToken.canTransfer.call(account_investor2, new BN(10).mul(new BN(10).pow(new BN(18))), "0x0", {from: account_investor1});
-            
+
             assert.isFalse(_canTransfer[0]);
             assert.equal(_canTransfer[1], 0x50);
 
@@ -643,7 +644,7 @@ contract("SecurityToken", async (accounts) => {
         it("Should activate allow All Transfer", async () => {
             ID_snap = await takeSnapshot();
             await I_GeneralTransferManager.modifyTransferRequirementsMulti(
-                [0, 1, 2], 
+                [0, 1, 2],
                 [false, false, false],
                 [false, false, false],
                 [false, false, false],
@@ -710,7 +711,7 @@ contract("SecurityToken", async (accounts) => {
         it("Should activate allow All Whitelist Transfers", async () => {
             ID_snap = await takeSnapshot();
             await I_GeneralTransferManager.modifyTransferRequirementsMulti(
-                [0, 1, 2], 
+                [0, 1, 2],
                 [true, false, true],
                 [true, true, false],
                 [false, false, false],
@@ -778,7 +779,7 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(balance1.div(new BN(10).pow(new BN(18))).toNumber(), 500);
             let balance2 = await I_SecurityToken.balanceOf(account_affiliate2);
             assert.equal(balance2.div(new BN(10).pow(new BN(18))).toNumber(), 220);
-            
+
         });
 
         it("Should provide more permissions to the delegate", async () => {
@@ -819,7 +820,7 @@ contract("SecurityToken", async (accounts) => {
 
         it("STO should fail to issue tokens after minting is frozen", async () => {
             let id = await takeSnapshot();
-            let signature = (web3.eth.accounts.sign(freezeIssuanceAckHash, token_owner_pk)).signature;
+            let signature = (web3.eth.accounts.sign(freezeIssuanceAckHash, "0x" + token_owner_pk)).signature;
             await I_SecurityToken.freezeIssuance(signature, { from: token_owner });
 
             await catchRevert(
@@ -943,7 +944,7 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should force burn the tokens - value too high", async () => {
             await I_GeneralTransferManager.modifyTransferRequirementsMulti(
-                [0, 1, 2], 
+                [0, 1, 2],
                 [true, false, false],
                 [true, true, false],
                 [true, false, false],
@@ -1218,18 +1219,18 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(new BN(web3.utils.toWei("10", "ether")).toString(), eventTransfer.args.value.toString(), "Event not emitted as expected");
         });
 
-        it("Should fail to freeze controller functionality because not owner", async () => { 
-            let signature = (web3.eth.accounts.sign(disableControllerAckHash, token_owner_pk)).signature;
+        it("Should fail to freeze controller functionality because not owner", async () => {
+            let signature = (web3.eth.accounts.sign(disableControllerAckHash, "0x" + token_owner_pk)).signature;
             await catchRevert(I_SecurityToken.disableController(signature, { from: account_investor1 }));
         });
 
         it("Should fail to freeze controller functionality because proper acknowledgement not signed by owner", async () => {
-            let signature = (web3.eth.accounts.sign("He truely is", token_owner_pk)).signature;
+            let signature = (web3.eth.accounts.sign("He truely is", "0x" + token_owner_pk)).signature;
             await catchRevert(I_SecurityToken.disableController(signature, { from: token_owner }));
         });
 
         it("Should successfully freeze controller functionality", async () => {
-            let signature = (web3.eth.accounts.sign(disableControllerAckHash, token_owner_pk)).signature;
+            let signature = (web3.eth.accounts.sign(disableControllerAckHash, "0x" + token_owner_pk)).signature;
             await I_SecurityToken.disableController(signature, { from: token_owner });
             // check state
             assert.equal(address_zero, await I_SecurityToken.controller.call(), "State not changed");
@@ -1241,7 +1242,7 @@ contract("SecurityToken", async (accounts) => {
         });
 
         it("Should fail to freeze controller functionality because already frozen", async () => {
-            let signature = (web3.eth.accounts.sign(disableControllerAckHash, token_owner_pk)).signature;
+            let signature = (web3.eth.accounts.sign(disableControllerAckHash, "0x" + token_owner_pk)).signature;
             await catchRevert(I_SecurityToken.disableController(signature, { from: token_owner }));
         });
 
@@ -1399,77 +1400,67 @@ contract("SecurityToken", async (accounts) => {
             );
 
             console.log(`
-                FeatureRegistry address from the contract:         ${await stGetter.featureRegistry.call()}
-                FeatureRegistry address from the storage:          ${await readStorage(I_SecurityToken.address, 11)}
-            `)
-
-            assert.equal(
-                await stGetter.featureRegistry.call(),
-                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 11))
-            );
-
-            console.log(`
                 PolyToken address from the contract:         ${await stGetter.polyToken.call()}
-                PolyToken address from the storage:          ${await readStorage(I_SecurityToken.address, 12)}
+                PolyToken address from the storage:          ${await readStorage(I_SecurityToken.address, 11)}
             `)
 
             assert.equal(
                 await stGetter.polyToken.call(),
-                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 12))
+                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 11))
             );
 
             console.log(`
                 Delegate address from the contract:         ${await stGetter.delegate.call()}
-                Delegate address from the storage:          ${await readStorage(I_SecurityToken.address, 13)}
+                Delegate address from the storage:          ${await readStorage(I_SecurityToken.address, 12)}
             `)
 
             assert.equal(
                 await stGetter.delegate.call(),
-                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 13))
+                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 12))
             );
 
             console.log(`
                 Datastore address from the contract:         ${await stGetter.dataStore.call()}
-                Datastore address from the storage:          ${await readStorage(I_SecurityToken.address, 14)}
+                Datastore address from the storage:          ${await readStorage(I_SecurityToken.address, 13)}
             `)
 
             assert.equal(
                 await stGetter.dataStore.call(),
-                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 14))
+                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 13))
             );
 
             console.log(`
                 Granularity value from the contract:         ${await stGetter.granularity.call()}
-                Granularity value from the storage:          ${(web3.utils.toBN(await readStorage(I_SecurityToken.address, 15))).toString()}
+                Granularity value from the storage:          ${(web3.utils.toBN(await readStorage(I_SecurityToken.address, 14))).toString()}
             `)
 
             assert.equal(
                 web3.utils.fromWei(await stGetter.granularity.call()),
-                web3.utils.fromWei((web3.utils.toBN(await readStorage(I_SecurityToken.address, 15))).toString())
+                web3.utils.fromWei((web3.utils.toBN(await readStorage(I_SecurityToken.address, 14))).toString())
             );
 
             console.log(`
                 Current checkpoint ID from the contract:    ${await stGetter.currentCheckpointId.call()}
-                Current checkpoint ID from the storage:     ${(web3.utils.toBN(await readStorage(I_SecurityToken.address, 16))).toString()}
+                Current checkpoint ID from the storage:     ${(web3.utils.toBN(await readStorage(I_SecurityToken.address, 15))).toString()}
             `)
             assert.equal(
                 await stGetter.currentCheckpointId.call(),
-                (web3.utils.toBN(await readStorage(I_SecurityToken.address, 16))).toString()
+                (web3.utils.toBN(await readStorage(I_SecurityToken.address, 15))).toString()
             );
 
             console.log(`
                 TokenDetails from the contract:    ${await stGetter.tokenDetails.call()}
-                TokenDetails from the storage:     ${(web3.utils.toUtf8((await readStorage(I_SecurityToken.address, 17)).substring(0, 60)))}
+                TokenDetails from the storage:     ${(web3.utils.toUtf8((await readStorage(I_SecurityToken.address, 16)).substring(0, 60)))}
             `)
             assert.equal(
                 await stGetter.tokenDetails.call(),
-                (web3.utils.toUtf8((await readStorage(I_SecurityToken.address, 17)).substring(0, 60))).replace(/\u0000/g, "")
+                (web3.utils.toUtf8((await readStorage(I_SecurityToken.address, 16)).substring(0, 60))).replace(/\u0000/g, "")
             );
 
         });
 
     });
-    
+
     describe(`Test cases for the ERC1643 contract\n`, async () => {
 
         describe(`Test cases for the setDocument() function of the ERC1643\n`, async() => {
@@ -1561,7 +1552,7 @@ contract("SecurityToken", async (accounts) => {
             });
 
             it("\tShould succssfully remove the document from the contract  which is present in the last index of the `_docsName` and check the params of the `DocumentRemoved` event\n", async() => {
-                // first add the new document 
+                // first add the new document
                 await I_SecurityToken.setDocument(web3.utils.utf8ToHex("doc3"), "https://www.bts.l", "0x0", {from: token_owner});
                 // as this will be last in the array so remove this
                 let tx = await I_SecurityToken.removeDocument(web3.utils.utf8ToHex("doc3"), {from: token_owner});

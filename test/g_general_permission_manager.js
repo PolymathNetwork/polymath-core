@@ -490,7 +490,7 @@ contract("GeneralPermissionManager", async (accounts) => {
 
         it("Should get the tags of the factory", async () => {
             let tags = await I_GeneralPermissionManagerFactory.tags.call();
-            assert.equal(tags.length, 0);
+            assert.equal(web3.utils.toUtf8(tags[0]), "Permission Management");
         });
 
     });

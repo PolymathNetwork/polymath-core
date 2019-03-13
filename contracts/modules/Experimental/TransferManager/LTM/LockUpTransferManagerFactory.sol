@@ -28,7 +28,7 @@ contract LockUpTransferManagerFactory is UpgradableModuleFactory {
         title = "LockUp Transfer Manager";
         description = "Manage transfers using lock ups over time";
         typesData.push(2);
-        tagsData.push("Lockup");
+        tagsData.push("LockUp");
         tagsData.push("Transfer Restriction");
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));

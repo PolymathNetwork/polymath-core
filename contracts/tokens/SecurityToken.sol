@@ -12,12 +12,12 @@ import "../interfaces/token/IERC1594.sol";
 import "../interfaces/token/IERC1643.sol";
 import "../interfaces/token/IERC1644.sol";
 import "../interfaces/IModuleRegistry.sol";
-import "../interfaces/IFeatureRegistry.sol";
 import "../interfaces/ITransferManager.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
+import "openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
 
 /**
  * @title Security Token contract
@@ -32,6 +32,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
 contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, SecurityTokenStorage, IERC1594, IERC1643, IERC1644, Proxy {
 
     using SafeMath for uint256;
+    using ECDSA for bytes32;
 
     // Emit at the time when module get added
     event ModuleAdded(
@@ -115,11 +116,6 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         _;
     }
 
-    modifier isEnabled(string memory _nameKey) {
-        require(IFeatureRegistry(featureRegistry).getFeatureStatus(_nameKey));
-        _;
-    }
-
     /**
      * @notice constructor
      * @param _name Name of the SecurityToken
@@ -141,7 +137,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     )
         public
         ERC20Detailed(_name, _symbol, _decimals)
-    {   
+    {
         _zeroAddressCheck(_polymathRegistry);
         _zeroAddressCheck(_delegate);
         polymathRegistry = _polymathRegistry;
@@ -298,7 +294,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
 
     /**
      * @notice Allows to change the treasury wallet address
-     * @param _wallet Ethereum address of the treasury wallet 
+     * @param _wallet Ethereum address of the treasury wallet
      */
     function changeTreasuryWallet(address _wallet) external onlyOwner {
         _zeroAddressCheck(_wallet);
@@ -485,7 +481,10 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * @notice Permanently freeze issuance of this security token.
      * @dev It MUST NOT be possible to increase `totalSuppy` after this function is called.
      */
-    function freezeIssuance() external isIssuanceAllowed isEnabled("freezeIssuanceAllowed") onlyOwner {
+    function freezeIssuance(bytes calldata _signature) external onlyOwner {
+        // keccack256("I acknowledge that freezing Issuance is a permanent and irrevocable change");
+        bytes32 hash = 0x3cebd417af2bef7b3e07b77448684b22aedaf0f43dbc106b1eda6599190f6a6d;
+        require(owner() == hash.toEthSignedMessageHash().recover(_signature), "Owner did not sign");
         issuance = false;
         /*solium-disable-next-line security/no-block-members*/
         emit FreezeIssuance();
@@ -507,8 +506,8 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     )
         public
         isIssuanceAllowed
-    {   
-        _onlyModuleOrOwner(MINT_KEY); 
+    {
+        _onlyModuleOrOwner(MINT_KEY);
         // Add a function to validate the `_data` parameter
         _isValidTransfer(_updateTransfer(address(0), _tokenHolder, _value, _data));
         _mint(_tokenHolder, _value);
@@ -603,7 +602,10 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * @notice Used by the issuer to permanently disable controller functionality
      * @dev enabled via feature switch "disableControllerAllowed"
      */
-    function disableController() external isEnabled("disableControllerAllowed") onlyOwner {
+    function disableController(bytes calldata _signature) external onlyOwner {
+        // keccack256("I acknowledge that disabling controller is a permanent and irrevocable change");
+        bytes32 hash = 0x6c33f5d82a4088dba7f7969350798c7a2900b5a3689f123d0630d513d05e5611;
+        require(owner() == hash.toEthSignedMessageHash().recover(_signature), "Owner did not sign");
         require(_isControllable());
         controllerDisabled = true;
         delete controller;
@@ -766,7 +768,6 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     function updateFromRegistry() public onlyOwner {
         moduleRegistry = PolymathRegistry(polymathRegistry).getAddress("ModuleRegistry");
         securityTokenRegistry = PolymathRegistry(polymathRegistry).getAddress("SecurityTokenRegistry");
-        featureRegistry = PolymathRegistry(polymathRegistry).getAddress("FeatureRegistry");
         polyToken = PolymathRegistry(polymathRegistry).getAddress("PolyToken");
     }
 }

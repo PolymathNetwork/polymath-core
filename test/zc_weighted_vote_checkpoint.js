@@ -118,7 +118,7 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
         STFactory:                         ${I_STFactory.address}
         GeneralTransferManagerFactory:     ${I_GeneralTransferManagerFactory.address}
 
-        WeightedVoteCheckpointFactory:          ${I_WeightedVoteCheckpointFactory.address}
+        WeightedVoteCheckpointFactory:     ${I_WeightedVoteCheckpointFactory.address}
         -----------------------------------------------------------------------------
         `);
     });
@@ -226,8 +226,16 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
                 assert.equal(web3.utils.fromWei((await I_SecurityToken.balanceOf.call(account_investor3)).toString()), 5000);
             });
 
+            it("\t\t Should fail to create ballot -- Invalid checkpoint Id \n", async() => {
+                let startTime = new BN(await latestTime());
+                let endTime = new BN(await latestTime() + duration.days(4));
+                await catchRevert(
+                    I_WeightedVoteCheckpoint.createCustomBallot(startTime, endTime, new BN(100), new BN(5), {from: token_owner})
+                );
+            });
+
             it("\t\t Should create the ballot successfully \n", async() => {
-                let tx = await I_WeightedVoteCheckpoint.createBallot(new BN(duration.days(5)), 3, {from: token_owner});
+                let tx = await I_WeightedVoteCheckpoint.createBallot(new BN(duration.days(5)), new BN(3), {from: token_owner});
                 assert.equal((tx.logs[0].args._noOfProposals).toString(), 3);
                 assert.equal((tx.logs[0].args._checkpointId).toString(), 1);
                 assert.equal((tx.logs[0].args._ballotId).toString(), 0);
@@ -349,12 +357,19 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
                 );
             });
 
+            it("\t\t Should check who votes whom \n", async() => {
+                assert.equal((await I_WeightedVoteCheckpoint.getSelectedProposal.call(new BN(0), account_investor1)).toString(), 1);
+                assert.equal((await I_WeightedVoteCheckpoint.getSelectedProposal.call(new BN(0), account_investor2)).toString(), 2);
+                assert.equal((await I_WeightedVoteCheckpoint.getSelectedProposal.call(new BN(0), account_investor3)).toString(), 1);
+            });
+
             it("\t\t Should get the result of the ballot \n", async() => {
-                let data = await I_WeightedVoteCheckpoint.getResults.call(new BN(0));
-                assert.equal(data[2], 3);
+                let data = await I_WeightedVoteCheckpoint.getBallotResults.call(new BN(0));
+                assert.equal(data[4], 3);
                 assert.equal(web3.utils.fromWei((data[0][0]).toString()), 5500);
                 assert.equal(web3.utils.fromWei((data[0][1]).toString()), 1000);
-                assert.equal(data[1], 0);
+                assert.equal(data[2], 1);
+                assert.equal(data[3], 0);
             });
         });
 
@@ -362,7 +377,7 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
 
             it("\t\t Should check the permission \n", async() => {
                 let data = await I_WeightedVoteCheckpoint.getPermissions.call();
-                assert.equal(data.length, 0);
+                assert.equal(data.length, 1);
             });
 
             it("\t\t Should check the init function \n", async() => {

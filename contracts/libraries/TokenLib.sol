@@ -12,6 +12,24 @@ library TokenLib {
 
     using SafeMath for uint256;
 
+    struct EIP712Domain {
+        string  name;
+        uint256 chainId;
+        address verifyingContract;
+    }
+
+    struct Acknowledgment {
+        string text;
+    }
+
+    bytes32 constant EIP712DOMAIN_TYPEHASH = keccak256(
+        "EIP712Domain(string name,uint256 chainId,address verifyingContract)"
+    );
+
+    bytes32 constant ACK_TYPEHASH = keccak256(
+        "Acknowledgment(string text)"
+    );
+
     bytes32 internal constant WHITELIST = "WHITELIST";
     bytes32 internal constant INVESTORSKEY = 0xdf3a8dd24acdd05addfc6aeffef7574d2de3f844535ec91e8e0f3e45dba96731; //keccak256(abi.encodePacked("INVESTORS"))
 
@@ -25,6 +43,80 @@ library TokenLib {
     event ModuleRemoved(uint8[] _types, address _module);
     // Emit when the budget allocated to a module is changed
     event ModuleBudgetChanged(uint8[] _moduleTypes, address _module, uint256 _oldBudget, uint256 _budget);
+
+    function hash(EIP712Domain memory _eip712Domain) internal pure returns (bytes32) {
+        return keccak256(
+            abi.encode(
+                EIP712DOMAIN_TYPEHASH,
+                keccak256(bytes(_eip712Domain.name)),
+                _eip712Domain.chainId,
+                _eip712Domain.verifyingContract
+            )
+        );
+    }
+
+    function hash(Acknowledgment memory _ack) internal pure returns (bytes32) {
+        return keccak256(abi.encode(keccak256(bytes(_ack.text))));
+    }
+
+    function recoverFreezeIssuanceAckSigner(bytes memory _signature) public view returns (address) {
+        Acknowledgment memory ack = Acknowledgment("I acknowledge that freezing Issuance is a permanent and irrevocable change");
+        return extractSigner(ack, _signature);
+    }
+
+    function recoverDisableControllerAckSigner(bytes memory _signature) public view returns (address) {
+        Acknowledgment memory ack = Acknowledgment("I acknowledge that disabling controller is a permanent and irrevocable change");
+        return extractSigner(ack, _signature);
+    }
+
+    function extractSigner(Acknowledgment memory _ack, bytes memory _signature) internal view returns (address) {
+        bytes32 r;
+        bytes32 s;
+        uint8 v;
+
+        // Check the signature length
+        if (_signature.length != 65) {
+            return (address(0));
+        }
+
+        // Divide the signature in r, s and v variables
+        // ecrecover takes the signature parameters, and the only way to get them
+        // currently is to use assembly.
+        // solhint-disable-next-line no-inline-assembly
+        assembly {
+            r := mload(add(_signature, 0x20))
+            s := mload(add(_signature, 0x40))
+            v := byte(0, mload(add(_signature, 0x60)))
+        }
+
+        // Version of signature should be 27 or 28, but 0 and 1 are also possible versions
+        if (v < 27) {
+            v += 27;
+        }
+
+        // If the version is correct return the signer address
+        if (v != 27 && v != 28) {
+            return (address(0));
+        }
+
+        bytes32 DOMAIN_SEPARATOR = hash(
+            EIP712Domain(
+                {
+                    name: "Polymath",
+                    chainId: 1,
+                    verifyingContract: address(this)
+                }
+            )
+        );
+
+        // Note: we need to use `encodePacked` here instead of `encode`.
+        bytes32 digest = keccak256(abi.encodePacked(
+            "\x19\x01",
+            DOMAIN_SEPARATOR,
+            hash(_ack)
+        ));
+        return ecrecover(digest, v, r, s);
+    }
 
     /**
     * @notice Archives a module attached to the SecurityToken

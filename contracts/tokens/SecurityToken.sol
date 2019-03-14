@@ -51,6 +51,8 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     event GranularityChanged(uint256 _oldGranularity, uint256 _newGranularity);
     // Emit when is permanently frozen by the issuer
     event FreezeIssuance();
+
+    event AddressEvent(address sig);
     // Emit when transfers are frozen or unfrozen
     event FreezeTransfers(bool _status);
     // Emit when Module get archived from the securityToken
@@ -477,14 +479,17 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         return issuance;
     }
 
+
+
     /**
      * @notice Permanently freeze issuance of this security token.
      * @dev It MUST NOT be possible to increase `totalSuppy` after this function is called.
      */
     function freezeIssuance(bytes calldata _signature) external onlyOwner {
-        // keccack256("I acknowledge that freezing Issuance is a permanent and irrevocable change");
-        bytes32 hash = 0x3cebd417af2bef7b3e07b77448684b22aedaf0f43dbc106b1eda6599190f6a6d;
-        require(owner() == hash.toEthSignedMessageHash().recover(_signature), "Owner did not sign");
+        emit AddressEvent(address(this));
+        address ad = TokenLib.recoverFreezeIssuanceAckSigner(_signature);
+        emit AddressEvent(ad);
+        require(owner() == ad, "Owner did not sign");
         issuance = false;
         /*solium-disable-next-line security/no-block-members*/
         emit FreezeIssuance();
@@ -603,9 +608,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * @dev enabled via feature switch "disableControllerAllowed"
      */
     function disableController(bytes calldata _signature) external onlyOwner {
-        // keccack256("I acknowledge that disabling controller is a permanent and irrevocable change");
-        bytes32 hash = 0x6c33f5d82a4088dba7f7969350798c7a2900b5a3689f123d0630d513d05e5611;
-        require(owner() == hash.toEthSignedMessageHash().recover(_signature), "Owner did not sign");
+        require(owner() == TokenLib.recoverDisableControllerAckSigner(_signature), "Owner did not sign");
         require(_isControllable());
         controllerDisabled = true;
         delete controller;

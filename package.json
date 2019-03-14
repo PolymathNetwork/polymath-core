@@ -57,6 +57,7 @@
   },
   "homepage": "https://github.com/PolymathNetwork/polymath-core#readme",
   "dependencies": {
+    "eth-sig-util": "^2.1.1",
     "truffle": "^5.0.4",
     "truffle-hdwallet-provider": "^1.0.4",
     "web3-provider-engine": "^14.1.0"

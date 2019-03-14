@@ -1,4 +1,5 @@
 const Web3 = require("web3");
+const sigUtil = require('eth-sig-util')
 let BN = Web3.utils.BN;
 
 function getSignSTMData(tmAddress, nonce, validFrom, expiry, fromAddress, toAddress, amount, pk) {
@@ -30,6 +31,90 @@ function getSignSTMData(tmAddress, nonce, validFrom, expiry, fromAddress, toAddr
         [tmAddress, new BN(nonce).toString(), new BN(validFrom).toString(), new BN(expiry).toString(), signature]
     );
     return data;
+}
+
+async function getFreezeIssuanceAck(stAddress, from) {
+    const typedData = {
+        types: {
+            EIP712Domain: [
+                { name: 'name', type: 'string' },
+                { name: 'chainId', type: 'uint256' },
+                { name: 'verifyingContract', type: 'address' }
+            ],
+            Acknowledgment: [
+                { name: 'text', type: 'string' }
+            ],
+        },
+        primaryType: 'Acknowledgment',
+        domain: {
+            name: 'Polymath',
+            chainId: 1,
+            verifyingContract: stAddress
+        },
+        message: {
+            text: 'I acknowledge that freezing Issuance is a permanent and irrevocable change',
+        },
+    };
+    const result = await new Promise((resolve, reject) => { 
+        web3.currentProvider.send(
+            {
+                method: 'eth_signTypedData',
+                params: [from, typedData]
+            },
+            (err, result) => {
+                if (err) {
+                    return reject(err);
+                }
+                resolve(result.result);
+            }
+        );
+    });
+    // console.log('signed by', from);
+    // const recovered = sigUtil.recoverTypedSignature({
+    //     data: typedData,
+    //     sig: result 
+    // })
+    // console.log('recovered', recovered);
+    return result;
+}
+
+async function getDisableControllerAck(stAddress, from) {
+    const typedData = {
+        types: {
+            EIP712Domain: [
+                { name: 'name', type: 'string' },
+                { name: 'chainId', type: 'uint256' },
+                { name: 'verifyingContract', type: 'address' }
+            ],
+            Acknowledgment: [
+                { name: 'text', type: 'string' }
+            ],
+        },
+        primaryType: 'Acknowledgment',
+        domain: {
+            name: 'Polymath',
+            chainId: 1,
+            verifyingContract: stAddress
+        },
+        message: {
+            text: 'I acknowledge that disabling controller is a permanent and irrevocable change',
+        },
+    };
+    const result = await new Promise((resolve, reject) => { 
+        web3.currentProvider.send(
+            {
+                method: 'eth_signTypedData',
+                params: [from, typedData]
+            },
+            (err, result) => {
+                if (err) {
+                    return reject(err);
+                }
+                resolve(result.result);
+            }
+        );
+    });
+    return result;
 }
 
 function getSignGTMData(tmAddress, investorAddress, fromTime, toTime, expiryTime, validFrom, validTo, nonce, pk) {
@@ -109,5 +194,7 @@ module.exports = {
     getSignSTMData,
     getSignGTMData,
     getSignGTMTransferData,
-    getMultiSignGTMData
+    getMultiSignGTMData,
+    getFreezeIssuanceAck,
+    getDisableControllerAck
 };

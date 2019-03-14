@@ -322,8 +322,6 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should finish minting & restrict the further minting", async () => {
             let id = await takeSnapshot();
-            console.log(freezeIssuanceAckHash, token_owner);
-
             await I_SecurityToken.freezeIssuance(freezeIssuanceAckHash, { from: token_owner });
             assert.isFalse(await I_SecurityToken.isIssuable.call());
             await catchRevert(I_SecurityToken.issue(account_affiliate1, new BN(100).mul(new BN(10).pow(new BN(18))), "0x0", { from: token_owner, gas: 500000 }));

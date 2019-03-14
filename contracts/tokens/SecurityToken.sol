@@ -51,8 +51,6 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     event GranularityChanged(uint256 _oldGranularity, uint256 _newGranularity);
     // Emit when is permanently frozen by the issuer
     event FreezeIssuance();
-
-    event AddressEvent(address sig);
     // Emit when transfers are frozen or unfrozen
     event FreezeTransfers(bool _status);
     // Emit when Module get archived from the securityToken
@@ -479,17 +477,12 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         return issuance;
     }
 
-
-
     /**
      * @notice Permanently freeze issuance of this security token.
      * @dev It MUST NOT be possible to increase `totalSuppy` after this function is called.
      */
     function freezeIssuance(bytes calldata _signature) external onlyOwner {
-        emit AddressEvent(address(this));
-        address ad = TokenLib.recoverFreezeIssuanceAckSigner(_signature);
-        emit AddressEvent(ad);
-        require(owner() == ad, "Owner did not sign");
+        require(owner() == TokenLib.recoverFreezeIssuanceAckSigner(_signature), "Owner did not sign");
         issuance = false;
         /*solium-disable-next-line security/no-block-members*/
         emit FreezeIssuance();

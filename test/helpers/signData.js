@@ -1,5 +1,5 @@
 const Web3 = require("web3");
-const sigUtil = require('eth-sig-util')
+//const sigUtil = require('eth-sig-util')
 let BN = Web3.utils.BN;
 
 function getSignSTMData(tmAddress, nonce, validFrom, expiry, fromAddress, toAddress, amount, pk) {
@@ -74,7 +74,7 @@ async function getFreezeIssuanceAck(stAddress, from) {
     //     data: typedData,
     //     sig: result 
     // })
-    // console.log('recovered', recovered);
+    // console.log('recovered address', recovered);
     return result;
 }
 

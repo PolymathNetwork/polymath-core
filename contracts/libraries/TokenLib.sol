@@ -56,7 +56,7 @@ library TokenLib {
     }
 
     function hash(Acknowledgment memory _ack) internal pure returns (bytes32) {
-        return keccak256(abi.encode(keccak256(bytes(_ack.text))));
+        return keccak256(abi.encode(ACK_TYPEHASH, keccak256(bytes(_ack.text))));
     }
 
     function recoverFreezeIssuanceAckSigner(bytes memory _signature) public view returns (address) {

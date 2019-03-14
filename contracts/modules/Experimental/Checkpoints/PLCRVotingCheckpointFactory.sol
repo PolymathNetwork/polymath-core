@@ -21,6 +21,10 @@ contract PLCRVotingCheckpointFactory is ModuleFactory {
         name = "PLCRVotingCheckpoint";
         title = "PLCR Voting Checkpoint";
         description = "Commit & reveal technique used for voting";
+        typesData.push(4);
+        tagsData.push("Vote");
+        tagsData.push("Checkpoint");
+        tagsData.push("PLCR");
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
 
@@ -34,25 +38,5 @@ contract PLCRVotingCheckpointFactory is ModuleFactory {
         address plcrVotingCheckpoint = address(new PLCRVotingCheckpoint(msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken")));
         _initializeModule(plcrVotingCheckpoint, _data);
         return plcrVotingCheckpoint;
-    }
-
-     /**
-     * @notice Type of the Module factory
-     */
-    function types() external view returns(uint8[] memory) {
-        uint8[] memory res = new uint8[](1);
-        res[0] = 4;
-        return res;
-    }
-
-    /**
-     * @notice Get the tags related to the module factory
-     */
-    function tags() external view returns(bytes32[] memory) {
-        bytes32[] memory availableTags = new bytes32[](3);
-        availableTags[0] = "Vote";
-        availableTags[1] = "Checkpoint";
-        availableTags[2] = "PLCR";
-        return availableTags;
     }
 }

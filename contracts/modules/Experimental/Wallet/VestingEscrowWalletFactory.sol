@@ -19,6 +19,10 @@ contract VestingEscrowWalletFactory is UpgradableModuleFactory {
         name = "VestingEscrowWallet";
         title = "Vesting Escrow Wallet";
         description = "Manage vesting schedules to employees / affiliates";
+        typesData.push(7);
+        tagsData.push("Vesting");
+        tagsData.push("Escrow");
+        tagsData.push("Transfer Restriction");
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
@@ -34,22 +38,4 @@ contract VestingEscrowWalletFactory is UpgradableModuleFactory {
         return vestingEscrowWallet;
     }
 
-    /**
-     * @notice Type of the Module factory
-     */
-    function types() external view returns(uint8[] memory)  {
-        uint8[] memory res = new uint8[](1);
-        res[0] = 7;
-        return res;
-    }
-
-    /**
-     * @notice Get the tags related to the module factory
-     */
-    function tags() external view returns(bytes32[] memory) {
-        bytes32[] memory availableTags = new bytes32[](2);
-        availableTags[0] = "Vested";
-        availableTags[1] = "Escrow Wallet";
-        return availableTags;
-    }
 }

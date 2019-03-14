@@ -25,6 +25,10 @@ contract ScheduledCheckpointFactory is ModuleFactory {
         name = "ScheduledCheckpoint";
         title = "Schedule Checkpoints";
         description = "Allows you to schedule checkpoints in the future";
+        typesData.push(4);
+        typesData.push(2);
+        tagsData.push("Scheduled");
+        tagsData.push("Checkpoint");
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
@@ -44,23 +48,4 @@ contract ScheduledCheckpointFactory is ModuleFactory {
         return scheduledCheckpoint;
     }
 
-    /**
-     * @notice Type of the Module factory
-     */
-    function types() external view returns(uint8[] memory) {
-        uint8[] memory res = new uint8[](2);
-        res[0] = 4;
-        res[1] = 2;
-        return res;
-    }
-
-    /**
-     * @notice Get the tags related to the module factory
-     */
-    function tags() external view returns(bytes32[] memory) {
-        bytes32[] memory availableTags = new bytes32[](2);
-        availableTags[0] = "Scheduled";
-        availableTags[1] = "Checkpoint";
-        return availableTags;
-    }
 }

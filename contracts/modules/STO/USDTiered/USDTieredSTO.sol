@@ -538,22 +538,24 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         internal
         returns(uint256 spentUSD, uint256 purchasedTokens, bool gotoNextTier)
     {
-        uint256 maximumTokens = DecimalMath.div(_investedUSD, _tierPrice);
+        purchasedTokens = DecimalMath.div(_investedUSD, _tierPrice);
         uint256 granularity = ISecurityToken(securityToken).granularity();
-        maximumTokens = maximumTokens.div(granularity);
-        maximumTokens = maximumTokens.mul(granularity);
-        if (maximumTokens > _tierRemaining) {
-            spentUSD = DecimalMath.mul(_tierRemaining, _tierPrice);
-            // In case of rounding issues, ensure that spentUSD is never more than investedUSD
-            if (spentUSD > _investedUSD) {
-                spentUSD = _investedUSD;
-            }
-            purchasedTokens = _tierRemaining;
+
+        if (purchasedTokens > _tierRemaining) {
+            purchasedTokens = _tierRemaining.div(granularity);
             gotoNextTier = true;
         } else {
-            spentUSD = DecimalMath.mul(maximumTokens, _tierPrice);
-            purchasedTokens = maximumTokens;
+            purchasedTokens = purchasedTokens.div(granularity);
         }
+
+        purchasedTokens = purchasedTokens.mul(granularity);
+        spentUSD = DecimalMath.mul(purchasedTokens, _tierPrice);
+
+        // In case of rounding issues, ensure that spentUSD is never more than investedUSD
+        if (spentUSD > _investedUSD) {
+            spentUSD = _investedUSD;
+        }
+
         if (purchasedTokens > 0) {
             ISecurityToken(securityToken).issue(_beneficiary, purchasedTokens, "");
             emit TokenPurchase(msg.sender, _beneficiary, purchasedTokens, spentUSD, _tierPrice, _tier);

@@ -45,7 +45,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     );
 
     // Emit when the token details get updated
-    event UpdateTokenDetails(string _oldDetails, string _newDetails);
+    event UpdateTokenDetails(string _newName, string _newDetails);
     // Emit when the granularity get changed
     event GranularityChanged(uint256 _oldGranularity, uint256 _newGranularity);
     // Emit when is permanently frozen by the issuer
@@ -141,7 +141,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     )
         public
         ERC20Detailed(_name, _symbol, _decimals)
-    {   
+    {
         _zeroAddressCheck(_polymathRegistry);
         _zeroAddressCheck(_delegate);
         polymathRegistry = _polymathRegistry;
@@ -271,10 +271,12 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     /**
      * @notice updates the tokenDetails associated with the token
      * @param _newTokenDetails New token details
+     * @param name new Token name
      */
-    function updateTokenDetails(string calldata _newTokenDetails) external onlyOwner {
-        emit UpdateTokenDetails(tokenDetails, _newTokenDetails);
+    function updateTokenDetails(string calldata name, string calldata _newTokenDetails) external onlyOwner {
+        emit UpdateTokenDetails(name, _newTokenDetails);
         tokenDetails = _newTokenDetails;
+        _name = name;
     }
 
     /**
@@ -296,9 +298,17 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         dataStore = _dataStore;
     }
 
+    // *
+    // * @notice Allows owner to change token name
+    // * @param name new name of the token
+
+    // function changeName(string calldata name) external onlyOwner {
+    //     _name = name;
+    // }
+
     /**
      * @notice Allows to change the treasury wallet address
-     * @param _wallet Ethereum address of the treasury wallet 
+     * @param _wallet Ethereum address of the treasury wallet
      */
     function changeTreasuryWallet(address _wallet) external onlyOwner {
         _zeroAddressCheck(_wallet);
@@ -507,8 +517,8 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     )
         public
         isIssuanceAllowed
-    {   
-        _onlyModuleOrOwner(MINT_KEY); 
+    {
+        _onlyModuleOrOwner(MINT_KEY);
         // Add a function to validate the `_data` parameter
         _isValidTransfer(_updateTransfer(address(0), _tokenHolder, _value, _data));
         _mint(_tokenHolder, _value);

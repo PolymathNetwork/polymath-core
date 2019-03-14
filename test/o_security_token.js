@@ -435,12 +435,15 @@ contract("SecurityToken", async (accounts) => {
         });
 
         it("Should fail in updating the token details", async () => {
-            await catchRevert(I_SecurityToken.updateTokenDetails("new token details", { from: account_delegate }));
+            await catchRevert(I_SecurityToken.updateTokenDetails("new token details", "new token details", { from: account_delegate }));
         });
 
         it("Should update the token details", async () => {
-            let log = await I_SecurityToken.updateTokenDetails("new token details", { from: token_owner });
+            let snapId = await takeSnapshot(); 
+            let log = await I_SecurityToken.updateTokenDetails("new token details", "new token details", { from: token_owner });
+            assert.equal(web3.utils.toAscii(await I_SecurityToken.name()).replace(/\u0000/g, ""), "new token name");
             assert.equal(log.logs[0].args._newDetails, "new token details");
+            await revertToSnapshot(snapId);
         });
 
         it("Should successfully remove the general transfer manager module from the securityToken -- fails msg.sender should be Owner", async () => {

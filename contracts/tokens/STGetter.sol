@@ -127,7 +127,7 @@ contract STGetter is OZStorage, SecurityTokenStorage {
     }
 
     /**
-     * @notice use to return the global treasury wallet 
+     * @notice use to return the global treasury wallet
      */
     function getTreasuryWallet() external view returns(address) {
         return IDataStore(dataStore).getAddress(TREASURY);
@@ -212,6 +212,13 @@ contract STGetter is OZStorage, SecurityTokenStorage {
         _version[1] = securityTokenVersion.minor;
         _version[2] = securityTokenVersion.patch;
         return _version;
+    }
+
+    /**
+     * @notice Returns the name of the SecurityToken
+     */
+    function name() external view returns(string memory) {
+        return _name;
     }
 
 }

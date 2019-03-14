@@ -21,6 +21,11 @@ contract VolumeRestrictionTMFactory is UpgradableModuleFactory {
         name = "VolumeRestrictionTM";
         title = "Volume Restriction Transfer Manager";
         description = "Manage transfers based on the volume of tokens that needs to be transact";
+        typesData.push(2);
+        typesData.push(6);
+        tagsData.push("Rolling Period");
+        tagsData.push("Volume");
+        tagsData.push("Transfer Restriction");
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
@@ -33,30 +38,6 @@ contract VolumeRestrictionTMFactory is UpgradableModuleFactory {
         address volumeRestrictionTransferManager = address(new VolumeRestrictionTMProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
         _initializeModule(volumeRestrictionTransferManager, _data);
         return volumeRestrictionTransferManager;
-    }
-
-
-    /**
-     * @notice Type of the Module factory
-     */
-    function types() external view returns(uint8[] memory) {
-        uint8[] memory res = new uint8[](2);
-        res[0] = 2;
-        res[1] = 6;
-        return res;
-    }
-
-    /**
-     * @notice Get the tags related to the module factory
-     */
-    function tags() public view returns(bytes32[] memory) {
-        bytes32[] memory availableTags = new bytes32[](5);
-        availableTags[0] = "Maximum Volume";
-        availableTags[1] = "Transfer Restriction";
-        availableTags[2] = "Daily Restriction";
-        availableTags[3] = "Individual Restriction";
-        availableTags[4] = "Default Restriction";
-        return availableTags;
     }
 
 }

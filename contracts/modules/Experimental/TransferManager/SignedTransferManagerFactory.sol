@@ -18,6 +18,10 @@ contract SignedTransferManagerFactory is ModuleFactory {
         name = "SignedTransferManager";
         title = "Signed Transfer Manager";
         description = "Manage transfers using a signature";
+        typesData.push(2);
+        typesData.push(6);
+        tagsData.push("Signed");
+        tagsData.push("Transfer Restriction");
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
@@ -32,27 +36,5 @@ contract SignedTransferManagerFactory is ModuleFactory {
         _initializeModule(signedTransferManager, _data);
         return signedTransferManager;
     }
-
-
-    /**
-     * @notice Type of the Module factory
-     */
-    function types() external view returns(uint8[] memory) {
-        uint8[] memory res = new uint8[](2);
-        res[0] = 2;
-        res[1] = 6;
-        return res;
-    }
-
-    /**
-     * @notice Get the tags related to the module factory
-     */
-    function tags() public view returns(bytes32[] memory) {
-        bytes32[] memory availableTags = new bytes32[](2);
-        availableTags[0] = "Signed";
-        availableTags[1] = "Transfer Restriction";
-        return availableTags;
-    }
-
 
 }

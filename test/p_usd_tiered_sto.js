@@ -4601,10 +4601,11 @@ contract("USDTieredSTO", async (accounts) => {
             assert.equal(await I_USDTieredSTOFactory.title.call(), "USD Tiered STO", "Wrong Module added");
             assert.equal(await I_USDTieredSTOFactory.version.call(), "3.0.0");
             let tags = await I_USDTieredSTOFactory.tags.call();
-            assert.equal(web3.utils.hexToString(tags[0]), "USD");
-            assert.equal(web3.utils.hexToString(tags[1]), "Tiered");
+            assert.equal(web3.utils.hexToString(tags[0]), "Tiered");
+            assert.equal(web3.utils.hexToString(tags[1]), "ETH");
             assert.equal(web3.utils.hexToString(tags[2]), "POLY");
-            assert.equal(web3.utils.hexToString(tags[3]), "ETH");
+            assert.equal(web3.utils.hexToString(tags[3]), "USD");
+            assert.equal(web3.utils.hexToString(tags[4]), "STO");
         });
     });
 });

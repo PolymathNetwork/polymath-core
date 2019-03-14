@@ -3,7 +3,6 @@ import { duration, ensureException, promisifyLogWatch, latestBlock } from "./hel
 import { getFreezeIssuanceAck, getDisableControllerAck } from "./helpers/signData";
 import { takeSnapshot, increaseTime, revertToSnapshot } from "./helpers/time";
 import { encodeProxyCall, encodeModuleCall } from "./helpers/encodeCall";
-import { pk } from "./helpers/testprivateKey";
 import { catchRevert } from "./helpers/exceptions";
 import {
     setUpPolymathNetwork,
@@ -31,7 +30,6 @@ contract("SecurityToken", async (accounts) => {
     let account_investor1;
     let account_issuer;
     let token_owner;
-    let token_owner_pk;
     let disableControllerAckHash;
     let freezeIssuanceAckHash;
     let account_investor2;
@@ -135,8 +133,6 @@ contract("SecurityToken", async (accounts) => {
         account_investor1 = accounts[9];
 
         token_owner = account_issuer;
-        token_owner_pk = pk.account_1;
-
         account_controller = account_temp;
 
         // Step:1 Create the polymath ecosystem contract instances
@@ -200,10 +196,7 @@ contract("SecurityToken", async (accounts) => {
             I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
             stGetter = await STGetter.at(I_SecurityToken.address);
             assert.equal(await stGetter.getTreasuryWallet.call(), token_owner, "Incorrect wallet set")
-            const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
-
-            disableControllerAckHash = "0x6c33f5d82a4088dba7f7969350798c7a2900b5a3689f123d0630d513d05e5611";
-            
+            const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];            
 
             // Verify that GeneralTransferManager module get added successfully or not
             assert.equal(log.args._types[0].toNumber(), transferManagerKey);
@@ -311,8 +304,10 @@ contract("SecurityToken", async (accounts) => {
         })
 
         it("Should finish the minting -- fail because owner didn't sign correct acknowledegement", async () => {
-            let fakeHash = await getFreezeIssuanceAck(I_SecurityToken.address, account_investor2);
-            await catchRevert(I_SecurityToken.freezeIssuance(fakeHash, { from: token_owner }));
+            let trueButOutOfPlaceAcknowledegement = web3.utils.utf8ToHex(
+                "F O'Brien is the best!"
+            );
+            await catchRevert(I_SecurityToken.freezeIssuance(trueButOutOfPlaceAcknowledegement, { from: token_owner }));
         });
 
         it("Should finish the minting -- fail because msg.sender is not the owner", async () => {
@@ -325,7 +320,6 @@ contract("SecurityToken", async (accounts) => {
             await I_SecurityToken.freezeIssuance(freezeIssuanceAckHash, { from: token_owner });
             assert.isFalse(await I_SecurityToken.isIssuable.call());
             await catchRevert(I_SecurityToken.issue(account_affiliate1, new BN(100).mul(new BN(10).pow(new BN(18))), "0x0", { from: token_owner, gas: 500000 }));
-            // assert.isTrue(false);
             await revertToSnapshot(id);
         });
 

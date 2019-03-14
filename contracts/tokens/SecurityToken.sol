@@ -17,7 +17,6 @@ import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
-import "openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
 
 /**
  * @title Security Token contract
@@ -32,7 +31,6 @@ import "openzeppelin-solidity/contracts/cryptography/ECDSA.sol";
 contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, SecurityTokenStorage, IERC1594, IERC1643, IERC1644, Proxy {
 
     using SafeMath for uint256;
-    using ECDSA for bytes32;
 
     // Emit at the time when module get added
     event ModuleAdded(
@@ -481,7 +479,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * @notice Permanently freeze issuance of this security token.
      * @dev It MUST NOT be possible to increase `totalSuppy` after this function is called.
      */
-    function freezeIssuance(bytes calldata _signature) external onlyOwner {
+    function freezeIssuance(bytes calldata _signature) external isIssuanceAllowed onlyOwner {
         require(owner() == TokenLib.recoverFreezeIssuanceAckSigner(_signature), "Owner did not sign");
         issuance = false;
         /*solium-disable-next-line security/no-block-members*/

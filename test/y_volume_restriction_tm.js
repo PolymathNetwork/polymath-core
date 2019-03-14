@@ -1689,8 +1689,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
         it("Should get the tags of the factory", async() => {
             let tags = await I_VolumeRestrictionTMFactory.tags.call();
-            assert.equal(tags.length, 5);
-            assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ''), "Maximum Volume");
+            assert.equal(tags.length, 3);
+            assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ''), "Rolling Period");
         });
     });
 

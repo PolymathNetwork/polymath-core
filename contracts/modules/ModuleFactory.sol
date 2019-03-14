@@ -23,7 +23,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
     string public title;
     string public description;
 
-    uint8[] typesData; // Can't be modified unless using UpgradableModuleFactory
+    uint8[] typesData;
     bytes32[] tagsData;
 
     uint256 public usageCost; // Denominated in USD

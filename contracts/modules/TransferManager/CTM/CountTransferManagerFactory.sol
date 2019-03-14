@@ -28,7 +28,7 @@ contract CountTransferManagerFactory is UpgradableModuleFactory {
         description = "Restrict the number of investors";
         typesData.push(2);
         tagsData.push("Count");
-        tagsData.push("Transfer Manager");
+        tagsData.push("Transfer Restriction");
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }

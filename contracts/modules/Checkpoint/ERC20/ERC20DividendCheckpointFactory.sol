@@ -29,6 +29,10 @@ contract ERC20DividendCheckpointFactory is UpgradableModuleFactory {
         name = "ERC20DividendCheckpoint";
         title = "ERC20 Dividend Checkpoint";
         description = "Create ERC20 dividends for token holders at a specific checkpoint";
+        typesData.push(4);
+        tagsData.push("ERC20");
+        tagsData.push("Dividend");
+        tagsData.push("Checkpoint");
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
@@ -43,23 +47,4 @@ contract ERC20DividendCheckpointFactory is UpgradableModuleFactory {
         return erc20DividendCheckpoint;
     }
 
-    /**
-     * @notice Type of the Module factory
-     */
-    function types() external view returns(uint8[] memory) {
-        uint8[] memory res = new uint8[](1);
-        res[0] = 4;
-        return res;
-    }
-
-    /**
-     * @notice Get the tags related to the module factory
-     */
-    function tags() external view returns(bytes32[] memory) {
-        bytes32[] memory availableTags = new bytes32[](3);
-        availableTags[0] = "ERC20";
-        availableTags[1] = "Dividend";
-        availableTags[2] = "Checkpoint";
-        return availableTags;
-    }
 }

@@ -19,20 +19,20 @@ interface ISecurityToken {
 
     /**
      * @notice Transfers of securities may fail for a number of reasons. So this function will used to understand the
-     * cause of failure by getting the byte value. Which will be the ESC that follows the EIP 1066. ESC can be mapped 
+     * cause of failure by getting the byte value. Which will be the ESC that follows the EIP 1066. ESC can be mapped
      * with a reson string to understand the failure cause, table of Ethereum status code will always reside off-chain
      * @param _to address The address which you want to transfer to
      * @param _value uint256 the amount of tokens to be transferred
      * @param _data The `bytes _data` allows arbitrary data to be submitted alongside the transfer.
      * @return bool It signifies whether the transaction will be executed or not.
      * @return byte Ethereum status code (ESC)
-     * @return bytes32 Application specific reason code 
+     * @return bytes32 Application specific reason code
      */
     function canTransfer(address _to, uint256 _value, bytes calldata _data) external view returns (bool, byte, bytes32);
 
     /**
      * @notice Transfers of securities may fail for a number of reasons. So this function will used to understand the
-     * cause of failure by getting the byte value. Which will be the ESC that follows the EIP 1066. ESC can be mapped 
+     * cause of failure by getting the byte value. Which will be the ESC that follows the EIP 1066. ESC can be mapped
      * with a reson string to understand the failure cause, table of Ethereum status code will always reside off-chain
      * @param _from address The address which you want to send tokens from
      * @param _to address The address which you want to transfer to
@@ -40,7 +40,7 @@ interface ISecurityToken {
      * @param _data The `bytes _data` allows arbitrary data to be submitted alongside the transfer.
      * @return bool It signifies whether the transaction will be executed or not.
      * @return byte Ethereum status code (ESC)
-     * @return bytes32 Application specific reason code 
+     * @return bytes32 Application specific reason code
      */
     function canTransferFrom(address _from, address _to, uint256 _value, bytes calldata _data) external view returns (bool, byte, bytes32);
 
@@ -114,7 +114,7 @@ interface ISecurityToken {
     /**
      * @notice This function redeem an amount of the token of a msg.sender. For doing so msg.sender may incentivize
      * using different ways that could be implemented with in the `redeem` function definition. But those implementations
-     * are out of the scope of the ERC1594. 
+     * are out of the scope of the ERC1594.
      * @param _value The amount of tokens need to be redeemed
      * @param _data The `bytes _data` it can be used in the token contract to authenticate the redemption.
      */
@@ -123,7 +123,7 @@ interface ISecurityToken {
     /**
      * @notice This function redeem an amount of the token of a msg.sender. For doing so msg.sender may incentivize
      * using different ways that could be implemented with in the `redeem` function definition. But those implementations
-     * are out of the scope of the ERC1594. 
+     * are out of the scope of the ERC1594.
      * @dev It is analogy to `transferFrom`
      * @param _tokenHolder The account whose tokens gets redeemed.
      * @param _value The amount of tokens need to be redeemed
@@ -238,12 +238,19 @@ interface ISecurityToken {
     */
     function changeDataStore(address _dataStore) external;
 
-   /**
-    * @notice Allows the owner to withdraw unspent POLY stored by them on the ST or any ERC20 token.
-    * @dev Owner can transfer POLY to the ST which will be used to pay for modules that require a POLY fee.
-    * @param _tokenContract Address of the ERC20Basic compliance token
-    * @param _value Amount of POLY to withdraw
-    */
+
+    /**
+     * @notice Allows to change the treasury wallet address
+     * @param _wallet Ethereum address of the treasury wallet
+     */
+    function changeTreasuryWallet(address _wallet) external;
+
+    /**
+     * @notice Allows the owner to withdraw unspent POLY stored by them on the ST or any ERC20 token.
+     * @dev Owner can transfer POLY to the ST which will be used to pay for modules that require a POLY fee.
+     * @param _tokenContract Address of the ERC20Basic compliance token
+     * @param _value Amount of POLY to withdraw
+     */
     function withdrawERC20(address _tokenContract, uint256 _value) external;
 
     /**
@@ -347,8 +354,8 @@ interface ISecurityToken {
      * @param _value uint256 the amount of tokens to be transferred
      * @param _data data to validate the transfer. (It is not used in this reference implementation
      * because use of `_data` parameter is implementation specific).
-     * @param _operatorData data attached to the transfer by controller to emit in event. (It is more like a reason string 
-     * for calling this function (aka force transfer) which provides the transparency on-chain). 
+     * @param _operatorData data attached to the transfer by controller to emit in event. (It is more like a reason string
+     * for calling this function (aka force transfer) which provides the transparency on-chain).
      */
     function controllerTransfer(address _from, address _to, uint256 _value, bytes calldata _data, bytes calldata _operatorData) external;
 
@@ -361,8 +368,8 @@ interface ISecurityToken {
      * @param _value uint256 the amount of tokens need to be redeemed.
      * @param _data data to validate the transfer. (It is not used in this reference implementation
      * because use of `_data` parameter is implementation specific).
-     * @param _operatorData data attached to the transfer by controller to emit in event. (It is more like a reason string 
-     * for calling this function (aka force transfer) which provides the transparency on-chain). 
+     * @param _operatorData data attached to the transfer by controller to emit in event. (It is more like a reason string
+     * for calling this function (aka force transfer) which provides the transparency on-chain).
      */
     function controllerRedeem(address _tokenHolder, uint256 _value, bytes calldata _data, bytes calldata _operatorData) external;
 

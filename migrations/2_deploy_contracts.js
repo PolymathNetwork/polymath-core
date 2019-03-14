@@ -27,7 +27,7 @@ const DevPolyToken = artifacts.require("./helpers/PolyTokenFaucet.sol");
 const MockOracle = artifacts.require("./MockOracle.sol");
 const StableOracle = artifacts.require("./StableOracle.sol");
 const TokenLib = artifacts.require("./TokenLib.sol");
-const SecurityToken = artifacts.require("./tokens/SecurityToken.sol");
+const SecurityTokenLogic = artifacts.require("./tokens/SecurityToken.sol");
 const STRGetter = artifacts.require('./STRGetter.sol');
 const STGetter = artifacts.require('./STGetter.sol');
 const DataStoreLogic = artifacts.require('./DataStore.sol');
@@ -214,7 +214,7 @@ module.exports = function(deployer, network, accounts) {
         .then(() => {
             // Link libraries
             deployer.link(VolumeRestrictionLib, VolumeRestrictionTMLogic);
-            deployer.link(TokenLib, SecurityToken);
+            deployer.link(TokenLib, SecurityTokenLogic);
             deployer.link(TokenLib, STFactory);
             deployer.link(TokenLib, STGetter);
             // A) Deploy the ModuleRegistry Contract (It contains the list of verified ModuleFactory)
@@ -293,6 +293,10 @@ module.exports = function(deployer, network, accounts) {
             return deployer.deploy(DataStoreLogic, { from: PolymathAccount });
         })
         .then(() => {
+            // B) Deploy the SecurityTokenLogic Contract
+            return deployer.deploy(SecurityTokenLogic, { from: PolymathAccount });
+        })
+        .then(() => {
             // B) Deploy the DataStoreFactory Contract
             return deployer.deploy(DataStoreFactory, DataStoreLogic.address, { from: PolymathAccount });
         })
@@ -356,7 +360,7 @@ module.exports = function(deployer, network, accounts) {
         })
         .then(() => {
             // H) Deploy the STVersionProxy001 Contract which contains the logic of deployment of securityToken.
-            return deployer.deploy(STFactory, GeneralTransferManagerFactory.address, DataStoreFactory.address, STGetter.address, { from: PolymathAccount });
+            return deployer.deploy(STFactory, GeneralTransferManagerFactory.address, DataStoreFactory.address, STGetter.address, "3.0.0", SecurityTokenLogic.address, { from: PolymathAccount });
         })
         .then(() => {
             // K) Deploy the FeatureRegistry contract to control feature switches
@@ -525,7 +529,7 @@ module.exports = function(deployer, network, accounts) {
             return polymathRegistry.changeAddress("EthUsdOracle", ETHOracle, { from: PolymathAccount });
         })
         .then(() => {
-            return deployer.deploy(SecurityToken, "a", "a", 18, 1, "a", polymathRegistry.address, STGetter.address, { from: PolymathAccount });
+            // return deployer.deploy(SecurityToken, "a", "a", 18, 1, "a", polymathRegistry.address, STGetter.address, { from: PolymathAccount });
             return polymathRegistry.changeAddress("StablePolyUsdOracle", StablePOLYOracle, { from: PolymathAccount });
         })
         .then(() => {

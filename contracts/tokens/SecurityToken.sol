@@ -68,6 +68,13 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     event TreasuryWalletChanged(address _oldTreasuryWallet, address _newTreasuryWallet);
     event DisableController();
 
+    function initialize() external {
+        require(!initialized, "already initialized");
+        securityTokenVersion = SemanticVersion(3, 0, 0);
+        updateFromRegistry();
+        initialized = true;
+    }
+
     function _isModule(address _module, uint8 _type) internal view returns(bool) {
         if (modulesToData[_module].module != _module || modulesToData[_module].isArchived)
             return false;
@@ -118,39 +125,6 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     modifier isEnabled(string memory _nameKey) {
         require(IFeatureRegistry(featureRegistry).getFeatureStatus(_nameKey));
         _;
-    }
-
-    /**
-     * @notice constructor
-     * @param _name Name of the SecurityToken
-     * @param _symbol Symbol of the Token
-     * @param _decimals Decimals for the securityToken
-     * @param _granularity granular level of the token
-     * @param _tokenDetails Details of the token that are stored off-chain
-     * @param _polymathRegistry Contract address of the polymath registry
-     * @param _delegate Contract address of the delegate
-     */
-    constructor(
-        string memory _name,
-        string memory _symbol,
-        uint8 _decimals,
-        uint256 _granularity,
-        string memory _tokenDetails,
-        address _polymathRegistry,
-        address _delegate
-    )
-        public
-        ERC20Detailed(_name, _symbol, _decimals)
-    {   
-        _zeroAddressCheck(_polymathRegistry);
-        _zeroAddressCheck(_delegate);
-        polymathRegistry = _polymathRegistry;
-        //When it is created, the owner is the STR
-        updateFromRegistry();
-        delegate = _delegate;
-        tokenDetails = _tokenDetails;
-        granularity = _granularity;
-        securityTokenVersion = SemanticVersion(3, 0, 0);
     }
 
     /**
@@ -298,7 +272,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
 
     /**
      * @notice Allows to change the treasury wallet address
-     * @param _wallet Ethereum address of the treasury wallet 
+     * @param _wallet Ethereum address of the treasury wallet
      */
     function changeTreasuryWallet(address _wallet) external onlyOwner {
         _zeroAddressCheck(_wallet);
@@ -507,8 +481,8 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     )
         public
         isIssuanceAllowed
-    {   
-        _onlyModuleOrOwner(MINT_KEY); 
+    {
+        _onlyModuleOrOwner(MINT_KEY);
         // Add a function to validate the `_data` parameter
         _isValidTransfer(_updateTransfer(address(0), _tokenHolder, _value, _data));
         _mint(_tokenHolder, _value);
@@ -742,6 +716,29 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     }
 
     /**
+     * @notice Used to return the details of a document with a known name (`bytes32`).
+     * @param _name Name of the document
+     * @return string The URI associated with the document.
+     * @return bytes32 The hash (of the contents) of the document.
+     * @return uint256 the timestamp at which the document was last modified.
+     */
+    function getDocument(bytes32 _name) external view returns (string memory, bytes32, uint256) {
+        return (
+           _documents[_name].uri,
+           _documents[_name].docHash,
+           _documents[_name].lastModified
+        );
+    }
+
+    /**
+     * @notice Used to retrieve a full list of documents attached to the smart contract.
+     * @return bytes32 List of all documents names present in the contract.
+     */
+    function getAllDocuments() external view returns (bytes32[] memory) {
+        return _docNames;
+    }
+
+    /**
      * @notice This function allows an authorised address to redeem tokens for any token holder.
      * The redemption must still respect the balances of the token holder (so the redemption must be for at most
      * `balanceOf(_tokenHolder)` tokens) and potentially also need to respect other transfer restrictions.
@@ -760,7 +757,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     }
 
     function _implementation() internal view returns(address) {
-        return delegate;
+        return getterDelegate;
     }
 
     function updateFromRegistry() public onlyOwner {

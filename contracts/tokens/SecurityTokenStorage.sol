@@ -46,7 +46,10 @@ contract SecurityTokenStorage {
         uint256 value;
     }
 
-    string internal _name;
+    // ERC20 Details
+    string public name;
+    string public symbol;
+    uint8 public decimals;
 
     // Address of the controller which is a delegated entity
     // set by the issuer/owner of the token
@@ -111,5 +114,4 @@ contract SecurityTokenStorage {
     mapping(bytes32 => Document) internal _documents;
     // mapping to store the document name indexes
     mapping(bytes32 => uint256) internal _docIndexes;
-
 }

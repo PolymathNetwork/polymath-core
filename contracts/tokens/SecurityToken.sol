@@ -17,7 +17,6 @@ import "../interfaces/ITransferManager.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
 
 /**
  * @title Security Token contract
@@ -29,7 +28,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
  * @notice - ST does not inherit from ISecurityToken due to:
  * @notice - https://github.com/ethereum/solidity/issues/4847
  */
-contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, SecurityTokenStorage, IERC1594, IERC1643, IERC1644, Proxy {
+contract SecurityToken is ERC20, Ownable, ReentrancyGuard, SecurityTokenStorage, IERC1594, IERC1643, IERC1644, Proxy {
 
     using SafeMath for uint256;
 
@@ -45,7 +44,9 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     );
 
     // Emit when the token details get updated
-    event UpdateTokenDetails(string _newName, string _newDetails);
+    event UpdateTokenDetails(string _oldDetails, string _newDetails);
+    // Emit when the token name get updated
+    // event UpdateTokenName(string _oldName, string _newName);
     // Emit when the granularity get changed
     event GranularityChanged(uint256 _oldGranularity, uint256 _newGranularity);
     // Emit when is permanently frozen by the issuer
@@ -140,13 +141,15 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         address _delegate
     )
         public
-        ERC20Detailed(_name, _symbol, _decimals)
     {
         _zeroAddressCheck(_polymathRegistry);
         _zeroAddressCheck(_delegate);
         polymathRegistry = _polymathRegistry;
         //When it is created, the owner is the STR
         updateFromRegistry();
+        name = _name;
+        symbol = _symbol;
+        decimals = _decimals;
         delegate = _delegate;
         tokenDetails = _tokenDetails;
         granularity = _granularity;
@@ -271,12 +274,10 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     /**
      * @notice updates the tokenDetails associated with the token
      * @param _newTokenDetails New token details
-     * @param name new Token name
      */
-    function updateTokenDetails(string calldata name, string calldata _newTokenDetails) external onlyOwner {
-        emit UpdateTokenDetails(name, _newTokenDetails);
+    function updateTokenDetails(string calldata _newTokenDetails) external onlyOwner {
+        emit UpdateTokenDetails(tokenDetails, _newTokenDetails);
         tokenDetails = _newTokenDetails;
-        _name = name;
     }
 
     /**
@@ -298,13 +299,14 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         dataStore = _dataStore;
     }
 
-    // *
-    // * @notice Allows owner to change token name
-    // * @param name new name of the token
-
-    // function changeName(string calldata name) external onlyOwner {
-    //     _name = name;
-    // }
+    /**
+    * @notice Allows owner to change token name
+    * @param _name new name of the token
+    */
+    function changeName(string calldata _name) external onlyOwner {
+        //emit UpdateTokenName(name, _name);
+        name = _name;
+    }
 
     /**
      * @notice Allows to change the treasury wallet address

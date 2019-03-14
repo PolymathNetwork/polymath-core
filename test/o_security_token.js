@@ -200,6 +200,17 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(web3.utils.toUtf8(log.args._name), "GeneralTransferManager");
         });
 
+        it("Should not allow unauthorized address to change name", async() => {
+            await catchRevert(I_SecurityToken.changeName("new token name"));
+        });
+
+        it("Should allow authorized address to change name", async() => {
+            let snapId = await takeSnapshot(); 
+            await I_SecurityToken.changeName("new token name", { from: token_owner });
+            assert.equal((await I_SecurityToken.name()).replace(/\u0000/g, ""), "new token name");
+            await revertToSnapshot(snapId);
+        });
+
         it("Should intialize the auto attached modules", async () => {
             let moduleData = (await stGetter.getModulesByType(transferManagerKey))[0];
             I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
@@ -435,15 +446,12 @@ contract("SecurityToken", async (accounts) => {
         });
 
         it("Should fail in updating the token details", async () => {
-            await catchRevert(I_SecurityToken.updateTokenDetails("new token details", "new token details", { from: account_delegate }));
+            await catchRevert(I_SecurityToken.updateTokenDetails("new token details", { from: account_delegate }));
         });
 
         it("Should update the token details", async () => {
-            let snapId = await takeSnapshot(); 
-            let log = await I_SecurityToken.updateTokenDetails("new token details", "new token details", { from: token_owner });
-            assert.equal(web3.utils.toAscii(await I_SecurityToken.name()).replace(/\u0000/g, ""), "new token name");
+            let log = await I_SecurityToken.updateTokenDetails("new token details", { from: token_owner });
             assert.equal(log.logs[0].args._newDetails, "new token details");
-            await revertToSnapshot(snapId);
         });
 
         it("Should successfully remove the general transfer manager module from the securityToken -- fails msg.sender should be Owner", async () => {
@@ -1329,28 +1337,28 @@ contract("SecurityToken", async (accounts) => {
             `);
             assert.equal(
                 await I_SecurityToken.name.call(),
-                (web3.utils.toAscii(await readStorage(I_SecurityToken.address, 3)).replace(/\u0000/g, "")).replace(/\u0014/g, "")
+                (web3.utils.toAscii(await readStorage(I_SecurityToken.address, 5)).replace(/\u0000/g, "")).replace(/\u0014/g, "")
             )
             console.log(`
                 Name of the ST:                     ${await I_SecurityToken.name.call()}
-                Name of the ST from the storage:    ${web3.utils.toUtf8(await readStorage(I_SecurityToken.address, 3))}
+                Name of the ST from the storage:    ${web3.utils.toUtf8(await readStorage(I_SecurityToken.address, 5))}
             `);
             assert.equal(
                 await I_SecurityToken.symbol.call(),
-                (web3.utils.toUtf8(await readStorage(I_SecurityToken.address, 4)).replace(/\u0000/g, "")).replace(/\u0006/g, "")
+                (web3.utils.toUtf8(await readStorage(I_SecurityToken.address, 6)).replace(/\u0000/g, "")).replace(/\u0006/g, "")
             );
             console.log(`
                 Symbol of the ST:                     ${await I_SecurityToken.symbol.call()}
-                Symbol of the ST from the storage:    ${web3.utils.toUtf8(await readStorage(I_SecurityToken.address, 4))}
+                Symbol of the ST from the storage:    ${web3.utils.toUtf8(await readStorage(I_SecurityToken.address, 6))}
             `);
 
             console.log(`
                 Address of the owner:                   ${await I_SecurityToken.owner.call()}
-                Address of the owner from the storage:  ${(await readStorage(I_SecurityToken.address, 5)).substring(0, 42)}
+                Address of the owner from the storage:  ${(await readStorage(I_SecurityToken.address, 3)).substring(0, 42)}
             `)
             assert.equal(
                 await I_SecurityToken.owner.call(),
-                web3.utils.toChecksumAddress((await readStorage(I_SecurityToken.address, 5)).substring(0, 42))
+                web3.utils.toChecksumAddress((await readStorage(I_SecurityToken.address, 3)).substring(0, 42))
             );
 
         });
@@ -1362,17 +1370,12 @@ contract("SecurityToken", async (accounts) => {
 
             console.log(`
                 Controller address from the contract:         ${await stGetter.controller.call()}
-                Controller address from the storage:          ${await readStorage(I_SecurityToken.address, 7)}
+                uint8 decimals + controller address from the storage:          ${await readStorage(I_SecurityToken.address, 7)}
             `)
-            // Different versions of web3 behave differently :/
-            assert.oneOf(
-                await readStorage(I_SecurityToken.address, 7),
-                [
-                    (await stGetter.controller.call()).substring(0, 4),
-                    (await stGetter.controller.call()).substring(0, 3),
-                    await stGetter.controller.call()
-                ]
-            );
+
+            assert.equal(await stGetter.controller.call(), address_zero);
+            // Controller address is packed with decimals so of controller address is 0x0, only decimals will be returned from read storage.
+            assert.equal(await readStorage(I_SecurityToken.address, 7), "0x12");
 
             console.log(`
                 PolymathRegistry address from the contract:         ${await stGetter.polymathRegistry.call()}

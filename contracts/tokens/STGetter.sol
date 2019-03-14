@@ -214,11 +214,4 @@ contract STGetter is OZStorage, SecurityTokenStorage {
         return _version;
     }
 
-    /**
-     * @notice Returns the name of the SecurityToken
-     */
-    function name() external view returns(string memory) {
-        return _name;
-    }
-
 }

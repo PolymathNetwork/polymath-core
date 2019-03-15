@@ -1363,6 +1363,7 @@ contract("SecurityToken", async (accounts) => {
             assert.oneOf(
                 await readStorage(I_SecurityToken.address, 7),
                 [
+                    (await stGetter.controller.call()).toLowerCase(),
                     (await stGetter.controller.call()).substring(0, 4),
                     (await stGetter.controller.call()).substring(0, 3),
                     await stGetter.controller.call()

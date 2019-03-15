@@ -16,8 +16,9 @@ contract PLCRVotingCheckpoint is Module {
         uint64 commitDuration;
         uint64 revealDuration;
         uint64 startTime;
-        uint32 totalProposals;
+        uint24 totalProposals;
         uint32 totalVotes;
+        uint8 isActive;
         mapping(uint256 => uint256) weightedVote;
         mapping(address => Vote) proposalToVote;
     }
@@ -42,7 +43,7 @@ contract PLCRVotingCheckpoint is Module {
         uint256 _checkpointId
     );
     event VoteRevealed(address _voter, uint256 _weight, uint256 indexed _ballotId, uint256 _choiceOfProposal, uint256 _salt, bytes32 _secretVote);
-
+    event BallotStatusChanged(uint256 _ballotId, bool _newStatus);
 
     constructor(address _securityToken, address _polyAddress)
     public
@@ -101,6 +102,7 @@ contract PLCRVotingCheckpoint is Module {
         // Sanity checks
         _validValueCheck(_commitDuration);
         _validValueCheck(_revealDuration);
+        _validValueCheck(_proposedQuorum);
         require(_startTime >= now, "Invalid start time");
         require(_totalProposals > 1, "totalProposals should be > 1");
         uint256 supplyAtCheckpoint = ISecurityToken(securityToken).totalSupplyAt(_checkpointId);
@@ -112,8 +114,9 @@ contract PLCRVotingCheckpoint is Module {
             uint64(_commitDuration),
             uint64(_revealDuration),
             uint64(_startTime),
-            uint32(_totalProposals),
-            uint32(0)
+            uint24(_totalProposals),
+            uint32(0),
+            uint8(1)
         ));
         emit BallotCreated(_ballotId, _commitDuration, _revealDuration, _totalProposals, _startTime, _proposedQuorum, supplyAtCheckpoint, _checkpointId);
     }
@@ -129,6 +132,7 @@ contract PLCRVotingCheckpoint is Module {
         Ballot storage ballot = ballots[_ballotId];
         require(ballot.proposalToVote[msg.sender].secretVote == bytes32(0), "Already voted");
         require(_secretVote != bytes32(0), "Invalid vote");
+        require(ballot.isActive == uint8(1), "Inactive ballot");
         uint256 weight = ISecurityToken(securityToken).balanceOfAt(msg.sender, ballot.checkpointId);
         ballot.proposalToVote[msg.sender] = Vote(0, _secretVote, false);
         emit VoteCommited(msg.sender, weight, _ballotId, _secretVote);
@@ -144,6 +148,7 @@ contract PLCRVotingCheckpoint is Module {
         _validBallotId(_ballotId);
         require(getBallotStage(_ballotId) == Stage.REVEAL, "Not in reveal stage");
         Ballot storage ballot = ballots[_ballotId];
+        require(ballot.isActive == uint8(1), "Inactive ballot");
         require(_choiceOfProposal < ballot.totalProposals, "Invalid proposal choice");
         require(!ballot.proposalToVote[msg.sender].isRevealed, "Already revealed");
 
@@ -154,9 +159,31 @@ contract PLCRVotingCheckpoint is Module {
         );
         uint256 weight = ISecurityToken(securityToken).balanceOfAt(msg.sender, ballot.checkpointId);
         ballot.weightedVote[_choiceOfProposal] = ballot.weightedVote[_choiceOfProposal].add(weight);
+        ballot.totalVotes = ballot.totalVotes + 1;
         ballot.proposalToVote[msg.sender].voteOption = _choiceOfProposal;
         ballot.proposalToVote[msg.sender].isRevealed = true;
         emit VoteRevealed(msg.sender, weight, _ballotId, _choiceOfProposal, _salt, ballot.proposalToVote[msg.sender].secretVote);
+    }
+
+    /**
+     * @notice Allows the token issuer to set the active stats of a ballot
+     * @param _ballotId The index of the target ballot
+     * @param _isActive The bool value of the active stats of the ballot
+     */
+    function changeBallotStatus(uint256 _ballotId, bool _isActive) external withPerm(ADMIN) {
+        _validBallotId(_ballotId);
+        require(
+            now < uint256(ballots[_ballotId].startTime)
+            .add(uint256(ballots[_ballotId].commitDuration)
+            .add(uint256(ballots[_ballotId].revealDuration))),
+            "Already ended"
+        );
+        uint8 activeStatus = 0;
+        if (_isActive)
+            activeStatus = 1;
+        require(ballots[_ballotId].isActive != activeStatus, "Active state unchanged");
+        ballots[_ballotId].isActive = activeStatus;
+        emit BallotStatusChanged(_ballotId, _isActive);
     }
 
     /**
@@ -231,7 +258,25 @@ contract PLCRVotingCheckpoint is Module {
             return 0;
         return ballots[_ballotId].proposalToVote[_voter].voteOption;
     }
-    
+
+    /**
+     * @notice Get the stats of the ballot
+     * @param _ballotId The index of the target ballot
+     */
+    function getBallotStats(uint256 _ballotId) external view returns(uint256, uint256, uint256, uint64, uint64, uint64, uint32, uint32, bool) {
+        Ballot memory ballot = ballots[_ballotId];
+        return (
+            ballot.quorum,
+            ballot.totalSupply,
+            ballot.checkpointId,
+            ballot.commitDuration,
+            ballot.revealDuration,
+            ballot.startTime,
+            ballot.totalProposals,
+            ballot.totalVotes,
+            (ballot.isActive == 1 ? true : false)
+        );
+    }
 
     /**
      * @notice This function returns the signature of configure function
@@ -244,7 +289,7 @@ contract PLCRVotingCheckpoint is Module {
      * @notice Return the permissions flag that are associated with CountTransferManager
      */
     function getPermissions() external view returns(bytes32[] memory) {
-        bytes32[] memory allPermissions = new bytes32[](0);
+        bytes32[] memory allPermissions = new bytes32[](1);
         allPermissions[0] = ADMIN;
         return allPermissions;
     }

@@ -49,6 +49,7 @@ const VolumeRestrictionTMFactory = artifacts.require("./VolumeRestrictionTMFacto
 const VolumeRestrictionTM = artifacts.require("./VolumeRestrictionTM.sol");
 const VestingEscrowWalletFactory = artifacts.require("./VestingEscrowWalletFactory.sol");
 const VestingEscrowWallet = artifacts.require("./VestingEscrowWallet.sol");
+const PLCRVotingCheckpointFactory = artifacts.require("./PLCRVotingCheckpointFactory.sol");
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -107,6 +108,7 @@ let I_SignedTransferManagerFactory;
 let I_USDOracle;
 let I_POLYOracle;
 let I_StablePOLYOracle;
+let I_PLCRVotingCheckpointFactory;
 
 // Initial fee for ticker registry and security token registry
 const initRegFee = new BN(web3.utils.toWei("250"));
@@ -589,4 +591,18 @@ export async function deploySignedTMAndVerifyed(accountPolymath, MRProxyInstance
 
     await registerAndVerifyByMR(I_SignedTransferManagerFactory.address, accountPolymath, MRProxyInstance);
     return new Array(I_SignedTransferManagerFactory);
+}
+
+// Deploy voting modules
+
+export async function deployPLCRVoteCheckpoint(accountPolymath, MRProxyInstance, setupCost) {
+    I_PLCRVotingCheckpointFactory = await PLCRVotingCheckpointFactory.new(setupCost, new BN(0), I_PolymathRegistry.address, { from: accountPolymath });
+    assert.notEqual(
+        I_PLCRVotingCheckpointFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "PLCRVotingCheckpointFactory contract was not deployed"
+    );
+
+     await registerAndVerifyByMR(I_PLCRVotingCheckpointFactory.address, accountPolymath, MRProxyInstance);
+    return new Array(I_PLCRVotingCheckpointFactory);
 }

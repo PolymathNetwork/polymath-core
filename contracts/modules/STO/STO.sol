@@ -63,7 +63,7 @@ contract STO is ISTO, STOStorage, Module, Pausable {
 
     function _setFundRaiseType(FundRaiseType[] memory _fundRaiseTypes) internal {
         // FundRaiseType[] parameter type ensures only valid values for _fundRaiseTypes
-        require(_fundRaiseTypes.length > 0, "Raise type is not specified");
+        require(_fundRaiseTypes.length > 0 && _fundRaiseTypes.length <= 3, "Raise type is not specified");
         fundRaiseTypes[uint8(FundRaiseType.ETH)] = false;
         fundRaiseTypes[uint8(FundRaiseType.POLY)] = false;
         fundRaiseTypes[uint8(FundRaiseType.SC)] = false;

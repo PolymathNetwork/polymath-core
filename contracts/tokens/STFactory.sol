@@ -1,6 +1,7 @@
 pragma solidity ^0.5.0;
 
 import "./SecurityTokenProxy.sol";
+import "../proxy/OwnedUpgradeabilityProxy.sol";
 import "../interfaces/ISTFactory.sol";
 import "../interfaces/ISecurityToken.sol";
 import "../interfaces/IOwnable.sol";
@@ -67,16 +68,17 @@ contract STFactory is ISTFactory {
         bool _divisible,
         address _polymathRegistry
     ) internal returns(address) {
-        return address(new SecurityTokenProxy(
+        SecurityTokenProxy proxy = new SecurityTokenProxy(
             _name,
             _symbol,
             _decimals,
             _divisible ? 1 : uint256(10) ** _decimals,
             _tokenDetails,
             _polymathRegistry,
-            getterDelegate,
-            version,
-            implementation
-        ));
+            getterDelegate
+        );
+        proxy.upgradeTo(version, implementation);
+        ISecurityToken(address(proxy)).initialize();
+        return address(proxy);
     }
 }

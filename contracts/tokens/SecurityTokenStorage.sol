@@ -2,7 +2,8 @@ pragma solidity ^0.5.0;
 
 contract SecurityTokenStorage {
 
-    bool internal initialized;
+    address internal _owner;
+    bool public initialized;
     uint8 constant PERMISSION_KEY = 1;
     uint8 constant TRANSFER_KEY = 2;
     uint8 constant MINT_KEY = 3;

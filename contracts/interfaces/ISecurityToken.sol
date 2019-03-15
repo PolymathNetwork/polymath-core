@@ -31,6 +31,13 @@ interface ISecurityToken {
     function canTransfer(address _to, uint256 _value, bytes calldata _data) external view returns (bool, byte, bytes32);
 
     /**
+     * @notice Initialization function
+     * @dev Expected to be called atomically with the proxy being created, by the owner of the token
+     * @dev Can only be called once
+     */
+    function initialize() external;
+
+    /**
      * @notice Transfers of securities may fail for a number of reasons. So this function will used to understand the
      * cause of failure by getting the byte value. Which will be the ESC that follows the EIP 1066. ESC can be mapped
      * with a reson string to understand the failure cause, table of Ethereum status code will always reside off-chain

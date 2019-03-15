@@ -188,9 +188,13 @@ contract("SecurityToken", async (accounts) => {
 
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, token_owner, 0, { from: token_owner });
             // Verify the successful generation of the security token
-            assert.equal(tx.logs[2].args._ticker, symbol, "SecurityToken doesn't get deployed");
+            for (let i = 0; i < tx.logs.length; i++) {
+              console.log("LOGS: " + i);
+              console.log(tx.logs[i]);
+            }
+            assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
 
-            I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+            I_SecurityToken = await SecurityToken.at(tx.logs[1].args._securityTokenAddress);
             stGetter = await STGetter.at(I_SecurityToken.address);
             assert.equal(await stGetter.getTreasuryWallet.call(), token_owner, "Incorrect wallet set")
             const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
@@ -293,7 +297,7 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(balance1.div(new BN(10).pow(new BN(18))).toNumber(), 200);
             let balance2 = await I_SecurityToken.balanceOf(account_affiliate2);
             assert.equal(balance2.div(new BN(10).pow(new BN(18))).toNumber(), 110);
-            
+
         });
 
         it("Should ST be issuable", async() => {
@@ -385,7 +389,7 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should successfully issue tokens while STO attached", async () => {
             await I_SecurityToken.issue(account_affiliate1, new BN(100).mul(new BN(10).pow(new BN(18))), "0x0", { from: token_owner });
-            
+
             let balance = await I_SecurityToken.balanceOf(account_affiliate1);
             assert.equal(balance.div(new BN(10).pow(new BN(18))).toNumber(), 300);
         });
@@ -463,13 +467,13 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(tx.logs[0].args._module, I_GeneralTransferManager.address);
             await I_SecurityToken.issue(account_investor1, new BN(web3.utils.toWei("500")), "0x0", { from: token_owner });
             let _canTransfer = await I_SecurityToken.canTransfer.call(account_investor2, new BN(web3.utils.toWei("200")), "0x0", {from: account_investor1});
-            
+
             assert.isTrue(_canTransfer[0]);
             assert.equal(_canTransfer[1], 0x51);
             assert.equal(_canTransfer[2], empty_hash);
-            
+
             await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("200")), { from: account_investor1 });
-            
+
             assert.equal((await I_SecurityToken.balanceOf(account_investor2)).div(new BN(10).pow(new BN(18))).toNumber(), 200);
             await revertToSnapshot(key);
         });
@@ -615,7 +619,7 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should Fail in transferring the token from one whitelist investor 1 to non whitelist investor 2", async () => {
             let _canTransfer = await I_SecurityToken.canTransfer.call(account_investor2, new BN(10).mul(new BN(10).pow(new BN(18))), "0x0", {from: account_investor1});
-            
+
             assert.isFalse(_canTransfer[0]);
             assert.equal(_canTransfer[1], 0x50);
 
@@ -643,7 +647,7 @@ contract("SecurityToken", async (accounts) => {
         it("Should activate allow All Transfer", async () => {
             ID_snap = await takeSnapshot();
             await I_GeneralTransferManager.modifyTransferRequirementsMulti(
-                [0, 1, 2], 
+                [0, 1, 2],
                 [false, false, false],
                 [false, false, false],
                 [false, false, false],
@@ -710,7 +714,7 @@ contract("SecurityToken", async (accounts) => {
         it("Should activate allow All Whitelist Transfers", async () => {
             ID_snap = await takeSnapshot();
             await I_GeneralTransferManager.modifyTransferRequirementsMulti(
-                [0, 1, 2], 
+                [0, 1, 2],
                 [true, false, true],
                 [true, true, false],
                 [false, false, false],
@@ -778,7 +782,7 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(balance1.div(new BN(10).pow(new BN(18))).toNumber(), 500);
             let balance2 = await I_SecurityToken.balanceOf(account_affiliate2);
             assert.equal(balance2.div(new BN(10).pow(new BN(18))).toNumber(), 220);
-            
+
         });
 
         it("Should provide more permissions to the delegate", async () => {
@@ -942,7 +946,7 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should force burn the tokens - value too high", async () => {
             await I_GeneralTransferManager.modifyTransferRequirementsMulti(
-                [0, 1, 2], 
+                [0, 1, 2],
                 [true, false, false],
                 [true, true, false],
                 [true, false, false],
@@ -1471,7 +1475,7 @@ contract("SecurityToken", async (accounts) => {
         });
 
     });
-    
+
     describe(`Test cases for the ERC1643 contract\n`, async () => {
 
         describe(`Test cases for the setDocument() function of the ERC1643\n`, async() => {
@@ -1563,7 +1567,7 @@ contract("SecurityToken", async (accounts) => {
             });
 
             it("\tShould succssfully remove the document from the contract  which is present in the last index of the `_docsName` and check the params of the `DocumentRemoved` event\n", async() => {
-                // first add the new document 
+                // first add the new document
                 await I_SecurityToken.setDocument(web3.utils.utf8ToHex("doc3"), "https://www.bts.l", "0x0", {from: token_owner});
                 // as this will be last in the array so remove this
                 let tx = await I_SecurityToken.removeDocument(web3.utils.utf8ToHex("doc3"), {from: token_owner});

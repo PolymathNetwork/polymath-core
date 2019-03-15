@@ -14,7 +14,6 @@ import "../interfaces/token/IERC1644.sol";
 import "../interfaces/IModuleRegistry.sol";
 import "../interfaces/IFeatureRegistry.sol";
 import "../interfaces/ITransferManager.sol";
-import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
@@ -29,7 +28,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
  * @notice - ST does not inherit from ISecurityToken due to:
  * @notice - https://github.com/ethereum/solidity/issues/4847
  */
-contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, SecurityTokenStorage, IERC1594, IERC1643, IERC1644, Proxy {
+contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, SecurityTokenStorage, IERC1594, IERC1643, IERC1644, Proxy {
 
     using SafeMath for uint256;
 
@@ -67,6 +66,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     //Event emit when the global treasury wallet address get changed
     event TreasuryWalletChanged(address _oldTreasuryWallet, address _newTreasuryWallet);
     event DisableController();
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     /**
      * @notice constructor
@@ -86,8 +86,14 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     {
     }
 
+    /**
+     * @notice Initialization function
+     * @dev Expected to be called atomically with the proxy being created, by the owner of the token
+     * @dev Can only be called once
+     */
     function initialize() external {
-        require(!initialized, "already initialized");
+        //Expected to be called atomically with the proxy being created
+        require(!initialized, "Already initialized");
         securityTokenVersion = SemanticVersion(3, 0, 0);
         updateFromRegistry();
         initialized = true;
@@ -116,6 +122,14 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
 
     function _isValidTransfer(bool _isTransfer) internal pure {
         require(_isTransfer, "Transfer Invalid");
+    }
+
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        require(isOwner());
+        _;
     }
 
     // Require msg.sender to be the specified module type
@@ -783,5 +797,50 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         securityTokenRegistry = PolymathRegistry(polymathRegistry).getAddress("SecurityTokenRegistry");
         featureRegistry = PolymathRegistry(polymathRegistry).getAddress("FeatureRegistry");
         polyToken = PolymathRegistry(polymathRegistry).getAddress("PolyToken");
+    }
+
+    //Ownable Functions
+
+    /**
+     * @return the address of the owner.
+     */
+    function owner() public view returns (address) {
+        return _owner;
+    }
+
+    /**
+     * @return true if `msg.sender` is the owner of the contract.
+     */
+    function isOwner() public view returns (bool) {
+        return msg.sender == _owner;
+    }
+
+    /**
+     * @dev Allows the current owner to relinquish control of the contract.
+     * @notice Renouncing to ownership will leave the contract without an owner.
+     * It will not be possible to call the functions with the `onlyOwner`
+     * modifier anymore.
+     */
+    function renounceOwnership() public onlyOwner {
+        emit OwnershipTransferred(_owner, address(0));
+        _owner = address(0);
+    }
+
+    /**
+     * @dev Allows the current owner to transfer control of the contract to a newOwner.
+     * @param newOwner The address to transfer ownership to.
+     */
+    function transferOwnership(address newOwner) public onlyOwner {
+        _transferOwnership(newOwner);
+    }
+
+    /**
+     * @dev Transfers control of the contract to a newOwner.
+     * @param newOwner The address to transfer ownership to.
+     */
+    function _transferOwnership(address newOwner) internal {
+        require(newOwner != address(0));
+        emit OwnershipTransferred(_owner, newOwner);
+        _owner = newOwner;
     }
 }

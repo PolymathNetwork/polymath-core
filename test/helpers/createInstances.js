@@ -239,6 +239,7 @@ async function deployGTM(account_polymath) {
 async function deploySTFactory(account_polymath) {
     I_STGetter = await STGetter.new("", "", 0, {from: account_polymath});
     I_SecurityToken = await SecurityTokenLogic.new("", "", 0, {from: account_polymath});
+    console.log("STL - " + I_SecurityToken.address);
     let I_DataStoreLogic = await DataStoreLogic.new({ from: account_polymath });
     let I_DataStoreFactory = await DataStoreFactory.new(I_DataStoreLogic.address, { from: account_polymath });
     I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, I_DataStoreFactory.address, I_STGetter.address, "3.0.0", I_SecurityToken.address, { from: account_polymath });

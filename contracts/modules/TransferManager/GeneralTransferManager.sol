@@ -24,19 +24,19 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
     // Emit when there is change in the flag variable called signingAddress
     event ChangeSigningAddress(address _signingAddress);
     // Emit when investor details get modified related to their whitelisting
-    event ChangeDefaults(uint64 _defaultFromTime, uint64 _defaultToTime);
+    event ChangeDefaults(uint64 _defaultCanSendTokensAfter, uint64 _defaultCanReceiveTokensAfter);
 
-    // _fromTime is the time from which the _investor can send tokens
-    // _toTime is the time from which the _investor can receive tokens
-    // if allowAllWhitelistIssuances is TRUE, then _toTime is ignored when receiving tokens from the issuance address
-    // if allowAllWhitelistTransfers is TRUE, then _toTime and _fromTime is ignored when sending or receiving tokens
+    // _canSendTokensAfter is the time from which the _investor can send tokens
+    // _canReceiveTokensAfter is the time from which the _investor can receive tokens
+    // if allowAllWhitelistIssuances is TRUE, then _canReceiveTokensAfter is ignored when receiving tokens from the issuance address
+    // if allowAllWhitelistTransfers is TRUE, then _canReceiveTokensAfter and _canSendTokensAfter is ignored when sending or receiving tokens
     // in any case, any investor sending or receiving tokens, must have a _expiryTime in the future
     event ModifyWhitelist(
         address indexed _investor,
         uint256 _dateAdded,
         address indexed _addedBy,
-        uint256 _fromTime,
-        uint256 _toTime,
+        uint256 _canSendTokensAfter,
+        uint256 _canReceiveTokensAfter,
         uint256 _expiryTime,
         bool _canBuyFromSTO
     );
@@ -60,14 +60,17 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
     }
 
     /**
-     * @notice Used to change the default times used when fromTime / toTime are zero
-     * @param _defaultFromTime default for zero fromTime
-     * @param _defaultToTime default for zero toTime
+     * @notice Used to change the default times used when canSendTokensAfter / canReceiveTokensAfter are zero
+     * @param _defaultCanSendTokensAfter default for zero canSendTokensAfter
+     * @param _defaultCanReceiveTokensAfter default for zero canReceiveTokensAfter
      */
-    function changeDefaults(uint64 _defaultFromTime, uint64 _defaultToTime) public withPerm(FLAGS) {
-        defaults.fromTime = _defaultFromTime;
-        defaults.toTime = _defaultToTime;
-        emit ChangeDefaults(_defaultFromTime, _defaultToTime);
+    function changeDefaults(uint64 _defaultCanSendTokensAfter, uint64 _defaultCanReceiveTokensAfter) public withPerm(FLAGS) {
+        /* 0 values are also allowed as they represent that the Issuer
+           does not want a default value for these variables.
+           0 is also the default value of these variables */
+        defaults.canSendTokensAfter = _defaultCanSendTokensAfter;
+        defaults.canReceiveTokensAfter = _defaultCanReceiveTokensAfter;
+        emit ChangeDefaults(_defaultCanSendTokensAfter, _defaultCanReceiveTokensAfter);
     }
 
     /**
@@ -75,6 +78,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
      * @param _issuanceAddress new address for the issuance
      */
     function changeIssuanceAddress(address _issuanceAddress) public withPerm(FLAGS) {
+        // address(0x0) is also a valid value and in most cases, the address that issues tokens is 0x0.
         issuanceAddress = _issuanceAddress;
         emit ChangeIssuanceAddress(_issuanceAddress);
     }
@@ -84,6 +88,9 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
      * @param _signingAddress new address for the signing
      */
     function changeSigningAddress(address _signingAddress) public withPerm(FLAGS) {
+        /* address(0x0) is also a valid value as an Issuer might want to
+           give this permission to nobody (except their own address).
+           0x0 is also the default value */
         signingAddress = _signingAddress;
         emit ChangeSigningAddress(_signingAddress);
     }
@@ -156,7 +163,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
                 return (_onWhitelist(_to) && _onWhitelist(_from)) ? Result.VALID : Result.NA;
             }
 
-            (uint64 adjustedFromTime, uint64 adjustedToTime) = _adjustTimes(whitelist[_from].fromTime, whitelist[_to].toTime);
+            (uint64 adjustedCanSendTokensAfter, uint64 adjustedCanReceiveTokensAfter) = _adjustTimes(whitelist[_from].canSendTokensAfter, whitelist[_to].canReceiveTokensAfter);
             if (_from == issuanceAddress) {
                 // Possible STO transaction, but investor not allowed to purchased from STO
                 if ((whitelist[_to].canBuyFromSTO == 0) && _isSTOAttached()) {
@@ -166,14 +173,14 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
                 if (allowAllWhitelistIssuances) {
                     return _onWhitelist(_to) ? Result.VALID : Result.NA;
                 } else {
-                    return (_onWhitelist(_to) && (adjustedToTime <= uint64(now))) ? Result.VALID : Result.NA;
+                    return (_onWhitelist(_to) && (adjustedCanReceiveTokensAfter <= uint64(now))) ? Result.VALID : Result.NA;
                 }
             }
 
             //Anyone on the whitelist can transfer provided the blocknumber is large enough
             /*solium-disable-next-line security/no-block-members*/
-            return ((_onWhitelist(_from) && (adjustedFromTime <= uint64(now))) &&
-                (_onWhitelist(_to) && (adjustedToTime <= uint64(now)))) ? Result.VALID : Result.NA; /*solium-disable-line security/no-block-members*/
+            return ((_onWhitelist(_from) && (adjustedCanSendTokensAfter <= uint64(now))) &&
+                (_onWhitelist(_to) && (adjustedCanReceiveTokensAfter <= uint64(now)))) ? Result.VALID : Result.NA; /*solium-disable-line security/no-block-members*/
         }
         return Result.NA;
     }
@@ -181,36 +188,36 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
     /**
     * @notice Adds or removes addresses from the whitelist.
     * @param _investor is the address to whitelist
-    * @param _fromTime is the moment when the sale lockup period ends and the investor can freely sell his tokens
-    * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
+    * @param _canSendTokensAfter is the moment when the sale lockup period ends and the investor can freely sell his tokens
+    * @param _canReceiveTokensAfter is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
     * @param _expiryTime is the moment till investors KYC will be validated. After that investor need to do re-KYC
     * @param _canBuyFromSTO is used to know whether the investor is restricted investor or not.
     */
     function modifyWhitelist(
         address _investor,
-        uint256 _fromTime,
-        uint256 _toTime,
+        uint256 _canSendTokensAfter,
+        uint256 _canReceiveTokensAfter,
         uint256 _expiryTime,
         bool _canBuyFromSTO
     )
         public
         withPerm(WHITELIST)
     {
-        _modifyWhitelist(_investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
+        _modifyWhitelist(_investor, _canSendTokensAfter, _canReceiveTokensAfter, _expiryTime, _canBuyFromSTO);
     }
 
     /**
     * @notice Adds or removes addresses from the whitelist.
     * @param _investor is the address to whitelist
-    * @param _fromTime is the moment when the sale lockup period ends and the investor can freely sell his tokens
-    * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
+    * @param _canSendTokensAfter is the moment when the sale lockup period ends and the investor can freely sell his tokens
+    * @param _canReceiveTokensAfter is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
     * @param _expiryTime is the moment till investors KYC will be validated. After that investor need to do re-KYC
     * @param _canBuyFromSTO is used to know whether the investor is restricted investor or not.
     */
     function _modifyWhitelist(
         address _investor,
-        uint256 _fromTime,
-        uint256 _toTime,
+        uint256 _canSendTokensAfter,
+        uint256 _canReceiveTokensAfter,
         uint256 _expiryTime,
         bool _canBuyFromSTO
     )
@@ -224,39 +231,39 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
         if (whitelist[_investor].added == uint8(0)) {
             investors.push(_investor);
         }
-        whitelist[_investor] = TimeRestriction(uint64(_fromTime), uint64(_toTime), uint64(_expiryTime), canBuyFromSTO, uint8(1));
-        emit ModifyWhitelist(_investor, now, msg.sender, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
+        whitelist[_investor] = TimeRestriction(uint64(_canSendTokensAfter), uint64(_canReceiveTokensAfter), uint64(_expiryTime), canBuyFromSTO, uint8(1));
+        emit ModifyWhitelist(_investor, now, msg.sender, _canSendTokensAfter, _canReceiveTokensAfter, _expiryTime, _canBuyFromSTO);
     }
 
     /**
     * @notice Adds or removes addresses from the whitelist.
     * @param _investors List of the addresses to whitelist
-    * @param _fromTimes An array of the moment when the sale lockup period ends and the investor can freely sell his tokens
-    * @param _toTimes An array of the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
+    * @param _canSendTokensAfters An array of the moment when the sale lockup period ends and the investor can freely sell his tokens
+    * @param _canReceiveTokensAfters An array of the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
     * @param _expiryTimes An array of the moment till investors KYC will be validated. After that investor need to do re-KYC
     * @param _canBuyFromSTO An array of boolean values
     */
     function modifyWhitelistMulti(
         address[] _investors,
-        uint256[] _fromTimes,
-        uint256[] _toTimes,
+        uint256[] _canSendTokensAfters,
+        uint256[] _canReceiveTokensAfters,
         uint256[] _expiryTimes,
         bool[] _canBuyFromSTO
     ) public withPerm(WHITELIST) {
-        require(_investors.length == _fromTimes.length, "Mismatched input lengths");
-        require(_fromTimes.length == _toTimes.length, "Mismatched input lengths");
-        require(_toTimes.length == _expiryTimes.length, "Mismatched input lengths");
-        require(_canBuyFromSTO.length == _toTimes.length, "Mismatched input length");
+        require(_investors.length == _canSendTokensAfters.length, "Mismatched input lengths");
+        require(_canSendTokensAfters.length == _canReceiveTokensAfters.length, "Mismatched input lengths");
+        require(_canReceiveTokensAfters.length == _expiryTimes.length, "Mismatched input lengths");
+        require(_canBuyFromSTO.length == _canReceiveTokensAfters.length, "Mismatched input length");
         for (uint256 i = 0; i < _investors.length; i++) {
-            _modifyWhitelist(_investors[i], _fromTimes[i], _toTimes[i], _expiryTimes[i], _canBuyFromSTO[i]);
+            _modifyWhitelist(_investors[i], _canSendTokensAfters[i], _canReceiveTokensAfters[i], _expiryTimes[i], _canBuyFromSTO[i]);
         }
     }
 
     /**
     * @notice Adds or removes addresses from the whitelist - can be called by anyone with a valid signature
     * @param _investor is the address to whitelist
-    * @param _fromTime is the moment when the sale lockup period ends and the investor can freely sell his tokens
-    * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
+    * @param _canSendTokensAfter is the moment when the sale lockup period ends and the investor can freely sell his tokens
+    * @param _canReceiveTokensAfter is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
     * @param _expiryTime is the moment till investors KYC will be validated. After that investor need to do re-KYC
     * @param _canBuyFromSTO is used to know whether the investor is restricted investor or not.
     * @param _validFrom is the time that this signature is valid from
@@ -268,8 +275,8 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
     */
     function modifyWhitelistSigned(
         address _investor,
-        uint256 _fromTime,
-        uint256 _toTime,
+        uint256 _canSendTokensAfter,
+        uint256 _canReceiveTokensAfter,
         uint256 _expiryTime,
         bool _canBuyFromSTO,
         uint256 _validFrom,
@@ -286,10 +293,10 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
         require(!nonceMap[_investor][_nonce], "Already used signature");
         nonceMap[_investor][_nonce] = true;
         bytes32 hash = keccak256(
-            abi.encodePacked(this, _investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO, _validFrom, _validTo, _nonce)
+            abi.encodePacked(this, _investor, _canSendTokensAfter, _canReceiveTokensAfter, _expiryTime, _canBuyFromSTO, _validFrom, _validTo, _nonce)
         );
         _checkSig(hash, _v, _r, _s);
-        _modifyWhitelist(_investor, _fromTime, _toTime, _expiryTime, _canBuyFromSTO);
+        _modifyWhitelist(_investor, _canSendTokensAfter, _canReceiveTokensAfter, _expiryTime, _canBuyFromSTO);
     }
 
     /**
@@ -297,7 +304,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
      */
     function _checkSig(bytes32 _hash, uint8 _v, bytes32 _r, bytes32 _s) internal view {
         //Check that the signature is valid
-        //sig should be signing - _investor, _fromTime, _toTime & _expiryTime and be signed by the issuer address
+        //sig should be signing - _investor, _canSendTokensAfter, _canReceiveTokensAfter & _expiryTime and be signed by the issuer address
         address signer = ecrecover(keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", _hash)), _v, _r, _s);
         require(signer == Ownable(securityToken).owner() || signer == signingAddress, "Incorrect signer");
     }
@@ -322,16 +329,16 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
     /**
      * @notice Internal function to adjust times using default values
      */
-    function _adjustTimes(uint64 _fromTime, uint64 _toTime) internal view returns(uint64, uint64) {
-        uint64 adjustedFromTime = _fromTime;
-        uint64 adjustedToTime = _toTime;
-        if (_fromTime == 0) {
-            adjustedFromTime = defaults.fromTime;
+    function _adjustTimes(uint64 _canSendTokensAfter, uint64 _canReceiveTokensAfter) internal view returns(uint64, uint64) {
+        uint64 adjustedCanSendTokensAfter = _canSendTokensAfter;
+        uint64 adjustedCanReceiveTokensAfter = _canReceiveTokensAfter;
+        if (_canSendTokensAfter == 0) {
+            adjustedCanSendTokensAfter = defaults.canSendTokensAfter;
         }
-        if (_toTime == 0) {
-            adjustedToTime = defaults.toTime;
+        if (_canReceiveTokensAfter == 0) {
+            adjustedCanReceiveTokensAfter = defaults.canReceiveTokensAfter;
         }
-        return (adjustedFromTime, adjustedToTime);
+        return (adjustedCanSendTokensAfter, adjustedCanReceiveTokensAfter);
     }
 
     /**
@@ -345,9 +352,9 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
      * @dev Returns list of all investors data
      */
     function getAllInvestorsData() external view returns(address[], uint256[], uint256[], uint256[], bool[]) {
-        (uint256[] memory fromTimes, uint256[] memory toTimes, uint256[] memory expiryTimes, bool[] memory canBuyFromSTOs)
+        (uint256[] memory canSendTokensAfters, uint256[] memory canReceiveTokensAfters, uint256[] memory expiryTimes, bool[] memory canBuyFromSTOs)
           = _investorsData(investors);
-        return (investors, fromTimes, toTimes, expiryTimes, canBuyFromSTOs);
+        return (investors, canSendTokensAfters, canReceiveTokensAfters, expiryTimes, canBuyFromSTOs);
 
     }
 
@@ -359,13 +366,13 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
     }
 
     function _investorsData(address[] _investors) internal view returns(uint256[], uint256[], uint256[], bool[]) {
-        uint256[] memory fromTimes = new uint256[](_investors.length);
-        uint256[] memory toTimes = new uint256[](_investors.length);
+        uint256[] memory canSendTokensAfters = new uint256[](_investors.length);
+        uint256[] memory canReceiveTokensAfters = new uint256[](_investors.length);
         uint256[] memory expiryTimes = new uint256[](_investors.length);
         bool[] memory canBuyFromSTOs = new bool[](_investors.length);
         for (uint256 i = 0; i < _investors.length; i++) {
-            fromTimes[i] = whitelist[_investors[i]].fromTime;
-            toTimes[i] = whitelist[_investors[i]].toTime;
+            canSendTokensAfters[i] = whitelist[_investors[i]].canSendTokensAfter;
+            canReceiveTokensAfters[i] = whitelist[_investors[i]].canReceiveTokensAfter;
             expiryTimes[i] = whitelist[_investors[i]].expiryTime;
             if (whitelist[_investors[i]].canBuyFromSTO == 0) {
                 canBuyFromSTOs[i] = false;
@@ -373,7 +380,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
                 canBuyFromSTOs[i] = true;
             }
         }
-        return (fromTimes, toTimes, expiryTimes, canBuyFromSTOs);
+        return (canSendTokensAfters, canReceiveTokensAfters, expiryTimes, canBuyFromSTOs);
     }
 
     /**

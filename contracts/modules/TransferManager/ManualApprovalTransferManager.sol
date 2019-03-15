@@ -9,12 +9,6 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 contract ManualApprovalTransferManager is ITransferManager {
     using SafeMath for uint256;
 
-    //Address from which issuances come
-    address public issuanceAddress = address(0);
-
-    //Address which can sign whitelist changes
-    address public signingAddress = address(0);
-
     bytes32 public constant TRANSFER_APPROVAL = "TRANSFER_APPROVAL";
 
     //Manual approval is an allowance (that has been approved) with an expiry time
@@ -27,7 +21,10 @@ contract ManualApprovalTransferManager is ITransferManager {
     }
 
     mapping (address => mapping (address => uint256)) public approvalIndex;
-    // An array to track all approvals
+
+    // An array to track all approvals. It is an unbounded array but it's not a problem as
+    // it is never looped through in an onchain call. It is defined as an Array instead of mapping
+    // just to make it easier for users to fetch list of all approvals through constant functions.
     ManualApproval[] public approvals;
 
     event AddManualApproval(

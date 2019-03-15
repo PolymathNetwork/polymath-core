@@ -144,9 +144,9 @@ contract('LockUpTransferManager', accounts => {
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, token_owner, 0, { from: token_owner });
 
             // Verify the successful generation of the security token
-            assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
+            assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
-            I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+            I_SecurityToken = await SecurityToken.at(tx.logs[1].args._securityTokenAddress);
             stGetter = await STGetter.at(I_SecurityToken.address);
             assert.equal(await stGetter.getTreasuryWallet.call(), token_owner, "Incorrect wallet set");
             const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
@@ -177,9 +177,9 @@ contract('LockUpTransferManager', accounts => {
             let tx = await I_STRProxied.generateSecurityToken(name2, symbol2, tokenDetails, true, token_owner, 0, { from: token_owner });
 
             // Verify the successful generation of the security token
-            assert.equal(tx.logs[2].args._ticker, symbol2.toUpperCase(), "SecurityToken doesn't get deployed");
+            assert.equal(tx.logs[1].args._ticker, symbol2.toUpperCase(), "SecurityToken doesn't get deployed");
 
-            I_SecurityToken_div = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+            I_SecurityToken_div = await SecurityToken.at(tx.logs[1].args._securityTokenAddress);
             stGetter_div = await STGetter.at(I_SecurityToken_div.address);
             assert.equal(await stGetter_div.getTreasuryWallet.call(), token_owner, "Incorrect wallet set");
             const log = (await I_SecurityToken_div.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
@@ -959,7 +959,7 @@ contract('LockUpTransferManager', accounts => {
                 I_LockUpTransferManager.removeLockupType(web3.utils.fromAscii("l_lockup"), {from: token_owner})
             );
         })
-        
+
         it("Should get the data of all lockups", async() => {
             console.log(await I_LockUpTransferManager.getAllLockupData.call());
         });

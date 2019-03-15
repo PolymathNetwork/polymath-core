@@ -594,9 +594,9 @@ contract("SecurityTokenRegistry", async (accounts) => {
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, treasury_wallet, 0, { from: token_owner });
 
             // Verify the successful generation of the security token
-            assert.equal(tx.logs[2].args._ticker, symbol, "SecurityToken doesn't get deployed");
+            assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
 
-            I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+            I_SecurityToken = await SecurityToken.at(tx.logs[1].args._securityTokenAddress);
             stGetter = await STGetter.at(I_SecurityToken.address);
             assert.equal(await stGetter.getTreasuryWallet.call(), treasury_wallet, "Incorrect wallet set")
             const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
@@ -642,9 +642,9 @@ contract("SecurityTokenRegistry", async (accounts) => {
             let tx = await I_STRProxied.generateSecurityToken(name, "TMP", tokenDetails, false, account_temp, 0, { from: account_temp });
 
             // Verify the successful generation of the security token
-            assert.equal(tx.logs[2].args._ticker, "TMP", "SecurityToken doesn't get deployed");
+            assert.equal(tx.logs[1].args._ticker, "TMP", "SecurityToken doesn't get deployed");
 
-            let securityTokenTmp = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+            let securityTokenTmp = await SecurityToken.at(tx.logs[1].args._securityTokenAddress);
 
             let tokens = await I_Getter.getTokensByOwner.call(token_owner);
             assert.equal(tokens.length, 1, "tokens array length error");
@@ -712,9 +712,9 @@ contract("SecurityTokenRegistry", async (accounts) => {
             let tx = await I_STRProxied.generateSecurityToken(name2, symbol2, tokenDetails, false, token_owner, _pack(2,2,0), { from: token_owner });
             console.log(`Protocol version: ${_pack(2,2,0)}`);
             // Verify the successful generation of the security token
-            assert.equal(tx.logs[2].args._ticker, symbol2, "SecurityToken doesn't get deployed");
+            assert.equal(tx.logs[1].args._ticker, symbol2, "SecurityToken doesn't get deployed");
 
-            I_SecurityToken002 = await SecurityTokenMock.at(tx.logs[2].args._securityTokenAddress);
+            I_SecurityToken002 = await SecurityTokenMock.at(tx.logs[1].args._securityTokenAddress);
             let stGetterV2 = await STGetter.at(I_SecurityToken002.address);
             let stVersion = await stGetterV2.getVersion.call();
             console.log(stVersion);
@@ -1092,7 +1092,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
             let tx = await I_STRProxied.generateSecurityToken("Polymath", "POLY", tokenDetails, false, token_owner, 0, { from: token_owner });
 
             // Verify the successful generation of the security token
-            assert.equal(tx.logs[2].args._ticker, "POLY", "SecurityToken doesn't get deployed");
+            assert.equal(tx.logs[1].args._ticker, "POLY", "SecurityToken doesn't get deployed");
         });
     });
 

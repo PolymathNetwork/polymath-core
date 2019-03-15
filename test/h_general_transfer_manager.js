@@ -175,9 +175,9 @@ contract("GeneralTransferManager", async (accounts) => {
 
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, token_owner, 0, { from: token_owner });
             // Verify the successful generation of the security token
-            assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
+            assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
-            I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+            I_SecurityToken = await SecurityToken.at(tx.logs[1].args._securityTokenAddress);
             stGetter = await STGetter.at(I_SecurityToken.address);
             const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
@@ -388,7 +388,7 @@ contract("GeneralTransferManager", async (accounts) => {
         it("should not allow unauthorized people to change transfer requirements", async () => {
             await catchRevert(
                 I_GeneralTransferManager.modifyTransferRequirementsMulti(
-                    [0, 1, 2], 
+                    [0, 1, 2],
                     [true, false, true],
                     [true, true, false],
                     [false, false, false],
@@ -754,7 +754,7 @@ contract("GeneralTransferManager", async (accounts) => {
             assert.equal(new BN(kycData[2][1]).toNumber(), 1, "KYC data not modified correctly");
 
             let nonce = 5;
-            
+
             let newExpiryTime =  new BN(expiryTime).add(new BN(duration.days(200)));
             const sig = getMultiSignGTMData(
                 I_GeneralTransferManager.address,
@@ -769,8 +769,8 @@ contract("GeneralTransferManager", async (accounts) => {
             );
 
             await increaseTime(10000);
-            
-            
+
+
             await catchRevert(
                 I_GeneralTransferManager.modifyKYCDataSignedMulti(
                     [account_investor1, account_investor2],
@@ -787,7 +787,7 @@ contract("GeneralTransferManager", async (accounts) => {
                     }
                 )
             );
-            
+
             kycData = await I_GeneralTransferManager.getKYCData([account_investor1, account_investor2]);
 
             assert.equal(new BN(kycData[2][0]).toNumber(), 1, "KYC data modified incorrectly");
@@ -798,7 +798,7 @@ contract("GeneralTransferManager", async (accounts) => {
             let validFrom = await latestTime();
             let validTo = await latestTime() + duration.days(5);
             let nonce = 5;
-            
+
             let newExpiryTime =  new BN(expiryTime).add(new BN(duration.days(200)));
             const sig = getMultiSignGTMData(
                 I_GeneralTransferManager.address,
@@ -813,8 +813,8 @@ contract("GeneralTransferManager", async (accounts) => {
             );
 
             await increaseTime(10000);
-            
-            
+
+
             await catchRevert(
                 I_GeneralTransferManager.modifyKYCDataSignedMulti(
                     [account_investor1, account_investor2],
@@ -831,7 +831,7 @@ contract("GeneralTransferManager", async (accounts) => {
                     }
                 )
             );
-            
+
             let kycData = await I_GeneralTransferManager.getKYCData([account_investor1, account_investor2]);
 
             assert.equal(new BN(kycData[2][0]).toNumber(), 1, "KYC data modified incorrectly");
@@ -842,7 +842,7 @@ contract("GeneralTransferManager", async (accounts) => {
             let validFrom = await latestTime();
             let validTo = await latestTime() + duration.days(5);
             let nonce = 5;
-            
+
             let newExpiryTime =  new BN(expiryTime).add(new BN(duration.days(200)));
             const sig = getMultiSignGTMData(
                 I_GeneralTransferManager.address,
@@ -857,8 +857,8 @@ contract("GeneralTransferManager", async (accounts) => {
             );
 
             await increaseTime(10000);
-            
-            
+
+
             I_GeneralTransferManager.modifyKYCDataSignedMulti(
                 [account_investor1, account_investor2],
                 [fromTime, fromTime],
@@ -873,7 +873,7 @@ contract("GeneralTransferManager", async (accounts) => {
                     gas: 6000000
                 }
             );
-            
+
             let kycData = await I_GeneralTransferManager.getKYCData([account_investor1, account_investor2]);
 
             assert.equal(new BN(kycData[2][0]).toString(), newExpiryTime.toString(), "KYC data not modified correctly");
@@ -1051,7 +1051,7 @@ contract("GeneralTransferManager", async (accounts) => {
 
         it("should failed in trasfering the tokens", async () => {
             await I_GeneralTransferManager.modifyTransferRequirementsMulti(
-                [0, 1, 2], 
+                [0, 1, 2],
                 [true, false, true],
                 [true, true, false],
                 [false, false, false],

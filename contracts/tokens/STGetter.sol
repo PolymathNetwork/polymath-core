@@ -210,4 +210,26 @@ contract STGetter is OZStorage, SecurityTokenStorage {
         return _version;
     }
 
+    /**
+     * @notice Used to return the details of a document with a known name (`bytes32`).
+     * @param _name Name of the document
+     * @return string The URI associated with the document.
+     * @return bytes32 The hash (of the contents) of the document.
+     * @return uint256 the timestamp at which the document was last modified.
+     */
+    function getDocument(bytes32 _name) external view returns (string memory, bytes32, uint256) {
+        return (
+           _documents[_name].uri,
+           _documents[_name].docHash,
+           _documents[_name].lastModified
+        );
+    }
+
+    /**
+     * @notice Used to retrieve a full list of documents attached to the smart contract.
+     * @return bytes32 List of all documents names present in the contract.
+     */
+    function getAllDocuments() external view returns (bytes32[] memory) {
+        return _docNames;
+    }
 }

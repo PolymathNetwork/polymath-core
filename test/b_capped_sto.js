@@ -135,7 +135,7 @@ contract("CappedSTO", async (accounts) => {
             I_STFactory,
             I_SecurityTokenRegistry,
             I_SecurityTokenRegistryProxy,
-            I_STRProxied, 
+            I_STRProxied,
             I_STRGetter,
             I_STGetter
         ] = instances;
@@ -179,9 +179,9 @@ contract("CappedSTO", async (accounts) => {
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, treasury_wallet, 0, { from: token_owner });
 
             // Verify the successful generation of the security token
-            assert.equal(tx.logs[2].args._ticker, symbol, "SecurityToken doesn't get deployed");
+            assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
 
-            I_SecurityToken_ETH = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+            I_SecurityToken_ETH = await SecurityToken.at(tx.logs[1].args._securityTokenAddress);
             stGetter_eth = await STGetter.at(I_SecurityToken_ETH.address);
             assert.equal(await stGetter_eth.getTreasuryWallet.call(), treasury_wallet, "Incorrect wallet set")
             const log = (await I_SecurityToken_ETH.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
@@ -641,7 +641,7 @@ contract("CappedSTO", async (accounts) => {
                 I_SecurityToken_POLY = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
                 stGetter_poly = await STGetter.at(I_SecurityToken_POLY.address);
                 assert.equal(await stGetter_poly.getTreasuryWallet.call(), treasury_wallet, "Incorrect wallet set")
-                
+
                 const log = (await I_SecurityToken_POLY.getPastEvents('ModuleAdded', {filter: {from: blockNo}}))[0];
 
                 // Verify that GeneralTransferManager module get added successfully or not

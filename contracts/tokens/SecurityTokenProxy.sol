@@ -33,24 +33,18 @@ contract SecurityTokenProxy is OZStorage, SecurityTokenStorage, OwnedUpgradeabil
         address _implementation
     )
         public
+        OZStorage(_ERC20name, _ERC20symbol, _ERC20decimals)
     {
-        _configure(_ERC20name, _ERC20symbol, _ERC20decimals, _granularity, _tokenDetails, _polymathRegistry, _getterDelegate);
-        _upgradeToAndCall(_version, _implementation, _functor("initialize()"));
+        //_configure(_granularity, _tokenDetails, _polymathRegistry, _getterDelegate);
+        //_upgradeToAndCall(_version, _implementation, _functor("initialize()"));
     }
 
     function _configure(
-        string memory _ERC20name,
-        string memory _ERC20symbol,
-        uint8 _ERC20decimals,
         uint256 _granularity,
         string memory _tokenDetails,
         address _polymathRegistry,
         address _getterDelegate
     ) internal {
-        //ERC20Detailed Initialisation
-        _name = _ERC20name;
-        _symbol = _ERC20symbol;
-        _decimals = _ERC20decimals;
         //SecurityToken Initialisation
         require(_polymathRegistry != address(0), "Invalid Address");
         polymathRegistry = _polymathRegistry;

@@ -294,7 +294,7 @@ module.exports = function(deployer, network, accounts) {
         })
         .then(() => {
             // B) Deploy the SecurityTokenLogic Contract
-            return deployer.deploy(SecurityTokenLogic, { from: PolymathAccount });
+            return deployer.deploy(SecurityTokenLogic, "", "", 0, { from: PolymathAccount });
         })
         .then(() => {
             // B) Deploy the DataStoreFactory Contract
@@ -356,7 +356,7 @@ module.exports = function(deployer, network, accounts) {
         })
         .then(() => {
             // Deploy the STGetter contract (Logic contract that have the getters of the securityToken)
-            return deployer.deploy(STGetter, { from: PolymathAccount });
+            return deployer.deploy(STGetter, "", "", 0, { from: PolymathAccount });
         })
         .then(() => {
             // H) Deploy the STVersionProxy001 Contract which contains the logic of deployment of securityToken.

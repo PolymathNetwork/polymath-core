@@ -10,6 +10,7 @@ const CappedSTO = artifacts.require("./CappedSTO.sol");
 const SecurityTokenRegistryProxy = artifacts.require("./SecurityTokenRegistryProxy.sol");
 const SecurityTokenRegistry = artifacts.require("./SecurityTokenRegistry.sol");
 const SecurityTokenRegistryMock = artifacts.require("./SecurityTokenRegistryMock.sol");
+const SecurityTokenLogic = artifacts.require("./SecurityToken.sol");
 const ERC20DividendCheckpoint = artifacts.require("./ERC20DividendCheckpoint.sol");
 const EtherDividendCheckpoint = artifacts.require("./EtherDividendCheckpoint.sol");
 const ERC20DividendCheckpointFactory = artifacts.require("./ERC20DividendCheckpointFactory.sol");
@@ -236,10 +237,11 @@ async function deployGTM(account_polymath) {
 }
 
 async function deploySTFactory(account_polymath) {
-    I_STGetter = await STGetter.new({from: account_polymath});
+    I_STGetter = await STGetter.new("", "", 0, {from: account_polymath});
+    I_SecurityToken = await SecurityTokenLogic.new("", "", 0, {from: account_polymath});
     let I_DataStoreLogic = await DataStoreLogic.new({ from: account_polymath });
     let I_DataStoreFactory = await DataStoreFactory.new(I_DataStoreLogic.address, { from: account_polymath });
-    I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, I_DataStoreFactory.address, I_STGetter.address, { from: account_polymath });
+    I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, I_DataStoreFactory.address, I_STGetter.address, "3.0.0", I_SecurityToken.address, { from: account_polymath });
 
     assert.notEqual(I_STFactory.address.valueOf(), "0x0000000000000000000000000000000000000000", "STFactory contract was not deployed");
 

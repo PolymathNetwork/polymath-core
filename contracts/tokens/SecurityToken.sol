@@ -68,6 +68,24 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     event TreasuryWalletChanged(address _oldTreasuryWallet, address _newTreasuryWallet);
     event DisableController();
 
+    /**
+     * @notice constructor
+     * @dev Never called as contract is created through Proxy factory
+     * @dev Needed otherwise contract is considered abstract
+     * @param _name Name of the SecurityToken
+     * @param _symbol Symbol of the Token
+     * @param _decimals Decimals for the securityToken
+     */
+    constructor(
+        string memory _name,
+        string memory _symbol,
+        uint8 _decimals
+    )
+        public
+        ERC20Detailed(_name, _symbol, _decimals)
+    {
+    }
+
     function initialize() external {
         require(!initialized, "already initialized");
         securityTokenVersion = SemanticVersion(3, 0, 0);

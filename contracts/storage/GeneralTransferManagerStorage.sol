@@ -16,8 +16,10 @@ contract GeneralTransferManagerStorage {
 
     //from and to timestamps that an investor can send / receive tokens respectively
     struct TimeRestriction {
-        uint64 canSendTokensAfter;
-        uint64 canReceiveTokensAfter;
+        //the moment when the sale lockup period ends and the investor can freely sell or transfer away their tokens
+        uint64 canSendAfter;
+        //the moment when the purchase lockup period ends and the investor can freely purchase or receive from others
+        uint64 canReceiveAfter;
         uint64 expiryTime;
         uint8 canBuyFromSTO;
         uint8 added;
@@ -25,8 +27,8 @@ contract GeneralTransferManagerStorage {
 
     // Allows all TimeRestrictions to be offset
     struct Defaults {
-        uint64 canSendTokensAfter;
-        uint64 canReceiveTokensAfter;
+        uint64 canSendAfter;
+        uint64 canReceiveAfter;
     }
 
     // Offset to be applied to all timings (except KYC expiry)

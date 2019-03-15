@@ -231,6 +231,12 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, ITransferManag
         if (whitelist[_investor].added == uint8(0)) {
             investors.push(_investor);
         }
+        require(
+            uint64(_canSendAfter) == _canSendAfter &&
+            uint64(_canReceiveAfter) == _canReceiveAfter &&
+            uint64(_expiryTime) == _expiryTime,
+            "uint64 overflow"
+        );
         whitelist[_investor] = TimeRestriction(uint64(_canSendAfter), uint64(_canReceiveAfter), uint64(_expiryTime), canBuyFromSTO, uint8(1));
         emit ModifyWhitelist(_investor, now, msg.sender, _canSendAfter, _canReceiveAfter, _expiryTime, _canBuyFromSTO);
     }

@@ -459,7 +459,7 @@ contract("ManualApprovalTransferManager", accounts => {
                     latestTime() + duration.days(2),
                     web3.utils.toWei("5"),
                     "New Description",
-                    0,
+                    false,
                     { 
                         from: token_owner
                     }
@@ -493,9 +493,9 @@ contract("ManualApprovalTransferManager", accounts => {
                     account_investor1,
                     account_investor4,
                     expiryTimeMA,
-                    web3.utils.toWei("5"),
+                    0,
                     "New Description",
-                    45,
+                    true,
                     { 
                         from: token_owner
                     }
@@ -529,7 +529,7 @@ contract("ManualApprovalTransferManager", accounts => {
                 expiryTimeMA,
                 web3.utils.toWei("4"),
                 "New Description",
-                1,
+                true,
                 { 
                     from: token_owner
                 }
@@ -557,7 +557,7 @@ contract("ManualApprovalTransferManager", accounts => {
                 expiryTimeMA,
                 web3.utils.toWei("1"),
                 "New Description",
-                0,
+                false,
                 { 
                     from: token_owner
                 }
@@ -592,7 +592,7 @@ contract("ManualApprovalTransferManager", accounts => {
                     expiryTimeMA,
                     web3.utils.toWei("5"),
                     "New Description",
-                    0,
+                    false,
                     { 
                         from: token_owner
                     }

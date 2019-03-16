@@ -636,9 +636,9 @@ contract("CappedSTO", async (accounts) => {
                 let tx = await I_STRProxied.generateSecurityToken(P_name, P_symbol, P_tokenDetails, false, treasury_wallet, 0, { from: token_owner });
 
                 // Verify the successful generation of the security token
-                assert.equal(tx.logs[2].args._ticker, P_symbol, "SecurityToken doesn't get deployed");
+                assert.equal(tx.logs[1].args._ticker, P_symbol, "SecurityToken doesn't get deployed");
 
-                I_SecurityToken_POLY = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+                I_SecurityToken_POLY = await SecurityToken.at(tx.logs[1].args._securityTokenAddress);
                 stGetter_poly = await STGetter.at(I_SecurityToken_POLY.address);
                 assert.equal(await stGetter_poly.getTreasuryWallet.call(), treasury_wallet, "Incorrect wallet set")
 

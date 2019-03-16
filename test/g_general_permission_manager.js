@@ -332,9 +332,9 @@ contract("GeneralPermissionManager", async (accounts) => {
             let tx2 = await I_STRProxied.generateSecurityToken(name, "DEL", tokenDetails, false, token_owner, 0, { from: token_owner });
 
             // Verify the successful generation of the security token
-            assert.equal(tx2.logs[2].args._ticker, "DEL", "SecurityToken doesn't get deployed");
+            assert.equal(tx2.logs[1].args._ticker, "DEL", "SecurityToken doesn't get deployed");
 
-            let I_SecurityToken_DEL = await SecurityToken.at(tx2.logs[2].args._securityTokenAddress);
+            let I_SecurityToken_DEL = await SecurityToken.at(tx2.logs[1].args._securityTokenAddress);
 
             const tx = await I_SecurityToken_DEL.addModule(I_GeneralPermissionManagerFactory.address, "0x", 0, 0, { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), delegateManagerKey, "General Permission Manager doesn't get deployed");

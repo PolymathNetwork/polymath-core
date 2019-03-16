@@ -24,14 +24,23 @@ contract SecurityTokenMock is SecurityToken {
         string memory _name,
         string memory _symbol,
         uint8 _decimals,
-        uint256 /* _granularity */,
-        string memory /* _tokenDetails */,
-        address /* _polymathRegistry */,
-        address /* _delegate */
+        uint256 _granularity,
+        string memory _tokenDetails,
+        address _polymathRegistry,
+        address _delegate
     )
         public
         SecurityToken(_name, _symbol, _decimals)
     {
+        _zeroAddressCheck(_polymathRegistry);
+        _zeroAddressCheck(_delegate);
+        _owner = msg.sender;
+        polymathRegistry = _polymathRegistry;
+        //When it is created, the owner is the STR
+        updateFromRegistry();
+        getterDelegate = _delegate;
+        tokenDetails = _tokenDetails;
+        granularity = _granularity;
         securityTokenVersion = SemanticVersion(2, 2, 0);
     }
 

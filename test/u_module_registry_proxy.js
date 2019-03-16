@@ -139,6 +139,13 @@ contract("ModuleRegistryProxy", async (accounts) => {
                 { from: account_polymath }
             );
 
+            let I_SecurityTokenLogic = await SecurityToken.new(
+                "",
+                "",
+                0,
+                { from: account_polymath }
+            );
+
             I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(new BN(0), new BN(0), I_GeneralTransferManagerLogic.address, I_PolymathRegistry.address, {
                 from: account_polymath
             });
@@ -156,10 +163,10 @@ contract("ModuleRegistryProxy", async (accounts) => {
             await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
 
             // Step 3: Deploy the STFactory contract
-            I_STGetter = await STGetter.new();
+            I_STGetter = await STGetter.new("", "", 0);
             let I_DataStoreLogic = await DataStoreLogic.new({ from: account_polymath });
             let I_DataStoreFactory = await DataStoreFactory.new(I_DataStoreLogic.address, { from: account_polymath });
-            I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, I_DataStoreFactory.address, I_STGetter.address, { from: account_polymath });
+            I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, I_DataStoreFactory.address, I_STGetter.address, "3.0.0", I_SecurityTokenLogic.address, { from: account_polymath });
 
             assert.notEqual(I_STFactory.address.valueOf(), address_zero, "STFactory contract was not deployed");
         });

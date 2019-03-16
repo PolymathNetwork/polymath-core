@@ -1399,6 +1399,37 @@ contract("POLYPeggedSTO", async (accounts) => {
             }));
             await revertToSnapshot(snapId);
         });
+
+        it("should fail when POLY to USD rate set by contract does not return the minimum specified number of tokens", async () => {
+            let stoId = 0;
+            let snapId = await takeSnapshot();
+
+            let investment_POLY = new BN(1000).mul(e18);
+            const minTokens = new BN(1000).mul(e18);
+
+            await I_PolyToken.getTokens(investment_POLY, ACCREDITED1);
+            await I_PolyToken.approve(I_POLYPeggedSTO_Array[stoId].address, investment_POLY, { from: ACCREDITED1 });
+
+            // Whitelist
+            let fromTime = await latestTime();
+            let toTime = await latestTime() + duration.days(15);
+            let expiryTime = toTime + duration.days(200);
+            await I_GeneralTransferManager.modifyKYCData(ACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
+            // Set as accredited
+            await I_GeneralTransferManager.modifyInvestorFlag(ACCREDITED1, 0, true, { from: ISSUER }); //set as Accredited
+            // Advance time to after STO start
+            await increaseTime(duration.days(3));
+            assert.equal(await I_POLYPeggedSTO_Array[stoId].isOpen(), true, "STO is not Open");
+
+            // Buy With POLY
+            await catchRevert(
+                I_POLYPeggedSTO_Array[stoId].buyWithPOLYRateLimited(ACCREDITED1, investment_POLY, minTokens, {
+                from: ACCREDITED1,
+                gasPrice: GAS_PRICE
+                })
+            );
+            await revertToSnapshot(snapId);
+        });
     });
 
     describe("Prep STO", async () => {
@@ -1447,20 +1478,27 @@ contract("POLYPeggedSTO", async (accounts) => {
             let rate = await I_POLYPeggedSTO_Array[stoId].rate.call();
             let investment_USD = investment_POLY.mul(await I_POLYOracle.getPrice.call()).div(e18);
             let expectedTokens = investment_USD.mul(rate).div(e18);
+
             await I_PolyToken.getTokens(investment_POLY, NONACCREDITED1);
             await I_PolyToken.approve(I_POLYPeggedSTO_Array[stoId].address, investment_POLY, { from: NONACCREDITED1 });
 
-/*            // Verify the prePurchaseCheck function
-            let prePurchaseCheck = await I_POLYPeggedSTO_Array[stoId].prePurchaseChecks(NONACCREDITED1, investment_POLY);
-            console.log(prePurchaseCheck);
-            let calculatedTokens = prePurchaseCheck.tokens;
-            let calculatedSpentValue = prePurchaseCheck.spentValue;
-            console.log("calculated tokens " + calculatedTokens);
-            console.log("expected tokens " + expectedTokens);
+            // Use call to verify test transaction before sending
+            let purchaseCheck = await I_POLYPeggedSTO_Array[stoId].buyWithPOLY.call(NONACCREDITED1, investment_POLY, {from: NONACCREDITED1});
+            let spentUSD = purchaseCheck[0];
+            let spentValue = purchaseCheck[1];
+            let tokens = purchaseCheck[2];
 
-            assert.equal(calculatedTokens.toString(), expectedTokens.toString(), "Token amounts don't match");
-            assert.equal(calculatedSpentValue, investment_POLY.toString(), "Spent amounts don't match");
-*/
+            assert.equal(spentUSD, investment_USD.toString(), "Spent USD amounts don't match");
+            assert.equal(spentValue, investment_POLY.toString(), "Spent POLY amounts don't match");
+            assert.equal(tokens.toString(), expectedTokens.toString(), "Token amounts don't match");
+
+            let polyUsdRate = await I_POLYPeggedSTO_Array[stoId].getPolyUsdRate.call();
+
+            console.log("        Poly to USD rate " + web3.utils.fromWei(polyUsdRate));
+            console.log("        Spent USD " + web3.utils.fromWei(spentUSD) + " USD");
+            console.log("        Spent Value " + web3.utils.fromWei(spentValue) + " POLY");
+            console.log("        Tokens " + web3.utils.fromWei(tokens));
+
             // Additional checks on getters
             let init_TokenSupply = await I_SecurityToken.totalSupply();
             let init_InvestorTokenBal = await I_SecurityToken.balanceOf(NONACCREDITED1);
@@ -1483,11 +1521,12 @@ contract("POLYPeggedSTO", async (accounts) => {
             assert.equal(await I_POLYPeggedSTO_Array[stoId].investorInvestedPOLY(NONACCREDITED1), 0, "Investor has already invested");
             assert.equal(await I_POLYPeggedSTO_Array[stoId].investorInvestedUSD(NONACCREDITED1), 0, "Investor has already invested");
 
-            // Buy With POLY
+            // Buy with POLY
             let tx1 = await I_POLYPeggedSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, {
                 from: NONACCREDITED1,
                 gasPrice: GAS_PRICE
             });
+
             let gasCost2 = new BN(GAS_PRICE).mul(new BN(tx1.receipt.gasUsed));
             console.log("          Gas buyWithPOLY: ".grey + new BN(tx1.receipt.gasUsed).toString().grey);
 
@@ -1583,16 +1622,20 @@ contract("POLYPeggedSTO", async (accounts) => {
             let rate = await I_POLYPeggedSTO_Array[stoId].rate.call();
             let investment_USD = investment_POLY.mul(await I_POLYOracle.getPrice.call()).div(e18);
             let expectedTokens = investment_USD.mul(rate).div(e18);
+
             await I_PolyToken.getTokens(investment_POLY, ACCREDITED1);
             await I_PolyToken.approve(I_POLYPeggedSTO_Array[stoId].address, investment_POLY, { from: ACCREDITED1 });
 
-/*            // Verify the prePurchaseCheck function
-            let prePurchaseCheck = await I_POLYPeggedSTO_Array[stoId].prePurchaseChecks(ACCREDITED1, investment_POLY);
-            let calculatedTokens = prePurchaseCheck.tokens;
-            let calculatedSpentValue = prePurchaseCheck.spentValue;
-            assert.equal(calculatedTokens.toString(), expectedTokens.toString(), "Token amounts don't match");
-            assert.equal(calculatedSpentValue, investment_POLY.toString(), "Spent amounts don't match");
-*/
+            // Use call to verify test transaction before sending
+            let purchaseCheck = await I_POLYPeggedSTO_Array[stoId].buyWithPOLY.call(ACCREDITED1, investment_POLY, {from: ACCREDITED1});
+            let spentUSD = purchaseCheck[0];
+            let spentValue = purchaseCheck[1];
+            let tokens = purchaseCheck[2];
+
+            assert.equal(spentUSD, investment_USD.toString(), "Spent USD amounts don't match");
+            assert.equal(spentValue, investment_POLY.toString(), "Spent POLY amounts don't match");
+            assert.equal(tokens.toString(), expectedTokens.toString(), "Token amounts don't match");
+
             // Additional checks on getters
             let init_TokenSupply = await I_SecurityToken.totalSupply();
             let init_InvestorTokenBal = await I_SecurityToken.balanceOf(ACCREDITED1);
@@ -1748,22 +1791,25 @@ contract("POLYPeggedSTO", async (accounts) => {
             let investment_POLY = investment_USD.mul(e18).div(await I_POLYOracle.getPrice.call()); // Calculate investment amount in POLY
             let expectedTokens = (investment_USD.sub(surplus_USD)).mul(rate).div(e18); // Number of tokens that should with the limit applied
 
-/*            // Verify the prePurchaseCheck function
-            let prePurchaseCheck = await I_POLYPeggedSTO_Array[stoId].prePurchaseChecks(NONACCREDITED1, investment_POLY);
-            let calculatedTokens = prePurchaseCheck.tokens;
-            let calculatedSpentValue = prePurchaseCheck.spentValue;
-            assert.equal(calculatedTokens.toString(), expectedTokens.toString(), "Token amounts don't match");
-            assert.equal(calculatedSpentValue, investment_POLY.sub(surplus_POLY).toString(), "Spent amounts don't match");
-*/
+            await I_PolyToken.getTokens(investment_POLY, NONACCREDITED1);
+            await I_PolyToken.approve(I_POLYPeggedSTO_Array[stoId].address, investment_POLY, { from: NONACCREDITED1 });
+
+            // Use call to verify test transaction before sending
+            let purchaseCheck = await I_POLYPeggedSTO_Array[stoId].buyWithPOLY.call(NONACCREDITED1, investment_POLY, {from: NONACCREDITED1});
+            let spentUSD = purchaseCheck[0];
+            let spentValue = purchaseCheck[1];
+            let tokens = purchaseCheck[2];
+
+            assert.equal(spentUSD, investment_USD.sub(surplus_USD).toString(), "Spent USD amounts don't match");
+            assert.equal(spentValue, investment_POLY.sub(surplus_POLY).toString(), "Spent POLY amounts don't match");
+            assert.equal(tokens.toString(), expectedTokens.toString(), "Token amounts don't match");
+
             console.log("          investedUSD: ".grey + investedUSD.toString().grey + " POLY - USD".grey);
             console.log("          investorLimit: ".grey + investorLimit.toString().grey + " USD".grey);
             console.log("          Investment: ".grey + investment_POLY.toString().grey + " POLY".grey);
             console.log("          Investment Value: ".grey + investment_USD.toString().grey + " USD".grey);
             console.log("          Expected surplus in POLY: ".grey + surplus_POLY.toString().grey + " POLY".grey);
             console.log("          Expected surplus in USD: ".grey + surplus_USD.toString().grey + " USD".grey);
-
-            await I_PolyToken.getTokens(investment_POLY, NONACCREDITED1);
-            await I_PolyToken.approve(I_POLYPeggedSTO_Array[stoId].address, investment_POLY, { from: NONACCREDITED1 });
 
             // Additional checks on getters
             let init_TokenSupply = await I_SecurityToken.totalSupply();
@@ -1913,15 +1959,18 @@ contract("POLYPeggedSTO", async (accounts) => {
             console.log("          Investment: ".grey + investment_POLY.toString().grey + " POLY".grey);
             console.log("          Expected surplus: ".grey + surplus_POLY.toString().grey + " POLY".grey);
 
-/*            // Verify the prePurchaseCheck function
-            let prePurchaseCheck = await I_POLYPeggedSTO_Array[stoId].prePurchaseChecks(ACCREDITED1, investment_POLY);
-            let calculatedTokens = prePurchaseCheck.tokens;
-            let calculatedSpentValue = prePurchaseCheck.spentValue;
-            assert.equal(calculatedTokens.toString(), expectedTokens.toString(), "Token amounts don't match");
-            assert.equal(calculatedSpentValue, investment_POLY.sub(surplus_POLY).toString(), "Spent amounts don't match");
-*/
             await I_PolyToken.getTokens(investment_POLY, ACCREDITED1);
             await I_PolyToken.approve(I_POLYPeggedSTO_Array[stoId].address, investment_POLY, { from: ACCREDITED1 });
+
+            // Use call to verify test transaction before sending
+            let purchaseCheck = await I_POLYPeggedSTO_Array[stoId].buyWithPOLY.call(ACCREDITED1, investment_POLY, {from: ACCREDITED1});
+            let spentUSD = purchaseCheck[0];
+            let spentValue = purchaseCheck[1];
+            let tokens = purchaseCheck[2];
+
+            assert.equal(spentUSD, investment_USD.sub(surplus_USD).toString(), "Spent USD amounts don't match");
+            assert.equal(spentValue, investment_POLY.sub(surplus_POLY).toString(), "Spent POLY amounts don't match");
+            assert.equal(tokens.toString(), expectedTokens.toString(), "Token amounts don't match");
 
             // Additional checks on getters
             let init_TokenSupply = await I_SecurityToken.totalSupply();
@@ -2157,15 +2206,18 @@ contract("POLYPeggedSTO", async (accounts) => {
             let investment_POLY = investment_USD.mul(e18).div(await I_POLYOracle.getPrice.call()); // Calculate investment amount in POLY
             let expectedTokens = remainingTokens; // Number of tokens that should with the limit applied
 
-/*            // Verify the prePurchaseCheck function when called directly
-            let prePurchaseCheck = await I_POLYPeggedSTO_Array[stoId].prePurchaseChecks(ACCREDITED1, investment_POLY);
-            let calculatedTokens = prePurchaseCheck.tokens;
-            let calculatedSpentValue = prePurchaseCheck.spentValue;
-            assert.equal(calculatedTokens.toString(), expectedTokens.toString(), "Token amounts don't match");
-            assert.equal(calculatedSpentValue, investment_POLY.sub(surplus_POLY).toString(), "Spent amounts don't match");
-*/
             await I_PolyToken.getTokens(investment_POLY, ACCREDITED1);
             await I_PolyToken.approve(I_POLYPeggedSTO_Array[stoId].address, investment_POLY, { from: ACCREDITED1 });
+
+            // Use call to verify test transaction before sending
+            let purchaseCheck = await I_POLYPeggedSTO_Array[stoId].buyWithPOLY.call(ACCREDITED1, investment_POLY, {from: ACCREDITED1});
+            let spentUSD = purchaseCheck[0];
+            let spentValue = purchaseCheck[1];
+            let tokens = purchaseCheck[2];
+
+            assert.equal(spentUSD, investment_USD.sub(surplus_USD).toString(), "Spent USD amounts don't match");
+            assert.equal(spentValue, investment_POLY.sub(surplus_POLY).toString(), "Spent POLY amounts don't match");
+            assert.equal(tokens.toString(), expectedTokens.toString(), "Token amounts don't match");
 
             console.log("          Investment: ".grey + investment_POLY.toString().grey + " POLY".grey);
             console.log("          Expected surplus in POLY: ".grey + surplus_POLY.toString().grey + " POLY".grey);

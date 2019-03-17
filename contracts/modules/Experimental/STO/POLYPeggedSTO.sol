@@ -401,12 +401,17 @@ contract POLYPeggedSTO is POLYPeggedSTOStorage, STO, ReentrancyGuard {
         // Get the number of tokens to be minted and value in USD and POLY
         tokens = _getTokenAmount(allowedInvestment);
         require(tokens >= _minTokens, "Insufficient tokens minted");
-        spentUSD = DecimalMath.div(tokens, rate);
-        spentValue = DecimalMath.div(spentUSD, polyUsdRate);
 
+        spentUSD = DecimalMath.div(tokens, rate);
         // In case of rounding issues, ensure that spentUSD is never more than investmentValueUSD
         if (spentUSD > investmentValueUSD) {
             spentUSD = investmentValueUSD;
+            }
+
+        spentValue = DecimalMath.div(spentUSD, polyUsdRate);
+        // In case of rounding issues, ensure that spentValue is never more than _investedTokens
+        if (spentValue > _investedTokens) {
+            spentValue = _investedTokens;
             }
         }
 

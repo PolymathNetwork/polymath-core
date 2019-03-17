@@ -79,7 +79,7 @@ contract POLYPeggedSTO is POLYPeggedSTOStorage, STO, ReentrancyGuard {
      * @param _cap Maximum No. of token base units for sale
      * @param _rate Token units a buyer gets multiplied by 10^18 per USD value of POLY
      * @param _minimumInvestment Minimun investment in USD (* 10**18)
-     * @param _nonAccreditedLimit Limit in USD (* 10**18) for non-accredited investors
+     * @param _nonAccreditedLimit Default Limit in USD (* 10**18) for non-accredited investors
      * @param _maxNonAccreditedInvestors Maximum number of non-accredited investors allowed (0 = unlimited)
      * @param _wallet Ethereum account address to hold the funds
      * @param _treasuryWallet Ethereum account where unsold Tokens will be sent
@@ -123,7 +123,7 @@ contract POLYPeggedSTO is POLYPeggedSTOStorage, STO, ReentrancyGuard {
     }
 
     /**
-     * @dev Modifies fund raise rate per token
+     * @dev Modifies USD rate per token
      * @param _rate How many token units a buyer gets per USD multiplied by 10^18
      */
     function modifyRate(uint256 _rate) external notStarted {
@@ -163,6 +163,7 @@ contract POLYPeggedSTO is POLYPeggedSTOStorage, STO, ReentrancyGuard {
     /**
      * @notice Use to change the treasury wallet
      * @param _treasuryWallet Ethereum account address to receive unsold tokens
+     * @notice Set to address zero to use dataStore treasuryWallet
      */
     function modifyTreasuryWallet(address _treasuryWallet) external {
         //can be modified even when STO started
@@ -274,6 +275,9 @@ contract POLYPeggedSTO is POLYPeggedSTOStorage, STO, ReentrancyGuard {
       * @notice Purchase tokens using POLY
       * @param _beneficiary Address where security tokens will be sent
       * @param _investedPOLY Amount of POLY invested
+      * @return spentUSD USD value of the POLY spent to buy the number of tokens
+      * @return spentValue Number of POLY that will be spent to buy the number of tokens
+      * @return tokens Number of tokens the _beneficiary will recieve
       */
     function buyWithPOLY(address _beneficiary, uint256 _investedPOLY) external returns (uint256, uint256, uint256) {
         return buyWithPOLYRateLimited(_beneficiary, _investedPOLY, 0);
@@ -284,14 +288,28 @@ contract POLYPeggedSTO is POLYPeggedSTOStorage, STO, ReentrancyGuard {
       * @param _beneficiary Address where security tokens will be sent
       * @param _investedPOLY Amount of POLY invested
       * @param _minTokens Minumum number of tokens to buy or else revert
+      * @return spentUSD USD value of the POLY spent to buy the number of tokens
+      * @return spentValue Number of POLY that will be spent to buy the number of tokens
+      * @return tokens Number of tokens the _beneficiary will recieve
       */
     function buyWithPOLYRateLimited(address _beneficiary, uint256 _investedPOLY, uint256 _minTokens) public returns (uint256, uint256, uint256) {
         return _buyWithTokens(_beneficiary, _investedPOLY, FundRaiseType.POLY, _minTokens, polyToken);
     }
 
+    /**
+      * @notice Function to buy using an ERC20 token (POLY)
+      * @param _beneficiary Address where security tokens will be sent
+      * @param _investedTokens Amount of token invested
+      * @param _fundRaiseType Fund raise type (POLY)
+      * @param _minTokens Minumum number of tokens to buy or else revert
+      * @param _token Token used for investment i.e. POLY
+      * @return spentUSD USD value of the POLY spent to buy the number of tokens
+      * @return spentValue Number of POLY that will be spent to buy the number of tokens
+      * @return tokens Number of tokens the _beneficiary will recieve
+      */
     function _buyWithTokens(
         address _beneficiary,
-        uint256 _tokenAmount,
+        uint256 _investedTokens,
         FundRaiseType _fundRaiseType,
         uint256 _minTokens,
         IERC20 _token
@@ -303,23 +321,26 @@ contract POLYPeggedSTO is POLYPeggedSTOStorage, STO, ReentrancyGuard {
             require(_beneficiary == msg.sender, "Beneficiary != msg.sender");
         }
         require(_canBuy(_beneficiary), "Unauthorized");
-        (uint256 spentUSD, uint256 spentValue, uint256 tokens)  = _buyTokens(_beneficiary, _tokenAmount, _fundRaiseType, _minTokens);
+        (uint256 spentUSD, uint256 spentValue, uint256 tokens)  = _buyTokens(_beneficiary, _investedTokens, _fundRaiseType, _minTokens);
         // Forward coins to issuer wallet
         require(_token.transferFrom(msg.sender, wallet, spentValue), "Transfer failed");
-        emit FundsReceived(msg.sender, _beneficiary, _fundRaiseType, _tokenAmount, spentValue);
+        emit FundsReceived(msg.sender, _beneficiary, _fundRaiseType, _investedTokens, spentValue);
         return (spentUSD, spentValue, tokens);
     }
 
     /**
       * @notice Low level token purchase
       * @param _beneficiary Address where security tokens will be sent
-      * @param _investmentValue Amount of POLY invested
+      * @param _investedTokens Amount of POLY tokens invested
       * @param _fundRaiseType Fund raise type (POLY)
       * @param _minTokens Minumum number of tokens to buy or else revert
+      * @return spentUSD USD value of the POLY spent to buy the number of tokens
+      * @return spentValue Number of POLY that will be spent to buy the number of tokens
+      * @return tokens Number of tokens the _beneficiary will recieve
       */
     function _buyTokens(
         address _beneficiary,
-        uint256 _investmentValue,
+        uint256 _investedTokens,
         FundRaiseType _fundRaiseType,
         uint256 _minTokens
     )
@@ -329,7 +350,7 @@ contract POLYPeggedSTO is POLYPeggedSTOStorage, STO, ReentrancyGuard {
         returns(uint256 spentUSD, uint256 spentValue, uint256 tokens)
     {
         bool accredited;
-        (tokens, spentValue, spentUSD, accredited) = prePurchaseChecks (_beneficiary, _investmentValue, _minTokens);
+        (tokens, spentValue, spentUSD, accredited) = _prePurchaseChecks (_beneficiary, _investedTokens, _minTokens);
         _processPurchase(_beneficiary, tokens, accredited);
         emit TokenPurchase(msg.sender, _beneficiary, spentValue, spentUSD, tokens);
         // Modify storage
@@ -344,13 +365,13 @@ contract POLYPeggedSTO is POLYPeggedSTOStorage, STO, ReentrancyGuard {
       * @notice Checks restrictions related to the token purchase and calculates number of tokens
       * @notice and calculates the number of tokens and spent value based on those restrictions
       * @param _beneficiary Address where security tokens will be sent
-      * @param _investmentValue Amount of POLY invested
+      * @param _investedTokens Amount of POLY invested
       * @param _minTokens Minumum number of tokens to buy or else revert
       * @return tokens Number of tokens the _beneficiary will recieve
       * @return spentValue Number of POLY that will be spent to buy the number of tokens
       * @return spentUSD USD value of the POLY spent to buy the number of tokens
       */
-    function prePurchaseChecks(address _beneficiary, uint256 _investmentValue, uint256 _minTokens) internal returns(
+    function _prePurchaseChecks(address _beneficiary, uint256 _investedTokens, uint256 _minTokens) internal returns(
         uint256 tokens,
         uint256 spentValue,
         uint256 spentUSD,
@@ -358,10 +379,10 @@ contract POLYPeggedSTO is POLYPeggedSTOStorage, STO, ReentrancyGuard {
     ) {
         //Pre-Purchase checks
         require(isOpen(), "STO not open");
-        require(_investmentValue > 0, "No funds sent");
+        require(_investedTokens > 0, "No funds sent");
         require(_beneficiary != address(0), "Beneficiary is 0x0");
         uint256 polyUsdRate = getPolyUsdRate();
-        uint256 investmentValueUSD = DecimalMath.mul(_investmentValue, polyUsdRate);
+        uint256 investmentValueUSD = DecimalMath.mul(_investedTokens, polyUsdRate);
         require(investmentValueUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestment, "Less than minimum investment");
         accredited = _isAccredited(_beneficiary);
         // Accredited investors are not limited
@@ -380,9 +401,14 @@ contract POLYPeggedSTO is POLYPeggedSTOStorage, STO, ReentrancyGuard {
         // Get the number of tokens to be minted and value in USD and POLY
         tokens = _getTokenAmount(allowedInvestment);
         require(tokens >= _minTokens, "Insufficient tokens minted");
-        spentUSD = (tokens.mul(uint256(10) ** 18)).div(rate);
-        spentValue = (spentUSD.mul(uint256(10) ** 18)).div(polyUsdRate);
-    }
+        spentUSD = DecimalMath.div(tokens, rate);
+        spentValue = DecimalMath.div(spentUSD, polyUsdRate);
+
+        // In case of rounding issues, ensure that spentUSD is never more than investmentValueUSD
+        if (spentUSD > investmentValueUSD) {
+            spentUSD = investmentValueUSD;
+            }
+        }
 
     /**
      * @dev returns current POLY to USD conversion rate of funds
@@ -399,8 +425,7 @@ contract POLYPeggedSTO is POLYPeggedSTOStorage, STO, ReentrancyGuard {
     * @return tokens Number of tokens that can be purchased with the specified _investedAmount
     */
     function _getTokenAmount(uint256 _investedAmount) internal view returns (uint256 tokens) {
-        tokens = _investedAmount.mul(rate);
-        tokens = tokens.div(uint256(10) ** 18);
+        tokens = DecimalMath.mul(_investedAmount, rate);
         if (totalTokensSold.add(tokens) > cap) {
             tokens = cap.sub(totalTokensSold);
         }
@@ -505,18 +530,18 @@ contract POLYPeggedSTO is POLYPeggedSTOStorage, STO, ReentrancyGuard {
      * @return startTime - Unixtimestamp at which offering gets start.
      * @return endTime - Unixtimestamp at which offering ends.
      * @return cap - Number of token base units this STO will be allowed to sell to investors.
-     * @return rate - Token units a buyer gets(multiplied by 10^18) base unit of POLY
-     * @return minimumInvestment - minimum investment in POLY
-     * @return nonAccreditedLimit - default non accredited investor limit
+     * @return rate - Token units a buyer gets(multiplied by 10^18) for USD value of invested POLY
+     * @return minimumInvestment - minimum investment in USD
+     * @return nonAccreditedLimit - default non accredited investor limit in USD
      * @return maxNonAccreditedInvestors - maximum number of non-accredited investors that can invest in the offering
      * @return totalTokensSold - Amount of tokens get sold.
-     * @return _raised - Amount of funds raised in POLY
+     * @return fundsRaisedPOLY - Amount of funds raised in POLY
      * @return fundsRaisedUSD - Amount of funds raised converted to USD at time of investment
      * @return investorCount - Number of individual investors this STO have.
      * @return nonAccreditedCount - Number of non-accredited investor that have invested in the offering
      */
     function getSTODetails() external view returns(uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256, uint256) {
-        uint256 raised = fundsRaised[uint8(FundRaiseType.POLY)];
+        uint256 fundsRaisedPOLY = fundsRaised[uint8(FundRaiseType.POLY)];
         return (
             startTime,
             endTime,
@@ -526,7 +551,7 @@ contract POLYPeggedSTO is POLYPeggedSTOStorage, STO, ReentrancyGuard {
             nonAccreditedLimit,
             maxNonAccreditedInvestors,
             totalTokensSold,
-            raised,
+            fundsRaisedPOLY,
             fundsRaisedUSD,
             investorCount,
             nonAccreditedCount

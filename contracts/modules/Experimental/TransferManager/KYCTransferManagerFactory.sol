@@ -16,6 +16,10 @@ contract KYCTransferManagerFactory is ModuleFactory {
         name = "KYCTransferManager";
         title = "KYC Transfer Manager";
         description = "Manages KYC";
+        typesData.push(2);
+        typesData.push(6);
+        tagsData.push("KYC");
+        tagsData.push("Transfer Restriction");
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
@@ -29,26 +33,6 @@ contract KYCTransferManagerFactory is ModuleFactory {
         address kycTransferManager = address(new KYCTransferManager(msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken")));
         _initializeModule(kycTransferManager, _data);
         return kycTransferManager;
-    }
-
-
-    /**
-     * @notice Type of the Module factory
-     */
-    function types() external view returns(uint8[] memory) {
-        uint8[] memory res = new uint8[](2);
-        res[0] = 2;
-        res[1] = 6;
-        return res;
-    }
-
-    /**
-     * @notice Get the tags related to the module factory
-     */
-    function tags() public view returns(bytes32[] memory) {
-        bytes32[] memory availableTags = new bytes32[](1);
-        availableTags[0] = "KYC";
-        return availableTags;
     }
 
 }

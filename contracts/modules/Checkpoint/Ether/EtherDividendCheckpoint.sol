@@ -131,6 +131,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         require(_name[0] != 0);
         uint256 dividendIndex = dividends.length;
         uint256 currentSupply = ISecurityToken(securityToken).totalSupplyAt(_checkpointId);
+        require(currentSupply > 0, "Invalid supply");
         uint256 excludedSupply = 0;
         dividends.push(
             Dividend(

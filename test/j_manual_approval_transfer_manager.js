@@ -816,7 +816,8 @@ contract("ManualApprovalTransferManager", accounts => {
 
         it("Should get the tags of the factory", async () => {
             let tags = await I_ManualApprovalTransferManagerFactory.tags.call();
-            assert.equal(web3.utils.toUtf8(tags[0]), "ManualApproval");
+            assert.equal(web3.utils.toUtf8(tags[0]), "Manual Approval");
+            assert.equal(web3.utils.toUtf8(tags[1]), "Transfer Restriction");
         });
     });
 });

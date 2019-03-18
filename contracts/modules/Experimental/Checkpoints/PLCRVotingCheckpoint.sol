@@ -147,7 +147,7 @@ contract PLCRVotingCheckpoint is Module {
     /**
      * @notice Used to reveal the vote
      * @param _ballotId Given ballot Id
-     * @param _choiceOfProposal Proposal chossed by the voter. It varies from (0 - totalProposals - 1)
+     * @param _choiceOfProposal Proposal chossed by the voter. It varies from (0 to totalProposals - 1)
      * @param _salt used salt for hashing (unique for each user)
      */
     function revealVote(uint256 _ballotId, uint256 _choiceOfProposal, uint256 _salt) external {

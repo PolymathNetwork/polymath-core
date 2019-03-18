@@ -241,12 +241,12 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
         uint256 claimAfterWithheld = claim.sub(withheld);
         if (claimAfterWithheld > 0) {
             require(IERC20(dividendTokens[_dividendIndex]).transfer(_payee, claimAfterWithheld), "transfer failed");
-            if (withheld > 0) {
-                _dividend.totalWithheld = _dividend.totalWithheld.add(withheld);
-                _dividend.withheld[_payee] = withheld;
-            }
-            emit ERC20DividendClaimed(_payee, _dividendIndex, dividendTokens[_dividendIndex], claim, withheld);
         }
+        if (withheld > 0) {
+            _dividend.totalWithheld = _dividend.totalWithheld.add(withheld);
+            _dividend.withheld[_payee] = withheld;
+        }
+        emit ERC20DividendClaimed(_payee, _dividendIndex, dividendTokens[_dividendIndex], claim, withheld);
     }
 
     /**

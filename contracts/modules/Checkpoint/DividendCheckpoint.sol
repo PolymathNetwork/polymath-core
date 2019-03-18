@@ -10,6 +10,7 @@ pragma solidity ^0.4.24;
 import "./ICheckpoint.sol";
 import "./DividendCheckpointStorage.sol";
 import "../Module.sol";
+import "../../Pausable.sol";
 import "../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/math/Math.sol";
@@ -18,7 +19,7 @@ import "openzeppelin-solidity/contracts/math/Math.sol";
  * @title Checkpoint module for issuing ether dividends
  * @dev abstract contract
  */
-contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
+contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module, Pausable {
     using SafeMath for uint256;
 
     event SetDefaultExcludedAddresses(address[] _excluded, uint256 _timestamp);
@@ -34,6 +35,20 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
         /*solium-disable-next-line security/no-block-members*/
         require(now < dividends[_dividendIndex].expiry, "Dividend expiry in past");
         _;
+    }
+
+    /**
+     * @notice Pause (overridden function)
+     */
+    function pause() public onlyOwner {
+        super._pause();
+    }
+
+    /**
+     * @notice Unpause (overridden function)
+     */
+    function unpause() public onlyOwner {
+        super._unpause();
     }
 
     /**
@@ -182,7 +197,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @notice Investors can pull their own dividends
      * @param _dividendIndex Dividend to pull
      */
-    function pullDividendPayment(uint256 _dividendIndex) public validDividendIndex(_dividendIndex)
+    function pullDividendPayment(uint256 _dividendIndex) public validDividendIndex(_dividendIndex) whenNotPaused
     {
         Dividend storage dividend = dividends[_dividendIndex];
         require(!dividend.claimed[msg.sender], "Dividend already claimed");

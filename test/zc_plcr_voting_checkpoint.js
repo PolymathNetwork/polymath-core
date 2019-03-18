@@ -520,11 +520,8 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
 
             it("\t\t Should check who votes whom \n", async() => {
                 assert.equal(((await I_PLCRVotingCheckpoint.getSelectedProposal.call(new BN(0), account_investor1))[0]).toString(), 1);
-                assert.isTrue((await I_PLCRVotingCheckpoint.getSelectedProposal.call(new BN(0), account_investor1))[1]);
                 assert.equal(((await I_PLCRVotingCheckpoint.getSelectedProposal.call(new BN(0), account_investor2))[0]).toString(), 0);
-                assert.isFalse((await I_PLCRVotingCheckpoint.getSelectedProposal.call(new BN(0), account_investor2))[1]);
-                assert.equal(((await I_PLCRVotingCheckpoint.getSelectedProposal.call(new BN(0), account_investor3))[0]).toString(), 0);
-                assert.isTrue((await I_PLCRVotingCheckpoint.getSelectedProposal.call(new BN(0), account_investor3))[1]);                
+                assert.equal(((await I_PLCRVotingCheckpoint.getSelectedProposal.call(new BN(0), account_investor3))[0]).toString(), 0);               
             });
 
             it("\t\t Should give the result to 0 because ballot id is not valid", async() => {

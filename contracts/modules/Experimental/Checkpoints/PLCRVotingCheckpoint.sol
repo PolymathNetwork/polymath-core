@@ -11,14 +11,13 @@ contract PLCRVotingCheckpoint is Module {
 
     struct Ballot {
         uint256 quorum;       // Should be a multiple of 10 ** 16
-        uint256 totalSupply;
         uint256 checkpointId;
         uint64 commitDuration;
         uint64 revealDuration;
         uint64 startTime;
         uint24 totalProposals;
         uint32 totalVotes;
-        uint8 isActive;
+        bool isActive;
         mapping(uint256 => uint256) weightedVote;
         mapping(address => Vote) proposalToVote;
     }
@@ -26,12 +25,11 @@ contract PLCRVotingCheckpoint is Module {
     struct Vote {
         uint256 voteOption;
         bytes32 secretVote;
-        bool isRevealed;
     }
 
     Ballot[] ballots;
 
-    event VoteCommited(address indexed _voter, uint256 _weight, uint256 _ballotId, bytes32 _secretVote);
+    event VoteCommited(address indexed _voter, uint256 _weight, uint256 indexed _ballotId, bytes32 _secretVote);
     event BallotCreated(
         uint256 indexed _ballotId,
         uint256 _commitDuration,
@@ -39,11 +37,10 @@ contract PLCRVotingCheckpoint is Module {
         uint256 _noOfProposals,
         uint256 _startTime,
         uint256 _proposedQuorum,
-        uint256 _totalSupply,
         uint256 _checkpointId
     );
-    event VoteRevealed(address _voter, uint256 _weight, uint256 indexed _ballotId, uint256 _choiceOfProposal, uint256 _salt, bytes32 _secretVote);
-    event BallotStatusChanged(uint256 _ballotId, bool _newStatus);
+    event VoteRevealed(address indexed _voter, uint256 _weight, uint256 indexed _ballotId, uint256 _choiceOfProposal, uint256 _salt, bytes32 _secretVote);
+    event BallotStatusChanged(uint256 indexed _ballotId, bool _newStatus);
 
     constructor(address _securityToken, address _polyAddress)
     public
@@ -109,24 +106,22 @@ contract PLCRVotingCheckpoint is Module {
             uint64(_revealDuration) == _revealDuration &&
             uint64(_startTime) == _startTime &&
             uint24(_totalProposals) == _totalProposals,
-            "Uint64 values get overflowed"
+            "Parameter values get overflowed"
         );
         require(_startTime >= now, "Invalid start time");
-        require(_totalProposals > 1, "totalProposals should be > 1");
-        uint256 supplyAtCheckpoint = ISecurityToken(securityToken).totalSupplyAt(_checkpointId);
+        require(_totalProposals > 1, "Invalid number of totalProposals");
         uint256 _ballotId = ballots.length;
         ballots.push(Ballot(
             _proposedQuorum,
-            supplyAtCheckpoint,
             _checkpointId,
             uint64(_commitDuration),
             uint64(_revealDuration),
             uint64(_startTime),
             uint24(_totalProposals),
             uint32(0),
-            uint8(1)
+            true
         ));
-        emit BallotCreated(_ballotId, _commitDuration, _revealDuration, _totalProposals, _startTime, _proposedQuorum, supplyAtCheckpoint, _checkpointId);
+        emit BallotCreated(_ballotId, _commitDuration, _revealDuration, _totalProposals, _startTime, _proposedQuorum, _checkpointId);
     }
 
     /**
@@ -140,10 +135,10 @@ contract PLCRVotingCheckpoint is Module {
         Ballot storage ballot = ballots[_ballotId];
         require(ballot.proposalToVote[msg.sender].secretVote == bytes32(0), "Already voted");
         require(_secretVote != bytes32(0), "Invalid vote");
-        require(ballot.isActive == uint8(1), "Inactive ballot");
+        require(ballot.isActive, "Inactive ballot");
         uint256 weight = ISecurityToken(securityToken).balanceOfAt(msg.sender, ballot.checkpointId);
         require(weight > 0, "Zero weight is not allowed");
-        ballot.proposalToVote[msg.sender] = Vote(0, _secretVote, false);
+        ballot.proposalToVote[msg.sender] = Vote(0, _secretVote);
         emit VoteCommited(msg.sender, weight, _ballotId, _secretVote);
     }
 
@@ -157,10 +152,9 @@ contract PLCRVotingCheckpoint is Module {
         _validBallotId(_ballotId);
         require(getCurrentBallotStage(_ballotId) == Stage.REVEAL, "Not in reveal stage");
         Ballot storage ballot = ballots[_ballotId];
-        require(ballot.isActive == uint8(1), "Inactive ballot");
+        require(ballot.isActive, "Inactive ballot");
         require(ballot.proposalToVote[msg.sender].secretVote != bytes32(0), "Should be commit vote first");
         require(_choiceOfProposal < ballot.totalProposals, "Invalid proposal choice");
-        require(!ballot.proposalToVote[msg.sender].isRevealed, "Already revealed");
 
         // validate the secret vote
         require(
@@ -168,11 +162,12 @@ contract PLCRVotingCheckpoint is Module {
             "Invalid vote"
         );
         uint256 weight = ISecurityToken(securityToken).balanceOfAt(msg.sender, ballot.checkpointId);
+        bytes32 secretVote = ballot.proposalToVote[msg.sender].secretVote;
         ballot.weightedVote[_choiceOfProposal] = ballot.weightedVote[_choiceOfProposal].add(weight);
         ballot.totalVotes = ballot.totalVotes + 1;
         ballot.proposalToVote[msg.sender].voteOption = _choiceOfProposal;
-        ballot.proposalToVote[msg.sender].isRevealed = true;
-        emit VoteRevealed(msg.sender, weight, _ballotId, _choiceOfProposal, _salt, ballot.proposalToVote[msg.sender].secretVote);
+        ballot.proposalToVote[msg.sender].secretVote = bytes32(0);
+        emit VoteRevealed(msg.sender, weight, _ballotId, _choiceOfProposal, _salt, secretVote);
     }
 
     /**
@@ -188,11 +183,8 @@ contract PLCRVotingCheckpoint is Module {
             .add(uint256(ballots[_ballotId].revealDuration))),
             "Already ended"
         );
-        uint8 activeStatus = 0;
-        if (_isActive)
-            activeStatus = 1;
-        require(ballots[_ballotId].isActive != activeStatus, "Active state unchanged");
-        ballots[_ballotId].isActive = activeStatus;
+        require(ballots[_ballotId].isActive != _isActive, "Active state unchanged");
+        ballots[_ballotId].isActive = _isActive;
         emit BallotStatusChanged(_ballotId, _isActive);
     }
 
@@ -234,7 +226,8 @@ contract PLCRVotingCheckpoint is Module {
         uint256 counter = 0;
         uint256 maxWeight = 0;
         uint256 winningProposal = 0;
-        uint256 quorumWeight = (ballot.totalSupply.mul(ballot.quorum)).div(10 ** 18);
+        uint256 supplyAtCheckpoint = ISecurityToken(securityToken).totalSupplyAt(ballot.checkpointId);
+        uint256 quorumWeight = (supplyAtCheckpoint.mul(ballot.quorum)).div(10 ** 18);
         uint256[] memory voteWeighting = new uint256[](ballot.totalProposals);
         for (i = 0; i < ballot.totalProposals; i++) {
             voteWeighting[i] = ballot.weightedVote[i];
@@ -253,10 +246,10 @@ contract PLCRVotingCheckpoint is Module {
         }
         
         uint256[] memory tieWith = new uint256[](counter);
-        counter = 0;
-        if (counter > 1) {
+        if (counter > 0) {
+            counter = 0;
             for (i = 0; i < ballot.totalProposals; i++) {
-                if (maxWeight == ballot.weightedVote[i]) {
+                if (maxWeight == ballot.weightedVote[i] && i != winningProposal) {
                     tieWith[counter] = i;
                     counter ++;
                 }   
@@ -270,10 +263,10 @@ contract PLCRVotingCheckpoint is Module {
      * @param _ballotId Id of the ballot
      * @param _voter Address of the voter
      */
-    function getSelectedProposal(uint256 _ballotId, address _voter) external view returns(uint256 proposalId, bool isRevealed) {
+    function getSelectedProposal(uint256 _ballotId, address _voter) external view returns(uint256 proposalId, bytes32 secretVote) {
         if (_ballotId >= ballots.length)
-            return (0, false);
-        return (ballots[_ballotId].proposalToVote[_voter].voteOption, ballots[_ballotId].proposalToVote[_voter].isRevealed);
+            return (0, bytes32(0));
+        return (ballots[_ballotId].proposalToVote[_voter].voteOption, ballots[_ballotId].proposalToVote[_voter].secretVote);
     }
 
     /**
@@ -284,14 +277,14 @@ contract PLCRVotingCheckpoint is Module {
         Ballot memory ballot = ballots[_ballotId];
         return (
             ballot.quorum,
-            ballot.totalSupply,
+            ISecurityToken(securityToken).totalSupplyAt(ballot.checkpointId),
             ballot.checkpointId,
             ballot.commitDuration,
             ballot.revealDuration,
             ballot.startTime,
             ballot.totalProposals,
             ballot.totalVotes,
-            (ballot.isActive == 1 ? true : false)
+            ballot.isActive
         );
     }
 

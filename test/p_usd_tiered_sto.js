@@ -4666,7 +4666,6 @@ contract("USDTieredSTO", accounts => {
             await I_POLYOracle.changePrice(USDPOLY, { from: POLYMATH });
         });
 
-        it("should allow issuer to retrieve funds", async () => {
     });
 
     describe("Test getter functions", async () => {

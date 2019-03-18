@@ -128,12 +128,13 @@ contract PLCRVotingCheckpoint is Module {
      */
     function commitVote(uint256 _ballotId, bytes32 _secretVote) external {
         _validBallotId(_ballotId);
-        require(getBallotStage(_ballotId) == Stage.COMMIT, "Not in commit stage");
+        require(getCurrentBallotStage(_ballotId) == Stage.COMMIT, "Not in commit stage");
         Ballot storage ballot = ballots[_ballotId];
         require(ballot.proposalToVote[msg.sender].secretVote == bytes32(0), "Already voted");
         require(_secretVote != bytes32(0), "Invalid vote");
         require(ballot.isActive == uint8(1), "Inactive ballot");
         uint256 weight = ISecurityToken(securityToken).balanceOfAt(msg.sender, ballot.checkpointId);
+        require(weight > 0, "Zero weight is not allowed");
         ballot.proposalToVote[msg.sender] = Vote(0, _secretVote, false);
         emit VoteCommited(msg.sender, weight, _ballotId, _secretVote);
     }
@@ -146,9 +147,10 @@ contract PLCRVotingCheckpoint is Module {
      */
     function revealVote(uint256 _ballotId, uint256 _choiceOfProposal, uint256 _salt) external {
         _validBallotId(_ballotId);
-        require(getBallotStage(_ballotId) == Stage.REVEAL, "Not in reveal stage");
+        require(getCurrentBallotStage(_ballotId) == Stage.REVEAL, "Not in reveal stage");
         Ballot storage ballot = ballots[_ballotId];
         require(ballot.isActive == uint8(1), "Inactive ballot");
+        require(ballot.proposalToVote[msg.sender].secretVote != bytes32(0), "Should be commit vote first");
         require(_choiceOfProposal < ballot.totalProposals, "Invalid proposal choice");
         require(!ballot.proposalToVote[msg.sender].isRevealed, "Already revealed");
 
@@ -190,7 +192,7 @@ contract PLCRVotingCheckpoint is Module {
      * @notice Used to get the current stage of the ballot
      * @param _ballotId Given ballot Id
      */
-    function getBallotStage(uint256 _ballotId) public view returns (Stage) {
+    function getCurrentBallotStage(uint256 _ballotId) public view returns (Stage) {
         Ballot memory ballot = ballots[_ballotId];
         uint256 commitTimeEnd = uint256(ballot.startTime).add(uint256(ballot.commitDuration));
         uint256 revealTimeEnd = commitTimeEnd.add(uint256(ballot.revealDuration));
@@ -211,41 +213,48 @@ contract PLCRVotingCheckpoint is Module {
      * @return uint256 voteWeighting
      * @return uint256 tieWith
      * @return uint256 winningProposal
+     * @return bool isVotingSucceed
      * @return uint256 totalVotes
      */
-    function getBallotResult(uint256 _ballotId) external view returns(uint256[] memory, uint256[] memory, uint256, uint256) {
+    function getBallotResults(uint256 _ballotId) external view returns(uint256[] memory, uint256[] memory, uint256, bool, uint256) {
         if (_ballotId >= ballots.length)
-            return (new uint256[](0), new uint256[](0), 0, 0);
+            return (new uint256[](0), new uint256[](0), 0, false, 0);
         
         Ballot storage ballot = ballots[_ballotId];
         uint256 i = 0;
+        bool isVotingSucceed = false;
         uint256 counter = 0;
         uint256 maxWeight = 0;
-        uint256 winningProposal;
-        for (i = 0; i < ballot.totalProposals; i++) {
-            if (maxWeight < ballot.weightedVote[i]) {
-                maxWeight = ballot.weightedVote[i];
-                winningProposal = i;
-            }
-        }
-        for (i = 0; i < ballot.totalProposals; i++) {
-            if (maxWeight == ballot.weightedVote[i])
-                counter ++;
-        }
+        uint256 winningProposal = 0;
+        uint256 quorumWeight = (ballot.totalSupply.mul(ballot.quorum)).div(10 ** 18);
         uint256[] memory voteWeighting = new uint256[](ballot.totalProposals);
-        uint256[] memory tieWith = new uint256[](counter);
-        counter = 0;
         for (i = 0; i < ballot.totalProposals; i++) {
             voteWeighting[i] = ballot.weightedVote[i];
-            if (maxWeight == ballot.weightedVote[i]) {
-                tieWith[counter] = i;
-                counter ++;
-            }   
+            if (maxWeight < ballot.weightedVote[i]) {
+                maxWeight = ballot.weightedVote[i];
+                if (maxWeight >= quorumWeight)
+                    winningProposal = i;
+            }
         }
-        uint256 quorumWeight = (ballot.totalSupply.mul(ballot.quorum)).div(10 ** 18);
-        if (maxWeight < quorumWeight)
-            winningProposal = 0;
-        return (voteWeighting, tieWith, winningProposal, ballot.totalVotes);  
+        if (maxWeight >= quorumWeight) {
+            isVotingSucceed = true;
+            for (i = 0; i < ballot.totalProposals; i++) {
+                if (maxWeight == ballot.weightedVote[i] && i != winningProposal)
+                    counter ++;
+            }
+        }
+        
+        uint256[] memory tieWith = new uint256[](counter);
+        counter = 0;
+        if (counter > 1) {
+            for (i = 0; i < ballot.totalProposals; i++) {
+                if (maxWeight == ballot.weightedVote[i]) {
+                    tieWith[counter] = i;
+                    counter ++;
+                }   
+            }
+        }
+        return (voteWeighting, tieWith, winningProposal, isVotingSucceed, ballot.totalVotes);  
     }
 
     /**
@@ -253,10 +262,10 @@ contract PLCRVotingCheckpoint is Module {
      * @param _ballotId Id of the ballot
      * @param _voter Address of the voter
      */
-    function getSelectedProposal(uint256 _ballotId, address _voter) external view returns(uint256 proposalId) {
+    function getSelectedProposal(uint256 _ballotId, address _voter) external view returns(uint256 proposalId, bool isRevealed) {
         if (_ballotId >= ballots.length)
-            return 0;
-        return ballots[_ballotId].proposalToVote[_voter].voteOption;
+            return (0, false);
+        return (ballots[_ballotId].proposalToVote[_voter].voteOption, ballots[_ballotId].proposalToVote[_voter].isRevealed);
     }
 
     /**

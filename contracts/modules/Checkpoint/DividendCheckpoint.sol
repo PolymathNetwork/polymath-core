@@ -26,6 +26,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module, P
     event SetWithholding(address[] _investors, uint256[] _withholding, uint256 _timestamp);
     event SetWithholdingFixed(address[] _investors, uint256 _withholding, uint256 _timestamp);
     event SetWallet(address indexed _oldWallet, address indexed _newWallet, uint256 _timestamp);
+    event UpdateDividendDates(uint256 indexed _dividendIndex, uint256 _maturity, uint256 _expiry);
 
     modifier validDividendIndex(uint256 _dividendIndex) {
         require(_dividendIndex < dividends.length, "Invalid dividend");
@@ -266,6 +267,21 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module, P
      * @param _dividendIndex Dividend to withdraw from
      */
     function withdrawWithholding(uint256 _dividendIndex) external;
+
+    /**
+     * @notice Allows issuer to change maturity / expiry dates for dividends
+     * @param _dividendIndex Dividend to withdraw from
+     * @param _maturity updated maturity date
+     * @param _expiry updated expiry date
+     */
+    function updateDividendDates(uint256 _dividendIndex, uint256 _maturity, uint256 _expiry) onlyOwner {
+        require(_dividendIndex < dividends.length, "Invalid dividend");
+        require(_expiry > _maturity, "Expiry before maturity");
+        Dividend storage dividend = dividends[_dividendIndex];
+        dividend.expiry = _expiry;
+        dividend.maturity = _maturity;
+        emit UpdateDividendDates(_dividendIndex, _maturity, _expiry);
+    }
 
     /**
      * @notice Get static dividend data

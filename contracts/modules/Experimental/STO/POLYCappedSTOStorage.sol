@@ -15,14 +15,14 @@ contract POLYCappedSTOStorage {
     // 1 full token = 10^decimals_of_token base units
     uint256 public cap;
 
-    // How many token units a buyer gets per base unit of Fund Raise Type (i.e. ETH/POLY/SC) (multiplied by 10^18)
-    // If rate is 10^18, buyer will get 1 token unit for every ETH/POLY/SC token.
+    // How many token units a buyer gets per base unit of POLY (multiplied by 10^18)
+    // If rate is 10^18, buyer will get 1 token unit for every POLY token.
     uint256 public rate;
 
-    // Minimum investable amount in FundRaiseType (ETH/POLY/SC)
+    // Minimum investable amount in POLY
     uint256 public minimumInvestment;
 
-    // Default limit in fund raise type for non-accredited investors multiplied by 10**18
+    // Default limit in POLY for non-accredited investors multiplied by 10**18
     uint256 public nonAccreditedLimit;
 
     // Limit for the maximum number of non-accredited Investors (0 = unlimited)
@@ -35,13 +35,13 @@ contract POLYCappedSTOStorage {
     address public treasuryWallet;
 
     // Determine whether users can invest on behalf of a beneficiary
-    bool public allowBeneficialInvestments = false;
+    bool public allowBeneficialInvestments;
 
     // Whether or not the STO has been finalized
     bool public isFinalized;
 
-    // Amount in the selected fund raise type invested by each investor
-    mapping(address => uint256) public investorInvested;
+    // Amount in POLY invested by each investor
+    mapping(address => uint256) public investorInvestedPOLY;
 
     // Amount in USD invested by each address
     mapping(address => uint256) public investorInvestedUSD;
@@ -50,6 +50,7 @@ contract POLYCappedSTOStorage {
     uint256 public fundsRaisedUSD;
 
     // Overrides for default limit for non-accredited investors (0 = no override)
+    // limit in POLY multiplied by 10**18
     mapping(address => uint256) public nonAccreditedLimitOverride;
 
     // Final amount of tokens returned to issuer

@@ -1473,10 +1473,10 @@ contract("POLYCappedSTO", async (accounts) => {
             let init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
             let init_InvestorCount = await I_POLYCappedSTO_Array[stoId].investorCount.call();
             let init_nonAccreditedCount = await I_POLYCappedSTO_Array[stoId].nonAccreditedCount.call();
-            let init_investorInvested = await I_POLYCappedSTO_Array[stoId].investorInvested(NONACCREDITED1);
+            let init_investorInvested = await I_POLYCappedSTO_Array[stoId].investorInvestedPOLY(NONACCREDITED1);
             let init_investorInvestedUSD = await I_POLYCappedSTO_Array[stoId].investorInvestedUSD(NONACCREDITED1);
 
-            assert.equal(await I_POLYCappedSTO_Array[stoId].investorInvested(NONACCREDITED1), 0, "Investor has already invested");
+            assert.equal(await I_POLYCappedSTO_Array[stoId].investorInvestedPOLY(NONACCREDITED1), 0, "Investor has already invested");
             assert.equal(await I_POLYCappedSTO_Array[stoId].investorInvestedUSD(NONACCREDITED1), 0, "Investor has already invested");
 
             // Buy With POLY
@@ -1502,7 +1502,7 @@ contract("POLYCappedSTO", async (accounts) => {
             let final_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
             let final_InvestorCount = await I_POLYCappedSTO_Array[stoId].investorCount.call();
             let final_nonAccreditedCount = await I_POLYCappedSTO_Array[stoId].nonAccreditedCount.call();
-            let final_investorInvested = await I_POLYCappedSTO_Array[stoId].investorInvested(NONACCREDITED1);
+            let final_investorInvested = await I_POLYCappedSTO_Array[stoId].investorInvestedPOLY(NONACCREDITED1);
             let final_investorInvestedUSD = await I_POLYCappedSTO_Array[stoId].investorInvestedUSD(NONACCREDITED1);
 
             assert.equal(
@@ -1605,10 +1605,10 @@ contract("POLYCappedSTO", async (accounts) => {
             let init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
             let init_InvestorCount = await I_POLYCappedSTO_Array[stoId].investorCount.call();
             let init_nonAccreditedCount = await I_POLYCappedSTO_Array[stoId].nonAccreditedCount.call();
-            let init_investorInvested = await I_POLYCappedSTO_Array[stoId].investorInvested(ACCREDITED1);
+            let init_investorInvested = await I_POLYCappedSTO_Array[stoId].investorInvestedPOLY(ACCREDITED1);
             let init_investorInvestedUSD = await I_POLYCappedSTO_Array[stoId].investorInvestedUSD(ACCREDITED1);
 
-            assert.equal(await I_POLYCappedSTO_Array[stoId].investorInvested(ACCREDITED1), 0, "Investor has already invested");
+            assert.equal(await I_POLYCappedSTO_Array[stoId].investorInvestedPOLY(ACCREDITED1), 0, "Investor has already invested");
             assert.equal(await I_POLYCappedSTO_Array[stoId].investorInvestedUSD(ACCREDITED1), 0, "Investor has already invested");
 
             // Buy With POLY
@@ -1634,7 +1634,7 @@ contract("POLYCappedSTO", async (accounts) => {
             let final_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
             let final_InvestorCount = await I_POLYCappedSTO_Array[stoId].investorCount.call();
             let final_nonAccreditedCount = await I_POLYCappedSTO_Array[stoId].nonAccreditedCount.call();
-            let final_investorInvested = await I_POLYCappedSTO_Array[stoId].investorInvested(ACCREDITED1);
+            let final_investorInvested = await I_POLYCappedSTO_Array[stoId].investorInvestedPOLY(ACCREDITED1);
             let final_investorInvestedUSD = await I_POLYCappedSTO_Array[stoId].investorInvestedUSD(ACCREDITED1);
 
             assert.equal(
@@ -1714,7 +1714,7 @@ contract("POLYCappedSTO", async (accounts) => {
 
         it("Should successfully modify NONACCREDITED cap for NONACCREDITED1", async () => {
             let stoId = 0;
-            console.log("          Current investment: ".grey + (await I_POLYCappedSTO_Array[stoId].investorInvested.call(NONACCREDITED1)).toString().grey);
+            console.log("          Current investment: ".grey + (await I_POLYCappedSTO_Array[stoId].investorInvestedPOLY.call(NONACCREDITED1)).toString().grey);
 
             await I_POLYCappedSTO_Array[stoId].changeNonAccreditedLimit([NONACCREDITED1], [_nonAccreditedLimit[stoId].mul(new BN(2))], {
                 from: ISSUER
@@ -1735,7 +1735,7 @@ contract("POLYCappedSTO", async (accounts) => {
             let stoId = 0;
 
             let investorLimit = await I_POLYCappedSTO_Array[stoId].nonAccreditedLimitOverride.call(NONACCREDITED1);
-            let investedPOLY = await I_POLYCappedSTO_Array[stoId].investorInvested.call(NONACCREDITED1);
+            let investedPOLY = await I_POLYCappedSTO_Array[stoId].investorInvestedPOLY.call(NONACCREDITED1);
             let rate = await I_POLYCappedSTO_Array[stoId].rate.call();
             let surplus_POLY = new BN (web3.utils.toWei("1234", "ether")); // Amount above the limit to invest
             let surplus_USD = surplus_POLY.mul(await I_POLYOracle.getPrice.call()).div(e18);
@@ -1773,7 +1773,7 @@ contract("POLYCappedSTO", async (accounts) => {
             let init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
             let init_InvestorCount = await I_POLYCappedSTO_Array[stoId].investorCount.call();
             let init_nonAccreditedCount = await I_POLYCappedSTO_Array[stoId].nonAccreditedCount.call();
-            let init_investorInvested = await I_POLYCappedSTO_Array[stoId].investorInvested(NONACCREDITED1);
+            let init_investorInvested = await I_POLYCappedSTO_Array[stoId].investorInvestedPOLY(NONACCREDITED1);
             let init_investorInvestedUSD = await I_POLYCappedSTO_Array[stoId].investorInvestedUSD(NONACCREDITED1);
 
             assert.notEqual(init_investorInvested, 0, "Investor has not already invested");
@@ -1802,7 +1802,7 @@ contract("POLYCappedSTO", async (accounts) => {
             let final_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
             let final_InvestorCount = await I_POLYCappedSTO_Array[stoId].investorCount.call();
             let final_nonAccreditedCount = await I_POLYCappedSTO_Array[stoId].nonAccreditedCount.call();
-            let final_investorInvested = await I_POLYCappedSTO_Array[stoId].investorInvested(NONACCREDITED1);
+            let final_investorInvested = await I_POLYCappedSTO_Array[stoId].investorInvestedPOLY(NONACCREDITED1);
             let final_investorInvestedUSD = await I_POLYCappedSTO_Array[stoId].investorInvestedUSD(NONACCREDITED1);
 
             assert.equal(
@@ -1931,7 +1931,7 @@ contract("POLYCappedSTO", async (accounts) => {
             let init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
             let init_InvestorCount = await I_POLYCappedSTO_Array[stoId].investorCount.call();
             let init_nonAccreditedCount = await I_POLYCappedSTO_Array[stoId].nonAccreditedCount.call();
-            let init_investorInvested = await I_POLYCappedSTO_Array[stoId].investorInvested(ACCREDITED1);
+            let init_investorInvested = await I_POLYCappedSTO_Array[stoId].investorInvestedPOLY(ACCREDITED1);
             let init_investorInvestedUSD = await I_POLYCappedSTO_Array[stoId].investorInvestedUSD(ACCREDITED1);
 
             console.log("          Old total investment: ".grey + init_investorInvested.toString().grey + " POLY".grey);
@@ -1962,7 +1962,7 @@ contract("POLYCappedSTO", async (accounts) => {
             let final_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
             let final_InvestorCount = await I_POLYCappedSTO_Array[stoId].investorCount.call();
             let final_nonAccreditedCount = await I_POLYCappedSTO_Array[stoId].nonAccreditedCount.call();
-            let final_investorInvested = await I_POLYCappedSTO_Array[stoId].investorInvested(ACCREDITED1);
+            let final_investorInvested = await I_POLYCappedSTO_Array[stoId].investorInvestedPOLY(ACCREDITED1);
             let final_investorInvestedUSD = await I_POLYCappedSTO_Array[stoId].investorInvestedUSD(ACCREDITED1);
 
             console.log("          New total investment: ".grey + final_investorInvestedUSD.toString().grey + " POLY".grey);
@@ -2058,9 +2058,9 @@ contract("POLYCappedSTO", async (accounts) => {
 
             await I_SecurityToken.changeGranularity(e18, { from: ISSUER });
             // check minimum investment has already been met
-            let investorInvested = await I_POLYCappedSTO_Array[stoId].investorInvested(ACCREDITED1);
+            let investorInvestedPOLY = await I_POLYCappedSTO_Array[stoId].investorInvestedPOLY(ACCREDITED1);
             let minimumInvestment = await I_POLYCappedSTO_Array[stoId].minimumInvestment.call();
-            let minInvested = investorInvested.gte(minimumInvestment);
+            let minInvested = investorInvestedPOLY.gte(minimumInvestment);
             assert.equal(minInvested, true, "minimum investment not met")
 
             let investment_POLY = new BN(50).mul(e16); // Invest 0.5 POLY
@@ -2175,7 +2175,7 @@ contract("POLYCappedSTO", async (accounts) => {
             let init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
             let init_InvestorCount = await I_POLYCappedSTO_Array[stoId].investorCount.call();
             let init_nonAccreditedCount = await I_POLYCappedSTO_Array[stoId].nonAccreditedCount.call();
-            let init_investorInvested = await I_POLYCappedSTO_Array[stoId].investorInvested(ACCREDITED1);
+            let init_investorInvested = await I_POLYCappedSTO_Array[stoId].investorInvestedPOLY(ACCREDITED1);
             let init_investorInvestedUSD = await I_POLYCappedSTO_Array[stoId].investorInvestedUSD(ACCREDITED1);
 
             assert.notEqual(init_investorInvested, 0, "Investor has not already invested");
@@ -2204,7 +2204,7 @@ contract("POLYCappedSTO", async (accounts) => {
             let final_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
             let final_InvestorCount = await I_POLYCappedSTO_Array[stoId].investorCount.call();
             let final_nonAccreditedCount = await I_POLYCappedSTO_Array[stoId].nonAccreditedCount.call();
-            let final_investorInvested = await I_POLYCappedSTO_Array[stoId].investorInvested(ACCREDITED1);
+            let final_investorInvested = await I_POLYCappedSTO_Array[stoId].investorInvestedPOLY(ACCREDITED1);
             let final_investorInvestedUSD = await I_POLYCappedSTO_Array[stoId].investorInvestedUSD(ACCREDITED1);
             console.log("          Final tokens sold: ".grey + final_STOTokenSold.toString().grey);
 

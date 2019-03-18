@@ -363,6 +363,10 @@ contract("EtherDividendCheckpoint", accounts => {
             assert.equal(issuerBalanceAfter.sub(issuerBalance).toNumber(), web3.utils.toWei("0", "ether"));
         });
 
+        it("Set withholding tax of 100% on investor 2", async () => {
+            await I_EtherDividendCheckpoint.setWithholdingFixed([account_investor2], BigNumber(100 * 10 ** 16), { from: token_owner });
+        });
+
         it("Buy some tokens for account_temp (1 ETH)", async () => {
             // Add the Investor in to the whitelist
 
@@ -486,12 +490,13 @@ contract("EtherDividendCheckpoint", accounts => {
             let investor1BalanceAfter1 = new BigNumber(await web3.eth.getBalance(account_investor1));
             let investor2BalanceAfter1 = new BigNumber(await web3.eth.getBalance(account_investor2));
             let investor3BalanceAfter1 = new BigNumber(await web3.eth.getBalance(account_investor3));
-            await I_EtherDividendCheckpoint.pushDividendPayment(2, 0, 10, { from: token_owner });
+            let _blockNo = latestBlock();
+            let tx = await I_EtherDividendCheckpoint.pushDividendPayment(2, 0, 10, { from: token_owner });
             let investor1BalanceAfter2 = new BigNumber(await web3.eth.getBalance(account_investor1));
             let investor2BalanceAfter2 = new BigNumber(await web3.eth.getBalance(account_investor2));
             let investor3BalanceAfter2 = new BigNumber(await web3.eth.getBalance(account_investor3));
             assert.equal(investor1BalanceAfter2.sub(investor1BalanceAfter1).toNumber(), 0);
-            assert.equal(investor2BalanceAfter2.sub(investor2BalanceAfter1).toNumber(), web3.utils.toWei("2.4", "ether"));
+            assert.equal(investor2BalanceAfter2.sub(investor2BalanceAfter1).toNumber(), 0);
             assert.equal(investor3BalanceAfter2.sub(investor3BalanceAfter1).toNumber(), 0);
             //Check fully claimed
             assert.equal((await I_EtherDividendCheckpoint.dividends(2))[5].toNumber(), web3.utils.toWei("11", "ether"));
@@ -501,7 +506,7 @@ contract("EtherDividendCheckpoint", accounts => {
             let issuerBalance = new BigNumber(await web3.eth.getBalance(wallet));
             await I_EtherDividendCheckpoint.withdrawWithholding(2, { from: token_owner, gasPrice: 0 });
             let issuerBalanceAfter = new BigNumber(await web3.eth.getBalance(wallet));
-            assert.equal(issuerBalanceAfter.sub(issuerBalance).toNumber(), web3.utils.toWei("0.6", "ether"));
+            assert.equal(issuerBalanceAfter.sub(issuerBalance).toNumber(), web3.utils.toWei("3", "ether"));
         });
 
         it("Investor 2 transfers 1 ETH of his token balance to investor 1", async () => {
@@ -531,7 +536,7 @@ contract("EtherDividendCheckpoint", accounts => {
             );
         });
 
-        it("Create another new dividend with bad expirty - fails", async () => {
+        it("Create another new dividend with bad expiry - fails", async () => {
             let maturity = latestTime() - duration.days(5);
             let expiry = latestTime() - duration.days(2);
             await catchRevert(
@@ -648,7 +653,7 @@ contract("EtherDividendCheckpoint", accounts => {
             assert.equal(dividendAmount1[0].toNumber(), web3.utils.toWei("0", "ether"));
             assert.equal(dividendAmount1[1].toNumber(), web3.utils.toWei("0", "ether"));
             assert.equal(dividendAmount2[0].toNumber(), web3.utils.toWei("2", "ether"));
-            assert.equal(dividendAmount2[1].toNumber(), web3.utils.toWei("0.4", "ether"));
+            assert.equal(dividendAmount2[1].toNumber(), web3.utils.toWei("2", "ether"));
             assert.equal(dividendAmount3[0].toNumber(), web3.utils.toWei("7", "ether"));
             assert.equal(dividendAmount3[1].toNumber(), web3.utils.toWei("0", "ether"));
             assert.equal(dividendAmount_temp[0].toNumber(), web3.utils.toWei("1", "ether"));
@@ -666,7 +671,7 @@ contract("EtherDividendCheckpoint", accounts => {
             let investor3BalanceAfter1 = new BigNumber(await web3.eth.getBalance(account_investor3));
             let tempBalanceAfter1 = new BigNumber(await web3.eth.getBalance(account_temp));
             assert.equal(investor1BalanceAfter1.sub(investor1Balance).toNumber(), 0);
-            assert.equal(investor2BalanceAfter1.sub(investor2Balance).toNumber(), web3.utils.toWei("1.6", "ether"));
+            assert.equal(investor2BalanceAfter1.sub(investor2Balance).toNumber(), 0);
             assert.equal(investor3BalanceAfter1.sub(investor3Balance).toNumber(), 0);
             assert.equal(tempBalanceAfter1.sub(tempBalance).toNumber(), 0);
         });
@@ -769,7 +774,7 @@ contract("EtherDividendCheckpoint", accounts => {
             let tokenBalanceAfter = new BigNumber(await web3.eth.getBalance(I_PolyToken.address));
 
             assert.equal(investor1BalanceAfter.sub(investor1BalanceBefore).toNumber(), web3.utils.toWei("1", "ether"));
-            assert.equal(investor2BalanceAfter.sub(investor2BalanceBefore).toNumber(), web3.utils.toWei("1.6", "ether"));
+            assert.equal(investor2BalanceAfter.sub(investor2BalanceBefore).toNumber(), 0);
             assert.equal(investor3BalanceAfter.sub(investor3BalanceBefore).toNumber(), web3.utils.toWei("7", "ether"));
             assert.equal(tempBalanceAfter.sub(tempBalanceBefore).toNumber(), web3.utils.toWei("1", "ether"));
             assert.equal(tokenBalanceAfter.sub(tokenBalanceBefore).toNumber(), web3.utils.toWei("0", "ether"));

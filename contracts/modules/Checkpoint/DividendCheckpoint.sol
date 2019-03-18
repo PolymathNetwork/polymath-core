@@ -29,13 +29,17 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module, P
     event UpdateDividendDates(uint256 indexed _dividendIndex, uint256 _maturity, uint256 _expiry);
 
     modifier validDividendIndex(uint256 _dividendIndex) {
+        _validDividendIndex(_dividendIndex);
+        _;
+    }
+
+    function _validDividendIndex(uint256 _dividendIndex) internal view {
         require(_dividendIndex < dividends.length, "Invalid dividend");
         require(!dividends[_dividendIndex].reclaimed, "Dividend reclaimed");
         /*solium-disable-next-line security/no-block-members*/
         require(now >= dividends[_dividendIndex].maturity, "Dividend maturity in future");
         /*solium-disable-next-line security/no-block-members*/
         require(now < dividends[_dividendIndex].expiry, "Dividend expiry in past");
-        _;
     }
 
     /**
@@ -50,6 +54,26 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module, P
      */
     function unpause() public onlyOwner {
         super._unpause();
+    }
+
+    /**
+    * @notice Reclaims ERC20Basic compatible tokens
+    * @dev We duplicate here due to the overriden owner & onlyOwner
+    * @param _tokenContract The address of the token contract
+    */
+    function reclaimERC20(address _tokenContract) external onlyOwner {
+        require(_tokenContract != address(0), "Invalid address");
+        IERC20 token = IERC20(_tokenContract);
+        uint256 balance = token.balanceOf(address(this));
+        require(token.transfer(msg.sender, balance), "Transfer failed");
+    }
+
+    /**
+    * @notice Reclaims ETH
+    * @dev We duplicate here due to the overriden owner & onlyOwner
+    */
+    function reclaimETH() external onlyOwner {
+        msg.sender.transfer(address(this).balance);
     }
 
     /**
@@ -274,7 +298,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module, P
      * @param _maturity updated maturity date
      * @param _expiry updated expiry date
      */
-    function updateDividendDates(uint256 _dividendIndex, uint256 _maturity, uint256 _expiry) onlyOwner {
+    function updateDividendDates(uint256 _dividendIndex, uint256 _maturity, uint256 _expiry) external onlyOwner {
         require(_dividendIndex < dividends.length, "Invalid dividend");
         require(_expiry > _maturity, "Expiry before maturity");
         Dividend storage dividend = dividends[_dividendIndex];

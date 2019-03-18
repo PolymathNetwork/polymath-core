@@ -2197,7 +2197,7 @@ contract("USDTieredSTO", accounts => {
             let investorStatus = await I_USDTieredSTO_Array[stoId].investors.call(NONACCREDITED1);
             console.log("Current limit: " + investorStatus[2].toNumber());
             let totalStatus = await I_USDTieredSTO_Array[stoId].getAccreditedData.call();
-            
+
             assert.equal(totalStatus[0][0], NONACCREDITED1, "Account match");
             assert.equal(totalStatus[0][1], ACCREDITED1, "Account match");
             assert.equal(totalStatus[1][0], false, "Account match");
@@ -4665,6 +4665,8 @@ contract("USDTieredSTO", accounts => {
             await I_USDOracle.changePrice(USDETH, { from: POLYMATH });
             await I_POLYOracle.changePrice(USDPOLY, { from: POLYMATH });
         });
+
+        it("should allow issuer to retrieve funds", async () => {
     });
 
     describe("Test getter functions", async () => {

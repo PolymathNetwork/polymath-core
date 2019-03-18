@@ -53,4 +53,24 @@ contract STO is ISTO, STOStorage, Module, Pausable  {
         emit SetFundRaiseTypes(_fundRaiseTypes);
     }
 
+    /**
+    * @notice Reclaims ERC20Basic compatible tokens
+    * @dev We duplicate here due to the overriden owner & onlyOwner
+    * @param _tokenContract The address of the token contract
+    */
+    function reclaimERC20(address _tokenContract) external onlyOwner {
+        require(_tokenContract != address(0), "Invalid address");
+        IERC20 token = IERC20(_tokenContract);
+        uint256 balance = token.balanceOf(address(this));
+        require(token.transfer(msg.sender, balance), "Transfer failed");
+    }
+
+    /**
+    * @notice Reclaims ETH
+    * @dev We duplicate here due to the overriden owner & onlyOwner
+    */
+    function reclaimETH() external onlyOwner {
+        msg.sender.transfer(address(this).balance);
+    }
+
 }

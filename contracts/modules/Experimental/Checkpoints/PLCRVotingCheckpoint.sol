@@ -103,6 +103,14 @@ contract PLCRVotingCheckpoint is Module {
         _validValueCheck(_commitDuration);
         _validValueCheck(_revealDuration);
         _validValueCheck(_proposedQuorum);
+        // Overflow check
+        require(
+            uint64(_commitDuration) == _commitDuration && 
+            uint64(_revealDuration) == _revealDuration &&
+            uint64(_startTime) == _startTime &&
+            uint24(_totalProposals) == _totalProposals,
+            "Uint64 values get overflowed"
+        );
         require(_startTime >= now, "Invalid start time");
         require(_totalProposals > 1, "totalProposals should be > 1");
         uint256 supplyAtCheckpoint = ISecurityToken(securityToken).totalSupplyAt(_checkpointId);

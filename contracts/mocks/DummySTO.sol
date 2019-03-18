@@ -90,6 +90,8 @@ contract DummySTO is STO {
         return allPermissions;
     }
 
-
+    function () payable {
+        //Payable fallback function to allow us to test leaking ETH
+    }
 
 }

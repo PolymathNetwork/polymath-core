@@ -109,6 +109,8 @@ contract PLCRVotingCheckpoint is Module {
             "Parameter values get overflowed"
         );
         require(_startTime >= now, "Invalid start time");
+        // Total no of proposals always greater than 2 it means minimum valid
+        // proposal id will be 0 or 1. Proposal Id should be start from 0 instead of 1.
         require(_totalProposals > 1, "Invalid number of totalProposals");
         uint256 _ballotId = ballots.length;
         ballots.push(Ballot(
@@ -145,7 +147,7 @@ contract PLCRVotingCheckpoint is Module {
     /**
      * @notice Used to reveal the vote
      * @param _ballotId Given ballot Id
-     * @param _choiceOfProposal Proposal chossed by the voter.
+     * @param _choiceOfProposal Proposal chossed by the voter. It varies from (0 - totalProposals - 1)
      * @param _salt used salt for hashing (unique for each user)
      */
     function revealVote(uint256 _ballotId, uint256 _choiceOfProposal, uint256 _salt) external {
@@ -153,7 +155,7 @@ contract PLCRVotingCheckpoint is Module {
         require(getCurrentBallotStage(_ballotId) == Stage.REVEAL, "Not in reveal stage");
         Ballot storage ballot = ballots[_ballotId];
         require(ballot.isActive, "Inactive ballot");
-        require(ballot.proposalToVote[msg.sender].secretVote != bytes32(0), "Should be commit vote first");
+        require(ballot.proposalToVote[msg.sender].secretVote != bytes32(0), "Secret vote not available");
         require(_choiceOfProposal < ballot.totalProposals, "Invalid proposal choice");
 
         // validate the secret vote

@@ -121,8 +121,7 @@ contract WeightedVoteCheckpoint is ICheckpoint, Module {
      * @param _isActive The bool value of the active stats of the ballot
      * @return bool success
      */
-    function changeBallotStatus(uint256 _ballotId, bool _isActive) external {
-        _onlySecurityTokenOwner();
+    function changeBallotStatus(uint256 _ballotId, bool _isActive) external withPerm(ADMIN) {
         require(uint64(now) < ballots[_ballotId].endTime, "Already ended");
         uint8 activeStatus = 0;
         if (_isActive)

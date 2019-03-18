@@ -25,6 +25,9 @@ contract TrackedRedemptionFactory is ModuleFactory {
         name = "TrackedRedemption";
         title = "Tracked Redemption";
         description = "Track token redemptions";
+        typesData.push(5);
+        tagsData.push("Tracked");
+        tagsData.push("Redemption");
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
@@ -42,25 +45,6 @@ contract TrackedRedemptionFactory is ModuleFactory {
         address trackedRedemption = address(new TrackedRedemption(msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken")));
         _initializeModule(trackedRedemption, _data);
         return trackedRedemption;
-    }
-
-    /**
-     * @notice Type of the Module factory
-     */
-    function types() external view returns(uint8[] memory) {
-        uint8[] memory res = new uint8[](1);
-        res[0] = 5;
-        return res;
-    }
-
-    /**
-     * @notice Get the tags related to the module factory
-     */
-    function tags() external view returns(bytes32[] memory) {
-        bytes32[] memory availableTags = new bytes32[](2);
-        availableTags[0] = "Redemption";
-        availableTags[1] = "Tracked";
-        return availableTags;
     }
 
 }

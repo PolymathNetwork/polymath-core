@@ -165,6 +165,7 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
         require(_name[0] != 0);
         uint256 dividendIndex = dividends.length;
         uint256 currentSupply = securityTokenInstance.totalSupplyAt(_checkpointId);
+        require(currentSupply > 0, "Invalid supply");
         uint256 excludedSupply = 0;
         dividends.push(
             Dividend(

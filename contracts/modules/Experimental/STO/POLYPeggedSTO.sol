@@ -183,13 +183,13 @@ contract POLYPeggedSTO is POLYPeggedSTOStorage, STO, ReentrancyGuard {
     }
 
     function _modifyRate(uint256 _rate) internal {
-        require(_rate > 0, "Rate not > 0");
+        require(_rate > 0, "Invalid rate");
         rate = _rate;
         emit SetRate (rate);
     }
 
     function _modifyCap(uint256 _cap) internal {
-        require(_cap > 0, "Cap not > 0");
+        require(_cap > 0, "Invalid cap");
         cap = _cap;
         emit SetCap (cap);
     }
@@ -228,6 +228,7 @@ contract POLYPeggedSTO is POLYPeggedSTOStorage, STO, ReentrancyGuard {
         isFinalized = true;
         if ((_mintUnsoldTokens) && (totalTokensSold < cap)) {
             address treasury = (treasuryWallet == address(0) ? IDataStore(getDataStore()).getAddress(TREASURY) : treasuryWallet);
+            require(treasury != address(0), "Invalid treasury address");
             uint256 granularity = ISecurityToken(securityToken).granularity();
             finalAmountReturned = cap.sub(totalTokensSold);
             finalAmountReturned = finalAmountReturned.div(granularity);
@@ -318,9 +319,9 @@ contract POLYPeggedSTO is POLYPeggedSTOStorage, STO, ReentrancyGuard {
         returns(uint256, uint256, uint256)
      {
         if (!allowBeneficialInvestments) {
-            require(_beneficiary == msg.sender, "Beneficiary != msg.sender");
+            require(_beneficiary == msg.sender, "Beneficiary is not funder");
         }
-        require(_canBuy(_beneficiary), "Unauthorized");
+        require(_canBuy(_beneficiary), "Unauthorized beneficiary");
         (uint256 spentUSD, uint256 spentValue, uint256 tokens)  = _buyTokens(_beneficiary, _investedTokens, _fundRaiseType, _minTokens);
         // Forward coins to issuer wallet
         require(_token.transferFrom(msg.sender, wallet, spentValue), "Transfer failed");
@@ -380,7 +381,7 @@ contract POLYPeggedSTO is POLYPeggedSTOStorage, STO, ReentrancyGuard {
         //Pre-Purchase checks
         require(isOpen(), "STO not open");
         require(_investedTokens > 0, "No funds sent");
-        require(_beneficiary != address(0), "Beneficiary is 0x0");
+        require(_beneficiary != address(0), "Invalid beneficiary");
         uint256 polyUsdRate = getPolyUsdRate();
         uint256 investmentValueUSD = DecimalMath.mul(_investedTokens, polyUsdRate);
         require(investmentValueUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestment, "Less than minimum investment");
@@ -395,7 +396,7 @@ contract POLYPeggedSTO is POLYPeggedSTOStorage, STO, ReentrancyGuard {
                 allowedInvestment = investorLimit.sub(investorInvestedUSD[_beneficiary]);
             }
             if (maxNonAccreditedInvestors != 0) {
-                require(nonAccreditedCount < maxNonAccreditedInvestors, "Max Non-accredited investors");
+                require(nonAccreditedCount < maxNonAccreditedInvestors, "Max non-accredited investors");
             }
         }
         // Get the number of tokens to be minted and value in USD and POLY
@@ -420,7 +421,7 @@ contract POLYPeggedSTO is POLYPeggedSTOStorage, STO, ReentrancyGuard {
      */
     function getPolyUsdRate() public returns (uint256) {
         address polyOracle = PolymathRegistry(RegistryUpdater(securityToken).polymathRegistry()).getAddress(POLY_ORACLE);
-        require(polyOracle != address(0), "Invalid Oracle");
+        require(polyOracle != address(0), "Invalid oracle");
         return IOracle(polyOracle).getPrice();
     }
 

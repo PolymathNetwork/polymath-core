@@ -32,12 +32,10 @@ contract POLYCappedSTOFactory is UpgradableModuleFactory {
         description = "This smart contract creates a maximum number of tokens (i.e. hard cap) which the total aggregate of tokens acquired by all investors cannot exceed. Security tokens are sent to the investor upon reception of the funds (POLY). This STO supports options for a minimum investment limit for all investors, maximum investment limit for non-accredited investors and an option to mint unsold tokens to a treasury wallet upon termination of the offering.";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-        // set default tags
-        bytes32[] memory availableTags = new bytes32[](3);
-        availableTags[0] = "Capped";
-        availableTags[1] = "Non-refundable";
-        availableTags[2] = "POLY";
-        changeTags(availableTags);
+        typesData.push(3);
+        tagsData.push("Capped");
+        tagsData.push("POLY");
+        tagsData.push("STO");
     }
 
     /**
@@ -51,12 +49,4 @@ contract POLYCappedSTOFactory is UpgradableModuleFactory {
         return address(polyCappedSTO);
     }
 
-    /**
-     * @notice Type of the Module factory
-     */
-    function types() external view returns(uint8[] memory) {
-        uint8[] memory res = new uint8[](1);
-        res[0] = 3;
-        return res;
-    }
 }

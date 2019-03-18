@@ -2780,8 +2780,8 @@ contract("POLYCappedSTO", async (accounts) => {
             assert.equal(await I_POLYCappedSTOFactory.version.call(), "3.0.0");
             let tags = await I_POLYCappedSTOFactory.tags.call();
             assert.equal(web3.utils.hexToString(tags[0]), "Capped");
-            assert.equal(web3.utils.hexToString(tags[1]), "Non-refundable");
-            assert.equal(web3.utils.hexToString(tags[2]), "POLY");
+            assert.equal(web3.utils.hexToString(tags[1]), "POLY");
+            assert.equal(web3.utils.hexToString(tags[2]), "STO");
             let lower = await I_POLYCappedSTOFactory.lowerSTVersionBounds.call();
             assert.equal(lower[0], 0, "Wrong lower bound");
             assert.equal(lower[1], 0, "Wrong lower bound");

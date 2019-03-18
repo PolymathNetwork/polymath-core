@@ -888,6 +888,8 @@ contract("CappedSTO", accounts => {
             it("should reclaim ETH and ERC20 from STO", async () => {
                 let initialIssuerETH = BigNumber(await web3.eth.getBalance(token_owner));
                 let initialIssuerPOLY = BigNumber(await I_PolyToken.balanceOf(token_owner));
+                await catchRevert(I_DummySTO.reclaimERC20(I_PolyToken.address, {from: account_polymath, gasPrice: 0}));
+                await catchRevert(I_DummySTO.reclaimETH( {from: account_polymath, gasPrice: 0}));
                 let tx = await I_DummySTO.reclaimERC20(I_PolyToken.address, {from: token_owner, gasPrice: 0});
                 let tx2 = await I_DummySTO.reclaimETH({from: token_owner, gasPrice: 0});
                 let finalIssuerETH = BigNumber(await web3.eth.getBalance(token_owner));

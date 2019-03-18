@@ -805,6 +805,15 @@ contract("ERC20DividendCheckpoint", accounts => {
             assert.equal(dividendAmount_temp[1].toNumber(), web3.utils.toWei("0.2", "ether"));
         });
 
+        it("Pause and unpause the dividend contract", async () => {
+            await catchRevert(I_ERC20DividendCheckpoint.pause({from: account_polymath}));
+            let tx = await I_ERC20DividendCheckpoint.pause({from: token_owner});
+            await catchRevert(I_ERC20DividendCheckpoint.pullDividendPayment(3, { from: account_investor2, gasPrice: 0 }));
+            await catchRevert(I_ERC20DividendCheckpoint.unpause({from: account_polymath}));
+            tx = await I_ERC20DividendCheckpoint.unpause({from: token_owner});
+        });
+
+
         it("Investor 2 claims dividend", async () => {
             let investor1Balance = new BigNumber(await I_PolyToken.balanceOf(account_investor1));
             let investor2Balance = new BigNumber(await I_PolyToken.balanceOf(account_investor2));
@@ -834,7 +843,10 @@ contract("ERC20DividendCheckpoint", accounts => {
             let investor2BalanceAfter1 = new BigNumber(await I_PolyToken.balanceOf(account_investor2));
             let investor3BalanceAfter1 = new BigNumber(await I_PolyToken.balanceOf(account_investor3));
             let tempBalanceAfter1 = new BigNumber(await I_PolyToken.balanceOf(account_temp));
+            // Issuer can still push payments when contract is paused
+            let tx = await I_ERC20DividendCheckpoint.pause({from: token_owner});
             await I_ERC20DividendCheckpoint.pushDividendPaymentToAddresses(3, [account_temp, account_investor1], { from: token_owner });
+            tx = await I_ERC20DividendCheckpoint.unpause({from: token_owner});
             let investor1BalanceAfter2 = new BigNumber(await I_PolyToken.balanceOf(account_investor1));
             let investor2BalanceAfter2 = new BigNumber(await I_PolyToken.balanceOf(account_investor2));
             let investor3BalanceAfter2 = new BigNumber(await I_PolyToken.balanceOf(account_investor3));
@@ -1226,6 +1238,28 @@ contract("ERC20DividendCheckpoint", accounts => {
             );
             assert.equal(tx.logs[0].args._checkpointId.toNumber(), 10);
         });
+
+        it("Update maturity and expiry dates on dividend", async () => {
+            await catchRevert(I_ERC20DividendCheckpoint.updateDividendDates(7, 0, 1, {from: account_polymath}));
+            let tx = await I_ERC20DividendCheckpoint.updateDividendDates(7, 0, 1, {from: token_owner});
+            let info = await I_ERC20DividendCheckpoint.getDividendData.call(7);
+            assert.equal(info[1].toNumber(), 0);
+            assert.equal(info[2].toNumber(), 1);
+            // Can now reclaim the dividend
+            await I_ERC20DividendCheckpoint.reclaimDividend(7, {from: token_owner});
+        });
+
+        it("Reclaim ERC20 tokens from the dividend contract", async () => {
+            let currentDividendBalance = BigNumber(await I_PolyToken.balanceOf.call(I_ERC20DividendCheckpoint.address));
+            let currentIssuerBalance = BigNumber(await I_PolyToken.balanceOf.call(token_owner));
+            await catchRevert(I_ERC20DividendCheckpoint.reclaimERC20(I_PolyToken.address, {from: account_polymath}));
+            let tx = await I_ERC20DividendCheckpoint.reclaimERC20(I_PolyToken.address, {from: token_owner});
+            assert.equal(await I_PolyToken.balanceOf.call(I_ERC20DividendCheckpoint.address), 0);
+            let newIssuerBalance = BigNumber(await I_PolyToken.balanceOf.call(token_owner));
+            console.log("Reclaimed: " + currentDividendBalance.toNumber());
+            assert.equal(newIssuerBalance.sub(currentIssuerBalance).toNumber(), currentDividendBalance.toNumber());
+        });
+
 
         it("should allow manager with permission to create checkpoint", async () => {
             let initCheckpointID = await I_SecurityToken.createCheckpoint.call({ from: token_owner });

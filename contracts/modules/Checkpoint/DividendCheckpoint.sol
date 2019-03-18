@@ -294,6 +294,10 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module, P
 
     /**
      * @notice Allows issuer to change maturity / expiry dates for dividends
+     * @dev NB - setting the maturity of a currently matured dividend to a future date
+     * @dev will effectively refreeze claims on that dividend until the new maturity date passes
+     * @ dev NB - setting the expiry date to a past date will mean no more payments can be pulled
+     * @dev or pushed out of a dividend
      * @param _dividendIndex Dividend to withdraw from
      * @param _maturity updated maturity date
      * @param _expiry updated expiry date

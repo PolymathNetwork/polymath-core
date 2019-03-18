@@ -948,7 +948,30 @@ contract("EtherDividendCheckpoint", accounts => {
                 { from: account_manager, value: web3.utils.toWei("12", "ether") }
             );
             assert.equal(tx.logs[0].args._checkpointId.toNumber(), 12);
+            console.log(tx.logs[0].args._dividendIndex.toNumber());
         });
+
+        it("Update maturity and expiry dates on dividend", async () => {
+            await catchRevert(I_EtherDividendCheckpoint.updateDividendDates(8, 0, 1, {from: account_polymath}));
+            let tx = await I_EtherDividendCheckpoint.updateDividendDates(8, 0, 1, {from: token_owner});
+            let info = await I_EtherDividendCheckpoint.getDividendData.call(8);
+            assert.equal(info[1].toNumber(), 0);
+            assert.equal(info[2].toNumber(), 1);
+            // Can now reclaim the dividend
+            await I_EtherDividendCheckpoint.reclaimDividend(8, {from: token_owner});
+        });
+
+        it("Reclaim ETH from the dividend contract", async () => {
+            let currentDividendBalance = BigNumber(await web3.eth.getBalance(I_EtherDividendCheckpoint.address));
+            let currentIssuerBalance = BigNumber(await web3.eth.getBalance(token_owner));
+            await catchRevert(I_EtherDividendCheckpoint.reclaimETH({from: account_polymath, gasPrice: 0}));
+            let tx = await I_EtherDividendCheckpoint.reclaimETH({from: token_owner, gasPrice: 0});
+            assert.equal(await web3.eth.getBalance(I_EtherDividendCheckpoint.address), 0);
+            let newIssuerBalance = BigNumber(await web3.eth.getBalance(token_owner));
+            console.log("Reclaimed: " + currentDividendBalance.toNumber());
+            assert.equal(newIssuerBalance.sub(currentIssuerBalance).toNumber(), currentDividendBalance.toNumber());
+        });
+
 
         it("should allow manager with permission to create checkpoint", async () => {
             let initCheckpointID = await I_SecurityToken.createCheckpoint.call({ from: token_owner });

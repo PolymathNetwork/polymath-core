@@ -108,10 +108,10 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         if (_data.length > 32) {
             address target;
             uint256 nonce;
-            uint64 validFrom;
-            uint64 validTo;
+            uint256 validFrom;
+            uint256 validTo;
             bytes memory data;
-            (target, nonce, validFrom, validTo, data) = abi.decode(_data, (address, uint256, uint64, uint64, bytes));
+            (target, nonce, validFrom, validTo, data) = abi.decode(_data, (address, uint256, uint256, uint256, bytes));
             if (target == address(this))
                 _processTransferSignature(nonce, validFrom, validTo, data);
         }
@@ -119,14 +119,14 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         return success;
     }
 
-    function _processTransferSignature(uint256 _nonce, uint64 _validFrom, uint64 _validTo, bytes memory _data) internal {
+    function _processTransferSignature(uint256 _nonce, uint256 _validFrom, uint256 _validTo, bytes memory _data) internal {
         address[] memory investor;
-        uint64[] memory canSendAfter;
-        uint64[] memory canReceiveAfter;
-        uint64[] memory expiryTime;
+        uint256[] memory canSendAfter;
+        uint256[] memory canReceiveAfter;
+        uint256[] memory expiryTime;
         bytes memory signature;
         (investor, canSendAfter, canReceiveAfter, expiryTime, signature) =
-            abi.decode(_data, (address[], uint64[], uint64[], uint64[], bytes));
+            abi.decode(_data, (address[], uint256[], uint256[], uint256[], bytes));
         _modifyKYCDataSignedMulti(investor, canSendAfter, canReceiveAfter, expiryTime, _validFrom, _validTo, _nonce, signature);
     }
 
@@ -392,11 +392,11 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     */
     function modifyKYCDataSigned(
         address _investor,
-        uint64 _canSendAfter,
-        uint64 _canReceiveAfter,
-        uint64 _expiryTime,
-        uint64 _validFrom,
-        uint64 _validTo,
+        uint256 _canSendAfter,
+        uint256 _canReceiveAfter,
+        uint256 _expiryTime,
+        uint256 _validFrom,
+        uint256 _validTo,
         uint256 _nonce,
         bytes memory _signature
     )
@@ -410,11 +410,11 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
 
     function _modifyKYCDataSigned(
         address _investor,
-        uint64 _canSendAfter,
-        uint64 _canReceiveAfter,
-        uint64 _expiryTime,
-        uint64 _validFrom,
-        uint64 _validTo,
+        uint256 _canSendAfter,
+        uint256 _canReceiveAfter,
+        uint256 _expiryTime,
+        uint256 _validFrom,
+        uint256 _validTo,
         uint256 _nonce,
         bytes memory _signature
     )
@@ -428,7 +428,13 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
             abi.encodePacked(this, _investor, _canSendAfter, _canReceiveAfter, _expiryTime, _validFrom, _validTo, _nonce)
         );
         if (_checkSig(hash, _signature, _nonce)) {
-            _modifyKYCData(_investor, _canSendAfter, _canReceiveAfter, _expiryTime);
+            require(
+                uint64(_canSendAfter) == _canSendAfter &&
+                uint64(_canReceiveAfter) == _canReceiveAfter &&
+                uint64(_expiryTime) == _expiryTime,
+                "uint64 overflow"
+            );
+            _modifyKYCData(_investor, uint64(_canSendAfter), uint64(_canReceiveAfter), uint64(_expiryTime));
             return true;
         }
         return false;
@@ -436,6 +442,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
 
     /**
     * @notice Adds or removes addresses from the whitelist - can be called by anyone with a valid signature
+    * @dev using uint256 for some uint256 variables as web3 wasn;t packing and hashing uint64 arrays properly
     * @param _investor is the address to whitelist
     * @param _canSendAfter is the moment when the sale lockup period ends and the investor can freely sell his tokens
     * @param _canReceiveAfter is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
@@ -447,11 +454,11 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     */
     function modifyKYCDataSignedMulti(
         address[] memory _investor,
-        uint64[] memory _canSendAfter,
-        uint64[] memory _canReceiveAfter,
-        uint64[] memory _expiryTime,
-        uint64 _validFrom,
-        uint64 _validTo,
+        uint256[] memory _canSendAfter,
+        uint256[] memory _canReceiveAfter,
+        uint256[] memory _expiryTime,
+        uint256 _validFrom,
+        uint256 _validTo,
         uint256 _nonce,
         bytes memory _signature
     )
@@ -465,11 +472,11 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
 
     function _modifyKYCDataSignedMulti(
         address[] memory _investor,
-        uint64[] memory _canSendAfter,
-        uint64[] memory _canReceiveAfter,
-        uint64[] memory _expiryTime,
-        uint64 _validFrom,
-        uint64 _validTo,
+        uint256[] memory _canSendAfter,
+        uint256[] memory _canReceiveAfter,
+        uint256[] memory _expiryTime,
+        uint256 _validFrom,
+        uint256 _validTo,
         uint256 _nonce,
         bytes memory _signature
     )
@@ -493,7 +500,13 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
 
         if (_checkSig(hash, _signature, _nonce)) {
             for (uint256 i = 0; i < _investor.length; i++) {
-                _modifyKYCData(_investor[i], _canSendAfter[i], _canReceiveAfter[i], _expiryTime[i]);
+                require(
+                    uint64(_canSendAfter[i]) == _canSendAfter[i] &&
+                    uint64(_canReceiveAfter[i]) == _canReceiveAfter[i] &&
+                    uint64(_expiryTime[i]) == _expiryTime[i],
+                    "uint64 overflow"
+                );
+                _modifyKYCData(_investor[i], uint64(_canSendAfter[i]), uint64(_canReceiveAfter[i]), uint64(_expiryTime[i]));
             }
             return true;
         }

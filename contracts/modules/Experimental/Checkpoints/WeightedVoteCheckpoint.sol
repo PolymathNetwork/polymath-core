@@ -65,6 +65,12 @@ contract WeightedVoteCheckpoint is ICheckpoint, Module {
     function _createCustomBallot(uint256 _startTime, uint256 _endTime, uint256 _checkpointId, uint256 _noOfProposals) internal {
         require(_noOfProposals > 1, "Incorrect proposals no");
         require(_endTime > _startTime, "Times are not valid");
+        require(
+            uint64(_startTime) == _startTime &&
+            uint64(_endTime) == _endTime &&
+            uint56(_noOfProposals) == _noOfProposals,
+            "values get overflowed"
+        );
         uint256 ballotId = ballots.length;
         uint256 supplyAtCheckpoint = ISecurityToken(securityToken).totalSupplyAt(_checkpointId);
         ballots.push(
@@ -104,7 +110,7 @@ contract WeightedVoteCheckpoint is ICheckpoint, Module {
         require(ballot.isActive == uint8(1), "Ballot is not active");
 
         ballot.voteByAddress[msg.sender] = _proposalId;
-        ballot.totalNumVotes = uint64(uint256(ballot.totalNumVotes).add(uint256(1)));
+        ballot.totalNumVotes = ballot.totalNumVotes + 1;
         ballot.proposalToVote[_proposalId] = ballot.proposalToVote[_proposalId].add(weight);
         emit VoteCasted(_ballotId, _proposalId, msg.sender, weight);
     }

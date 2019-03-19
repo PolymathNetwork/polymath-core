@@ -410,6 +410,19 @@ contract BlacklistTransferManager is TransferManager {
     }
 
     /**
+     * @notice return the amount of tokens for a given user as per the partition
+     * @param _partition Identifier
+     * @param _tokenHolder Whom token amount need to query
+     */
+    function getTokensByPartition(bytes32 _partition, address _tokenHolder) external view returns(uint256) {
+        (Result success, ) = verifyTransfer(_tokenHolder, address(0), 0, "0x0");
+        if ((_partition == LOCKED && success == Result.INVALID) || (_partition == UNLOCKED && success != Result.INVALID))
+            return ISecurityToken(securityToken).balanceOf(_tokenHolder);
+        else 
+            return 0;
+    }
+
+    /**
     * @notice Return the permissions flag that are associated with blacklist transfer manager
     */
     function getPermissions() public view returns(bytes32[] memory) {

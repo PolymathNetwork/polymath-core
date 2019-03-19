@@ -671,6 +671,21 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         return allPermissions;
     }
 
+    /**
+     * @notice return the amount of tokens for a given user as per the partition
+     * @param _partition Identifier
+     * @param _tokenHolder Whom token amount need to query
+     */
+    function getTokensByPartition(bytes32 _partition, address _tokenHolder) external view returns(uint256) {
+        uint256 canSendAfter;
+        (canSendAfter,,,) = _getKYCValues(_tokenHolder, getDataStore());
+        canSendAfter = (canSendAfter == 0 ? defaults.canSendAfter:  canSendAfter);
+        if ((_partition == LOCKED && now < canSendAfter) || (_partition == UNLOCKED && now >= canSendAfter))
+            return ISecurityToken(securityToken).balanceOf(_tokenHolder);
+        else
+            return 0;
+    }
+
     function getAddressBytes32() public view returns(bytes32) {
         return bytes32(uint256(address(this)) << 96);
     }

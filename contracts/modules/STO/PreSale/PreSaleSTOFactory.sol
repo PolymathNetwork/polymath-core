@@ -29,6 +29,9 @@ contract PreSaleSTOFactory is UpgradableModuleFactory {
         name = "PreSaleSTO";
         title = "PreSale STO";
         description = "Allows Issuer to configure pre-sale token allocations";
+        typesData.push(3);
+        tagsData.push("PreSale");
+        tagsData.push("STO");
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
@@ -42,24 +45,6 @@ contract PreSaleSTOFactory is UpgradableModuleFactory {
         address preSaleSTO = address(new PreSaleSTOProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
         _initializeModule(preSaleSTO, _data);
         return preSaleSTO;
-    }
-
-    /**
-     * @notice Type of the Module factory
-     */
-    function types() external view returns(uint8[] memory) {
-        uint8[] memory res = new uint8[](1);
-        res[0] = 3;
-        return res;
-    }
-
-    /**
-     * @notice Get the tags related to the module factory
-     */
-    function tags() external view returns(bytes32[] memory) {
-        bytes32[] memory availableTags = new bytes32[](1);
-        availableTags[0] = "Presale";
-        return availableTags;
     }
 
 }

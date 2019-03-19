@@ -291,9 +291,9 @@ contract('VestingEscrowWallet', accounts => {
 
         it("Should get the tags of the factory", async () => {
             let tags = await I_VestingEscrowWalletFactory.tags.call();
-            assert.equal(tags.length, 2);
-            assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ""), "Vested");
-            assert.equal(web3.utils.toAscii(tags[1]).replace(/\u0000/g, ""), "Escrow Wallet");
+            assert.equal(tags.length, 3);
+            assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ""), "Vesting");
+            assert.equal(web3.utils.toAscii(tags[1]).replace(/\u0000/g, ""), "Escrow");
         });
 
     });

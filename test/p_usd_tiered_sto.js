@@ -699,6 +699,48 @@ contract("USDTieredSTO", async (accounts) => {
             assert.equal(tokens[0], I_DaiToken.address, "USD Tokens should match");
         });
 
+        it("Should successfully attach the sixth STO module to the security token", async () => {
+            let stoId = 5; // Non-divisible token with invalid tier
+
+            _startTime.push(new BN(currentTime).add(new BN(duration.days(2))));
+            _endTime.push(new BN(_startTime[stoId]).add(new BN(currentTime).add(new BN(duration.days(100)))));
+            _ratePerTier.push([new BN(1).mul(e18), new BN(1).mul(e18)]); // [ 1 USD/Token, 1 USD/Token ]
+            _ratePerTierDiscountPoly.push([new BN(1).mul(e18), new BN(1).mul(e18)]); // [ 1 USD/Token, 1 USD/Token ]
+            _tokensPerTierTotal.push([new BN(10010).mul(e16), new BN(50).mul(e18)]); // [ 100.1 Token, 50 Token ]
+            _tokensPerTierDiscountPoly.push([new BN(0), new BN(0)]); // [ 0 Token, 0 Token ]
+            _nonAccreditedLimitUSD.push(new BN(25).mul(e18)); // [ 25 USD ]
+            _minimumInvestmentUSD.push(new BN(5));
+            _fundRaiseTypes.push([0, 1, 2]);
+            _wallet.push(WALLET);
+            _treasuryWallet.push(TREASURYWALLET);
+            _usdToken.push([I_DaiToken.address]);
+
+            let config = [
+                _startTime[stoId],
+                _endTime[stoId],
+                _ratePerTier[stoId],
+                _ratePerTierDiscountPoly[stoId],
+                _tokensPerTierTotal[stoId],
+                _tokensPerTierDiscountPoly[stoId],
+                _nonAccreditedLimitUSD[stoId],
+                _minimumInvestmentUSD[stoId],
+                _fundRaiseTypes[stoId],
+                _wallet[stoId],
+                _treasuryWallet[stoId],
+                _usdToken[stoId]
+            ];
+
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
+            let tx = await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, { from: ISSUER, gasPrice: GAS_PRICE });
+            console.log("          Gas addModule: ".grey + tx.receipt.gasUsed.toString().grey);
+            assert.equal(tx.logs[2].args._types[0], STOKEY, "USDTieredSTO doesn't get deployed");
+            assert.equal(web3.utils.hexToString(tx.logs[2].args._name), "USDTieredSTO", "USDTieredSTOFactory module was not added");
+            I_USDTieredSTO_Array.push(await USDTieredSTO.at(tx.logs[2].args._module));
+            // console.log(I_USDTieredSTO_Array[I_USDTieredSTO_Array.length - 1]);
+            let tokens = await I_USDTieredSTO_Array[I_USDTieredSTO_Array.length - 1].getUsdTokens.call();
+            assert.equal(tokens[0], I_DaiToken.address, "USD Tokens should match");
+        });
+
         it("Should fail because rates and tier array of different length", async () => {
             let stoId = 0;
 
@@ -1236,7 +1278,8 @@ contract("USDTieredSTO", async (accounts) => {
             await I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, I_DaiToken.address, { from: NONACCREDITED1 });
 
             // Change Stable coin address
-            await I_USDTieredSTO_Array[stoId].modifyAddresses(WALLET, TREASURYWALLET, [I_PolyToken.address], { from: ISSUER });
+            let I_DaiToken2 = await PolyTokenFaucet.new();
+            await I_USDTieredSTO_Array[stoId].modifyAddresses(WALLET, TREASURYWALLET, [I_DaiToken2.address], { from: ISSUER });
 
             // NONACCREDITED DAI
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, I_DaiToken.address, { from: NONACCREDITED1 }));
@@ -3894,6 +3937,114 @@ contract("USDTieredSTO", async (accounts) => {
             await I_SecurityToken.changeGranularity(1, { from: ISSUER });
         });
 
+        it("should successfully buy a granular amount when buying indivisible token with illegal tier limits", async () => {
+            await I_SecurityToken.changeGranularity(e18, { from: ISSUER });
+            let stoId = 5;
+            let tierId = 0;
+            let investment_Tokens = new BN(110).mul(e18);
+            let investment_POLY = await convert(stoId, tierId, false, "TOKEN", "POLY", investment_Tokens);
+
+            let refund_Tokens = new BN(0);
+            let refund_POLY = await convert(stoId, tierId, false, "TOKEN", "POLY", refund_Tokens);
+
+            await I_PolyToken.getTokens(investment_POLY, ACCREDITED1);
+            await I_PolyToken.approve(I_USDTieredSTO_Array[stoId].address, investment_POLY, { from: ACCREDITED1 });
+
+            let init_TokenSupply = await I_SecurityToken.totalSupply();
+            let init_InvestorTokenBal = await I_SecurityToken.balanceOf(ACCREDITED1);
+            let init_InvestorETHBal = new BN(await web3.eth.getBalance(ACCREDITED1));
+            let init_InvestorPOLYBal = await I_PolyToken.balanceOf(ACCREDITED1);
+            let init_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
+            let init_STOETHBal = new BN(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let init_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
+            let init_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaised.call(ETH);
+            let init_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaised.call(POLY);
+            let init_WalletETHBal = new BN(await web3.eth.getBalance(WALLET));
+            let init_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
+
+            let tokensToMint = (await I_USDTieredSTO_Array[stoId].buyWithPOLY.call(ACCREDITED1, investment_POLY, {from: ACCREDITED1}))[2];
+
+            // Buy With POLY
+            let tx2 = await I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, {
+                from: ACCREDITED1,
+                gasPrice: GAS_PRICE
+            });
+            let gasCost2 = new BN(GAS_PRICE).mul(new BN(tx2.receipt.gasUsed));
+            console.log("          Gas buyWithPOLY: ".grey + new BN(tx2.receipt.gasUsed).toString().grey);
+
+            let final_TokenSupply = await I_SecurityToken.totalSupply();
+            let final_InvestorTokenBal = await I_SecurityToken.balanceOf(ACCREDITED1);
+            let final_InvestorETHBal = new BN(await web3.eth.getBalance(ACCREDITED1));
+            let final_InvestorPOLYBal = await I_PolyToken.balanceOf(ACCREDITED1);
+            let final_STOTokenSold = await I_USDTieredSTO_Array[stoId].getTokensSold();
+            let final_STOETHBal = new BN(await web3.eth.getBalance(I_USDTieredSTO_Array[stoId].address));
+            let final_STOPOLYBal = await I_PolyToken.balanceOf(I_USDTieredSTO_Array[stoId].address);
+            let final_RaisedETH = await I_USDTieredSTO_Array[stoId].fundsRaised.call(ETH);
+            let final_RaisedPOLY = await I_USDTieredSTO_Array[stoId].fundsRaised.call(POLY);
+            let final_WalletETHBal = new BN(await web3.eth.getBalance(WALLET));
+            let final_WalletPOLYBal = await I_PolyToken.balanceOf(WALLET);
+
+            assert.equal(
+                final_TokenSupply.toString(),
+                init_TokenSupply
+                    .add(investment_Tokens)
+                    .sub(refund_Tokens)
+                    .toString(),
+                "Token Supply not changed as expected"
+            );
+            assert.equal(tokensToMint.toString(), investment_Tokens.sub(refund_Tokens).toString(), "View function returned incorrect data");
+            assert.equal(
+                final_InvestorTokenBal.toString(),
+                init_InvestorTokenBal
+                    .add(investment_Tokens)
+                    .sub(refund_Tokens)
+                    .toString(),
+                "Investor Token Balance not changed as expected"
+            );
+            assert.equal(
+                final_InvestorETHBal.toString(),
+                init_InvestorETHBal.sub(gasCost2).toString(),
+                "Investor ETH Balance not changed as expected"
+            );
+            assert.equal(
+                final_InvestorPOLYBal.toString(),
+                init_InvestorPOLYBal
+                    .sub(investment_POLY)
+                    .add(refund_POLY)
+                    .toString(),
+                "Investor POLY Balance not changed as expected"
+            );
+            assert.equal(
+                final_STOTokenSold.toString(),
+                init_STOTokenSold
+                    .add(investment_Tokens)
+                    .sub(refund_Tokens)
+                    .toString(),
+                "STO Token Sold not changed as expected"
+            );
+            assert.equal(final_STOETHBal.toString(), init_STOETHBal.toString(), "STO ETH Balance not changed as expected");
+            assert.equal(final_STOPOLYBal.toString(), init_STOPOLYBal.toString(), "STO POLY Balance not changed as expected");
+            assert.equal(final_RaisedETH.toString(), init_RaisedETH.toString(), "Raised ETH not changed as expected");
+            assert.equal(
+                final_RaisedPOLY.toString(),
+                init_RaisedPOLY
+                    .add(investment_POLY)
+                    .sub(refund_POLY)
+                    .toString(),
+                "Raised POLY not changed as expected"
+            );
+            assert.equal(final_WalletETHBal.toString(), init_WalletETHBal.toString(), "Wallet ETH Balance not changed as expected");
+            assert.equal(
+                final_WalletPOLYBal.toString(),
+                init_WalletPOLYBal
+                    .add(investment_POLY)
+                    .sub(refund_POLY)
+                    .toString(),
+                "Wallet POLY Balance not changed as expected"
+            );
+            await I_SecurityToken.changeGranularity(1, { from: ISSUER });
+        });
+
         it("should successfully buy a granular amount and refund balance when buying indivisible token with ETH", async () => {
             await I_SecurityToken.changeGranularity(e18, { from: ISSUER });
             let stoId = 4;
@@ -4601,10 +4752,11 @@ contract("USDTieredSTO", async (accounts) => {
             assert.equal(await I_USDTieredSTOFactory.title.call(), "USD Tiered STO", "Wrong Module added");
             assert.equal(await I_USDTieredSTOFactory.version.call(), "3.0.0");
             let tags = await I_USDTieredSTOFactory.tags.call();
-            assert.equal(web3.utils.hexToString(tags[0]), "USD");
-            assert.equal(web3.utils.hexToString(tags[1]), "Tiered");
+            assert.equal(web3.utils.hexToString(tags[0]), "Tiered");
+            assert.equal(web3.utils.hexToString(tags[1]), "ETH");
             assert.equal(web3.utils.hexToString(tags[2]), "POLY");
-            assert.equal(web3.utils.hexToString(tags[3]), "ETH");
+            assert.equal(web3.utils.hexToString(tags[3]), "USD");
+            assert.equal(web3.utils.hexToString(tags[4]), "STO");
         });
     });
 });

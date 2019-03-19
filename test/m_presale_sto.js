@@ -439,7 +439,7 @@ contract("PreSaleSTO", async (accounts) => {
             );
             assert.equal(await I_PreSaleSTOFactory.title.call(), "PreSale STO", "Wrong Module added");
             let tags = await I_PreSaleSTOFactory.tags.call();
-            assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ""), "Presale");
+            assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ""), "PreSale");
         });
     });
 });

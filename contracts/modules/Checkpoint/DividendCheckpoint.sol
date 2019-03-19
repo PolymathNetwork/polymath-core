@@ -10,6 +10,7 @@ pragma solidity ^0.5.0;
 import "./ICheckpoint.sol";
 import "../../storage/modules/Checkpoint/DividendCheckpointStorage.sol";
 import "../Module.sol";
+import "../../Pausable.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/math/Math.sol";
 
@@ -17,13 +18,14 @@ import "openzeppelin-solidity/contracts/math/Math.sol";
  * @title Checkpoint module for issuing ether dividends
  * @dev abstract contract
  */
-contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
+contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module, Pausable {
     using SafeMath for uint256;
 
     event SetDefaultExcludedAddresses(address[] _excluded);
     event SetWithholding(address[] _investors, uint256[] _withholding);
     event SetWithholdingFixed(address[] _investors, uint256 _withholding);
     event SetWallet(address indexed _oldWallet, address indexed _newWallet);
+    event UpdateDividendDates(uint256 indexed _dividendIndex, uint256 _maturity, uint256 _expiry);
 
     function _validDividendIndex(uint256 _dividendIndex) internal view {
         require(_dividendIndex < dividends.length, "Invalid dividend");
@@ -43,6 +45,44 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
     ) public onlyFactory {
         _setWallet(_wallet);
     }
+
+    /**
+     * @notice Pause (overridden function)
+     */
+    function pause() public {
+        _onlySecurityTokenOwner();
+        super._pause();
+    }
+
+     /**
+     * @notice Unpause (overridden function)
+     */
+    function unpause() public {
+        _onlySecurityTokenOwner();
+        super._unpause();
+    }
+
+     /**
+    * @notice Reclaims ERC20Basic compatible tokens
+    * @dev We duplicate here due to the overriden owner & onlyOwner
+    * @param _tokenContract The address of the token contract
+    */
+    function reclaimERC20(address _tokenContract) external {
+        _onlySecurityTokenOwner();
+        require(_tokenContract != address(0), "Invalid address");
+        IERC20 token = IERC20(_tokenContract);
+        uint256 balance = token.balanceOf(address(this));
+        require(token.transfer(msg.sender, balance), "Transfer failed");
+    }
+
+     /**
+    * @notice Reclaims ETH
+    * @dev We duplicate here due to the overriden owner & onlyOwner
+    */
+    function reclaimETH() external {
+        _onlySecurityTokenOwner();
+        msg.sender.transfer(address(this).balance);
+    }	   
 
     /**
     * @notice Init function i.e generalise function to maintain the structure of the module contract
@@ -192,7 +232,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @notice Investors can pull their own dividends
      * @param _dividendIndex Dividend to pull
      */
-    function pullDividendPayment(uint256 _dividendIndex) public {
+    function pullDividendPayment(uint256 _dividendIndex) public whenNotPaused {
         _validDividendIndex(_dividendIndex);
         Dividend storage dividend = dividends[_dividendIndex];
         require(!dividend.claimed[msg.sender], "Dividend already claimed");
@@ -261,6 +301,25 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @param _dividendIndex Dividend to withdraw from
      */
     function withdrawWithholding(uint256 _dividendIndex) external;
+
+    /**
+     * @notice Allows issuer to change maturity / expiry dates for dividends
+     * @dev NB - setting the maturity of a currently matured dividend to a future date
+     * @dev will effectively refreeze claims on that dividend until the new maturity date passes
+     * @ dev NB - setting the expiry date to a past date will mean no more payments can be pulled
+     * @dev or pushed out of a dividend
+     * @param _dividendIndex Dividend to withdraw from
+     * @param _maturity updated maturity date
+     * @param _expiry updated expiry date
+     */
+    function updateDividendDates(uint256 _dividendIndex, uint256 _maturity, uint256 _expiry) external withPerm(ADMIN) {
+        require(_dividendIndex < dividends.length, "Invalid dividend");
+        require(_expiry > _maturity, "Expiry before maturity");
+        Dividend storage dividend = dividends[_dividendIndex];
+        dividend.expiry = _expiry;
+        dividend.maturity = _maturity;
+        emit UpdateDividendDates(_dividendIndex, _maturity, _expiry);
+    }
 
     /**
      * @notice Get static dividend data

@@ -1,7 +1,7 @@
 pragma solidity ^0.5.0;
 
-import "../STO.sol";
-import "../../../interfaces/ISecurityToken.sol";
+import "../../modules/STO/STO.sol";
+import "../../interfaces/ISecurityToken.sol";
 import "./DummySTOStorage.sol";
 
 /**
@@ -79,6 +79,10 @@ contract DummySTO is DummySTOStorage, STO {
         bytes32[] memory allPermissions = new bytes32[](1);
         allPermissions[0] = ADMIN;
         return allPermissions;
+    }
+
+    function () external payable {
+        //Payable fallback function to allow us to test leaking ETH
     }
 
 }

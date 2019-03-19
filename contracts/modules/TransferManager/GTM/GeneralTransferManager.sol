@@ -18,19 +18,19 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     event ChangeIssuanceAddress(address _issuanceAddress);
 
     // Emit when investor details get modified related to their whitelisting
-    event ChangeDefaults(uint64 _defaultFromTime, uint64 _defaultToTime);
+    event ChangeDefaults(uint64 _defaultCanSendAfter, uint64 _defaultCanReceiveAfter);
 
-    // _fromTime is the time from which the _investor can send tokens
-    // _toTime is the time from which the _investor can receive tokens
-    // if allowAllWhitelistIssuances is TRUE, then _toTime is ignored when receiving tokens from the issuance address
-    // if allowAllWhitelistTransfers is TRUE, then _toTime and _fromTime is ignored when sending or receiving tokens
+    // _canSendAfter is the time from which the _investor can send tokens
+    // _canReceiveAfter is the time from which the _investor can receive tokens
+    // if allowAllWhitelistIssuances is TRUE, then _canReceiveAfter is ignored when receiving tokens from the issuance address
+    // if allowAllWhitelistTransfers is TRUE, then _canReceiveAfter and _canSendAfter is ignored when sending or receiving tokens
     // in any case, any investor sending or receiving tokens, must have a _expiryTime in the future
     event ModifyKYCData(
         address indexed _investor,
         address indexed _addedBy,
-        uint256 _fromTime,
-        uint256 _toTime,
-        uint256 _expiryTime
+        uint64 _canSendAfter,
+        uint64 _canReceiveAfter,
+        uint64 _expiryTime
     );
 
     event ModifyInvestorFlag(
@@ -66,14 +66,17 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     }
 
     /**
-     * @notice Used to change the default times used when fromTime / toTime are zero
-     * @param _defaultFromTime default for zero fromTime
-     * @param _defaultToTime default for zero toTime
+     * @notice Used to change the default times used when canSendAfter / canReceiveAfter are zero
+     * @param _defaultCanSendAfter default for zero canSendAfter
+     * @param _defaultCanReceiveAfter default for zero canReceiveAfter
      */
-    function changeDefaults(uint64 _defaultFromTime, uint64 _defaultToTime) public withPerm(ADMIN) {
-        defaults.fromTime = _defaultFromTime;
-        defaults.toTime = _defaultToTime;
-        emit ChangeDefaults(_defaultFromTime, _defaultToTime);
+    function changeDefaults(uint64 _defaultCanSendAfter, uint64 _defaultCanReceiveAfter) public withPerm(ADMIN) {
+        /* 0 values are also allowed as they represent that the Issuer
+           does not want a default value for these variables.
+           0 is also the default value of these variables */
+        defaults.canSendAfter = _defaultCanSendAfter;
+        defaults.canReceiveAfter = _defaultCanReceiveAfter;
+        emit ChangeDefaults(_defaultCanSendAfter, _defaultCanReceiveAfter);
     }
 
     /**
@@ -81,6 +84,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
      * @param _issuanceAddress new address for the issuance
      */
     function changeIssuanceAddress(address _issuanceAddress) public withPerm(ADMIN) {
+        // address(0x0) is also a valid value and in most cases, the address that issues tokens is 0x0.
         issuanceAddress = _issuanceAddress;
         emit ChangeIssuanceAddress(_issuanceAddress);
     }
@@ -117,13 +121,13 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
 
     function _processTransferSignature(uint256 _nonce, uint256 _validFrom, uint256 _validTo, bytes memory _data) internal {
         address[] memory investor;
-        uint256[] memory fromTime;
-        uint256[] memory toTime;
+        uint256[] memory canSendAfter;
+        uint256[] memory canReceiveAfter;
         uint256[] memory expiryTime;
         bytes memory signature;
-        (investor, fromTime, toTime, expiryTime, signature) =
+        (investor, canSendAfter, canReceiveAfter, expiryTime, signature) =
             abi.decode(_data, (address[], uint256[], uint256[], uint256[], bytes));
-        _modifyKYCDataSignedMulti(investor, fromTime, toTime, expiryTime, _validFrom, _validTo, _nonce, signature);
+        _modifyKYCDataSignedMulti(investor, canSendAfter, canReceiveAfter, expiryTime, _validFrom, _validTo, _nonce, signature);
     }
 
     /**
@@ -143,10 +147,10 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     {
         if (!paused) {
             TransferRequirements memory txReq;
-            uint64 fromTime;
+            uint64 canSendAfter;
             uint64 fromExpiry;
             uint64 toExpiry;
-            uint64 toTime;
+            uint64 canReceiveAfter;
 
             if (_from == issuanceAddress) {
                 txReq = transferRequirements[1]; //Issuance
@@ -156,15 +160,15 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
                 txReq = transferRequirements[0]; //General Transfer
             }
 
-            (fromTime, fromExpiry, toTime, toExpiry) = _getValuesForTransfer(_from, _to);
+            (canSendAfter, fromExpiry, canReceiveAfter, toExpiry) = _getValuesForTransfer(_from, _to);
 
             if ((txReq.fromValidKYC && !_validExpiry(fromExpiry)) || (txReq.toValidKYC && !_validExpiry(toExpiry))) {
                 return (Result.NA, bytes32(0));
             }
 
-            (fromTime, toTime) = _adjustTimes(fromTime, toTime);
+            (canSendAfter, canReceiveAfter) = _adjustTimes(canSendAfter, canReceiveAfter);
 
-            if ((txReq.fromRestricted && !_validLockTime(fromTime)) || (txReq.toRestricted && !_validLockTime(toTime))) {
+            if ((txReq.fromRestricted && !_validLockTime(canSendAfter)) || (txReq.toRestricted && !_validLockTime(canReceiveAfter))) {
                 return (Result.NA, bytes32(0));
             }
 
@@ -260,57 +264,57 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     /**
     * @notice Add or remove KYC info of an investor.
     * @param _investor is the address to whitelist
-    * @param _fromTime is the moment when the sale lockup period ends and the investor can freely sell his tokens
-    * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
+    * @param _canSendAfter is the moment when the sale lockup period ends and the investor can freely sell or transfer their tokens
+    * @param _canReceiveAfter is the moment when the purchase lockup period ends and the investor can freely purchase or receive tokens from others
     * @param _expiryTime is the moment till investors KYC will be validated. After that investor need to do re-KYC
     */
     function modifyKYCData(
         address _investor,
-        uint256 _fromTime,
-        uint256 _toTime,
-        uint256 _expiryTime
+        uint64 _canSendAfter,
+        uint64 _canReceiveAfter,
+        uint64 _expiryTime
     )
         public
         withPerm(ADMIN)
     {
-        _modifyKYCData(_investor, _fromTime, _toTime, _expiryTime);
+        _modifyKYCData(_investor, _canSendAfter, _canReceiveAfter, _expiryTime);
     }
 
-    function _modifyKYCData(address _investor, uint256 _fromTime, uint256 _toTime, uint256 _expiryTime) internal {
+    function _modifyKYCData(address _investor, uint64 _canSendAfter, uint64 _canReceiveAfter, uint64 _expiryTime) internal {
         require(_investor != address(0), "Invalid investor");
         IDataStore dataStore = getDataStore();
         if (!_isExistingInvestor(_investor, dataStore)) {
            dataStore.insertAddress(INVESTORSKEY, _investor);
         }
-        uint256 _data = VersionUtils.packKYC(uint64(_fromTime), uint64(_toTime), uint64(_expiryTime), uint8(1));
+        uint256 _data = VersionUtils.packKYC(_canSendAfter, _canReceiveAfter, _expiryTime, uint8(1));
         dataStore.setUint256(_getKey(WHITELIST, _investor), _data);
-        emit ModifyKYCData(_investor, msg.sender, _fromTime, _toTime, _expiryTime);
+        emit ModifyKYCData(_investor, msg.sender, _canSendAfter, _canReceiveAfter, _expiryTime);
     }
 
     /**
     * @notice Add or remove KYC info of an investor.
     * @param _investors is the address to whitelist
-    * @param _fromTime is the moment when the sale lockup period ends and the investor can freely sell his tokens
-    * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
+    * @param _canSendAfter is the moment when the sale lockup period ends and the investor can freely sell his tokens
+    * @param _canReceiveAfter is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
     * @param _expiryTime is the moment till investors KYC will be validated. After that investor need to do re-KYC
     */
     function modifyKYCDataMulti(
         address[] memory _investors,
-        uint256[] memory _fromTime,
-        uint256[] memory _toTime,
-        uint256[] memory _expiryTime
+        uint64[] memory _canSendAfter,
+        uint64[] memory _canReceiveAfter,
+        uint64[] memory _expiryTime
     )
         public
         withPerm(ADMIN)
     {
         require(
-            _investors.length == _fromTime.length &&
-            _fromTime.length == _toTime.length &&
-            _toTime.length == _expiryTime.length,
+            _investors.length == _canSendAfter.length &&
+            _canSendAfter.length == _canReceiveAfter.length &&
+            _canReceiveAfter.length == _expiryTime.length,
             "Mismatched input lengths"
         );
         for (uint256 i = 0; i < _investors.length; i++) {
-            _modifyKYCData(_investors[i], _fromTime[i], _toTime[i], _expiryTime[i]);
+            _modifyKYCData(_investors[i], _canSendAfter[i], _canReceiveAfter[i], _expiryTime[i]);
         }
     }
 
@@ -378,8 +382,8 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     /**
     * @notice Adds or removes addresses from the whitelist - can be called by anyone with a valid signature
     * @param _investor is the address to whitelist
-    * @param _fromTime is the moment when the sale lockup period ends and the investor can freely sell his tokens
-    * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
+    * @param _canSendAfter is the moment when the sale lockup period ends and the investor can freely sell his tokens
+    * @param _canReceiveAfter is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
     * @param _expiryTime is the moment till investors KYC will be validated. After that investor need to do re-KYC
     * @param _validFrom is the time that this signature is valid from
     * @param _validTo is the time that this signature is valid until
@@ -388,8 +392,8 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     */
     function modifyKYCDataSigned(
         address _investor,
-        uint256 _fromTime,
-        uint256 _toTime,
+        uint256 _canSendAfter,
+        uint256 _canReceiveAfter,
         uint256 _expiryTime,
         uint256 _validFrom,
         uint256 _validTo,
@@ -399,15 +403,15 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         public
     {
         require(
-            _modifyKYCDataSigned(_investor, _fromTime, _toTime, _expiryTime, _validFrom, _validTo, _nonce, _signature),
+            _modifyKYCDataSigned(_investor, _canSendAfter, _canReceiveAfter, _expiryTime, _validFrom, _validTo, _nonce, _signature),
             "Invalid signature or data"
         );
     }
 
     function _modifyKYCDataSigned(
         address _investor,
-        uint256 _fromTime,
-        uint256 _toTime,
+        uint256 _canSendAfter,
+        uint256 _canReceiveAfter,
         uint256 _expiryTime,
         uint256 _validFrom,
         uint256 _validTo,
@@ -421,10 +425,16 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         if(_validFrom > now || _validTo < now || _investor == address(0))
             return false;
         bytes32 hash = keccak256(
-            abi.encodePacked(this, _investor, _fromTime, _toTime, _expiryTime, _validFrom, _validTo, _nonce)
+            abi.encodePacked(this, _investor, _canSendAfter, _canReceiveAfter, _expiryTime, _validFrom, _validTo, _nonce)
         );
         if (_checkSig(hash, _signature, _nonce)) {
-            _modifyKYCData(_investor, _fromTime, _toTime, _expiryTime);
+            require(
+                uint64(_canSendAfter) == _canSendAfter &&
+                uint64(_canReceiveAfter) == _canReceiveAfter &&
+                uint64(_expiryTime) == _expiryTime,
+                "uint64 overflow"
+            );
+            _modifyKYCData(_investor, uint64(_canSendAfter), uint64(_canReceiveAfter), uint64(_expiryTime));
             return true;
         }
         return false;
@@ -432,9 +442,10 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
 
     /**
     * @notice Adds or removes addresses from the whitelist - can be called by anyone with a valid signature
+    * @dev using uint256 for some uint256 variables as web3 wasn;t packing and hashing uint64 arrays properly
     * @param _investor is the address to whitelist
-    * @param _fromTime is the moment when the sale lockup period ends and the investor can freely sell his tokens
-    * @param _toTime is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
+    * @param _canSendAfter is the moment when the sale lockup period ends and the investor can freely sell his tokens
+    * @param _canReceiveAfter is the moment when the purchase lockup period ends and the investor can freely purchase tokens from others
     * @param _expiryTime is the moment till investors KYC will be validated. After that investor need to do re-KYC
     * @param _validFrom is the time that this signature is valid from
     * @param _validTo is the time that this signature is valid until
@@ -443,8 +454,8 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     */
     function modifyKYCDataSignedMulti(
         address[] memory _investor,
-        uint256[] memory _fromTime,
-        uint256[] memory _toTime,
+        uint256[] memory _canSendAfter,
+        uint256[] memory _canReceiveAfter,
         uint256[] memory _expiryTime,
         uint256 _validFrom,
         uint256 _validTo,
@@ -454,15 +465,15 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         public
     {
         require(
-            _modifyKYCDataSignedMulti(_investor, _fromTime, _toTime, _expiryTime, _validFrom, _validTo, _nonce, _signature),
+            _modifyKYCDataSignedMulti(_investor, _canSendAfter, _canReceiveAfter, _expiryTime, _validFrom, _validTo, _nonce, _signature),
             "Invalid signature or data"
         );
     }
 
     function _modifyKYCDataSignedMulti(
         address[] memory _investor,
-        uint256[] memory _fromTime,
-        uint256[] memory _toTime,
+        uint256[] memory _canSendAfter,
+        uint256[] memory _canReceiveAfter,
         uint256[] memory _expiryTime,
         uint256 _validFrom,
         uint256 _validTo,
@@ -472,9 +483,9 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         internal
         returns(bool)
     {
-        if (_investor.length != _fromTime.length ||
-            _fromTime.length != _toTime.length ||
-            _toTime.length != _expiryTime.length
+        if (_investor.length != _canSendAfter.length ||
+            _canSendAfter.length != _canReceiveAfter.length ||
+            _canReceiveAfter.length != _expiryTime.length
         ) {
             return false;
         }
@@ -484,12 +495,18 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         }
 
         bytes32 hash = keccak256(
-            abi.encodePacked(this, _investor, _fromTime, _toTime, _expiryTime, _validFrom, _validTo, _nonce)
+            abi.encodePacked(this, _investor, _canSendAfter, _canReceiveAfter, _expiryTime, _validFrom, _validTo, _nonce)
         );
 
         if (_checkSig(hash, _signature, _nonce)) {
             for (uint256 i = 0; i < _investor.length; i++) {
-                _modifyKYCData(_investor[i], _fromTime[i], _toTime[i], _expiryTime[i]);
+                require(
+                    uint64(_canSendAfter[i]) == _canSendAfter[i] &&
+                    uint64(_canReceiveAfter[i]) == _canReceiveAfter[i] &&
+                    uint64(_expiryTime[i]) == _expiryTime[i],
+                    "uint64 overflow"
+                );
+                _modifyKYCData(_investor[i], uint64(_canSendAfter[i]), uint64(_canReceiveAfter[i]), uint64(_expiryTime[i]));
             }
             return true;
         }
@@ -501,7 +518,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
      */
     function _checkSig(bytes32 _hash, bytes memory _signature, uint256 _nonce) internal returns(bool) {
         //Check that the signature is valid
-        //sig should be signing - _investor, _fromTime, _toTime & _expiryTime and be signed by the issuer address
+        //sig should be signing - _investor, _canSendAfter, _canReceiveAfter & _expiryTime and be signed by the issuer address
         address signer = _hash.toEthSignedMessageHash().recover(_signature);
         if (nonceMap[signer][_nonce] || !_checkPerm(OPERATOR, signer)) {
             return false;
@@ -531,14 +548,14 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     /**
      * @notice Internal function to adjust times using default values
      */
-    function _adjustTimes(uint64 _fromTime, uint64 _toTime) internal view returns(uint64, uint64) {
-        if (_fromTime == 0) {
-            _fromTime = defaults.fromTime;
+    function _adjustTimes(uint64 _canSendAfter, uint64 _canReceiveAfter) internal view returns(uint64, uint64) {
+        if (_canSendAfter == 0) {
+            _canSendAfter = defaults.canSendAfter;
         }
-        if (_toTime == 0) {
-            _toTime = defaults.toTime;
+        if (_canReceiveAfter == 0) {
+            _canReceiveAfter = defaults.canReceiveAfter;
         }
-        return (_fromTime, _toTime);
+        return (_canSendAfter, _canReceiveAfter);
     }
 
     function _getKey(bytes32 _key1, address _key2) internal pure returns(bytes32) {
@@ -546,14 +563,14 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     }
 
     function _getKYCValues(address _investor, IDataStore dataStore) internal view returns(
-        uint64 fromTime,
-        uint64 toTime,
+        uint64 canSendAfter,
+        uint64 canReceiveAfter,
         uint64 expiryTime,
         uint8 added
     )
     {
         uint256 data = dataStore.getUint256(_getKey(WHITELIST, _investor));
-        (fromTime, toTime, expiryTime, added)  = VersionUtils.unpackKYC(data);
+        (canSendAfter, canReceiveAfter, expiryTime, added)  = VersionUtils.unpackKYC(data);
     }
 
     function _isExistingInvestor(address _investor, IDataStore dataStore) internal view returns(bool) {
@@ -562,10 +579,10 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         return uint8(data) == 0 ? false : true;
     }
 
-    function _getValuesForTransfer(address _from, address _to) internal view returns(uint64 fromTime, uint64 fromExpiry, uint64 toTime, uint64 toExpiry) {
+    function _getValuesForTransfer(address _from, address _to) internal view returns(uint64 canSendAfter, uint64 fromExpiry, uint64 canReceiveAfter, uint64 toExpiry) {
         IDataStore dataStore = getDataStore();
-        (fromTime, , fromExpiry, ) = _getKYCValues(_from, dataStore);
-        (, toTime, toExpiry, ) = _getKYCValues(_to, dataStore);
+        (canSendAfter, , fromExpiry, ) = _getKYCValues(_from, dataStore);
+        (, canReceiveAfter, toExpiry, ) = _getKYCValues(_to, dataStore);
     }
 
     /**
@@ -611,13 +628,13 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
      */
     function getAllKYCData() external view returns(
         address[] memory investors,
-        uint256[] memory fromTimes,
-        uint256[] memory toTimes,
+        uint256[] memory canSendAfters,
+        uint256[] memory canReceiveAfters,
         uint256[] memory expiryTimes
     ) {
         investors = getAllInvestors();
-        (fromTimes, toTimes, expiryTimes) = _kycData(investors);
-        return (investors, fromTimes, toTimes, expiryTimes);
+        (canSendAfters, canReceiveAfters, expiryTimes) = _kycData(investors);
+        return (investors, canSendAfters, canReceiveAfters, expiryTimes);
     }
 
     /**
@@ -636,13 +653,13 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         uint256[] memory,
         uint256[] memory
     ) {
-        uint256[] memory fromTimes = new uint256[](_investors.length);
-        uint256[] memory toTimes = new uint256[](_investors.length);
+        uint256[] memory canSendAfters = new uint256[](_investors.length);
+        uint256[] memory canReceiveAfters = new uint256[](_investors.length);
         uint256[] memory expiryTimes = new uint256[](_investors.length);
         for (uint256 i = 0; i < _investors.length; i++) {
-            (fromTimes[i], toTimes[i], expiryTimes[i], ) = _getKYCValues(_investors[i], getDataStore());
+            (canSendAfters[i], canReceiveAfters[i], expiryTimes[i], ) = _getKYCValues(_investors[i], getDataStore());
         }
-        return (fromTimes, toTimes, expiryTimes);
+        return (canSendAfters, canReceiveAfters, expiryTimes);
     }
 
     /**

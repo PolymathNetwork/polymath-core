@@ -92,8 +92,9 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
         view
         returns(Result, bytes32)
     {
-        if (!paused && approvalIndex[_from][_to] != 0) {
-            uint256 index = approvalIndex[_from][_to] - 1;
+        uint256 index = approvalIndex[_from][_to];
+        if (!paused && index != 0) {
+            index--; //Actual index is storedIndex - 1
             ManualApproval memory approval = approvals[index];
             if ((approval.expiryTime >= now) && (approval.allowance >= _amount)) {
                 return (Result.VALID, bytes32(uint256(address(this)) << 96));
@@ -166,68 +167,67 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
     * @param _from is the address from which transfers are approved
     * @param _to is the address to which transfers are approved
     * @param _expiryTime is the time until which the transfer is allowed
-    * @param _changedAllowance is the changed allowance
+    * @param _changeInAllowance is the change in allowance
     * @param _description Description about the manual approval
-    * @param _change uint values which tells whether the allowances will be increased (1) or decreased (0)
+    * @param _increase tells whether the allowances will be increased (true) or decreased (false).
     * or any value when there is no change in allowances
     */
     function modifyManualApproval(
         address _from,
         address _to,
         uint256 _expiryTime,
-        uint256 _changedAllowance,
+        uint256 _changeInAllowance,
         bytes32 _description,
-        uint8 _change
+        bool _increase
     )
         external
         withPerm(ADMIN)
     {
-        _modifyManualApproval(_from, _to, _expiryTime, _changedAllowance, _description, _change);
+        _modifyManualApproval(_from, _to, _expiryTime, _changeInAllowance, _description, _increase);
     }
 
     function _modifyManualApproval(
         address _from,
         address _to,
         uint256 _expiryTime,
-        uint256 _changedAllowance,
+        uint256 _changeInAllowance,
         bytes32 _description,
-        uint8 _change
+        bool _increase
     )
         internal
     {
         /*solium-disable-next-line security/no-block-members*/
         require(_expiryTime > now, "Invalid expiry time");
-        require(approvalIndex[_from][_to] != 0, "Approval not present");
-        uint256 index = approvalIndex[_from][_to] - 1;
+        uint256 index = approvalIndex[_from][_to];
+        require(index != 0, "Approval not present");
+        index--; //Index is stored in an incremented form. 0 represnts non existant.
         ManualApproval storage approval = approvals[index];
-        require(approval.allowance != 0 && approval.expiryTime > now, "Not allowed");
-        uint256 currentAllowance = approval.allowance;
-        uint256 newAllowance;
-        if (_change == 1) {
-            // Allowance get increased
-            newAllowance = currentAllowance.add(_changedAllowance);
-            approval.allowance = newAllowance;
-        } else if (_change == 0) {
-            // Allowance get decreased
-            if (_changedAllowance > currentAllowance) {
-                newAllowance = 0;
-                approval.allowance = newAllowance;
+        uint256 allowance = approval.allowance;
+        uint256 expiryTime = approval.expiryTime;
+        require(allowance != 0 && expiryTime > now, "Not allowed");
+
+        if (_changeInAllowance > 0) {
+            if (_increase) {
+                // Allowance get increased
+                allowance = allowance.add(_changeInAllowance);
             } else {
-                newAllowance = currentAllowance.sub(_changedAllowance);
-                approval.allowance = newAllowance;
+                // Allowance get decreased
+                if (_changeInAllowance >= allowance) {
+                    allowance = 0;
+                } else {
+                    allowance = allowance - _changeInAllowance;
+                }
             }
-        } else {
-            // No change in the Allowance
-            newAllowance = currentAllowance;
+            approval.allowance = allowance;
         }
         // Greedy storage technique
-        if (approval.expiryTime != _expiryTime) {
+        if (expiryTime != _expiryTime) {
             approval.expiryTime = _expiryTime;
         }
         if (approval.description != _description) {
             approval.description = _description;
         }
-        emit ModifyManualApproval(_from, _to, _expiryTime, newAllowance, _description, msg.sender);
+        emit ModifyManualApproval(_from, _to, _expiryTime, allowance, _description, msg.sender);
     }
 
     /**
@@ -235,26 +235,26 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
      * @param _from is the address array from which transfers are approved
      * @param _to is the address array to which transfers are approved
      * @param _expiryTimes is the array of the times until which eath transfer is allowed
-     * @param _changedAllowances is the array of approved amounts
+     * @param _changeInAllowance is the array of change in allowances
      * @param _descriptions is the description array for these manual approvals
-     * @param _changes Array of uint values which tells whether the allowances will be increased (1) or decreased (0)
+     * @param _increase Array of bools that tells whether the allowances will be increased (true) or decreased (false).
      * or any value when there is no change in allowances
      */
     function modifyManualApprovalMulti(
         address[] memory _from,
         address[] memory _to,
         uint256[] memory _expiryTimes,
-        uint256[] memory _changedAllowances,
+        uint256[] memory _changeInAllowance,
         bytes32[] memory _descriptions,
-        uint8[] memory _changes
+        bool[] memory _increase
     )
         public
         withPerm(ADMIN)
     {
-        _checkInputLengthArray(_from, _to, _changedAllowances, _expiryTimes, _descriptions);
-        require(_changes.length == _changedAllowances.length, "Input length array mismatch");
+        _checkInputLengthArray(_from, _to, _changeInAllowance, _expiryTimes, _descriptions);
+        require(_increase.length == _changeInAllowance.length, "Input length array mismatch");
         for (uint256 i = 0; i < _from.length; i++) {
-            _modifyManualApproval(_from[i], _to[i], _expiryTimes[i], _changedAllowances[i], _descriptions[i], _changes[i]);
+            _modifyManualApproval(_from[i], _to[i], _expiryTimes[i], _changeInAllowance[i], _descriptions[i], _increase[i]);
         }
     }
 
@@ -268,12 +268,14 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
     }
 
     function _revokeManualApproval(address _from, address _to) internal {
-        require(approvalIndex[_from][_to] != 0, "Approval not exist");
+        uint256 index = approvalIndex[_from][_to];
+        require(index != 0, "Approval not exist");
 
         // find the record in active approvals array & delete it
-        uint256 index = approvalIndex[_from][_to] - 1;
-        if (index != approvals.length -1) {
-            approvals[index] = approvals[approvals.length -1];
+        index--; //Index is stored after incrementation so that 0 represents non existant index
+        uint256 lastApprovalIndex = approvals.length - 1;
+        if (index != lastApprovalIndex) {
+            approvals[index] = approvals[lastApprovalIndex];
             approvalIndex[approvals[index].from][approvals[index].to] = index + 1;
         }
         delete approvalIndex[_from][_to];
@@ -323,7 +325,8 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
      */
     function getActiveApprovalsToUser(address _user) external view returns(address[] memory, address[] memory, uint256[] memory, uint256[] memory, bytes32[] memory) {
         uint256 counter = 0;
-        for (uint256 i = 0; i < approvals.length; i++) {
+        uint256 approvalsLength = approvals.length;
+        for (uint256 i = 0; i < approvalsLength; i++) {
             if ((approvals[i].from == _user || approvals[i].to == _user)
                 && approvals[i].expiryTime >= now)
                 counter ++;
@@ -336,7 +339,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
         bytes32[] memory description = new bytes32[](counter);
 
         counter = 0;
-        for (uint256 i = 0; i < approvals.length; i++) {
+        for (uint256 i = 0; i < approvalsLength; i++) {
             if ((approvals[i].from == _user || approvals[i].to == _user)
                 && approvals[i].expiryTime >= now) {
 
@@ -360,8 +363,9 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
      * @return uint256 Description provided to the approval
      */
     function getApprovalDetails(address _from, address _to) external view returns(uint256, uint256, bytes32) {
-        if (approvalIndex[_from][_to] != 0) {
-            uint256 index = approvalIndex[_from][_to] - 1;
+        uint256 index = approvalIndex[_from][_to];
+        if (index != 0) {
+            index--;
             if (index < approvals.length) {
                 ManualApproval storage approval = approvals[index];
                 return(
@@ -390,13 +394,14 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
      * @return bytes32[] descriptions provided to the approvals
      */
     function getAllApprovals() external view returns(address[] memory, address[] memory, uint256[] memory, uint256[] memory, bytes32[] memory) {
-        address[] memory from = new address[](approvals.length);
-        address[] memory to = new address[](approvals.length);
-        uint256[] memory allowance = new uint256[](approvals.length);
-        uint256[] memory expiryTime = new uint256[](approvals.length);
-        bytes32[] memory description = new bytes32[](approvals.length);
+        uint256 approvalsLength = approvals.length;
+        address[] memory from = new address[](approvalsLength);
+        address[] memory to = new address[](approvalsLength);
+        uint256[] memory allowance = new uint256[](approvalsLength);
+        uint256[] memory expiryTime = new uint256[](approvalsLength);
+        bytes32[] memory description = new bytes32[](approvalsLength);
 
-        for (uint256 i = 0; i < approvals.length; i++) {
+        for (uint256 i = 0; i < approvalsLength; i++) {
 
             from[i]=approvals[i].from;
             to[i]=approvals[i].to;

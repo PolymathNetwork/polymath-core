@@ -141,7 +141,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     )
         public
         ERC20Detailed(_name, _symbol, _decimals)
-    {   
+    {
         _zeroAddressCheck(_polymathRegistry);
         _zeroAddressCheck(_delegate);
         polymathRegistry = _polymathRegistry;
@@ -298,7 +298,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
 
     /**
      * @notice Allows to change the treasury wallet address
-     * @param _wallet Ethereum address of the treasury wallet 
+     * @param _wallet Ethereum address of the treasury wallet
      */
     function changeTreasuryWallet(address _wallet) external onlyOwner {
         _zeroAddressCheck(_wallet);
@@ -445,10 +445,10 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         returns(bool)
     {
         if (!transfersFrozen) {
-            bool isInvalid = false;
-            bool isValid = false;
-            bool isForceValid = false;
-            bool unarchived = false;
+            bool isInvalid;
+            bool isValid;
+            bool isForceValid;
+            bool unarchived;
             address module;
             for (uint256 i = 0; i < modules[TRANSFER_KEY].length; i++) {
                 module = modules[TRANSFER_KEY][i];
@@ -503,12 +503,22 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     function issue(
         address _tokenHolder,
         uint256 _value,
+        bytes calldata _data
+    )
+        external
+        isIssuanceAllowed
+    {
+        _onlyModuleOrOwner(MINT_KEY);
+        _issue(_tokenHolder, _value, _data);
+    }
+
+    function _issue(
+        address _tokenHolder,
+        uint256 _value,
         bytes memory _data
     )
-        public
-        isIssuanceAllowed
-    {   
-        _onlyModuleOrOwner(MINT_KEY); 
+        internal
+    {
         // Add a function to validate the `_data` parameter
         _isValidTransfer(_updateTransfer(address(0), _tokenHolder, _value, _data));
         _mint(_tokenHolder, _value);
@@ -522,10 +532,11 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * @param _values A list of number of tokens get minted and transfer to corresponding address of the investor from _tokenHolders[] list
      * @return success
      */
-    function issueMulti(address[] calldata _tokenHolders, uint256[] calldata _values) external {
+    function issueMulti(address[] calldata _tokenHolders, uint256[] calldata _values) external isIssuanceAllowed {
+        _onlyModuleOrOwner(MINT_KEY);
         require(_tokenHolders.length == _values.length, "Incorrect inputs");
         for (uint256 i = 0; i < _tokenHolders.length; i++) {
-            issue(_tokenHolders[i], _values[i], "");
+            _issue(_tokenHolders[i], _values[i], "");
         }
     }
 

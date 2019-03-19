@@ -1,7 +1,7 @@
 pragma solidity ^0.4.24;
 
-import "./STO.sol";
-import "../../interfaces/ISecurityToken.sol";
+import "../modules/STO/STO.sol";
+import "../interfaces/ISecurityToken.sol";
 
 /**
  * @title STO module for sample implementation of a different crowdsale module
@@ -88,6 +88,10 @@ contract DummySTO is STO {
         bytes32[] memory allPermissions = new bytes32[](1);
         allPermissions[0] = ADMIN;
         return allPermissions;
+    }
+
+    function () payable {
+        //Payable fallback function to allow us to test leaking ETH
     }
 
 }

@@ -1,8 +1,8 @@
 pragma solidity ^0.4.24;
 
 import "./DummySTO.sol";
-import "../ModuleFactory.sol";
-import "../../libraries/Util.sol";
+import "../modules/ModuleFactory.sol";
+import "../libraries/Util.sol";
 
 /**
  * @title Factory for deploying DummySTO module

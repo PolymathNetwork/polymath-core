@@ -277,7 +277,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
      * @notice Reserve address must be whitelisted to successfully finalize
      */
     function finalize() external onlyOwner {
-        require(!isFinalized, "STO is already finalized");
+        require(!isFinalized, "STO is finalized");
         isFinalized = true;
         uint256 tempReturned;
         uint256 tempSold;
@@ -305,7 +305,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
      * @param _accredited Array of bools specifying accreditation status
      */
     function changeAccredited(address[] _investors, bool[] _accredited) external onlyOwner {
-        require(_investors.length == _accredited.length, "Array length mismatch");
+        require(_investors.length == _accredited.length, "Array mismatch");
         for (uint256 i = 0; i < _investors.length; i++) {
             if (_accredited[i]) {
                 investors[_investors[i]].accredited = uint8(1);
@@ -324,7 +324,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
      */
     function changeNonAccreditedLimit(address[] _investors, uint256[] _nonAccreditedLimit) external onlyOwner {
         //nonAccreditedLimitUSDOverride
-        require(_investors.length == _nonAccreditedLimit.length, "Array length mismatch");
+        require(_investors.length == _nonAccreditedLimit.length, "Array mismatch");
         for (uint256 i = 0; i < _investors.length; i++) {
             investors[_investors[i]].nonAccreditedLimitUSDOverride = _nonAccreditedLimit[i];
             _addToInvestorsList(_investors[i]);
@@ -361,7 +361,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
      * @param _allowBeneficialInvestments Boolean to allow or disallow beneficial investments
      */
     function changeAllowBeneficialInvestments(bool _allowBeneficialInvestments) external onlyOwner {
-        require(_allowBeneficialInvestments != allowBeneficialInvestments, "Value unchanged");
+        require(_allowBeneficialInvestments != allowBeneficialInvestments);
         allowBeneficialInvestments = _allowBeneficialInvestments;
         emit SetAllowBeneficialInvestments(allowBeneficialInvestments);
     }
@@ -399,7 +399,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
         uint256 rate = getRate(FundRaiseType.ETH);
         uint256 initialMinted = getTokensMinted();
         (uint256 spentUSD, uint256 spentValue) = _buyTokens(_beneficiary, msg.value, rate, FundRaiseType.ETH);
-        require(getTokensMinted().sub(initialMinted) >= _minTokens, "Insufficient tokens minted");
+        require(getTokensMinted().sub(initialMinted) >= _minTokens, "Insufficient minted");
         // Modify storage
         investorInvested[_beneficiary][uint8(FundRaiseType.ETH)] = investorInvested[_beneficiary][uint8(FundRaiseType.ETH)].add(spentValue);
         fundsRaised[uint8(FundRaiseType.ETH)] = fundsRaised[uint8(FundRaiseType.ETH)].add(spentValue);
@@ -434,11 +434,11 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
     }
 
     function _buyWithTokens(address _beneficiary, uint256 _tokenAmount, FundRaiseType _fundRaiseType, uint256 _minTokens, IERC20 _token) internal {
-        require(_fundRaiseType == FundRaiseType.POLY || _fundRaiseType == FundRaiseType.SC, "Invalid raise type");
+        require(_fundRaiseType == FundRaiseType.POLY || _fundRaiseType == FundRaiseType.SC, "Invalid raise");
         uint256 initialMinted = getTokensMinted();
         uint256 rate = getRate(_fundRaiseType);
         (uint256 spentUSD, uint256 spentValue) = _buyTokens(_beneficiary, _tokenAmount, rate, _fundRaiseType);
-        require(getTokensMinted().sub(initialMinted) >= _minTokens, "Insufficient tokens minted");
+        require(getTokensMinted().sub(initialMinted) >= _minTokens, "Insufficient minted");
         // Modify storage
         investorInvested[_beneficiary][uint8(_fundRaiseType)] = investorInvested[_beneficiary][uint8(_fundRaiseType)].add(spentValue);
         fundsRaised[uint8(_fundRaiseType)] = fundsRaised[uint8(_fundRaiseType)].add(spentValue);
@@ -552,12 +552,12 @@ contract USDTieredSTO is USDTieredSTOStorage, STO, ReentrancyGuard {
         require(_investmentValue > 0, "No funds were sent");
 
         // Check for minimum investment
-        require(investedUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestmentUSD, "Total investment < minimumInvestmentUSD");
+        require(investedUSD.add(investorInvestedUSD[_beneficiary]) >= minimumInvestmentUSD, "investment < minimumInvestmentUSD");
         netInvestedUSD = investedUSD;
         // Check for non-accredited cap
         if (investors[_beneficiary].accredited == uint8(0)) {
             uint256 investorLimitUSD = (investors[_beneficiary].nonAccreditedLimitUSDOverride == 0) ? nonAccreditedLimitUSD : investors[_beneficiary].nonAccreditedLimitUSDOverride;
-            require(investorInvestedUSD[_beneficiary] < investorLimitUSD, "Over Non-accredited investor limit");
+            require(investorInvestedUSD[_beneficiary] < investorLimitUSD, "Over investor limit");
             if (investedUSD.add(investorInvestedUSD[_beneficiary]) > investorLimitUSD)
                 netInvestedUSD = investorLimitUSD.sub(investorInvestedUSD[_beneficiary]);
         }

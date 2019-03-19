@@ -450,7 +450,8 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
             bool isForceValid;
             bool unarchived;
             address module;
-            for (uint256 i = 0; i < modules[TRANSFER_KEY].length; i++) {
+            uint256 tmLength = modules[TRANSFER_KEY].length;
+            for (uint256 i = 0; i < tmLength; i++) {
                 module = modules[TRANSFER_KEY][i];
                 if (!modulesToData[module].isArchived) {
                     unarchived = true;

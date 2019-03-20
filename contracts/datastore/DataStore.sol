@@ -298,9 +298,9 @@ contract DataStore is DataStoreStorage, IDataStore {
     }
 
     function getUint256ArrayElements(bytes32 _key, uint256 _startIndex, uint256 _endIndex) external view returns(uint256[] memory array) {
-        uint256 size = uintArrayData[_key].length - 1;
-        if (_endIndex > size) {
-            size = size - _startIndex + 1;
+        uint256 size = uintArrayData[_key].length;
+        if (_endIndex >= size) {
+            size = size - _startIndex;
         } else {
             size = _endIndex - _startIndex + 1;
         }
@@ -310,9 +310,9 @@ contract DataStore is DataStoreStorage, IDataStore {
     }
 
     function getBytes32ArrayElements(bytes32 _key, uint256 _startIndex, uint256 _endIndex) external view returns(bytes32[] memory array) {
-        uint256 size = bytes32ArrayData[_key].length - 1;
-        if (_endIndex > size) {
-            size = size - _startIndex + 1;
+        uint256 size = bytes32ArrayData[_key].length;
+        if (_endIndex >= size) {
+            size = size - _startIndex;
         } else {
             size = _endIndex - _startIndex + 1;
         }
@@ -322,9 +322,9 @@ contract DataStore is DataStoreStorage, IDataStore {
     }
 
     function getAddressArrayElements(bytes32 _key, uint256 _startIndex, uint256 _endIndex) external view returns(address[] memory array) {
-        uint256 size = addressArrayData[_key].length - 1;
-        if (_endIndex > size) {
-            size = size - _startIndex + 1;
+        uint256 size = addressArrayData[_key].length;
+        if (_endIndex >= size) {
+            size = size - _startIndex;
         } else {
             size = _endIndex - _startIndex + 1;
         }
@@ -334,9 +334,9 @@ contract DataStore is DataStoreStorage, IDataStore {
     }
 
     function getBoolArrayElements(bytes32 _key, uint256 _startIndex, uint256 _endIndex) external view returns(bool[] memory array) {
-        uint256 size = boolArrayData[_key].length - 1;
-        if (_endIndex > size) {
-            size = size - _startIndex + 1;
+        uint256 size = boolArrayData[_key].length;
+        if (_endIndex >= size) {
+            size = size - _startIndex;
         } else {
             size = _endIndex - _startIndex + 1;
         }

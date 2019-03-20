@@ -1,6 +1,7 @@
 pragma solidity ^0.5.0;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "openzeppelin-solidity/contracts/math/Math.sol";
 import "../../../libraries/BokkyPooBahsDateTimeLibrary.sol";
 import "../../../libraries/VolumeRestrictionLib.sol";
 import "../TransferManager.sol";
@@ -112,7 +113,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         uint256 dailyTime;
         uint256 endTime;
         bool isGlobal;
-        (success, fromTimestamp, sumOfLastPeriod, daysCovered, dailyTime, endTime, isGlobal) = _verifyTransfer(_from, _amount);
+        (success, fromTimestamp, sumOfLastPeriod, daysCovered, dailyTime, endTime, ,isGlobal) = _verifyTransfer(_from, _amount);
         if (fromTimestamp != 0 || dailyTime != 0) {
             _updateStorage(
                 _from,
@@ -145,7 +146,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         returns (Result, bytes32)
     {
 
-        (Result success,,,,,,) = _verifyTransfer(_from, _amount);
+        (Result success,,,,,,,) = _verifyTransfer(_from, _amount);
         if (success == Result.INVALID)
             return (success, bytes32(uint256(address(this)) << 96));
         return (Result.NA, bytes32(0));
@@ -163,7 +164,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
     )
         internal
         view
-        returns (Result, uint256, uint256, uint256, uint256, uint256, bool)
+        returns (Result, uint256, uint256, uint256, uint256, uint256, uint256, bool)
     {
         // If `_from` is present in the exemptionList or it is `0x0` address then it will not follow the vol restriction
         if (!paused && _from != address(0) && exemptions.exemptIndex[_from] == 0) {
@@ -171,15 +172,15 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
             if ((individualRestrictions.individualRestriction[_from].endTime >= now && individualRestrictions.individualRestriction[_from].startTime <= now)
                 || (individualRestrictions.individualDailyRestriction[_from].endTime >= now && individualRestrictions.individualDailyRestriction[_from].startTime <= now)) {
 
-                return _individualRestrictionCheck(_from, _amount);
+                return _individualRestrictionCheck(_amount, _from);
                 // If the `_from` doesn't fall under the individual category. It will processed with in the global category automatically
             } else if ((globalRestrictions.defaultRestriction.endTime >= now && globalRestrictions.defaultRestriction.startTime <= now)
                 || (globalRestrictions.defaultDailyRestriction.endTime >= now && globalRestrictions.defaultDailyRestriction.startTime <= now)) {
 
-                return _defaultRestrictionCheck(_from, _amount);
+                return _defaultRestrictionCheck(_amount, _from);
             }
         }
-        return (Result.NA, 0, 0, 0, 0, 0, false);
+        return (Result.NA, 0, 0, 0, 0, 0, 0, false);
     }
 
     /**
@@ -759,13 +760,14 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
     * @notice Internal function used to validate the transaction for a given address
     * If it validates then it also update the storage corressponds to the default restriction
     */
-    function _defaultRestrictionCheck(address _from, uint256 _amount) internal view returns (
+    function _defaultRestrictionCheck(uint256 _amount, address _from) internal view returns (
         Result success,
         uint256 fromTimestamp,
         uint256 sumOfLastPeriod,
         uint256 daysCovered,
         uint256 dailyTime,
         uint256 endTime,
+        uint256 allowedAmountToTransact,
         bool isGlobal
     ) {
         // using the variable to avoid stack too deep error
@@ -792,13 +794,20 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
                 bucketDetails
             );
             // validation of the transaction amount
-            if (!_checkValidAmountToTransact(sumOfLastPeriod, _amount, globalRestrictions.defaultRestriction)) {
+            // reusing the local variable to avoid stack too deep error
+            // here variable allowedAmountToTransact is representing the allowedAmount
+            allowedAmountToTransact = _allowedAmountToTransact(sumOfLastPeriod, globalRestrictions.defaultRestriction);
+            if (allowedAmountToTransact < _amount) {
                 allowedDefault = false;
             }
         }
-        (allowedDaily, dailyTime) = _dailyTxCheck(_from, _amount, bucketDetails.dailyLastTradedDayTime, globalRestrictions.defaultDailyRestriction);
-
+        // reusing the local variable to avoid stack too deep error
+        // here variable endTime is representing the allowedDailyAmount
+        (allowedDaily, dailyTime, endTime) = _dailyTxCheck(_from, _amount, bucketDetails.dailyLastTradedDayTime, globalRestrictions.defaultDailyRestriction);
         success = ((allowedDaily && allowedDefault) == true ? Result.NA : Result.INVALID);
+        allowedAmountToTransact = _validAllowedAmount(
+                globalRestrictions.defaultDailyRestriction, globalRestrictions.defaultRestriction, allowedAmountToTransact, endTime
+            );
         endTime = globalRestrictions.defaultDailyRestriction.endTime;
         isGlobal = true;
     }
@@ -807,14 +816,15 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
      * @notice Internal function used to validate the transaction for a given address
      * If it validates then it also update the storage corressponds to the individual restriction
      */
-    function _individualRestrictionCheck(address _from, uint256 _amount) internal view returns (
+    function _individualRestrictionCheck(uint256 _amount, address _from) internal view returns (
         Result success,
         uint256 fromTimestamp,
         uint256 sumOfLastPeriod,
         uint256 daysCovered,
         uint256 dailyTime,
         uint256 endTime,
-        bool allowedDaily
+        uint256 allowedAmountToTransact,
+        bool isGlobal
     ) {
         // using the variable to avoid stack too deep error
         BucketDetails memory bucketDetails = bucketData.userToBucket[_from];
@@ -841,14 +851,39 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
                 bucketDetails
             );
             // validation of the transaction amount
-            if (!_checkValidAmountToTransact(sumOfLastPeriod, _amount, restriction)) {
+            // reusing the local variable to avoid stack too deep error
+            // here variable allowedAmountToTransact is representing the allowedAmount
+            allowedAmountToTransact = _allowedAmountToTransact(sumOfLastPeriod, restriction);
+            if (allowedAmountToTransact < _amount) {
                 allowedIndividual = false;
             }
         }
-        (allowedDaily, dailyTime) = _dailyTxCheck(_from, _amount, bucketDetails.dailyLastTradedDayTime, dailyRestriction);
-        success = ((allowedDaily && allowedIndividual) ? Result.NA : Result.INVALID);
+        // reusing the local variable to avoid stack too deep error
+        // here variable endTime is representing the allowedDailyAmount
+        // & isGlobal is representing the allowedDaily
+        (isGlobal, dailyTime, endTime) = _dailyTxCheck(_from, _amount, bucketDetails.dailyLastTradedDayTime, dailyRestriction);
+        success = ((isGlobal && allowedIndividual) ? Result.NA : Result.INVALID);
+        allowedAmountToTransact = _validAllowedAmount(dailyRestriction, restriction, allowedAmountToTransact, endTime);
         endTime = dailyRestriction.endTime;
-        allowedDaily = false;
+        isGlobal = false;
+    }
+
+    function _validAllowedAmount(
+        VolumeRestriction memory dailyRestriction,
+        VolumeRestriction memory restriction,
+        uint256 allowedAmount,
+        uint256 allowedDailyAmount
+    )
+        internal
+        view
+        returns (uint256) 
+    {   
+        if (now > dailyRestriction.endTime || now < dailyRestriction.startTime)
+            return allowedAmount;
+        else if (now > restriction.endTime || now < restriction.startTime)
+            return allowedDailyAmount;
+        else 
+            return Math.min(allowedDailyAmount, allowedAmount);
     }
 
     function _dailyTxCheck(
@@ -859,7 +894,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
     )
         internal
         view
-        returns(bool, uint256)
+        returns(bool, uint256, uint256)
     {
         // Checking whether the daily restriction is added or not if yes then calculate
         // the total amount get traded on a particular day (~ _fromTime)
@@ -872,9 +907,41 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
                 dailyLastTradedDayTime = dailyLastTradedDayTime.add(BokkyPooBahsDateTimeLibrary.diffDays(dailyLastTradedDayTime, now).mul(1 days));
             // Assgining total sum traded on dailyLastTradedDayTime timestamp
             txSumOfDay = bucketData.bucket[from][dailyLastTradedDayTime];
-            return (_checkValidAmountToTransact(txSumOfDay, amount, restriction), dailyLastTradedDayTime);
+            (bool isAllowed, uint256 allowedAmount) =  _checkValidAmountToTransact(txSumOfDay, amount, restriction);
+            return (isAllowed, dailyLastTradedDayTime, allowedAmount);
         }
-        return (true, dailyLastTradedDayTime);
+        return (true, dailyLastTradedDayTime, amount);
+    }
+
+    function _checkValidAmountToTransact(
+        uint256 _sumOfLastPeriod,
+        uint256 _amountToTransact,
+        VolumeRestriction memory _restriction
+    )
+        internal
+        view
+        returns (bool, uint256)
+    {
+        uint256 allowedAmount = _allowedAmountToTransact(_sumOfLastPeriod, _restriction);
+        // Validation on the amount to transact
+        return ((allowedAmount >= _amountToTransact), allowedAmount);
+    }
+
+    function _allowedAmountToTransact(
+        uint256 _sumOfLastPeriod,
+        VolumeRestriction memory _restriction
+    )
+        internal
+        view
+        returns (uint256)
+    {
+        uint256 _allowedAmount = 0;
+        if (_restriction.typeOfRestriction == RestrictionType.Percentage) {
+            _allowedAmount = (_restriction.allowedTokens.mul(IERC20(securityToken).totalSupply())) / uint256(10) ** 18;
+        } else {
+            _allowedAmount = _restriction.allowedTokens;
+        }
+        return _allowedAmount.sub(_sumOfLastPeriod);
     }
 
     /// Internal function for the bucket check
@@ -921,25 +988,6 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         // where T1,T2,T3 are timestamps having 24 hrs difference
         _fromTime = _fromTime.add(_diffDays.mul(1 days));
         return (sumOfLastPeriod, _fromTime, counter);
-    }
-
-    function _checkValidAmountToTransact(
-        uint256 _sumOfLastPeriod,
-        uint256 _amountToTransact,
-        VolumeRestriction memory _restriction
-    )
-        internal
-        view
-        returns (bool)
-    {
-        uint256 _allowedAmount = 0;
-        if (_restriction.typeOfRestriction == RestrictionType.Percentage) {
-            _allowedAmount = (_restriction.allowedTokens.mul(IERC20(securityToken).totalSupply())) / uint256(10) ** 18;
-        } else {
-            _allowedAmount = _restriction.allowedTokens;
-        }
-        // Validation on the amount to transact
-        return (_allowedAmount >= _sumOfLastPeriod.add(_amountToTransact));
     }
 
     function _updateStorage(
@@ -1030,6 +1078,35 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
             BokkyPooBahsDateTimeLibrary.diffDays(_startTime, _endTime) >= _rollingPeriodDays && _endTime > _startTime,
             "Invalid times"
         );
+    }
+
+    /**
+     * @notice return the amount of tokens for a given user as per the partition
+     * @param _partition Identifier
+     * @param _tokenHolder Whom token amount need to query
+     */
+    function getTokensByPartition(bytes32 _partition, address _tokenHolder) external view returns(uint256) {
+        uint256 allowedAmountToTransact;
+        uint256 fromTimestamp;
+        uint256 dailyTime;
+        (,fromTimestamp,,,dailyTime,,allowedAmountToTransact,) = _verifyTransfer(_tokenHolder, 0);
+        uint256 currentBalance = ISecurityToken(securityToken).balanceOf(_tokenHolder);
+        if (_partition == LOCKED) {
+            if (allowedAmountToTransact == 0 && fromTimestamp == 0 && dailyTime == 0)
+                return 0;
+            else if (allowedAmountToTransact == 0)
+                return currentBalance;
+            else
+                return (currentBalance.sub(allowedAmountToTransact));
+        }
+        else if (_partition == UNLOCKED) {
+            if (allowedAmountToTransact == 0 && fromTimestamp == 0 && dailyTime == 0)
+                return currentBalance;
+            else if (allowedAmountToTransact == 0)
+                return 0;
+            else
+                return allowedAmountToTransact;
+        }
     }
 
     /**

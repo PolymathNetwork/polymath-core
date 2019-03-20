@@ -6,6 +6,7 @@ const gbl = require('./common/global');
 const contracts = require('./helpers/contract_addresses');
 const abis = require('./helpers/contract_abis');
 const csvParse = require('./helpers/csv');
+const BigNumber = require('bignumber.js');
 const { table } = require('table')
 
 const EXCLUSIONS_DATA_CSV = `${__dirname}/../data/Checkpoint/exclusions_data.csv`;
@@ -409,12 +410,11 @@ async function createDividends() {
   }
   let dividendAmount = readlineSync.question(`How much ${dividendSymbol} would you like to distribute to token holders? `);
 
-  let dividendAmountToSend = parseFloat(dividendAmount) * Math.pow(10, dividendTokenDecimals);
-  let issuerBalance = await getBalance(Issuer.address, dividendToken);
-  if (issuerBalance < dividendAmountToSend) {
+  let dividendAmountBN = new BigNumber(dividendAmount).times(Math.pow(10, dividendTokenDecimals));
+  let issuerBalance = new BigNumber(await getBalance(Issuer.address, dividendToken));
+  if (issuerBalance.lt(dividendAmountBN)) {
     console.log(chalk.red(`You have ${issuerBalance / Math.pow(10, dividendTokenDecimals)} ${dividendSymbol}. You need ${(dividendAmountBN - issuerBalance) / Math.pow(10, dividendTokenDecimals)} ${dividendSymbol} more!`));
   } else {
-    let dividendAmountBN = new web3.utils.BN(dividendAmountToSend.toString());
     let checkpointId = await selectCheckpoint(true); // If there are no checkpoints, it must create a new one
     let now = Math.floor(Date.now() / 1000);
     let maturityTime = readlineSync.questionInt('Enter the dividend maturity time from which dividend can be paid (Unix Epoch time)\n(Now = ' + now + ' ): ', { defaultInput: now });
@@ -525,7 +525,7 @@ function showReport(_name, _tokenSymbol, _tokenDecimals, _amount, _witthheld, _c
     let investor = _investorArray[i];
     let excluded = _excludedArray[i];
     let withdrawn = _claimedArray[i] ? 'YES' : 'NO';
-    let amount = !excluded ? web3.utils.toBN(_amountArray[i]).add(web3.utils.toBN(_withheldArray[i])).divn(Math.pow(10, _tokenDecimals)) : 0;
+    let amount = !excluded ? new BigNumber(_amountArray[i]).plus(_withheldArray[i]).div((Math.pow(10, _tokenDecimals))) : 0;
     let withheld = !excluded ? parseFloat(_withheldArray[i]) / Math.pow(10, _tokenDecimals) : 'NA';
     let withheldPercentage = (!excluded) ? (withheld !== '0' ? parseFloat(withheld) / parseFloat(amount) * 100 : 0) : 'NA';
     let received = !excluded ? parseFloat(_amountArray[i]) / Math.pow(10, _tokenDecimals) : 0;

@@ -491,7 +491,7 @@ async function reclaimFromContract() {
         defaultInput: polyToken.options.address
       });
       let reclaimERC20Action = currentDividendsModule.methods.reclaimERC20(erc20Address);
-      await common.sendTransaction(reclaimERC20Action, { factor: 2 });
+      await common.sendTransaction(reclaimERC20Action);
       console.log(chalk.green('ERC20 has been reclaimed succesfully!'));
       break
   }

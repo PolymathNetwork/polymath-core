@@ -16,7 +16,7 @@ contract CappedSTOFactory is ModuleFactory {
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
     ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
-        version = "2.1.1";
+        version = "2.1.0";
         name = "CappedSTO";
         title = "Capped STO";
         description = "This smart contract creates a maximum number of tokens (i.e. hard cap) which the total aggregate of tokens acquired by all investors cannot exceed. Security tokens are sent to the investor upon reception of the funds (ETH or POLY), and any security tokens left upon termination of the offering will not be minted.";

@@ -298,28 +298,48 @@ contract DataStore is DataStoreStorage, IDataStore {
     }
 
     function getUint256ArrayElements(bytes32 _key, uint256 _startIndex, uint256 _endIndex) external view returns(uint256[] memory array) {
-        uint256 size = _endIndex - _startIndex + 1;
+        uint256 size = uintArrayData[_key].length - 1;
+        if (_endIndex > size) {
+            size = size - _startIndex + 1;
+        } else {
+            size = _endIndex - _startIndex + 1;
+        }
         array = new uint256[](size);
         for(uint256 i; i < size; i++)
             array[i] = uintArrayData[_key][i + _startIndex];
     }
 
     function getBytes32ArrayElements(bytes32 _key, uint256 _startIndex, uint256 _endIndex) external view returns(bytes32[] memory array) {
-        uint256 size = _endIndex - _startIndex + 1;
+        uint256 size = bytes32ArrayData[_key].length - 1;
+        if (_endIndex > size) {
+            size = size - _startIndex + 1;
+        } else {
+            size = _endIndex - _startIndex + 1;
+        }
         array = new bytes32[](size);
         for(uint256 i; i < size; i++)
             array[i] = bytes32ArrayData[_key][i + _startIndex];
     }
 
     function getAddressArrayElements(bytes32 _key, uint256 _startIndex, uint256 _endIndex) external view returns(address[] memory array) {
-        uint256 size = _endIndex - _startIndex + 1;
+        uint256 size = addressArrayData[_key].length - 1;
+        if (_endIndex > size) {
+            size = size - _startIndex + 1;
+        } else {
+            size = _endIndex - _startIndex + 1;
+        }
         array = new address[](size);
         for(uint256 i; i < size; i++)
             array[i] = addressArrayData[_key][i + _startIndex];
     }
 
     function getBoolArrayElements(bytes32 _key, uint256 _startIndex, uint256 _endIndex) external view returns(bool[] memory array) {
-        uint256 size = _endIndex - _startIndex + 1;
+        uint256 size = boolArrayData[_key].length - 1;
+        if (_endIndex > size) {
+            size = size - _startIndex + 1;
+        } else {
+            size = _endIndex - _startIndex + 1;
+        }
         array = new bool[](size);
         for(uint256 i; i < size; i++)
             array[i] = boolArrayData[_key][i + _startIndex];

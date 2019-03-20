@@ -715,6 +715,9 @@ contract("SecurityTokenRegistry", async (accounts) => {
         })
 
         it("Should generate the new security token with version 2", async () => {
+            //Fails due to incompatible GTM version
+            await catchRevert(I_STRProxied.generateSecurityToken(name2, symbol2, tokenDetails, false, token_owner, _pack(2,2,0), { from: token_owner }));
+            await I_GeneralTransferManagerFactory.changeSTVersionBounds("lowerBound", [2, 2, 0], {from: account_polymath});
             let tx = await I_STRProxied.generateSecurityToken(name2, symbol2, tokenDetails, false, token_owner, _pack(2,2,0), { from: token_owner });
             console.log(`Protocol version: ${_pack(2,2,0)}`);
             // Verify the successful generation of the security token

@@ -129,7 +129,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         } else {
             require(getBoolValue(Encoder.getKey("verified", _moduleFactory)), "ModuleFactory must be verified");
         }
-        require(isCompatibleModule(_moduleFactory, msg.sender), "Version should within the compatible range of ST");
+        require(isCompatibleModule(_moduleFactory, msg.sender), "Incompatible versions");
         // This if statement is required to be able to add modules from the STFactory contract during deployment
         // before the token has been registered to the STR.
         if ((!_isUpgrade) && ISecurityTokenRegistry(getAddressValue(Encoder.getKey("securityTokenRegistry"))).isSecurityToken(msg.sender)) {

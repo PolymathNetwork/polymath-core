@@ -119,10 +119,11 @@ async function modifySTO(selectedSTO, currentSTO) {
 async function addSTOModule(stoConfig) {
   console.log(chalk.blue('Launch STO - Configuration'));
 
+  let factorySelected;
   let optionSelected;
   if (typeof stoConfig === 'undefined') {
     let availableModules = await moduleRegistry.methods.getModulesByTypeAndToken(gbl.constants.MODULES_TYPES.STO, securityToken.options.address).call();
-    let moduleList = await Promise.all(availableModules.map(async function (m) {
+    moduleList = await Promise.all(availableModules.map(async function (m) {
       let moduleFactoryABI = abis.moduleFactory();
       let moduleFactory = new web3.eth.Contract(moduleFactoryABI, m);
       let moduleName = web3.utils.hexToUtf8(await moduleFactory.methods.name().call());
@@ -133,17 +134,19 @@ async function addSTOModule(stoConfig) {
 
     let index = readlineSync.keyInSelect(options, 'What type of STO do you want?', { cancel: 'RETURN' });
     optionSelected = index != -1 ? moduleList[index].name : 'RETURN';
+    factorySelected = moduleList[index].factoryAddress;
   } else {
     optionSelected = stoConfig.type;
+    factorySelected = await await contracts.getModuleFactoryAddressByName(securityToken.options.address, gbl.constants.MODULES_TYPES.STO, optionSelected);
   }
   console.log('Selected:', optionSelected, '\n');
   switch (optionSelected) {
     case 'CappedSTO':
-      let cappedSTO = await cappedSTO_launch(stoConfig);
+      let cappedSTO = await cappedSTO_launch(stoConfig, factorySelected);
       await cappedSTO_status(cappedSTO);
       break;
     case 'USDTieredSTO':
-      let usdTieredSTO = await usdTieredSTO_launch(stoConfig);
+      let usdTieredSTO = await usdTieredSTO_launch(stoConfig, factorySelected);
       await usdTieredSTO_status(usdTieredSTO);
       break;
   }
@@ -152,12 +155,11 @@ async function addSTOModule(stoConfig) {
 ////////////////
 // Capped STO //
 ////////////////
-async function cappedSTO_launch(stoConfig) {
+async function cappedSTO_launch(stoConfig, factoryAddress) {
   console.log(chalk.blue('Launch STO - Capped STO in No. of Tokens'));
 
   let cappedSTOFactoryABI = abis.cappedSTOFactory();
-  let cappedSTOFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, gbl.constants.MODULES_TYPES.STO, "CappedSTO");
-  let cappedSTOFactory = new web3.eth.Contract(cappedSTOFactoryABI, cappedSTOFactoryAddress);
+  let cappedSTOFactory = new web3.eth.Contract(cappedSTOFactoryABI, factoryAddress);
   cappedSTOFactory.setProvider(web3.currentProvider);
   let stoFee = new web3.utils.BN(await cappedSTOFactory.methods.getSetupCost().call());
 
@@ -221,7 +223,7 @@ async function cappedSTO_launch(stoConfig) {
     cappedSTOconfig.wallet]
   );
 
-  let addModuleAction = securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, stoFee, 0);
+  let addModuleAction = securityToken.methods.addModule(cappedSTOFactory.options.address, bytesSTO, stoFee, 0);
   let receipt = await common.sendTransaction(addModuleAction);
   let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
   console.log(`STO deployed at address: ${event._module}`);
@@ -512,12 +514,11 @@ function timesConfigUSDTieredSTO(stoConfig) {
   return times;
 }
 
-async function usdTieredSTO_launch(stoConfig) {
+async function usdTieredSTO_launch(stoConfig, factoryAddress) {
   console.log(chalk.blue('Launch STO - USD pegged tiered STO'));
 
   let usdTieredSTOFactoryABI = abis.usdTieredSTOFactory();
-  let usdTieredSTOFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, gbl.constants.MODULES_TYPES.STO, 'USDTieredSTO');
-  let usdTieredSTOFactory = new web3.eth.Contract(usdTieredSTOFactoryABI, usdTieredSTOFactoryAddress);
+  let usdTieredSTOFactory = new web3.eth.Contract(usdTieredSTOFactoryABI, factoryAddress);
   usdTieredSTOFactory.setProvider(web3.currentProvider);
   let stoFee = new web3.utils.BN(await usdTieredSTOFactory.methods.getSetupCost().call());
 
@@ -562,7 +563,7 @@ async function usdTieredSTO_launch(stoConfig) {
     addresses.usdToken]
   );
 
-  let addModuleAction = securityToken.methods.addModule(usdTieredSTOFactoryAddress, bytesSTO, stoFee, 0);
+  let addModuleAction = securityToken.methods.addModule(usdTieredSTOFactory.options.address, bytesSTO, stoFee, 0);
   let receipt = await common.sendTransaction(addModuleAction);
   let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
   console.log(`STO deployed at address: ${event._module}`);

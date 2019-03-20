@@ -40,7 +40,8 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, SecurityTokenSt
         address _module,
         uint256 _moduleCost,
         uint256 _budget,
-        bytes32 _label
+        bytes32 _label,
+        bool _archived
     );
 
     // Emit when the token details get updated
@@ -195,29 +196,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, SecurityTokenSt
         require(modulesToData[module].module == address(0), "Module exists");
         //Approve ongoing budget
         ERC20(polyToken).approve(module, _budget);
-        //Add to SecurityToken module map
-        /* bytes32 moduleName = moduleFactory.name();
-        uint256[] memory moduleIndexes = new uint256[](moduleTypes.length);
-        uint256 i;
-        for (i = 0; i < moduleTypes.length; i++) {
-            moduleIndexes[i] = modules[moduleTypes[i]].length;
-            modules[moduleTypes[i]].push(module);
-        }
-        modulesToData[module] = ModuleData(
-            moduleName,
-            module,
-            _moduleFactory,
-            _archived,
-            moduleTypes,
-            moduleIndexes,
-            names[moduleName].length,
-            _label
-        );
-        names[moduleName].push(module); */
-        //Emit log event
-        /*solium-disable-next-line security/no-block-members*/
         _addModuleData(moduleTypes, _moduleFactory, module, moduleCost, _budget, _label, _archived);
-        //emit ModuleAdded(moduleTypes, moduleName, _moduleFactory, module, moduleCost, _budget, _label);
     }
 
     function _addModuleData(uint8[] memory _moduleTypes, address _moduleFactory, address _module, uint256 _moduleCost, uint256 _budget, bytes32 _label, bool _archived) internal {
@@ -239,7 +218,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, SecurityTokenSt
             _label
         );
         names[moduleName].push(_module);
-        emit ModuleAdded(_moduleTypes, moduleName, _moduleFactory, _module, _moduleCost, _budget, _label);
+        emit ModuleAdded(_moduleTypes, moduleName, _moduleFactory, _module, _moduleCost, _budget, _label, _archived);
     }
 
     /**

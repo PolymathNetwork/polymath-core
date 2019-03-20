@@ -168,7 +168,7 @@ contract("PreSaleSTO", async (accounts) => {
             await catchRevert(I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, new BN(0), new BN(0), false, { from: token_owner }));
         });
 
-        it("Should successfully attach the Paid STO factory with the security token", async () => {
+        it("Should successfully attach the Paid STO factory (archived) with the security token", async () => {
             let snap_id = await takeSnapshot();
             endTime = await latestTime() + duration.days(30); // Start time will be 5000 seconds more than the latest time
             let bytesSTO = encodeModuleCall(STOParameters, [endTime]);
@@ -193,11 +193,11 @@ contract("PreSaleSTO", async (accounts) => {
             await catchRevert(I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, new BN(0), new BN(0), false, { from: token_owner }));
         });
 
-        it("Should successfully attach the STO factory with the security token", async () => {
+        it("Should successfully attach the STO factory (archived) with the security token", async () => {
             endTime = await latestTime() + duration.days(30); // Start time will be 5000 seconds more than the latest time
             let bytesSTO = encodeModuleCall(STOParameters, [endTime]);
 
-            const tx = await I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, new BN(0), new BN(0), false, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, new BN(0), new BN(0), true, { from: token_owner });
 
             assert.equal(tx.logs[2].args._types[0], stoKey, "PreSaleSTO doesn't get deployed");
             assert.equal(
@@ -206,13 +206,15 @@ contract("PreSaleSTO", async (accounts) => {
                 "PreSaleSTOFactory module was not added"
             );
             I_PreSaleSTO = await PreSaleSTO.at(tx.logs[2].args._module);
+            let info = I_SecurityToken.getModule.call(I_PreSaleSTO.address);
+            assert.equal(info[3], true);
         });
 
         it("Should successfully attach the STO factory with the security token", async () => {
             endTime = await latestTime() + duration.days(30); // Start time will be 5000 seconds more than the latest time
             let bytesSTO = encodeModuleCall(STOParameters, [endTime]);
 
-            const tx = await I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, new BN(0), new BN(0), false, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, new BN(0), new BN(0), true, { from: token_owner });
 
             assert.equal(tx.logs[2].args._types[0], stoKey, "PreSaleSTO doesn't get deployed");
             assert.equal(
@@ -221,6 +223,9 @@ contract("PreSaleSTO", async (accounts) => {
                 "PreSaleSTOFactory module was not added"
             );
             I_PreSaleSTO = await PreSaleSTO.at(tx.logs[2].args._module);
+            let info = I_SecurityToken.getModule.call(I_PreSaleSTO.address);
+            assert.equal(info[3], true);
+
         });
     });
 
@@ -236,9 +241,6 @@ contract("PreSaleSTO", async (accounts) => {
     });
 
     describe("Buy tokens", async () => {
-        it("Should allocate the tokens -- failed due to investor not on whitelist", async () => {
-            await catchRevert(I_PreSaleSTO.allocateTokens(account_investor1, 1000, new BN(web3.utils.toWei("1", "ether")), 0));
-        });
 
         it("Should Buy the tokens", async () => {
             fromTime = await latestTime();
@@ -255,10 +257,21 @@ contract("PreSaleSTO", async (accounts) => {
 
             // Jump time
             await increaseTime(duration.days(1));
+            // Fail as module is archived
+            await catchRevert(
+                I_PreSaleSTO.allocateTokens(account_investor1, new BN(web3.utils.toWei("1", "ether")), new BN(web3.utils.toWei("1", "ether")), new BN(0), {
+                    from: account_issuer
+                })
+            );
+            await I_SecurityToken.unarchiveModule(I_PreSaleSTO.address, {from: token_owner});
+            let info = I_SecurityToken.getModule.call(PreSaleSTO.address);
+            assert.equal(info[3], false);
+
+            //Fail as investor is not on whitelist
+            await catchRevert(I_PreSaleSTO.allocateTokens(account_investor2, 1000, new BN(web3.utils.toWei("1", "ether")), 0));
             await I_PreSaleSTO.allocateTokens(account_investor1, new BN(web3.utils.toWei("1", "ether")), new BN(web3.utils.toWei("1", "ether")), new BN(0), {
                 from: account_issuer
             });
-
             assert.equal((await I_PreSaleSTO.getRaised.call(0)).div(new BN(10).pow(new BN(18))).toNumber(), 1);
             console.log(await I_PreSaleSTO.getNumberInvestors.call());
             assert.equal((await I_PreSaleSTO.getNumberInvestors.call()).toNumber(), 1);

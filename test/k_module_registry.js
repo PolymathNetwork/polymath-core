@@ -7,6 +7,7 @@ import {deployCappedSTOAndVerifyed, setUpPolymathNetwork} from "./helpers/create
 
 const CappedSTOFactory = artifacts.require("./CappedSTOFactory.sol");
 const CappedSTO = artifacts.require("./CappedSTO.sol");
+const DummySTO = artifacts.require("./DummySTO.sol");
 const DummySTOFactory = artifacts.require("./DummySTOFactory.sol");
 const SecurityToken = artifacts.require("./SecurityToken.sol");
 const ModuleRegistryProxy = artifacts.require("./ModuleRegistryProxy.sol");
@@ -265,6 +266,7 @@ contract("ModuleRegistry", async (accounts) => {
             it("Should fail to register the new module because msg.sender is not the owner of the module", async() => {
                 I_CappedSTOLogic = await CappedSTO.new(address_zero, address_zero, { from: account_polymath });
                 I_CappedSTOFactory3 = await CappedSTOFactory.new(new BN(0), new BN(0), I_CappedSTOLogic.address, I_PolymathRegistry.address, { from: account_temp });
+                console.log("I_CappedSTOFactory3: " + I_CappedSTOFactory3.address);
                 catchRevert(I_MRProxied.registerModule(I_CappedSTOFactory3.address, { from: token_owner }));
             });
 
@@ -379,20 +381,22 @@ contract("ModuleRegistry", async (accounts) => {
             });
 
             it("Should failed in adding the TestSTOFactory module because not compatible with the current protocol version --lower", async () => {
-                I_TestSTOFactory = await TestSTOFactory.new(new BN(0), new BN(0), one_address, I_PolymathRegistry.address, { from: account_polymath });
+                let I_TestSTOFactoryLogic = await DummySTO.new(address_zero, address_zero);
+                I_TestSTOFactory = await TestSTOFactory.new(new BN(0), new BN(0), I_TestSTOFactoryLogic.address, I_PolymathRegistry.address, { from: account_polymath });
                 await I_MRProxied.registerModule(I_TestSTOFactory.address, { from: account_polymath });
                 await I_MRProxied.verifyModule(I_TestSTOFactory.address, { from: account_polymath });
                 // Taking the snapshot the revert the changes from here
                 let id = await takeSnapshot();
-                await I_TestSTOFactory.changeSTVersionBounds("lowerBound", [2, 1, 0], { from: account_polymath });
+                await I_TestSTOFactory.changeSTVersionBounds("lowerBound", [3, 1, 0], { from: account_polymath });
                 let _lstVersion = await I_TestSTOFactory.lowerSTVersionBounds.call();
-                assert.equal(_lstVersion[2], 0);
+                assert.equal(_lstVersion[0], 3);
                 assert.equal(_lstVersion[1], 1);
+                assert.equal(_lstVersion[2], 0);
                 let bytesData = encodeModuleCall(
                     ["uint256", "uint256", "uint256", "string"],
                     [await latestTime(), currentTime.add(new BN(duration.days(1))), cap, "Test STO"]
                 );
-
+                console.log("I_TestSTOFactory:" +I_TestSTOFactory.address);
                 await catchRevert(I_SecurityToken.addModule(I_TestSTOFactory.address, bytesData, new BN(0), new BN(0), false, { from: token_owner }));
                 await revertToSnapshot(id);
             });
@@ -402,8 +406,8 @@ contract("ModuleRegistry", async (accounts) => {
                 let _ustVersion = await I_TestSTOFactory.upperSTVersionBounds.call();
                 assert.equal(_ustVersion[0], 0);
                 assert.equal(_ustVersion[2], 1);
-                await I_STRProxied.setProtocolVersion(I_STFactory.address, 2, new BN(0), 1);
-
+                await I_STRProxied.setProtocolFactory(I_STFactory.address, 2, new BN(0), 1);
+                await I_STRProxied.setLatestVersion(2, new BN(0), 1);
                 // Generate the new securityToken
                 let newSymbol = "toro";
                 await I_PolyToken.getTokens(new BN(web3.utils.toWei("2000")), account_issuer);
@@ -426,12 +430,14 @@ contract("ModuleRegistry", async (accounts) => {
         describe("Test case for the getModulesByTypeAndToken()", async () => {
             it("Should get the list of available modules when the customModulesAllowed", async () => {
                 let _list = await I_MRProxied.getModulesByTypeAndToken.call(3, I_SecurityToken.address);
+                console.log(_list);
                 assert.equal(_list[0], I_CappedSTOFactory2.address);
             });
 
             it("Should get the list of available modules when the customModulesAllowed is not allowed", async () => {
                 await I_FeatureRegistry.setFeatureStatus("customModulesAllowed", false, { from: account_polymath });
                 let _list = await I_MRProxied.getModulesByTypeAndToken.call(3, I_SecurityToken.address);
+                console.log(_list);
                 assert.equal(_list.length, 0);
             });
         });

@@ -34,8 +34,8 @@ contract CappedSTOFactory is UpgradableModuleFactory {
         tagsData.push("ETH");
         tagsData.push("POLY");
         tagsData.push("STO");
-        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
     }
 
     /**

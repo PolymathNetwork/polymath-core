@@ -148,8 +148,8 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         uint8[] memory _latestVersion = ISecurityToken(_securityToken).getVersion();
         uint8[] memory _lowerBound = IModuleFactory(_moduleFactory).lowerSTVersionBounds();
         uint8[] memory _upperBound = IModuleFactory(_moduleFactory).upperSTVersionBounds();
-        bool _isLowerAllowed = VersionUtils.compareLowerBound(_lowerBound, _latestVersion);
-        bool _isUpperAllowed = VersionUtils.compareUpperBound(_upperBound, _latestVersion);
+        bool _isLowerAllowed = VersionUtils.lessThanOrEqual(_lowerBound, _latestVersion);
+        bool _isUpperAllowed = VersionUtils.greaterThanOrEqual(_upperBound, _latestVersion);
         return (_isLowerAllowed && _isUpperAllowed);
     }
 
@@ -332,8 +332,8 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @return address array that contains the list of available addresses of module factory contracts.
      */
     function getModulesByTypeAndToken(uint8 _moduleType, address _securityToken) public view returns(address[] memory) {
-        uint256 _len = getArrayAddress(Encoder.getKey("moduleList", uint256(_moduleType))).length;
         address[] memory _addressList = getArrayAddress(Encoder.getKey("moduleList", uint256(_moduleType)));
+        uint256 _len = _addressList.length;
         bool _isCustomModuleAllowed = IFeatureRegistry(getAddressValue(Encoder.getKey("featureRegistry"))).getFeatureStatus(
             "customModulesAllowed"
         );

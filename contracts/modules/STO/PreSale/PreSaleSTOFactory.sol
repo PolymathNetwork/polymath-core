@@ -32,8 +32,8 @@ contract PreSaleSTOFactory is UpgradableModuleFactory {
         typesData.push(3);
         tagsData.push("PreSale");
         tagsData.push("STO");
-        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
     }
 
     /**

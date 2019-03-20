@@ -577,8 +577,8 @@ contract("CountTransferManager", async (accounts) => {
 
             it("Should successfully change the version bound", async () => {
                 await I_CountTransferManagerFactory.changeSTVersionBounds("lowerBound", [1, 2, 1], { from: account_polymath });
-                await I_CountTransferManagerFactory.changeSTVersionBounds("lowerBound", [1, 4, 9], { from: account_polymath });
-                await catchRevert(I_CountTransferManagerFactory.changeSTVersionBounds("lowerBound", [1, new BN(0), 0], { from: account_polymath }));
+                await I_CountTransferManagerFactory.changeSTVersionBounds("lowerBound", [1, 0, 9], { from: account_polymath });
+                await catchRevert(I_CountTransferManagerFactory.changeSTVersionBounds("lowerBound", [1, 1, 0], { from: account_polymath }));
             });
         });
     });

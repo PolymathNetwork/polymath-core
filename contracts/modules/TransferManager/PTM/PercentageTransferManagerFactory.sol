@@ -32,8 +32,8 @@ contract PercentageTransferManagerFactory is UpgradableModuleFactory {
         typesData.push(2);
         tagsData.push("Percentage");
         tagsData.push("Transfer Restriction");
-        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
     }
 
     /**

@@ -689,12 +689,18 @@ contract("SecurityTokenRegistry", async (accounts) => {
         });
 
         it("Should change the protocol version", async() => {
-            await I_STRProxied.setProtocolVersion(I_STFactory002.address, new BN(2), new BN(2), new BN(0), { from: account_polymath });
+            await I_STRProxied.setProtocolFactory(I_STFactory002.address, new BN(2), new BN(2), new BN(0), { from: account_polymath });
             let _protocol = await I_Getter.getLatestProtocolVersion.call();
+            assert.equal(_protocol[0], 2);
+            assert.equal(_protocol[1], 0);
+            assert.equal(_protocol[2], 0);
+            await I_STRProxied.setLatestVersion(new BN(2), new BN(2), new BN(0), { from: account_polymath });
+            _protocol = await I_Getter.getLatestProtocolVersion.call();
             assert.equal(_protocol[0], 2);
             assert.equal(_protocol[1], 2);
             assert.equal(_protocol[2], 0);
-            await I_STRProxied.setProtocolVersion(I_STFactory.address, new BN(3), new BN(0), new BN(0), { from: account_polymath});
+            await I_STRProxied.setProtocolFactory(I_STFactory.address, new BN(3), new BN(0), new BN(0), { from: account_polymath});
+            await I_STRProxied.setLatestVersion(new BN(3), new BN(0), new BN(0), { from: account_polymath});
             _protocol = await I_Getter.getLatestProtocolVersion.call();
             assert.equal(_protocol[0], 3);
             assert.equal(_protocol[1], 0);
@@ -1278,23 +1284,23 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         describe("Test cases for the setProtocolVersion", async () => {
             it("Should successfully change the protocolVersion -- failed because of bad owner", async () => {
-                await catchRevert(I_STRProxied.setProtocolVersion(accounts[8], 5, 6, 7, { from: account_temp }));
+                await catchRevert(I_STRProxied.setProtocolFactory(accounts[8], 5, 6, 7, { from: account_temp }));
             });
 
             it("Should successfully change the protocolVersion -- failed because factory address is 0x", async () => {
                 await catchRevert(
-                    I_STRProxied.setProtocolVersion(address_zero, 5, 6, 7, { from: account_polymath })
+                    I_STRProxied.setProtocolFactory(address_zero, 5, 6, 7, { from: account_polymath })
                 );
             });
 
-            it("Should successfully change the protocolVersion -- not a valid vesrion", async () => {
-                await catchRevert(I_STRProxied.setProtocolVersion(accounts[8], new BN(0), new BN(0), new BN(0), { from: account_polymath }));
+            it("Should successfully change the protocolVersion -- not a valid version", async () => {
+                await catchRevert(I_STRProxied.setLatestVersion(new BN(0), new BN(0), new BN(0), { from: account_polymath }));
             });
 
             it("Should successfully change the protocolVersion -- fail in second attempt because of invalid version", async () => {
                 let snap_Id = await takeSnapshot();
-                await I_STRProxied.setProtocolVersion(accounts[8], 3, 1, 1, { from: account_polymath });
-                await catchRevert(I_STRProxied.setProtocolVersion(accounts[8], 1, 3, 1, { from: account_polymath }));
+                await I_STRProxied.setProtocolFactory(accounts[8], 3, 1, 1, { from: account_polymath });
+                await catchRevert(I_STRProxied.setLatestVersion(1, 3, 1, { from: account_polymath }));
                 await revertToSnapshot(snap_Id);
             });
         });

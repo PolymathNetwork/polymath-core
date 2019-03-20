@@ -28,8 +28,8 @@ contract TrackedRedemptionFactory is ModuleFactory {
         typesData.push(5);
         tagsData.push("Tracked");
         tagsData.push("Redemption");
-        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
     }
 
     /**

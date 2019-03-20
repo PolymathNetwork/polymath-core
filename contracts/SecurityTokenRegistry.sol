@@ -184,7 +184,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     {
         require(!getBoolValue(INITIALIZE),"Initialized");
         require(
-            _STFactory != address(0) && _owner != address(0) && _polymathRegistry != address(0) && _getterContract != address(0),
+            _owner != address(0) && _polymathRegistry != address(0) && _getterContract != address(0),
             "Invalid address"
         );
         require(_stLaunchFee != 0 && _tickerRegFee != 0, "Bad fee");
@@ -194,7 +194,8 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         set(PAUSED, false);
         set(OWNER, _owner);
         set(POLYMATHREGISTRY, _polymathRegistry);
-        _setProtocolVersion(_STFactory, uint8(2), uint8(0), uint8(0));
+        _setProtocolFactory(_STFactory, uint8(2), uint8(0), uint8(0));
+        _setLatestVersion(uint8(2), uint8(0), uint8(0));
         set(INITIALIZE, true);
         set(STRGETTER, _getterContract);
         _updateFromRegistry();
@@ -518,7 +519,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         require(_tickerOwner(ticker) == msg.sender, "Not authorised");
         /*solium-disable-next-line security/no-block-members*/
         require(getUintValue(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now, "Ticker expired");
-        _deployToken(_name, ticker, _tokenDetails, msg.sender, _divisible, _treasuryWallet, protocolVersion); 
+        _deployToken(_name, ticker, _tokenDetails, msg.sender, _divisible, _treasuryWallet, protocolVersion);
     }
 
     function _deployToken(
@@ -529,7 +530,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         bool _divisible,
         address _wallet,
         uint256 _protocolVersion
-    ) 
+    )
         internal
     {
         (uint256 _usdFee, uint256 _polyFee) = _takeFee(STLAUNCHFEE);
@@ -572,7 +573,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     )
         external
         onlyOwner
-    {   
+    {
         require(bytes(_name).length > 0 && bytes(_ticker).length > 0, "Bad data");
         require(bytes(_ticker).length <= 10, "Bad ticker");
         require(_deployedAt != 0 && _owner != address(0), "Bad data");
@@ -682,7 +683,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     }
 
     /**
-    * @notice Changes the protocol version and the SecurityToken contract
+    * @notice Changes the SecurityToken contract for a particular factory version
     * @notice Used only by Polymath to upgrade the SecurityToken contract and add more functionalities to future versions
     * @notice Changing versions does not affect existing tokens.
     * @param _STFactoryAddress is the address of the proxy.
@@ -690,26 +691,41 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     * @param _minor Minor version of the proxy.
     * @param _patch Patch version of the proxy
     */
-    function setProtocolVersion(address _STFactoryAddress, uint8 _major, uint8 _minor, uint8 _patch) external onlyOwner {
-        require(_STFactoryAddress != address(0), "Bad address");
-        _setProtocolVersion(_STFactoryAddress, _major, _minor, _patch);
+    function setProtocolFactory(address _STFactoryAddress, uint8 _major, uint8 _minor, uint8 _patch) external onlyOwner {
+        _setProtocolFactory(_STFactoryAddress, _major, _minor, _patch);
     }
 
-    /**
-    * @notice Internal - Changes the protocol version and the SecurityToken contract
-    */
-    function _setProtocolVersion(address _STFactoryAddress, uint8 _major, uint8 _minor, uint8 _patch) internal {
+    function _setProtocolFactory(address _STFactoryAddress, uint8 _major, uint8 _minor, uint8 _patch) internal {
+        require(_STFactoryAddress != address(0), "Bad address");
         uint8[] memory _version = new uint8[](3);
         _version[0] = _major;
         _version[1] = _minor;
         _version[2] = _patch;
         uint24 _packedVersion = VersionUtils.pack(_major, _minor, _patch);
-        require(
-            VersionUtils.isValidVersion(VersionUtils.unpack(uint24(getUintValue(Encoder.getKey("latestVersion")))), _version),
-            "Bad version"
-        );
+        //set(Encoder.getKey("latestVersion"), uint256(_packedVersion));
+        set(Encoder.getKey("protocolVersionST", uint256(_packedVersion)), _STFactoryAddress);
+    }
+
+    /**
+    * @notice Changes the default protocol version
+    * @notice Used only by Polymath to upgrade the SecurityToken contract and add more functionalities to future versions
+    * @notice Changing versions does not affect existing tokens.
+    * @param _major Major version of the proxy.
+    * @param _minor Minor version of the proxy.
+    * @param _patch Patch version of the proxy
+    */
+    function setLatestVersion(uint8 _major, uint8 _minor, uint8 _patch) external onlyOwner {
+        _setLatestVersion(_major, _minor, _patch);
+    }
+
+    function _setLatestVersion(uint8 _major, uint8 _minor, uint8 _patch) internal {
+        uint8[] memory _version = new uint8[](3);
+        _version[0] = _major;
+        _version[1] = _minor;
+        _version[2] = _patch;
+        uint24 _packedVersion = VersionUtils.pack(_major, _minor, _patch);
+        require(getAddressValue(Encoder.getKey("protocolVersionST", _packedVersion)) != address(0), "No factory");
         set(Encoder.getKey("latestVersion"), uint256(_packedVersion));
-        set(Encoder.getKey("protocolVersionST", getUintValue(Encoder.getKey("latestVersion"))), _STFactoryAddress);
     }
 
     /**

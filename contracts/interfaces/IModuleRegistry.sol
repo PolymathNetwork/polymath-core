@@ -7,8 +7,9 @@ interface IModuleRegistry {
     /**
      * @notice Called by a security token to notify the registry it is using a module
      * @param _moduleFactory is the address of the relevant module factory
+     * @param _isUpgrade whether the use is part of an existing module upgrade
      */
-    function useModule(address _moduleFactory) external;
+    function useModule(address _moduleFactory, bool _isUpgrade) external;
 
     /**
      * @notice Called by the ModuleFactory owner to register new modules for SecurityToken to use

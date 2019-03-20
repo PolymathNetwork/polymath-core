@@ -53,8 +53,10 @@ library TokenLib {
     * @notice Upgrades a module attached to the SecurityToken
     * @param _moduleData Storage data
     */
-    function upgradeModule(SecurityTokenStorage.ModuleData storage _moduleData) public {
+    function upgradeModule(address _moduleRegistry, SecurityTokenStorage.ModuleData storage _moduleData) public {
         require(_moduleData.module != address(0), "Module missing");
+        //Check module is verified and within version bounds
+        IModuleRegistry(_moduleRegistry).useModule(_moduleData.moduleFactory, true);
         // Will revert if module isn't upgradable
         UpgradableModuleFactory(_moduleData.moduleFactory).upgrade(_moduleData.module);
         emit ModuleUpgraded(_moduleData.moduleTypes, _moduleData.module);

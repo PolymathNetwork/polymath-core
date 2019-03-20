@@ -264,7 +264,7 @@ contract("PreSaleSTO", async (accounts) => {
                 })
             );
             await I_SecurityToken.unarchiveModule(I_PreSaleSTO.address, {from: token_owner});
-            let info = await stGetter.getModule.call(PreSaleSTO.address);
+            let info = await stGetter.getModule.call(I_PreSaleSTO.address);
             assert.equal(info[3], false);
 
             //Fail as investor is not on whitelist
@@ -275,7 +275,6 @@ contract("PreSaleSTO", async (accounts) => {
             assert.equal((await I_PreSaleSTO.getRaised.call(0)).div(new BN(10).pow(new BN(18))).toNumber(), 1);
             console.log(await I_PreSaleSTO.getNumberInvestors.call());
             assert.equal((await I_PreSaleSTO.getNumberInvestors.call()).toNumber(), 1);
-            // assert.isTrue(false);
         });
 
         it("Should allocate the tokens --failed because of amount is 0", async () => {

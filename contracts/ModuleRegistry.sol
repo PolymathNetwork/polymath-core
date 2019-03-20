@@ -120,7 +120,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @dev The feature switch for custom modules is labelled "customModulesAllowed"
      * @param _moduleFactory is the address of the relevant module factory
      */
-    function useModule(address _moduleFactory) external {
+    function useModule(address _moduleFactory, bool _isUpgrade) external {
         if (IFeatureRegistry(getAddressValue(Encoder.getKey("featureRegistry"))).getFeatureStatus("customModulesAllowed")) {
             require(
                 getBoolValue(Encoder.getKey("verified", _moduleFactory)) || IOwnable(_moduleFactory).owner() == IOwnable(msg.sender).owner(),
@@ -132,7 +132,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         require(isCompatibleModule(_moduleFactory, msg.sender), "Version should within the compatible range of ST");
         // This if statement is required to be able to add modules from the STFactory contract during deployment
         // before the token has been registered to the STR.
-        if (ISecurityTokenRegistry(getAddressValue(Encoder.getKey("securityTokenRegistry"))).isSecurityToken(msg.sender)) {
+        if ((!_isUpgrade) && ISecurityTokenRegistry(getAddressValue(Encoder.getKey("securityTokenRegistry"))).isSecurityToken(msg.sender)) {
             pushArray(Encoder.getKey("reputation", _moduleFactory), msg.sender);
             emit ModuleUsed(_moduleFactory, msg.sender);
         }

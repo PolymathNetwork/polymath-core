@@ -184,7 +184,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, SecurityTokenSt
         nonReentrant
     {
         //Check that the module factory exists in the ModuleRegistry - will throw otherwise
-        IModuleRegistry(moduleRegistry).useModule(_moduleFactory);
+        IModuleRegistry(moduleRegistry).useModule(_moduleFactory, false);
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
         uint8[] memory moduleTypes = moduleFactory.types();
         uint256 moduleCost = moduleFactory.setupCostInPoly();
@@ -237,7 +237,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, SecurityTokenSt
     }
 
     function upgradeModule(address _module) external onlyOwner {
-        TokenLib.upgradeModule(modulesToData[_module]);
+        TokenLib.upgradeModule(moduleRegistry, modulesToData[_module]);
     }
 
     /**

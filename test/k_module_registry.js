@@ -248,8 +248,8 @@ contract("ModuleRegistry", async (accounts) => {
                 assert.equal(_list.length, 1, "Length should be 1");
                 assert.equal(_list[0], I_GeneralTransferManagerFactory.address);
 
-                let _reputation = await I_MRProxied.getReputationByFactory(I_GeneralTransferManagerFactory.address);
-                assert.equal(_reputation.length, 0);
+                let _reputation = await I_MRProxied.getFactoryDetails(I_GeneralTransferManagerFactory.address);
+                assert.equal(_reputation[1].length, 0);
             });
 
             it("Should fail the register the module -- Already registered module", async () => {
@@ -355,8 +355,8 @@ contract("ModuleRegistry", async (accounts) => {
                     "CappedSTO",
                     "CappedSTOFactory module was not added"
                 );
-                let _reputation = await I_MRProxied.getReputationByFactory.call(I_CappedSTOFactory2.address);
-                assert.equal(_reputation.length, 1);
+                let _reputation = await I_MRProxied.getFactoryDetails.call(I_CappedSTOFactory2.address);
+                assert.equal(_reputation[1].length, 1);
             });
 
             it("Should successfully add module when custom modules switched on -- fail because factory owner is different", async () => {
@@ -491,7 +491,7 @@ contract("ModuleRegistry", async (accounts) => {
                 assert.equal(sto3_end, sto3);
                 // delete related data
                 assert.equal(await I_MRProxied.getUintValue.call(web3.utils.soliditySha3("registry", sto4)), 0);
-                assert.equal(await I_MRProxied.getReputationByFactory.call(sto4), 0);
+                assert.equal((await I_MRProxied.getFactoryDetails.call(sto4))[1], 0);
                 assert.equal((await I_MRProxied.getModulesByType.call(3)).length, 3);
                 assert.equal(await I_MRProxied.getBoolValue.call(web3.utils.soliditySha3("verified", sto4)), false);
 
@@ -517,7 +517,7 @@ contract("ModuleRegistry", async (accounts) => {
                 assert.equal(sto1_end, sto1);
                 // delete related data
                 assert.equal(await I_MRProxied.getUintValue.call(web3.utils.soliditySha3("registry", sto2)), 0);
-                assert.equal(await I_MRProxied.getReputationByFactory.call(sto2), 0);
+                assert.equal((await I_MRProxied.getFactoryDetails.call(sto2))[1], 0);
                 assert.equal((await I_MRProxied.getModulesByType.call(3)).length, 3);
                 assert.equal(await I_MRProxied.getBoolValue.call(web3.utils.soliditySha3("verified", sto2)), false);
             });

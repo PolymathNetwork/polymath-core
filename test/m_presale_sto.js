@@ -206,7 +206,7 @@ contract("PreSaleSTO", async (accounts) => {
                 "PreSaleSTOFactory module was not added"
             );
             I_PreSaleSTO = await PreSaleSTO.at(tx.logs[2].args._module);
-            let info = I_SecurityToken.getModule.call(I_PreSaleSTO.address);
+            let info = await stGetter.getModule.call(I_PreSaleSTO.address);
             assert.equal(info[3], true);
         });
 
@@ -223,7 +223,7 @@ contract("PreSaleSTO", async (accounts) => {
                 "PreSaleSTOFactory module was not added"
             );
             I_PreSaleSTO = await PreSaleSTO.at(tx.logs[2].args._module);
-            let info = I_SecurityToken.getModule.call(I_PreSaleSTO.address);
+            let info = await stGetter.getModule.call(I_PreSaleSTO.address);
             assert.equal(info[3], true);
 
         });
@@ -264,7 +264,7 @@ contract("PreSaleSTO", async (accounts) => {
                 })
             );
             await I_SecurityToken.unarchiveModule(I_PreSaleSTO.address, {from: token_owner});
-            let info = I_SecurityToken.getModule.call(PreSaleSTO.address);
+            let info = await stGetter.getModule.call(PreSaleSTO.address);
             assert.equal(info[3], false);
 
             //Fail as investor is not on whitelist

@@ -506,8 +506,10 @@ async function pauseModule(modules) {
       moduleABI = abis.ISTO();
     } else if (modules[index].type == gbl.constants.MODULES_TYPES.TRANSFER) {
       moduleABI = abis.ITransferManager();
+    } else if (modules[index].type == gbl.constants.MODULES_TYPES.DIVIDENDS) {
+      moduleABI = abis.erc20DividendCheckpoint();
     } else {
-      console.log(chalk.red(`Only STO and TM modules can be paused/unpaused`));
+      console.log(chalk.red(`Only STO, TM and DIVIDEND modules can be paused/unpaused`));
       process.exit(0);
     }
     let pausableModule = new web3.eth.Contract(moduleABI, modules[index].address);
@@ -527,8 +529,10 @@ async function unpauseModule(modules) {
       moduleABI = abis.ISTO();
     } else if (modules[index].type == gbl.constants.MODULES_TYPES.TRANSFER) {
       moduleABI = abis.ITransferManager();
+    } else if (modules[index].type == gbl.constants.MODULES_TYPES.DIVIDENDS) {
+      moduleABI = abis.erc20DividendCheckpoint();
     } else {
-      console.log(chalk.red(`Only STO and TM modules can be paused/unpaused`));
+      console.log(chalk.red(`Only STO, TM and DIVIDEND modules can be paused/unpaused`));
       process.exit(0);
     }
     let pausableModule = new web3.eth.Contract(moduleABI, modules[index].address);
@@ -616,7 +620,7 @@ async function getAllModules() {
         let details = await securityToken.methods.getModule(allModules[i]).call();
         let nameTemp = web3.utils.hexToUtf8(details[0]);
         let pausedTemp = null;
-        if (type == gbl.constants.MODULES_TYPES.STO || type == gbl.constants.MODULES_TYPES.TRANSFER) {
+        if (type == gbl.constants.MODULES_TYPES.STO || type == gbl.constants.MODULES_TYPES.TRANSFER || type == gbl.constants.MODULES_TYPES.DIVIDENDS) {
           let abiTemp = JSON.parse(require('fs').readFileSync(`${__dirname}/../../build/contracts/${nameTemp}.json`).toString()).abi;
           let contractTemp = new web3.eth.Contract(abiTemp, details[1]);
           pausedTemp = await contractTemp.methods.paused().call();

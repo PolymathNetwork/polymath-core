@@ -44,7 +44,7 @@ contract LockUpTransferManagerFactory is UpgradableModuleFactory {
         external
         returns(address)
     {
-        address lockUpTransferManager = address(new LockUpTransferManagerProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
+        address lockUpTransferManager = address(new LockUpTransferManagerProxy(logicContracts[latestUpgrade].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestUpgrade].logicContract));
         _initializeModule(lockUpTransferManager, _data);
         return lockUpTransferManager;
     }

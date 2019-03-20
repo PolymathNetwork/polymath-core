@@ -242,7 +242,18 @@ async function deploySTFactory(account_polymath) {
     console.log("STL - " + I_SecurityToken.address);
     let I_DataStoreLogic = await DataStoreLogic.new({ from: account_polymath });
     let I_DataStoreFactory = await DataStoreFactory.new(I_DataStoreLogic.address, { from: account_polymath });
-    I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, I_DataStoreFactory.address, I_STGetter.address, "3.0.0", I_SecurityToken.address, { from: account_polymath });
+    const tokenInitBytes = {
+        name: "initialize",
+        type: "function",
+        inputs: [
+            {
+                type: "address",
+                name: "_getterDelegate"
+            }
+        ]
+    };
+    let tokenInitBytesCall = web3.eth.abi.encodeFunctionCall(tokenInitBytes, [I_STGetter.address]);
+    I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, I_DataStoreFactory.address, "3.0.0", I_SecurityToken.address, tokenInitBytesCall, { from: account_polymath });
 
     assert.notEqual(I_STFactory.address.valueOf(), "0x0000000000000000000000000000000000000000", "STFactory contract was not deployed");
 
@@ -286,12 +297,12 @@ async function setInPolymathRegistry(account_polymath) {
 
 async function registerGTM(account_polymath) {
     await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
-    await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
+    await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
 }
 
 async function registerAndVerifyByMR(factoryAdrress, owner, mr) {
     await mr.registerModule(factoryAdrress, { from: owner });
-    await mr.verifyModule(factoryAdrress, true, { from: owner });
+    await mr.verifyModule(factoryAdrress, { from: owner });
 }
 
 /// Deploy the TransferManagers

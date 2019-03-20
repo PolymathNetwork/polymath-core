@@ -160,13 +160,24 @@ contract("ModuleRegistryProxy", async (accounts) => {
 
             // (A) :  Register the GeneralTransferManagerFactory
             await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
-            await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
+            await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
 
             // Step 3: Deploy the STFactory contract
             I_STGetter = await STGetter.new("", "", 0);
             let I_DataStoreLogic = await DataStoreLogic.new({ from: account_polymath });
             let I_DataStoreFactory = await DataStoreFactory.new(I_DataStoreLogic.address, { from: account_polymath });
-            I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, I_DataStoreFactory.address, I_STGetter.address, "3.0.0", I_SecurityTokenLogic.address, { from: account_polymath });
+            const tokenInitBytes = {
+                name: "initialize",
+                type: "function",
+                inputs: [
+                    {
+                        type: "address",
+                        name: "_getterDelegate"
+                    }
+                ]
+            };
+            let tokenInitBytesCall = web3.eth.abi.encodeFunctionCall(tokenInitBytes, [I_STGetter.address]);
+            I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, I_DataStoreFactory.address, "3.0.0", I_SecurityTokenLogic.address, tokenInitBytesCall, { from: account_polymath });
 
             assert.notEqual(I_STFactory.address.valueOf(), address_zero, "STFactory contract was not deployed");
         });
@@ -195,7 +206,7 @@ contract("ModuleRegistryProxy", async (accounts) => {
             );
 
             await I_MRProxied.registerModule(I_GeneralPermissionManagerfactory.address, { from: account_polymath });
-            await I_MRProxied.verifyModule(I_GeneralPermissionManagerfactory.address, true, { from: account_polymath });
+            await I_MRProxied.verifyModule(I_GeneralPermissionManagerfactory.address, { from: account_polymath });
         });
     });
 

@@ -91,9 +91,10 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, SecurityTokenSt
      * @dev Expected to be called atomically with the proxy being created, by the owner of the token
      * @dev Can only be called once
      */
-    function initialize() external {
+    function initialize(address _getterDelegate) external {
         //Expected to be called atomically with the proxy being created
         require(!initialized, "Already initialized");
+        getterDelegate = _getterDelegate;
         securityTokenVersion = SemanticVersion(3, 0, 0);
         updateFromRegistry();
         initialized = true;

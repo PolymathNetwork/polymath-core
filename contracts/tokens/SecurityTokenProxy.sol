@@ -17,7 +17,6 @@ contract SecurityTokenProxy is OZStorage, SecurityTokenStorage, OwnedUpgradeabil
      * @param _granularity granular level of the token
      * @param _tokenDetails Details of the token that are stored off-chain
      * @param _polymathRegistry Contract address of the polymath registry
-     * @param _getterDelegate Contract address of the getter delegate
      */
     constructor(
         string memory _ERC20name,
@@ -25,17 +24,14 @@ contract SecurityTokenProxy is OZStorage, SecurityTokenStorage, OwnedUpgradeabil
         uint8 _ERC20decimals,
         uint256 _granularity,
         string memory _tokenDetails,
-        address _polymathRegistry,
-        address _getterDelegate
+        address _polymathRegistry
     )
         public
         OZStorage(_ERC20name, _ERC20symbol, _ERC20decimals)
     {
         //Set storage variables - NB implementation not yet set
         require(_polymathRegistry != address(0), "Invalid Address");
-        require(_getterDelegate != address(0), "Invalid Address");
         polymathRegistry = _polymathRegistry;
-        getterDelegate = _getterDelegate;
         tokenDetails = _tokenDetails;
         granularity = _granularity;
         _owner = msg.sender;

@@ -23,19 +23,36 @@ interface IModuleRegistry {
     function removeModule(address _moduleFactory) external;
 
     /**
+     * @notice Check that a module and its factory are compatible
+     * @param _moduleFactory is the address of the relevant module factory
+     * @param _securityToken is the address of the relevant security token
+     * @return bool whether module and token are compatible
+     */
+    function isCompatibleModule(address _moduleFactory, address _securityToken) external view returns(bool);
+
+    /**
     * @notice Called by Polymath to verify modules for SecurityToken to use.
     * @notice A module can not be used by an ST unless first approved/verified by Polymath
     * @notice (The only exception to this is that the author of the module is the owner of the ST - Only if enabled by the FeatureRegistry)
     * @param _moduleFactory is the address of the module factory to be registered
     */
-    function verifyModule(address _moduleFactory, bool _verified) external;
+    function verifyModule(address _moduleFactory) external;
 
     /**
-     * @notice Used to get the reputation of a Module Factory
-     * @param _factoryAddress address of the Module Factory
-     * @return address array which has the list of securityToken's uses that module factory
+    * @notice Called by Polymath to unverify modules for SecurityToken to use.
+    * @notice A module can not be used by an ST unless first approved/verified by Polymath
+    * @notice (The only exception to this is that the author of the module is the owner of the ST - Only if enabled by the FeatureRegistry)
+    * @param _moduleFactory is the address of the module factory to be registered
+    */
+    function unverifyModule(address _moduleFactory) external;
+
+    /**
+     * @notice Returns the verified status, and reputation of the entered Module Factory
+     * @param _factoryAddress is the address of the module factory
+     * @return bool indicating whether module factory is verified
+     * @return address array which contains the list of securityTokens that use that module factory
      */
-    function getReputationByFactory(address _factoryAddress) external view returns(address[] memory);
+    function getFactoryDetails(address _factoryAddress) external view returns(bool, address[] memory);
 
     /**
      * @notice Returns all the tags related to the a module type which are valid for the given token
@@ -82,7 +99,7 @@ interface IModuleRegistry {
 
     /**
      * @notice Check whether the contract operations is paused or not
-     * @return bool 
+     * @return bool
      */
     function isPaused() external view returns(bool);
 

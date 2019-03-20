@@ -203,11 +203,11 @@ contract STGetter is OZStorage, SecurityTokenStorage {
      * @notice Returns the version of the SecurityToken
      */
     function getVersion() external view returns(uint8[] memory) {
-        uint8[] memory _version = new uint8[](3);
-        _version[0] = securityTokenVersion.major;
-        _version[1] = securityTokenVersion.minor;
-        _version[2] = securityTokenVersion.patch;
-        return _version;
+        uint8[] memory version = new uint8[](3);
+        version[0] = securityTokenVersion.major;
+        version[1] = securityTokenVersion.minor;
+        version[2] = securityTokenVersion.patch;
+        return version;
     }
 
     /**

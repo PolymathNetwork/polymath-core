@@ -276,25 +276,27 @@ contract("ModuleRegistry", async (accounts) => {
 
         describe("Test case for verifyModule", async () => {
             it("Should fail in calling the verify module. Because msg.sender should be account_polymath", async () => {
-                await catchRevert(I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_temp }));
+                await catchRevert(I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, { from: account_temp }));
             });
 
             it("Should successfully verify the module -- true", async () => {
-                let tx = await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
+                let tx = await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
                 assert.equal(tx.logs[0].args._moduleFactory, I_GeneralTransferManagerFactory.address, "Failed in verifying the module");
-                assert.equal(tx.logs[0].args._verified, true, "Failed in verifying the module");
+                let info = await I_MRProxied.getFactoryDetails.call(I_GeneralTransferManagerFactory.address);
+                assert.equal(info[0], true);
             });
 
             it("Should successfully verify the module -- false", async () => {
                 I_CappedSTOFactory1 = await CappedSTOFactory.new(new BN(0), new BN(0), I_CappedSTOLogic.address, I_PolymathRegistry.address, { from: account_polymath });
                 await I_MRProxied.registerModule(I_CappedSTOFactory1.address, { from: account_polymath });
-                let tx = await I_MRProxied.verifyModule(I_CappedSTOFactory1.address, false, { from: account_polymath });
+                let tx = await I_MRProxied.unverifyModule(I_CappedSTOFactory1.address, { from: account_polymath });
                 assert.equal(tx.logs[0].args._moduleFactory, I_CappedSTOFactory1.address, "Failed in verifying the module");
-                assert.equal(tx.logs[0].args._verified, false, "Failed in verifying the module");
+                let info = await I_MRProxied.getFactoryDetails.call(I_CappedSTOFactory1.address);
+                assert.equal(info[0], false);
             });
 
             it("Should fail in verifying the module. Because the module is not registered", async () => {
-                await catchRevert(I_MRProxied.verifyModule(I_MockFactory.address, true, { from: account_polymath }));
+                await catchRevert(I_MRProxied.verifyModule(I_MockFactory.address, { from: account_polymath }));
             });
         });
 
@@ -371,7 +373,7 @@ contract("ModuleRegistry", async (accounts) => {
                     from: account_polymath
                 });
                 await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
-                await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, true, { from: account_polymath });
+                await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
                 let tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x0", new BN(0), new BN(0), { from: token_owner });
                 assert.equal(tx.logs[2].args._types[0], permissionManagerKey, "module doesn't get deployed");
             });
@@ -379,7 +381,7 @@ contract("ModuleRegistry", async (accounts) => {
             it("Should failed in adding the TestSTOFactory module because not compatible with the current protocol version --lower", async () => {
                 I_TestSTOFactory = await TestSTOFactory.new(new BN(0), new BN(0), one_address, I_PolymathRegistry.address, { from: account_polymath });
                 await I_MRProxied.registerModule(I_TestSTOFactory.address, { from: account_polymath });
-                await I_MRProxied.verifyModule(I_TestSTOFactory.address, true, { from: account_polymath });
+                await I_MRProxied.verifyModule(I_TestSTOFactory.address, { from: account_polymath });
                 // Taking the snapshot the revert the changes from here
                 let id = await takeSnapshot();
                 await I_TestSTOFactory.changeSTVersionBounds("lowerBound", [2, 1, 0], { from: account_polymath });

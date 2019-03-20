@@ -48,7 +48,9 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     // Emit when the Module Factory gets registered on the ModuleRegistry contract
     event ModuleRegistered(address indexed _moduleFactory, address indexed _owner);
     // Emit when the module gets verified by Polymath
-    event ModuleVerified(address indexed _moduleFactory, bool _verified);
+    event ModuleVerified(address indexed _moduleFactory);
+    // Emit when the module gets unverified by Polymath or the factory owner
+    event ModuleUnverified(address indexed _moduleFactory);
     // Emit when a ModuleFactory is removed by Polymath
     event ModuleRemoved(address indexed _moduleFactory, address indexed _decisionMaker);
     // Emit when ownership gets transferred
@@ -119,23 +121,30 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @param _moduleFactory is the address of the relevant module factory
      */
     function useModule(address _moduleFactory) external {
-        // This if statement is required to be able to add modules from the token proxy contract during deployment
+        if (IFeatureRegistry(getAddressValue(Encoder.getKey("featureRegistry"))).getFeatureStatus("customModulesAllowed")) {
+            require(
+                getBoolValue(Encoder.getKey("verified", _moduleFactory)) || IOwnable(_moduleFactory).owner() == IOwnable(msg.sender).owner(),
+                "ModuleFactory must be verified or SecurityToken owner must be ModuleFactory owner"
+            );
+        } else {
+            require(getBoolValue(Encoder.getKey("verified", _moduleFactory)), "ModuleFactory must be verified");
+        }
+        require(isCompatibleModule(_moduleFactory, msg.sender), "Version should within the compatible range of ST");
+        // This if statement is required to be able to add modules from the STFactory contract during deployment
+        // before the token has been registered to the STR.
         if (ISecurityTokenRegistry(getAddressValue(Encoder.getKey("securityTokenRegistry"))).isSecurityToken(msg.sender)) {
-            if (IFeatureRegistry(getAddressValue(Encoder.getKey("featureRegistry"))).getFeatureStatus("customModulesAllowed")) {
-                require(
-                    getBoolValue(Encoder.getKey("verified", _moduleFactory)) || IOwnable(_moduleFactory).owner() == IOwnable(msg.sender).owner(),
-                    "ModuleFactory must be verified or SecurityToken owner must be ModuleFactory owner"
-                );
-            } else {
-                require(getBoolValue(Encoder.getKey("verified", _moduleFactory)), "ModuleFactory must be verified");
-            }
-            require(_isCompatibleModule(_moduleFactory, msg.sender), "Version should within the compatible range of ST");
             pushArray(Encoder.getKey("reputation", _moduleFactory), msg.sender);
             emit ModuleUsed(_moduleFactory, msg.sender);
         }
     }
 
-    function _isCompatibleModule(address _moduleFactory, address _securityToken) internal view returns(bool) {
+    /**
+     * @notice Check that a module and its factory are compatible
+     * @param _moduleFactory is the address of the relevant module factory
+     * @param _securityToken is the address of the relevant security token
+     * @return bool whether module and token are compatible
+     */
+    function isCompatibleModule(address _moduleFactory, address _securityToken) public view returns(bool) {
         uint8[] memory _latestVersion = ISecurityToken(_securityToken).getVersion();
         uint8[] memory _lowerBound = IModuleFactory(_moduleFactory).lowerSTVersionBounds();
         uint8[] memory _upperBound = IModuleFactory(_moduleFactory).upperSTVersionBounds();
@@ -221,12 +230,29 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     * @notice (The only exception to this is that the author of the module is the owner of the ST)
     * @notice -> Only if Polymath enabled the feature.
     * @param _moduleFactory is the address of the module factory to be verified
-    * @return bool
     */
-    function verifyModule(address _moduleFactory, bool _verified) external onlyOwner {
+    function verifyModule(address _moduleFactory) external onlyOwner {
         require(getUintValue(Encoder.getKey("registry", _moduleFactory)) != uint256(0), "Module factory must be registered");
-        set(Encoder.getKey("verified", _moduleFactory), _verified);
-        emit ModuleVerified(_moduleFactory, _verified);
+        set(Encoder.getKey("verified", _moduleFactory), true);
+        emit ModuleVerified(_moduleFactory);
+    }
+
+    /**
+    * @notice Called by Polymath to verify Module Factories for SecurityTokens to use.
+    * @notice A module can not be used by an ST unless first approved/verified by Polymath
+    * @notice (The only exception to this is that the author of the module is the owner of the ST)
+    * @notice -> Only if Polymath enabled the feature.
+    * @param _moduleFactory is the address of the module factory to be verified
+    */
+    function unverifyModule(address _moduleFactory) external {
+        // Can be called by the registry owner, the module factory, or the module factory owner
+        bool isOwner = msg.sender == owner();
+        bool isFactoryOwner = msg.sender == IOwnable(_moduleFactory).owner();
+        bool isFactory = msg.sender == _moduleFactory;
+        require(isOwner || isFactoryOwner || isFactory, "Not authorised");
+        require(getUintValue(Encoder.getKey("registry", _moduleFactory)) != uint256(0), "Module factory must be registered");
+        set(Encoder.getKey("verified", _moduleFactory), false);
+        emit ModuleUnverified(_moduleFactory);
     }
 
     /**
@@ -281,12 +307,13 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     }
 
     /**
-     * @notice Returns the reputation of the entered Module Factory
+     * @notice Returns the verified status, and reputation of the entered Module Factory
      * @param _factoryAddress is the address of the module factory
+     * @return bool indicating whether module factory is verified
      * @return address array which contains the list of securityTokens that use that module factory
      */
-    function getReputationByFactory(address _factoryAddress) external view returns(address[] memory) {
-        return getArrayAddress(Encoder.getKey("reputation", _factoryAddress));
+    function getFactoryDetails(address _factoryAddress) external view returns(bool, address[] memory) {
+        return (getBoolValue(Encoder.getKey("verified", _factoryAddress)), getArrayAddress(Encoder.getKey("reputation", _factoryAddress)));
     }
 
     /**
@@ -315,9 +342,9 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
             if (_isCustomModuleAllowed) {
                 if (IOwnable(_addressList[i]).owner() == IOwnable(_securityToken).owner() || getBoolValue(
                     Encoder.getKey("verified", _addressList[i])
-                )) if (_isCompatibleModule(_addressList[i], _securityToken)) counter++;
+                )) if (isCompatibleModule(_addressList[i], _securityToken)) counter++;
             } else if (getBoolValue(Encoder.getKey("verified", _addressList[i]))) {
-                if (_isCompatibleModule(_addressList[i], _securityToken)) counter++;
+                if (isCompatibleModule(_addressList[i], _securityToken)) counter++;
             }
         }
         address[] memory _tempArray = new address[](counter);
@@ -327,13 +354,13 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
                 if (IOwnable(_addressList[j]).owner() == IOwnable(_securityToken).owner() || getBoolValue(
                     Encoder.getKey("verified", _addressList[j])
                 )) {
-                    if (_isCompatibleModule(_addressList[j], _securityToken)) {
+                    if (isCompatibleModule(_addressList[j], _securityToken)) {
                         _tempArray[counter] = _addressList[j];
                         counter++;
                     }
                 }
             } else if (getBoolValue(Encoder.getKey("verified", _addressList[j]))) {
-                if (_isCompatibleModule(_addressList[j], _securityToken)) {
+                if (isCompatibleModule(_addressList[j], _securityToken)) {
                     _tempArray[counter] = _addressList[j];
                     counter++;
                 }

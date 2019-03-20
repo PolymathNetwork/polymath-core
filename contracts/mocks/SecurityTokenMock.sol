@@ -32,8 +32,6 @@ contract SecurityTokenMock is SecurityToken {
         public
         SecurityToken(_name, _symbol, _decimals)
     {
-        _zeroAddressCheck(_polymathRegistry);
-        _zeroAddressCheck(_delegate);
         _owner = msg.sender;
         polymathRegistry = _polymathRegistry;
         //When it is created, the owner is the STR

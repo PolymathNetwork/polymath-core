@@ -205,7 +205,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
     describe("Attach the VRTM", async() => {
         it("Deploy the VRTM and attach with the ST", async()=> {
-            let tx = await I_SecurityToken.addModule(I_VolumeRestrictionTMFactory.address, "0x0", 0, 0, {from: token_owner });
+            let tx = await I_SecurityToken.addModule(I_VolumeRestrictionTMFactory.address, "0x0", 0, 0, false, {from: token_owner });
             assert.equal(tx.logs[2].args._moduleFactory, I_VolumeRestrictionTMFactory.address);
             assert.equal(
                 web3.utils.toUtf8(tx.logs[2].args._name),

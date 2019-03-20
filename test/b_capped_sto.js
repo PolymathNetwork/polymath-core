@@ -206,7 +206,7 @@ contract("CappedSTO", async (accounts) => {
 
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, new BN(0), [E_fundRaiseType], account_fundsReceiver]);
 
-            await catchRevert(I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), { from: token_owner }));
+            await catchRevert(I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), false, { from: token_owner }));
         });
 
         it("Should fail to launch the STO due to rate is 0", async () => {
@@ -216,7 +216,7 @@ contract("CappedSTO", async (accounts) => {
 
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, new BN(0), [E_fundRaiseType], account_fundsReceiver]);
 
-            await catchRevert(I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), { from: token_owner }));
+            await catchRevert(I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), false, { from: token_owner }));
         });
 
         it("Should fail to launch the STO due funds reciever account 0x", async () => {
@@ -225,7 +225,7 @@ contract("CappedSTO", async (accounts) => {
 
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, [E_fundRaiseType], address_zero]);
 
-            await catchRevert(I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), { from: token_owner }));
+            await catchRevert(I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), false, { from: token_owner }));
         });
 
         it("Should fail to launch the STO due to raise type of 0 length", async () => {
@@ -234,7 +234,7 @@ contract("CappedSTO", async (accounts) => {
 
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, [], account_fundsReceiver]);
 
-            await catchRevert(I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), { from: token_owner }));
+            await catchRevert(I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), false, { from: token_owner }));
         });
 
         it("Should fail to launch the STO due to startTime > endTime", async () => {
@@ -247,7 +247,7 @@ contract("CappedSTO", async (accounts) => {
                 account_fundsReceiver
             ]);
 
-            await catchRevert(I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), { from: token_owner }));
+            await catchRevert(I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), false, { from: token_owner }));
         });
 
         it("Should fail to launch the STO due to cap is of 0 securityToken", async () => {
@@ -255,14 +255,14 @@ contract("CappedSTO", async (accounts) => {
             let endTime = startTime + duration.days(30);
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, new BN(0), rate, [E_fundRaiseType], account_fundsReceiver]);
 
-            await catchRevert(I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), { from: token_owner }));
+            await catchRevert(I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), false, { from: token_owner }));
         });
 
         it("Should fail to launch the STO due to different value incompare to getInitFunction", async () => {
             let startTime = await latestTime() + duration.days(1);
             let endTime = startTime + duration.days(30);
             let bytesSTO = encodeModuleCall(["uint256", "uint256", "uint256"], [startTime, endTime, 0]);
-            await catchRevert(I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), { from: token_owner }));
+            await catchRevert(I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), false, { from: token_owner }));
         });
 
         it("Should successfully attach the STO module to the security token", async () => {
@@ -276,7 +276,7 @@ contract("CappedSTO", async (accounts) => {
                 [E_fundRaiseType],
                 account_fundsReceiver
             ]);
-            const tx = await I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), { from: token_owner });
+            const tx = await I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), false, { from: token_owner });
 
             assert.equal(tx.logs[3].args._types[0], stoKey, "CappedSTO doesn't get deployed");
             assert.equal(web3.utils.hexToString(tx.logs[3].args._name), "CappedSTO", "CappedSTOFactory module was not added");
@@ -515,7 +515,7 @@ contract("CappedSTO", async (accounts) => {
                 [E_fundRaiseType],
                 account_fundsReceiver
             ]);
-            const tx = await I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), { from: token_owner });
+            const tx = await I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), false, { from: token_owner });
 
             assert.equal(tx.logs[3].args._types[0], stoKey, "CappedSTO doesn't get deployed");
             assert.equal(web3.utils.hexToString(tx.logs[3].args._name), "CappedSTO", "CappedSTOFactory module was not added");
@@ -589,7 +589,7 @@ contract("CappedSTO", async (accounts) => {
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, [E_fundRaiseType], account_fundsReceiver]);
 
             for (var STOIndex = 2; STOIndex < MAX_MODULES; STOIndex++) {
-                const tx = await I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), { from: token_owner });
+                const tx = await I_SecurityToken_ETH.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), false, { from: token_owner });
                 assert.equal(tx.logs[3].args._types[0], stoKey, `Wrong module type added at index ${STOIndex}`);
                 assert.equal(web3.utils.hexToString(tx.logs[3].args._name), "CappedSTO", `Wrong STO module added at index ${STOIndex}`);
                 I_CappedSTO_Array_ETH.push(await CappedSTO.at(tx.logs[3].args._module));
@@ -670,7 +670,7 @@ contract("CappedSTO", async (accounts) => {
                     account_fundsReceiver
                 ]);
 
-                const tx = await I_SecurityToken_POLY.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), { from: token_owner });
+                const tx = await I_SecurityToken_POLY.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), false, { from: token_owner });
 
                 assert.equal(tx.logs[3].args._types[0], stoKey, "CappedSTO doesn't get deployed");
                 assert.equal(web3.utils.hexToString(tx.logs[3].args._name), "CappedSTO", "CappedSTOFactory module was not added");
@@ -945,7 +945,7 @@ contract("CappedSTO", async (accounts) => {
                 account_fundsReceiver
             ]);
 
-            const tx = await I_SecurityToken_POLY.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), { from: token_owner });
+            const tx = await I_SecurityToken_POLY.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), false, { from: token_owner });
 
             assert.equal(tx.logs[3].args._types[0], stoKey, "CappedSTO doesn't get deployed");
             assert.equal(web3.utils.hexToString(tx.logs[3].args._name), "CappedSTO", "CappedSTOFactory module was not added");

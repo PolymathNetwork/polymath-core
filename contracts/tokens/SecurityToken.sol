@@ -175,7 +175,8 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, SecurityTokenSt
         bytes memory _data,
         uint256 _maxCost,
         uint256 _budget,
-        bytes32 _label
+        bytes32 _label,
+        bool _archived
     )
         public
         onlyOwner
@@ -195,7 +196,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, SecurityTokenSt
         //Approve ongoing budget
         ERC20(polyToken).approve(module, _budget);
         //Add to SecurityToken module map
-        bytes32 moduleName = moduleFactory.name();
+        /* bytes32 moduleName = moduleFactory.name();
         uint256[] memory moduleIndexes = new uint256[](moduleTypes.length);
         uint256 i;
         for (i = 0; i < moduleTypes.length; i++) {
@@ -206,23 +207,46 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, SecurityTokenSt
             moduleName,
             module,
             _moduleFactory,
-            false,
+            _archived,
             moduleTypes,
             moduleIndexes,
             names[moduleName].length,
             _label
         );
-        names[moduleName].push(module);
+        names[moduleName].push(module); */
         //Emit log event
         /*solium-disable-next-line security/no-block-members*/
-        emit ModuleAdded(moduleTypes, moduleName, _moduleFactory, module, moduleCost, _budget, _label);
+        _addModuleData(moduleTypes, _moduleFactory, module, moduleCost, _budget, _label, _archived);
+        //emit ModuleAdded(moduleTypes, moduleName, _moduleFactory, module, moduleCost, _budget, _label);
+    }
+
+    function _addModuleData(uint8[] memory _moduleTypes, address _moduleFactory, address _module, uint256 _moduleCost, uint256 _budget, bytes32 _label, bool _archived) internal {
+        bytes32 moduleName = IModuleFactory(_moduleFactory).name();
+        uint256[] memory moduleIndexes = new uint256[](_moduleTypes.length);
+        uint256 i;
+        for (i = 0; i < _moduleTypes.length; i++) {
+            moduleIndexes[i] = modules[_moduleTypes[i]].length;
+            modules[_moduleTypes[i]].push(_module);
+        }
+        modulesToData[_module] = ModuleData(
+            moduleName,
+            _module,
+            _moduleFactory,
+            _archived,
+            _moduleTypes,
+            moduleIndexes,
+            names[moduleName].length,
+            _label
+        );
+        names[moduleName].push(_module);
+        emit ModuleAdded(_moduleTypes, moduleName, _moduleFactory, _module, _moduleCost, _budget, _label);
     }
 
     /**
     * @notice addModule function will call addModuleWithLabel() with an empty label for backward compatible
     */
-    function addModule(address _moduleFactory, bytes calldata _data, uint256 _maxCost, uint256 _budget) external {
-        addModuleWithLabel(_moduleFactory, _data, _maxCost, _budget, "");
+    function addModule(address _moduleFactory, bytes calldata _data, uint256 _maxCost, uint256 _budget, bool _archived) external {
+        addModuleWithLabel(_moduleFactory, _data, _maxCost, _budget, "", _archived);
     }
 
     /**

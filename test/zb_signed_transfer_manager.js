@@ -193,7 +193,7 @@ contract("SignedTransferManager", accounts => {
 
 
         it("Should successfully attach the SignedTransferManager with the security token", async () => {
-            const tx = await I_SecurityToken.addModule(I_SignedTransferManagerFactory.address, "0x0",new BN(0),new BN(0), { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_SignedTransferManagerFactory.address, "0x0",new BN(0),new BN(0), false, { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), transferManagerKey, "SignedTransferManager doesn't get deployed");
             assert.equal(
                 web3.utils.toUtf8(tx.logs[2].args._name),
@@ -209,7 +209,7 @@ contract("SignedTransferManager", accounts => {
 
         it("Should successfully attach the permission manager factory with the security token", async () => {
             console.log((await I_GeneralPermissionManagerFactory.setupCostInPoly.call()).toString());
-            const tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x0", new BN(0), new BN(0), { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x0", new BN(0), new BN(0), false, { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), delegateManagerKey, "GeneralPermissionManager doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),

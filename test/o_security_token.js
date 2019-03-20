@@ -339,7 +339,7 @@ contract("SecurityToken", async (accounts) => {
             startTime = await latestTime() + duration.seconds(5000);
             endTime = startTime + duration.days(30);
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
-            await catchRevert(I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), { from: token_owner }));
+            await catchRevert(I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), false, { from: token_owner }));
         });
 
         it("Should fail to attach the STO factory because max cost too small", async () => {
@@ -350,7 +350,7 @@ contract("SecurityToken", async (accounts) => {
             await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCostPOLY, { from: token_owner });
 
             await catchRevert(
-                I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, new BN(web3.utils.toWei("1000", "ether")), new BN(0), { from: token_owner })
+                I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, new BN(web3.utils.toWei("1000", "ether")), new BN(0), false, { from: token_owner })
             );
         });
 
@@ -363,7 +363,7 @@ contract("SecurityToken", async (accounts) => {
             await I_PolyToken.getTokens(cappedSTOSetupCostPOLY, token_owner);
             await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCostPOLY, { from: token_owner });
             console.log("0");
-            const tx = await I_SecurityToken.addModuleWithLabel(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), web3.utils.fromAscii("stofactory"), {
+            const tx = await I_SecurityToken.addModuleWithLabel(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), web3.utils.fromAscii("stofactory"), false, {
                 from: token_owner
             });
             assert.equal(tx.logs[3].args._types[0], stoKey, "CappedSTO doesn't get deployed");
@@ -382,7 +382,7 @@ contract("SecurityToken", async (accounts) => {
             await I_PolyToken.getTokens(cappedSTOSetupCostPOLY, token_owner);
             await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCostPOLY, { from: token_owner });
 
-            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), false, { from: token_owner });
 
             assert.equal(tx.logs[3].args._types[0], stoKey, "CappedSTO doesn't get deployed");
             assert.equal(web3.utils.toUtf8(tx.logs[3].args._name), "CappedSTO", "CappedSTOFactory module was not added");
@@ -492,7 +492,7 @@ contract("SecurityToken", async (accounts) => {
             FactoryInstances = [D_GPM, D_GPM_1, D_GPM_2];
             // Adding module in the ST
             for (let i = 0; i < FactoryInstances.length; i++) {
-                let tx = await I_SecurityToken.addModule(FactoryInstances[i].address, "0x0", new BN(0), new BN(0), { from: token_owner });
+                let tx = await I_SecurityToken.addModule(FactoryInstances[i].address, "0x0", new BN(0), new BN(0), false, { from: token_owner });
                 assert.equal(tx.logs[2].args._types[0], permissionManagerKey, "fail in adding the GPM");
                 GPMAddress.push(tx.logs[2].args._module);
             }
@@ -630,7 +630,7 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should fail to provide the permission to the delegate to change the transfer bools -- Bad owner", async () => {
             // Add permission to the deletgate (A regesteration process)
-            await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x0", new BN(0), new BN(0), { from: token_owner });
+            await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x0", new BN(0), new BN(0), false, { from: token_owner });
             let moduleData = (await stGetter.getModulesByType(permissionManagerKey))[0];
             I_GeneralPermissionManager = await GeneralPermissionManager.at(moduleData);
             await catchRevert(I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: account_temp }));
@@ -1054,7 +1054,7 @@ contract("SecurityToken", async (accounts) => {
     describe("Test cases for the Mock TrackedRedeemption", async () => {
         it("Should add the tracked redeemption module successfully", async () => {
             [I_MockRedemptionManagerFactory] = await deployMockRedemptionAndVerifyed(account_polymath, I_MRProxied, 0);
-            let tx = await I_SecurityToken.addModule(I_MockRedemptionManagerFactory.address, "0x0", new BN(0), new BN(0), { from: token_owner });
+            let tx = await I_SecurityToken.addModule(I_MockRedemptionManagerFactory.address, "0x0", new BN(0), new BN(0), false, { from: token_owner });
             assert.equal(tx.logs[2].args._types[0], burnKey, "fail in adding the burn manager");
             I_MockRedemptionManager = await MockRedemptionManager.at(tx.logs[2].args._module);
             // adding the burn module into the GTM
@@ -1093,7 +1093,7 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should successfully fail in calling the burn functions", async () => {
             [I_MockRedemptionManagerFactory] = await deployMockWrongTypeRedemptionAndVerifyed(account_polymath, I_MRProxied, 0);
-            let tx = await I_SecurityToken.addModule(I_MockRedemptionManagerFactory.address, "0x0", new BN(0), new BN(0), { from: token_owner });
+            let tx = await I_SecurityToken.addModule(I_MockRedemptionManagerFactory.address, "0x0", new BN(0), new BN(0), false, { from: token_owner });
             I_MockRedemptionManager = await MockRedemptionManager.at(tx.logs[2].args._module);
 
             // adding the burn module into the GTM

@@ -304,13 +304,15 @@ interface ISecurityToken {
       * @param _maxCost max amount of POLY willing to pay to the module.
       * @param _budget max amount of ongoing POLY willing to assign to the module.
       * @param _label custom module label.
+      * @param _archived whether to add the module as an archived module
       */
     function addModuleWithLabel(
         address _moduleFactory,
         bytes calldata _data,
         uint256 _maxCost,
         uint256 _budget,
-        bytes32 _label
+        bytes32 _label,
+        bool _archived
     ) external;
 
     /**
@@ -324,8 +326,9 @@ interface ISecurityToken {
      * @param _data is data packed into bytes used to further configure the module (See STO usage)
      * @param _maxCost max amount of POLY willing to pay to module. (WIP)
      * @param _budget max amount of ongoing POLY willing to assign to the module.
+     * @param _archived whether to add the module as an archived module
      */
-    function addModule(address _moduleFactory, bytes calldata _data, uint256 _maxCost, uint256 _budget) external;
+    function addModule(address _moduleFactory, bytes calldata _data, uint256 _maxCost, uint256 _budget, bool _archived) external;
 
     /**
     * @notice Archives a module attached to the SecurityToken

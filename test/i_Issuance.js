@@ -193,7 +193,7 @@ contract("Issuance", async (accounts) => {
                 await I_PolyToken.getTokens(cappedSTOSetupCostPOLY, account_polymath);
                 await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCostPOLY, { from: account_polymath });
 
-                const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), { from: account_polymath });
+                const tx = await I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), false, { from: account_polymath });
 
                 assert.equal(tx.logs[3].args._types[0], stoKey, "CappedSTO doesn't get deployed");
                 assert.equal(
@@ -225,7 +225,7 @@ contract("Issuance", async (accounts) => {
 
             it("Should add the delegate with permission", async () => {
                 //First attach a permission manager to the token
-                await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x0", new BN(0), new BN(0), { from: account_polymath });
+                await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x0", new BN(0), new BN(0), false, { from: account_polymath });
                 let moduleData = (await stGetter.getModulesByType(permissionManagerKey))[0];
                 I_GeneralPermissionManager = await GeneralPermissionManager.at(moduleData);
                 // Add permission to the deletgate (A regesteration process)

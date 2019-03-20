@@ -208,7 +208,7 @@ contract("Concurrent STO", async (accounts) => {
                 switch (STOIndex % 3) {
                     case 0:
                         // Capped STO
-                        let tx1 = await I_SecurityToken.addModule(I_CappedSTOFactory.address, cappedBytesSig, maxCost, budget, {
+                        let tx1 = await I_SecurityToken.addModule(I_CappedSTOFactory.address, cappedBytesSig, maxCost, budget, false, {
                             from: account_issuer
                         });
                         assert.equal(tx1.logs[3].args._types[0], stoKey, `Wrong module type added at index ${STOIndex}`);
@@ -221,7 +221,7 @@ contract("Concurrent STO", async (accounts) => {
                         break;
                     case 1:
                         // Dummy STO
-                        let tx2 = await I_SecurityToken.addModule(I_DummySTOFactory.address, dummyBytesSig, maxCost, budget, {
+                        let tx2 = await I_SecurityToken.addModule(I_DummySTOFactory.address, dummyBytesSig, maxCost, budget, false, {
                             from: account_issuer
                         });
                         assert.equal(tx2.logs[3].args._types[0], stoKey, `Wrong module type added at index ${STOIndex}`);
@@ -234,7 +234,7 @@ contract("Concurrent STO", async (accounts) => {
                         break;
                     case 2:
                         // Pre Sale STO
-                        let tx3 = await I_SecurityToken.addModule(I_PreSaleSTOFactory.address, presaleBytesSig, maxCost, budget, {
+                        let tx3 = await I_SecurityToken.addModule(I_PreSaleSTOFactory.address, presaleBytesSig, maxCost, budget, false, {
                             from: account_issuer
                         });
                         assert.equal(tx3.logs[3].args._types[0], stoKey, `Wrong module type added at index ${STOIndex}`);

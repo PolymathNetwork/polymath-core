@@ -178,7 +178,7 @@ contract('BlacklistTransferManager', accounts => {
         it("Should successfully attach the BlacklistTransferManager factory with the security token", async () => {
             await I_PolyToken.getTokens(web3.utils.toWei("2000", "ether"), token_owner);
             await catchRevert (
-                I_SecurityToken.addModule(P_BlacklistTransferManagerFactory.address, bytesSTO, web3.utils.toWei("2000", "ether"), 0, {
+                I_SecurityToken.addModule(P_BlacklistTransferManagerFactory.address, bytesSTO, web3.utils.toWei("2000", "ether"), 0, false, {
                     from: token_owner
                 })
             );
@@ -187,7 +187,7 @@ contract('BlacklistTransferManager', accounts => {
         it("Should successfully attach the BlacklistTransferManager factory with the security token", async () => {
             let snapId = await takeSnapshot();
             await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("2000", "ether"), {from: token_owner});
-            const tx = await I_SecurityToken.addModule(P_BlacklistTransferManagerFactory.address, bytesSTO, web3.utils.toWei("2000", "ether"), 0, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(P_BlacklistTransferManagerFactory.address, bytesSTO, web3.utils.toWei("2000", "ether"), 0, false, { from: token_owner });
             assert.equal(tx.logs[3].args._types[0].toString(), transferManagerKey, "BlacklistTransferManager doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[3].args._name)
@@ -200,7 +200,7 @@ contract('BlacklistTransferManager', accounts => {
         });
 
         it("Should successfully attach the BlacklistTransferManager with the security token", async () => {
-            const tx = await I_SecurityToken.addModule(I_BlacklistTransferManagerFactory.address, bytesSTO, 0, 0, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_BlacklistTransferManagerFactory.address, bytesSTO, 0, 0, false, { from: token_owner });
             console.log(tx);
             assert.equal(tx.logs[2].args._types[0].toString(), transferManagerKey, "BlacklistTransferManager doesn't get deployed");
             assert.equal(

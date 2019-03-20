@@ -168,7 +168,7 @@ contract('VestingEscrowWallet', accounts => {
         });
 
         it("Should successfully attach the General permission manager factory with the security token", async () => {
-            const tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x", new BN(0), new BN(0), { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x", new BN(0), new BN(0), false, { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toString(), delegateManagerKey, "General Permission Manager doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
@@ -185,7 +185,7 @@ contract('VestingEscrowWallet', accounts => {
             );
 
             await I_SecurityToken.changeGranularity(1, {from: token_owner});
-            const tx = await I_SecurityToken.addModule(I_VestingEscrowWalletFactory.address, bytesData, 0, 0, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_VestingEscrowWalletFactory.address, bytesData, 0, 0, false, { from: token_owner });
 
             assert.equal(tx.logs[3].args._types[0].toString(), 7, "VestingEscrowWallet doesn't get deployed");
             assert.equal(

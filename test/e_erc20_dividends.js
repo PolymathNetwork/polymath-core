@@ -174,7 +174,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
         it("Should successfully attach the ERC20DividendCheckpoint with the security token - fail insufficient payment", async () => {
             let bytesDividend = encodeModuleCall(DividendParameters, [wallet]);
             await catchRevert(
-                I_SecurityToken.addModule(P_ERC20DividendCheckpointFactory.address, bytesDividend, new BN(web3.utils.toWei("2000", "ether")), new BN(0), {
+                I_SecurityToken.addModule(P_ERC20DividendCheckpointFactory.address, bytesDividend, new BN(web3.utils.toWei("2000", "ether")), new BN(0), false, {
                     from: token_owner
                 })
             );
@@ -185,7 +185,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             await I_PolyToken.getTokens(new BN(web3.utils.toWei("2000", "ether")), token_owner);
             await I_PolyToken.transfer(I_SecurityToken.address, new BN(web3.utils.toWei("2000", "ether")), { from: token_owner });
             let bytesDividend = encodeModuleCall(DividendParameters, [wallet]);
-            const tx = await I_SecurityToken.addModule(P_ERC20DividendCheckpointFactory.address, bytesDividend, new BN(web3.utils.toWei("2000", "ether")), new BN(0), {
+            const tx = await I_SecurityToken.addModule(P_ERC20DividendCheckpointFactory.address, bytesDividend, new BN(web3.utils.toWei("2000", "ether")), new BN(0), false, {
                 from: token_owner
             });
             assert.equal(tx.logs[3].args._types[0].toNumber(), checkpointKey, "ERC20DividendCheckpoint doesn't get deployed");
@@ -200,7 +200,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
 
         it("Should successfully attach the ERC20DividendCheckpoint with the security token", async () => {
             let bytesDividend = encodeModuleCall(DividendParameters, [address_zero]);
-            const tx = await I_SecurityToken.addModule(I_ERC20DividendCheckpointFactory.address, bytesDividend, new BN(0), new BN(0), { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_ERC20DividendCheckpointFactory.address, bytesDividend, new BN(0), new BN(0), false, { from: token_owner });
             console.log(tx.logs[2].args);
             assert.equal(tx.logs[2].args._types[0].toNumber(), checkpointKey, "ERC20DividendCheckpoint doesn't get deployed");
             assert.equal(
@@ -985,7 +985,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
 
         it("should registr a delegate", async () => {
             [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
-            let tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x", new BN(0), new BN(0), { from: token_owner });
+            let tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x", new BN(0), new BN(0), false, { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), delegateManagerKey, "General Permission Manager doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),

@@ -317,7 +317,7 @@ contract("ModuleRegistry", async (accounts) => {
                 endTime = startTime + duration.days(30);
                 let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
 
-                await catchRevert(I_SecurityToken.addModule(I_CappedSTOFactory1.address, bytesSTO, new BN(0), new BN(0), { from: token_owner }));
+                await catchRevert(I_SecurityToken.addModule(I_CappedSTOFactory1.address, bytesSTO, new BN(0), new BN(0), false, { from: token_owner }));
             });
 
             it("Should fail to register module because custom modules not allowed", async () => {
@@ -347,7 +347,7 @@ contract("ModuleRegistry", async (accounts) => {
                 endTime = startTime + duration.days(30);
                 let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
                 let tx = await I_MRProxied.registerModule(I_CappedSTOFactory2.address, { from: token_owner });
-                tx = await I_SecurityToken.addModule(I_CappedSTOFactory2.address, bytesSTO, new BN(0), new BN(0), { from: token_owner });
+                tx = await I_SecurityToken.addModule(I_CappedSTOFactory2.address, bytesSTO, new BN(0), new BN(0), false, { from: token_owner });
 
                 assert.equal(tx.logs[2].args._types[0], stoKey, "CappedSTO doesn't get deployed");
                 assert.equal(
@@ -364,7 +364,7 @@ contract("ModuleRegistry", async (accounts) => {
                 startTime = await latestTime() + duration.seconds(5000);
                 endTime = startTime + duration.days(30);
                 let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
-                catchRevert(I_SecurityToken.addModule(I_CappedSTOFactory3.address, bytesSTO, new BN(0), new BN(0), { from: token_owner }));
+                catchRevert(I_SecurityToken.addModule(I_CappedSTOFactory3.address, bytesSTO, new BN(0), new BN(0), false, { from: token_owner }));
             });
 
             it("Should successfully add verified module", async () => {
@@ -374,7 +374,7 @@ contract("ModuleRegistry", async (accounts) => {
                 });
                 await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
                 await I_MRProxied.verifyModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
-                let tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x0", new BN(0), new BN(0), { from: token_owner });
+                let tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x0", new BN(0), new BN(0), false, { from: token_owner });
                 assert.equal(tx.logs[2].args._types[0], permissionManagerKey, "module doesn't get deployed");
             });
 
@@ -393,7 +393,7 @@ contract("ModuleRegistry", async (accounts) => {
                     [await latestTime(), currentTime.add(new BN(duration.days(1))), cap, "Test STO"]
                 );
 
-                await catchRevert(I_SecurityToken.addModule(I_TestSTOFactory.address, bytesData, new BN(0), new BN(0), { from: token_owner }));
+                await catchRevert(I_SecurityToken.addModule(I_TestSTOFactory.address, bytesData, new BN(0), new BN(0), false, { from: token_owner }));
                 await revertToSnapshot(id);
             });
 
@@ -419,7 +419,7 @@ contract("ModuleRegistry", async (accounts) => {
                     [await latestTime(), currentTime.add(new BN(duration.days(1))), cap, "Test STO"]
                 );
 
-                await catchRevert(I_SecurityToken2.addModule(I_TestSTOFactory.address, bytesData, new BN(0), new BN(0), { from: token_owner }));
+                await catchRevert(I_SecurityToken2.addModule(I_TestSTOFactory.address, bytesData, new BN(0), new BN(0), false, { from: token_owner }));
             });
         });
 

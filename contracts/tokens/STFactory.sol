@@ -38,11 +38,10 @@ contract STFactory is ISTFactory, Ownable {
 
     event LogicContractSet(string _version, address _logicContract, bytes _upgradeData);
 
-    constructor(address _polymathRegistry, address _transferManagerFactory, address _dataStoreFactory, string memory _version, address _logicContract, bytes memory _initializationData) public {
+    constructor(address _transferManagerFactory, address _dataStoreFactory, string memory _version, address _logicContract, bytes memory _initializationData) public {
         require(_logicContract != address(0), "Invalid Address");
         require(_transferManagerFactory != address(0), "Invalid Address");
         require(_dataStoreFactory != address(0), "Invalid Address");
-        require(_polymathRegistry != address(0), "Invalid Address");
         transferManagerFactory = _transferManagerFactory;
         dataStoreFactory = DataStoreFactory(_dataStoreFactory);
         logicContracts[latestUpgrade].logicContract = _logicContract;
@@ -78,7 +77,7 @@ contract STFactory is ISTFactory, Ownable {
         //NB When dataStore is generated, the security token address is automatically set via the constructor in DataStoreProxy.
         ISecurityToken(securityToken).changeDataStore(dataStoreFactory.generateDataStore(securityToken));
         ISecurityToken(securityToken).changeTreasuryWallet(_treasuryWallet);
-        ISecurityToken(securityToken).addModule(transferManagerFactory, "", 0, 0);
+        ISecurityToken(securityToken).addModule(transferManagerFactory, "", 0, 0, false);
         IOwnable(securityToken).transferOwnership(_issuer);
         return securityToken;
     }

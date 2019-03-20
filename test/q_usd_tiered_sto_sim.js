@@ -311,7 +311,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
             ];
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
-            let tx = await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), { from: ISSUER, gasPrice: GAS_PRICE });
+            let tx = await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), false, { from: ISSUER, gasPrice: GAS_PRICE });
             console.log("          Gas addModule: ".grey + tx.receipt.gasUsed.toString().grey);
             assert.equal(tx.logs[2].args._types[0], STOKEY, "USDTieredSTO doesn't get deployed");
             assert.equal(web3.utils.hexToString(tx.logs[2].args._name), "USDTieredSTO", "USDTieredSTOFactory module was not added");

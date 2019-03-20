@@ -122,13 +122,17 @@ async function addSTOModule(stoConfig) {
   let optionSelected;
   if (typeof stoConfig === 'undefined') {
     let availableModules = await moduleRegistry.methods.getModulesByTypeAndToken(gbl.constants.MODULES_TYPES.STO, securityToken.options.address).call();
-    let options = await Promise.all(availableModules.map(async function (m) {
+    let moduleList = await Promise.all(availableModules.map(async function (m) {
       let moduleFactoryABI = abis.moduleFactory();
       let moduleFactory = new web3.eth.Contract(moduleFactoryABI, m);
-      return web3.utils.hexToUtf8(await moduleFactory.methods.name().call());
+      let moduleName = web3.utils.hexToUtf8(await moduleFactory.methods.name().call());
+      let moduleVersion = await moduleFactory.methods.version().call();
+      return { name: moduleName, version: moduleVersion, factoryAddress: m };
     }));
+    let options = moduleList.map(m => `${m.name} - ${m.version} (${m.factoryAddress})`);
+
     let index = readlineSync.keyInSelect(options, 'What type of STO do you want?', { cancel: 'RETURN' });
-    optionSelected = index != -1 ? options[index] : 'RETURN';
+    optionSelected = index != -1 ? moduleList[index].name : 'RETURN';
   } else {
     optionSelected = stoConfig.type;
   }
@@ -972,6 +976,8 @@ async function getBalance(from, type) {
       return await web3.eth.getBalance(from);
     case gbl.constants.FUND_RAISE_TYPES.POLY:
       return await polyToken.methods.balanceOf(from).call();
+    default:
+      return '0';
   }
 }
 

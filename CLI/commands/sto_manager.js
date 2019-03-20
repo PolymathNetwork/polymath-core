@@ -786,6 +786,8 @@ async function usdTieredSTO_configure(currentSTO) {
         'Modify limits configuration', 'Modify funding configuration');
     }
 
+    options.push('Reclaim ETH or ERC20 token from contract');
+
     let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
     let selected = index != -1 ? options[index] : 'Exit';
     switch (selected) {
@@ -843,6 +845,9 @@ async function usdTieredSTO_configure(currentSTO) {
       case 'Modify funding configuration':
         await modfifyFunding(currentSTO);
         await usdTieredSTO_status(currentSTO);
+        break;
+      case 'Reclaim ETH or ERC20 token from contract':
+        await reclaimFromContract(currentSTO);
         break;
     }
   }
@@ -965,6 +970,33 @@ async function modfifyTiers(currentSTO) {
     tiers.tokensPerTierDiscountPoly,
   );
   await common.sendTransaction(modifyTiersAction);
+}
+
+async function reclaimFromContract(currentSTO) {
+  let options = ['ETH', 'ERC20'];
+  let index = readlineSync.keyInSelect(options, 'What do you want to reclaim?', { cancel: 'RETURN' });
+  let selected = index != -1 ? options[index] : 'RETURN';
+  switch (selected) {
+    case 'ETH':
+      let ethBalance = await this.getBalance(currentSTO.options.address, gbl.constants.FUND_RAISE_TYPES.ETH);
+      console.log(chalk.yellow(`Current ETH balance: ${web3.utils.fromWei(ethBalance)} ETH`));
+      let reclaimETHAction = currentSTO.methods.reclaimETH();
+      await common.sendTransaction(reclaimETHAction);
+      console.log(chalk.green('ETH has been reclaimed succesfully!'));
+      break;
+    case 'ERC20':
+      let erc20Address = readlineSync.question('Enter the ERC20 token address to reclaim (POLY = ' + polyToken.options.address + '): ', {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address",
+        defaultInput: polyToken.options.address
+      });
+      let reclaimERC20Action = currentSTO.methods.reclaimERC20(erc20Address);
+      await common.sendTransaction(reclaimERC20Action);
+      console.log(chalk.green('ERC20 has been reclaimed succesfully!'));
+      break
+  }
 }
 
 //////////////////////

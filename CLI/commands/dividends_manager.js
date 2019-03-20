@@ -146,7 +146,7 @@ async function dividendsManager() {
   if (currentDividends.length > 0) {
     options.push('Manage existing dividends');
   }
-  options.push('Create new dividends');
+  options.push('Create new dividends', 'Reclaim ETH or ERC20 tokens from contract');
 
   let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
   let selected = index != -1 ? options[index] : 'RETURN';
@@ -177,6 +177,9 @@ async function dividendsManager() {
       break;
     case 'Create new dividends':
       await createDividends();
+      break;
+    case 'Reclaim ETH or ERC20 tokens from contract':
+      await reclaimFromContract();
       break;
     case 'RETURN':
       return;
@@ -326,6 +329,9 @@ async function manageExistingDividend(dividendIndex) {
     case 'Reclaim expired dividends':
       await reclaimedDividend(dividendIndex, dividendTokenSymbol, dividendTokenDecimals);
       return;
+    case 'Reclaim ETH or ERC20 tokens from contract':
+      await reclaim
+      break;
     case 'RETURN':
       return;
   }
@@ -403,14 +409,12 @@ async function createDividends() {
   }
   let dividendAmount = readlineSync.question(`How much ${dividendSymbol} would you like to distribute to token holders? `);
 
-  console.log("Decimals:", dividendTokenDecimals);
-  let dividendAmountBN = parseFloat(dividendAmount) * Math.pow(10, dividendTokenDecimals);
-  console.log('Amount to use:', dividendAmountBN);
+  let dividendAmountToSend = parseFloat(dividendAmount) * Math.pow(10, dividendTokenDecimals);
   let issuerBalance = await getBalance(Issuer.address, dividendToken);
-  console.log('Issuer balance:', issuerBalance);
-  if (issuerBalance < dividendAmountBN) {
+  if (issuerBalance < dividendAmountToSend) {
     console.log(chalk.red(`You have ${issuerBalance / Math.pow(10, dividendTokenDecimals)} ${dividendSymbol}. You need ${(dividendAmountBN - issuerBalance) / Math.pow(10, dividendTokenDecimals)} ${dividendSymbol} more!`));
   } else {
+    let dividendAmountBN = new web3.utils.BN(dividendAmountToSend.toString());
     let checkpointId = await selectCheckpoint(true); // If there are no checkpoints, it must create a new one
     let now = Math.floor(Date.now() / 1000);
     let maturityTime = readlineSync.questionInt('Enter the dividend maturity time from which dividend can be paid (Unix Epoch time)\n(Now = ' + now + ' ): ', { defaultInput: now });
@@ -457,12 +461,39 @@ async function createDividends() {
           createDividendAction = currentDividendsModule.methods.createDividendWithExclusions(maturityTime, expiryTime, excluded, web3.utils.toHex(dividendName));
         }
       }
-      let receipt = await common.sendTransaction(createDividendAction, { value: web3.utils.toWei(dividendAmountBN) });
+      let receipt = await common.sendTransaction(createDividendAction, { value: dividendAmountBN });
       let event = common.getEventFromLogs(currentDividendsModule._jsonInterface, receipt.logs, 'EtherDividendDeposited');
       console.log(`
 Dividend ${ event._dividendIndex} deposited`
       );
     }
+  }
+}
+
+async function reclaimFromContract() {
+  let options = ['ETH', 'ERC20'];
+  let index = readlineSync.keyInSelect(options, 'What do you want to reclaim?', { cancel: 'RETURN' });
+  let selected = index != -1 ? options[index] : 'RETURN';
+  switch (selected) {
+    case 'ETH':
+      let ethBalance = await web3.eth.getBalance(currentDividendsModule.options.address);
+      console.log(chalk.yellow(`Current ETH balance: ${web3.utils.fromWei(ethBalance)} ETH`));
+      let reclaimETHAction = currentDividendsModule.methods.reclaimETH();
+      await common.sendTransaction(reclaimETHAction);
+      console.log(chalk.green('ETH has been reclaimed succesfully!'));
+      break;
+    case 'ERC20':
+      let erc20Address = readlineSync.question('Enter the ERC20 token address to reclaim (POLY = ' + polyToken.options.address + '): ', {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address",
+        defaultInput: polyToken.options.address
+      });
+      let reclaimERC20Action = currentDividendsModule.methods.reclaimERC20(erc20Address);
+      await common.sendTransaction(reclaimERC20Action, { factor: 2 });
+      console.log(chalk.green('ERC20 has been reclaimed succesfully!'));
+      break
   }
 }
 

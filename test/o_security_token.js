@@ -762,7 +762,6 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(tx.logs[0].args._upgrade, 11);
             tx = await newGetter.newGetter(12);
             assert.equal(tx.logs[0].args._upgrade, 12);
-            assert.isTrue(false);
         });
 
         it("Should transfer from whitelist investor1 to whitelist investor 2", async () => {

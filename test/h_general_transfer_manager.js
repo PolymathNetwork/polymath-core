@@ -858,7 +858,6 @@ contract("GeneralTransferManager", async (accounts) => {
 
             await increaseTime(10000);
 
-
             await I_GeneralTransferManager.modifyKYCDataSignedMulti(
                 [account_investor1, account_investor2],
                 [fromTime, fromTime],

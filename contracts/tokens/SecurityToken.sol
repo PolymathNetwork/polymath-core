@@ -477,12 +477,13 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, SecurityTokenSt
         returns(bool)
     {
         if (!transfersFrozen) {
-            bool isInvalid = false;
-            bool isValid = false;
-            bool isForceValid = false;
-            bool unarchived = false;
+            bool isInvalid;
+            bool isValid;
+            bool isForceValid;
+            bool unarchived;
             address module;
-            for (uint256 i = 0; i < modules[TRANSFER_KEY].length; i++) {
+            uint256 tmLength = modules[TRANSFER_KEY].length;
+            for (uint256 i = 0; i < tmLength; i++) {
                 module = modules[TRANSFER_KEY][i];
                 if (!modulesToData[module].isArchived) {
                     unarchived = true;
@@ -535,12 +536,22 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, SecurityTokenSt
     function issue(
         address _tokenHolder,
         uint256 _value,
-        bytes memory _data
+        bytes calldata _data
     )
-        public
+        external
         isIssuanceAllowed
     {
         _onlyModuleOrOwner(MINT_KEY);
+        _issue(_tokenHolder, _value, _data);
+    }
+
+    function _issue(
+        address _tokenHolder,
+        uint256 _value,
+        bytes memory _data
+    )
+        internal
+    {
         // Add a function to validate the `_data` parameter
         _isValidTransfer(_updateTransfer(address(0), _tokenHolder, _value, _data));
         _mint(_tokenHolder, _value);
@@ -554,10 +565,11 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, SecurityTokenSt
      * @param _values A list of number of tokens get minted and transfer to corresponding address of the investor from _tokenHolders[] list
      * @return success
      */
-    function issueMulti(address[] calldata _tokenHolders, uint256[] calldata _values) external {
+    function issueMulti(address[] calldata _tokenHolders, uint256[] calldata _values) external isIssuanceAllowed {
+        _onlyModuleOrOwner(MINT_KEY);
         require(_tokenHolders.length == _values.length, "Incorrect inputs");
         for (uint256 i = 0; i < _tokenHolders.length; i++) {
-            issue(_tokenHolders[i], _values[i], "");
+            _issue(_tokenHolders[i], _values[i], "");
         }
     }
 

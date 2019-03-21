@@ -68,9 +68,9 @@ library VersionUtils {
      * @notice Used to convert packed data into KYC data
      * @param _packedVersion Packed data
      */
-    function unpackKYC(uint256 _packedVersion) internal pure returns(uint64 fromTime, uint64 toTime, uint64 expiryTime, uint8 added) {
-        fromTime = uint64(_packedVersion >> 136);
-        toTime = uint64(_packedVersion >> 72);
+    function unpackKYC(uint256 _packedVersion) internal pure returns(uint64 canSendAfter, uint64 canReceiveAfter, uint64 expiryTime, uint8 added) {
+        canSendAfter = uint64(_packedVersion >> 136);
+        canReceiveAfter = uint64(_packedVersion >> 72);
         expiryTime = uint64(_packedVersion >> 8);
         added = uint8(_packedVersion);
     }

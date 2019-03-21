@@ -107,27 +107,27 @@ async function displayModules() {
 
   if (numPM) {
     console.log(`Permission Manager Modules:`);
-    pmModules.map(m => console.log(`- ${m.name} is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
+    pmModules.map(m => console.log(`- ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
   }
 
   if (numTM) {
     console.log(`Transfer Manager Modules:`);
-    tmModules.map(m => console.log(`- ${m.name} is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
+    tmModules.map(m => console.log(`- ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
   }
 
   if (numSTO) {
     console.log(`STO Modules:`);
-    stoModules.map(m => console.log(`- ${m.name} is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
+    stoModules.map(m => console.log(`- ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
   }
 
   if (numCP) {
     console.log(`Checkpoint Modules:`);
-    cpModules.map(m => console.log(`- ${m.name} is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
+    cpModules.map(m => console.log(`- ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
   }
 
   if (numBURN) {
     console.log(` Burn Modules:`);
-    burnModules.map(m => console.log(`- ${m.name} is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
+    burnModules.map(m => console.log(`- ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
   }
 }
 
@@ -497,7 +497,7 @@ async function addModule() {
 }
 
 async function pauseModule(modules) {
-  let options = modules.map(m => `${m.name} (${m.address})`);
+  let options = modules.map(m => `${m.name} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module would you like to pause?');
   if (index != -1) {
     console.log("\nSelected:", options[index]);
@@ -520,7 +520,7 @@ async function pauseModule(modules) {
 }
 
 async function unpauseModule(modules) {
-  let options = modules.map(m => `${m.name} (${m.address})`);
+  let options = modules.map(m => `${m.name} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module would you like to pause?');
   if (index != -1) {
     console.log("\nSelected: ", options[index]);
@@ -543,7 +543,7 @@ async function unpauseModule(modules) {
 }
 
 async function archiveModule(modules) {
-  let options = modules.map(m => `${m.name} (${m.address})`);
+  let options = modules.map(m => `${m.name} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module would you like to archive?');
   if (index != -1) {
     console.log("\nSelected: ", options[index]);
@@ -554,7 +554,7 @@ async function archiveModule(modules) {
 }
 
 async function unarchiveModule(modules) {
-  let options = modules.map(m => `${m.name} (${m.address})`);
+  let options = modules.map(m => `${m.name} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module would you like to unarchive?');
   if (index != -1) {
     console.log("\nSelected: ", options[index]);
@@ -565,7 +565,7 @@ async function unarchiveModule(modules) {
 }
 
 async function removeModule(modules) {
-  let options = modules.map(m => `${m.name} (${m.address})`);
+  let options = modules.map(m => `${m.name} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module would you like to remove?');
   if (index != -1) {
     console.log("\nSelected: ", options[index]);
@@ -576,7 +576,7 @@ async function removeModule(modules) {
 }
 
 async function changeBudget(modules) {
-  let options = modules.map(m => `${m.name} (${m.address})`);
+  let options = modules.map(m => `${m.name} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module would you like to change budget for?');
   if (index != -1) {
     console.log("\nSelected: ", options[index]);
@@ -599,13 +599,14 @@ async function showUserInfo(_user) {
 }
 
 async function getAllModules() {
-  function ModuleInfo(_moduleType, _name, _address, _factoryAddress, _archived, _paused) {
+  function ModuleInfo(_moduleType, _name, _address, _factoryAddress, _archived, _paused, _version) {
     this.name = _name;
     this.type = _moduleType;
     this.address = _address;
     this.factoryAddress = _factoryAddress;
     this.archived = _archived;
     this.paused = _paused;
+    this.version = _version;
   }
 
   let modules = [];
@@ -620,12 +621,16 @@ async function getAllModules() {
         let details = await securityToken.methods.getModule(allModules[i]).call();
         let nameTemp = web3.utils.hexToUtf8(details[0]);
         let pausedTemp = null;
-        if (type == gbl.constants.MODULES_TYPES.STO || type == gbl.constants.MODULES_TYPES.TRANSFER || type == gbl.constants.MODULES_TYPES.DIVIDENDS) {
+        let factoryAbi = abis.moduleFactory();
+        let factory = new web3.eth.Contract(factoryAbi, details[2]);
+        let versionTemp = await factory.methods.version().call();
+        if (type == gbl.constants.MODULES_TYPES.STO || type == gbl.constants.MODULES_TYPES.TRANSFER || (type == gbl.constants.MODULES_TYPES.DIVIDENDS && versionTemp === '2.1.1')) {
           let abiTemp = JSON.parse(require('fs').readFileSync(`${__dirname}/../../build/contracts/${nameTemp}.json`).toString()).abi;
           let contractTemp = new web3.eth.Contract(abiTemp, details[1]);
           pausedTemp = await contractTemp.methods.paused().call();
         }
-        modules.push(new ModuleInfo(type, nameTemp, details[1], details[2], details[3], pausedTemp));
+
+        modules.push(new ModuleInfo(type, nameTemp, details[1], details[2], details[3], pausedTemp, versionTemp));
       } catch (error) {
         console.log(error);
         console.log(chalk.red(`

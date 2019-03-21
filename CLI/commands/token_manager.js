@@ -503,7 +503,7 @@ async function pauseModule(modules) {
     console.log("\nSelected:", options[index]);
     let moduleABI;
     if (modules[index].type == gbl.constants.MODULES_TYPES.STO) {
-      moduleABI = abis.ISTO();
+      moduleABI = abis.sto();
     } else if (modules[index].type == gbl.constants.MODULES_TYPES.TRANSFER) {
       moduleABI = abis.ITransferManager();
     } else if (modules[index].type == gbl.constants.MODULES_TYPES.DIVIDENDS) {
@@ -526,7 +526,7 @@ async function unpauseModule(modules) {
     console.log("\nSelected: ", options[index]);
     let moduleABI;
     if (modules[index].type == gbl.constants.MODULES_TYPES.STO) {
-      moduleABI = abis.ISTO();
+      moduleABI = abis.sto();
     } else if (modules[index].type == gbl.constants.MODULES_TYPES.TRANSFER) {
       moduleABI = abis.ITransferManager();
     } else if (modules[index].type == gbl.constants.MODULES_TYPES.DIVIDENDS) {

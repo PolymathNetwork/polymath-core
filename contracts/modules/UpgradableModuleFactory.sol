@@ -12,6 +12,12 @@ contract UpgradableModuleFactory is ModuleFactory {
 
     event LogicContractSet(string _version, address _logicContract, bytes _upgradeData);
 
+    event ModuleUpgraded(
+        address indexed _module,
+        address indexed _securityToken,
+        uint256 indexed _version
+    );
+
     struct LogicContract {
         string version;
         address logicContract;
@@ -82,6 +88,11 @@ contract UpgradableModuleFactory is ModuleFactory {
         require(newVersion <= latestUpgrade, "Incorrect version");
         OwnedUpgradeabilityProxy(address(uint160(_module))).upgradeToAndCall(logicContracts[newVersion].version, logicContracts[newVersion].logicContract, logicContracts[newVersion].upgradeData);
         modules[msg.sender][_module] = newVersion;
+        emit ModuleUpgraded(
+            _module,
+            msg.sender,
+            newVersion
+        );
     }
 
     /**

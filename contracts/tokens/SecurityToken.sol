@@ -7,6 +7,7 @@ import "../interfaces/IModule.sol";
 import "./SecurityTokenStorage.sol";
 import "../libraries/TokenLib.sol";
 import "../interfaces/IDataStore.sol";
+import "../interfaces/IUpgradableTokenFactory.sol";
 import "../interfaces/IModuleFactory.sol";
 import "../interfaces/token/IERC1594.sol";
 import "../interfaces/token/IERC1643.sol";
@@ -68,7 +69,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, SecurityTokenSt
     event TreasuryWalletChanged(address _oldTreasuryWallet, address _newTreasuryWallet);
     event DisableController();
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
+    event TokenUpgraded(uint8 _major, uint8 _minor, uint8 _patch);
     /**
      * @notice constructor
      * @dev Never called as contract is created through Proxy factory
@@ -98,6 +99,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, SecurityTokenSt
         getterDelegate = _getterDelegate;
         securityTokenVersion = SemanticVersion(3, 0, 0);
         updateFromRegistry();
+        tokenFactory = msg.sender;
         initialized = true;
     }
 
@@ -131,6 +133,14 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, SecurityTokenSt
      */
     modifier onlyOwner() {
         require(isOwner());
+        _;
+    }
+
+    /**
+     * @dev Throws if called by any account other than the STFactory.
+     */
+    modifier onlyTokenFactory() {
+        require(msg.sender == tokenFactory);
         _;
     }
 
@@ -236,8 +246,20 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, SecurityTokenSt
         TokenLib.archiveModule(modulesToData[_module]);
     }
 
+    /**
+    * @notice Upgrades a module attached to the SecurityToken
+    * @param _module address of module to archive
+    */
     function upgradeModule(address _module) external onlyOwner {
         TokenLib.upgradeModule(moduleRegistry, modulesToData[_module]);
+    }
+
+    /**
+    * @notice Upgrades security token
+    */
+    function upgradeToken() external onlyOwner {
+        IUpgradableTokenFactory(tokenFactory).upgradeToken();
+        emit TokenUpgraded(securityTokenVersion.major, securityTokenVersion.minor, securityTokenVersion.patch);
     }
 
     /**
@@ -245,7 +267,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, SecurityTokenSt
     * @param _module address of module to unarchive
     */
     function unarchiveModule(address _module) external onlyOwner {
-        TokenLib.unarchiveModule(modulesToData[_module]);
+        TokenLib.unarchiveModule(moduleRegistry, modulesToData[_module]);
     }
 
     /**

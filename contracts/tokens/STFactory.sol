@@ -15,7 +15,6 @@ import "../datastore/DataStoreFactory.sol";
  */
 contract STFactory is ISTFactory, Ownable {
 
-    address public polymathRegistry;
     address public transferManagerFactory;
     DataStoreFactory public dataStoreFactory;
     // Mapping from Security Token address to token version
@@ -37,6 +36,10 @@ contract STFactory is ISTFactory, Ownable {
     uint256 public latestUpgrade;
 
     event LogicContractSet(string _version, address _logicContract, bytes _upgradeData);
+    event TokenUpgraded(
+        address indexed _securityToken,
+        uint256 indexed _version
+    );
 
     constructor(address _transferManagerFactory, address _dataStoreFactory, string memory _version, address _logicContract, bytes memory _initializationData) public {
         require(_logicContract != address(0), "Invalid Address");
@@ -137,13 +140,19 @@ contract STFactory is ISTFactory, Ownable {
         OwnedUpgradeabilityProxy(address(uint160(msg.sender))).upgradeToAndCall(logicContracts[newVersion].version, logicContracts[newVersion].logicContract, logicContracts[newVersion].upgradeData);
         tokenVersion[msg.sender] = newVersion;
         // Check that all modules remain valid
-        IModuleRegistry moduleRegistry = IModuleRegistry(IPolymathRegistry(polymathRegistry).getAddress("ModuleRegistry"));
+        IModuleRegistry moduleRegistry = IModuleRegistry(IPolymathRegistry(tokenToRegistry[msg.sender]).getAddress("ModuleRegistry"));
+        address moduleFactory;
+        bool isArchived;
         for (uint8 i = 1; i < 10; i++) {
             address[] memory modules = ISecurityToken(msg.sender).getModulesByType(i);
             for (uint256 j = 0; j < modules.length; j++) {
-                require(moduleRegistry.isCompatibleModule(msg.sender, modules[j]), "Incompatible Modules");
+                (,, moduleFactory, isArchived,,) = ISecurityToken(msg.sender).getModule(modules[j]);
+                if (!isArchived) {
+                    require(moduleRegistry.isCompatibleModule(moduleFactory, msg.sender), "Incompatible Modules");
+                }
             }
         }
-
+        emit TokenUpgraded(msg.sender, newVersion);
     }
+
 }

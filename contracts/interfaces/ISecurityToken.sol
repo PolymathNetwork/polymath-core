@@ -430,6 +430,17 @@ interface ISecurityToken {
     function granularity() external view returns(uint256);
 
     /**
+    * @notice Upgrades a module attached to the SecurityToken
+    * @param _module address of module to archive
+    */
+    function upgradeModule(address _module) external;
+
+    /**
+    * @notice Upgrades security token
+    */
+    function upgradeToken() external;
+
+    /**
      * @notice A security token issuer can specify that issuance has finished for the token
      * (i.e. no new tokens can be minted or issued).
      * @dev If a token returns FALSE for `isIssuable()` then it MUST always return FALSE in the future.

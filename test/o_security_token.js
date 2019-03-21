@@ -11,6 +11,8 @@ import {
     deployMockWrongTypeRedemptionAndVerifyed
 } from "./helpers/createInstances";
 
+const MockSecurityTokenLogic = artifacts.require("./MockSecurityTokenLogic.sol");
+const MockSTGetter = artifacts.require("./MockSTGetter.sol");
 const CappedSTOFactory = artifacts.require("./CappedSTOFactory.sol");
 const CappedSTO = artifacts.require("./CappedSTO.sol");
 const SecurityToken = artifacts.require("./SecurityToken.sol");
@@ -730,6 +732,39 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(transferRestrions[3], false);
         });
 
+        it("Should upgrade token logic and getter", async () => {
+            let mockSTGetter = await MockSTGetter.new("", "", 0, {from: account_polymath});
+            let mockSecurityTokenLogic = await MockSecurityTokenLogic.new("", "", 0, {from: account_polymath});
+            const tokenInitBytes = {
+                name: "upgrade",
+                type: "function",
+                inputs: [
+                    {
+                        type: "address",
+                        name: "_getterDelegate"
+                    },
+                    {
+                        type: "uint256",
+                        name: "_upgrade"
+                    }
+                ]
+            };
+            let tokenInitBytesCall = web3.eth.abi.encodeFunctionCall(tokenInitBytes, [mockSTGetter.address, 10]);
+            await I_STFactory.setLogicContract("3.0.1", mockSecurityTokenLogic.address, tokenInitBytesCall, {from: account_polymath});
+            // NB - the mockSecurityTokenLogic sets its internal version to 3.0.0 not 3.0.1
+            let tx = await I_SecurityToken.upgradeToken({from: token_owner});
+            assert.equal(tx.logs[0].args._major, 3);
+            assert.equal(tx.logs[0].args._minor, 0);
+            assert.equal(tx.logs[0].args._patch, 0);
+            let newToken = await MockSecurityTokenLogic.at(I_SecurityToken.address);
+            let newGetter = await MockSTGetter.at(I_SecurityToken.address);
+            tx = await newToken.newFunction(11);
+            assert.equal(tx.logs[0].args._upgrade, 11);
+            tx = await newGetter.newGetter(12);
+            assert.equal(tx.logs[0].args._upgrade, 12);
+            assert.isTrue(false);
+        });
+
         it("Should transfer from whitelist investor1 to whitelist investor 2", async () => {
             let tx = await I_GeneralTransferManager.modifyKYCData(account_investor2, fromTime, toTime, expiryTime, {
                 from: token_owner,
@@ -1356,11 +1391,11 @@ contract("SecurityToken", async (accounts) => {
 
             console.log(`
                 Controller address from the contract:         ${await stGetter.controller.call()}
-                Controller address from the storage:          ${await readStorage(I_SecurityToken.address, 8)}
+                Controller address from the storage:          ${await readStorage(I_SecurityToken.address, 9)}
             `)
             // Different versions of web3 behave differently :/
             assert.oneOf(
-                await readStorage(I_SecurityToken.address, 8),
+                await readStorage(I_SecurityToken.address, 9),
                 [
                     (await stGetter.controller.call()).substring(0, 4),
                     (await stGetter.controller.call()).substring(0, 3),
@@ -1370,99 +1405,99 @@ contract("SecurityToken", async (accounts) => {
 
             console.log(`
                 PolymathRegistry address from the contract:         ${await stGetter.polymathRegistry.call()}
-                PolymathRegistry address from the storage:          ${await readStorage(I_SecurityToken.address, 9)}
+                PolymathRegistry address from the storage:          ${await readStorage(I_SecurityToken.address, 10)}
             `)
 
             assert.equal(
                 await stGetter.polymathRegistry.call(),
-                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 9))
+                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 10))
             );
             console.log(`
                 ModuleRegistry address from the contract:         ${await stGetter.moduleRegistry.call()}
-                ModuleRegistry address from the storage:          ${await readStorage(I_SecurityToken.address, 10)}
+                ModuleRegistry address from the storage:          ${await readStorage(I_SecurityToken.address, 11)}
             `)
 
             assert.equal(
                 await stGetter.moduleRegistry.call(),
-                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 10))
-            );
-
-            console.log(`
-                SecurityTokenRegistry address from the contract:         ${await stGetter.securityTokenRegistry.call()}
-                SecurityTokenRegistry address from the storage:          ${await readStorage(I_SecurityToken.address, 11)}
-            `)
-
-            assert.equal(
-                await stGetter.securityTokenRegistry.call(),
                 web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 11))
             );
 
             console.log(`
-                FeatureRegistry address from the contract:         ${await stGetter.featureRegistry.call()}
-                FeatureRegistry address from the storage:          ${await readStorage(I_SecurityToken.address, 12)}
+                SecurityTokenRegistry address from the contract:         ${await stGetter.securityTokenRegistry.call()}
+                SecurityTokenRegistry address from the storage:          ${await readStorage(I_SecurityToken.address, 12)}
             `)
 
             assert.equal(
-                await stGetter.featureRegistry.call(),
+                await stGetter.securityTokenRegistry.call(),
                 web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 12))
             );
 
             console.log(`
-                PolyToken address from the contract:         ${await stGetter.polyToken.call()}
-                PolyToken address from the storage:          ${await readStorage(I_SecurityToken.address, 13)}
+                FeatureRegistry address from the contract:         ${await stGetter.featureRegistry.call()}
+                FeatureRegistry address from the storage:          ${await readStorage(I_SecurityToken.address, 13)}
             `)
 
             assert.equal(
-                await stGetter.polyToken.call(),
+                await stGetter.featureRegistry.call(),
                 web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 13))
             );
 
             console.log(`
-                Delegate address from the contract:         ${await stGetter.getterDelegate.call()}
-                Delegate address from the storage:          ${await readStorage(I_SecurityToken.address, 14)}
+                PolyToken address from the contract:         ${await stGetter.polyToken.call()}
+                PolyToken address from the storage:          ${await readStorage(I_SecurityToken.address, 14)}
             `)
 
             assert.equal(
-                await stGetter.getterDelegate.call(),
+                await stGetter.polyToken.call(),
                 web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 14))
             );
 
             console.log(`
-                Datastore address from the contract:         ${await stGetter.dataStore.call()}
-                Datastore address from the storage:          ${await readStorage(I_SecurityToken.address, 15)}
+                Delegate address from the contract:         ${await stGetter.getterDelegate.call()}
+                Delegate address from the storage:          ${await readStorage(I_SecurityToken.address, 15)}
             `)
 
             assert.equal(
-                await stGetter.dataStore.call(),
+                await stGetter.getterDelegate.call(),
                 web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 15))
             );
 
             console.log(`
+                Datastore address from the contract:         ${await stGetter.dataStore.call()}
+                Datastore address from the storage:          ${await readStorage(I_SecurityToken.address, 16)}
+            `)
+
+            assert.equal(
+                await stGetter.dataStore.call(),
+                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 16))
+            );
+
+            console.log(`
                 Granularity value from the contract:         ${await stGetter.granularity.call()}
-                Granularity value from the storage:          ${(web3.utils.toBN(await readStorage(I_SecurityToken.address, 16))).toString()}
+                Granularity value from the storage:          ${(web3.utils.toBN(await readStorage(I_SecurityToken.address, 17))).toString()}
             `)
 
             assert.equal(
                 web3.utils.fromWei(await stGetter.granularity.call()),
-                web3.utils.fromWei((web3.utils.toBN(await readStorage(I_SecurityToken.address, 16))).toString())
+                web3.utils.fromWei((web3.utils.toBN(await readStorage(I_SecurityToken.address, 17))).toString())
             );
 
             console.log(`
                 Current checkpoint ID from the contract:    ${await stGetter.currentCheckpointId.call()}
-                Current checkpoint ID from the storage:     ${(web3.utils.toBN(await readStorage(I_SecurityToken.address, 17))).toString()}
+                Current checkpoint ID from the storage:     ${(web3.utils.toBN(await readStorage(I_SecurityToken.address, 18))).toString()}
             `)
             assert.equal(
                 await stGetter.currentCheckpointId.call(),
-                (web3.utils.toBN(await readStorage(I_SecurityToken.address, 17))).toString()
+                (web3.utils.toBN(await readStorage(I_SecurityToken.address, 18))).toString()
             );
 
             console.log(`
                 TokenDetails from the contract:    ${await stGetter.tokenDetails.call()}
-                TokenDetails from the storage:     ${(web3.utils.toUtf8((await readStorage(I_SecurityToken.address, 18)).substring(0, 60)))}
+                TokenDetails from the storage:     ${(web3.utils.toUtf8((await readStorage(I_SecurityToken.address, 19)).substring(0, 60)))}
             `)
             assert.equal(
                 await stGetter.tokenDetails.call(),
-                (web3.utils.toUtf8((await readStorage(I_SecurityToken.address, 18)).substring(0, 60))).replace(/\u0000/g, "")
+                (web3.utils.toUtf8((await readStorage(I_SecurityToken.address, 19)).substring(0, 60))).replace(/\u0000/g, "")
             );
 
         });

@@ -9,7 +9,7 @@ contract SecurityTokenStorage {
     uint8 constant BURN_KEY = 5;
     uint8 constant DATA_KEY = 6;
     uint8 constant WALLET_KEY = 7;
-    
+
     bytes32 internal constant INVESTORSKEY = 0xdf3a8dd24acdd05addfc6aeffef7574d2de3f844535ec91e8e0f3e45dba96731; //keccak256(abi.encodePacked("INVESTORS"))
     bytes32 internal constant TREASURY = 0xaae8817359f3dcb67d050f44f3e49f982e0359d90ca4b5f18569926304aaece6; //keccak256(abi.encodePacked("TREASURY_WALLET"))
 
@@ -48,7 +48,9 @@ contract SecurityTokenStorage {
         uint256 value;
     }
 
-    address internal _owner;
+    //Naming scheme to match Ownable
+    address public _owner;
+    address public tokenFactory;
     bool public initialized;
 
     // Address of the controller which is a delegated entity

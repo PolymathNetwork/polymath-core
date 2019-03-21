@@ -42,9 +42,11 @@ library TokenLib {
     * @notice Unarchives a module attached to the SecurityToken
     * @param _moduleData Storage data
     */
-    function unarchiveModule(SecurityTokenStorage.ModuleData storage _moduleData) public {
+    function unarchiveModule(address _moduleRegistry, SecurityTokenStorage.ModuleData storage _moduleData) public {
         require(_moduleData.isArchived, "Module unarchived");
         /*solium-disable-next-line security/no-block-members*/
+        // Check the version is still valid - can only be false if token was upgraded between unarchive / archive
+        IModuleRegistry(_moduleRegistry).useModule(_moduleData.moduleFactory, true);
         emit ModuleUnarchived(_moduleData.moduleTypes, _moduleData.module);
         _moduleData.isArchived = false;
     }

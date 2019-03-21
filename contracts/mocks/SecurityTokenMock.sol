@@ -37,8 +37,6 @@ contract SecurityTokenMock is SecurityToken {
         //When it is created, the owner is the STR
         updateFromRegistry();
         getterDelegate = _delegate;
-        tokenDetails = _tokenDetails;
-        granularity = _granularity;
         securityTokenVersion = SemanticVersion(2, 2, 0);
     }
 

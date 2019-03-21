@@ -72,7 +72,7 @@ function selectExistingSTO(stoModules, showPaused) {
   if (!showPaused) {
     filteredModules = stoModules.filter(m => !m.paused);
   }
-  let options = filteredModules.map(m => `${m.name} at ${m.address}`);
+  let options = filteredModules.map(m => `${m.name} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Select a module: ', { cancel: false });
   console.log('Selected:', options[index], '\n');
   let selectedName = filteredModules[index].name;
@@ -1015,13 +1015,14 @@ async function getBalance(from, type) {
 }
 
 async function getAllModulesByType(type) {
-  function ModuleInfo(_moduleType, _name, _address, _factoryAddress, _archived, _paused) {
+  function ModuleInfo(_moduleType, _name, _address, _factoryAddress, _archived, _paused, _version) {
     this.name = _name;
     this.type = _moduleType;
     this.address = _address;
     this.factoryAddress = _factoryAddress;
     this.archived = _archived;
     this.paused = _paused;
+    this.version = _version;
   }
 
   let modules = [];
@@ -1037,7 +1038,10 @@ async function getAllModulesByType(type) {
       let contractTemp = new web3.eth.Contract(abiTemp, details[1]);
       pausedTemp = await contractTemp.methods.paused().call();
     }
-    modules.push(new ModuleInfo(type, nameTemp, details[1], details[2], details[3], pausedTemp));
+    let factoryAbi = abis.moduleFactory();
+    let factory = new web3.eth.Contract(factoryAbi, details[2]);
+    let versionTemp = await factory.methods.version().call();
+    modules.push(new ModuleInfo(type, nameTemp, details[1], details[2], details[3], pausedTemp, versionTemp));
   }
 
   return modules;

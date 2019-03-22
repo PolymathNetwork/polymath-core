@@ -622,7 +622,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
     describe("Generate SecurityToken v2", async () => {
         it("Should deploy the st version 2", async () => {
             // Step 7: Deploy the STFactory contract
-            I_STGetter = await STGetter.new("", "", 0);
+            I_STGetter = await STGetter.new({from: account_polymath});
             let I_DataStoreLogic = await DataStoreLogic.new({ from: account_polymath });
             let I_DataStoreFactory = await DataStoreFactory.new(I_DataStoreLogic.address, { from: account_polymath });
             I_TokenLib = await TokenLib.new();

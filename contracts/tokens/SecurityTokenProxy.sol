@@ -27,10 +27,12 @@ contract SecurityTokenProxy is OZStorage, SecurityTokenStorage, OwnedUpgradeabil
         address _polymathRegistry
     )
         public
-        OZStorage(_ERC20name, _ERC20symbol, _ERC20decimals)
     {
         //Set storage variables - NB implementation not yet set
         require(_polymathRegistry != address(0), "Invalid Address");
+        _name = _ERC20name;
+        _symbol = _ERC20symbol;
+        _decimals = _ERC20decimals;
         polymathRegistry = _polymathRegistry;
         tokenDetails = _tokenDetails;
         granularity = _granularity;

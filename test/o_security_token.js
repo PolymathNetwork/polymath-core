@@ -296,7 +296,7 @@ contract("SecurityToken", async (accounts) => {
         it("Should mint to lots of addresses and check gas", async () => {
             let id = await takeSnapshot();
             await I_GeneralTransferManager.modifyTransferRequirementsMulti(
-                [0, 1, 2], 
+                [0, 1, 2],
                 [false, false, false],
                 [false, false, false],
                 [false, false, false],
@@ -317,7 +317,7 @@ contract("SecurityToken", async (accounts) => {
 
             console.log("Cost for issuing to 40 addresses without checkpoint: " + tx.receipt.gasUsed);
             await revertToSnapshot(id2);
-            
+
             await I_SecurityToken.createCheckpoint({ from: token_owner });
 
             tx = await I_SecurityToken.issueMulti(mockInvestors, mockAmount, {
@@ -768,7 +768,7 @@ contract("SecurityToken", async (accounts) => {
         });
 
         it("Should upgrade token logic and getter", async () => {
-            let mockSTGetter = await MockSTGetter.new("", "", 0, {from: account_polymath});
+            let mockSTGetter = await MockSTGetter.new({from: account_polymath});
             let mockSecurityTokenLogic = await MockSecurityTokenLogic.new("", "", 0, {from: account_polymath});
             const tokenInitBytes = {
                 name: "upgrade",

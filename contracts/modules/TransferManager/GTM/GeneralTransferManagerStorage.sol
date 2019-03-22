@@ -15,8 +15,8 @@ contract GeneralTransferManagerStorage {
 
     // Allows all TimeRestrictions to be offset
     struct Defaults {
-        uint64 fromTime;
-        uint64 toTime;
+        uint64 canSendAfter;
+        uint64 canReceiveAfter;
     }
 
     // Offset to be applied to all timings (except KYC expiry)

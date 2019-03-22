@@ -611,7 +611,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      */
     function disableController(bytes calldata _signature) external onlyOwner {
         require(owner() == TokenLib.recoverDisableControllerAckSigner(_signature), "Owner did not sign");
-        require(_isControllable());
+        require(isControllable());
         controllerDisabled = true;
         delete controller;
         emit DisableController();

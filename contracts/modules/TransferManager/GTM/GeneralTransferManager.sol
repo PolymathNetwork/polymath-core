@@ -680,7 +680,8 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         uint256 canSendAfter;
         (canSendAfter,,,) = _getKYCValues(_tokenHolder, getDataStore());
         canSendAfter = (canSendAfter == 0 ? defaults.canSendAfter:  canSendAfter);
-        if ((_partition == LOCKED && now < canSendAfter) || (_partition == UNLOCKED && now >= canSendAfter))
+        bool unlockedCheck = paused ? _partition == UNLOCKED : (_partition == UNLOCKED && now >= canSendAfter);
+        if (((_partition == LOCKED && now < canSendAfter) && !paused) || unlockedCheck)
             return ISecurityToken(securityToken).balanceOf(_tokenHolder);
         else
             return 0;

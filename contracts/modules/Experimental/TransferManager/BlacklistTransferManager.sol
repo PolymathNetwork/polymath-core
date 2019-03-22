@@ -415,6 +415,9 @@ contract BlacklistTransferManager is TransferManager {
      * @param _tokenHolder Whom token amount need to query
      */
     function getTokensByPartition(bytes32 _partition, address _tokenHolder) external view returns(uint256) {
+        if (paused && _partition == UNLOCKED)
+            return ISecurityToken(securityToken).balanceOf(_tokenHolder);
+            
         (Result success, ) = verifyTransfer(_tokenHolder, address(0), 0, "0x0");
         if ((_partition == LOCKED && success == Result.INVALID) || (_partition == UNLOCKED && success != Result.INVALID))
             return ISecurityToken(securityToken).balanceOf(_tokenHolder);

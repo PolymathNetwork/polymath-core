@@ -713,7 +713,13 @@ contract('VolumeRestrictionTransferManager', accounts => {
             console.log(`
                 Gas estimation (Individual): ${await I_SecurityToken.transfer.estimateGas(account_investor3, new BN(web3.utils.toWei('.3', "ether")), {from: account_investor1})}`
             );
+            // Back and forth verifying the partition balances
             await verifyPartitionBalance(account_investor1, 23, 12);
+            await I_VolumeRestrictionTM.pause({from: token_owner});
+            await verifyPartitionBalance(account_investor1, 0, 35);
+            await I_VolumeRestrictionTM.unpause({from: token_owner});
+            await verifyPartitionBalance(account_investor1, 23, 12);
+            
             await I_SecurityToken.transfer(account_investor3, new BN(web3.utils.toWei('.3')), {from: account_investor1});
             // Check the balance of the investors
             let bal1 = await I_SecurityToken.balanceOf.call(account_investor1);

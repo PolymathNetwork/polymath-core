@@ -1089,8 +1089,11 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         uint256 allowedAmountToTransact;
         uint256 fromTimestamp;
         uint256 dailyTime;
-        (,fromTimestamp,,,dailyTime,,allowedAmountToTransact,) = _verifyTransfer(_tokenHolder, 0);
         uint256 currentBalance = ISecurityToken(securityToken).balanceOf(_tokenHolder);
+        if (paused)
+            return (_partition == UNLOCKED ? currentBalance: 0);
+        
+        (,fromTimestamp,,,dailyTime,,allowedAmountToTransact,) = _verifyTransfer(_tokenHolder, 0);
         if (_partition == LOCKED) {
             if (allowedAmountToTransact == 0 && fromTimestamp == 0 && dailyTime == 0)
                 return 0;

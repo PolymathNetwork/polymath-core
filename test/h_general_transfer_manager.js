@@ -1175,6 +1175,105 @@ contract("GeneralTransferManager", async (accounts) => {
         });
     });
 
+    describe("Test cases for the getTokensByPartition", async() => {
+
+        it("Should change the transfer requirements", async() => {
+            await I_GeneralTransferManager.modifyTransferRequirementsMulti(
+                [0, 1, 2], 
+                [true, false, true],
+                [true, true, false],
+                [true, false, false],
+                [true, false, false],
+                { from: token_owner }
+            );
+        })
+
+        it("Should check the partition balance before changing the canSendAfter & canReceiveAfter", async() => {
+            assert.equal(
+                web3.utils.fromWei(
+                (
+                    await I_SecurityToken.balanceOf.call(account_investor2)
+                ).toString()
+                ),
+                1
+            );
+            assert.equal(
+                web3.utils.fromWei(
+                (
+                    await I_GeneralTransferManager.getTokensByPartition.call(web3.utils.toHex("LOCKED"), account_investor2)
+                ).toString()
+                ),
+                0
+            );
+
+            assert.equal(
+                web3.utils.fromWei(
+                (
+                    await I_GeneralTransferManager.getTokensByPartition.call(web3.utils.toHex("UNLOCKED"), account_investor2)
+                ).toString()
+                ),
+                1
+            );
+        });
+
+        it("Should change the canSendAfter and canRecieveAfter of the investor2", async() => {
+            let canSendAfter = await latestTime() + duration.days(10);
+            let canRecieveAfter = await latestTime() + duration.days(10);
+            let expiryTime = await latestTime() + duration.days(100);
+        
+            let tx = await I_GeneralTransferManager.modifyKYCData(
+                account_investor2,
+                canSendAfter,
+                canRecieveAfter,
+                expiryTime,
+                {
+                    from: token_owner,
+                    gas: 6000000
+                }
+            );
+            assert.equal(tx.logs[0].args._investor, account_investor2);
+            assert.equal(
+                web3.utils.fromWei(
+                (
+                    await I_GeneralTransferManager.getTokensByPartition.call(web3.utils.toHex("LOCKED"), account_investor2)
+                ).toString()
+                ),
+                1
+            );
+
+            assert.equal(
+                web3.utils.fromWei(
+                (
+                    await I_GeneralTransferManager.getTokensByPartition.call(web3.utils.toHex("UNLOCKED"), account_investor2)
+                ).toString()
+                ),
+                0
+            );
+        });
+
+        it("Should check the values of partition balance after the GTM pause", async() => {
+            await I_GeneralTransferManager.pause({from: token_owner});
+            assert.equal(
+                web3.utils.fromWei(
+                (
+                    await I_GeneralTransferManager.getTokensByPartition.call(web3.utils.toHex("LOCKED"), account_investor2)
+                ).toString()
+                ),
+                0
+            );
+
+            assert.equal(
+                web3.utils.fromWei(
+                (
+                    await I_GeneralTransferManager.getTokensByPartition.call(web3.utils.toHex("UNLOCKED"), account_investor2)
+                ).toString()
+                ),
+                1
+            );
+            await I_GeneralTransferManager.unpause({from: token_owner});
+        })
+    });
+
     describe("General Transfer Manager Factory test cases", async () => {
         it("Should get the exact details of the factory", async () => {
             assert.equal(await I_GeneralTransferManagerFactory.setupCost.call(), 0);

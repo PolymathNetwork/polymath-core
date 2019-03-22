@@ -1067,7 +1067,6 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(filteredInvestors[2], investors[2]);
             assert.equal(filteredInvestors[3], investors[3]);
             assert.equal(filteredInvestors.length, 4);
-            await catchRevert(stGetter.iterateInvestors(0, 5));
         });
 
         it("Should check the balance of investor at checkpoint", async () => {

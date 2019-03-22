@@ -61,7 +61,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     // Emit when the budget allocated to a module is changed
     event ModuleBudgetChanged(uint8[] _moduleTypes, address _module, uint256 _oldBudget, uint256 _budget);
     // Emit when new checkpoint created
-    event CheckpointCreated(uint256 indexed _checkpointId);
+    event CheckpointCreated(uint256 indexed _checkpointId, uint256 _investorLength);
     // Events to log controller actions
     event SetController(address indexed _oldController, address indexed _newController);
     //Event emit when the global treasury wallet address get changed
@@ -141,7 +141,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     )
         public
         ERC20Detailed(_name, _symbol, _decimals)
-    {   
+    {
         _zeroAddressCheck(_polymathRegistry);
         _zeroAddressCheck(_delegate);
         polymathRegistry = _polymathRegistry;
@@ -253,7 +253,6 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     * @param _value amount of POLY to withdraw
     */
     function withdrawERC20(address _tokenContract, uint256 _value) external onlyOwner {
-        require(_tokenContract != address(0));
         IERC20 token = IERC20(_tokenContract);
         require(token.transfer(owner(), _value));
     }
@@ -298,7 +297,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
 
     /**
      * @notice Allows to change the treasury wallet address
-     * @param _wallet Ethereum address of the treasury wallet 
+     * @param _wallet Ethereum address of the treasury wallet
      */
     function changeTreasuryWallet(address _wallet) external onlyOwner {
         _zeroAddressCheck(_wallet);
@@ -320,7 +319,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * @notice freezes transfers
      */
     function freezeTransfers() external onlyOwner {
-        require(!transfersFrozen, "Already frozen");
+        require(!transfersFrozen);
         transfersFrozen = true;
         /*solium-disable-next-line security/no-block-members*/
         emit FreezeTransfers(true);
@@ -330,7 +329,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * @notice Unfreeze transfers
      */
     function unfreezeTransfers() external onlyOwner {
-        require(transfersFrozen, "Not frozen");
+        require(transfersFrozen);
         transfersFrozen = false;
         /*solium-disable-next-line security/no-block-members*/
         emit FreezeTransfers(false);
@@ -445,12 +444,13 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         returns(bool)
     {
         if (!transfersFrozen) {
-            bool isInvalid = false;
-            bool isValid = false;
-            bool isForceValid = false;
-            bool unarchived = false;
+            bool isInvalid;
+            bool isValid;
+            bool isForceValid;
+            bool unarchived;
             address module;
-            for (uint256 i = 0; i < modules[TRANSFER_KEY].length; i++) {
+            uint256 tmLength = modules[TRANSFER_KEY].length;
+            for (uint256 i = 0; i < tmLength; i++) {
                 module = modules[TRANSFER_KEY][i];
                 if (!modulesToData[module].isArchived) {
                     unarchived = true;
@@ -503,12 +503,22 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     function issue(
         address _tokenHolder,
         uint256 _value,
+        bytes calldata _data
+    )
+        external
+        isIssuanceAllowed
+    {
+        _onlyModuleOrOwner(MINT_KEY);
+        _issue(_tokenHolder, _value, _data);
+    }
+
+    function _issue(
+        address _tokenHolder,
+        uint256 _value,
         bytes memory _data
     )
-        public
-        isIssuanceAllowed
-    {   
-        _onlyModuleOrOwner(MINT_KEY); 
+        internal
+    {
         // Add a function to validate the `_data` parameter
         _isValidTransfer(_updateTransfer(address(0), _tokenHolder, _value, _data));
         _mint(_tokenHolder, _value);
@@ -522,10 +532,11 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * @param _values A list of number of tokens get minted and transfer to corresponding address of the investor from _tokenHolders[] list
      * @return success
      */
-    function issueMulti(address[] calldata _tokenHolders, uint256[] calldata _values) external {
+    function issueMulti(address[] calldata _tokenHolders, uint256[] calldata _values) external isIssuanceAllowed {
+        _onlyModuleOrOwner(MINT_KEY);
         require(_tokenHolders.length == _values.length, "Incorrect inputs");
         for (uint256 i = 0; i < _tokenHolders.length; i++) {
-            issue(_tokenHolders[i], _values[i], "");
+            _issue(_tokenHolders[i], _values[i], "");
         }
     }
 
@@ -579,13 +590,13 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      */
     function createCheckpoint() external returns(uint256) {
         _onlyModuleOrOwner(CHECKPOINT_KEY);
-        require(currentCheckpointId < 2 ** 256 - 1);
+        IDataStore dataStoreInstance = IDataStore(dataStore);
+        // currentCheckpointId can only be incremented by 1 and hence it can not be overflowed
         currentCheckpointId = currentCheckpointId + 1;
         /*solium-disable-next-line security/no-block-members*/
         checkpointTimes.push(now);
-        /*solium-disable-next-line security/no-block-members*/
         checkpointTotalSupply[currentCheckpointId] = totalSupply();
-        emit CheckpointCreated(currentCheckpointId);
+        emit CheckpointCreated(currentCheckpointId, dataStoreInstance.getAddressArrayLength(INVESTORSKEY));
         return currentCheckpointId;
     }
 
@@ -594,7 +605,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * @param _controller address of the controller
      */
     function setController(address _controller) public onlyOwner {
-        require(_isControllable());
+        require(isControllable());
         emit SetController(controller, _controller);
         controller = _controller;
     }
@@ -604,7 +615,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * @dev enabled via feature switch "disableControllerAllowed"
      */
     function disableController() external isEnabled("disableControllerAllowed") onlyOwner {
-        require(_isControllable());
+        require(isControllable());
         controllerDisabled = true;
         delete controller;
         emit DisableController();
@@ -641,8 +652,8 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         (bool success, byte reasonCode, bytes32 appCode) = _canTransfer(_from, _to, _value, _data);
         if (success && _value > allowance(_from, msg.sender)) {
             return (false, 0x53, bytes32(0));
-        } else
-            return (success, reasonCode, appCode);
+        }
+        return (success, reasonCode, appCode);
     }
 
     function _canTransfer(address _from, address _to, uint256 _value, bytes memory _data) internal view returns (bool, byte, bytes32) {
@@ -702,23 +713,14 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     }
 
     /**
-     * @notice Internal function to know whether the controller functionality
-     * allowed or not.
-     * @return bool `true` when controller address is non-zero otherwise return `false`.
-     */
-    function _isControllable() internal view returns (bool) {
-        return !controllerDisabled;
-    }
-
-    /**
      * @notice In order to provide transparency over whether `controllerTransfer` / `controllerRedeem` are useable
      * or not `isControllable` function will be used.
      * @dev If `isControllable` returns `false` then it always return `false` and
      * `controllerTransfer` / `controllerRedeem` will always revert.
      * @return bool `true` when controller address is non-zero otherwise return `false`.
      */
-    function isControllable() external view returns (bool) {
-        return _isControllable();
+    function isControllable() public view returns (bool) {
+        return !controllerDisabled;
     }
 
     /**
@@ -735,7 +737,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * for calling this function (aka force transfer) which provides the transparency on-chain).
      */
     function controllerTransfer(address _from, address _to, uint256 _value, bytes calldata _data, bytes calldata _operatorData) external onlyController {
-        require(_isControllable());
+        require(isControllable());
         _updateTransfer(_from, _to, _value, _data);
         _transfer(_from, _to, _value);
         emit ControllerTransfer(msg.sender, _from, _to, _value, _data, _operatorData);
@@ -754,7 +756,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * for calling this function (aka force transfer) which provides the transparency on-chain).
      */
     function controllerRedeem(address _tokenHolder, uint256 _value, bytes calldata _data, bytes calldata _operatorData) external onlyController {
-        require(_isControllable());
+        require(isControllable());
         _checkAndBurn(_tokenHolder, _value, _data);
         emit ControllerRedemption(msg.sender, _tokenHolder, _value, _data, _operatorData);
     }

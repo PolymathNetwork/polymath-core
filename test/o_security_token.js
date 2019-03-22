@@ -276,13 +276,48 @@ contract("SecurityToken", async (accounts) => {
         });
 
 
-        it("Should issueMulti", async () => {
+        it("Should fail due to array length mismatch", async () => {
             await catchRevert(
                 I_SecurityToken.issueMulti([account_affiliate1, account_affiliate2], [new BN(100).mul(new BN(10).pow(new BN(18)))], {
                     from: token_owner,
                     gas: 500000
                 })
             );
+        });
+
+        it("Should mint to lots of addresses and check gas", async () => {
+            let id = await takeSnapshot();
+            await I_GeneralTransferManager.modifyTransferRequirementsMulti(
+                [0, 1, 2], 
+                [false, false, false],
+                [false, false, false],
+                [false, false, false],
+                [false, false, false],
+                { from: token_owner }
+            );
+            let id2 = await takeSnapshot();
+            let mockInvestors = [];
+            let mockAmount = [];
+            for (let i = 0; i < 40; i++) {
+                mockInvestors.push("0x1000000000000000000000000000000000000000".substring(0, 42 - i.toString().length) + i.toString());
+                mockAmount.push(new BN(10).pow(new BN(18)));
+            }
+
+            let tx = await I_SecurityToken.issueMulti(mockInvestors, mockAmount, {
+                from: token_owner
+            });
+
+            console.log("Cost for issuing to 40 addresses without checkpoint: " + tx.receipt.gasUsed);
+            await revertToSnapshot(id2);
+            
+            await I_SecurityToken.createCheckpoint({ from: token_owner });
+
+            tx = await I_SecurityToken.issueMulti(mockInvestors, mockAmount, {
+                from: token_owner
+            });
+
+            console.log("Cost for issuing to 40 addresses with checkpoint: " + tx.receipt.gasUsed);
+            await revertToSnapshot(id);
         });
 
         it("Should issue the tokens for multiple afiliated investors before attaching the STO", async () => {
@@ -1032,7 +1067,6 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(filteredInvestors[2], investors[2]);
             assert.equal(filteredInvestors[3], investors[3]);
             assert.equal(filteredInvestors.length, 4);
-            await catchRevert(stGetter.iterateInvestors(0, 5));
         });
 
         it("Should check the balance of investor at checkpoint", async () => {

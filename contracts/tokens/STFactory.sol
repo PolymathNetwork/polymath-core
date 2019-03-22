@@ -40,6 +40,8 @@ contract STFactory is ISTFactory, Ownable {
         address indexed _securityToken,
         uint256 indexed _version
     );
+    event DefaultTransferManagerUpdated(address indexed _oldTransferManagerFactory, address indexed _newTransferManagerFactory);
+    event DefaultDataStoreUpdated(address indexed _oldDataStoreFactory, address indexed _newDataStoreFactory);
 
     constructor(address _transferManagerFactory, address _dataStoreFactory, string memory _version, address _logicContract, bytes memory _initializationData) public {
         require(_logicContract != address(0), "Invalid Address");
@@ -78,9 +80,13 @@ contract STFactory is ISTFactory, Ownable {
             _polymathRegistry
         );
         //NB When dataStore is generated, the security token address is automatically set via the constructor in DataStoreProxy.
-        ISecurityToken(securityToken).changeDataStore(dataStoreFactory.generateDataStore(securityToken));
+        if (address(dataStoreFactory) != address(0)) {
+            ISecurityToken(securityToken).changeDataStore(dataStoreFactory.generateDataStore(securityToken));
+        }
         ISecurityToken(securityToken).changeTreasuryWallet(_treasuryWallet);
-        ISecurityToken(securityToken).addModule(transferManagerFactory, "", 0, 0, false);
+        if (transferManagerFactory != address(0)) {
+            ISecurityToken(securityToken).addModule(transferManagerFactory, "", 0, 0, false);
+        }
         IOwnable(securityToken).transferOwnership(_issuer);
         return securityToken;
     }
@@ -131,8 +137,9 @@ contract STFactory is ISTFactory, Ownable {
 
     /**
      * @notice Used to upgrade a token
+     * @param _maxModuleType maximum module type enumeration
      */
-    function upgradeToken() external {
+    function upgradeToken(uint8 _maxModuleType) external {
         // Check the token was created by this factory
         require(tokenToRegistry[msg.sender] != address(0), "Invalid token");
         uint256 newVersion = tokenVersion[msg.sender] + 1;
@@ -143,7 +150,7 @@ contract STFactory is ISTFactory, Ownable {
         IModuleRegistry moduleRegistry = IModuleRegistry(IPolymathRegistry(tokenToRegistry[msg.sender]).getAddress("ModuleRegistry"));
         address moduleFactory;
         bool isArchived;
-        for (uint8 i = 1; i < 10; i++) {
+        for (uint8 i = 1; i < _maxModuleType; i++) {
             address[] memory modules = ISecurityToken(msg.sender).getModulesByType(i);
             for (uint256 j = 0; j < modules.length; j++) {
                 (,, moduleFactory, isArchived,,) = ISecurityToken(msg.sender).getModule(modules[j]);
@@ -153,6 +160,28 @@ contract STFactory is ISTFactory, Ownable {
             }
         }
         emit TokenUpgraded(msg.sender, newVersion);
+    }
+
+    /**
+     * @notice Used to set a new default transfer manager
+     * @dev Setting this to address(0) means don't deploy a default TM
+     * @param _transferManagerFactory Address of new default transfer manager factory
+     */
+    function updateDefaultTransferManager(address _transferManagerFactory) external onlyOwner {
+        // NB - setting this to address(0) means don't deploy a default TM
+        emit DefaultTransferManagerUpdated(transferManagerFactory, _transferManagerFactory);
+        transferManagerFactory = _transferManagerFactory;
+    }
+
+    /**
+     * @notice Used to set a new default data store
+     * @dev Setting this to address(0) means don't deploy a default data store
+     * @param _dataStoreFactory Address of new default data store factory
+     */
+    function updateDefaultDataStore(address _dataStoreFactory) external onlyOwner {
+        // NB - setting this to address(0) means don't deploy a default TM
+        emit DefaultDataStoreUpdated(address(dataStoreFactory), address(_dataStoreFactory));
+        dataStoreFactory = DataStoreFactory(_dataStoreFactory);
     }
 
 }

@@ -94,7 +94,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
     const initRegFee = new BN(web3.utils.toWei("250"));
     const initRegFeePOLY = new BN(web3.utils.toWei("1000"));
 
-    const STRProxyParameters = ["address", "address", "uint256", "uint256", "address", "address"];
+    const STRProxyParameters = ["address", "uint256", "uint256", "address", "address"];
     const STOParameters = ["uint256", "uint256", "uint256", "string"];
 
     // Capped STO details
@@ -185,7 +185,6 @@ contract("SecurityTokenRegistry", async (accounts) => {
         it("Should successfully update the implementation address -- fail because polymathRegistry address is 0x", async () => {
             let bytesProxy = encodeProxyCall(STRProxyParameters, [
                 address_zero,
-                I_STFactory.address,
                 initRegFee,
                 initRegFee,
                 account_polymath,
@@ -199,61 +198,9 @@ contract("SecurityTokenRegistry", async (accounts) => {
             );
         });
 
-        it("Should successfully update the implementation address -- fail because STFactory address is 0x", async () => {
-            let bytesProxy = encodeProxyCall(STRProxyParameters, [
-                I_PolymathRegistry.address,
-                address_zero,
-                initRegFee,
-                initRegFee,
-                account_polymath,
-                I_STRGetter.address
-            ]);
-            await catchRevert(
-                I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {
-                    from: account_polymath
-                }),
-                "tx-> revert because STFactory address is 0x"
-            );
-        });
-
-        it("Should successfully update the implementation address -- fail because STLaunch fee is 0", async () => {
-            let bytesProxy = encodeProxyCall(STRProxyParameters, [
-                I_PolymathRegistry.address,
-                I_STFactory.address,
-                new BN(0),
-                initRegFee,
-                account_polymath,
-                I_STRGetter.address
-            ]);
-            await catchRevert(
-                I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {
-                    from: account_polymath
-                }),
-                "tx-> revert because STLaunch fee is 0"
-            );
-        });
-
-        it("Should successfully update the implementation address -- fail because tickerRegFee fee is 0", async () => {
-            let bytesProxy = encodeProxyCall(STRProxyParameters, [
-                I_PolymathRegistry.address,
-                I_STFactory.address,
-                initRegFee,
-                new BN(0),
-                account_polymath,
-                I_STRGetter.address
-            ]);
-            await catchRevert(
-                I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {
-                    from: account_polymath
-                }),
-                "tx-> revert because tickerRegFee is 0"
-            );
-        });
-
         it("Should successfully update the implementation address -- fail because owner address is 0x", async () => {
             let bytesProxy = encodeProxyCall(STRProxyParameters, [
                 I_PolymathRegistry.address,
-                I_STFactory.address,
                 initRegFee,
                 initRegFee,
                 address_zero,
@@ -268,7 +215,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         });
 
         it("Should successfully update the implementation address -- fail because all params get 0", async () => {
-            let bytesProxy = encodeProxyCall(STRProxyParameters, [address_zero, address_zero, new BN(0), new BN(0), address_zero, address_zero]);
+            let bytesProxy = encodeProxyCall(STRProxyParameters, [address_zero, new BN(0), new BN(0), address_zero, address_zero]);
             await catchRevert(
                 I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, {
                     from: account_polymath
@@ -280,7 +227,6 @@ contract("SecurityTokenRegistry", async (accounts) => {
         it("Should successfully update the implementation address", async () => {
             let bytesProxy = encodeProxyCall(STRProxyParameters, [
                 I_PolymathRegistry.address,
-                I_STFactory.address,
                 initRegFee,
                 initRegFee,
                 account_polymath,
@@ -291,6 +237,16 @@ contract("SecurityTokenRegistry", async (accounts) => {
             });
             I_Getter = await STRGetter.at(I_SecurityTokenRegistryProxy.address);
             I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
+            await I_STRProxied.setProtocolFactory(I_STFactory.address, 3, 0, 0);
+            await I_STRProxied.setLatestVersion(3, 0, 0);
+
+            console.log(await I_Getter.getSTFactoryAddress());
+            let info = await I_Getter.getLatestProtocolVersion();
+            for (let i = 0; i < info.length; i++) {
+                console.log(info[i].toNumber());
+            }
+            console.log(await I_Getter.getLatestProtocolVersion());
+
         });
     });
 
@@ -325,7 +281,6 @@ contract("SecurityTokenRegistry", async (accounts) => {
             await catchRevert(
                 I_STRProxied.initialize(
                     I_PolymathRegistry.address,
-                    I_STFactory.address,
                     initRegFee,
                     initRegFee,
                     account_polymath,
@@ -590,7 +545,12 @@ contract("SecurityTokenRegistry", async (accounts) => {
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
-
+            console.log(await I_STRGetter.getSTFactoryAddress());
+            let info = await I_STRGetter.getLatestProtocolVersion();
+            for (let i = 0; i < info.length; i++) {
+                console.log(info[i].toNumber());
+            }
+            console.log(await I_STRGetter.getLatestProtocolVersion());
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, treasury_wallet, 0, { from: token_owner });
 
             // Verify the successful generation of the security token
@@ -676,7 +636,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
                 "STFactory002 contract was not deployed"
             );
             let _protocol = await I_Getter.getLatestProtocolVersion.call();
-            assert.equal(_protocol[0], 2);
+            assert.equal(_protocol[0], 3);
             assert.equal(_protocol[1], 0);
             assert.equal(_protocol[2], 0);
         });
@@ -691,7 +651,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         it("Should change the protocol version", async() => {
             await I_STRProxied.setProtocolFactory(I_STFactory002.address, new BN(2), new BN(2), new BN(0), { from: account_polymath });
             let _protocol = await I_Getter.getLatestProtocolVersion.call();
-            assert.equal(_protocol[0], 2);
+            assert.equal(_protocol[0], 3);
             assert.equal(_protocol[1], 0);
             assert.equal(_protocol[2], 0);
             await I_STRProxied.setLatestVersion(new BN(2), new BN(2), new BN(0), { from: account_polymath });
@@ -715,8 +675,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         })
 
         it("Should generate the new security token with version 2", async () => {
-            //Fails due to incompatible GTM version
-            await catchRevert(I_STRProxied.generateSecurityToken(name2, symbol2, tokenDetails, false, token_owner, _pack(2,2,0), { from: token_owner }));
+            // Version bounds not checked here as MR is called as non-token
             await I_GeneralTransferManagerFactory.changeSTVersionBounds("lowerBound", [2, 2, 0], {from: account_polymath});
             let tx = await I_STRProxied.generateSecurityToken(name2, symbol2, tokenDetails, false, token_owner, _pack(2,2,0), { from: token_owner });
             console.log(`Protocol version: ${_pack(2,2,0)}`);

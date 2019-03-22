@@ -258,7 +258,7 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, SecurityTokenSt
     * @notice Upgrades security token
     */
     function upgradeToken() external onlyOwner {
-        IUpgradableTokenFactory(tokenFactory).upgradeToken();
+        IUpgradableTokenFactory(tokenFactory).upgradeToken(7);
         emit TokenUpgraded(securityTokenVersion.major, securityTokenVersion.minor, securityTokenVersion.patch);
     }
 
@@ -828,17 +828,6 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, SecurityTokenSt
      */
     function isOwner() public view returns (bool) {
         return msg.sender == _owner;
-    }
-
-    /**
-     * @dev Allows the current owner to relinquish control of the contract.
-     * @notice Renouncing to ownership will leave the contract without an owner.
-     * It will not be possible to call the functions with the `onlyOwner`
-     * modifier anymore.
-     */
-    function renounceOwnership() public onlyOwner {
-        emit OwnershipTransferred(_owner, address(0));
-        _owner = address(0);
     }
 
     /**

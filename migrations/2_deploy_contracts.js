@@ -169,10 +169,6 @@ module.exports = function(deployer, network, accounts) {
                 name: "_polymathRegistry"
             },
             {
-                type: "address",
-                name: "_STFactory"
-            },
-            {
                 type: "uint256",
                 name: "_stLaunchFee"
             },
@@ -402,7 +398,6 @@ module.exports = function(deployer, network, accounts) {
         .then((securityTokenRegistryProxy) => {
             let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignatureProxy, [
                 PolymathRegistry.address,
-                STFactory.address,
                 initRegFee,
                 initRegFee,
                 PolymathAccount,

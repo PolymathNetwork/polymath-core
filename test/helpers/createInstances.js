@@ -112,7 +112,7 @@ let I_StablePOLYOracle;
 // Initial fee for ticker registry and security token registry
 const initRegFee = new BN(web3.utils.toWei("250"));
 
-const STRProxyParameters = ["address", "address", "uint256", "uint256", "address", "address"];
+const STRProxyParameters = ["address", "uint256", "uint256", "address", "address"];
 const MRProxyParameters = ["address", "address"];
 
 /// Function use to launch the polymath ecossystem.
@@ -275,7 +275,6 @@ async function deploySTR(account_polymath) {
 
     let bytesProxy = encodeProxyCall(STRProxyParameters, [
         I_PolymathRegistry.address,
-        I_STFactory.address,
         initRegFee,
         initRegFee,
         account_polymath,
@@ -283,6 +282,8 @@ async function deploySTR(account_polymath) {
     ]);
     await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, { from: account_polymath });
     I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
+    await I_STRProxied.setProtocolFactory(I_STFactory.address, 3, 0, 0);
+    await I_STRProxied.setLatestVersion(3, 0, 0);
     I_STRGetter = await STRGetter.at(I_SecurityTokenRegistryProxy.address);
     return new Array(I_SecurityTokenRegistry, I_SecurityTokenRegistryProxy, I_STRProxied, I_STRGetter);
 }

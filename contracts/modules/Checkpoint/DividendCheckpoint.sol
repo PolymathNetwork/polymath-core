@@ -10,7 +10,6 @@ pragma solidity ^0.5.0;
 import "./ICheckpoint.sol";
 import "../../storage/modules/Checkpoint/DividendCheckpointStorage.sol";
 import "../Module.sol";
-import "../../Pausable.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/math/Math.sol";
 
@@ -18,7 +17,7 @@ import "openzeppelin-solidity/contracts/math/Math.sol";
  * @title Checkpoint module for issuing ether dividends
  * @dev abstract contract
  */
-contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module, Pausable {
+contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
     using SafeMath for uint256;
 
     event SetDefaultExcludedAddresses(address[] _excluded);
@@ -45,44 +44,6 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module, P
     ) public onlyFactory {
         _setWallet(_wallet);
     }
-
-    /**
-     * @notice Pause (overridden function)
-     */
-    function pause() public {
-        _onlySecurityTokenOwner();
-        super._pause();
-    }
-
-     /**
-     * @notice Unpause (overridden function)
-     */
-    function unpause() public {
-        _onlySecurityTokenOwner();
-        super._unpause();
-    }
-
-     /**
-    * @notice Reclaims ERC20Basic compatible tokens
-    * @dev We duplicate here due to the overriden owner & onlyOwner
-    * @param _tokenContract The address of the token contract
-    */
-    function reclaimERC20(address _tokenContract) external {
-        _onlySecurityTokenOwner();
-        require(_tokenContract != address(0), "Invalid address");
-        IERC20 token = IERC20(_tokenContract);
-        uint256 balance = token.balanceOf(address(this));
-        require(token.transfer(msg.sender, balance), "Transfer failed");
-    }
-
-     /**
-    * @notice Reclaims ETH
-    * @dev We duplicate here due to the overriden owner & onlyOwner
-    */
-    function reclaimETH() external {
-        _onlySecurityTokenOwner();
-        msg.sender.transfer(address(this).balance);
-    }	   
 
     /**
     * @notice Init function i.e generalise function to maintain the structure of the module contract

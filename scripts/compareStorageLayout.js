@@ -6,7 +6,7 @@ const path = require("path");
 const util = require("util");
 const exec = util.promisify(require("child_process").exec);
 
-console.log(`Mandatory: Solc cli tool should be installed globally`);
+console.log(`Mandatory: Solc cli tool should be installed globally. Please put the contract name only`);
 prompt.start();
 
 prompt.get(["LogicContract", "ProxyContract"], async (err, result) => {

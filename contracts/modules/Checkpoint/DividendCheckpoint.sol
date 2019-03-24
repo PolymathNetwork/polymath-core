@@ -82,7 +82,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
         if (wallet == address(0)) {
             address payable treasuryWallet = address(uint160(IDataStore(getDataStore()).getAddress(TREASURY)));
             require(address(treasuryWallet) != address(0), "Invalid address");
-            return treasuryWallet; 
+            return treasuryWallet;
         }
         else
             return wallet;
@@ -167,21 +167,24 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @notice Issuer can push dividends using the investor list from the security token
      * @param _dividendIndex Dividend to push
      * @param _start Index in investor list at which to start pushing dividends
-     * @param _iterations Number of addresses to push dividends for
+     * @param _end Index in investor list at which to stop pushing dividends
      */
     function pushDividendPayment(
         uint256 _dividendIndex,
         uint256 _start,
-        uint256 _iterations
-    ) public
-      withPerm(OPERATOR)
+        uint256 _end
+    )
+        public
+        withPerm(OPERATOR)
     {
+        //NB If possible, please use pushDividendPaymentToAddresses as it is cheaper than this function
         _validDividendIndex(_dividendIndex);
         Dividend storage dividend = dividends[_dividendIndex];
         uint256 checkpointId = dividend.checkpointId;
-        address[] memory investors = ISecurityToken(securityToken).getInvestorsAt(checkpointId);
-        uint256 numberInvestors = Math.min(investors.length, _start.add(_iterations));
-        for (uint256 i = _start; i < numberInvestors; i++) {
+        address[] memory investors = ISecurityToken(securityToken).getInvestorsSubsetAt(checkpointId, _start, _end);
+        // The investors list maybe smaller than _end - _start becuase it only contains addresses that had a positive balance
+        // the _start and _end used here are for the address list stored in the dataStore
+        for (uint256 i = 0; i < investors.length; i++) {
             address payable payee = address(uint160(investors[i]));
             if ((!dividend.claimed[payee]) && (!dividend.dividendExcluded[payee])) {
                 _payDividend(payee, dividend, _dividendIndex);

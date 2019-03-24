@@ -40,7 +40,10 @@ contract TransferManager is ITransferManager, Module, Pausable {
      * @notice return the amount of tokens for a given user as per the partition
      */
     function getPartitions(address /*_tokenHolder*/) external view returns(bytes32[] memory) {
-        return new bytes32[](0);
+        bytes32[] memory result = new bytes32[](2);
+        result[0] = UNLOCKED;
+        result[1] = LOCKED;
+        return result;
     }
 
 }

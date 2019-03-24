@@ -664,22 +664,15 @@ contract LockUpTransferManager is LockUpTransferManagerStorage, TransferManager 
     function getTokensByPartition(bytes32 _partition, address _tokenHolder) external view returns(uint256){
         uint256 currentBalance = IERC20(securityToken).balanceOf(_tokenHolder);
         uint256 lockedBalance = Math.min(getLockedTokenToUser(_tokenHolder), currentBalance);
-        if (_partition == LOCKED) {
-            return lockedBalance;
-        } else if (_partition == UNLOCKED) {
-            return currentBalance.sub(lockedBalance);
+        if (paused) {
+            return (_partition == UNLOCKED ? currentBalance : uint256(0));
+        } else {
+            if (_partition == LOCKED)
+                return lockedBalance;
+            else if (_partition == UNLOCKED)
+                return currentBalance.sub(lockedBalance);
         }
-        return 0;
-    }
-
-    /**
-     * @notice return the amount of tokens for a given user as per the partition
-     */
-    function getPartitions(address /*_tokenHolder*/) external view returns(bytes32[] memory) {
-        bytes32[] memory result = new bytes32[](2);
-        result[0] = UNLOCKED;
-        result[1] = LOCKED;
-        return result;
+        return uint256(0);
     }
 
     /**

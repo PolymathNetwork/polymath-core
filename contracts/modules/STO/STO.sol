@@ -31,12 +31,12 @@ contract STO is ISTO, STOStorage, Module {
 
     /**
      * @notice Pause (overridden function)
+     * @dev Only securityToken owner restriction applied on the super function
      */
     function pause() public {
-        _onlySecurityTokenOwner();
         /*solium-disable-next-line security/no-block-members*/
         require(now < endTime, "STO has been finalized");
-        super._pause();
+        super.pause();
     }
 
     function _setFundRaiseType(FundRaiseType[] memory _fundRaiseTypes) internal {

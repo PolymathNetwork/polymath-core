@@ -1396,18 +1396,21 @@ contract("SecurityToken", async (accounts) => {
         });
 
         it("Verify the storage of the STStorage", async() => {
-            // for (let j = 7; j < 35; j++) {
-            //     console.log(await readStorage(I_SecurityToken.address, j));
-            // }
 
             console.log(`
-                Controller address from the contract:         ${await stGetter.controller.call()}
-                uint8 decimals + controller address from the storage:          ${await readStorage(I_SecurityToken.address, 7)}
+                Controller address from the contract:                   ${await stGetter.controller.call()}
+                decimals from the contract:                             ${await stGetter.decimals.call()} 
+                controller address from the storage + uint8 decimals:   ${await readStorage(I_SecurityToken.address, 7)}
             `)
 
-            assert.equal(await stGetter.controller.call(), address_zero);
-            // Controller address is packed with decimals so of controller address is 0x0, only decimals will be returned from read storage.
-            assert.equal(await readStorage(I_SecurityToken.address, 7), "0x12");
+            // Controller address is packed with decimals so if controller address is 0x0, only decimals will be returned from read storage.
+            assert.oneOf(
+                await readStorage(I_SecurityToken.address, 7),
+                [
+                    (await stGetter.controller.call()).toLowerCase() + "12",
+                    "0x12" // When controller address = 0x0, web3 converts 0x00000..000012 to 0x12
+                ]
+            );
 
             console.log(`
                 PolymathRegistry address from the contract:         ${await stGetter.polymathRegistry.call()}

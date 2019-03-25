@@ -75,6 +75,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     bytes32 constant OWNER = 0x02016836a56b71f0d02689e69e326f4f4c1b9057164ef592671cf0d37c8040c0;
     bytes32 constant POLYMATHREGISTRY = 0x90eeab7c36075577c7cc5ff366e389fefa8a18289b949bab3529ab4471139d4d;
     bytes32 constant STRGETTER = 0x982f24b3bd80807ec3cb227ba152e15c07d66855fa8ae6ca536e689205c0e2e9;
+    bytes32 constant IS_FEE_IN_POLY = 0x7152e5426955da44af11ecd67fec5e2a3ba747be974678842afa9394b9a075b6; //keccak256("IS_FEE_IN_POLY")
 
     string constant POLY_ORACLE = "StablePolyUsdOracle";
 
@@ -87,9 +88,9 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     // Emit when the token ticker expiry is changed
     event ChangeExpiryLimit(uint256 _oldExpiry, uint256 _newExpiry);
     // Emit when changeSecurityLaunchFee is called
-    event ChangeSecurityLaunchFee(uint256 _oldFee, uint256 _newFee);
+    event ChangeSecurityLaunchFee(uint256 _oldFee, uint256 _newFee, bool _isFeeInPoly);
     // Emit when changeTickerRegistrationFee is called
-    event ChangeTickerRegistrationFee(uint256 _oldFee, uint256 _newFee);
+    event ChangeTickerRegistrationFee(uint256 _oldFee, uint256 _newFee, bool _isFeeInPoly);
     // Emit when ownership gets transferred
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     // Emit when ownership of the ticker gets changed
@@ -227,8 +228,12 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @param _feeType Key corresponding to fee type
      */
     function getFees(bytes32 _feeType) public returns (uint256, uint256) {
-        address polymathRegistry = getAddressValue(POLYMATHREGISTRY);
-        uint256 polyRate = IOracle(IPolymathRegistry(polymathRegistry).getAddress(POLY_ORACLE)).getPrice();
+        uint256 polyRate = 1;
+        bool isFeesInPoly = getBoolValue(IS_FEE_IN_POLY);
+        if (!isFeesInPoly) { //Fee is in USD and not poly
+            address polymathRegistry = getAddressValue(POLYMATHREGISTRY);
+            polyRate = IOracle(IPolymathRegistry(polymathRegistry).getAddress(POLY_ORACLE)).getPrice();
+        }
         uint256 usdFee = getUintValue(_feeType);
         uint256 polyFee = DecimalMath.div(usdFee, polyRate);
         return (usdFee, polyFee);
@@ -518,7 +523,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         require(_tickerOwner(ticker) == msg.sender, "Not authorised");
         /*solium-disable-next-line security/no-block-members*/
         require(getUintValue(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now, "Ticker expired");
-        _deployToken(_name, ticker, _tokenDetails, msg.sender, _divisible, _treasuryWallet, protocolVersion); 
+        _deployToken(_name, ticker, _tokenDetails, msg.sender, _divisible, _treasuryWallet, protocolVersion);
     }
 
     function _deployToken(
@@ -529,7 +534,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         bool _divisible,
         address _wallet,
         uint256 _protocolVersion
-    ) 
+    )
         internal
     {
         (uint256 _usdFee, uint256 _polyFee) = _takeFee(STLAUNCHFEE);
@@ -572,7 +577,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     )
         external
         onlyOwner
-    {   
+    {
         require(bytes(_name).length > 0 && bytes(_ticker).length > 0, "Bad data");
         require(bytes(_ticker).length <= 10, "Bad ticker");
         require(_deployedAt != 0 && _owner != address(0), "Bad data");
@@ -651,23 +656,27 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     /**
     * @notice Sets the ticker registration fee in USD tokens. Only Polymath.
     * @param _tickerRegFee is the registration fee in USD tokens (base 18 decimals)
+    * @param _isFeeInPoly defines if the few is in poly
     */
-    function changeTickerRegistrationFee(uint256 _tickerRegFee) external onlyOwner {
+    function changeTickerRegistrationFee(uint256 _tickerRegFee, bool _isFeeInPoly) external onlyOwner {
         uint256 fee = getUintValue(TICKERREGFEE);
-        require(fee != _tickerRegFee, "Bad fee");
-        emit ChangeTickerRegistrationFee(fee, _tickerRegFee);
+        //NB Changing fee type for ticker reg will also change it for st creation.
+        emit ChangeTickerRegistrationFee(fee, _tickerRegFee, _isFeeInPoly);
         set(TICKERREGFEE, _tickerRegFee);
+        set(IS_FEE_IN_POLY, _isFeeInPoly);
     }
 
     /**
     * @notice Sets the ticker registration fee in USD tokens. Only Polymath.
     * @param _stLaunchFee is the registration fee in USD tokens (base 18 decimals)
+    * @param _isFeeInPoly defines if the few is in poly
     */
-    function changeSecurityLaunchFee(uint256 _stLaunchFee) external onlyOwner {
+    function changeSecurityLaunchFee(uint256 _stLaunchFee, bool _isFeeInPoly) external onlyOwner {
         uint256 fee = getUintValue(STLAUNCHFEE);
-        require(fee != _stLaunchFee, "Bad fee");
-        emit ChangeSecurityLaunchFee(fee, _stLaunchFee);
+        //NB Changing fee type for st creation will also change it for ticker reg.
+        emit ChangeSecurityLaunchFee(fee, _stLaunchFee, _isFeeInPoly);
         set(STLAUNCHFEE, _stLaunchFee);
+        set(IS_FEE_IN_POLY, _isFeeInPoly);
     }
 
     /**

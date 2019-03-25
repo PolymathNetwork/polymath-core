@@ -26,8 +26,9 @@ contract ModuleFactory is IModuleFactory, Ownable {
     uint8[] typesData;
     bytes32[] tagsData;
 
-    uint256 public usageCost; // Denominated in USD
-    uint256 public setupCost; // Denominated in USD
+    bool public isCostInPoly;
+    uint256 public usageCost;
+    uint256 public setupCost;
 
     string constant POLY_ORACLE = "StablePolyUsdOracle";
 
@@ -41,10 +42,11 @@ contract ModuleFactory is IModuleFactory, Ownable {
     /**
      * @notice Constructor
      */
-    constructor(uint256 _setupCost, uint256 _usageCost, address _polymathRegistry) public {
+    constructor(uint256 _setupCost, uint256 _usageCost, address _polymathRegistry, bool _isCostInPoly) public {
         setupCost = _setupCost;
         usageCost = _usageCost;
         polymathRegistry = _polymathRegistry;
+        isCostInPoly = _isCostInPoly;
     }
 
     /**
@@ -70,7 +72,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
 
     /**
      * @notice Used to change the fee of the setup cost
-     * @param _setupCost new setup cost in USD
+     * @param _setupCost new setup cost
      */
     function changeSetupCost(uint256 _setupCost) public onlyOwner {
         emit ChangeSetupCost(setupCost, _setupCost);
@@ -79,11 +81,20 @@ contract ModuleFactory is IModuleFactory, Ownable {
 
     /**
      * @notice Used to change the fee of the usage cost
-     * @param _usageCost new usage cost in USD
+     * @param _usageCost new usage cost
      */
     function changeUsageCost(uint256 _usageCost) public onlyOwner {
         emit ChangeUsageCost(usageCost, _usageCost);
         usageCost = _usageCost;
+    }
+
+    /**
+     * @notice Used to change the currency of usage and setup cost
+     * @param _isCostInPoly new usage cost currency. USD or POLY
+     */
+    function changeCostType(bool _isCostInPoly) public onlyOwner {
+        emit ChangeCostType(isCostInPoly, _isCostInPoly);
+        isCostInPoly = _isCostInPoly;
     }
 
     /**
@@ -163,6 +174,8 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @notice Get the setup cost of the module
      */
     function setupCostInPoly() public returns (uint256) {
+        if (isCostInPoly)
+            return setupCost;
         uint256 polyRate = IOracle(IPolymathRegistry(polymathRegistry).getAddress(POLY_ORACLE)).getPrice();
         return DecimalMath.div(setupCost, polyRate);
     }
@@ -171,6 +184,8 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @notice Get the setup cost of the module
      */
     function usageCostInPoly() public returns (uint256) {
+        if (isCostInPoly)
+            return usageCost;
         uint256 polyRate = IOracle(IPolymathRegistry(polymathRegistry).getAddress(POLY_ORACLE)).getPrice();
         return DecimalMath.div(usageCost, polyRate);
     }

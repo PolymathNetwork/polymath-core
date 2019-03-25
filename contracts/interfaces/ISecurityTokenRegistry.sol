@@ -175,17 +175,19 @@ interface ISecurityTokenRegistry {
      */
     function changeExpiryLimit(uint256 _newExpiry) external;
 
-    /**
-    * @notice Sets the ticker registration fee in POLY tokens
-    * @param _tickerRegFee Registration fee in POLY tokens (base 18 decimals)
+   /**
+    * @notice Sets the ticker registration fee in USD tokens. Only Polymath.
+    * @param _tickerRegFee is the registration fee in USD tokens (base 18 decimals)
+    * @param _isFeeInPoly defines if the few is in poly
     */
-    function changeTickerRegistrationFee(uint256 _tickerRegFee) external;
+    function changeTickerRegistrationFee(uint256 _tickerRegFee, bool _isFeeInPoly) external;
 
     /**
-    * @notice Sets the ticker registration fee in POLY tokens
-    * @param _stLaunchFee Registration fee in POLY tokens (base 18 decimals)
+    * @notice Sets the ticker registration fee in USD tokens. Only Polymath.
+    * @param _stLaunchFee is the registration fee in USD tokens (base 18 decimals)
+    * @param _isFeeInPoly defines if the few is in poly
     */
-    function changeSecurityLaunchFee(uint256 _stLaunchFee) external;
+    function changeSecurityLaunchFee(uint256 _stLaunchFee, bool _isFeeInPoly) external;
 
     /**
      * @notice Gets the security token launch fee

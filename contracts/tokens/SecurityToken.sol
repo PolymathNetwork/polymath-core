@@ -45,7 +45,7 @@ contract SecurityToken is ERC20, Ownable, ReentrancyGuard, SecurityTokenStorage,
     // Emit when the token details get updated
     event UpdateTokenDetails(string _oldDetails, string _newDetails);
     // Emit when the token name get updated
-    // event UpdateTokenName(string _oldName, string _newName);
+    event UpdateTokenName(string _oldName, string _newName);
     // Emit when the granularity get changed
     event GranularityChanged(uint256 _oldGranularity, uint256 _newGranularity);
     // Emit when is permanently frozen by the issuer
@@ -297,7 +297,7 @@ contract SecurityToken is ERC20, Ownable, ReentrancyGuard, SecurityTokenStorage,
     * @param _name new name of the token
     */
     function changeName(string calldata _name) external onlyOwner {
-        //emit UpdateTokenName(name, _name);
+        emit UpdateTokenName(name, _name);
         name = _name;
     }
 

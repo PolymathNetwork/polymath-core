@@ -74,12 +74,44 @@ contract STGetter is OZStorage, SecurityTokenStorage {
         for (i = 0; i < investors.length; i++) {
             if (balanceOfAt(investors[i], _checkpointId) > 0) {
                 count++;
+            } else {
+                investors[i] = address(0);
             }
         }
         address[] memory holders = new address[](count);
         count = 0;
         for (i = 0; i < investors.length; i++) {
+            if (investors[i] != address(0)) {
+                holders[count] = investors[i];
+                count++;
+            }
+        }
+        return holders;
+    }
+
+    /**
+     * @notice returns an array of investors with non zero balance at a given checkpoint
+     * @param _checkpointId Checkpoint id at which investor list is to be populated
+     * @param _start Position of investor to start iteration from
+     * @param _end Position of investor to stop iteration at
+     * @return list of investors
+     */
+    function getInvestorsSubsetAt(uint256 _checkpointId, uint256 _start, uint256 _end) external view returns(address[] memory) {
+        uint256 count;
+        uint256 i;
+        IDataStore dataStoreInstance = IDataStore(dataStore);
+        address[] memory investors = dataStoreInstance.getAddressArrayElements(INVESTORSKEY, _start, _end);
+        for (i = 0; i < investors.length; i++) {
             if (balanceOfAt(investors[i], _checkpointId) > 0) {
+                count++;
+            } else {
+                investors[i] = address(0);
+            }
+        }
+        address[] memory holders = new address[](count);
+        count = 0;
+        for (i = 0; i < investors.length; i++) {
+            if (investors[i] != address(0)) {
                 holders[count] = investors[i];
                 count++;
             }

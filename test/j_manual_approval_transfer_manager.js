@@ -777,10 +777,14 @@ contract("ManualApprovalTransferManager", accounts => {
                         {
                             type: "uint256",
                             name: "_maxHolderCount"
+                        },
+                        {
+                            type: "uint256",
+                            name: "_maxNonAccreditedHolderCount"
                         }
                     ]
                 },
-                [1]
+                [1, 1]
             );
 
             const tx = await I_SecurityToken.addModule(I_CountTransferManagerFactory.address, bytesCountTM, 0, 0, { from: token_owner });

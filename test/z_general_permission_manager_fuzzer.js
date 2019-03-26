@@ -97,7 +97,9 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
 
     // CountTransferManager details
     const holderCount = 2; // Maximum number of token holders
-    let bytesSTO = encodeModuleCall(["uint256"], [holderCount]);
+    const nonAccreditedHolderCount = 2; // Maximum Number of non accredited token holders
+
+    let bytesSTO = encodeModuleCall(["uint256", "uint256"], [holderCount, nonAccreditedHolderCount]);
 
     let _details = "details holding for test";
     let _description = "some description";

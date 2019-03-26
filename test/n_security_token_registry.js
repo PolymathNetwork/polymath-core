@@ -431,7 +431,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should register the ticker when the tickerRegFee is 0", async () => {
             let snap_Id = await takeSnapshot();
-            await I_STRProxied.changeTickerRegistrationFee(0, { from: account_polymath });
+            await I_STRProxied.changeTickerRegistrationFee(0, true, { from: account_polymath });
             let tx = await I_STRProxied.registerTicker(account_temp, "ZERO", name, { from: account_temp });
             assert.equal(tx.logs[0].args._owner, account_temp, `Owner should be the ${account_temp}`);
             assert.equal(tx.logs[0].args._ticker, "ZERO", `Symbol should be ZERO`);
@@ -627,7 +627,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should generate the SecurityToken when launch fee is 0", async () => {
             let snap_Id = await takeSnapshot();
-            await I_STRProxied.changeSecurityLaunchFee(0, { from: account_polymath });
+            await I_STRProxied.changeSecurityLaunchFee(0, true, { from: account_polymath });
             await I_PolyToken.approve(I_STRProxied.address, new BN(web3.utils.toWei("2000")), { from: token_owner });
             let tx = await I_STRProxied.registerTicker(token_owner, "CCC", name, { from: token_owner });
             await I_STRProxied.generateSecurityToken(name, "CCC", tokenDetails, false, treasury_wallet, 0, { from: token_owner }),
@@ -998,21 +998,22 @@ contract("SecurityTokenRegistry", async (accounts) => {
     describe("Test case for the changeSecurityLaunchFee()", async () => {
         it("Should able to change the STLaunchFee-- failed because of bad owner", async () => {
             await catchRevert(
-                I_STRProxied.changeSecurityLaunchFee(new BN(web3.utils.toWei("500")), { from: account_temp }),
+                I_STRProxied.changeSecurityLaunchFee(new BN(web3.utils.toWei("500"), true), { from: account_temp }),
                 "tx revert -> failed because of bad owner"
             );
         });
 
         it("Should able to change the STLaunchFee-- failed because of putting the same fee", async () => {
             await catchRevert(
-                I_STRProxied.changeSecurityLaunchFee(initRegFee, { from: account_polymath }),
+                I_STRProxied.changeSecurityLaunchFee(initRegFee, false, { from: account_polymath }),
                 "tx revert -> failed because of putting the same fee"
             );
         });
 
         it("Should able to change the STLaunchFee", async () => {
-            let tx = await I_STRProxied.changeSecurityLaunchFee(new BN(web3.utils.toWei("500")), { from: account_polymath });
+            let tx = await I_STRProxied.changeSecurityLaunchFee(new BN(web3.utils.toWei("500")), false, { from: account_polymath });
             assert.equal(tx.logs[0].args._newFee.toString(), new BN(web3.utils.toWei("500")).toString());
+            assert.equal(tx.logs[0].args._isFeeInPoly, false);
             let stLaunchFee = await I_STRProxied.getUintValue(web3.utils.soliditySha3("stLaunchFee"));
             assert.equal(stLaunchFee.toString(), new BN(web3.utils.toWei("500")).toString());
         });
@@ -1044,21 +1045,22 @@ contract("SecurityTokenRegistry", async (accounts) => {
     describe("Test cases for the changeTickerRegistrationFee()", async () => {
         it("Should able to change the TickerRegFee-- failed because of bad owner", async () => {
             await catchRevert(
-                I_STRProxied.changeTickerRegistrationFee(new BN(web3.utils.toWei("500")), { from: account_temp }),
+                I_STRProxied.changeTickerRegistrationFee(new BN(web3.utils.toWei("500")), false, { from: account_temp }),
                 "tx revert -> failed because of bad owner"
             );
         });
 
         it("Should able to change the TickerRegFee-- failed because of putting the same fee", async () => {
             await catchRevert(
-                I_STRProxied.changeTickerRegistrationFee(initRegFee, { from: account_polymath }),
+                I_STRProxied.changeTickerRegistrationFee(initRegFee, false, { from: account_polymath }),
                 "tx revert -> failed because of putting the same fee"
             );
         });
 
         it("Should able to change the TickerRegFee", async () => {
-            let tx = await I_STRProxied.changeTickerRegistrationFee(new BN(web3.utils.toWei("400")), { from: account_polymath });
+            let tx = await I_STRProxied.changeTickerRegistrationFee(new BN(web3.utils.toWei("400"), false), { from: account_polymath });
             assert.equal(tx.logs[0].args._newFee.toString(), new BN(web3.utils.toWei("400")).toString());
+            assert.equal(tx.logs[0].args._isFeeInPoly, false);
             let tickerRegFee = await I_STRProxied.getUintValue(web3.utils.soliditySha3("tickerRegFee"));
             assert.equal(tickerRegFee.toString(), new BN(web3.utils.toWei("400")).toString());
         });

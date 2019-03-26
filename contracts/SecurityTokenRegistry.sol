@@ -227,16 +227,18 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @notice Returns the usd & poly fee for a particular feetype
      * @param _feeType Key corresponding to fee type
      */
-    function getFees(bytes32 _feeType) public returns (uint256, uint256) {
-        uint256 polyRate = 1;
+    function getFees(bytes32 _feeType) public returns (uint256 usdFee, uint256 polyFee) {
         bool isFeesInPoly = getBoolValue(IS_FEE_IN_POLY);
+        uint256 rawFee = getUintValue(_feeType);
+        address polymathRegistry = getAddressValue(POLYMATHREGISTRY);
+        uint256 polyRate = IOracle(IPolymathRegistry(polymathRegistry).getAddress(POLY_ORACLE)).getPrice();
         if (!isFeesInPoly) { //Fee is in USD and not poly
-            address polymathRegistry = getAddressValue(POLYMATHREGISTRY);
-            polyRate = IOracle(IPolymathRegistry(polymathRegistry).getAddress(POLY_ORACLE)).getPrice();
+            usdFee = rawFee;
+            polyFee = DecimalMath.div(rawFee, polyRate);
+        } else {
+            usdFee = DecimalMath.mul(rawFee, polyRate);
+            polyFee = rawFee;
         }
-        uint256 usdFee = getUintValue(_feeType);
-        uint256 polyFee = DecimalMath.div(usdFee, polyRate);
-        return (usdFee, polyFee);
     }
 
     /**

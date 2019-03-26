@@ -1773,9 +1773,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
             let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_delegate2, data[0].toNumber()))
              .dividedBy(new BigNumber(10).pow(18)).toNumber();
             // Verify the storage changes
-            assert.equal(data[0].toNumber(), dataIndividual[0].toNumber());
-            assert.equal(data[2].toNumber(), 0);
-            assert.equal(amt, 14);
+            assert.equal(data[0].toNumber(), dataIndividual[0].toNumber() + 1);
+            assert.equal(data[2].toNumber(), 5);
+            assert.equal(amt, 5);
         })
     })
 

@@ -13,7 +13,7 @@ contract VolumeRestrictionTMStorage {
         // 1 represent true & 0 for false
         uint8 seen;
         // Type of period will be enum index of TypeOfPeriod enum
-        uint8 typeOfPeriod;
+        TypeOfPeriod typeOfPeriod;
         // Index of the array where the holder address lives
         uint128 index;
     }
@@ -51,6 +51,8 @@ contract VolumeRestrictionTMStorage {
     mapping(address => VolumeRestriction) public individualDailyRestriction;
     // Storing _from => day's timestamp => total amount transact in a day --individual
     mapping(address => mapping(uint256 => uint256)) internal bucket;
+    // Storing _from => day's timestamp => total amount transact in a day --default
+    mapping(address => mapping(uint256 => uint256)) internal defaultBucket;
     // Storing the information that used to validate the transaction
     mapping(address => BucketDetails) internal userToBucket;
     // Storing the information related to default restriction

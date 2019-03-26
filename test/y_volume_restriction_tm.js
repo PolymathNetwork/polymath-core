@@ -543,7 +543,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await I_VolumeRestrictionTM.addIndividualRestrictionMulti(
                 [account_investor2, account_delegate3, account_investor4],
                 [web3.utils.toWei("12"), web3.utils.toWei("10"), web3.utils.toWei("15")],
-                [0, 0, 0],
+                [latestTime() + duration.minutes(1), latestTime() + duration.minutes(1), latestTime() + duration.minutes(1)],
                 [3, 4, 5],
                 [latestTime() + duration.days(5), latestTime() + duration.days(6), latestTime() + duration.days(7)],
                 [0, 0, 0],
@@ -608,7 +608,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 ${await I_VolumeRestrictionTM.addIndividualRestriction.estimateGas(
                     account_investor1,
                     web3.utils.toWei("12"),
-                    latestTime() + duration.seconds(2),
+                    latestTime() + duration.seconds(5),
                     3,
                     latestTime() + duration.days(6),
                     0,
@@ -621,7 +621,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             let tx = await I_VolumeRestrictionTM.addIndividualRestriction(
                 account_investor1,
                 web3.utils.toWei("12"),
-                latestTime() + duration.seconds(2),
+                latestTime() + duration.seconds(5),
                 3,
                 latestTime() + duration.days(6),
                 0,
@@ -739,7 +739,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             let tx = await I_VolumeRestrictionTM.addIndividualDailyRestriction(
                 account_investor3,
                 web3.utils.toWei("6"),
-                latestTime() + duration.seconds(1),
+                latestTime() + duration.seconds(10),
                 latestTime() + duration.days(4),
                 0,
                 {
@@ -767,7 +767,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
         it("Should transfer the tokens within the individual daily restriction limits", async () => {
             // transfer 2 tokens as per the limit
-            await increaseTime(5); // increase 5 seconds to layoff the time gap
+            await increaseTime(15); // increase 5 seconds to layoff the time gap
             let startTime = (await I_VolumeRestrictionTM.individualDailyRestriction.call(account_investor3))[1].toNumber();
             console.log(`
                 Gas Estimation for the Individual daily tx - ${await I_SecurityToken.transfer.estimateGas(account_investor2, web3.utils.toWei("2"), { from: account_investor3 })}
@@ -819,7 +819,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             let tx = await I_VolumeRestrictionTM.addIndividualDailyRestriction(
                 account_investor1,
                 new BigNumber(5).times(new BigNumber(10).pow(16)),
-                0,
+                latestTime() + duration.seconds(5),
                 latestTime() + duration.days(4),
                 1,
                 {
@@ -847,6 +847,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should transfer tokens on the 2nd day by investor1 (Individual + Individual daily)", async () => {
+            await increaseTime(6);
             let startTime = (await I_VolumeRestrictionTM.individualRestriction.call(account_investor1))[1].toNumber();
             let rollingPeriod = (await I_VolumeRestrictionTM.individualRestriction.call(account_investor1))[2].toNumber();
 
@@ -888,7 +889,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             let tx = await I_VolumeRestrictionTM.addIndividualRestriction(
                 account_investor3,
                 new BigNumber(15.36).times(new BigNumber(10).pow(16)), // 15.36 tokens as totalsupply is 1000
-                latestTime() + duration.seconds(2),
+                latestTime() + duration.seconds(10),
                 6,
                 latestTime() + duration.days(15),
                 1,
@@ -908,7 +909,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should transfer the token by the investor 3 with in the (Individual + Individual daily limit)", async () => {
-            await increaseTime(4);
+            await increaseTime(duration.seconds(15));
             // Allowed 4 tokens to transfer
             let startTime = (await I_VolumeRestrictionTM.individualRestriction.call(account_investor3))[1].toNumber();
             let rollingPeriod = (await I_VolumeRestrictionTM.individualRestriction.call(account_investor3))[2].toNumber();
@@ -1058,7 +1059,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await I_VolumeRestrictionTM.modifyIndividualDailyRestriction(
                 account_investor3,
                 web3.utils.toWei('3'),
-                0,
+                latestTime() + duration.seconds(10),
                 latestTime() + duration.days(5),
                 0,
                 {
@@ -1078,6 +1079,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should allow to sell to transfer more tokens by investor3", async () => {
+            await increaseTime(duration.seconds(15));
             let startTime = (await I_VolumeRestrictionTM.individualRestriction.call(account_investor3))[1].toNumber();
             let startTimedaily = (await I_VolumeRestrictionTM.individualDailyRestriction.call(account_investor3))[1].toNumber();
             let rollingPeriod = (await I_VolumeRestrictionTM.individualRestriction.call(account_investor3))[2].toNumber();
@@ -1285,7 +1287,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Should add the default daily restriction successfully", async () => {
             await I_VolumeRestrictionTM.addDefaultDailyRestriction(
                 new BigNumber(2.75).times(new BigNumber(10).pow(16)),
-                0,
+                latestTime() + duration.seconds(10),
                 latestTime() + duration.days(3),
                 1,
                 {
@@ -1305,6 +1307,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should fail to transfer above the daily limit", async () => {
+            await increaseTime(duration.seconds(15));
             await catchRevert(
                 I_SecurityToken.transfer(account_investor3, web3.utils.toWei("5"), { from: account_investor4 })
             )
@@ -1342,7 +1345,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Should successfully add the default restriction", async () => {
             await I_VolumeRestrictionTM.addDefaultRestriction(
                 web3.utils.toWei("10"),
-                0,
+                latestTime() + duration.seconds(10),
                 5,
                 latestTime() + duration.days(10),
                 0,
@@ -1366,7 +1369,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should transfer tokens on by investor 3 (comes under the Default restriction)", async () => {
-            await increaseTime(10);
+            await increaseTime(15);
             tempArray3.length = 0;
             let startTime = (await I_VolumeRestrictionTM.defaultRestriction.call())[1].toNumber();
             let startTimedaily = (await I_VolumeRestrictionTM.defaultDailyRestriction.call())[1].toNumber();
@@ -1454,7 +1457,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Should add the daily default restriction again", async () => {
             await I_VolumeRestrictionTM.addDefaultDailyRestriction(
                 web3.utils.toWei("2"),
-                0,
+                latestTime() + duration.seconds(10),
                 latestTime() + duration.days(3),
                 0,
                 {
@@ -1474,6 +1477,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should not able to transfer tokens more than the default daily restriction", async () => {
+            await increaseTime(duration.seconds(15));
             await catchRevert(
                 I_SecurityToken.transfer(account_investor2, web3.utils.toWei("3"), { from: account_investor3 })
             );

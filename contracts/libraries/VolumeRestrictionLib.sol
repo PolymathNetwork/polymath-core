@@ -15,7 +15,7 @@ library VolumeRestrictionLib {
         uint256[] _startTimes,
         uint256[] _rollingPeriodInDays,
         uint256[] _endTimes,
-        uint256[] _restrictionTypes
+        VolumeRestrictionTMStorage.RestrictionType[] _restrictionTypes
     )
         internal
         pure
@@ -30,14 +30,20 @@ library VolumeRestrictionLib {
         );
     }
 
-    function deleteHolderFromList(VolumeRestrictionTMStorage.RestrictedData storage data, address _holder, uint8 _typeOfPeriod) public {
+    function deleteHolderFromList(
+        VolumeRestrictionTMStorage.RestrictedData storage data,
+        address _holder,
+        VolumeRestrictionTMStorage.TypeOfPeriod _typeOfPeriod
+    ) 
+        public 
+    {
         // Deleting the holder if holder's type of Period is `Both` type otherwise
         // it will assign the given type `_typeOfPeriod` to the _holder typeOfPeriod
         // `_typeOfPeriod` it always be contrary to the removing restriction
         // if removing restriction is individual then typeOfPeriod is TypeOfPeriod.OneDay
         // in uint8 its value is 1. if removing restriction is daily individual then typeOfPeriod
         // is TypeOfPeriod.MultipleDays in uint8 its value is 0.
-        if (data.restrictedHolders[_holder].typeOfPeriod != uint8(VolumeRestrictionTMStorage.TypeOfPeriod.Both)) {
+        if (data.restrictedHolders[_holder].typeOfPeriod != VolumeRestrictionTMStorage.TypeOfPeriod.Both) {
             uint128 index = data.restrictedHolders[_holder].index;
             uint256 _len = data.restrictedAddresses.length;
             if (index != _len) {
@@ -51,19 +57,34 @@ library VolumeRestrictionLib {
         }
     }
 
-    function addRestrictionData(VolumeRestrictionTMStorage.RestrictedData storage data, address _holder, uint8 _callFrom, uint256 _endTime) public {
+    function addRestrictionData(
+        VolumeRestrictionTMStorage.RestrictedData storage data,
+        address _holder,
+        VolumeRestrictionTMStorage.TypeOfPeriod _callFrom, 
+        uint256 _endTime
+    )   
+        public 
+    {
         uint128 index = data.restrictedHolders[_holder].index;
         if (data.restrictedHolders[_holder].seen == 0) {
             data.restrictedAddresses.push(_holder);
             index = uint128(data.restrictedAddresses.length);
         }
-        uint8 _type = _getTypeOfPeriod(data.restrictedHolders[_holder].typeOfPeriod, _callFrom, _endTime);
+        VolumeRestrictionTMStorage.TypeOfPeriod _type = _getTypeOfPeriod(data.restrictedHolders[_holder].typeOfPeriod, _callFrom, _endTime);
         data.restrictedHolders[_holder] = VolumeRestrictionTMStorage.RestrictedHolder(uint8(1), _type, index);
     }
 
-    function _getTypeOfPeriod(uint8 _currentTypeOfPeriod, uint8 _callFrom, uint256 _endTime) internal pure returns(uint8) {
+    function _getTypeOfPeriod(
+        VolumeRestrictionTMStorage.TypeOfPeriod _currentTypeOfPeriod,
+        VolumeRestrictionTMStorage.TypeOfPeriod _callFrom,
+        uint256 _endTime
+    ) 
+        internal
+        pure
+        returns(VolumeRestrictionTMStorage.TypeOfPeriod)
+    {
         if (_currentTypeOfPeriod != _callFrom && _endTime != uint256(0))
-            return uint8(VolumeRestrictionTMStorage.TypeOfPeriod.Both);
+            return VolumeRestrictionTMStorage.TypeOfPeriod.Both;
         else
             return _callFrom;
     }

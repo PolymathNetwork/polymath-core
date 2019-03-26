@@ -5,7 +5,12 @@ pragma solidity ^0.5.0;
  */
 contract CountTransferManagerStorage {
 
+    bytes32 public constant INVESTORFLAGS = "INVESTORFLAGS";
+
     // The maximum number of concurrent token holders
     uint256 public maxHolderCount;
+
+    // The maximum number of concurrent token holders
+    uint256 public maxNonAccreditedHolderCount;
 
 }

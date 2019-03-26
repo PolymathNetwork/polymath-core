@@ -345,6 +345,15 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
            //KYC data can not be present if added is false and hence we can set packed KYC as uint256(1) to set added as true
            dataStore.setUint256(_getKey(WHITELIST, _investor), uint256(1));
         }
+        // Update non accredited investor count in the event accredited status is changed and investor balance is not 0
+        if (_flag == 0 && ISecurityToken(securityToken).balanceOf(_investor) > 0) {
+            if (_isAccredited(_investor, dataStore) != _value && _value == false) {
+                ISecurityToken(securityToken).increaseNonAccreditedCount();
+            }
+            if (_isAccredited(_investor, dataStore) != _value && _value == true) {
+                ISecurityToken(securityToken).decreaseNonAccreditedCount();
+            }
+        }
         //NB Flags are packed together in a uint256 to save gas. We can have a maximum of 256 flags.
         uint256 flags = dataStore.getUint256(_getKey(INVESTORFLAGS, _investor));
         if (_value)
@@ -682,4 +691,9 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         return bytes32(uint256(address(this)) << 96);
     }
 
+    function _isAccredited(address _investor, IDataStore dataStore) internal view returns(bool) {
+        uint256 flags = dataStore.getUint256(_getKey(INVESTORFLAGS, _investor));
+        uint256 flag = flags & uint256(1); //isAccredited is flag 0 so we don't need to bit shift flags.
+        return flag > 0 ? true : false;
+    }
 }

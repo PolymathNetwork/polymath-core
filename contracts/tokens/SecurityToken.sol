@@ -306,7 +306,23 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     * @param _value value of transfer
     */
     function _adjustInvestorCount(address _from, address _to, uint256 _value) internal {
-        holderCount = TokenLib.adjustInvestorCount(holderCount, _from, _to, _value, balanceOf(_to), balanceOf(_from), dataStore);
+        (holderCount, nonAccreditedHolderCount) = TokenLib.adjustInvestorCount(holderCount, nonAccreditedHolderCount, _from, _to, _value, balanceOf(_to), balanceOf(_from), dataStore);
+    }
+
+    /**
+    * @notice Increases non-accredited investor count by 1
+    * @dev Used when modifying accredited flag of an existing holder
+    */
+    function increaseNonAccreditedCount() external onlyOwner {
+        nonAccreditedHolderCount = nonAccreditedHolderCount.add(1);
+    }
+
+    /**
+    * @notice decreases non-accredited investor count by 1
+    * @dev Used when modifying accredited flag of an existing holder
+    */
+    function decreaseNonAccreditedCount() external onlyOwner {
+        nonAccreditedHolderCount = nonAccreditedHolderCount.sub(1);
     }
 
     /**

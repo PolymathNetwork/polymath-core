@@ -74,7 +74,8 @@ contract("CountTransferManager", async (accounts) => {
 
     // CountTransferManager details
     const holderCount = 2; // Maximum number of token holders
-    let bytesSTO = encodeModuleCall(["uint256"], [holderCount]);
+    const nonAccreditedHolderCount = 2; // Maximum Number of non accredited token holders
+    let bytesSTO = encodeModuleCall(["uint256", "uint256"], [holderCount, nonAccreditedHolderCount]);
 
     let currentTime;
 
@@ -323,13 +324,13 @@ contract("CountTransferManager", async (accounts) => {
         });
 
         it("Should fail in modifying the holder count", async () => {
-            await catchRevert(I_CountTransferManager.changeHolderCount(1, { from: account_investor1 }));
+            await catchRevert(I_CountTransferManager.changeHolderCount(1, 1, { from: account_investor1 }));
         });
 
         it("Modify holder count to 1", async () => {
             // Add the Investor in to the whitelist
             // Mint some tokens
-            await I_CountTransferManager.changeHolderCount(1, { from: token_owner });
+            await I_CountTransferManager.changeHolderCount(1, 1, { from: token_owner });
 
             assert.equal((await I_CountTransferManager.maxHolderCount()).toNumber(), 1);
         });
@@ -450,7 +451,7 @@ contract("CountTransferManager", async (accounts) => {
                     "CountTransferManager module was not added"
                 );
                 I_CountTransferManager2 = await CountTransferManager.at(tx.logs[2].args._module);
-                await I_CountTransferManager2.changeHolderCount(2, { from: token_owner });
+                await I_CountTransferManager2.changeHolderCount(2,2, { from: token_owner });
                 console.log("current max holder number is " + (await I_CountTransferManager2.maxHolderCount({ from: token_owner })));
             });
 

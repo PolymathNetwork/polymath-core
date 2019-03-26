@@ -75,6 +75,9 @@ contract SecurityTokenStorage {
     // Number of investors with non-zero balance
     uint256 public holderCount;
 
+    // Number of non-accredited investors investors with non-zero balance
+    uint256 public nonAccreditedHolderCount;
+
     // Variable which tells whether issuance is ON or OFF forever
     // Implementers need to implement one more function to reset the value of `issuance` variable
     // to false. That function is not a part of the standard (EIP-1594) as it is depend on the various factors

@@ -32,6 +32,7 @@ library TokenLib {
 
     bytes32 internal constant WHITELIST = "WHITELIST";
     bytes32 internal constant INVESTORSKEY = 0xdf3a8dd24acdd05addfc6aeffef7574d2de3f844535ec91e8e0f3e45dba96731; //keccak256(abi.encodePacked("INVESTORS"))
+    bytes32 internal constant INVESTORFLAGS = "INVESTORFLAGS";
 
     // Emit when Module get upgraded from the securityToken
     event ModuleUpgraded(uint8[] _types, address _module);
@@ -303,6 +304,7 @@ library TokenLib {
     /**
     * @notice Keeps track of the number of non-zero token holders
     * @param _holderCount Number of current token holders
+    * @param _nonAccreditedHolderCount Number of current non-accredited token holders
     * @param _from Sender of transfer
     * @param _to Receiver of transfer
     * @param _value Value of transfer
@@ -312,6 +314,7 @@ library TokenLib {
     */
     function adjustInvestorCount(
         uint256 _holderCount,
+        uint256 _nonAccreditedHolderCount,
         address _from,
         address _to,
         uint256 _value,
@@ -320,10 +323,10 @@ library TokenLib {
         address _dataStore
     )
         public
-        returns(uint256)
+        returns(uint256, uint256)
     {
         if ((_value == 0) || (_from == _to)) {
-            return _holderCount;
+            return (_holderCount, _nonAccreditedHolderCount);
         }
         // Check whether receiver is a new token holder
         if ((_balanceTo == 0) && (_to != address(0))) {
@@ -334,13 +337,20 @@ library TokenLib {
                 //KYC data can not be present if added is false and hence we can set packed KYC as uint256(1) to set added as true
                 dataStore.setUint256(_getKey(WHITELIST, _to), uint256(1));
             }
+            if (!_isAccredited(_to, dataStore)) {
+                _nonAccreditedHolderCount = _nonAccreditedHolderCount.add(1);
+            }
         }
         // Check whether sender is moving all of their tokens
         if (_value == _balanceFrom) {
             _holderCount = _holderCount.sub(1);
+            IDataStore dataStore = IDataStore(_dataStore);
+            if (!_isAccredited(_from, dataStore)) {
+                _nonAccreditedHolderCount = _nonAccreditedHolderCount.sub(1);
+            }
         }
 
-        return _holderCount;
+        return (_holderCount, _nonAccreditedHolderCount);
     }
 
     /**
@@ -406,4 +416,11 @@ library TokenLib {
         //extracts `added` from packed `whitelistData`
         return uint8(data) == 0 ? false : true;
     }
+
+    function _isAccredited(address _investor, IDataStore dataStore) internal view returns(bool) {
+        uint256 flags = dataStore.getUint256(_getKey(INVESTORFLAGS, _investor));
+        uint256 flag = flags & uint256(1); //isAccredited is flag 0 so we don't need to bit shift flags.
+        return flag > 0 ? true : false;
+    }
+
 }

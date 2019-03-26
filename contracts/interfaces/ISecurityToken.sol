@@ -397,6 +397,23 @@ interface ISecurityToken {
     function holderCount() external view returns(uint256);
 
     /**
+     * @notice Gets the non-accredited holder count (non-accredited investors with non zero balance)
+     */
+    function nonAccreditedHolderCount() external view returns(uint256);
+
+    /**
+    * @notice Increases non-accredited investor count by 1
+    * @dev Used when modifying accredited flag of an existing holder
+    */
+    function increaseNonAccreditedCount() external;
+
+    /**
+    * @notice Decreases non-accredited investor count by 1
+    * @dev Used when modifying accredited flag of an existing holder
+    */
+    function decreaseNonAccreditedCount() external;
+
+    /**
       * @notice Overloaded version of the transfer function
       * @param _to receiver of transfer
       * @param _value value of transfer

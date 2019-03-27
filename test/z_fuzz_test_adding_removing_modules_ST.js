@@ -274,7 +274,8 @@ contract('GeneralPermissionManager', accounts => {
                 //calculate the data needed for different modules
                 if (random.module == 'CountTransferManager' ||  random.module == 'ManualApprovalTransferManager' || random.module == 'VolumeRestrictionTransferManager' ){
                     const holderCount = 2; // Maximum number of token holders
-                    bytesSTO = encodeModuleCall(["uint256"], [holderCount]);
+                    const nonAccreditedHolderCount = 2; // Maximum Number of non accredited token holders
+                    bytesSTO = encodeModuleCall(["uint256", "uint256"], [holderCount, nonAccreditedHolderCount]);
                 } else if (random.module == 'PercentageTransferManager'){
                     console.log("PTM 01");
                     const holderPercentage = 70 * 10**16;

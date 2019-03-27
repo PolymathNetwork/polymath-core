@@ -397,12 +397,13 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                 });
                 if (randomPerms === "ADMIN") {
                     // console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " should pass");
-                    await I_CountTransferManager.changeHolderCount(i + 1, { from: accounts[j] });
+                    await I_CountTransferManager.changeHolderCount(i + 1, i + 1, { from: accounts[j] });
                     assert.equal((await I_CountTransferManager.maxHolderCount()).toNumber(), i + 1);
+                    assert.equal((await I_CountTransferManager._maxNonAccreditedHolderCount()).toNumber(), i + 1);
                     console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " passed");
                 } else {
                     // console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " should failed");
-                    await catchRevert(I_CountTransferManager.changeHolderCount(i + 1, { from: accounts[j] }));
+                    await catchRevert(I_CountTransferManager.changeHolderCount(i + 1, i + 1, { from: accounts[j] }));
                     console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " failed as expected");
                 }
             }

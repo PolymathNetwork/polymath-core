@@ -1,6 +1,6 @@
 import latestTime from "./helpers/latestTime";
 import { duration, promisifyLogWatch, latestBlock } from "./helpers/utils";
-import { takeSnapshot, increaseTime, revertToSnapshot } from "./helpers/time";
+import { takeSnapshot, increaseTime, revertToSnapshot, jumpToTime } from "./helpers/time";
 import { encodeProxyCall, encodeModuleCall } from "./helpers/encodeCall";
 import { setUpPolymathNetwork, deployScheduleCheckpointAndVerified } from "./helpers/createInstances";
 
@@ -13,7 +13,7 @@ const Web3 = require("web3");
 let BN = Web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
-contract("ScheduledCheckpoint", async (accounts) => {
+process.env.COVERAGE ? contract.skip : contract("ScheduledCheckpoint", async (accounts) => {
 
     const SECONDS = 0;
     const DAYS = 1;
@@ -73,7 +73,6 @@ contract("ScheduledCheckpoint", async (accounts) => {
     const one_address = "0x0000000000000000000000000000000000000001";
 
     before(async () => {
-        currentTime = new BN(await latestTime());
         account_polymath = accounts[0];
         account_issuer = accounts[1];
 
@@ -81,7 +80,10 @@ contract("ScheduledCheckpoint", async (accounts) => {
 
         account_investor1 = accounts[7];
         account_investor2 = accounts[8];
-        account_investor3 = accounts[9];
+        account_investor3 = accounts[9]; 
+        //await jumpToTime(Math.floor((new Date().getTime())/1000));
+        await jumpToTime(1553040000); // 03/20/2019 @ 12:00am (UTC)
+        currentTime = new BN(await latestTime());
 
         // Step 1: Deploy the genral PM ecosystem
         let instances = await setUpPolymathNetwork(account_polymath, token_owner);

@@ -930,13 +930,29 @@ contract("EtherDividendCheckpoint", async (accounts) => {
             console.log(tx.logs[0].args._dividendIndex.toNumber());
         });
 
-        it("Update maturity and expiry dates on dividend", async () => {
-            console.log((await I_EtherDividendCheckpoint.getDividendsData.call())[0].length);
-            await catchRevert(I_EtherDividendCheckpoint.updateDividendDates(new BN(7), new BN(0), new BN(1), {from: account_polymath}));
-            let tx = await I_EtherDividendCheckpoint.updateDividendDates(new BN(7), new BN(0), new BN(1), {from: token_owner});
-            let info = await I_EtherDividendCheckpoint.getDividendData.call(new BN(7));
-            assert.equal(info[1].toNumber(), 0);
-            assert.equal(info[2].toNumber(), 1);
+        it("Should fail to update the dividend dates because msg.sender is not authorised", async () => {
+            // failed because msg.sender is not the owner
+            await catchRevert(
+                I_EtherDividendCheckpoint.updateDividendDates(new BN(7), new BN(0), new BN(1), {from: account_polymath})
+            );
+        });
+
+        it("Should fail to update the dates when the dividend get expired", async() => {
+            let id = await takeSnapshot();
+            await increaseTime(duration.days(11));
+            await catchRevert(
+                I_EtherDividendCheckpoint.updateDividendDates(new BN(7), new BN(0), new BN(1), {from: token_owner})
+            );
+            await revertToSnapshot(id);
+        });
+
+        it("Should update the dividend dates", async() => {
+            let newMaturity = await latestTime() - duration.days(4);
+            let newExpiry = await latestTime() - duration.days(2);
+            let tx = await I_EtherDividendCheckpoint.updateDividendDates(new BN(7), newMaturity, newExpiry, {from: token_owner});
+            let info = await I_EtherDividendCheckpoint.getDividendData.call(7);
+            assert.equal(info[1].toNumber(), newMaturity);
+            assert.equal(info[2].toNumber(), newExpiry);
             // Can now reclaim the dividend
             await I_EtherDividendCheckpoint.reclaimDividend(new BN(7), {from: token_owner});
         });

@@ -1223,14 +1223,32 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
                 { from: account_manager }
             );
             assert.equal(tx.logs[0].args._checkpointId.toNumber(), 10);
+            console.log(tx.logs[0].args._dividendIndex);
         });
 
-        it("Update maturity and expiry dates on dividend", async () => {
-            await catchRevert(I_ERC20DividendCheckpoint.updateDividendDates(7, 0, 1, {from: account_polymath}));
-            let tx = await I_ERC20DividendCheckpoint.updateDividendDates(7, 0, 1, {from: token_owner});
+        it("Should fail to update the dividend dates because msg.sender is not authorised", async () => {
+            // failed because msg.sender is not the owner
+            await catchRevert(
+                I_ERC20DividendCheckpoint.updateDividendDates(7, 0, 1, {from: account_polymath})
+            );
+        });
+
+        it("Should fail to update the dates when the dividend get expired", async() => {
+            let id = await takeSnapshot();
+            await increaseTime(duration.days(11));
+            await catchRevert(
+                I_ERC20DividendCheckpoint.updateDividendDates(7, 0, 1, {from: token_owner})
+            );
+            await revertToSnapshot(id);
+        });
+
+        it("Should update the dividend dates", async() => {
+            let newMaturity = await latestTime() - duration.days(4);
+            let newExpiry = await latestTime() - duration.days(2);
+            let tx = await I_ERC20DividendCheckpoint.updateDividendDates(7, newMaturity, newExpiry, {from: token_owner});
             let info = await I_ERC20DividendCheckpoint.getDividendData.call(7);
-            assert.equal(info[1].toNumber(), 0);
-            assert.equal(info[2].toNumber(), 1);
+            assert.equal(info[1].toNumber(), newMaturity);
+            assert.equal(info[2].toNumber(), newExpiry);
             // Can now reclaim the dividend
             await I_ERC20DividendCheckpoint.reclaimDividend(7, {from: token_owner});
         });

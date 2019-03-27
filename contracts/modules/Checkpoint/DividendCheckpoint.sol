@@ -280,6 +280,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
         require(_dividendIndex < dividends.length, "Invalid dividend");
         require(_expiry > _maturity, "Expiry before maturity");
         Dividend storage dividend = dividends[_dividendIndex];
+        require(dividend.expiry > now, "Dividend already expired");
         dividend.expiry = _expiry;
         dividend.maturity = _maturity;
         emit UpdateDividendDates(_dividendIndex, _maturity, _expiry);

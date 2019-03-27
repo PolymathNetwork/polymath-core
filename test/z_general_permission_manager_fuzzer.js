@@ -398,7 +398,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                     // console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " should pass");
                     await I_CountTransferManager.changeHolderCount(i + 1, i + 1, { from: accounts[j] });
                     assert.equal((await I_CountTransferManager.maxHolderCount()).toNumber(), i + 1);
-                    assert.equal((await I_CountTransferManager._maxNonAccreditedHolderCount()).toNumber(), i + 1);
+                    assert.equal((await I_CountTransferManager.maxNonAccreditedHolderCount()).toNumber(), i + 1);
                     console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " passed");
                 } else {
                     // console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " should failed");

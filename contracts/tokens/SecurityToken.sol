@@ -12,7 +12,6 @@ import "../interfaces/token/IERC1594.sol";
 import "../interfaces/token/IERC1643.sol";
 import "../interfaces/token/IERC1644.sol";
 import "../interfaces/IModuleRegistry.sol";
-import "../interfaces/IFeatureRegistry.sol";
 import "../interfaces/ITransferManager.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
@@ -112,11 +111,6 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     // Modifier to check whether the msg.sender is authorised or not
     modifier onlyController() {
         require(msg.sender == controller, "Not Authorised");
-        _;
-    }
-
-    modifier isEnabled(string memory _nameKey) {
-        require(IFeatureRegistry(featureRegistry).getFeatureStatus(_nameKey));
         _;
     }
 
@@ -485,7 +479,8 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * @notice Permanently freeze issuance of this security token.
      * @dev It MUST NOT be possible to increase `totalSuppy` after this function is called.
      */
-    function freezeIssuance() external isIssuanceAllowed isEnabled("freezeIssuanceAllowed") onlyOwner {
+    function freezeIssuance(bytes calldata _signature) external isIssuanceAllowed onlyOwner {
+        require(owner() == TokenLib.recoverFreezeIssuanceAckSigner(_signature), "Owner did not sign");
         issuance = false;
         /*solium-disable-next-line security/no-block-members*/
         emit FreezeIssuance();
@@ -618,7 +613,8 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * @notice Used by the issuer to permanently disable controller functionality
      * @dev enabled via feature switch "disableControllerAllowed"
      */
-    function disableController() external isEnabled("disableControllerAllowed") onlyOwner {
+    function disableController(bytes calldata _signature) external onlyOwner {
+        require(owner() == TokenLib.recoverDisableControllerAckSigner(_signature), "Owner did not sign");
         require(isControllable());
         controllerDisabled = true;
         delete controller;
@@ -772,7 +768,6 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     function updateFromRegistry() public onlyOwner {
         moduleRegistry = PolymathRegistry(polymathRegistry).getAddress("ModuleRegistry");
         securityTokenRegistry = PolymathRegistry(polymathRegistry).getAddress("SecurityTokenRegistry");
-        featureRegistry = PolymathRegistry(polymathRegistry).getAddress("FeatureRegistry");
         polyToken = PolymathRegistry(polymathRegistry).getAddress("PolyToken");
     }
 }

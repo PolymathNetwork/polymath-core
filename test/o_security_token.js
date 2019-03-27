@@ -1,5 +1,6 @@
 import latestTime from "./helpers/latestTime";
 import { duration, ensureException, promisifyLogWatch, latestBlock } from "./helpers/utils";
+import { getFreezeIssuanceAck, getDisableControllerAck } from "./helpers/signData";
 import { takeSnapshot, increaseTime, revertToSnapshot } from "./helpers/time";
 import { encodeProxyCall, encodeModuleCall } from "./helpers/encodeCall";
 import { catchRevert } from "./helpers/exceptions";
@@ -29,6 +30,8 @@ contract("SecurityToken", async (accounts) => {
     let account_investor1;
     let account_issuer;
     let token_owner;
+    let disableControllerAckHash;
+    let freezeIssuanceAckHash;
     let account_investor2;
     let account_investor3;
     let account_affiliate1;
@@ -193,7 +196,7 @@ contract("SecurityToken", async (accounts) => {
             I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
             stGetter = await STGetter.at(I_SecurityToken.address);
             assert.equal(await stGetter.getTreasuryWallet.call(), token_owner, "Incorrect wallet set")
-            const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
+            const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];            
 
             // Verify that GeneralTransferManager module get added successfully or not
             assert.equal(log.args._types[0].toNumber(), transferManagerKey);
@@ -328,37 +331,31 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(balance1.div(new BN(10).pow(new BN(18))).toNumber(), 200);
             let balance2 = await I_SecurityToken.balanceOf(account_affiliate2);
             assert.equal(balance2.div(new BN(10).pow(new BN(18))).toNumber(), 110);
-            
+
         });
 
         it("Should ST be issuable", async() => {
             assert.isTrue(await I_SecurityToken.isIssuable.call());
         })
 
-        it("Should finish the minting -- fail because feature is not activated", async () => {
-            await catchRevert(I_SecurityToken.freezeIssuance({ from: token_owner }));
+        
+        it("Should finish the minting -- fail because owner didn't sign correct acknowledegement", async () => {
+            let trueButOutOfPlaceAcknowledegement = web3.utils.utf8ToHex(
+                "F O'Brien is the best!"
+            );
+            await catchRevert(I_SecurityToken.freezeIssuance(trueButOutOfPlaceAcknowledegement, { from: token_owner }));
         });
 
-        it("Should finish the minting -- fail to activate the feature because msg.sender is not polymath", async () => {
-            await catchRevert(I_FeatureRegistry.setFeatureStatus("freezeIssuanceAllowed", true, { from: token_owner }));
+        // solidity-coverage uses an older version of testrpc that does not support eth_signTypedData. It is required to signt he acknowledgement
+        process.env.COVERAGE ? it.skip : it("Should finish the minting -- fail because msg.sender is not the owner", async () => {
+            freezeIssuanceAckHash = await getFreezeIssuanceAck(I_SecurityToken.address, token_owner);
+            await catchRevert(I_SecurityToken.freezeIssuance(freezeIssuanceAckHash, { from: account_temp }));
         });
 
-        it("Should finish the minting -- successfully activate the feature", async () => {
-            await catchRevert(I_FeatureRegistry.setFeatureStatus("freezeIssuanceAllowed", false, { from: account_polymath }));
-            assert.equal(false, await I_FeatureRegistry.getFeatureStatus("freezeIssuanceAllowed", { from: account_temp }));
-            await I_FeatureRegistry.setFeatureStatus("freezeIssuanceAllowed", true, { from: account_polymath });
-            assert.equal(true, await I_FeatureRegistry.getFeatureStatus("freezeIssuanceAllowed", { from: account_temp }));
-
-            await catchRevert(I_FeatureRegistry.setFeatureStatus("freezeIssuanceAllowed", true, { from: account_polymath }));
-        });
-
-        it("Should finish the minting -- fail because msg.sender is not the owner", async () => {
-            await catchRevert(I_SecurityToken.freezeIssuance({ from: account_temp }));
-        });
-
-        it("Should finish minting & restrict the further minting", async () => {
+        // solidity-coverage uses an older version of testrpc that does not support eth_signTypedData. It is required to signt he acknowledgement
+        process.env.COVERAGE ? it.skip : it("Should finish minting & restrict the further minting", async () => {
             let id = await takeSnapshot();
-            await I_SecurityToken.freezeIssuance({ from: token_owner });
+            await I_SecurityToken.freezeIssuance(freezeIssuanceAckHash, { from: token_owner });
             assert.isFalse(await I_SecurityToken.isIssuable.call());
             await catchRevert(I_SecurityToken.issue(account_affiliate1, new BN(100).mul(new BN(10).pow(new BN(18))), "0x0", { from: token_owner, gas: 500000 }));
             await revertToSnapshot(id);
@@ -420,14 +417,15 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should successfully issue tokens while STO attached", async () => {
             await I_SecurityToken.issue(account_affiliate1, new BN(100).mul(new BN(10).pow(new BN(18))), "0x0", { from: token_owner });
-            
+
             let balance = await I_SecurityToken.balanceOf(account_affiliate1);
             assert.equal(balance.div(new BN(10).pow(new BN(18))).toNumber(), 300);
         });
 
-        it("Should fail to issue tokens while STO attached after freezeMinting called", async () => {
+        // solidity-coverage uses an older version of testrpc that does not support eth_signTypedData. It is required to signt he acknowledgement
+        process.env.COVERAGE ? it.skip : it("Should fail to issue tokens while STO attached after freezeMinting called", async () => {
             let id = await takeSnapshot();
-            await I_SecurityToken.freezeIssuance({ from: token_owner });
+            await I_SecurityToken.freezeIssuance(freezeIssuanceAckHash, { from: token_owner });
 
             await catchRevert(I_SecurityToken.issue(account_affiliate1, new BN(100).mul(new BN(10).pow(new BN(18))), "0x0", { from: token_owner }));
             await revertToSnapshot(id);
@@ -498,13 +496,13 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(tx.logs[0].args._module, I_GeneralTransferManager.address);
             await I_SecurityToken.issue(account_investor1, new BN(web3.utils.toWei("500")), "0x0", { from: token_owner });
             let _canTransfer = await I_SecurityToken.canTransfer.call(account_investor2, new BN(web3.utils.toWei("200")), "0x0", {from: account_investor1});
-            
+
             assert.isTrue(_canTransfer[0]);
             assert.equal(_canTransfer[1], 0x51);
             assert.equal(_canTransfer[2], empty_hash);
-            
+
             await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("200")), { from: account_investor1 });
-            
+
             assert.equal((await I_SecurityToken.balanceOf(account_investor2)).div(new BN(10).pow(new BN(18))).toNumber(), 200);
             await revertToSnapshot(key);
         });
@@ -650,7 +648,7 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should Fail in transferring the token from one whitelist investor 1 to non whitelist investor 2", async () => {
             let _canTransfer = await I_SecurityToken.canTransfer.call(account_investor2, new BN(10).mul(new BN(10).pow(new BN(18))), "0x0", {from: account_investor1});
-            
+
             assert.isFalse(_canTransfer[0]);
             assert.equal(_canTransfer[1], 0x50);
 
@@ -678,7 +676,7 @@ contract("SecurityToken", async (accounts) => {
         it("Should activate allow All Transfer", async () => {
             ID_snap = await takeSnapshot();
             await I_GeneralTransferManager.modifyTransferRequirementsMulti(
-                [0, 1, 2], 
+                [0, 1, 2],
                 [false, false, false],
                 [false, false, false],
                 [false, false, false],
@@ -745,7 +743,7 @@ contract("SecurityToken", async (accounts) => {
         it("Should activate allow All Whitelist Transfers", async () => {
             ID_snap = await takeSnapshot();
             await I_GeneralTransferManager.modifyTransferRequirementsMulti(
-                [0, 1, 2], 
+                [0, 1, 2],
                 [true, false, true],
                 [true, true, false],
                 [false, false, false],
@@ -813,7 +811,7 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(balance1.div(new BN(10).pow(new BN(18))).toNumber(), 500);
             let balance2 = await I_SecurityToken.balanceOf(account_affiliate2);
             assert.equal(balance2.div(new BN(10).pow(new BN(18))).toNumber(), 220);
-            
+
         });
 
         it("Should provide more permissions to the delegate", async () => {
@@ -852,9 +850,10 @@ contract("SecurityToken", async (accounts) => {
             assert.equal((await I_SecurityToken.balanceOf(account_investor1)).div(new BN(10).pow(new BN(18))).toNumber(), 1000);
         });
 
-        it("STO should fail to issue tokens after minting is frozen", async () => {
+        // solidity-coverage uses an older version of testrpc that does not support eth_signTypedData. It is required to signt he acknowledgement
+        process.env.COVERAGE ? it.skip : it("STO should fail to issue tokens after minting is frozen", async () => {
             let id = await takeSnapshot();
-            await I_SecurityToken.freezeIssuance({ from: token_owner });
+            await I_SecurityToken.freezeIssuance(freezeIssuanceAckHash, { from: token_owner });
 
             await catchRevert(
                 web3.eth.sendTransaction({
@@ -977,7 +976,7 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should force burn the tokens - value too high", async () => {
             await I_GeneralTransferManager.modifyTransferRequirementsMulti(
-                [0, 1, 2], 
+                [0, 1, 2],
                 [true, false, false],
                 [true, true, false],
                 [true, false, false],
@@ -1251,41 +1250,40 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(new BN(web3.utils.toWei("10", "ether")).toString(), eventTransfer.args.value.toString(), "Event not emitted as expected");
         });
 
-        it("Should fail to freeze controller functionality because not owner", async () => {
-            await catchRevert(I_SecurityToken.disableController({ from: account_investor1 }));
+        it("Should fail to freeze controller functionality because proper acknowledgement not signed by owner", async () => {
+            let trueButOutOfPlaceAcknowledegement = web3.utils.utf8ToHex(
+                "F O'Brien is the best!"
+            );
+            await catchRevert(I_SecurityToken.disableController(trueButOutOfPlaceAcknowledegement, { from: token_owner }));
         });
 
-        it("Should fail to freeze controller functionality because disableControllerAllowed not activated", async () => {
-            await catchRevert(I_SecurityToken.disableController({ from: token_owner }));
+        // solidity-coverage uses an old version of testrpc that does not support eth_signTypedData. It is required to sign he acknowledgement
+        process.env.COVERAGE ? it.skip : it("Should fail to freeze controller functionality because not owner", async () => {
+            disableControllerAckHash = await getDisableControllerAck(I_SecurityToken.address, token_owner);
+            await catchRevert(I_SecurityToken.disableController(disableControllerAckHash, { from: account_investor1 }));
         });
 
-        it("Should successfully freeze controller functionality", async () => {
-            let tx1 = await I_FeatureRegistry.setFeatureStatus("disableControllerAllowed", true, { from: account_polymath });
-
-            // check event
-            assert.equal("disableControllerAllowed", tx1.logs[0].args._nameKey, "Event not emitted as expected");
-            assert.equal(true, tx1.logs[0].args._newStatus, "Event not emitted as expected");
-
-            let tx2 = await I_SecurityToken.disableController({ from: token_owner });
-
+        // solidity-coverage uses an old version of testrpc that does not support eth_signTypedData. It is required to sign he acknowledgement
+        process.env.COVERAGE ? it.skip : it("Should successfully freeze controller functionality", async () => {
+            await I_SecurityToken.disableController(disableControllerAckHash, { from: token_owner });
             // check state
             assert.equal(address_zero, await I_SecurityToken.controller.call(), "State not changed");
             assert.equal(true, await I_SecurityToken.controllerDisabled.call(), "State not changed");
-        });
-
-        it("Should ST be not controllable", async() => {
             assert.isFalse(await I_SecurityToken.isControllable.call());
         });
 
-        it("Should fail to freeze controller functionality because already frozen", async () => {
-            await catchRevert(I_SecurityToken.disableController({ from: token_owner }));
+        // solidity-coverage uses an old version of testrpc that does not support eth_signTypedData. It is required to sign he acknowledgement
+        process.env.COVERAGE ? it.skip : it("Should fail to freeze controller functionality because already frozen", async () => {
+            await catchRevert(I_SecurityToken.disableController(disableControllerAckHash, { from: token_owner }));
         });
 
-        it("Should fail to set controller because controller functionality frozen", async () => {
+        // solidity-coverage uses an old version of testrpc that does not support eth_signTypedData. It is required to sign he acknowledgement
+        process.env.COVERAGE ? it.skip : it("Should fail to set controller because controller functionality frozen", async () => {
             await catchRevert(I_SecurityToken.setController(account_controller, { from: token_owner }));
         });
 
-        it("Should fail to controllerTransfer because controller functionality frozen", async () => {
+        // solidity-coverage uses an old version of testrpc that does not support eth_signTypedData. It is required to sign he acknowledgement
+        process.env.COVERAGE ? it.skip : it("Should fail to controllerTransfer because controller functionality frozen", async () => {
             await catchRevert(
                 I_SecurityToken.controllerTransfer(account_investor1, account_investor2, new BN(web3.utils.toWei("10", "ether")), "0x0", web3.utils.fromAscii("reason"), {
                     from: account_controller
@@ -1399,6 +1397,7 @@ contract("SecurityToken", async (accounts) => {
             assert.oneOf(
                 await readStorage(I_SecurityToken.address, 7),
                 [
+                    (await stGetter.controller.call()).toLowerCase(),
                     (await stGetter.controller.call()).substring(0, 4),
                     (await stGetter.controller.call()).substring(0, 3),
                     await stGetter.controller.call()
@@ -1435,77 +1434,67 @@ contract("SecurityToken", async (accounts) => {
             );
 
             console.log(`
-                FeatureRegistry address from the contract:         ${await stGetter.featureRegistry.call()}
-                FeatureRegistry address from the storage:          ${await readStorage(I_SecurityToken.address, 11)}
-            `)
-
-            assert.equal(
-                await stGetter.featureRegistry.call(),
-                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 11))
-            );
-
-            console.log(`
                 PolyToken address from the contract:         ${await stGetter.polyToken.call()}
-                PolyToken address from the storage:          ${await readStorage(I_SecurityToken.address, 12)}
+                PolyToken address from the storage:          ${await readStorage(I_SecurityToken.address, 11)}
             `)
 
             assert.equal(
                 await stGetter.polyToken.call(),
-                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 12))
+                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 11))
             );
 
             console.log(`
                 Delegate address from the contract:         ${await stGetter.delegate.call()}
-                Delegate address from the storage:          ${await readStorage(I_SecurityToken.address, 13)}
+                Delegate address from the storage:          ${await readStorage(I_SecurityToken.address, 12)}
             `)
 
             assert.equal(
                 await stGetter.delegate.call(),
-                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 13))
+                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 12))
             );
 
             console.log(`
                 Datastore address from the contract:         ${await stGetter.dataStore.call()}
-                Datastore address from the storage:          ${await readStorage(I_SecurityToken.address, 14)}
+                Datastore address from the storage:          ${await readStorage(I_SecurityToken.address, 13)}
             `)
 
             assert.equal(
                 await stGetter.dataStore.call(),
-                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 14))
+                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 13))
             );
 
             console.log(`
                 Granularity value from the contract:         ${await stGetter.granularity.call()}
-                Granularity value from the storage:          ${(web3.utils.toBN(await readStorage(I_SecurityToken.address, 15))).toString()}
+                Granularity value from the storage:          ${(web3.utils.toBN(await readStorage(I_SecurityToken.address, 14))).toString()}
             `)
 
             assert.equal(
                 web3.utils.fromWei(await stGetter.granularity.call()),
-                web3.utils.fromWei((web3.utils.toBN(await readStorage(I_SecurityToken.address, 15))).toString())
+                web3.utils.fromWei((web3.utils.toBN(await readStorage(I_SecurityToken.address, 14))).toString())
             );
 
             console.log(`
                 Current checkpoint ID from the contract:    ${await stGetter.currentCheckpointId.call()}
-                Current checkpoint ID from the storage:     ${(web3.utils.toBN(await readStorage(I_SecurityToken.address, 16))).toString()}
+                Current checkpoint ID from the storage:     ${(web3.utils.toBN(await readStorage(I_SecurityToken.address, 15))).toString()}
             `)
             assert.equal(
                 await stGetter.currentCheckpointId.call(),
-                (web3.utils.toBN(await readStorage(I_SecurityToken.address, 16))).toString()
+                (web3.utils.toBN(await readStorage(I_SecurityToken.address, 15))).toString()
             );
 
             console.log(`
                 TokenDetails from the contract:    ${await stGetter.tokenDetails.call()}
-                TokenDetails from the storage:     ${(web3.utils.toUtf8((await readStorage(I_SecurityToken.address, 17)).substring(0, 60)))}
+                TokenDetails from the storage:     ${(web3.utils.toUtf8((await readStorage(I_SecurityToken.address, 16)).substring(0, 60)))}
             `)
             assert.equal(
                 await stGetter.tokenDetails.call(),
-                (web3.utils.toUtf8((await readStorage(I_SecurityToken.address, 17)).substring(0, 60))).replace(/\u0000/g, "")
+                (web3.utils.toUtf8((await readStorage(I_SecurityToken.address, 16)).substring(0, 60))).replace(/\u0000/g, "")
             );
 
         });
 
     });
-    
+
     describe(`Test cases for the ERC1643 contract\n`, async () => {
 
         describe(`Test cases for the setDocument() function of the ERC1643\n`, async() => {
@@ -1597,7 +1586,7 @@ contract("SecurityToken", async (accounts) => {
             });
 
             it("\tShould succssfully remove the document from the contract  which is present in the last index of the `_docsName` and check the params of the `DocumentRemoved` event\n", async() => {
-                // first add the new document 
+                // first add the new document
                 await I_SecurityToken.setDocument(web3.utils.utf8ToHex("doc3"), "https://www.bts.l", "0x0", {from: token_owner});
                 // as this will be last in the array so remove this
                 let tx = await I_SecurityToken.removeDocument(web3.utils.utf8ToHex("doc3"), {from: token_owner});

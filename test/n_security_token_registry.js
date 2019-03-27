@@ -1062,7 +1062,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
             let tx = await I_STRProxied.changeFeesAmountAndCurrency(new BN(web3.utils.toWei("500")), new BN(web3.utils.toWei("100")), true, { from: account_polymath });
             assert.equal(tx.logs[0].args._newFee.toString(), new BN(web3.utils.toWei("500")).toString(), "wrong ticker fee in event");
             assert.equal(tx.logs[1].args._newFee.toString(), new BN(web3.utils.toWei("100")).toString(), "wrong st fee in event");
-            assert.equal(tx.logs[2].args._newIsFeesInPoly, true, "wrong fee type");
+            assert.equal(tx.logs[2].args._isFeeInPoly, true, "wrong fee type");
             assert.equal(await I_Getter.getIsFeeInPoly(), true, "is fee in poly not set");
             let tickerRegFee = await I_STRProxied.getUintValue(web3.utils.soliditySha3("tickerRegFee"));
             assert.equal(tickerRegFee.toString(), new BN(web3.utils.toWei("500")).toString(), "wrong fee");

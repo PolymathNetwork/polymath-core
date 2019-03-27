@@ -92,7 +92,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     // Emit when changeTickerRegistrationFee is called
     event ChangeTickerRegistrationFee(uint256 _oldFee, uint256 _newFee);
     // Emit when Fee currency is changed
-    event ChangeFeeCurrency(bool _oldIsFeesInPoly, bool _newIsFeesInPoly);
+    event ChangeFeeCurrency(bool _isFeeInPoly);
     // Emit when ownership gets transferred
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     // Emit when ownership of the ticker gets changed
@@ -664,8 +664,12 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     function changeTickerRegistrationFee(uint256 _tickerRegFee) external onlyOwner {
         uint256 fee = getUintValue(TICKERREGFEE);
         require(fee != _tickerRegFee, "Bad fee");
-        emit ChangeTickerRegistrationFee(fee, _tickerRegFee);
-        set(TICKERREGFEE, _tickerRegFee);
+        _changeTickerRegistrationFee(fee, _tickerRegFee);
+    }
+
+    function _changeTickerRegistrationFee(uint256 _oldFee, uint256 _newFee) internal {
+        emit ChangeTickerRegistrationFee(_oldFee, _newFee);
+        set(TICKERREGFEE, _newFee);
     }
 
     /**
@@ -675,8 +679,12 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     function changeSecurityLaunchFee(uint256 _stLaunchFee) external onlyOwner {
         uint256 fee = getUintValue(STLAUNCHFEE);
         require(fee != _stLaunchFee, "Bad fee");
-        emit ChangeSecurityLaunchFee(fee, _stLaunchFee);
-        set(STLAUNCHFEE, _stLaunchFee);
+        _changeSecurityLaunchFee(fee, _stLaunchFee);
+    }
+
+    function _changeSecurityLaunchFee(uint256 _oldFee, uint256 _newFee) internal {
+        emit ChangeSecurityLaunchFee(_oldFee, _newFee);
+        set(STLAUNCHFEE, _newFee);
     }
 
     /**
@@ -688,13 +696,11 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     function changeFeesAmountAndCurrency(uint256 _tickerRegFee, uint256 _stLaunchFee, bool _isFeeInPoly) external onlyOwner {
         uint256 tickerFee = getUintValue(TICKERREGFEE);
         uint256 stFee = getUintValue(STLAUNCHFEE);
-        bool oldIsFeesInPoly = getBoolValue(IS_FEE_IN_POLY);
-        require(oldIsFeesInPoly != _isFeeInPoly, "Currency unchanged");
-        emit ChangeTickerRegistrationFee(tickerFee, _tickerRegFee);
-        emit ChangeSecurityLaunchFee(stFee, _stLaunchFee);
-        emit ChangeFeeCurrency(oldIsFeesInPoly, _isFeeInPoly);
-        set(TICKERREGFEE, _tickerRegFee);
-        set(STLAUNCHFEE, _stLaunchFee);
+        bool isOldFeesInPoly = getBoolValue(IS_FEE_IN_POLY);
+        require(isOldFeesInPoly != _isFeeInPoly, "Currency unchanged");
+        _changeTickerRegistrationFee(tickerFee, _tickerRegFee);
+        _changeSecurityLaunchFee(stFee, _stLaunchFee);
+        emit ChangeFeeCurrency(_isFeeInPoly);
         set(IS_FEE_IN_POLY, _isFeeInPoly);
     }
 

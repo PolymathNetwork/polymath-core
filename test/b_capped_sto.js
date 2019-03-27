@@ -847,6 +847,10 @@ contract("CappedSTO", async (accounts) => {
                     true, 
                     { from: account_polymath }
                 );
+                assert.equal((await newFactory.setupCostInPoly.call()).toString(), (new BN(1000)).toString());
+                assert.equal((await newFactory.usageCostInPoly.call()).toString(), (new BN(1000)).toString());
+                assert.equal((await newFactory.setupCost()).toString(), (new BN(1000)).toString());
+                assert.equal((await newFactory.usageCost()).toString(), (new BN(1000)).toString());
             });
         });
 

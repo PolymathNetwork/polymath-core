@@ -81,8 +81,9 @@ contract("ScheduledCheckpoint", async (accounts) => {
         account_investor1 = accounts[7];
         account_investor2 = accounts[8];
         account_investor3 = accounts[9]; 
-        //await jumpToTime(Math.floor((new Date().getTime())/1000));
-        await jumpToTime(1553040000); // 03/20/2019 @ 12:00am (UTC)
+        // This fixes the normal tests but coverage remains brocken as testrpc used by 
+        // solidity-coverage does not allow to jump back in time.
+        //await jumpToTime(1553040000); // 03/20/2019 @ 12:00am (UTC)
         currentTime = new BN(await latestTime());
 
         // Step 1: Deploy the genral PM ecosystem

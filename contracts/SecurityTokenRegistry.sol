@@ -88,9 +88,11 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     // Emit when the token ticker expiry is changed
     event ChangeExpiryLimit(uint256 _oldExpiry, uint256 _newExpiry);
     // Emit when changeSecurityLaunchFee is called
-    event ChangeSecurityLaunchFee(uint256 _oldFee, uint256 _newFee, bool _isFeeInPoly);
+    event ChangeSecurityLaunchFee(uint256 _oldFee, uint256 _newFee);
     // Emit when changeTickerRegistrationFee is called
-    event ChangeTickerRegistrationFee(uint256 _oldFee, uint256 _newFee, bool _isFeeInPoly);
+    event ChangeTickerRegistrationFee(uint256 _oldFee, uint256 _newFee);
+    // Emit when Fee currency is changed
+    event ChangeFeeCurrency(bool _oldIsFeesInPoly, bool _newIsFeesInPoly);
     // Emit when ownership gets transferred
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     // Emit when ownership of the ticker gets changed
@@ -658,25 +660,40 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     /**
     * @notice Sets the ticker registration fee in USD tokens. Only Polymath.
     * @param _tickerRegFee is the registration fee in USD tokens (base 18 decimals)
-    * @param _isFeeInPoly defines if the few is in poly
     */
-    function changeTickerRegistrationFee(uint256 _tickerRegFee, bool _isFeeInPoly) external onlyOwner {
+    function changeTickerRegistrationFee(uint256 _tickerRegFee) external onlyOwner {
         uint256 fee = getUintValue(TICKERREGFEE);
-        //NB Changing fee type for ticker reg will also change it for st creation.
-        emit ChangeTickerRegistrationFee(fee, _tickerRegFee, _isFeeInPoly);
+        require(fee != _tickerRegFee, "Bad fee");
+        emit ChangeTickerRegistrationFee(fee, _tickerRegFee);
         set(TICKERREGFEE, _tickerRegFee);
-        set(IS_FEE_IN_POLY, _isFeeInPoly);
     }
 
     /**
     * @notice Sets the ticker registration fee in USD tokens. Only Polymath.
     * @param _stLaunchFee is the registration fee in USD tokens (base 18 decimals)
-    * @param _isFeeInPoly defines if the few is in poly
     */
-    function changeSecurityLaunchFee(uint256 _stLaunchFee, bool _isFeeInPoly) external onlyOwner {
+    function changeSecurityLaunchFee(uint256 _stLaunchFee) external onlyOwner {
         uint256 fee = getUintValue(STLAUNCHFEE);
-        //NB Changing fee type for st creation will also change it for ticker reg.
-        emit ChangeSecurityLaunchFee(fee, _stLaunchFee, _isFeeInPoly);
+        require(fee != _stLaunchFee, "Bad fee");
+        emit ChangeSecurityLaunchFee(fee, _stLaunchFee);
+        set(STLAUNCHFEE, _stLaunchFee);
+    }
+
+    /**
+    * @notice Sets the ticker registration and ST launch fee amount and currency
+    * @param _tickerRegFee is the ticker registration fee (base 18 decimals)
+    * @param _stLaunchFee is the st generation fee (base 18 decimals)
+    * @param _isFeeInPoly defines if the fee is in poly or usd
+    */
+    function changeFeesAmountAndCurrency(uint256 _tickerRegFee, uint256 _stLaunchFee, bool _isFeeInPoly) external onlyOwner {
+        uint256 tickerFee = getUintValue(TICKERREGFEE);
+        uint256 stFee = getUintValue(STLAUNCHFEE);
+        bool oldIsFeesInPoly = getBoolValue(IS_FEE_IN_POLY);
+        require(oldIsFeesInPoly != _isFeeInPoly, "Currency unchanged");
+        emit ChangeTickerRegistrationFee(tickerFee, _tickerRegFee);
+        emit ChangeSecurityLaunchFee(stFee, _stLaunchFee);
+        emit ChangeFeeCurrency(oldIsFeesInPoly, _isFeeInPoly);
+        set(TICKERREGFEE, _tickerRegFee);
         set(STLAUNCHFEE, _stLaunchFee);
         set(IS_FEE_IN_POLY, _isFeeInPoly);
     }

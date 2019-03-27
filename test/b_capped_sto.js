@@ -837,6 +837,19 @@ contract("CappedSTO", async (accounts) => {
             });
         });
 
+        describe("Pricing Test cases for Module Factory", async () => {
+            it("Should return correct price when price is in poly", async () => {
+                let newFactory = await CappedSTOFactory.new(
+                    new BN(1000), 
+                    new BN(1000), 
+                    I_CappedSTO_Array_POLY[0].address, 
+                    I_PolymathRegistry.address, 
+                    true, 
+                    { from: account_polymath }
+                );
+            });
+        });
+
         describe("Test cases for the CappedSTOFactory", async () => {
             it("should get the exact details of the factory", async () => {
                 assert.equal((await I_CappedSTOFactory.setupCost.call()).toString(), cappedSTOSetupCost.toString());

@@ -89,11 +89,17 @@ contract ModuleFactory is IModuleFactory, Ownable {
     }
 
     /**
-     * @notice Used to change the currency of usage and setup cost
+     * @notice Used to change the currency and amount of usage and setup cost
+     * @param _setupCost new setup cost
+     * @param _usageCost new usage cost
      * @param _isCostInPoly new usage cost currency. USD or POLY
      */
-    function changeCostType(bool _isCostInPoly) public onlyOwner {
+    function changeCostsAndType(uint256 _setupCost, uint256 _usageCost, bool _isCostInPoly) public onlyOwner {
+        emit ChangeSetupCost(setupCost, _setupCost);
+        emit ChangeUsageCost(usageCost, _usageCost);
         emit ChangeCostType(isCostInPoly, _isCostInPoly);
+        setupCost = _setupCost;
+        usageCost = _usageCost;
         isCostInPoly = _isCostInPoly;
     }
 

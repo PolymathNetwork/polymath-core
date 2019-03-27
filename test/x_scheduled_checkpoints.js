@@ -13,7 +13,7 @@ const Web3 = require("web3");
 let BN = Web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
-contract("ScheduledCheckpoint", async (accounts) => {
+process.env.COVERAGE ? contract.skip : contract("ScheduledCheckpoint", async (accounts) => {
 
     const SECONDS = 0;
     const DAYS = 1;
@@ -81,9 +81,8 @@ contract("ScheduledCheckpoint", async (accounts) => {
         account_investor1 = accounts[7];
         account_investor2 = accounts[8];
         account_investor3 = accounts[9]; 
-        // This fixes the normal tests but coverage remains brocken as testrpc used by 
-        // solidity-coverage does not allow to jump back in time.
-        //await jumpToTime(1553040000); // 03/20/2019 @ 12:00am (UTC)
+        //await jumpToTime(Math.floor((new Date().getTime())/1000));
+        await jumpToTime(1553040000); // 03/20/2019 @ 12:00am (UTC)
         currentTime = new BN(await latestTime());
 
         // Step 1: Deploy the genral PM ecosystem

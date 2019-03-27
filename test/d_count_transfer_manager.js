@@ -451,7 +451,7 @@ contract("CountTransferManager", async (accounts) => {
                     "CountTransferManager module was not added"
                 );
                 I_CountTransferManager2 = await CountTransferManager.at(tx.logs[2].args._module);
-                await I_CountTransferManager2.changeHolderCount(2,2, { from: token_owner });
+                await I_CountTransferManager2.changeHolderCount(2, 2, { from: token_owner });
                 console.log("current max holder number is " + (await I_CountTransferManager2.maxHolderCount({ from: token_owner })));
             });
 

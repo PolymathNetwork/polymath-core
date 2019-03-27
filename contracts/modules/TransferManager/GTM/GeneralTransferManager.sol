@@ -346,12 +346,13 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
            dataStore.setUint256(_getKey(WHITELIST, _investor), uint256(1));
         }
         // Update non accredited investor count in the event accredited status is changed and investor balance is not 0
-        if (_flag == 0 && ISecurityToken(securityToken).balanceOf(_investor) > 0) {
-            if (_isAccredited(_investor, dataStore) != _value && _value == false) {
-                ISecurityToken(securityToken).increaseNonAccreditedCount();
-            }
-            if (_isAccredited(_investor, dataStore) != _value && _value == true) {
+        if (_flag == 0 && ISecurityToken(securityToken).balanceOf(_investor) > 0 && _isAccredited(_investor, dataStore) != _value) {
+            if (_value) {
+                // decrease count if holder is changed to accredited
                 ISecurityToken(securityToken).decreaseNonAccreditedCount();
+            } else {
+                // increase count if holder is changed to non-accredited
+                ISecurityToken(securityToken).increaseNonAccreditedCount();
             }
         }
         //NB Flags are packed together in a uint256 to save gas. We can have a maximum of 256 flags.

@@ -13,7 +13,7 @@ const Web3 = require("web3");
 let BN = Web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
-contract("ScheduledCheckpoint", async (accounts) => {
+process.env.COVERAGE ? contract.skip : contract("ScheduledCheckpoint", async (accounts) => {
 
     const SECONDS = 0;
     const DAYS = 1;

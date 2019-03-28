@@ -91,12 +91,11 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
       * @notice Low level token purchase ***DO NOT OVERRIDE***
       * @param _beneficiary Address performing the token purchase
       */
-    function buyTokens(address _beneficiary) public payable nonReentrant {
+    function buyTokens(address _beneficiary) public payable whenNotPaused nonReentrant {
         if (!allowBeneficialInvestments) {
             require(_beneficiary == msg.sender, "Beneficiary address does not match msg.sender");
         }
 
-        require(!paused, "Should not be paused");
         require(fundRaiseTypes[uint8(FundRaiseType.ETH)], "Mode of investment is not ETH");
 
         uint256 weiAmount = msg.value;
@@ -110,8 +109,7 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
       * @notice low level token purchase
       * @param _investedPOLY Amount of POLY invested
       */
-    function buyTokensWithPoly(uint256 _investedPOLY) public nonReentrant {
-        require(!paused, "Should not be paused");
+    function buyTokensWithPoly(uint256 _investedPOLY) public whenNotPaused nonReentrant {
         require(fundRaiseTypes[uint8(FundRaiseType.POLY)], "Mode of investment is not POLY");
         uint256 refund = _processTx(msg.sender, _investedPOLY);
         _forwardPoly(msg.sender, wallet, _investedPOLY.sub(refund));

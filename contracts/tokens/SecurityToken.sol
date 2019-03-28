@@ -12,12 +12,10 @@ import "../interfaces/token/IERC1594.sol";
 import "../interfaces/token/IERC1643.sol";
 import "../interfaces/token/IERC1644.sol";
 import "../interfaces/IModuleRegistry.sol";
-import "../interfaces/IFeatureRegistry.sol";
 import "../interfaces/ITransferManager.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
 
 /**
  * @title Security Token contract
@@ -29,7 +27,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
  * @notice - ST does not inherit from ISecurityToken due to:
  * @notice - https://github.com/ethereum/solidity/issues/4847
  */
-contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, SecurityTokenStorage, IERC1594, IERC1643, IERC1644, Proxy {
+contract SecurityToken is ERC20, Ownable, ReentrancyGuard, SecurityTokenStorage, IERC1594, IERC1643, IERC1644, Proxy {
 
     using SafeMath for uint256;
 
@@ -46,6 +44,8 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
 
     // Emit when the token details get updated
     event UpdateTokenDetails(string _oldDetails, string _newDetails);
+    // Emit when the token name get updated
+    event UpdateTokenName(string _oldName, string _newName);
     // Emit when the granularity get changed
     event GranularityChanged(uint256 _oldGranularity, uint256 _newGranularity);
     // Emit when is permanently frozen by the issuer
@@ -115,11 +115,6 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         _;
     }
 
-    modifier isEnabled(string memory _nameKey) {
-        require(IFeatureRegistry(featureRegistry).getFeatureStatus(_nameKey));
-        _;
-    }
-
     /**
      * @notice constructor
      * @param _name Name of the SecurityToken
@@ -140,13 +135,15 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         address _delegate
     )
         public
-        ERC20Detailed(_name, _symbol, _decimals)
     {
         _zeroAddressCheck(_polymathRegistry);
         _zeroAddressCheck(_delegate);
         polymathRegistry = _polymathRegistry;
         //When it is created, the owner is the STR
         updateFromRegistry();
+        name = _name;
+        symbol = _symbol;
+        decimals = _decimals;
         delegate = _delegate;
         tokenDetails = _tokenDetails;
         granularity = _granularity;
@@ -293,6 +290,15 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     function changeDataStore(address _dataStore) external onlyOwner {
         _zeroAddressCheck(_dataStore);
         dataStore = _dataStore;
+    }
+
+    /**
+    * @notice Allows owner to change token name
+    * @param _name new name of the token
+    */
+    function changeName(string calldata _name) external onlyOwner {
+        emit UpdateTokenName(name, _name);
+        name = _name;
     }
 
     /**
@@ -485,7 +491,8 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * @notice Permanently freeze issuance of this security token.
      * @dev It MUST NOT be possible to increase `totalSuppy` after this function is called.
      */
-    function freezeIssuance() external isIssuanceAllowed isEnabled("freezeIssuanceAllowed") onlyOwner {
+    function freezeIssuance(bytes calldata _signature) external isIssuanceAllowed onlyOwner {
+        require(owner() == TokenLib.recoverFreezeIssuanceAckSigner(_signature), "Owner did not sign");
         issuance = false;
         /*solium-disable-next-line security/no-block-members*/
         emit FreezeIssuance();
@@ -549,7 +556,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      */
     function redeem(uint256 _value, bytes calldata _data) external onlyModule(BURN_KEY) {
         // Add a function to validate the `_data` parameter
-        require(_checkAndBurn(msg.sender, _value, _data), "Invalid redeem");
+        _validateRedeem(_checkAndBurn(msg.sender, _value, _data));
     }
 
     /**
@@ -579,9 +586,13 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      */
     function redeemFrom(address _tokenHolder, uint256 _value, bytes calldata _data) external onlyModule(BURN_KEY) {
         // Add a function to validate the `_data` parameter
-        require(_updateTransfer(_tokenHolder, address(0), _value, _data), "Invalid redeem");
+        _validateRedeem(_updateTransfer(_tokenHolder, address(0), _value, _data));
         _burnFrom(_tokenHolder, _value);
         emit Redeemed(msg.sender, _tokenHolder, _value, _data);
+    }
+
+    function _validateRedeem(bool _isRedeem) internal pure {
+        require(_isRedeem, "Invalid redeem");
     }
 
     /**
@@ -614,7 +625,8 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * @notice Used by the issuer to permanently disable controller functionality
      * @dev enabled via feature switch "disableControllerAllowed"
      */
-    function disableController() external isEnabled("disableControllerAllowed") onlyOwner {
+    function disableController(bytes calldata _signature) external onlyOwner {
+        require(owner() == TokenLib.recoverDisableControllerAckSigner(_signature), "Owner did not sign");
         require(isControllable());
         controllerDisabled = true;
         delete controller;
@@ -768,7 +780,6 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     function updateFromRegistry() public onlyOwner {
         moduleRegistry = PolymathRegistry(polymathRegistry).getAddress("ModuleRegistry");
         securityTokenRegistry = PolymathRegistry(polymathRegistry).getAddress("SecurityTokenRegistry");
-        featureRegistry = PolymathRegistry(polymathRegistry).getAddress("FeatureRegistry");
         polyToken = PolymathRegistry(polymathRegistry).getAddress("PolyToken");
     }
 }

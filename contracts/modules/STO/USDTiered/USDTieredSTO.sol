@@ -260,7 +260,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      */
     function finalize() external {
         _onlySecurityTokenOwner();
-        require(!isFinalized, "STO already finalized");
+        require(!isFinalized, "STO is finalized");
         isFinalized = true;
         uint256 tempReturned;
         uint256 tempSold;
@@ -322,7 +322,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      */
     function changeAllowBeneficialInvestments(bool _allowBeneficialInvestments) external {
         _onlySecurityTokenOwner();
-        require(_allowBeneficialInvestments != allowBeneficialInvestments, "Value unchanged");
+        require(_allowBeneficialInvestments != allowBeneficialInvestments);
         allowBeneficialInvestments = _allowBeneficialInvestments;
         emit SetAllowBeneficialInvestments(allowBeneficialInvestments);
     }
@@ -409,7 +409,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         initialMinted = getTokensMinted();
         rate = getRate(_fundRaiseType);
         (spentUSD, spentValue) = _buyTokens(_beneficiary, _amount, rate, _fundRaiseType);
-        require(getTokensMinted().sub(initialMinted) >= _minTokens, "Insufficient tokens minted");
+        require(getTokensMinted().sub(initialMinted) >= _minTokens, "Insufficient minted");
     }
 
 

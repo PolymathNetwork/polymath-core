@@ -4,6 +4,7 @@ import "./SecurityTokenProxy.sol";
 import "../proxy/OwnedUpgradeabilityProxy.sol";
 import "../interfaces/ISTFactory.sol";
 import "../interfaces/ISecurityToken.sol";
+import "../interfaces/IPolymathRegistry.sol";
 import "../interfaces/IOwnable.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "../interfaces/IModuleRegistry.sol";
@@ -17,12 +18,11 @@ contract STFactory is ISTFactory, Ownable {
 
     address public transferManagerFactory;
     DataStoreFactory public dataStoreFactory;
-    // Mapping from Security Token address to token version
-    mapping (address => uint256) tokenVersion;
-    // Mapping from Security Token address to registry
-    // We do this so that we can use the registry to check module compatibility on upgrades
-    // And as a secondary benefit that a token was deployed initially through this factory
-    mapping (address => address) tokenToRegistry;
+    IPolymathRegistry public polymathRegistry;
+
+    // Mapping from Security Token address to token upgrade version.
+    // A mapping to 0 means a token has not yet been deployed
+    mapping (address => uint256) tokenUpgrade;
 
     struct LogicContract {
         string version;
@@ -43,12 +43,17 @@ contract STFactory is ISTFactory, Ownable {
     event DefaultTransferManagerUpdated(address indexed _oldTransferManagerFactory, address indexed _newTransferManagerFactory);
     event DefaultDataStoreUpdated(address indexed _oldDataStoreFactory, address indexed _newDataStoreFactory);
 
-    constructor(address _transferManagerFactory, address _dataStoreFactory, string memory _version, address _logicContract, bytes memory _initializationData) public {
+    constructor(address _polymathRegistry, address _transferManagerFactory, address _dataStoreFactory, string memory _version, address _logicContract, bytes memory _initializationData) public {
         require(_logicContract != address(0), "Invalid Address");
         require(_transferManagerFactory != address(0), "Invalid Address");
         require(_dataStoreFactory != address(0), "Invalid Address");
+        require(_polymathRegistry != address(0), "Invalid Address");
         transferManagerFactory = _transferManagerFactory;
         dataStoreFactory = DataStoreFactory(_dataStoreFactory);
+        polymathRegistry = IPolymathRegistry(_polymathRegistry);
+
+        // Start at 1 so that we can distinguish deployed tokens in tokenUpgrade
+        latestUpgrade = 1;
         logicContracts[latestUpgrade].logicContract = _logicContract;
         logicContracts[latestUpgrade].initializationData = _initializationData;
         logicContracts[latestUpgrade].version = _version;
@@ -66,7 +71,7 @@ contract STFactory is ISTFactory, Ownable {
         address _issuer,
         bool _divisible,
         address _treasuryWallet,
-        address _polymathRegistry
+        address /* _polymathRegistry */
     )
         external
         returns(address)
@@ -76,8 +81,7 @@ contract STFactory is ISTFactory, Ownable {
             _symbol,
             _decimals,
             _tokenDetails,
-            _divisible,
-            _polymathRegistry
+            _divisible
         );
         //NB When dataStore is generated, the security token address is automatically set via the constructor in DataStoreProxy.
         if (address(dataStoreFactory) != address(0)) {
@@ -96,8 +100,7 @@ contract STFactory is ISTFactory, Ownable {
         string memory _symbol,
         uint8 _decimals,
         string memory _tokenDetails,
-        bool _divisible,
-        address _polymathRegistry
+        bool _divisible
     ) internal returns(address) {
         // Creates proxy contract and sets some initial storage
         SecurityTokenProxy proxy = new SecurityTokenProxy(
@@ -106,7 +109,7 @@ contract STFactory is ISTFactory, Ownable {
             _decimals,
             _divisible ? 1 : uint256(10) ** _decimals,
             _tokenDetails,
-            _polymathRegistry
+            address(polymathRegistry)
         );
         // Sets logic contract
         proxy.upgradeTo(logicContracts[latestUpgrade].version, logicContracts[latestUpgrade].logicContract);
@@ -114,7 +117,7 @@ contract STFactory is ISTFactory, Ownable {
         // owner of the contract, or are specific to this particular logic contract (e.g. setting version)
         (bool success, ) = address(proxy).call(logicContracts[latestUpgrade].initializationData);
         require(success, "Unsuccessful initialization");
-        tokenToRegistry[address(proxy)] = _polymathRegistry;
+        tokenUpgrade[address(proxy)] = latestUpgrade;
         return address(proxy);
     }
 
@@ -141,13 +144,13 @@ contract STFactory is ISTFactory, Ownable {
      */
     function upgradeToken(uint8 _maxModuleType) external {
         // Check the token was created by this factory
-        require(tokenToRegistry[msg.sender] != address(0), "Invalid token");
-        uint256 newVersion = tokenVersion[msg.sender] + 1;
+        require(tokenUpgrade[msg.sender] != 0, "Invalid token");
+        uint256 newVersion = tokenUpgrade[msg.sender] + 1;
         require(newVersion <= latestUpgrade, "Incorrect version");
         OwnedUpgradeabilityProxy(address(uint160(msg.sender))).upgradeToAndCall(logicContracts[newVersion].version, logicContracts[newVersion].logicContract, logicContracts[newVersion].upgradeData);
-        tokenVersion[msg.sender] = newVersion;
+        tokenUpgrade[msg.sender] = newVersion;
         // Check that all modules remain valid
-        IModuleRegistry moduleRegistry = IModuleRegistry(IPolymathRegistry(tokenToRegistry[msg.sender]).getAddress("ModuleRegistry"));
+        IModuleRegistry moduleRegistry = IModuleRegistry(polymathRegistry.getAddress("ModuleRegistry"));
         address moduleFactory;
         bool isArchived;
         for (uint8 i = 1; i < _maxModuleType; i++) {

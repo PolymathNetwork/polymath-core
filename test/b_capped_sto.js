@@ -6,6 +6,7 @@ import { setUpPolymathNetwork, deployGPMAndVerifyed, deployCappedSTOAndVerifyed,
 import { catchRevert } from "./helpers/exceptions";
 
 const CappedSTOFactory = artifacts.require("./CappedSTOFactory.sol");
+const STFactory = artifacts.require("./STFactory.sol");
 const CappedSTO = artifacts.require("./CappedSTO.sol");
 const DummySTO = artifacts.require("./DummySTO.sol");
 const SecurityToken = artifacts.require("./SecurityToken.sol");
@@ -177,6 +178,10 @@ contract("CappedSTO", async (accounts) => {
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
+            let t = await I_STRGetter.getSTFactoryAddress.call();
+            console.log(t);
+            let foo = await STFactory.at(t);
+            console.log(await foo.polymathRegistry.call());
 
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, treasury_wallet, 0, { from: token_owner });
 
@@ -849,7 +854,7 @@ contract("CappedSTO", async (accounts) => {
                 let endTime = startTime + duration.days(30);
                 const cap = web3.utils.toWei("10000");
                 const dummyBytesSig = encodeModuleCall(DummySTOParameters, [startTime, endTime, cap, "Hello"]);
-                const tx = await I_SecurityToken_ETH.addModule(I_DummySTOFactory.address, dummyBytesSig, maxCost, new BN(0), { from: token_owner });
+                const tx = await I_SecurityToken_ETH.addModule(I_DummySTOFactory.address, dummyBytesSig, maxCost, new BN(0), false, { from: token_owner });
                 console.log(tx.logs[2]);
                 assert.equal(tx.logs[2].args._types[0], stoKey, `Wrong module type added`);
                 assert.equal(

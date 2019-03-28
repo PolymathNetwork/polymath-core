@@ -119,6 +119,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @dev Any module can be added during token creation without being registered if it is defined in the token proxy deployment contract
      * @dev The feature switch for custom modules is labelled "customModulesAllowed"
      * @param _moduleFactory is the address of the relevant module factory
+     * @param _isUpgrade whether or not the function is being called as a result of an upgrade
      */
     function useModule(address _moduleFactory, bool _isUpgrade) external {
         if (IFeatureRegistry(getAddressValue(Encoder.getKey("featureRegistry"))).getFeatureStatus("customModulesAllowed")) {
@@ -129,12 +130,16 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         } else {
             require(getBoolValue(Encoder.getKey("verified", _moduleFactory)), "ModuleFactory must be verified");
         }
-        require(isCompatibleModule(_moduleFactory, msg.sender), "Incompatible versions");
         // This if statement is required to be able to add modules from the STFactory contract during deployment
         // before the token has been registered to the STR.
-        if ((!_isUpgrade) && ISecurityTokenRegistry(getAddressValue(Encoder.getKey("securityTokenRegistry"))).isSecurityToken(msg.sender)) {
-            pushArray(Encoder.getKey("reputation", _moduleFactory), msg.sender);
-            emit ModuleUsed(_moduleFactory, msg.sender);
+        if (ISecurityTokenRegistry(getAddressValue(Encoder.getKey("securityTokenRegistry"))).isSecurityToken(msg.sender)
+            || (ISecurityTokenRegistry(getAddressValue(Encoder.getKey("securityTokenRegistry"))).getSTFactoryAddress() == msg.sender)
+        ) {
+            require(isCompatibleModule(_moduleFactory, msg.sender), "Incompatible versions");
+            if (!_isUpgrade) {
+                pushArray(Encoder.getKey("reputation", _moduleFactory), msg.sender);
+                emit ModuleUsed(_moduleFactory, msg.sender);
+            }
         }
     }
 

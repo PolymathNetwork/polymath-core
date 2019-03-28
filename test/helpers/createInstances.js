@@ -253,7 +253,7 @@ async function deploySTFactory(account_polymath) {
         ]
     };
     let tokenInitBytesCall = web3.eth.abi.encodeFunctionCall(tokenInitBytes, [I_STGetter.address]);
-    I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, I_DataStoreFactory.address, "3.0.0", I_SecurityToken.address, tokenInitBytesCall, { from: account_polymath });
+    I_STFactory = await STFactory.new(I_PolymathRegistry.address, I_GeneralTransferManagerFactory.address, I_DataStoreFactory.address, "3.0.0", I_SecurityToken.address, tokenInitBytesCall, { from: account_polymath });
 
     assert.notEqual(I_STFactory.address.valueOf(), "0x0000000000000000000000000000000000000000", "STFactory contract was not deployed");
 

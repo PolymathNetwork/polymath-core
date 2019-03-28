@@ -177,7 +177,7 @@ contract("ModuleRegistryProxy", async (accounts) => {
                 ]
             };
             let tokenInitBytesCall = web3.eth.abi.encodeFunctionCall(tokenInitBytes, [I_STGetter.address]);
-            I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, I_DataStoreFactory.address, "3.0.0", I_SecurityTokenLogic.address, tokenInitBytesCall, { from: account_polymath });
+            I_STFactory = await STFactory.new(I_PolymathRegistry.address, I_GeneralTransferManagerFactory.address, I_DataStoreFactory.address, "3.0.0", I_SecurityTokenLogic.address, tokenInitBytesCall, { from: account_polymath });
 
             assert.notEqual(I_STFactory.address.valueOf(), address_zero, "STFactory contract was not deployed");
         });

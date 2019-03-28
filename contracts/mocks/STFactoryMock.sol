@@ -29,7 +29,7 @@ contract STFactoryMock is ISTFactory {
         string calldata _tokenDetails,
         address _issuer,
         bool _divisible,
-        address _treasuryWallet,
+        address /* _treasuryWallet */,
         address _polymathRegistry
     )
         external

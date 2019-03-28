@@ -372,7 +372,7 @@ module.exports = function(deployer, network, accounts) {
         .then(() => {
             // H) Deploy the STVersionProxy001 Contract which contains the logic of deployment of securityToken.
             let tokenInitBytesCall = web3.eth.abi.encodeFunctionCall(tokenInitBytes, [STGetter.address]);
-            return deployer.deploy(STFactory, GeneralTransferManagerFactory.address, DataStoreFactory.address, "3.0.0", SecurityTokenLogic.address, tokenInitBytesCall, { from: PolymathAccount });
+            return deployer.deploy(STFactory, polymathRegistry.address, GeneralTransferManagerFactory.address, DataStoreFactory.address, "3.0.0", SecurityTokenLogic.address, tokenInitBytesCall, { from: PolymathAccount });
         })
         .then(() => {
             // K) Deploy the FeatureRegistry contract to control feature switches
@@ -406,6 +406,18 @@ module.exports = function(deployer, network, accounts) {
             return securityTokenRegistryProxy.upgradeToAndCall("1.0.0", SecurityTokenRegistry.address, bytesProxy, {
                 from: PolymathAccount
             });
+        })
+        .then(() => {
+            return SecurityTokenRegistry.at(SecurityTokenRegistryProxy.address);
+        })
+        .then((securityTokenRegistry) => {
+            return securityTokenRegistry.setProtocolFactory(STFactory.address, 3, 0, 0);
+        })
+        .then(() => {
+            return SecurityTokenRegistry.at(SecurityTokenRegistryProxy.address);
+        })
+        .then((securityTokenRegistry) => {
+            return securityTokenRegistry.setLatestVersion(3, 0, 0);
         })
         .then(() => {
             // Assign the address into the SecurityTokenRegistry key

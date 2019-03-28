@@ -628,8 +628,9 @@ contract("SecurityTokenRegistry", async (accounts) => {
             I_TokenLib = await TokenLib.new();
             await STFactoryV2.link(TokenLib);
             await SecurityTokenMock.link(TokenLib);
+            console.log("ST linked");
             I_STFactory002 = await STFactoryV2.new(I_GeneralTransferManagerFactory.address, I_DataStoreFactory.address, I_STGetter.address, { from: account_polymath });
-
+            console.log("STF deployed");
             assert.notEqual(
                 I_STFactory002.address.valueOf(),
                 address_zero,

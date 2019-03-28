@@ -8,10 +8,6 @@ contract OZStorage {
 
     uint256 public _totalSupply;
 
-    string public _name;
-    string public _symbol;
-    uint8 public _decimals;
-
     /// @dev counter to allow mutex lock with only one SSTORE operation
     uint256 private _guardCounter;
 

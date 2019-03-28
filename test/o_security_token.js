@@ -211,6 +211,17 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(await I_SecurityToken.initialized.call(), true);
         });
 
+        it("Should not allow unauthorized address to change name", async() => {
+            await catchRevert(I_SecurityToken.changeName("new token name"));
+        });
+
+        it("Should allow authorized address to change name", async() => {
+            let snapId = await takeSnapshot(); 
+            await I_SecurityToken.changeName("new token name", { from: token_owner });
+            assert.equal((await I_SecurityToken.name()).replace(/\u0000/g, ""), "new token name");
+            await revertToSnapshot(snapId);
+        });
+
         it("Should intialize the auto attached modules", async () => {
             let moduleData = (await stGetter.getModulesByType(transferManagerKey))[0];
             I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
@@ -1398,40 +1409,46 @@ contract("SecurityToken", async (accounts) => {
             `);
             assert.equal(
                 await I_SecurityToken.name.call(),
-                (web3.utils.toAscii(await readStorage(I_SecurityToken.address, 3)).replace(/\u0000/g, "")).replace(/\u0014/g, "")
+                (web3.utils.toAscii(await readStorage(I_SecurityToken.address, 5)).replace(/\u0000/g, "")).replace(/\u0014/g, "")
             )
             console.log(`
                 Name of the ST:                     ${await I_SecurityToken.name.call()}
-                Name of the ST from the storage:    ${web3.utils.toUtf8(await readStorage(I_SecurityToken.address, 3))}
+                Name of the ST from the storage:    ${web3.utils.toUtf8(await readStorage(I_SecurityToken.address, 5))}
             `);
             assert.equal(
                 await I_SecurityToken.symbol.call(),
-                (web3.utils.toUtf8(await readStorage(I_SecurityToken.address, 4)).replace(/\u0000/g, "")).replace(/\u0006/g, "")
+                (web3.utils.toUtf8(await readStorage(I_SecurityToken.address, 6)).replace(/\u0000/g, "")).replace(/\u0006/g, "")
             );
             console.log(`
                 Symbol of the ST:                     ${await I_SecurityToken.symbol.call()}
-                Symbol of the ST from the storage:    ${web3.utils.toUtf8(await readStorage(I_SecurityToken.address, 4))}
+                Symbol of the ST from the storage:    ${web3.utils.toUtf8(await readStorage(I_SecurityToken.address, 6))}
             `);
+
+            console.log(`
+                Address of the owner:                   ${await I_SecurityToken.owner.call()}
+                Address of the owner from the storage:  ${(await readStorage(I_SecurityToken.address, 3)).substring(0, 42)}
+            `)
+            assert.equal(
+                await I_SecurityToken.owner.call(),
+                web3.utils.toChecksumAddress((await readStorage(I_SecurityToken.address, 3)).substring(0, 42))
+            );
 
         });
 
         it("Verify the storage of the STStorage", async() => {
-            for (let j = 4; j < 35; j++) {
-                console.log(await readStorage(I_SecurityToken.address, j));
-            }
 
             console.log(`
-                Controller address from the contract:         ${await stGetter.controller.call()}
-                Controller address from the storage:          ${await readStorage(I_SecurityToken.address, 9)}
+                Controller address from the contract:                   ${await stGetter.controller.call()}
+                decimals from the contract:                             ${await stGetter.decimals.call()} 
+                controller address from the storage + uint8 decimals:   ${await readStorage(I_SecurityToken.address, 7)}
             `)
-            // Different versions of web3 behave differently :/
+
+            // Controller address is packed with decimals so if controller address is 0x0, only decimals will be returned from read storage.
             assert.oneOf(
                 await readStorage(I_SecurityToken.address, 9),
                 [
-                    (await stGetter.controller.call()).toLowerCase(),
-                    (await stGetter.controller.call()).substring(0, 4),
-                    (await stGetter.controller.call()).substring(0, 3),
-                    await stGetter.controller.call()
+                    (await stGetter.controller.call()).toLowerCase() + "12",
+                    "0x12" // When controller address = 0x0, web3 converts 0x00000..000012 to 0x12
                 ]
             );
 

@@ -16,7 +16,6 @@ import "../interfaces/IModuleRegistry.sol";
 import "../interfaces/ITransferManager.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
 
 /**
  * @title Security Token contract
@@ -46,6 +45,8 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, SecurityTokenSt
 
     // Emit when the token details get updated
     event UpdateTokenDetails(string _oldDetails, string _newDetails);
+    // Emit when the token name get updated
+    event UpdateTokenName(string _oldName, string _newName);
     // Emit when the granularity get changed
     event GranularityChanged(uint256 _oldGranularity, uint256 _newGranularity);
     // Emit when is permanently frozen by the issuer
@@ -69,23 +70,6 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, SecurityTokenSt
     event DisableController();
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event TokenUpgraded(uint8 _major, uint8 _minor, uint8 _patch);
-    /**
-     * @notice constructor
-     * @dev Never called as contract is created through Proxy factory
-     * @dev Needed otherwise contract is considered abstract
-     * @param _name Name of the SecurityToken
-     * @param _symbol Symbol of the Token
-     * @param _decimals Decimals for the securityToken
-     */
-    constructor(
-        string memory _name,
-        string memory _symbol,
-        uint8 _decimals
-    )
-        public
-        ERC20Detailed(_name, _symbol, _decimals)
-    {
-    }
 
     /**
      * @notice Initialization function
@@ -319,6 +303,15 @@ contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, SecurityTokenSt
     function changeDataStore(address _dataStore) external onlyOwner {
         _zeroAddressCheck(_dataStore);
         dataStore = _dataStore;
+    }
+
+    /**
+    * @notice Allows owner to change token name
+    * @param _name new name of the token
+    */
+    function changeName(string calldata _name) external onlyOwner {
+        emit UpdateTokenName(name, _name);
+        name = _name;
     }
 
     /**

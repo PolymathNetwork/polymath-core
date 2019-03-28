@@ -193,14 +193,15 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         internal
     {
         require(_holder != address(0) && exemptIndex[_holder] == 0, "Invalid address");
-        _checkInputParams(_allowedTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType, now, false);
+        uint256 startTime = _getValidStartTime(_startTime);
+        _checkInputParams(_allowedTokens, startTime, _rollingPeriodInDays, _endTime, _restrictionType, now, false);
 
         if (individualRestriction[_holder].endTime != 0) {
             _removeIndividualRestriction(_holder);
         }
         individualRestriction[_holder] = VolumeRestriction(
             _allowedTokens,
-            _startTime,
+            startTime,
             _rollingPeriodInDays,
             _endTime,
             _restrictionType
@@ -209,7 +210,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         emit AddIndividualRestriction(
             _holder,
             _allowedTokens,
-            _startTime,
+            startTime,
             _rollingPeriodInDays,
             _endTime,
             _restrictionType
@@ -252,14 +253,15 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         RestrictionType _restrictionType
     )
         internal
-    {
-        _checkInputParams(_allowedTokens, _startTime, 1, _endTime, _restrictionType, now, false);
+    {   
+        uint256 startTime = _getValidStartTime(_startTime);
+        _checkInputParams(_allowedTokens, startTime, 1, _endTime, _restrictionType, now, false);
         if (individualDailyRestriction[_holder].endTime != 0) {
             _removeIndividualDailyRestriction(_holder);
         }
         individualDailyRestriction[_holder] = VolumeRestriction(
             _allowedTokens,
-            _startTime,
+            startTime,
             1,
             _endTime,
             _restrictionType
@@ -268,7 +270,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         emit AddIndividualDailyRestriction(
             _holder,
             _allowedTokens,
-            _startTime,
+            startTime,
             1,
             _endTime,
             _restrictionType
@@ -356,18 +358,19 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
     )
         external
         withPerm(ADMIN)
-    {
-        _checkInputParams(_allowedTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType, now, false);
+    {   
+        uint256 startTime = _getValidStartTime(_startTime);
+        _checkInputParams(_allowedTokens, startTime, _rollingPeriodInDays, _endTime, _restrictionType, now, false);
         defaultRestriction = VolumeRestriction(
             _allowedTokens,
-            _startTime,
+            startTime,
             _rollingPeriodInDays,
             _endTime,
             _restrictionType
         );
         emit AddDefaultRestriction(
             _allowedTokens,
-            _startTime,
+            startTime,
             _rollingPeriodInDays,
             _endTime,
             _restrictionType
@@ -389,18 +392,19 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
     )
         external
         withPerm(ADMIN)
-    {
-        _checkInputParams(_allowedTokens, _startTime, 1, _endTime, _restrictionType, now, false);
+    {   
+        uint256 startTime = _getValidStartTime(_startTime);
+        _checkInputParams(_allowedTokens, startTime, 1, _endTime, _restrictionType, now, false);
         defaultDailyRestriction = VolumeRestriction(
             _allowedTokens,
-            _startTime,
+            startTime,
             1,
             _endTime,
             _restrictionType
         );
         emit AddDefaultDailyRestriction(
             _allowedTokens,
-            _startTime,
+            startTime,
             1,
             _endTime,
             _restrictionType
@@ -525,10 +529,11 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         internal
     {
         _isAllowedToModify(individualRestriction[_holder].startTime);
-        _checkInputParams(_allowedTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType, now, false);
+        uint256 startTime = _getValidStartTime(_startTime);
+        _checkInputParams(_allowedTokens, startTime, _rollingPeriodInDays, _endTime, _restrictionType, now, false);
         individualRestriction[_holder] = VolumeRestriction(
             _allowedTokens,
-            _startTime,
+            startTime,
             _rollingPeriodInDays,
             _endTime,
             _restrictionType
@@ -536,7 +541,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         emit ModifyIndividualRestriction(
             _holder,
             _allowedTokens,
-            _startTime,
+            startTime,
             _rollingPeriodInDays,
             _endTime,
             _restrictionType
@@ -581,14 +586,15 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         RestrictionType _restrictionType
     )
         internal
-    {
-        _checkInputParams(_allowedTokens, _startTime, 1, _endTime, _restrictionType,
+    {   
+        uint256 startTime = _getValidStartTime(_startTime);
+        _checkInputParams(_allowedTokens, startTime, 1, _endTime, _restrictionType,
           (individualDailyRestriction[_holder].startTime <= now ? individualDailyRestriction[_holder].startTime : now),
           true
         );
         individualDailyRestriction[_holder] = VolumeRestriction(
             _allowedTokens,
-            _startTime,
+            startTime,
             1,
             _endTime,
             _restrictionType
@@ -596,7 +602,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         emit ModifyIndividualDailyRestriction(
             _holder,
             _allowedTokens,
-            _startTime,
+            startTime,
             1,
             _endTime,
             _restrictionType
@@ -684,19 +690,20 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
     )
         external
         withPerm(ADMIN)
-    {
+    {   
         _isAllowedToModify(defaultRestriction.startTime);
-        _checkInputParams(_allowedTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType, now, false);
+        uint256 startTime = _getValidStartTime(_startTime);
+        _checkInputParams(_allowedTokens, startTime, _rollingPeriodInDays, _endTime, _restrictionType, now, false);
         defaultRestriction = VolumeRestriction(
             _allowedTokens,
-            _startTime,
+            startTime,
             _rollingPeriodInDays,
             _endTime,
             _restrictionType
         );
         emit ModifyDefaultRestriction(
             _allowedTokens,
-            _startTime,
+            startTime,
             _rollingPeriodInDays,
             _endTime,
             _restrictionType
@@ -720,23 +727,24 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
     )
         external
         withPerm(ADMIN)
-    {
+    {   
+        uint256 startTime = _getValidStartTime(_startTime);
         // If old startTime is already passed then new startTime should be greater than or equal to the
         // old startTime otherwise any past startTime can be allowed in compare to earlier startTime.
-        _checkInputParams(_allowedTokens, _startTime, 1, _endTime, _restrictionType,
+        _checkInputParams(_allowedTokens, startTime, 1, _endTime, _restrictionType,
             (defaultDailyRestriction.startTime <= now ? defaultDailyRestriction.startTime : now),
             true
         );
         defaultDailyRestriction = VolumeRestriction(
             _allowedTokens,
-            _startTime,
+            startTime,
             1,
             _endTime,
             _restrictionType
         );
         emit ModifyDefaultDailyRestriction(
             _allowedTokens,
-            _startTime,
+            startTime,
             1,
             _endTime,
             _restrictionType
@@ -1015,6 +1023,12 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
 
     function _isAllowedToModify(uint256 _startTime) internal view {
         require(_startTime > now, "Not Allowed to modify after startTime passed");
+    }
+
+    function _getValidStartTime(uint256 _startTime) internal view returns(uint256) {
+        if (_startTime == 0)
+            _startTime = now + 1;
+        return _startTime;
     }
 
     /**

@@ -219,6 +219,15 @@ interface ISecurityToken {
     function getInvestorsAt(uint256 _checkpointId) external view returns(address[] memory);
 
     /**
+     * @notice returns an array of investors with non zero balance at a given checkpoint
+     * @param _checkpointId Checkpoint id at which investor list is to be populated
+     * @param _start Position of investor to start iteration from
+     * @param _end Position of investor to stop iteration at
+     * @return list of investors
+     */
+    function getInvestorsSubsetAt(uint256 _checkpointId, uint256 _start, uint256 _end) external view returns(address[] memory);
+
+    /**
      * @notice generates subset of investors
      * NB - can be used in batches if investor list is large
      * @param _start Position of investor to start iteration from

@@ -247,7 +247,9 @@ contract("Checkpoints", async function(accounts) {
                         " TotalSupply: " +
                         JSON.stringify(totalSupply)
                 );
-                await I_SecurityToken.createCheckpoint({ from: token_owner });
+                let investorLength = await stGetter.getInvestorCount();
+                let tx = await I_SecurityToken.createCheckpoint({ from: token_owner });
+                assert.equal((tx.logs[0].args[1]).toString(), investorLength.toString());
                 let checkpointTimes = await stGetter.getCheckpointTimes();
                 assert.equal(checkpointTimes.length, j + 1);
                 console.log("Checkpoint Times: " + checkpointTimes);

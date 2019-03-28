@@ -60,7 +60,6 @@ contract SecurityTokenStorage {
     address public polymathRegistry;
     address public moduleRegistry;
     address public securityTokenRegistry;
-    address public featureRegistry;
     address public polyToken;
     address public getterDelegate;
     // Address of the data store used to store shared data

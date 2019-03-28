@@ -136,7 +136,7 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, Wallet {
     /**
      * @notice Used to withdraw available tokens by beneficiary
      */
-    function pullAvailableTokens() external {
+    function pullAvailableTokens() external whenNotPaused {
         _sendTokens(msg.sender);
     }
 

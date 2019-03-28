@@ -450,7 +450,11 @@ contract('VestingEscrowWallet', accounts => {
             await I_VestingEscrowWallet.depositTokens(numberOfTokens, {from: token_owner});
             await I_VestingEscrowWallet.addSchedule(account_beneficiary3, templateName, numberOfTokens, duration, frequency, startTime, {from: wallet_admin});
             await increaseTime(durationUtil.seconds(130));
-
+            await I_VestingEscrowWallet.pause({from: token_owner});
+            await catchRevert(
+                I_VestingEscrowWallet.pullAvailableTokens({from: account_beneficiary3})
+            );
+            await I_VestingEscrowWallet.unpause({from: token_owner});
             const tx = await I_VestingEscrowWallet.pullAvailableTokens({from: account_beneficiary3});
             assert.equal(tx.logs[0].args._beneficiary, account_beneficiary3);
             assert.equal(tx.logs[0].args._numberOfTokens.toString(), numberOfTokens);
@@ -464,6 +468,28 @@ contract('VestingEscrowWallet', accounts => {
             await I_SecurityToken.transfer(token_owner, balance, {from: account_beneficiary3});
             await I_VestingEscrowWallet.revokeAllSchedules(account_beneficiary3, {from: wallet_admin});
             await I_VestingEscrowWallet.removeTemplate(templateName, {from: wallet_admin});
+        });
+
+        it("Should fetch the unused tokens from the wallet", async() => {
+            await I_PolyToken.getTokens(new BN(20).mul(new BN(10).pow(new BN(18))), I_VestingEscrowWallet.address, {from: token_owner});
+            let previousBalance = web3.utils.fromWei((await I_PolyToken.balanceOf.call(I_VestingEscrowWallet.address)).toString());
+            await catchRevert(
+                I_VestingEscrowWallet.reclaimERC20(I_PolyToken.address, {from: account_beneficiary2})
+            )
+            await I_VestingEscrowWallet.reclaimERC20(I_PolyToken.address, {from: token_owner});
+            let newBalance = web3.utils.fromWei((await I_PolyToken.balanceOf.call(I_VestingEscrowWallet.address)).toString());
+            assert.equal(previousBalance - newBalance, 20);
+        });
+
+        it("Should fail to transfer the tokens to wallet", async() => {
+            await catchRevert (
+                web3.eth.sendTransaction({
+                    from: token_owner,
+                    to: I_VestingEscrowWallet.address,
+                    gas: 2100000,
+                    value: new BN(web3.utils.toWei("1", "ether"))
+                })
+            );
         });
 
         it("Should withdraw available tokens 2 times by 3 schedules to the beneficiary address", async () => {

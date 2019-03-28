@@ -1,6 +1,5 @@
 pragma solidity ^0.5.0;
 
-import "../../Pausable.sol";
 import "../Module.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "../../storage/modules/STO/STOStorage.sol";
@@ -10,26 +9,13 @@ import "../../interfaces/ISTO.sol";
 /**
  * @title Base abstract contract to be extended by all STO modules
  */
-contract STO is ISTO, STOStorage, Module, Pausable {
+contract STO is ISTO, STOStorage, Module {
     using SafeMath for uint256;
 
     enum FundRaiseType {ETH, POLY, SC}
 
     // Event
     event SetFundRaiseTypes(FundRaiseType[] _fundRaiseTypes);
-
-    /**
-    * @notice Reclaims ERC20Basic compatible tokens
-    * @dev We duplicate here due to the overriden owner & onlyOwner
-    * @param _tokenContract The address of the token contract
-    */
-    function reclaimERC20(address _tokenContract) external {
-        _onlySecurityTokenOwner();
-        require(_tokenContract != address(0), "Invalid address");
-        IERC20 token = IERC20(_tokenContract);
-        uint256 balance = token.balanceOf(address(this));
-        require(token.transfer(msg.sender, balance), "Transfer failed");
-    }
 
     /**
      * @notice Returns funds raised by the STO
@@ -45,20 +31,12 @@ contract STO is ISTO, STOStorage, Module, Pausable {
 
     /**
      * @notice Pause (overridden function)
+     * @dev Only securityToken owner restriction applied on the super function
      */
     function pause() public {
-        _onlySecurityTokenOwner();
         /*solium-disable-next-line security/no-block-members*/
         require(now < endTime, "STO has been finalized");
-        super._pause();
-    }
-
-    /**
-     * @notice Unpause (overridden function)
-     */
-    function unpause() public {
-        _onlySecurityTokenOwner();
-        super._unpause();
+        super.pause();
     }
 
     function _setFundRaiseType(FundRaiseType[] memory _fundRaiseTypes) internal {

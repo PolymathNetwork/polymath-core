@@ -544,7 +544,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      */
     function redeem(uint256 _value, bytes calldata _data) external onlyModule(BURN_KEY) {
         // Add a function to validate the `_data` parameter
-        require(_checkAndBurn(msg.sender, _value, _data), "Invalid redeem");
+        _validateRedeem(_checkAndBurn(msg.sender, _value, _data));
     }
 
     /**
@@ -574,9 +574,13 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      */
     function redeemFrom(address _tokenHolder, uint256 _value, bytes calldata _data) external onlyModule(BURN_KEY) {
         // Add a function to validate the `_data` parameter
-        require(_updateTransfer(_tokenHolder, address(0), _value, _data), "Invalid redeem");
+        _validateRedeem(_updateTransfer(_tokenHolder, address(0), _value, _data));
         _burnFrom(_tokenHolder, _value);
         emit Redeemed(msg.sender, _tokenHolder, _value, _data);
+    }
+
+    function _validateRedeem(bool _isRedeem) internal pure {
+        require(_isRedeem, "Invalid redeem");
     }
 
     /**

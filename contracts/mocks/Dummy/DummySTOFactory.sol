@@ -1,9 +1,9 @@
 pragma solidity ^0.5.0;
 
-import "../../UpgradableModuleFactory.sol";
-import "../../../libraries/Util.sol";
+import "../../modules/UpgradableModuleFactory.sol";
+import "../../libraries/Util.sol";
 import "./DummySTOProxy.sol";
-import "../../../interfaces/IBoot.sol";
+import "../../interfaces/IBoot.sol";
 
 /**
  * @title Factory for deploying DummySTO module

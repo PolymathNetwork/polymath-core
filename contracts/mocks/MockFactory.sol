@@ -1,6 +1,6 @@
 pragma solidity ^0.5.0;
 
-import "../modules/STO/Dummy/DummySTOFactory.sol";
+import "./Dummy/DummySTOFactory.sol";
 
 /**
  * @title Mock Contract Not fit for production environment

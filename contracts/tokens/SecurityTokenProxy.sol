@@ -11,17 +11,17 @@ contract SecurityTokenProxy is OZStorage, SecurityTokenStorage, OwnedUpgradeabil
 
     /**
      * @notice constructor
-     * @param _ERC20name Name of the SecurityToken
-     * @param _ERC20symbol Symbol of the Token
-     * @param _ERC20decimals Decimals for the securityToken
+     * @param _name Name of the SecurityToken
+     * @param _symbol Symbol of the Token
+     * @param _decimals Decimals for the securityToken
      * @param _granularity granular level of the token
      * @param _tokenDetails Details of the token that are stored off-chain
      * @param _polymathRegistry Contract address of the polymath registry
      */
     constructor(
-        string memory _ERC20name,
-        string memory _ERC20symbol,
-        uint8 _ERC20decimals,
+        string memory _name,
+        string memory _symbol,
+        uint8 _decimals,
         uint256 _granularity,
         string memory _tokenDetails,
         address _polymathRegistry
@@ -30,9 +30,9 @@ contract SecurityTokenProxy is OZStorage, SecurityTokenStorage, OwnedUpgradeabil
     {
         //Set storage variables - NB implementation not yet set
         require(_polymathRegistry != address(0), "Invalid Address");
-        _name = _ERC20name;
-        _symbol = _ERC20symbol;
-        _decimals = _ERC20decimals;
+        name = _name;
+        symbol = _symbol;
+        decimals = _decimals;
         polymathRegistry = _polymathRegistry;
         tokenDetails = _tokenDetails;
         granularity = _granularity;

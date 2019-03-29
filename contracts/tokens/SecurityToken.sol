@@ -27,7 +27,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
  * @notice - ST does not inherit from ISecurityToken due to:
  * @notice - https://github.com/ethereum/solidity/issues/4847
  */
-contract SecurityToken is ERC20, ERC20Detailed, ReentrancyGuard, SecurityTokenStorage, IERC1594, IERC1643, IERC1644, Proxy {
+contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594, IERC1643, IERC1644, Proxy {
 
     using SafeMath for uint256;
 

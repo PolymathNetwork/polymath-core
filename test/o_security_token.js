@@ -216,7 +216,7 @@ contract("SecurityToken", async (accounts) => {
         });
 
         it("Should allow authorized address to change name", async() => {
-            let snapId = await takeSnapshot(); 
+            let snapId = await takeSnapshot();
             await I_SecurityToken.changeName("new token name", { from: token_owner });
             assert.equal((await I_SecurityToken.name()).replace(/\u0000/g, ""), "new token name");
             await revertToSnapshot(snapId);
@@ -1409,28 +1409,28 @@ contract("SecurityToken", async (accounts) => {
             `);
             assert.equal(
                 await I_SecurityToken.name.call(),
-                (web3.utils.toAscii(await readStorage(I_SecurityToken.address, 5)).replace(/\u0000/g, "")).replace(/\u0014/g, "")
+                (web3.utils.toAscii(await readStorage(I_SecurityToken.address, 6)).replace(/\u0000/g, "")).replace(/\u0014/g, "")
             )
             console.log(`
                 Name of the ST:                     ${await I_SecurityToken.name.call()}
-                Name of the ST from the storage:    ${web3.utils.toUtf8(await readStorage(I_SecurityToken.address, 5))}
+                Name of the ST from the storage:    ${web3.utils.toUtf8(await readStorage(I_SecurityToken.address, 6))}
             `);
             assert.equal(
                 await I_SecurityToken.symbol.call(),
-                (web3.utils.toUtf8(await readStorage(I_SecurityToken.address, 6)).replace(/\u0000/g, "")).replace(/\u0006/g, "")
+                (web3.utils.toUtf8(await readStorage(I_SecurityToken.address, 7)).replace(/\u0000/g, "")).replace(/\u0006/g, "")
             );
             console.log(`
                 Symbol of the ST:                     ${await I_SecurityToken.symbol.call()}
-                Symbol of the ST from the storage:    ${web3.utils.toUtf8(await readStorage(I_SecurityToken.address, 6))}
+                Symbol of the ST from the storage:    ${web3.utils.toUtf8(await readStorage(I_SecurityToken.address, 7))}
             `);
 
             console.log(`
                 Address of the owner:                   ${await I_SecurityToken.owner.call()}
-                Address of the owner from the storage:  ${(await readStorage(I_SecurityToken.address, 3)).substring(0, 42)}
+                Address of the owner from the storage:  ${(await readStorage(I_SecurityToken.address, 4)).substring(0, 42)}
             `)
             assert.equal(
                 await I_SecurityToken.owner.call(),
-                web3.utils.toChecksumAddress((await readStorage(I_SecurityToken.address, 3)).substring(0, 42))
+                web3.utils.toChecksumAddress((await readStorage(I_SecurityToken.address, 4)).substring(0, 42))
             );
 
         });
@@ -1439,13 +1439,13 @@ contract("SecurityToken", async (accounts) => {
 
             console.log(`
                 Controller address from the contract:                   ${await stGetter.controller.call()}
-                decimals from the contract:                             ${await stGetter.decimals.call()} 
-                controller address from the storage + uint8 decimals:   ${await readStorage(I_SecurityToken.address, 7)}
+                decimals from the contract:                             ${await stGetter.decimals.call()}
+                controller address from the storage + uint8 decimals:   ${await readStorage(I_SecurityToken.address, 8)}
             `)
 
             // Controller address is packed with decimals so if controller address is 0x0, only decimals will be returned from read storage.
             assert.oneOf(
-                await readStorage(I_SecurityToken.address, 9),
+                await readStorage(I_SecurityToken.address, 8),
                 [
                     (await stGetter.controller.call()).toLowerCase() + "12",
                     "0x12" // When controller address = 0x0, web3 converts 0x00000..000012 to 0x12
@@ -1454,89 +1454,89 @@ contract("SecurityToken", async (accounts) => {
 
             console.log(`
                 PolymathRegistry address from the contract:         ${await stGetter.polymathRegistry.call()}
-                PolymathRegistry address from the storage:          ${await readStorage(I_SecurityToken.address, 10)}
+                PolymathRegistry address from the storage:          ${await readStorage(I_SecurityToken.address, 9)}
             `)
 
             assert.equal(
                 await stGetter.polymathRegistry.call(),
-                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 10))
+                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 9))
             );
             console.log(`
                 ModuleRegistry address from the contract:         ${await stGetter.moduleRegistry.call()}
-                ModuleRegistry address from the storage:          ${await readStorage(I_SecurityToken.address, 11)}
+                ModuleRegistry address from the storage:          ${await readStorage(I_SecurityToken.address, 10)}
             `)
 
             assert.equal(
                 await stGetter.moduleRegistry.call(),
-                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 11))
+                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 10))
             );
 
             console.log(`
                 SecurityTokenRegistry address from the contract:         ${await stGetter.securityTokenRegistry.call()}
-                SecurityTokenRegistry address from the storage:          ${await readStorage(I_SecurityToken.address, 12)}
+                SecurityTokenRegistry address from the storage:          ${await readStorage(I_SecurityToken.address, 11)}
             `)
 
             assert.equal(
                 await stGetter.securityTokenRegistry.call(),
-                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 12))
+                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 11))
             );
 
             console.log(`
                 PolyToken address from the contract:         ${await stGetter.polyToken.call()}
-                PolyToken address from the storage:          ${await readStorage(I_SecurityToken.address, 13)}
+                PolyToken address from the storage:          ${await readStorage(I_SecurityToken.address, 12)}
             `)
 
             assert.equal(
                 await stGetter.polyToken.call(),
-                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 13))
+                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 12))
             );
 
             console.log(`
                 Delegate address from the contract:         ${await stGetter.getterDelegate.call()}
-                Delegate address from the storage:          ${await readStorage(I_SecurityToken.address, 14)}
+                Delegate address from the storage:          ${await readStorage(I_SecurityToken.address, 13)}
             `)
 
             assert.equal(
                 await stGetter.getterDelegate.call(),
-                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 14))
+                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 13))
             );
 
             console.log(`
                 Datastore address from the contract:         ${await stGetter.dataStore.call()}
-                Datastore address from the storage:          ${await readStorage(I_SecurityToken.address, 15)}
+                Datastore address from the storage:          ${await readStorage(I_SecurityToken.address, 14)}
             `)
 
             assert.equal(
                 await stGetter.dataStore.call(),
-                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 15))
+                web3.utils.toChecksumAddress(await readStorage(I_SecurityToken.address, 14))
             );
 
             console.log(`
                 Granularity value from the contract:         ${await stGetter.granularity.call()}
-                Granularity value from the storage:          ${(web3.utils.toBN(await readStorage(I_SecurityToken.address, 16))).toString()}
+                Granularity value from the storage:          ${(web3.utils.toBN(await readStorage(I_SecurityToken.address, 15))).toString()}
             `)
 
             assert.equal(
                 web3.utils.fromWei(await stGetter.granularity.call()),
-                web3.utils.fromWei((web3.utils.toBN(await readStorage(I_SecurityToken.address, 16))).toString())
+                web3.utils.fromWei((web3.utils.toBN(await readStorage(I_SecurityToken.address, 15))).toString())
             );
 
             console.log(`
                 Current checkpoint ID from the contract:    ${await stGetter.currentCheckpointId.call()}
-                Current checkpoint ID from the storage:     ${(web3.utils.toBN(await readStorage(I_SecurityToken.address, 17))).toString()}
+                Current checkpoint ID from the storage:     ${(web3.utils.toBN(await readStorage(I_SecurityToken.address, 16))).toString()}
             `)
             assert.equal(
                 await stGetter.currentCheckpointId.call(),
-                (web3.utils.toBN(await readStorage(I_SecurityToken.address, 17))).toString()
+                (web3.utils.toBN(await readStorage(I_SecurityToken.address, 16))).toString()
             );
 
             console.log(`
                 TokenDetails from the contract:    ${await stGetter.tokenDetails.call()}
-                TokenDetails from the storage:     ${(web3.utils.toUtf8((await readStorage(I_SecurityToken.address, 18)).substring(0, 60)))}
+                TokenDetails from the storage:     ${(web3.utils.toUtf8((await readStorage(I_SecurityToken.address, 17)).substring(0, 60)))}
             `)
             assert.equal(
                 await stGetter.tokenDetails.call(),
-                (web3.utils.toUtf8((await readStorage(I_SecurityToken.address, 18)).substring(0, 60))).replace(/\u0000/g, "")
+                (web3.utils.toUtf8((await readStorage(I_SecurityToken.address, 17)).substring(0, 60))).replace(/\u0000/g, "")
             );
 
         });

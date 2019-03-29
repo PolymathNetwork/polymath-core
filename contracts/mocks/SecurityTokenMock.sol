@@ -29,8 +29,7 @@ contract SecurityTokenMock is SecurityToken {
         address _polymathRegistry,
         address _delegate
     )
-        public
-        SecurityToken(_name, _symbol, _decimals)
+        public        
     {
         _owner = msg.sender;
         polymathRegistry = _polymathRegistry;

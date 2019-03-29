@@ -78,7 +78,9 @@ library VolumeRestrictionLib {
         public
         view
         returns(bool)
-    {
+    {   
+        // if restriction is to check whether the current transaction is performed within the 24 hours
+        // span after the last transaction performed by the user 
         if (BokkyPooBahsDateTimeLibrary.diffSeconds(_lastTradedTimestamp, now) < 86400) {
             (uint256 lastTxYear, uint256 lastTxMonth, uint256 lastTxDay) = BokkyPooBahsDateTimeLibrary.timestampToDate(_lastTradedTimestamp);
             (uint256 currentTxYear, uint256 currentTxMonth, uint256 currentTxDay) = BokkyPooBahsDateTimeLibrary.timestampToDate(now);
@@ -86,6 +88,7 @@ library VolumeRestrictionLib {
             // when `_isDefault` is true or defaultRestriction when `_isDefault` is false) is comes within the same day of the current
             // transaction timestamp or not.
             if (lastTxYear == currentTxYear && lastTxMonth == currentTxMonth && lastTxDay == currentTxDay) {
+                // Not allow to transact more than the current transaction restriction allowed amount
                 if ((_sumOfLastPeriod.add(_amount)).add(_amountTradedLastDay) > _allowedAmount)
                     return false;
             }

@@ -829,6 +829,9 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
      * @notice The function is used to check specific edge case where the user restriction type change from
      * default to individual or vice versa. It will return true when last transaction traded by the user
      * and the current txn timestamp lies in the same day.
+     * NB - Instead of comparing the current day transaction amount, we are comparing the total amount traded
+     * on the lastTradedDayTime that makes the restriction strict. The reason is not availability of amount 
+     * that transacted on the current day (because of bucket desgin).
      */
     function _isValidAmountAfterRestrictionChanges(
         bool _isDefault,
@@ -841,6 +844,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         view
         returns(bool)
     {
+        // Always use the alternate bucket details as per the current transaction restriction
         BucketDetails storage bucketDetails = _isDefault ? userToBucket[_from] : defaultUserToBucket[_from];
         uint256 amountTradedLastDay = _isDefault ? bucket[_from][bucketDetails.lastTradedDayTime]: defaultBucket[_from][bucketDetails.lastTradedDayTime];
         return VolumeRestrictionLib.isValidAmountAfterRestrictionChanges(
@@ -920,12 +924,14 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
     {
         uint256 counter = _bucketDetails.daysCovered;
         uint256 sumOfLastPeriod = _bucketDetails.sumOfLastPeriod;
+        uint256 i = 0;
         if (_diffDays >= _rollingPeriodInDays) {
             // If the difference of days is greater than the rollingPeriod then sumOfLastPeriod will always be zero
             sumOfLastPeriod = 0;
             counter = counter.add(_diffDays);
         } else {
-            for (uint256 diffDaysPlusDaysCovered = _diffDays + counter; counter < diffDaysPlusDaysCovered; counter++) {
+            for (i = 0; i < _diffDays; i++) {
+                counter++;
                 // This condition is to check whether the first rolling period is covered or not
                 // if not then it continues and adding 0 value into sumOfLastPeriod without subtracting
                 // the earlier value at that index

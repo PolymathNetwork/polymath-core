@@ -1182,7 +1182,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             );
         })
 
-        it("Should successfully to transact tokens in the second rolling period", async () => {
+        it("Should successfully transact tokens in the second rolling period", async () => {
             // Should transact freely tokens daily limit is also ended
 
             let startTime = (await I_VolumeRestrictionTM.individualRestriction.call(account_investor3))[1].toNumber();

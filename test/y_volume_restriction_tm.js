@@ -422,7 +422,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             let tx = await I_VolumeRestrictionTM.addIndividualRestriction(
                 account_investor1,
                 web3.utils.toWei("12"),
-                latestTime() + duration.seconds(2),
+                latestTime() + duration.seconds(10),
                 3,
                 latestTime() + duration.days(5),
                 0,
@@ -442,7 +442,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 I_VolumeRestrictionTM.addIndividualRestrictionMulti(
                     [account_investor2, account_delegate3, account_investor4],
                     [web3.utils.toWei("12"), web3.utils.toWei("10"), web3.utils.toWei("15")],
-                    [latestTime() + duration.seconds(2), latestTime() + duration.seconds(2), latestTime() + duration.seconds(2)],
+                    [latestTime() + duration.seconds(5), latestTime() + duration.seconds(5), latestTime() + duration.seconds(5)],
                     [3, 4, 5],
                     [latestTime() + duration.days(5), latestTime() + duration.days(6), latestTime() + duration.days(7)],
                     [0, 0, 0],
@@ -458,7 +458,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 I_VolumeRestrictionTM.addIndividualRestrictionMulti(
                     [account_investor2, account_delegate3],
                     [web3.utils.toWei("12"), web3.utils.toWei("10"), web3.utils.toWei("15")],
-                    [latestTime() + duration.seconds(2), latestTime() + duration.seconds(2), latestTime() + duration.seconds(2)],
+                    [latestTime() + duration.seconds(5), latestTime() + duration.seconds(5), latestTime() + duration.seconds(5)],
                     [3, 4, 5],
                     [latestTime() + duration.days(5), latestTime() + duration.days(6), latestTime() + duration.days(7)],
                     [0, 0, 0],
@@ -474,7 +474,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 I_VolumeRestrictionTM.addIndividualRestrictionMulti(
                     [account_investor2, account_delegate3, account_investor4],
                     [web3.utils.toWei("12"), web3.utils.toWei("10")],
-                    [latestTime() + duration.seconds(2), latestTime() + duration.seconds(2), latestTime() + duration.seconds(2)],
+                    [latestTime() + duration.seconds(5), latestTime() + duration.seconds(5), latestTime() + duration.seconds(5)],
                     [3, 4, 5],
                     [latestTime() + duration.days(5), latestTime() + duration.days(6), latestTime() + duration.days(7)],
                     [0, 0, 0],
@@ -490,7 +490,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 I_VolumeRestrictionTM.addIndividualRestrictionMulti(
                     [account_investor2, account_delegate3, account_investor4],
                     [web3.utils.toWei("12"), web3.utils.toWei("10"), web3.utils.toWei("15")],
-                    [latestTime() + duration.seconds(2), latestTime() + duration.seconds(2)],
+                    [latestTime() + duration.seconds(5), latestTime() + duration.seconds(5)],
                     [3, 4, 5],
                     [latestTime() + duration.days(5), latestTime() + duration.days(6), latestTime() + duration.days(7)],
                     [0, 0, 0],
@@ -506,7 +506,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 I_VolumeRestrictionTM.addIndividualRestrictionMulti(
                     [account_investor2, account_delegate3, account_investor4],
                     [web3.utils.toWei("12"), web3.utils.toWei("10"), web3.utils.toWei("15")],
-                    [latestTime() + duration.seconds(2), latestTime() + duration.seconds(2), latestTime() + duration.seconds(2)],
+                    [latestTime() + duration.seconds(5), latestTime() + duration.seconds(5), latestTime() + duration.seconds(5)],
                     [3],
                     [latestTime() + duration.days(5), latestTime() + duration.days(6), latestTime() + duration.days(7)],
                     [0, 0, 0],
@@ -522,7 +522,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 I_VolumeRestrictionTM.addIndividualRestrictionMulti(
                     [account_investor2, account_delegate3, account_investor4],
                     [web3.utils.toWei("12"), web3.utils.toWei("10"), web3.utils.toWei("15")],
-                    [latestTime() + duration.seconds(2), latestTime() + duration.seconds(2), latestTime() + duration.seconds(2)],
+                    [latestTime() + duration.seconds(5), latestTime() + duration.seconds(5), latestTime() + duration.seconds(5)],
                     [3, 4, 5],
                     [latestTime() + duration.days(5)],
                     [0, 0, 0],
@@ -538,7 +538,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 I_VolumeRestrictionTM.addIndividualRestrictionMulti(
                     [account_investor2, account_delegate3, account_investor4],
                     [web3.utils.toWei("12"), web3.utils.toWei("10"), web3.utils.toWei("15")],
-                    [latestTime() + duration.seconds(2), latestTime() + duration.seconds(2), latestTime() + duration.seconds(2)],
+                    [latestTime() + duration.seconds(5), latestTime() + duration.seconds(5), latestTime() + duration.seconds(5)],
                     [3, 4, 5],
                     [latestTime() + duration.days(5), latestTime() + duration.days(6), latestTime() + duration.days(7)],
                     [],
@@ -618,7 +618,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 ${await I_VolumeRestrictionTM.addIndividualRestriction.estimateGas(
                     account_investor1,
                     web3.utils.toWei("12"),
-                    latestTime() + duration.seconds(5),
+                    0,
                     3,
                     latestTime() + duration.days(6),
                     0,
@@ -631,7 +631,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             let tx = await I_VolumeRestrictionTM.addIndividualRestriction(
                 account_investor1,
                 web3.utils.toWei("12"),
-                latestTime() + duration.seconds(5),
+                0,
                 3,
                 latestTime() + duration.days(6),
                 0,

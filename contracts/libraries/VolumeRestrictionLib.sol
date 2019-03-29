@@ -34,8 +34,8 @@ library VolumeRestrictionLib {
         VolumeRestrictionTMStorage.RestrictedData storage data,
         address _holder,
         VolumeRestrictionTMStorage.TypeOfPeriod _typeOfPeriod
-    ) 
-        public 
+    )
+        public
     {
         // Deleting the holder if holder's type of Period is `Both` type otherwise
         // it will assign the given type `_typeOfPeriod` to the _holder typeOfPeriod
@@ -60,10 +60,10 @@ library VolumeRestrictionLib {
     function addRestrictionData(
         VolumeRestrictionTMStorage.RestrictedData storage data,
         address _holder,
-        VolumeRestrictionTMStorage.TypeOfPeriod _callFrom, 
+        VolumeRestrictionTMStorage.TypeOfPeriod _callFrom,
         uint256 _endTime
-    )   
-        public 
+    )
+        public
     {
         uint128 index = data.restrictedHolders[_holder].index;
         if (data.restrictedHolders[_holder].seen == 0) {
@@ -78,7 +78,7 @@ library VolumeRestrictionLib {
         VolumeRestrictionTMStorage.TypeOfPeriod _currentTypeOfPeriod,
         VolumeRestrictionTMStorage.TypeOfPeriod _callFrom,
         uint256 _endTime
-    ) 
+    )
         internal
         pure
         returns(VolumeRestrictionTMStorage.TypeOfPeriod)
@@ -89,14 +89,14 @@ library VolumeRestrictionLib {
             return _callFrom;
     }
 
-    function _isValidAmountAfterRestrictionChanges(
+    function isValidAmountAfterRestrictionChanges(
         uint256 _amountTradedLastDay,
         uint256 _amount,
         uint256 _sumOfLastPeriod,
         uint256 _allowedAmount,
         uint256 _lastTradedTimestamp
     )
-        internal
+        public
         view
         returns(bool)
     {
@@ -111,16 +111,16 @@ library VolumeRestrictionLib {
                     return false;
             }
         }
-        return true; 
+        return true;
     }
 
     function getAllowedAmount(
-        VolumeRestrictionTMStorage.RestrictionType _typeOfRestriction, 
+        VolumeRestrictionTMStorage.RestrictionType _typeOfRestriction,
         uint256 _allowedTokens,
         address _securityToken
-    )   
-        public
-        view 
+    )
+        internal
+        view
         returns(uint256 allowedAmount)
     {
         if (_typeOfRestriction == VolumeRestrictionTMStorage.RestrictionType.Percentage) {

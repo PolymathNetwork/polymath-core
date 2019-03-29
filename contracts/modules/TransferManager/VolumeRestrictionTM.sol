@@ -10,7 +10,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
     using SafeMath for uint256;
 
     // permission definition
-    bytes32 public constant ADMIN = "ADMIN";
+    bytes32 internal constant ADMIN = "ADMIN";
 
     // Emit when the token holder is added/removed from the exemption list
     event ChangedExemptWalletList(address indexed _wallet, bool _change);
@@ -138,13 +138,14 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
      */
     function changeExemptWalletList(address _wallet, bool _change) external withPerm(ADMIN) {
         require(_wallet != address(0));
-        require((exemptIndex[_wallet] == 0) == _change);
+        uint256 exemptIndexWallet = exemptIndex[_wallet];
+        require((exemptIndexWallet == 0) == _change);
         if (_change) {
             exemptAddresses.push(_wallet);
             exemptIndex[_wallet] = exemptAddresses.length;
         } else {
-            exemptAddresses[exemptIndex[_wallet] - 1] = exemptAddresses[exemptAddresses.length - 1];
-            exemptIndex[exemptAddresses[exemptIndex[_wallet] - 1]] = exemptIndex[_wallet];
+            exemptAddresses[exemptIndexWallet - 1] = exemptAddresses[exemptAddresses.length - 1];
+            exemptIndex[exemptAddresses[exemptIndexWallet - 1]] = exemptIndexWallet;
             delete exemptIndex[_wallet];
             exemptAddresses.length --;
         }
@@ -196,16 +197,16 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         // wants to set the startTime near to the current block.timestamp) and minting delayed because
         // of the gas fee or network congestion that lead to the process block timestamp may grater
         // than the given startTime.
-        _startTime = _getValidStartTime(_startTime);
+        uint256 startTime = _getValidStartTime(_startTime);
         require(_holder != address(0) && exemptIndex[_holder] == 0, "Invalid address");
-        _checkInputParams(_allowedTokens, _startTime, _rollingPeriodInDays, _endTime, _restrictionType, now, false);
+        _checkInputParams(_allowedTokens, startTime, _rollingPeriodInDays, _endTime, _restrictionType, now, false);
 
         if (individualRestriction[_holder].endTime != 0) {
             _removeIndividualRestriction(_holder);
         }
         individualRestriction[_holder] = VolumeRestriction(
             _allowedTokens,
-            _startTime,
+            startTime,
             _rollingPeriodInDays,
             _endTime,
             _restrictionType
@@ -214,7 +215,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         emit AddIndividualRestriction(
             _holder,
             _allowedTokens,
-            _startTime,
+            startTime,
             _rollingPeriodInDays,
             _endTime,
             _restrictionType
@@ -258,14 +259,14 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
     )
         internal
     {
-        _startTime = _getValidStartTime(_startTime);
-        _checkInputParams(_allowedTokens, _startTime, 1, _endTime, _restrictionType, now, false);
+        uint256 startTime = _getValidStartTime(_startTime);
+        _checkInputParams(_allowedTokens, startTime, 1, _endTime, _restrictionType, now, false);
         if (individualDailyRestriction[_holder].endTime != 0) {
             _removeIndividualDailyRestriction(_holder);
         }
         individualDailyRestriction[_holder] = VolumeRestriction(
             _allowedTokens,
-            _startTime,
+            startTime,
             1,
             _endTime,
             _restrictionType
@@ -274,7 +275,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         emit AddIndividualDailyRestriction(
             _holder,
             _allowedTokens,
-            _startTime,
+            startTime,
             1,
             _endTime,
             _restrictionType
@@ -296,7 +297,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         uint256[] _endTimes,
         RestrictionType[] _restrictionTypes
     )
-        external
+        public //Marked public to save code size
         withPerm(ADMIN)
     {
         //NB - we duplicate _startTimes below to allow function reuse
@@ -329,7 +330,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         uint256[] _endTimes,
         RestrictionType[] _restrictionTypes
     )
-        public
+        public //Marked public to save code size
         withPerm(ADMIN)
     {
         VolumeRestrictionLib._checkLengthOfArray(_holders, _allowedTokens, _startTimes, _rollingPeriodInDays, _endTimes, _restrictionTypes);
@@ -360,7 +361,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         uint256 _endTime,
         RestrictionType _restrictionType
     )
-        external
+        public //Marked public to save code size
         withPerm(ADMIN)
     {
         uint256 startTime = _getValidStartTime(_startTime);
@@ -394,7 +395,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         uint256 _endTime,
         RestrictionType _restrictionType
     )
-        external
+        public //Marked public to save code size
         withPerm(ADMIN)
     {
         uint256 startTime = _getValidStartTime(_startTime);
@@ -628,7 +629,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         uint256[] _endTimes,
         RestrictionType[] _restrictionTypes
     )
-        external
+        public //Marked public to save code size
         withPerm(ADMIN)
     {
         //NB - we duplicate _startTimes below to allow function reuse
@@ -661,7 +662,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         uint256[] _endTimes,
         RestrictionType[] _restrictionTypes
     )
-        public
+        public //Marked public to save code size
         withPerm(ADMIN)
     {
         VolumeRestrictionLib._checkLengthOfArray(_holders, _allowedTokens, _startTimes, _rollingPeriodInDays, _endTimes, _restrictionTypes);
@@ -692,7 +693,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         uint256 _endTime,
         RestrictionType _restrictionType
     )
-        external
+        public //Marked public to save code size
         withPerm(ADMIN)
     {
         _isAllowedToModify(defaultRestriction.startTime);
@@ -729,7 +730,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         uint256 _endTime,
         RestrictionType _restrictionType
     )
-        external
+        public //Marked public to save code size
         withPerm(ADMIN)
     {
         uint256 startTime = _getValidStartTime(_startTime);
@@ -842,7 +843,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
     {
         BucketDetails storage bucketDetails = _isDefault ? userToBucket[_from] : defaultUserToBucket[_from];
         uint256 amountTradedLastDay = _isDefault ? bucket[_from][bucketDetails.lastTradedDayTime]: defaultBucket[_from][bucketDetails.lastTradedDayTime];
-        return VolumeRestrictionLib._isValidAmountAfterRestrictionChanges(
+        return VolumeRestrictionLib.isValidAmountAfterRestrictionChanges(
             amountTradedLastDay,
             _amount,
             _sumOfLastPeriod,
@@ -1042,13 +1043,9 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
             require(_startTime >= _earliestStartTime, "Invalid startTime");
         else
             require(_startTime > _earliestStartTime, "Invalid startTime");
-        if (_restrictionType == RestrictionType.Fixed) {
-            require(_allowedTokens > 0, "Invalid value");
-        } else {
-            require(
-                _allowedTokens > 0 && _allowedTokens <= 100 * 10 ** 16,
-                "Invalid value"
-            );
+        require(_allowedTokens > 0, "Invalid value");
+        if (_restrictionType != RestrictionType.Fixed) {
+            require(_allowedTokens <= 100 * 10 ** 16, "Invalid value");
         }
         // Maximum limit for the rollingPeriod is 365 days
         require(_rollingPeriodDays >= 1 && _rollingPeriodDays <= 365, "Invalid rollingperiod");
@@ -1059,7 +1056,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
     }
 
     function _isAllowedToModify(uint256 _startTime) internal view {
-        require(_startTime > now, "Start time already passed");
+        require(_startTime > now, "Invalid startTime");
     }
 
     function _getValidStartTime(uint256 _startTime) internal view returns(uint256) {
@@ -1187,10 +1184,9 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
     /**
      * @notice Returns the permissions flag that are associated with Percentage transfer Manager
      */
-    function getPermissions() public view returns(bytes32[]) {
-        bytes32[] memory allPermissions = new bytes32[](1);
+    function getPermissions() public view returns(bytes32[] memory allPermissions) {
+        allPermissions = new bytes32[](1);
         allPermissions[0] = ADMIN;
-        return allPermissions;
     }
 
 }

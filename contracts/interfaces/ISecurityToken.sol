@@ -270,6 +270,12 @@ interface ISecurityToken {
     function updateTokenDetails(string calldata _newTokenDetails) external;
 
     /**
+    * @notice Allows owner to change token name
+    * @param _name new name of the token
+    */
+    function changeName(string calldata _name) external;
+
+    /**
     * @notice Allows the owner to change token granularity
     * @param _granularity Granularity level of the token
     */

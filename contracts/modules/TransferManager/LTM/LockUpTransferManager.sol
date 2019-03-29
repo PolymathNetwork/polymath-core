@@ -1,6 +1,6 @@
 pragma solidity ^0.5.0;
 
-import "../../../TransferManager/TransferManager.sol";
+import "../../TransferManager/TransferManager.sol";
 import "./LockUpTransferManagerStorage.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/math/Math.sol";
@@ -374,7 +374,7 @@ contract LockUpTransferManager is LockUpTransferManagerStorage, TransferManager 
         uint256[] memory releaseFrequencySeconds,
         uint256[] memory unlockedAmounts
     )
-    {   
+    {
         uint256 length = lockupArray.length;
         lockupAmounts = new uint256[](length);
         startTimes = new uint256[](length);

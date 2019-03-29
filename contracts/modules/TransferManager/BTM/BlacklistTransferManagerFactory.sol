@@ -27,7 +27,7 @@ contract BlacklistTransferManagerFactory is UpgradableModuleFactory {
         title = "Blacklist Transfer Manager";
         description = "Automate blacklist to restrict selling";
         typesData.push(2);
-        tagsData.push("Count");
+        tagsData.push("Blacklist");
         tagsData.push("Transfer Restriction");
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));

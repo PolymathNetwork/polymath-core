@@ -301,7 +301,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         withPerm(ADMIN)
     {
         //NB - we duplicate _startTimes below to allow function reuse
-        VolumeRestrictionLib._checkLengthOfArray(_holders, _allowedTokens, _startTimes, _startTimes, _endTimes, _restrictionTypes);
+        _checkLengthOfArray(_holders, _allowedTokens, _startTimes, _startTimes, _endTimes, _restrictionTypes);
         for (uint256 i = 0; i < _holders.length; i++) {
             _addIndividualDailyRestriction(
                 _holders[i],
@@ -333,7 +333,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         public //Marked public to save code size
         withPerm(ADMIN)
     {
-        VolumeRestrictionLib._checkLengthOfArray(_holders, _allowedTokens, _startTimes, _rollingPeriodInDays, _endTimes, _restrictionTypes);
+        _checkLengthOfArray(_holders, _allowedTokens, _startTimes, _rollingPeriodInDays, _endTimes, _restrictionTypes);
         for (uint256 i = 0; i < _holders.length; i++) {
             _addIndividualRestriction(
                 _holders[i],
@@ -633,7 +633,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         withPerm(ADMIN)
     {
         //NB - we duplicate _startTimes below to allow function reuse
-        VolumeRestrictionLib._checkLengthOfArray(_holders, _allowedTokens, _startTimes, _startTimes, _endTimes, _restrictionTypes);
+        _checkLengthOfArray(_holders, _allowedTokens, _startTimes, _startTimes, _endTimes, _restrictionTypes);
         for (uint256 i = 0; i < _holders.length; i++) {
             _modifyIndividualDailyRestriction(
                 _holders[i],
@@ -665,7 +665,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         public //Marked public to save code size
         withPerm(ADMIN)
     {
-        VolumeRestrictionLib._checkLengthOfArray(_holders, _allowedTokens, _startTimes, _rollingPeriodInDays, _endTimes, _restrictionTypes);
+        _checkLengthOfArray(_holders, _allowedTokens, _startTimes, _rollingPeriodInDays, _endTimes, _restrictionTypes);
         for (uint256 i = 0; i < _holders.length; i++) {
             _modifyIndividualRestriction(
                 _holders[i],
@@ -864,11 +864,12 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         view
         returns (bool)
     {
-        uint256 allowedAmount = VolumeRestrictionLib.getAllowedAmount(
-            _typeOfRestriction,
-            _allowedTokens,
-            securityToken
-        );
+        uint256 allowedAmount;
+        if (_typeOfRestriction == RestrictionType.Percentage) {
+            allowedAmount = (_allowedTokens.mul(ISecurityToken(securityToken).totalSupply())) / uint256(10) ** 18;
+        } else {
+            allowedAmount = _allowedTokens;
+        }
         // Validation on the amount to transact
         bool allowed = allowedAmount >= _sumOfLastPeriod.add(_amountToTransact);
         return (allowed && _isValidAmountAfterRestrictionChanges(_isDefault, _from, _amountToTransact, _sumOfLastPeriod, allowedAmount));
@@ -919,14 +920,12 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
     {
         uint256 counter = _bucketDetails.daysCovered;
         uint256 sumOfLastPeriod = _bucketDetails.sumOfLastPeriod;
-        uint256 i = 0;
         if (_diffDays >= _rollingPeriodInDays) {
             // If the difference of days is greater than the rollingPeriod then sumOfLastPeriod will always be zero
             sumOfLastPeriod = 0;
             counter = counter.add(_diffDays);
         } else {
-            for (i = 0; i < _diffDays; i++) {
-                counter++;
+            for (uint256 diffDaysPlusDaysCovered = _diffDays + counter; counter < diffDaysPlusDaysCovered; counter++) {
                 // This condition is to check whether the first rolling period is covered or not
                 // if not then it continues and adding 0 value into sumOfLastPeriod without subtracting
                 // the earlier value at that index
@@ -1000,7 +999,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
             details.dailyLastTradedDayTime = _dailyLastTradedDayTime;
         }
         if (details.daysCovered != _daysCovered) {
-                details.daysCovered = _daysCovered;
+            details.daysCovered = _daysCovered;
         }
         // Assigning the latest transaction timestamp
         details.lastTradedTimestamp = now;
@@ -1036,27 +1035,25 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         internal
         pure
     {
-        require(_restrictionType == RestrictionType.Fixed || _restrictionType == RestrictionType.Percentage,
-            "Invalid type"
-        );
+        require(uint256(_restrictionType) < 2);
         if (isModifyDaily)
             require(_startTime >= _earliestStartTime, "Invalid startTime");
         else
             require(_startTime > _earliestStartTime, "Invalid startTime");
-        require(_allowedTokens > 0, "Invalid value");
+        require(_allowedTokens > 0);
         if (_restrictionType != RestrictionType.Fixed) {
             require(_allowedTokens <= 100 * 10 ** 16, "Invalid value");
         }
         // Maximum limit for the rollingPeriod is 365 days
         require(_rollingPeriodDays >= 1 && _rollingPeriodDays <= 365, "Invalid rollingperiod");
         require(
-            BokkyPooBahsDateTimeLibrary.diffDays(_startTime, _endTime) >= _rollingPeriodDays && _endTime > _startTime,
+            BokkyPooBahsDateTimeLibrary.diffDays(_startTime, _endTime) >= _rollingPeriodDays,
             "Invalid times"
         );
     }
 
     function _isAllowedToModify(uint256 _startTime) internal view {
-        require(_startTime > now, "Invalid startTime");
+        require(_startTime > now);
     }
 
     function _getValidStartTime(uint256 _startTime) internal view returns(uint256) {
@@ -1074,7 +1071,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
      * @return uint256 24h lastTradedDayTime
      */
     function getIndividualBucketDetailsToUser(address _user) external view returns(uint256, uint256, uint256, uint256, uint256) {
-        return VolumeRestrictionLib._getBucketDetails(userToBucket[_user]);
+        return _getBucketDetails(userToBucket[_user]);
     }
 
     /**
@@ -1086,7 +1083,23 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
      * @return uint256 24h lastTradedDayTime
      */
     function getDefaultBucketDetailsToUser(address _user) external view returns(uint256, uint256, uint256, uint256, uint256) {
-        return VolumeRestrictionLib._getBucketDetails(defaultUserToBucket[_user]);
+        return _getBucketDetails(defaultUserToBucket[_user]);
+    }
+
+    function _getBucketDetails(BucketDetails storage _bucket) internal view returns(
+        uint256,
+        uint256,
+        uint256,
+        uint256,
+        uint256
+    ) {
+        return(
+            _bucket.lastTradedDayTime,
+            _bucket.sumOfLastPeriod,
+            _bucket.daysCovered,
+            _bucket.dailyLastTradedDayTime,
+            _bucket.lastTradedTimestamp
+        );
     }
 
     /**
@@ -1179,6 +1192,27 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         rollingPeriodInDays[index] = restriction.rollingPeriodInDays;
         endTime[index] = restriction.endTime;
         typeOfRestriction[index] = restriction.typeOfRestriction;
+    }
+
+    function _checkLengthOfArray(
+        address[] _holders,
+        uint256[] _allowedTokens,
+        uint256[] _startTimes,
+        uint256[] _rollingPeriodInDays,
+        uint256[] _endTimes,
+        VolumeRestrictionTMStorage.RestrictionType[] _restrictionTypes
+    )
+        internal
+        pure
+    {
+        require(
+            _holders.length == _allowedTokens.length &&
+            _allowedTokens.length == _startTimes.length &&
+            _startTimes.length == _rollingPeriodInDays.length &&
+            _rollingPeriodInDays.length == _endTimes.length &&
+            _endTimes.length == _restrictionTypes.length,
+            "Length mismatch"
+        );
     }
 
     /**

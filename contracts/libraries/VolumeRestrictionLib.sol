@@ -9,27 +9,6 @@ library VolumeRestrictionLib {
 
     using SafeMath for uint256;
 
-    function _checkLengthOfArray(
-        address[] _holders,
-        uint256[] _allowedTokens,
-        uint256[] _startTimes,
-        uint256[] _rollingPeriodInDays,
-        uint256[] _endTimes,
-        VolumeRestrictionTMStorage.RestrictionType[] _restrictionTypes
-    )
-        internal
-        pure
-    {
-        require(
-            _holders.length == _allowedTokens.length &&
-            _allowedTokens.length == _startTimes.length &&
-            _startTimes.length == _rollingPeriodInDays.length &&
-            _rollingPeriodInDays.length == _endTimes.length &&
-            _endTimes.length == _restrictionTypes.length,
-            "Length mismatch"
-        );
-    }
-
     function deleteHolderFromList(
         VolumeRestrictionTMStorage.RestrictedData storage data,
         address _holder,
@@ -112,38 +91,6 @@ library VolumeRestrictionLib {
             }
         }
         return true;
-    }
-
-    function getAllowedAmount(
-        VolumeRestrictionTMStorage.RestrictionType _typeOfRestriction,
-        uint256 _allowedTokens,
-        address _securityToken
-    )
-        internal
-        view
-        returns(uint256 allowedAmount)
-    {
-        if (_typeOfRestriction == VolumeRestrictionTMStorage.RestrictionType.Percentage) {
-            allowedAmount = (_allowedTokens.mul(ISecurityToken(_securityToken).totalSupply())) / uint256(10) ** 18;
-        } else {
-            allowedAmount = _allowedTokens;
-        }
-    }
-
-    function _getBucketDetails(VolumeRestrictionTMStorage.BucketDetails storage _bucket) internal view returns(
-        uint256,
-        uint256,
-        uint256,
-        uint256,
-        uint256
-    ) {
-        return(
-            _bucket.lastTradedDayTime,
-            _bucket.sumOfLastPeriod,
-            _bucket.daysCovered,
-            _bucket.dailyLastTradedDayTime,
-            _bucket.lastTradedTimestamp
-        );
     }
 
 }

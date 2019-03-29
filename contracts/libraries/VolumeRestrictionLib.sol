@@ -89,5 +89,61 @@ library VolumeRestrictionLib {
             return _callFrom;
     }
 
+    function _isValidAmountAfterRestrictionChanges(
+        uint256 _amountTradedLastDay,
+        uint256 _amount,
+        uint256 _sumOfLastPeriod,
+        uint256 _allowedAmount,
+        uint256 _lastTradedTimestamp
+    )
+        internal
+        view
+        returns(bool)
+    {
+        if (BokkyPooBahsDateTimeLibrary.diffSeconds(_lastTradedTimestamp, now) < 86400) {
+            (uint256 lastTxYear, uint256 lastTxMonth, uint256 lastTxDay) = BokkyPooBahsDateTimeLibrary.timestampToDate(_lastTradedTimestamp);
+            (uint256 currentTxYear, uint256 currentTxMonth, uint256 currentTxDay) = BokkyPooBahsDateTimeLibrary.timestampToDate(now);
+            // This if statement is to check whether the last transaction timestamp (of `individualRestriction[_from]`
+            // when `_isDefault` is true or defaultRestriction when `_isDefault` is false) is comes within the same day of the current
+            // transaction timestamp or not.
+            if (lastTxYear == currentTxYear && lastTxMonth == currentTxMonth && lastTxDay == currentTxDay) {
+                if ((_sumOfLastPeriod.add(_amount)).add(_amountTradedLastDay) > _allowedAmount)
+                    return false;
+            }
+        }
+        return true; 
+    }
+
+    function getAllowedAmount(
+        VolumeRestrictionTMStorage.RestrictionType _typeOfRestriction, 
+        uint256 _allowedTokens,
+        address _securityToken
+    )   
+        public
+        view 
+        returns(uint256 allowedAmount)
+    {
+        if (_typeOfRestriction == VolumeRestrictionTMStorage.RestrictionType.Percentage) {
+            allowedAmount = (_allowedTokens.mul(ISecurityToken(_securityToken).totalSupply())) / uint256(10) ** 18;
+        } else {
+            allowedAmount = _allowedTokens;
+        }
+    }
+
+    function _getBucketDetails(VolumeRestrictionTMStorage.BucketDetails storage _bucket) internal view returns(
+        uint256,
+        uint256,
+        uint256,
+        uint256,
+        uint256
+    ) {
+        return(
+            _bucket.lastTradedDayTime,
+            _bucket.sumOfLastPeriod,
+            _bucket.daysCovered,
+            _bucket.dailyLastTradedDayTime,
+            _bucket.lastTradedTimestamp
+        );
+    }
 
 }

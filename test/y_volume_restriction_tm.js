@@ -87,6 +87,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 .dividedBy(new BigNumber(10).pow(18)).toNumber()}
             Individual Total Trade on daily latestTimestamp : ${(await I_VolumeRestrictionTM.getTotalTradedByUser.call(account, data[3]))
                 .dividedBy(new BigNumber(10).pow(18)).toNumber()}
+            Last Transaction time in UTC: ${(new Date((data[4].toNumber()) * 1000 )).toUTCString()}
         `)
     }
 
@@ -113,6 +114,14 @@ contract('VolumeRestrictionTransferManager', accounts => {
             sum += tempArray[i];
         }
         return sum;
+    }
+
+    async function setTime() {
+        let currentTime = latestTime();
+        let currentHour = (new Date(currentTime * 1000)).getUTCHours();
+        console.log(`Earlier time ${new Date(latestTime() * 1000).toUTCString()}`);
+        await increaseTime(duration.hours(24 - currentHour));
+        console.log(`Current time ${new Date(latestTime() * 1000).toUTCString()}`);
     }
 
     before(async () => {
@@ -1634,8 +1643,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
     });
 
-    describe("Test the major issue from the audit", async() => {
-
+    describe("Test the major issue from the audit ( Possible accounting corruption between individualRestriction​ and ​defaultRestriction)", async() => {
+        
         it("Should add the individual restriction for the delegate 2 address", async() => {
             await I_GeneralTransferManager.modifyWhitelist(
                 account_delegate2,
@@ -1648,7 +1657,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 }
             );
 
-            await I_SecurityToken.mint(account_delegate2, web3.utils.toWei("20"), { from: token_owner });
+            await I_SecurityToken.mint(account_delegate2, web3.utils.toWei("50"), { from: token_owner });
+            // Use to set the time to start of the day 0:00 to test the edge case properly
+            await setTime();
 
             await I_VolumeRestrictionTM.addIndividualRestriction(
                 account_delegate2,
@@ -1664,7 +1675,6 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal((await I_VolumeRestrictionTM.individualRestriction.call(account_delegate2))[2].toNumber(), 2);
 
             let data = await I_VolumeRestrictionTM.getRestrictedData.call();
-            console.log(data[0].length);
             await printRestrictedData(data);
             
             // Add default restriction as well
@@ -1674,7 +1684,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 web3.utils.toWei("5"),
                 latestTime() + duration.minutes(1),
                 5,
-                latestTime() + duration.days(10),
+                latestTime() + duration.days(20),
                 0,
                 {
                     from: token_owner
@@ -1748,18 +1758,27 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal(amtTraded, 9);
         });
 
-        it("Should transact under the default restriction and check whether the bucket data affected or not", async() => {
+        it("Should fail to transact -- edge case when user restriction changes and do the transfer on the same day", async() => {
             await increaseTime(duration.days(0.6));
+            //sell tokens upto the limit
+            await catchRevert(
+                I_SecurityToken.transfer(account_investor2, web3.utils.toWei("5"), {from: account_delegate2})
+            );
+        });
+
+        it("Should transact under the default restriction unaffected from the edge case", async() => {
+            await increaseTime(duration.days(0.5));
             let individualStartTime = (await I_VolumeRestrictionTM.individualRestriction.call(account_delegate2))[1].toNumber();
             let startTime = (await I_VolumeRestrictionTM.defaultRestriction.call())[1].toNumber();
             let rollingPeriod = (await I_VolumeRestrictionTM.defaultRestriction.call())[2].toNumber();
 
             //sell tokens upto the limit
-            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("5"), {from: account_delegate2});
+            await I_SecurityToken.transfer(account_investor2, web3.utils.toWei("4"), {from: account_delegate2});
 
             console.log(`Print the individual bucket details`);
             let dataIndividual = await I_VolumeRestrictionTM.getIndividualBucketDetailsToUser.call(account_delegate2);
             await print(dataIndividual, account_delegate2);
+            console.log(dataIndividual[4].toString());
 
             // Verify the storage changes
             assert.equal(dataIndividual[0].toNumber(), individualStartTime + duration.days(dataIndividual[2].toNumber()));
@@ -1768,16 +1787,65 @@ contract('VolumeRestrictionTransferManager', accounts => {
             console.log(`Print the default bucket details`);
             let data = await I_VolumeRestrictionTM.getDefaultBucketDetailsToUser.call(account_delegate2);
             await print(data, account_delegate2);
+            console.log(data[4].toString());
 
              // get the trade amount using the timestamp
             let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_delegate2, data[0].toNumber()))
              .dividedBy(new BigNumber(10).pow(18)).toNumber();
             // Verify the storage changes
             assert.equal(data[0].toNumber(), startTime + duration.days(data[2].toNumber()));
-            assert.equal(data[2].toNumber(), 5);
-            assert.equal(amt, 5);
-        })
-    })
+            assert.equal(data[2].toNumber(), 6);
+            assert.equal(amt, 4);
+        });
+
+        it("Should check whether user is able to transfer when amount is less than the restriction limit (when restriction change)", async() => {
+            
+            await I_VolumeRestrictionTM.addIndividualRestriction(
+                account_delegate2,
+                web3.utils.toWei("7"),
+                latestTime() + duration.minutes(1),
+                1,
+                latestTime() + duration.days(2),
+                0,
+                {
+                    from: token_owner
+                }
+            );
+            assert.equal((await I_VolumeRestrictionTM.individualRestriction.call(account_delegate2))[2].toNumber(), 1);
+            let individualStartTime = (await I_VolumeRestrictionTM.individualRestriction.call(account_delegate2))[1].toNumber();
+            let startTime = (await I_VolumeRestrictionTM.defaultRestriction.call())[1].toNumber();
+            let rollingPeriod = (await I_VolumeRestrictionTM.defaultRestriction.call())[2].toNumber();
+
+            await increaseTime(duration.minutes(2));
+
+            // sell tokens when user restriction changes from the default restriction to individual restriction
+            await catchRevert (I_SecurityToken.transfer(account_investor1, web3.utils.toWei("5")), {from: account_delegate2});
+            
+            // allow to transact when the day limit is with in the restriction. default allow to transact maximum 5 tokens within
+            // a given rolling period. 4 tokens are already sold here user trying to sell 1 more token on the same day
+            await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1"), {from: account_delegate2});
+
+            console.log(`Print the individual bucket details`);
+            let dataIndividual = await I_VolumeRestrictionTM.getIndividualBucketDetailsToUser.call(account_delegate2);
+            await print(dataIndividual, account_delegate2);
+
+            // Verify the storage changes
+            assert.equal(dataIndividual[0].toNumber(), individualStartTime + duration.days(dataIndividual[2].toNumber()));
+            assert.equal(dataIndividual[2].toNumber(), 0);
+            // get the trade amount using the timestamp
+            let amt = (await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_delegate2, dataIndividual[0].toNumber()))
+            .dividedBy(new BigNumber(10).pow(18)).toNumber();
+            assert.equal(amt, 1);
+
+            console.log(`Print the default bucket details`);
+            let data = await I_VolumeRestrictionTM.getDefaultBucketDetailsToUser.call(account_delegate2);
+            await print(data, account_delegate2);
+
+            // Verify the storage changes
+            assert.equal(data[0].toNumber(), startTime + duration.days(data[2].toNumber()));
+            assert.equal(data[2].toNumber(), 6);
+        });
+    });
 
     describe("VolumeRestriction Transfer Manager Factory test cases", async () => {
 

@@ -191,7 +191,12 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         RestrictionType _restrictionType
     )
         internal
-    {
+    {   
+        // It will help to reduce the chances of transaction failure (Specially when the issuer
+        // wants to set the startTime near to the current block.timestamp) and minting delayed because
+        // of the gas fee or network congestion that lead to the process block timestamp may grater
+        // than the given startTime. 
+        _startTime = _getValidStartTime(_startTime);
         require(_holder != address(0) && exemptIndex[_holder] == 0, "Invalid address");
         uint256 startTime = _getValidStartTime(_startTime);
         _checkInputParams(_allowedTokens, startTime, _rollingPeriodInDays, _endTime, _restrictionType, now, false);
@@ -759,7 +764,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         bool _isTransfer,
         address _from,
         uint256 _amount,
-        BucketDetails storage _bucketDetails,
+        BucketDetails memory _bucketDetails,
         VolumeRestriction memory _restriction,
         bool _isDefault
     )   
@@ -767,10 +772,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         returns (Result) 
     {
         // using the variable to avoid stack too deep error
-        VolumeRestriction memory dailyRestriction = individualDailyRestriction[_from];
-        if (_isDefault)
-            dailyRestriction = defaultDailyRestriction;
-
+        VolumeRestriction memory dailyRestriction = _isDefault ? defaultDailyRestriction :individualDailyRestriction[_from];
         uint256 daysCovered = _restriction.rollingPeriodInDays;
         uint256 fromTimestamp = 0;
         uint256 sumOfLastPeriod = 0;
@@ -798,7 +800,11 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
                 _isDefault
             );
             // validation of the transaction amount
-            if (!_checkValidAmountToTransact(sumOfLastPeriod, _amount, _restriction)) {
+            if (
+                !_checkValidAmountToTransact(
+                    _isDefault, _from, sumOfLastPeriod, _amount, _restriction.typeOfRestriction, _restriction.allowedTokens
+                )
+            ) {
                 allowedDefault = false;
             }
         }
@@ -819,11 +825,60 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         return ((allowedDaily && allowedDefault) == true ? Result.NA : Result.INVALID);
     }
 
+    /**
+     * @notice The function is used to check specific edge case where the user restriction type change from
+     * default to individual or vice versa. It will return true when last transaction traded by the user 
+     * and the current txn timestamp lies in the same day.
+     */
+    function _isValidAmountAfterRestrictionChanges(
+        bool _isDefault,
+        address _from,
+        uint256 _amount,
+        uint256 _sumOfLastPeriod,
+        uint256 _allowedAmount
+    )   
+        internal
+        view 
+        returns(bool)
+    {
+        BucketDetails storage bucketDetails = _isDefault ? userToBucket[_from] : defaultUserToBucket[_from];
+        uint256 amountTradedLastDay = _isDefault ? bucket[_from][bucketDetails.lastTradedDayTime]: defaultBucket[_from][bucketDetails.lastTradedDayTime];
+        return VolumeRestrictionLib._isValidAmountAfterRestrictionChanges(
+            amountTradedLastDay,
+            _amount,
+            _sumOfLastPeriod,
+            _allowedAmount,
+            bucketDetails.lastTradedTimestamp
+        );
+    }
+
+    function _checkValidAmountToTransact(
+        bool _isDefault,
+        address _from,
+        uint256 _sumOfLastPeriod,
+        uint256 _amountToTransact,
+        RestrictionType _typeOfRestriction,
+        uint256 _allowedTokens
+    )
+        internal
+        view
+        returns (bool)
+    {
+        uint256 allowedAmount = VolumeRestrictionLib.getAllowedAmount(
+            _typeOfRestriction,
+            _allowedTokens,
+            securityToken
+        );
+        // Validation on the amount to transact
+        bool allowed = allowedAmount >= _sumOfLastPeriod.add(_amountToTransact);
+        return (allowed && _isValidAmountAfterRestrictionChanges(_isDefault, _from, _amountToTransact, _sumOfLastPeriod, allowedAmount));
+    }
+
     function _dailyTxCheck(
         address from,
         uint256 amount,
         uint256 dailyLastTradedDayTime,
-        VolumeRestriction restriction,
+        VolumeRestriction memory restriction,
         bool isDefault
     )
         internal
@@ -834,8 +889,8 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         // the total amount get traded on a particular day (~ _fromTime)
         if ( now <= restriction.endTime && now >= restriction.startTime) {
             uint256 txSumOfDay = 0;
+            // This if condition will be executed when the individual daily restriction executed first time
             if (dailyLastTradedDayTime == 0 || dailyLastTradedDayTime < restriction.startTime)
-                // This if condition will be executed when the individual daily restriction executed first time
                 dailyLastTradedDayTime = restriction.startTime.add(BokkyPooBahsDateTimeLibrary.diffDays(restriction.startTime, now).mul(1 days));
             else if (now.sub(dailyLastTradedDayTime) >= 1 days)
                 dailyLastTradedDayTime = dailyLastTradedDayTime.add(BokkyPooBahsDateTimeLibrary.diffDays(dailyLastTradedDayTime, now).mul(1 days));
@@ -844,7 +899,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
                 txSumOfDay = defaultBucket[from][dailyLastTradedDayTime];
             else
                 txSumOfDay = bucket[from][dailyLastTradedDayTime];
-            return (_checkValidAmountToTransact(txSumOfDay, amount, restriction), dailyLastTradedDayTime);
+            return (_checkValidAmountToTransact(isDefault, from, txSumOfDay, amount, restriction.typeOfRestriction, restriction.allowedTokens), dailyLastTradedDayTime);
         }
         return (true, dailyLastTradedDayTime);
     }
@@ -899,25 +954,6 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         return (sumOfLastPeriod, _fromTime, counter);
     }
 
-    function _checkValidAmountToTransact(
-        uint256 _sumOfLastPeriod,
-        uint256 _amountToTransact,
-        VolumeRestriction _restriction
-    )
-        internal
-        view
-        returns (bool)
-    {
-        uint256 _allowedAmount = 0;
-        if (_restriction.typeOfRestriction == RestrictionType.Percentage) {
-            _allowedAmount = (_restriction.allowedTokens.mul(ISecurityToken(securityToken).totalSupply())) / uint256(10) ** 18;
-        } else {
-            _allowedAmount = _restriction.allowedTokens;
-        }
-        // Validation on the amount to transact
-        return (_allowedAmount >= _sumOfLastPeriod.add(_amountToTransact));
-    }
-
     function _updateStorage(
         address _from,
         uint256 _amount,
@@ -966,6 +1002,8 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         if (details.daysCovered != _daysCovered) {
                 details.daysCovered = _daysCovered;
         }
+        // Assigning the latest transaction timestamp
+        details.lastTradedTimestamp = now;
         if (_amount != 0) {
             if (_lastTradedDayTime !=0) {
                 details.sumOfLastPeriod = _sumOfLastPeriod.add(_amount);
@@ -999,18 +1037,18 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         pure
     {
         require(_restrictionType == RestrictionType.Fixed || _restrictionType == RestrictionType.Percentage, 
-            "Invalid restriction type"
+            "Invalid type"
         );
         if (isModifyDaily)
             require(_startTime >= _earliestStartTime, "Invalid startTime");
         else
             require(_startTime > _earliestStartTime, "Invalid startTime");
         if (_restrictionType == RestrictionType.Fixed) {
-            require(_allowedTokens > 0, "Invalid tokens value");
+            require(_allowedTokens > 0, "Invalid value");
         } else {
             require(
                 _allowedTokens > 0 && _allowedTokens <= 100 * 10 ** 16,
-                "Invalid tokens value"
+                "Invalid value"
             );
         }
         // Maximum limit for the rollingPeriod is 365 days
@@ -1022,7 +1060,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
     }
 
     function _isAllowedToModify(uint256 _startTime) internal view {
-        require(_startTime > now, "Not Allowed to modify after startTime passed");
+        require(_startTime > now, "Start time already passed");
     }
 
     function _getValidStartTime(uint256 _startTime) internal view returns(uint256) {
@@ -1039,13 +1077,8 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
      * @return uint256 days covered
      * @return uint256 24h lastTradedDayTime
      */
-    function getIndividualBucketDetailsToUser(address _user) external view returns(uint256, uint256, uint256, uint256) {
-        return(
-            userToBucket[_user].lastTradedDayTime,
-            userToBucket[_user].sumOfLastPeriod,
-            userToBucket[_user].daysCovered,
-            userToBucket[_user].dailyLastTradedDayTime
-        );
+    function getIndividualBucketDetailsToUser(address _user) external view returns(uint256, uint256, uint256, uint256, uint256) {
+        return VolumeRestrictionLib._getBucketDetails(userToBucket[_user]);
     }
 
     /**
@@ -1056,13 +1089,8 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
      * @return uint256 days covered
      * @return uint256 24h lastTradedDayTime
      */
-    function getDefaultBucketDetailsToUser(address _user) external view returns(uint256, uint256, uint256, uint256) {
-        return(
-            defaultUserToBucket[_user].lastTradedDayTime,
-            defaultUserToBucket[_user].sumOfLastPeriod,
-            defaultUserToBucket[_user].daysCovered,
-            defaultUserToBucket[_user].dailyLastTradedDayTime
-        );
+    function getDefaultBucketDetailsToUser(address _user) external view returns(uint256, uint256, uint256, uint256, uint256) {
+        return VolumeRestrictionLib._getBucketDetails(defaultUserToBucket[_user]);
     }
 
     /**

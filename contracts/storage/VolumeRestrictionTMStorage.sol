@@ -39,6 +39,8 @@ contract VolumeRestrictionTMStorage {
         uint256 sumOfLastPeriod;   // It is the sum of transacted amount within the last rollingPeriodDays
         uint256 daysCovered;    // No of days covered till (from the startTime of VolumeRestriction)
         uint256 dailyLastTradedDayTime;
+        uint256 lastTradedTimestamp; // It is the timestamp at which last transaction get executed
+        uint256 lastTradedAmount; // It is the timestamp at which last transaction get executed
     }
 
     // Global restriction that applies to all token holders

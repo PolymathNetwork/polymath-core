@@ -9,8 +9,13 @@ contract KYCTransferManagerFactory is ModuleFactory {
     /**
      * @notice Constructor
      */
-    constructor (uint256 _setupCost, uint256 _usageCost, address _polymathRegistry) public
-    ModuleFactory(_setupCost, _usageCost, _polymathRegistry)
+    constructor(
+        uint256 _setupCost,
+        uint256 _usageCost,
+        address _polymathRegistry,
+        bool _isCostInPoly
+    )
+        public ModuleFactory(_setupCost, _usageCost, _polymathRegistry, _isCostInPoly)
     {
         initialVersion = "3.0.0";
         name = "KYCTransferManager";

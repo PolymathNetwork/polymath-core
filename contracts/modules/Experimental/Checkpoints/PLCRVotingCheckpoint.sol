@@ -16,7 +16,7 @@ contract PLCRVotingCheckpoint is Module {
         uint64 revealDuration;
         uint64 startTime;
         uint24 totalProposals;
-        uint32 totalVotes;
+        uint32 totalVoters;
         bool isActive;
         mapping(uint256 => uint256) weightedVote;
         mapping(address => Vote) proposalToVote;
@@ -29,7 +29,7 @@ contract PLCRVotingCheckpoint is Module {
 
     Ballot[] ballots;
 
-    event VoteCommited(address indexed _voter, uint256 _weight, uint256 indexed _ballotId, bytes32 _secretVote);
+    event VoteCommit(address indexed _voter, uint256 _weight, uint256 indexed _ballotId, bytes32 _secretVote);
     event BallotCreated(
         uint256 indexed _ballotId,
         uint256 _commitDuration,
@@ -37,7 +37,7 @@ contract PLCRVotingCheckpoint is Module {
         uint256 _noOfProposals,
         uint256 _startTime,
         uint256 _proposedQuorum,
-        uint256 _checkpointId
+        uint256 indexed _checkpointId
     );
     event VoteRevealed(address indexed _voter, uint256 _weight, uint256 indexed _ballotId, uint256 _choiceOfProposal, uint256 _salt, bytes32 _secretVote);
     event BallotStatusChanged(uint256 indexed _ballotId, bool _newStatus);
@@ -56,7 +56,15 @@ contract PLCRVotingCheckpoint is Module {
      * @param _noOfProposals Total number of proposal used in the ballot. In general it is 2 (For & Against)
      * @param _proposedQuorum Minimum number of weight vote requires to win a election.
      */
-    function createBallot(uint256 _commitDuration, uint256 _revealDuration, uint256 _noOfProposals, uint256 _proposedQuorum) external withPerm(ADMIN) {
+    function createBallot(
+        uint256 _commitDuration,
+        uint256 _revealDuration,
+        uint256 _noOfProposals,
+        uint256 _proposedQuorum
+    )   
+        external
+        withPerm(ADMIN)
+    {
         uint256 startTime = now;
         uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
         _createBallotWithCheckpoint(_commitDuration, _revealDuration, _noOfProposals, _proposedQuorum, checkpointId, startTime);
@@ -141,7 +149,7 @@ contract PLCRVotingCheckpoint is Module {
         uint256 weight = ISecurityToken(securityToken).balanceOfAt(msg.sender, ballot.checkpointId);
         require(weight > 0, "Zero weight is not allowed");
         ballot.proposalToVote[msg.sender] = Vote(0, _secretVote);
-        emit VoteCommited(msg.sender, weight, _ballotId, _secretVote);
+        emit VoteCommit(msg.sender, weight, _ballotId, _secretVote);
     }
 
     /**
@@ -156,7 +164,7 @@ contract PLCRVotingCheckpoint is Module {
         Ballot storage ballot = ballots[_ballotId];
         require(ballot.isActive, "Inactive ballot");
         require(ballot.proposalToVote[msg.sender].secretVote != bytes32(0), "Secret vote not available");
-        require(_choiceOfProposal < ballot.totalProposals, "Invalid proposal choice");
+        require(_choiceOfProposal < ballot.totalProposals && _choiceOfProposal >= 1, "Invalid proposal choice");
 
         // validate the secret vote
         require(
@@ -166,7 +174,7 @@ contract PLCRVotingCheckpoint is Module {
         uint256 weight = ISecurityToken(securityToken).balanceOfAt(msg.sender, ballot.checkpointId);
         bytes32 secretVote = ballot.proposalToVote[msg.sender].secretVote;
         ballot.weightedVote[_choiceOfProposal] = ballot.weightedVote[_choiceOfProposal].add(weight);
-        ballot.totalVotes = ballot.totalVotes + 1;
+        ballot.totalVoters = ballot.totalVoters + 1;
         ballot.proposalToVote[msg.sender].voteOption = _choiceOfProposal;
         ballot.proposalToVote[msg.sender].secretVote = bytes32(0);
         emit VoteRevealed(msg.sender, weight, _ballotId, _choiceOfProposal, _salt, secretVote);
@@ -180,7 +188,7 @@ contract PLCRVotingCheckpoint is Module {
     function changeBallotStatus(uint256 _ballotId, bool _isActive) external withPerm(ADMIN) {
         _validBallotId(_ballotId);
         require(
-            now < uint256(ballots[_ballotId].startTime)
+            now <= uint256(ballots[_ballotId].startTime)
             .add(uint256(ballots[_ballotId].commitDuration)
             .add(uint256(ballots[_ballotId].revealDuration))),
             "Already ended"
@@ -216,7 +224,7 @@ contract PLCRVotingCheckpoint is Module {
      * @return uint256 tieWith
      * @return uint256 winningProposal
      * @return bool isVotingSucceed
-     * @return uint256 totalVotes
+     * @return uint256 totalVoters
      */
     function getBallotResults(uint256 _ballotId) external view returns(uint256[] memory, uint256[] memory, uint256, bool, uint256) {
         if (_ballotId >= ballots.length)
@@ -232,17 +240,17 @@ contract PLCRVotingCheckpoint is Module {
         uint256 quorumWeight = (supplyAtCheckpoint.mul(ballot.quorum)).div(10 ** 18);
         uint256[] memory voteWeighting = new uint256[](ballot.totalProposals);
         for (i = 0; i < ballot.totalProposals; i++) {
-            voteWeighting[i] = ballot.weightedVote[i];
-            if (maxWeight < ballot.weightedVote[i]) {
-                maxWeight = ballot.weightedVote[i];
+            voteWeighting[i] = ballot.weightedVote[i + 1];
+            if (maxWeight < ballot.weightedVote[i + 1]) {
+                maxWeight = ballot.weightedVote[i + 1];
                 if (maxWeight >= quorumWeight)
-                    winningProposal = i;
+                    winningProposal = i + 1;
             }
         }
         if (maxWeight >= quorumWeight) {
             isVotingSucceed = true;
             for (i = 0; i < ballot.totalProposals; i++) {
-                if (maxWeight == ballot.weightedVote[i] && i != winningProposal)
+                if (maxWeight == ballot.weightedVote[i + 1] && (i + 1) != winningProposal)
                     counter ++;
             }
         }
@@ -251,13 +259,13 @@ contract PLCRVotingCheckpoint is Module {
         if (counter > 0) {
             counter = 0;
             for (i = 0; i < ballot.totalProposals; i++) {
-                if (maxWeight == ballot.weightedVote[i] && i != winningProposal) {
-                    tieWith[counter] = i;
+                if (maxWeight == ballot.weightedVote[i + 1] && (i + 1) != winningProposal) {
+                    tieWith[counter] = i + 1;
                     counter ++;
                 }   
             }
         }
-        return (voteWeighting, tieWith, winningProposal, isVotingSucceed, ballot.totalVotes);  
+        return (voteWeighting, tieWith, winningProposal, isVotingSucceed, ballot.totalVoters);  
     }
 
     /**
@@ -265,10 +273,10 @@ contract PLCRVotingCheckpoint is Module {
      * @param _ballotId Id of the ballot
      * @param _voter Address of the voter
      */
-    function getSelectedProposal(uint256 _ballotId, address _voter) external view returns(uint256 proposalId, bytes32 secretVote) {
+    function getSelectedProposal(uint256 _ballotId, address _voter) external view returns(uint256 proposalId) {
         if (_ballotId >= ballots.length)
-            return (0, bytes32(0));
-        return (ballots[_ballotId].proposalToVote[_voter].voteOption, ballots[_ballotId].proposalToVote[_voter].secretVote);
+            return 0;
+        return (ballots[_ballotId].proposalToVote[_voter].voteOption);
     }
 
     /**
@@ -285,7 +293,7 @@ contract PLCRVotingCheckpoint is Module {
             ballot.revealDuration,
             ballot.startTime,
             ballot.totalProposals,
-            ballot.totalVotes,
+            ballot.totalVoters,
             ballot.isActive
         );
     }

@@ -14,6 +14,7 @@ contract STRGetter is EternalStorage {
     bytes32 constant STLAUNCHFEE = 0xd677304bb45536bb7fdfa6b9e47a3c58fe413f9e8f01474b0a4b9c6e0275baf2;
     bytes32 constant TICKERREGFEE = 0x2fcc69711628630fb5a42566c68bd1092bc4aa26826736293969fddcd11cb2d2;
     bytes32 constant EXPIRYLIMIT = 0x604268e9a73dfd777dcecb8a614493dd65c638bad2f5e7d709d378bd2fb0baee;
+    bytes32 constant IS_FEE_IN_POLY = 0x7152e5426955da44af11ecd67fec5e2a3ba747be974678842afa9394b9a075b6; //keccak256("IS_FEE_IN_POLY")
 
     /**
      * @notice Returns the list of tickers owned by the selected address
@@ -240,6 +241,14 @@ contract STRGetter is EternalStorage {
      */
     function getTickerRegistrationFee() public view returns(uint256) {
         return getUintValue(TICKERREGFEE);
+    }
+
+    /**
+     * @notice Gets the fee currency
+     * @return true = poly, false = usd
+     */
+    function getIsFeeInPoly() public view returns(bool) {
+        return getBoolValue(IS_FEE_IN_POLY);
     }
 
     /**

@@ -14,15 +14,17 @@ contract GeneralPermissionManagerFactory is UpgradableModuleFactory {
      * @param _usageCost Usage cost of the module
      * @param _logicContract Contract address that contains the logic related to `description`
      * @param _polymathRegistry Address of the Polymath registry
+     * @param _isCostInPoly true = cost in Poly, false = USD
      */
-    constructor(
+    constructor (
         uint256 _setupCost,
         uint256 _usageCost,
         address _logicContract,
-        address _polymathRegistry
+        address _polymathRegistry,
+        bool _isCostInPoly
     )
         public
-        UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry)
+        UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry, _isCostInPoly)
     {
         name = "GeneralPermissionManager";
         title = "General Permission Manager";
@@ -47,5 +49,5 @@ contract GeneralPermissionManagerFactory is UpgradableModuleFactory {
         _initializeModule(permissionManager, _data);
         return permissionManager;
     }
-    
+
 }

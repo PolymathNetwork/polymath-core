@@ -75,6 +75,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     bytes32 constant OWNER = 0x02016836a56b71f0d02689e69e326f4f4c1b9057164ef592671cf0d37c8040c0;
     bytes32 constant POLYMATHREGISTRY = 0x90eeab7c36075577c7cc5ff366e389fefa8a18289b949bab3529ab4471139d4d;
     bytes32 constant STRGETTER = 0x982f24b3bd80807ec3cb227ba152e15c07d66855fa8ae6ca536e689205c0e2e9;
+    bytes32 constant IS_FEE_IN_POLY = 0x7152e5426955da44af11ecd67fec5e2a3ba747be974678842afa9394b9a075b6; //keccak256("IS_FEE_IN_POLY")
 
     string constant POLY_ORACLE = "StablePolyUsdOracle";
 
@@ -90,6 +91,8 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     event ChangeSecurityLaunchFee(uint256 _oldFee, uint256 _newFee);
     // Emit when changeTickerRegistrationFee is called
     event ChangeTickerRegistrationFee(uint256 _oldFee, uint256 _newFee);
+    // Emit when Fee currency is changed
+    event ChangeFeeCurrency(bool _isFeeInPoly);
     // Emit when ownership gets transferred
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     // Emit when ownership of the ticker gets changed
@@ -224,12 +227,18 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @notice Returns the usd & poly fee for a particular feetype
      * @param _feeType Key corresponding to fee type
      */
-    function getFees(bytes32 _feeType) public returns (uint256, uint256) {
+    function getFees(bytes32 _feeType) public returns (uint256 usdFee, uint256 polyFee) {
+        bool isFeesInPoly = getBoolValue(IS_FEE_IN_POLY);
+        uint256 rawFee = getUintValue(_feeType);
         address polymathRegistry = getAddressValue(POLYMATHREGISTRY);
         uint256 polyRate = IOracle(IPolymathRegistry(polymathRegistry).getAddress(POLY_ORACLE)).getPrice();
-        uint256 usdFee = getUintValue(_feeType);
-        uint256 polyFee = DecimalMath.div(usdFee, polyRate);
-        return (usdFee, polyFee);
+        if (!isFeesInPoly) { //Fee is in USD and not poly
+            usdFee = rawFee;
+            polyFee = DecimalMath.div(rawFee, polyRate);
+        } else {
+            usdFee = DecimalMath.mul(rawFee, polyRate);
+            polyFee = rawFee;
+        }
     }
 
     /**
@@ -653,8 +662,12 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     function changeTickerRegistrationFee(uint256 _tickerRegFee) external onlyOwner {
         uint256 fee = getUintValue(TICKERREGFEE);
         require(fee != _tickerRegFee, "Bad fee");
-        emit ChangeTickerRegistrationFee(fee, _tickerRegFee);
-        set(TICKERREGFEE, _tickerRegFee);
+        _changeTickerRegistrationFee(fee, _tickerRegFee);
+    }
+
+    function _changeTickerRegistrationFee(uint256 _oldFee, uint256 _newFee) internal {
+        emit ChangeTickerRegistrationFee(_oldFee, _newFee);
+        set(TICKERREGFEE, _newFee);
     }
 
     /**
@@ -664,8 +677,29 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     function changeSecurityLaunchFee(uint256 _stLaunchFee) external onlyOwner {
         uint256 fee = getUintValue(STLAUNCHFEE);
         require(fee != _stLaunchFee, "Bad fee");
-        emit ChangeSecurityLaunchFee(fee, _stLaunchFee);
-        set(STLAUNCHFEE, _stLaunchFee);
+        _changeSecurityLaunchFee(fee, _stLaunchFee);
+    }
+
+    function _changeSecurityLaunchFee(uint256 _oldFee, uint256 _newFee) internal {
+        emit ChangeSecurityLaunchFee(_oldFee, _newFee);
+        set(STLAUNCHFEE, _newFee);
+    }
+
+    /**
+    * @notice Sets the ticker registration and ST launch fee amount and currency
+    * @param _tickerRegFee is the ticker registration fee (base 18 decimals)
+    * @param _stLaunchFee is the st generation fee (base 18 decimals)
+    * @param _isFeeInPoly defines if the fee is in poly or usd
+    */
+    function changeFeesAmountAndCurrency(uint256 _tickerRegFee, uint256 _stLaunchFee, bool _isFeeInPoly) external onlyOwner {
+        uint256 tickerFee = getUintValue(TICKERREGFEE);
+        uint256 stFee = getUintValue(STLAUNCHFEE);
+        bool isOldFeesInPoly = getBoolValue(IS_FEE_IN_POLY);
+        require(isOldFeesInPoly != _isFeeInPoly, "Currency unchanged");
+        _changeTickerRegistrationFee(tickerFee, _tickerRegFee);
+        _changeSecurityLaunchFee(stFee, _stLaunchFee);
+        emit ChangeFeeCurrency(_isFeeInPoly);
+        set(IS_FEE_IN_POLY, _isFeeInPoly);
     }
 
     /**

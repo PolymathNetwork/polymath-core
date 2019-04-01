@@ -13,8 +13,15 @@ contract VestingEscrowWalletFactory is UpgradableModuleFactory {
     /**
      * @notice Constructor
      */
-    constructor (uint256 _setupCost, uint256 _usageCost, address _logicContract, address _polymathRegistry) public
-    UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry)
+    constructor (
+        uint256 _setupCost,
+        uint256 _usageCost,
+        address _logicContract,
+        address _polymathRegistry,
+        bool _isCostInPoly
+    )
+        public
+        UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry, _isCostInPoly)
     {
         name = "VestingEscrowWallet";
         title = "Vesting Escrow Wallet";

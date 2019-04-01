@@ -42,15 +42,17 @@ contract UpgradableModuleFactory is ModuleFactory {
      * @param _usageCost Usage cost of the module
      * @param _logicContract Contract address that contains the logic related to `description`
      * @param _polymathRegistry Address of the Polymath registry
+     * @param _isCostInPoly true = cost in Poly, false = USD
      */
     constructor(
         string memory _version,
         uint256 _setupCost,
         uint256 _usageCost,
         address _logicContract,
-        address _polymathRegistry
+        address _polymathRegistry,
+        bool _isCostInPoly
     )
-        public ModuleFactory(_setupCost, _usageCost, _polymathRegistry)
+        public ModuleFactory(_setupCost, _usageCost, _polymathRegistry, _isCostInPoly)
     {
         require(_logicContract != address(0), "Invalid address");
         logicContracts[latestUpgrade].logicContract = _logicContract;

@@ -132,9 +132,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         }
         // This if statement is required to be able to add modules from the STFactory contract during deployment
         // before the token has been registered to the STR.
-        if (ISecurityTokenRegistry(getAddressValue(Encoder.getKey("securityTokenRegistry"))).isSecurityToken(msg.sender)
-            || (ISecurityTokenRegistry(getAddressValue(Encoder.getKey("securityTokenRegistry"))).getSTFactoryAddress() == msg.sender)
-        ) {
+        if (ISecurityTokenRegistry(getAddressValue(Encoder.getKey("securityTokenRegistry"))).isSecurityToken(msg.sender)) {
             require(isCompatibleModule(_moduleFactory, msg.sender), "Incompatible versions");
             if (!_isUpgrade) {
                 pushArray(Encoder.getKey("reputation", _moduleFactory), msg.sender);

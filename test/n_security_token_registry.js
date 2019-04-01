@@ -677,7 +677,6 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should generate the new security token with version 2", async () => {
             // Version bounds not checked here as MR is called as non-token
-            await I_GeneralTransferManagerFactory.changeSTVersionBounds("lowerBound", [2, 2, 0], {from: account_polymath});
             let tx = await I_STRProxied.generateSecurityToken(name2, symbol2, tokenDetails, false, token_owner, _pack(2,2,0), { from: token_owner });
             console.log(`Protocol version: ${_pack(2,2,0)}`);
             // Verify the successful generation of the security token

@@ -15,21 +15,20 @@ contract WeightedVoteCheckpoint is ICheckpoint, Module {
 
     struct Ballot {
         uint256 checkpointId;
-        uint256 totalSupply;
         uint64 startTime;
         uint64 endTime;
-        uint64 totalNumVotes;
+        uint64 totalVoters;
         uint56 totalProposals;
-        uint8 isActive;
-        mapping(uint256 => uint256) proposalToVote;
-        mapping(address => uint256) voteByAddress;
+        bool isActive;
+        mapping(uint256 => uint256) proposalToVotes;
+        mapping(address => uint256) investorToProposal;
     }
 
     Ballot[] ballots;
 
-    event BallotCreated(uint256 _startTime, uint256 _endTime, uint256 _ballotId, uint256 _checkpointId, uint256 _noOfProposals);
-    event VoteCasted(uint256 indexed _ballotId, uint256 indexed _proposalId, address indexed _investor, uint256 _weight);
-    event BallotStatusChanged(uint256 _ballotId, bool _isActive);
+    event BallotCreated(uint256 _startTime, uint256 _endTime, uint256 indexed _ballotId, uint256 indexed _checkpointId, uint256 _noOfProposals);
+    event VoteCast(uint256 indexed _ballotId, uint256 indexed _proposalId, address indexed _investor, uint256 _weight);
+    event BallotStatusChanged(uint256 indexed _ballotId, bool _isActive);
 
     /**
      * @notice Constructor
@@ -72,10 +71,9 @@ contract WeightedVoteCheckpoint is ICheckpoint, Module {
             "values get overflowed"
         );
         uint256 ballotId = ballots.length;
-        uint256 supplyAtCheckpoint = ISecurityToken(securityToken).totalSupplyAt(_checkpointId);
         ballots.push(
             Ballot(
-                _checkpointId, supplyAtCheckpoint, uint64(_startTime), uint64(_endTime), uint64(0), uint56(_noOfProposals), uint8(1)
+                _checkpointId, uint64(_startTime), uint64(_endTime), uint64(0), uint56(_noOfProposals), true
             )
         );
         emit BallotCreated(_startTime, _endTime, ballotId, _checkpointId, _noOfProposals);
@@ -90,6 +88,7 @@ contract WeightedVoteCheckpoint is ICheckpoint, Module {
      */
     function createCustomBallot(uint256 _startTime, uint256 _endTime, uint256 _checkpointId, uint256 _noOfProposals) external withPerm(ADMIN) {
         require(_checkpointId <= ISecurityToken(securityToken).currentCheckpointId(), "Invalid checkpoint Id");
+        require(_startTime >= now, "Invalid startTime");
         _createCustomBallot(_startTime, _endTime, _checkpointId, _noOfProposals);
     }
 
@@ -106,13 +105,13 @@ contract WeightedVoteCheckpoint is ICheckpoint, Module {
         require(weight > 0, "weight should be > 0");
         require(ballot.totalProposals >= _proposalId && _proposalId > 0, "Incorrect proposals Id");
         require(now >= ballot.startTime && now <= ballot.endTime, "Voting period is not active");
-        require(ballot.voteByAddress[msg.sender] == 0, "Token holder has already voted");
-        require(ballot.isActive == uint8(1), "Ballot is not active");
+        require(ballot.investorToProposal[msg.sender] == 0, "Token holder has already voted");
+        require(ballot.isActive, "Ballot is not active");
 
-        ballot.voteByAddress[msg.sender] = _proposalId;
-        ballot.totalNumVotes = ballot.totalNumVotes + 1;
-        ballot.proposalToVote[_proposalId] = ballot.proposalToVote[_proposalId].add(weight);
-        emit VoteCasted(_ballotId, _proposalId, msg.sender, weight);
+        ballot.investorToProposal[msg.sender] = _proposalId;
+        ballot.totalVoters = ballot.totalVoters + 1;
+        ballot.proposalToVotes[_proposalId] = ballot.proposalToVotes[_proposalId].add(weight);
+        emit VoteCast(_ballotId, _proposalId, msg.sender, weight);
     }
 
     /**
@@ -122,12 +121,9 @@ contract WeightedVoteCheckpoint is ICheckpoint, Module {
      * @return bool success
      */
     function changeBallotStatus(uint256 _ballotId, bool _isActive) external withPerm(ADMIN) {
-        require(uint64(now) < ballots[_ballotId].endTime, "Already ended");
-        uint8 activeStatus = 0;
-        if (_isActive)
-            activeStatus = 1;
-        require(ballots[_ballotId].isActive != activeStatus, "Active state unchanged");
-        ballots[_ballotId].isActive = activeStatus;
+        require(uint64(now) <= ballots[_ballotId].endTime, "Already ended");
+        require(ballots[_ballotId].isActive != _isActive, "Active state unchanged");
+        ballots[_ballotId].isActive = _isActive;
         emit BallotStatusChanged(_ballotId, _isActive);
     }
 
@@ -139,11 +135,10 @@ contract WeightedVoteCheckpoint is ICheckpoint, Module {
      * @return uint256 winningProposal
      * @return uint256 remainingTime
      * @return uint256 totalVotes
-     
      */
     function getBallotResults(uint256 _ballotId) external view returns (
-        uint256[] memory,
-        uint256[] memory,
+        uint256[] memory voteWeighting,
+        uint256[] memory tieWith,
         uint256 winningProposal,
         uint256 remainingTime,
         uint256 totalVotes
@@ -156,28 +151,28 @@ contract WeightedVoteCheckpoint is ICheckpoint, Module {
         uint256 maxWeight = 0;
         uint256 i;
         for (i = 0; i < ballot.totalProposals; i++) {
-            if (maxWeight < ballot.proposalToVote[i+1]) {
-                maxWeight = ballot.proposalToVote[i+1];
+            if (maxWeight < ballot.proposalToVotes[i+1]) {
+                maxWeight = ballot.proposalToVotes[i+1];
                 winningProposal = i + 1;
             }
         }
         for (i = 0; i < ballot.totalProposals; i++) {
-            if (maxWeight == ballot.proposalToVote[i+1])
+            if (maxWeight == ballot.proposalToVotes[i+1])
                 counter ++;
         }
-        uint256[] memory voteWeighting = new uint256[](ballot.totalProposals);
-        uint256[] memory tieWith = new uint256[](counter);
+        voteWeighting = new uint256[](ballot.totalProposals);
+        tieWith = new uint256[](counter);
         counter = 0;
         for (i = 0; i < ballot.totalProposals; i++) {
-            voteWeighting[i] = ballot.proposalToVote[i+1];
-            if (maxWeight == ballot.proposalToVote[i+1]) {
+            voteWeighting[i] = ballot.proposalToVotes[i+1];
+            if (maxWeight == ballot.proposalToVotes[i+1]) {
                 tieWith[counter] = i+1;
                 counter ++;
             }   
         }
         if (ballot.endTime >= uint64(now))
             remainingTime = uint256(ballot.endTime).sub(now);
-        totalVotes = uint256(ballot.totalNumVotes);
+        totalVotes = uint256(ballot.totalVoters);
         return (voteWeighting, tieWith, winningProposal, remainingTime, totalVotes);
     }
 
@@ -189,7 +184,7 @@ contract WeightedVoteCheckpoint is ICheckpoint, Module {
     function getSelectedProposal(uint256 _ballotId, address _voter) external view returns(uint256 proposalId) {
         if (_ballotId >= ballots.length)
             return 0;
-        return ballots[_ballotId].voteByAddress[_voter];
+        return ballots[_ballotId].investorToProposal[_voter];
     }
 
     /**
@@ -200,12 +195,12 @@ contract WeightedVoteCheckpoint is ICheckpoint, Module {
         Ballot memory ballot = ballots[_ballotId];
         return (
             ballot.checkpointId,
-            ballot.totalSupply,
+            ISecurityToken(securityToken).totalSupplyAt(ballot.checkpointId),
             ballot.startTime,
             ballot.endTime,
-            ballot.totalNumVotes,
+            ballot.totalVoters,
             ballot.totalProposals,
-            (ballot.isActive == 1 ? true : false)
+            ballot.isActive
         );
     }
 

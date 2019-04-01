@@ -106,13 +106,17 @@ contract BlacklistTransferManager is BlacklistTransferManagerStorage, TransferMa
                     uint256 startTimeTemp = blacklists[blacklistName].startTime;
                     uint256 repeatPeriodTimeTemp = blacklists[blacklistName].repeatPeriodTime * 1 days;
                     /*solium-disable-next-line security/no-block-members*/
-                    if (now > startTimeTemp && repeatPeriodTimeTemp > 0) {
-                    // Find the repeating parameter that will be used to calculate the new startTime and endTime
-                    // based on the new current time value
-                    /*solium-disable-next-line security/no-block-members*/
-                        uint256 repeater = (now.sub(startTimeTemp)).div(repeatPeriodTimeTemp);
-                        /*solium-disable-next-line security/no-block-members*/
-                        if (endTimeTemp.add(repeatPeriodTimeTemp.mul(repeater)) >= now) {
+                    if (now > startTimeTemp) {
+                        if (repeatPeriodTimeTemp > 0) {
+                            // Find the repeating parameter that will be used to calculate the new startTime and endTime
+                            // based on the new current time value
+                            /*solium-disable-next-line security/no-block-members*/
+                            uint256 repeater = (now.sub(startTimeTemp)).div(repeatPeriodTimeTemp);
+                            /*solium-disable-next-line security/no-block-members*/
+                            if (endTimeTemp.add(repeatPeriodTimeTemp.mul(repeater)) >= now) {
+                                return (Result.INVALID, bytes32(uint256(address(this)) << 96));
+                            }
+                        } else if(endTimeTemp <= now) {
                             return (Result.INVALID, bytes32(uint256(address(this)) << 96));
                         }
                     }

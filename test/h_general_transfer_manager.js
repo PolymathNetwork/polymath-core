@@ -1037,7 +1037,7 @@ contract("GeneralTransferManager", async (accounts) => {
             let balanceBefore = await I_PolyToken.balanceOf(account_polymath);
             await I_GeneralTransferManager.takeUsageFee({ from: account_delegate });
             let balanceAfter = await I_PolyToken.balanceOf(account_polymath);
-            assert.equal(balanceBefore.add(new BN(web3.utils.toWei("4", "ether"))).toString(), balanceAfter.toString(), "Fee is transferred");
+            assert.equal(balanceBefore.add(new BN(web3.utils.toWei("1", "ether"))).toString(), balanceAfter.toString(), "Fee is transferred");
         });
 
         it("should allow authorized people to modify transfer requirements", async () => {

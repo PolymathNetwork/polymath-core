@@ -116,7 +116,7 @@ contract BlacklistTransferManager is BlacklistTransferManagerStorage, TransferMa
                             if (endTimeTemp.add(repeatPeriodTimeTemp.mul(repeater)) >= now) {
                                 return (Result.INVALID, bytes32(uint256(address(this)) << 96));
                             }
-                        } else if(endTimeTemp <= now) {
+                        } else if(endTimeTemp >= now) {
                             return (Result.INVALID, bytes32(uint256(address(this)) << 96));
                         }
                     }

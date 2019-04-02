@@ -14,6 +14,7 @@ async function readFiles() {
 }
 
 async function checkClashes() {
+    console.log(chalk.green("Starting function selector clash check"));
     let files = await readFiles();
     let contractFunctions = new Set();
     let functionSelectors = new Map();

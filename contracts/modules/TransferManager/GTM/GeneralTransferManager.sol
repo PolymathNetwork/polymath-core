@@ -675,14 +675,16 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
      * @notice return the amount of tokens for a given user as per the partition
      * @param _partition Identifier
      * @param _tokenHolder Whom token amount need to query
+     * @param _additionalBalance It is the `_value` that transfer during transfer/transferFrom function call
      */
-    function getTokensByPartition(bytes32 _partition, address _tokenHolder) external view returns(uint256) {
+    function getTokensByPartition(bytes32 _partition, address _tokenHolder, uint256 _additionalBalance) external view returns(uint256) {
+        uint256 currentBalance = (msg.sender == securityToken) ? (IERC20(securityToken).balanceOf(_tokenHolder)).add(_additionalBalance) : uint256(0);
         uint256 canSendAfter;
         (canSendAfter,,,) = _getKYCValues(_tokenHolder, getDataStore());
         canSendAfter = (canSendAfter == 0 ? defaults.canSendAfter:  canSendAfter);
         bool unlockedCheck = paused ? _partition == UNLOCKED : (_partition == UNLOCKED && now >= canSendAfter);
         if (((_partition == LOCKED && now < canSendAfter) && !paused) || unlockedCheck)
-            return ISecurityToken(securityToken).balanceOf(_tokenHolder);
+            return currentBalance;
         else
             return 0;
     }

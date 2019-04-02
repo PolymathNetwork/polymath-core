@@ -32,7 +32,7 @@ contract TransferManager is ITransferManager, Module, Pausable {
     /**
      * @notice return the amount of tokens for a given user as per the partition
      */
-    function getTokensByPartition(bytes32 /*_partition*/, address /*_tokenHolder*/) external view returns(uint256){
+    function getTokensByPartition(bytes32 /*_partition*/, address /*_tokenHolder*/, uint256 /*_additionalBalance*/) external view returns(uint256) {
         return 0;
     }
 

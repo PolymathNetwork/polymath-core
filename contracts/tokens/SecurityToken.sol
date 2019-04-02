@@ -8,6 +8,7 @@ import "./SecurityTokenStorage.sol";
 import "../libraries/TokenLib.sol";
 import "../interfaces/IDataStore.sol";
 import "../interfaces/IModuleFactory.sol";
+import "../interfaces/token/IERC1410.sol";
 import "../interfaces/token/IERC1594.sol";
 import "../interfaces/token/IERC1643.sol";
 import "../interfaces/token/IERC1644.sol";
@@ -28,7 +29,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
  * @notice - ST does not inherit from ISecurityToken due to:
  * @notice - https://github.com/ethereum/solidity/issues/4847
  */
-contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, SecurityTokenStorage, IERC1594, IERC1643, IERC1644, Proxy {
+contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, SecurityTokenStorage, IERC1594, IERC1643, IERC1644, IERC1410, Proxy {
 
     using SafeMath for uint256;
 
@@ -82,6 +83,17 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     function _onlyModuleOrOwner(uint8 _type) internal view {
         if (msg.sender != owner())
             require(_isModule(msg.sender, _type));
+    }
+
+    function _isValidPartition(bytes32 _partition) internal pure {
+        require(_partition == UNLOCKED, "Invalid partition");
+    }
+
+    function _isValidOperator(address _from, address _operator, bytes32 _partition) internal view {
+        require(
+            approvals[_from][_operator] || partitionApprovals[_from][_partition][_operator],
+            "Not authorised"
+        );
     }
 
     function _zeroAddressCheck(address _entity) internal pure {
@@ -360,8 +372,13 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * (e.g. a dynamic whitelist) but is flexible enough to accomadate other use-cases.
      */
     function transferWithData(address _to, uint256 _value, bytes memory _data) public {
-        _isValidTransfer(_updateTransfer(msg.sender, _to, _value, _data));
-        require(super.transfer(_to, _value));
+        _transferWithData(msg.sender, _to, _value, _data);
+    }
+
+    function _transferWithData(address _from, address _to, uint256 _value, bytes memory _data) internal {
+        _isValidTransfer(_updateTransfer(_from, _to, _value, _data));
+        // Using the internal function instead of super.transfer() in the favour of reducing the code size 
+        _transfer(msg.sender, _to, _value);
     }
 
     /**
@@ -392,6 +409,143 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     function transferFromWithData(address _from, address _to, uint256 _value, bytes memory _data) public {
         _isValidTransfer(_updateTransfer(_from, _to, _value, _data));
         require(super.transferFrom(_from, _to, _value));
+    }
+
+    /**
+     * @notice Get the balance according to the provided partitions
+     * @param _partition Partition which differentiate the tokens.
+     * @param _tokenHolder Whom balance need to queried
+     * @return Amount of tokens as per the given partitions
+     */
+    function balanceOfByPartition(bytes32 _partition, address _tokenHolder) public view returns(uint256) {
+        _balanceOfByPartition(_partition, _tokenHolder, 0);
+    }
+
+    /**
+     * @notice Transfers the ownership of tokens from a specified partition from one address to another address
+     * @param _partition The partition from which to transfer tokens
+     * @param _to The address to which to transfer tokens to
+     * @param _value The amount of tokens to transfer from `_partition`
+     * @param _data Additional data attached to the transfer of tokens
+     * @return The partition to which the transferred tokens were allocated for the _to address
+     */
+    function transferByPartition(bytes32 _partition, address _to, uint256 _value, bytes calldata _data) external returns (bytes32) {
+        return _transferByPartition(msg.sender, _to, _value, _partition, _data, address(0), "");
+    }
+
+    function _balanceOfByPartition(bytes32 _partition, address _tokenHolder, uint256 _additionalBalance) internal view returns(uint256) {
+        address[] memory tms = modules[TRANSFER_KEY];
+        uint256 max;
+        uint256 amount;
+        for (uint256 i = 0; i < tms.length; i++) {
+            amount = ITransferManager(tms[i]).getTokensByPartition(_partition, _tokenHolder, _additionalBalance);
+            if (max < amount) {
+                max = amount;
+            }
+        }
+        return max;
+    }
+
+    function _transferByPartition(
+        address _from,
+        address _to,
+        uint256 _value,
+        bytes32 _partition,
+        bytes memory _data,
+        address _operator,
+        bytes memory _operatorData
+    ) 
+        internal
+        returns(bytes32 toPartition) 
+    {
+        _isValidPartition(_partition);
+        // Avoiding to add this check 
+        // require(balanceOfByPartition(_partition, msg.sender) >= _value);
+        // NB - Above condition will be automatically checked using the executeTransfer() function execution.
+        // NB - passing `_additionalBalance` value is 0 because accessing the balance before transfer
+        uint256 balanceBeforeTransferLocked = _balanceOfByPartition(LOCKED, _to, 0);
+        _transferWithData(_from, _to, _value, _data);
+        // NB - passing `_additonalBalance` valie is 0 because balance of `_to` was updated in the transfer call
+        uint256 balanceAfterTransferLocked = _balanceOfByPartition(LOCKED, _to, 0);
+        toPartition =  _returnPartition(balanceBeforeTransferLocked, balanceAfterTransferLocked, _value);
+        emit TransferByPartition(toPartition, _operator, _from, _to, _value, _data, _operatorData);
+    }
+
+    function _returnPartition(uint256 _beforeBalance, uint256 _afterBalance, uint256 _value) internal pure returns(bytes32 toPartition) {
+        // return LOCKED only when the transaction `_value` should be equal to the change in the LOCKED partition
+        // balance otherwise return UNLOCKED
+        if (_afterBalance.sub(_beforeBalance) == _value)
+            toPartition = LOCKED;
+        // Returning the same partition UNLOCKED 
+        toPartition = UNLOCKED;
+    }
+
+    ///////////////////////
+    /// Operator Management
+    ///////////////////////
+    
+    /**
+     * @notice Authorises an operator for all partitions of `msg.sender`.
+     * NB - Allowing investors to authorize an investor to be an operator of all partitions
+     * but it doesn't mean we operator is allowed to transfer the LOCKED partition values.
+     * Logic for this restriction is written in `operatorTransferByPartition()` function.
+     * @param _operator An address which is being authorised.
+     */ 
+    function authorizeOperator(address _operator) external {
+        approvals[msg.sender][_operator] = true;
+        emit AuthorizedOperator(_operator, msg.sender);
+    }
+
+    /**
+     * @notice Revokes authorisation of an operator previously given for all partitions of `msg.sender`.
+     * NB - Allowing investors to authorize an investor to be an operator of all partitions
+     * but it doesn't mean we operator is allowed to transfer the LOCKED partition values.
+     * Logic for this restriction is written in `operatorTransferByPartition()` function.
+     * @param _operator An address which is being de-authorised
+     */
+    function revokeOperator(address _operator) external {
+        approvals[msg.sender][_operator] = false;
+        emit RevokedOperator(_operator, msg.sender);
+    }
+
+    /**
+     * @notice Authorises an operator for a given partition of `msg.sender`
+     * @param _partition The partition to which the operator is authorised
+     * @param _operator An address which is being authorised
+     */
+    function authorizeOperatorByPartition(bytes32 _partition, address _operator) external {
+        _isValidPartition(_partition);
+        partitionApprovals[msg.sender][_partition][_operator] = true;
+        emit AuthorizedOperatorByPartition(_partition, _operator, msg.sender);
+    }
+
+    /**
+     * @notice Revokes authorisation of an operator previously given for a specified partition of `msg.sender`
+     * @param _partition The partition to which the operator is de-authorised
+     * @param _operator An address which is being de-authorised
+     */
+    function revokeOperatorByPartition(bytes32 _partition, address _operator) external {
+        _isValidPartition(_partition);
+        partitionApprovals[msg.sender][_partition][_operator] = false;
+        emit RevokedOperatorByPartition(_partition, _operator, msg.sender);
+    }
+
+    /**
+     * @notice Transfers the ownership of tokens from a specified partition from one address to another address
+     * @param _partition The partition from which to transfer tokens.
+     * @param _from The address from which to transfer tokens from
+     * @param _to The address to which to transfer tokens to
+     * @param _value The amount of tokens to transfer from `_partition`
+     * @param _data Additional data attached to the transfer of tokens
+     * @param _operatorData Additional data attached to the transfer of tokens by the operator
+     * @return The partition to which the transferred tokens were allocated for the _to address
+     */
+    function operatorTransferByPartition(bytes32 _partition, address _from, address _to, uint256 _value, bytes calldata _data, bytes calldata _operatorData) external returns (bytes32) {
+        // For the current release we are only allowing UNLOCKED partition tokens to transact
+        _isValidPartition(_partition);
+        _isValidOperator(_from, msg.sender, _partition);
+        require(_operatorData.length > 0);
+        _transferByPartition(_from, _to, _value, _partition, _data, msg.sender, _operatorData);
     }
 
     /**
@@ -536,6 +690,20 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     }
 
     /**
+     * @notice Increases totalSupply and the corresponding amount of the specified owners partition
+     * @param _partition The partition to allocate the increase in balance
+     * @param _tokenHolder The token holder whose balance should be increased
+     * @param _value The amount by which to increase the balance
+     * @param _data Additional data attached to the minting of tokens
+     */
+    function issueByPartition(bytes32 _partition, address _tokenHolder, uint256 _value, bytes calldata _data) external isIssuanceAllowed {
+        _onlyModuleOrOwner(MINT_KEY);
+        _isValidPartition(_partition);
+        _issue(_tokenHolder, _value, _data);
+        emit IssuedByPartition(_partition, _tokenHolder, _value, _data);
+    }
+
+    /**
      * @notice This function redeem an amount of the token of a msg.sender. For doing so msg.sender may incentivize
      * using different ways that could be implemented with in the `redeem` function definition. But those implementations
      * are out of the scope of the ERC1594.
@@ -543,8 +711,62 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      * @param _data The `bytes _data` it can be used in the token contract to authenticate the redemption.
      */
     function redeem(uint256 _value, bytes calldata _data) external onlyModule(BURN_KEY) {
+        _redeem(msg.sender, _value, _data);
+    }
+
+    function _redeem(address _from, uint256 _value, bytes memory _data) internal {
         // Add a function to validate the `_data` parameter
-        require(_checkAndBurn(msg.sender, _value, _data), "Invalid redeem");
+        require(_checkAndBurn(_from, _value, _data), "Invalid redeem");
+    }
+
+    /**
+     * @notice Decreases totalSupply and the corresponding amount of the specified partition of msg.sender
+     * @param _partition The partition to allocate the decrease in balance
+     * @param _value The amount by which to decrease the balance
+     * @param _data Additional data attached to the burning of tokens
+     */
+    function redeemByPartition(bytes32 _partition, uint256 _value, bytes calldata _data) external onlyModule(BURN_KEY) {
+        _redeemByPartition(_partition, msg.sender, _value, address(0), _data, "");
+    }
+
+    function _redeemByPartition(
+        bytes32 _partition,
+        address _from,
+        uint256 _value,
+        address _operator,
+        bytes memory _data,
+        bytes memory _operatorData
+    )   
+        internal 
+    {
+        _isValidPartition(_partition);
+        _redeem(_from, _value, _data);
+        emit RedeemedByPartition(_partition, _operator, _from, _value, _data, _operatorData);
+    }
+
+    /**
+     * @notice Decreases totalSupply and the corresponding amount of the specified partition of tokenHolder
+     * @dev This function can only be called by the authorised operator.
+     * @param _partition The partition to allocate the decrease in balance.
+     * @param _tokenHolder The token holder whose balance should be decreased
+     * @param _value The amount by which to decrease the balance
+     * @param _data Additional data attached to the burning of tokens
+     * @param _operatorData Additional data attached to the transfer of tokens by the operator
+     */
+    function operatorRedeemByPartition(
+        bytes32 _partition,
+        address _tokenHolder,
+        uint256 _value,
+        bytes calldata _data,
+        bytes calldata _operatorData
+    ) 
+        external
+        onlyModule(BURN_KEY) 
+    {
+        require(_operatorData.length > 0);
+        _zeroAddressCheck(_tokenHolder);
+        _isValidOperator(_tokenHolder, msg.sender, _partition);
+        _redeemByPartition(_partition, _tokenHolder, _value, msg.sender, _data, _operatorData);
     }
 
     /**
@@ -671,6 +893,42 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         else if (!KindMath.checkAdd(balanceOf(_to), _value))
             return (false, 0x50, bytes32(0));
         return (true, 0x51, bytes32(0));
+    }
+
+    /**
+     * @notice The standard provides an on-chain function to determine whether a transfer will succeed,
+     * and return details indicating the reason if the transfer is not valid.
+     * @param _from The address from whom the tokens get transferred.
+     * @param _to The address to which to transfer tokens to.
+     * @param _partition The partition from which to transfer tokens
+     * @param _value The amount of tokens to transfer from `_partition`
+     * @param _data Additional data attached to the transfer of tokens
+     * @return ESC (Ethereum Status Code) following the EIP-1066 standard
+     * @return Application specific reason codes with additional details
+     * @return The partition to which the transferred tokens were allocated for the _to address
+     */
+    function canTransferByPartition(
+        address _from,
+        address _to,
+        bytes32 _partition,
+        uint256 _value,
+        bytes calldata _data
+    )
+        external
+        view
+        returns (byte, bytes32, bytes32)
+    {   
+        if (_partition == UNLOCKED) {
+            (bool success, byte esc, bytes32 appStatusCode) = _canTransfer(_from, _to, _value, _data);
+            bytes32 toPartition;
+            if (success) {
+                uint256 beforeBalance = _balanceOfByPartition(_partition, _to, 0);
+                uint256 afterBalance = _balanceOfByPartition(_partition, _to, _value);
+                toPartition = _returnPartition(beforeBalance, afterBalance, _value);
+            }
+            return (esc, appStatusCode, toPartition);
+        }
+        return (0x50, bytes32(0), bytes32(0));   
     }
 
     /**

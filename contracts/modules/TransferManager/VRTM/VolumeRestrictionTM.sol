@@ -1084,12 +1084,13 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
      * @notice return the amount of tokens for a given user as per the partition
      * @param _partition Identifier
      * @param _tokenHolder Whom token amount need to query
+     * @param _additionalBalance It is the `_value` that transfer during transfer/transferFrom function call
      */
-    function getTokensByPartition(bytes32 _partition, address _tokenHolder) external view returns(uint256) {
+    function getTokensByPartition(bytes32 _partition, address _tokenHolder, uint256 _additionalBalance) external view returns(uint256) {
         uint256 allowedAmountToTransact;
         uint256 fromTimestamp;
         uint256 dailyTime;
-        uint256 currentBalance = ISecurityToken(securityToken).balanceOf(_tokenHolder);
+        uint256 currentBalance = (msg.sender == securityToken) ? (IERC20(securityToken).balanceOf(_tokenHolder)).add(_additionalBalance) : uint256(0);
         if (paused)
             return (_partition == UNLOCKED ? currentBalance: 0);
         

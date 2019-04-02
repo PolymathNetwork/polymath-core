@@ -218,22 +218,24 @@ contract STGetter is OZStorage, SecurityTokenStorage {
     }
 
     /**
-     * @notice Get the balance according to the provided partitions
-     * @param _partition Partition which differentiate the tokens.
-     * @param _tokenHolder Whom balance need to queried
-     * @return Amount of tokens as per the given partitions
+     * @notice Determines whether `_operator` is an operator for all partitions of `_tokenHolder`
+     * @param _operator The operator to check
+     * @param _tokenHolder The token holder to check
+     * @return Whether the `_operator` is an operator for all partitions of `_tokenHolder`
      */
-    function balanceOfByPartition(bytes32 _partition, address _tokenHolder) external view returns(uint256) {
-        address[] memory tms = modules[TRANSFER_KEY];
-        uint256 max;
-        uint256 amount;
-        for (uint256 i = 0; i < tms.length; i++) {
-            amount = ITransferManager(tms[i]).getTokensByPartition(_partition, _tokenHolder);
-            if (max < amount) {
-                max = amount;
-            }
-        }
-        return max;
+    function isOperator(address _operator, address _tokenHolder) public view returns (bool) {
+        return approvals[_tokenHolder][_operator];
+    }
+
+    /**
+     * @notice Determines whether `_operator` is an operator for a specified partition of `_tokenHolder`
+     * @param _partition The partition to check
+     * @param _operator The operator to check
+     * @param _tokenHolder The token holder to check
+     * @return Whether the `_operator` is an operator for a specified partition of `_tokenHolder`
+     */
+    function isOperatorForPartition(bytes32 _partition, address _operator, address _tokenHolder) public view returns (bool) {
+        return partitionApprovals[_tokenHolder][_partition][_operator];
     }
 
     /**

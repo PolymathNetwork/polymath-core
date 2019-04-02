@@ -10,6 +10,8 @@ contract SecurityTokenStorage {
     uint8 constant DATA_KEY = 6;
     bytes32 internal constant INVESTORSKEY = 0xdf3a8dd24acdd05addfc6aeffef7574d2de3f844535ec91e8e0f3e45dba96731; //keccak256(abi.encodePacked("INVESTORS"))
     bytes32 internal constant TREASURY = 0xaae8817359f3dcb67d050f44f3e49f982e0359d90ca4b5f18569926304aaece6; //keccak256(abi.encodePacked("TREASURY_WALLET"))
+    bytes32 public constant LOCKED = "LOCKED";
+    bytes32 public constant UNLOCKED = "UNLOCKED";
 
     //////////////////////////
     /// Document datastructure
@@ -108,5 +110,9 @@ contract SecurityTokenStorage {
     mapping(bytes32 => Document) internal _documents;
     // mapping to store the document name indexes
     mapping(bytes32 => uint256) internal _docIndexes;
+    // Mapping from (investor, partition, operator) to approved status
+    mapping (address => mapping (bytes32 => mapping (address => bool))) partitionApprovals;
+    // Mapping from (investor, operator) to approved status (can be used against any partition)
+    mapping (address => mapping (address => bool)) approvals;
 
 }

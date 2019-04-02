@@ -4,7 +4,7 @@ interface IERC1410 {
 
     // Token Information
     function balanceOfByPartition(bytes32 _partition, address _tokenHolder) external view returns (uint256);
-    function partitionsOf(address _tokenHolder) external view returns (bytes32[] memory);
+    //function partitionsOf(address _tokenHolder) external view returns (bytes32[] memory);
 
     // Token Transfers
     function transferByPartition(bytes32 _partition, address _to, uint256 _value, bytes calldata _data) external returns (bytes32);
@@ -12,8 +12,9 @@ interface IERC1410 {
     function canTransferByPartition(address _from, address _to, bytes32 _partition, uint256 _value, bytes calldata _data) external view returns (byte, bytes32, bytes32);
 
     // Operator Information
-    function isOperator(address _operator, address _tokenHolder) external view returns (bool);
-    function isOperatorForPartition(bytes32 _partition, address _operator, address _tokenHolder) external view returns (bool);
+    // These functions are present in the STGetter
+    // function isOperator(address _operator, address _tokenHolder) external view returns (bool);
+    // function isOperatorForPartition(bytes32 _partition, address _operator, address _tokenHolder) external view returns (bool);
 
     // Operator Management
     function authorizeOperator(address _operator) external;

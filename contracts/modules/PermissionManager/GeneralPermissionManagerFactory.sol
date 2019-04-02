@@ -31,8 +31,8 @@ contract GeneralPermissionManagerFactory is UpgradableModuleFactory {
         description = "Manage permissions within the Security Token and attached modules";
         typesData.push(1);
         tagsData.push("Permission Management");
-        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
     }
 
     /**
@@ -45,7 +45,7 @@ contract GeneralPermissionManagerFactory is UpgradableModuleFactory {
         external
         returns(address)
     {
-        address permissionManager = address(new GeneralPermissionManagerProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
+        address permissionManager = address(new GeneralPermissionManagerProxy(logicContracts[latestUpgrade].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestUpgrade].logicContract));
         _initializeModule(permissionManager, _data);
         return permissionManager;
     }

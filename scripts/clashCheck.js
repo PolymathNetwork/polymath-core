@@ -34,16 +34,22 @@ async function checkClashes() {
             }
         });
     });
+    let clashesFound = false;
     contractFunctions.forEach(functionSig => {
         let fnSelector = Web3.utils.sha3(functionSig).slice(0, 10);
         if(functionSelectors.has(fnSelector)) {
+            clashesFound = true;
             console.log(chalk.red('Function selector clash found!', functionSelectors.get(fnSelector), 'and', functionSig, 'have the same function selector:', fnSelector));
             functionSelectors.set(fnSelector, functionSelectors.get(fnSelector) + ', ' + functionSig);
         } else {
             functionSelectors.set(fnSelector, functionSig);
         }
     });
-    console.log(chalk.green("Clash check finished. If you don't see any red error messages, you are good to go."));
+    if (clashesFound) {
+        console.log(chalk.yellow("The clash(es) might be in two different contracts and hence not be am Issue.\nThis script can not detect this (yet) because of proxy contracts"));
+        throw("Clash(es) found! Please fix.");
+    }  
+    console.log(chalk.green("Clash check finished. No Clashes found."));
 }
 
 checkClashes();

@@ -32,8 +32,8 @@ contract LockUpTransferManagerFactory is UpgradableModuleFactory {
         typesData.push(2);
         tagsData.push("LockUp");
         tagsData.push("Transfer Restriction");
-        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
     }
 
     /**
@@ -46,7 +46,7 @@ contract LockUpTransferManagerFactory is UpgradableModuleFactory {
         external
         returns(address)
     {
-        address lockUpTransferManager = address(new LockUpTransferManagerProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
+        address lockUpTransferManager = address(new LockUpTransferManagerProxy(logicContracts[latestUpgrade].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestUpgrade].logicContract));
         _initializeModule(lockUpTransferManager, _data);
         return lockUpTransferManager;
     }

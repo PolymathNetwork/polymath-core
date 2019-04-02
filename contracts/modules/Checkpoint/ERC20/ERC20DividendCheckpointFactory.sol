@@ -35,8 +35,8 @@ contract ERC20DividendCheckpointFactory is UpgradableModuleFactory {
         tagsData.push("ERC20");
         tagsData.push("Dividend");
         tagsData.push("Checkpoint");
-        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
     }
 
     /**
@@ -44,7 +44,7 @@ contract ERC20DividendCheckpointFactory is UpgradableModuleFactory {
      * @return Address Contract address of the Module
      */
     function deploy(bytes calldata _data) external returns(address) {
-        address erc20DividendCheckpoint = address(new ERC20DividendCheckpointProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
+        address erc20DividendCheckpoint = address(new ERC20DividendCheckpointProxy(logicContracts[latestUpgrade].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestUpgrade].logicContract));
         _initializeModule(erc20DividendCheckpoint, _data);
         return erc20DividendCheckpoint;
     }

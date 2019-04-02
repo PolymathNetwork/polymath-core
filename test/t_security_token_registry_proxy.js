@@ -56,7 +56,7 @@ contract("SecurityTokenRegistryProxy", async (accounts) => {
 
     const address_zero = "0x0000000000000000000000000000000000000000";
     const one_address = "0x0000000000000000000000000000000000000001";
-    const STRProxyParameters = ["address", "address", "uint256", "uint256", "address", "address"];
+    const STRProxyParameters = ["address", "uint256", "uint256", "address", "address"];
 
     async function readStorage(contractAddress, slot) {
         return await web3.eth.getStorageAt(contractAddress, slot);
@@ -115,7 +115,6 @@ contract("SecurityTokenRegistryProxy", async (accounts) => {
             I_STRGetter = await STRGetter.new({from: account_polymath});
             let bytesProxy = encodeProxyCall(STRProxyParameters, [
                 I_PolymathRegistry.address,
-                I_STFactory.address,
                 initRegFee,
                 initRegFee,
                 account_polymath,
@@ -135,6 +134,8 @@ contract("SecurityTokenRegistryProxy", async (accounts) => {
             );
             I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
             I_STRGetter = await STRGetter.at(I_SecurityTokenRegistryProxy.address);
+            await I_STRProxied.setProtocolFactory(I_STFactory.address, 3, 0, 0);
+            await I_STRProxied.setLatestVersion(3, 0, 0);
         });
 
         it("Verify the initialize data", async () => {
@@ -165,9 +166,9 @@ contract("SecurityTokenRegistryProxy", async (accounts) => {
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, token_owner, 0, { from: token_owner });
 
             // Verify the successful generation of the security token
-            assert.equal(tx.logs[2].args._ticker, symbol, "SecurityToken doesn't get deployed");
+            assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
 
-            I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+            I_SecurityToken = await SecurityToken.at(tx.logs[1].args._securityTokenAddress);
             stGetter = await STGetter.at(I_SecurityToken.address);
             assert.equal(await stGetter.getTreasuryWallet.call(), token_owner, "Incorrect wallet set");
             const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];

@@ -33,8 +33,8 @@ contract GeneralTransferManagerFactory is UpgradableModuleFactory {
         typesData.push(6);
         tagsData.push("General");
         tagsData.push("Transfer Restriction");
-        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
     }
 
     /**
@@ -47,7 +47,7 @@ contract GeneralTransferManagerFactory is UpgradableModuleFactory {
         external
         returns(address)
     {
-        address generalTransferManager = address(new GeneralTransferManagerProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
+        address generalTransferManager = address(new GeneralTransferManagerProxy(logicContracts[latestUpgrade].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestUpgrade].logicContract));
         _initializeModule(generalTransferManager, _data);
         return generalTransferManager;
     }

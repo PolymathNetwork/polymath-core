@@ -1,29 +1,31 @@
 pragma solidity ^0.5.0;
 
 import "./ModuleFactory.sol";
+import "../interfaces/IModuleRegistry.sol";
 import "../proxy/OwnedUpgradeabilityProxy.sol";
+
 
 /**
  * @title Factory for deploying upgradable modules
  */
 contract UpgradableModuleFactory is ModuleFactory {
 
-    event LogicContractSet(string _version, address _logicContract, bytes _logicData);
+    event LogicContractSet(string _version, address _logicContract, bytes _upgradeData);
+
+    event ModuleUpgraded(
+        address indexed _module,
+        address indexed _securityToken,
+        uint256 indexed _version
+    );
 
     struct LogicContract {
         string version;
         address logicContract;
-        bytes logicData;
+        bytes upgradeData;
     }
 
     // Mapping from version to logic contract
     mapping (uint256 => LogicContract) logicContracts;
-
-    // Mapping from Security Token address to module version
-    /* mapping (address => uint256) moduleVersions; */
-
-    // Mapping from Security Token address to module address
-    /* mapping (address => address) modules; */
 
     // Mapping from Security Token address, to deployed proxy module address, to module version
     mapping (address => mapping (address => uint256)) modules;
@@ -32,7 +34,7 @@ contract UpgradableModuleFactory is ModuleFactory {
     mapping (address => address) moduleToSecurityToken;
 
     // Current version
-    uint256 public latestVersion;
+    uint256 public latestUpgrade;
 
     /**
      * @notice Constructor
@@ -53,25 +55,27 @@ contract UpgradableModuleFactory is ModuleFactory {
         public ModuleFactory(_setupCost, _usageCost, _polymathRegistry, _isCostInPoly)
     {
         require(_logicContract != address(0), "Invalid address");
-        logicContracts[latestVersion].logicContract = _logicContract;
-        logicContracts[latestVersion].version = _version;
+        logicContracts[latestUpgrade].logicContract = _logicContract;
+        logicContracts[latestUpgrade].version = _version;
     }
 
     /**
      * @notice Used to upgrade the module factory
      * @param _version Version of upgraded module
      * @param _logicContract Address of deployed module logic contract referenced from proxy
-     * @param _logicData Data to be passed in call to upgradeToAndCall when a token upgrades its module
+     * @param _upgradeData Data to be passed in call to upgradeToAndCall when a token upgrades its module
      */
-    function setLogicContract(string calldata _version, address _logicContract, bytes calldata _logicData) external onlyOwner {
-        require(keccak256(abi.encodePacked(_version)) != keccak256(abi.encodePacked(logicContracts[latestVersion].version)), "Same version");
-        require(_logicContract != logicContracts[latestVersion].logicContract, "Same version");
+    function setLogicContract(string calldata _version, address _logicContract, bytes calldata _upgradeData) external onlyOwner {
+        require(keccak256(abi.encodePacked(_version)) != keccak256(abi.encodePacked(logicContracts[latestUpgrade].version)), "Same version");
+        require(_logicContract != logicContracts[latestUpgrade].logicContract, "Same version");
         require(_logicContract != address(0), "Invalid address");
-        latestVersion++;
-        logicContracts[latestVersion].logicContract = _logicContract;
-        logicContracts[latestVersion].logicData = _logicData;
-        logicContracts[latestVersion].version = _version;
-        emit LogicContractSet(_version, _logicContract, _logicData);
+        latestUpgrade++;
+        logicContracts[latestUpgrade].version = _version;
+        logicContracts[latestUpgrade].logicContract = _logicContract;
+        logicContracts[latestUpgrade].upgradeData = _upgradeData;
+        IModuleRegistry moduleRegistry = IModuleRegistry(IPolymathRegistry(polymathRegistry).getAddress("ModuleRegistry"));
+        moduleRegistry.unverifyModule(address(this));
+        emit LogicContractSet(_version, _logicContract, _upgradeData);
     }
 
     /**
@@ -83,10 +87,14 @@ contract UpgradableModuleFactory is ModuleFactory {
         require(moduleToSecurityToken[_module] == msg.sender, "Incorrect caller");
         // Only allow issuers to upgrade in single step verisons to preserve upgradeToAndCall semantics
         uint256 newVersion = modules[msg.sender][_module] + 1;
-        /* uint256 newVersion = moduleVersions[msg.sender] + 1; */
-        require(newVersion <= latestVersion, "Incorrect version");
-        OwnedUpgradeabilityProxy(address(uint160(_module))).upgradeToAndCall(logicContracts[newVersion].version, logicContracts[newVersion].logicContract, logicContracts[newVersion].logicData);
+        require(newVersion <= latestUpgrade, "Incorrect version");
+        OwnedUpgradeabilityProxy(address(uint160(_module))).upgradeToAndCall(logicContracts[newVersion].version, logicContracts[newVersion].logicContract, logicContracts[newVersion].upgradeData);
         modules[msg.sender][_module] = newVersion;
+        emit ModuleUpgraded(
+            _module,
+            msg.sender,
+            newVersion
+        );
     }
 
     /**
@@ -97,15 +105,14 @@ contract UpgradableModuleFactory is ModuleFactory {
     function _initializeModule(address _module, bytes memory _data) internal {
         super._initializeModule(_module, _data);
         moduleToSecurityToken[_module] = msg.sender;
-        modules[msg.sender][_module] = latestVersion;
-        /* modules[msg.sender] = _module; */
+        modules[msg.sender][_module] = latestUpgrade;
     }
 
     /**
      * @notice Get the version related to the module factory
      */
     function version() external view returns(string memory) {
-        return logicContracts[latestVersion].version;
+        return logicContracts[latestUpgrade].version;
     }
 
 }

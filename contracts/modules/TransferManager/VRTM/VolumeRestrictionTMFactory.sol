@@ -34,8 +34,8 @@ contract VolumeRestrictionTMFactory is UpgradableModuleFactory {
         tagsData.push("Rolling Period");
         tagsData.push("Volume");
         tagsData.push("Transfer Restriction");
-        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
     }
 
      /**
@@ -43,7 +43,7 @@ contract VolumeRestrictionTMFactory is UpgradableModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes calldata _data) external returns(address) {
-        address volumeRestrictionTransferManager = address(new VolumeRestrictionTMProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
+        address volumeRestrictionTransferManager = address(new VolumeRestrictionTMProxy(logicContracts[latestUpgrade].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestUpgrade].logicContract));
         _initializeModule(volumeRestrictionTransferManager, _data);
         return volumeRestrictionTransferManager;
     }

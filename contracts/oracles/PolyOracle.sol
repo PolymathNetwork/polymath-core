@@ -16,6 +16,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     uint256 public oraclizeTimeTolerance = 5 minutes;
     uint256 public staleTime = 6 hours;
 
+    // POLYUSD poly units = 1 * 10^18 USD units (1 USD)
     uint256 private POLYUSD;
     uint256 public latestUpdate;
     uint256 public latestScheduledUpdate;

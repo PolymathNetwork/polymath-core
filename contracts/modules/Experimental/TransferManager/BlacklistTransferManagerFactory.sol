@@ -14,9 +14,15 @@ contract BlacklistTransferManagerFactory is ModuleFactory {
      * @param _setupCost Setup cost of the module
      * @param _usageCost Usage cost of the module
      * @param _polymathRegistry Address of the Polymath registry
+     * @param _isCostInPoly true = cost in Poly, false = USD
      */
-    constructor (uint256 _setupCost, uint256 _usageCost, address _polymathRegistry) public
-    ModuleFactory(_setupCost, _usageCost, _polymathRegistry)
+    constructor(
+        uint256 _setupCost,
+        uint256 _usageCost,
+        address _polymathRegistry,
+        bool _isCostInPoly
+    )
+        public ModuleFactory(_setupCost, _usageCost, _polymathRegistry, _isCostInPoly)
     {
         initialVersion = "3.0.0";
         name = "BlacklistTransferManager";
@@ -25,8 +31,8 @@ contract BlacklistTransferManagerFactory is ModuleFactory {
         typesData.push(2);
         tagsData.push("Blacklist");
         tagsData.push("Transfer Restriction");
-        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
     }
 
      /**

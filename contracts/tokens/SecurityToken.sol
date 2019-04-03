@@ -7,6 +7,7 @@ import "../interfaces/IModule.sol";
 import "./SecurityTokenStorage.sol";
 import "../libraries/TokenLib.sol";
 import "../interfaces/IDataStore.sol";
+import "../interfaces/IUpgradableTokenFactory.sol";
 import "../interfaces/IModuleFactory.sol";
 import "../interfaces/token/IERC1410.sol";
 import "../interfaces/token/IERC1594.sol";
@@ -14,10 +15,8 @@ import "../interfaces/token/IERC1643.sol";
 import "../interfaces/token/IERC1644.sol";
 import "../interfaces/IModuleRegistry.sol";
 import "../interfaces/ITransferManager.sol";
-import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
 
 /**
  * @title Security Token contract
@@ -29,7 +28,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/ERC20Detailed.sol";
  * @notice - ST does not inherit from ISecurityToken due to:
  * @notice - https://github.com/ethereum/solidity/issues/4847
  */
-contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, SecurityTokenStorage, IERC1594, IERC1643, IERC1644, IERC1410, Proxy {
+contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594, IERC1643, IERC1644, IERC1410, Proxy {
 
     using SafeMath for uint256;
 
@@ -41,11 +40,14 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         address _module,
         uint256 _moduleCost,
         uint256 _budget,
-        bytes32 _label
+        bytes32 _label,
+        bool _archived
     );
 
     // Emit when the token details get updated
     event UpdateTokenDetails(string _oldDetails, string _newDetails);
+    // Emit when the token name get updated
+    event UpdateTokenName(string _oldName, string _newName);
     // Emit when the granularity get changed
     event GranularityChanged(uint256 _oldGranularity, uint256 _newGranularity);
     // Emit when is permanently frozen by the issuer
@@ -67,6 +69,23 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     //Event emit when the global treasury wallet address get changed
     event TreasuryWalletChanged(address _oldTreasuryWallet, address _newTreasuryWallet);
     event DisableController();
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event TokenUpgraded(uint8 _major, uint8 _minor, uint8 _patch);
+
+    /**
+     * @notice Initialization function
+     * @dev Expected to be called atomically with the proxy being created, by the owner of the token
+     * @dev Can only be called once
+     */
+    function initialize(address _getterDelegate) external {
+        //Expected to be called atomically with the proxy being created
+        require(!initialized, "Already initialized");
+        getterDelegate = _getterDelegate;
+        securityTokenVersion = SemanticVersion(3, 0, 0);
+        updateFromRegistry();
+        tokenFactory = msg.sender;
+        initialized = true;
+    }
 
     function _isModule(address _module, uint8 _type) internal view returns(bool) {
         if (modulesToData[_module].module != _module || modulesToData[_module].isArchived)
@@ -104,6 +123,22 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         require(_isTransfer, "Transfer Invalid");
     }
 
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        require(isOwner());
+        _;
+    }
+
+    /**
+     * @dev Throws if called by any account other than the STFactory.
+     */
+    modifier onlyTokenFactory() {
+        require(msg.sender == tokenFactory);
+        _;
+    }
+
     // Require msg.sender to be the specified module type
     modifier onlyModule(uint8 _type) {
         require(_isModule(msg.sender, _type));
@@ -127,39 +162,6 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     }
 
     /**
-     * @notice constructor
-     * @param _name Name of the SecurityToken
-     * @param _symbol Symbol of the Token
-     * @param _decimals Decimals for the securityToken
-     * @param _granularity granular level of the token
-     * @param _tokenDetails Details of the token that are stored off-chain
-     * @param _polymathRegistry Contract address of the polymath registry
-     * @param _delegate Contract address of the delegate
-     */
-    constructor(
-        string memory _name,
-        string memory _symbol,
-        uint8 _decimals,
-        uint256 _granularity,
-        string memory _tokenDetails,
-        address _polymathRegistry,
-        address _delegate
-    )
-        public
-        ERC20Detailed(_name, _symbol, _decimals)
-    {
-        _zeroAddressCheck(_polymathRegistry);
-        _zeroAddressCheck(_delegate);
-        polymathRegistry = _polymathRegistry;
-        //When it is created, the owner is the STR
-        updateFromRegistry();
-        delegate = _delegate;
-        tokenDetails = _tokenDetails;
-        granularity = _granularity;
-        securityTokenVersion = SemanticVersion(3, 0, 0);
-    }
-
-    /**
       * @notice Attachs a module to the SecurityToken
       * @dev  E.G.: On deployment (through the STR) ST gets a TransferManager module attached to it
       * @dev to control restrictions on transfers.
@@ -174,14 +176,15 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         bytes memory _data,
         uint256 _maxCost,
         uint256 _budget,
-        bytes32 _label
+        bytes32 _label,
+        bool _archived
     )
         public
         onlyOwner
         nonReentrant
     {
         //Check that the module factory exists in the ModuleRegistry - will throw otherwise
-        IModuleRegistry(moduleRegistry).useModule(_moduleFactory);
+        IModuleRegistry(moduleRegistry).useModule(_moduleFactory, false);
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
         uint8[] memory moduleTypes = moduleFactory.types();
         uint256 moduleCost = moduleFactory.setupCostInPoly();
@@ -193,35 +196,36 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         require(modulesToData[module].module == address(0), "Module exists");
         //Approve ongoing budget
         ERC20(polyToken).approve(module, _budget);
-        //Add to SecurityToken module map
-        bytes32 moduleName = moduleFactory.name();
-        uint256[] memory moduleIndexes = new uint256[](moduleTypes.length);
+        _addModuleData(moduleTypes, _moduleFactory, module, moduleCost, _budget, _label, _archived);
+    }
+
+    function _addModuleData(uint8[] memory _moduleTypes, address _moduleFactory, address _module, uint256 _moduleCost, uint256 _budget, bytes32 _label, bool _archived) internal {
+        bytes32 moduleName = IModuleFactory(_moduleFactory).name();
+        uint256[] memory moduleIndexes = new uint256[](_moduleTypes.length);
         uint256 i;
-        for (i = 0; i < moduleTypes.length; i++) {
-            moduleIndexes[i] = modules[moduleTypes[i]].length;
-            modules[moduleTypes[i]].push(module);
+        for (i = 0; i < _moduleTypes.length; i++) {
+            moduleIndexes[i] = modules[_moduleTypes[i]].length;
+            modules[_moduleTypes[i]].push(_module);
         }
-        modulesToData[module] = ModuleData(
+        modulesToData[_module] = ModuleData(
             moduleName,
-            module,
+            _module,
             _moduleFactory,
-            false,
-            moduleTypes,
+            _archived,
+            _moduleTypes,
             moduleIndexes,
             names[moduleName].length,
             _label
         );
-        names[moduleName].push(module);
-        //Emit log event
-        /*solium-disable-next-line security/no-block-members*/
-        emit ModuleAdded(moduleTypes, moduleName, _moduleFactory, module, moduleCost, _budget, _label);
+        names[moduleName].push(_module);
+        emit ModuleAdded(_moduleTypes, moduleName, _moduleFactory, _module, _moduleCost, _budget, _label, _archived);
     }
 
     /**
     * @notice addModule function will call addModuleWithLabel() with an empty label for backward compatible
     */
-    function addModule(address _moduleFactory, bytes calldata _data, uint256 _maxCost, uint256 _budget) external {
-        addModuleWithLabel(_moduleFactory, _data, _maxCost, _budget, "");
+    function addModule(address _moduleFactory, bytes calldata _data, uint256 _maxCost, uint256 _budget, bool _archived) external {
+        addModuleWithLabel(_moduleFactory, _data, _maxCost, _budget, "", _archived);
     }
 
     /**
@@ -232,8 +236,20 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
         TokenLib.archiveModule(modulesToData[_module]);
     }
 
+    /**
+    * @notice Upgrades a module attached to the SecurityToken
+    * @param _module address of module to archive
+    */
     function upgradeModule(address _module) external onlyOwner {
-        TokenLib.upgradeModule(modulesToData[_module]);
+        TokenLib.upgradeModule(moduleRegistry, modulesToData[_module]);
+    }
+
+    /**
+    * @notice Upgrades security token
+    */
+    function upgradeToken() external onlyOwner {
+        IUpgradableTokenFactory(tokenFactory).upgradeToken(7);
+        emit TokenUpgraded(securityTokenVersion.major, securityTokenVersion.minor, securityTokenVersion.patch);
     }
 
     /**
@@ -241,7 +257,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     * @param _module address of module to unarchive
     */
     function unarchiveModule(address _module) external onlyOwner {
-        TokenLib.unarchiveModule(modulesToData[_module]);
+        TokenLib.unarchiveModule(moduleRegistry, modulesToData[_module]);
     }
 
     /**
@@ -299,6 +315,15 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     function changeDataStore(address _dataStore) external onlyOwner {
         _zeroAddressCheck(_dataStore);
         dataStore = _dataStore;
+    }
+
+    /**
+    * @notice Allows owner to change token name
+    * @param _name new name of the token
+    */
+    function changeName(string calldata _name) external onlyOwner {
+        emit UpdateTokenName(name, _name);
+        name = _name;
     }
 
     /**
@@ -716,7 +741,7 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
 
     function _redeem(address _from, uint256 _value, bytes memory _data) internal {
         // Add a function to validate the `_data` parameter
-        require(_checkAndBurn(_from, _value, _data), "Invalid redeem");
+        _validateRedeem(_checkAndBurn(_from, _value, _data));
     }
 
     /**
@@ -796,9 +821,13 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
      */
     function redeemFrom(address _tokenHolder, uint256 _value, bytes calldata _data) external onlyModule(BURN_KEY) {
         // Add a function to validate the `_data` parameter
-        require(_updateTransfer(_tokenHolder, address(0), _value, _data), "Invalid redeem");
+        _validateRedeem(_updateTransfer(_tokenHolder, address(0), _value, _data));
         _burnFrom(_tokenHolder, _value);
         emit Redeemed(msg.sender, _tokenHolder, _value, _data);
+    }
+
+    function _validateRedeem(bool _isRedeem) internal pure {
+        require(_isRedeem, "Invalid redeem");
     }
 
     /**
@@ -1016,12 +1045,46 @@ contract SecurityToken is ERC20, ERC20Detailed, Ownable, ReentrancyGuard, Securi
     }
 
     function _implementation() internal view returns(address) {
-        return delegate;
+        return getterDelegate;
     }
 
     function updateFromRegistry() public onlyOwner {
         moduleRegistry = PolymathRegistry(polymathRegistry).getAddress("ModuleRegistry");
         securityTokenRegistry = PolymathRegistry(polymathRegistry).getAddress("SecurityTokenRegistry");
         polyToken = PolymathRegistry(polymathRegistry).getAddress("PolyToken");
+    }
+
+    //Ownable Functions
+
+    /**
+     * @return the address of the owner.
+     */
+    function owner() public view returns (address) {
+        return _owner;
+    }
+
+    /**
+     * @return true if `msg.sender` is the owner of the contract.
+     */
+    function isOwner() public view returns (bool) {
+        return msg.sender == _owner;
+    }
+
+    /**
+     * @dev Allows the current owner to transfer control of the contract to a newOwner.
+     * @param newOwner The address to transfer ownership to.
+     */
+    function transferOwnership(address newOwner) public onlyOwner {
+        _transferOwnership(newOwner);
+    }
+
+    /**
+     * @dev Transfers control of the contract to a newOwner.
+     * @param newOwner The address to transfer ownership to.
+     */
+    function _transferOwnership(address newOwner) internal {
+        require(newOwner != address(0));
+        emit OwnershipTransferred(_owner, newOwner);
+        _owner = newOwner;
     }
 }

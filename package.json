@@ -81,7 +81,7 @@
     "fs": "0.0.2",
     "ganache-cli": "6.1.8",
     "mocha-junit-reporter": "^1.18.0",
-    "openzeppelin-solidity": "2.1.2",
+    "openzeppelin-solidity": "2.2.0",
     "prettier": "^1.15.3",
     "prompt": "^1.0.0",
     "request": "^2.88.0",

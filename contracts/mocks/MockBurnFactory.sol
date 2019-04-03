@@ -18,10 +18,11 @@ contract MockBurnFactory is TrackedRedemptionFactory {
     constructor(
         uint256 _setupCost,
         uint256 _usageCost,
-        address _polymathRegistry
+        address _polymathRegistry,
+        bool _isFeeInPoly
     )
         public
-        TrackedRedemptionFactory(_setupCost, _usageCost, _polymathRegistry)
+        TrackedRedemptionFactory(_setupCost, _usageCost, _polymathRegistry, _isFeeInPoly)
     {
 
     }

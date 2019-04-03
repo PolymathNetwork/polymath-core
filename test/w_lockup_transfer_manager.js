@@ -448,7 +448,7 @@ contract('LockUpTransferManager', accounts => {
                     currentTime.add(new BN(duration.seconds(1))),
                     new BN(duration.seconds(400000)),
                     new BN(duration.seconds(100000)),
-                    web3.utils.fromAscii("a_lockup"),
+                    web3.utils.fromAscii("a_lockup2"),
                     {
                         from: token_owner
                     }

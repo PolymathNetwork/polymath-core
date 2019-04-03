@@ -599,10 +599,12 @@ contract LockUpTransferManager is LockUpTransferManagerStorage, TransferManager 
     {
         _checkZeroAddress(_userAddress);
         _checkValidStartTime(lockups[_lockupName].startTime);
-        require(
-            userToLockups[_userAddress][userToLockupIndex[_userAddress][_lockupName]] != _lockupName,
-            "User already in lockup"
-        );
+        if(userToLockups[_userAddress].length > 0) {
+            require(
+                userToLockups[_userAddress][userToLockupIndex[_userAddress][_lockupName]] != _lockupName,
+                "User already in lockup"
+            );
+        }
         userToLockupIndex[_userAddress][_lockupName] = userToLockups[_userAddress].length;
         lockupToUserIndex[_lockupName][_userAddress] = lockupToUsers[_lockupName].length;
         userToLockups[_userAddress].push(_lockupName);

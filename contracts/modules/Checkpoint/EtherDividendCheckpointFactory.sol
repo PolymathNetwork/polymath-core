@@ -1,6 +1,8 @@
 pragma solidity ^0.4.24;
 
-import "./EtherDividendCheckpoint.sol";
+import "../../proxy/EtherDividendCheckpointProxy.sol";
+import "../../libraries/Util.sol";
+import "../../interfaces/IBoot.sol";
 import "../ModuleFactory.sol";
 
 /**
@@ -8,32 +10,41 @@ import "../ModuleFactory.sol";
  */
 contract EtherDividendCheckpointFactory is ModuleFactory {
 
+    address public logicContract;
+
     /**
      * @notice Constructor
      * @param _polyAddress Address of the polytoken
      * @param _setupCost Setup cost of the module
      * @param _usageCost Usage cost of the module
      * @param _subscriptionCost Subscription cost of the module
+     * @param _logicContract Contract address that contains the logic related to `description`
      */
-    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
+    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _logicContract) public
     ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
-        version = "1.0.0";
+        require(_logicContract != address(0), "Invalid logic contract");
+        version = "2.1.1";
         name = "EtherDividendCheckpoint";
         title = "Ether Dividend Checkpoint";
         description = "Create ETH dividends for token holders at a specific checkpoint";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        logicContract = _logicContract;
     }
 
     /**
      * @notice Used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
-    function deploy(bytes /* _data */) external returns(address) {
+    function deploy(bytes _data) external returns(address) {
         if(setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Insufficent allowance or balance");
-        address ethDividendCheckpoint = new EtherDividendCheckpoint(msg.sender, address(polyToken));
+        address ethDividendCheckpoint = new EtherDividendCheckpointProxy(msg.sender, address(polyToken), logicContract);
+        //Checks that _data is valid (not calling anything it shouldn't)
+        require(Util.getSig(_data) == IBoot(ethDividendCheckpoint).getInitFunction(), "Invalid data");
+        /*solium-disable-next-line security/no-low-level-calls*/
+        require(ethDividendCheckpoint.call(_data), "Unsuccessfull call");
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(ethDividendCheckpoint, getName(), address(this), msg.sender, setupCost, now);
         return ethDividendCheckpoint;

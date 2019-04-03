@@ -56,7 +56,7 @@ start_testrpc() {
     --account="0x2bdd21761a483f71054e14f5b827213567971c676928d9a1808cbfa4b7501209,1000000000000000000000000"
   )
 
-  if [ "$COVERAGE" = true ]; then
+  if [ "$COVERAGE" = true ] || [ "$TRAVIS_PULL_REQUEST" > 0 ] && [ "$NOT_FORK" != true ]; then
     node_modules/.bin/testrpc-sc --gasLimit 0xfffffffffff --port "$testrpc_port" "${accounts[@]}" > /dev/null &
   else
     node_modules/.bin/ganache-cli --gasLimit 8000000 "${accounts[@]}" > /dev/null &
@@ -88,11 +88,15 @@ else
   fi
 fi
 
-if [ "$COVERAGE" = true ]; then
+if [ "$COVERAGE" = true ] || [ "$TRAVIS_PULL_REQUEST" > 0 ] && [ "$NOT_FORK" != true ]; then
   curl -o node_modules/solidity-coverage/lib/app.js https://raw.githubusercontent.com/maxsam4/solidity-coverage/relative-path/lib/app.js
-  node_modules/.bin/solidity-coverage
   if [ "$CIRCLECI" = true ]; then
-    cat coverage/lcov.info | node_modules/.bin/coveralls
+    rm truffle-config.js
+    mv truffle-ci.js truffle-config.js
+  fi
+  node_modules/.bin/solidity-coverage
+  if [ "$CIRCLECI" = true ] || [ "$TRAVIS_PULL_REQUEST" > 0 ] && [ "$NOT_FORK" != true ]; then
+    cat coverage/lcov.info | node_modules/.bin/coveralls || echo 'Failed to report coverage to Coveralls'
   fi
 else
   if [ "$CIRCLECI" = true ]; then # using mocha junit reporter for parallelism in CircleCI 

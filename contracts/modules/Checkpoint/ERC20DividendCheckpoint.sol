@@ -1,17 +1,16 @@
 pragma solidity ^0.4.24;
 
 import "./DividendCheckpoint.sol";
+import "./ERC20DividendCheckpointStorage.sol";
 import "../../interfaces/IOwnable.sol";
 import "../../interfaces/IERC20.sol";
 
 /**
  * @title Checkpoint module for issuing ERC20 dividends
  */
-contract ERC20DividendCheckpoint is DividendCheckpoint {
+contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendCheckpoint {
     using SafeMath for uint256;
 
-    // Mapping to token address for each dividend
-    mapping (uint256 => address) public dividendTokens;
     event ERC20DividendDeposited(
         address indexed _depositor,
         uint256 _checkpointId,
@@ -26,20 +25,20 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
     );
     event ERC20DividendClaimed(
         address indexed _payee,
-        uint256 _dividendIndex,
+        uint256 indexed _dividendIndex,
         address indexed _token,
         uint256 _amount,
         uint256 _withheld
     );
     event ERC20DividendReclaimed(
         address indexed _claimer,
-        uint256 _dividendIndex,
+        uint256 indexed _dividendIndex,
         address indexed _token,
         uint256 _claimedAmount
     );
     event ERC20DividendWithholdingWithdrawn(
         address indexed _claimer,
-        uint256 _dividendIndex,
+        uint256 indexed _dividendIndex,
         address indexed _token,
         uint256 _withheldAmount
     );
@@ -68,8 +67,8 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
         address _token,
         uint256 _amount,
         bytes32 _name
-    ) 
-        external 
+    )
+        external
         withPerm(MANAGE)
     {
         createDividendWithExclusions(_maturity, _expiry, _token, _amount, excluded, _name);
@@ -133,16 +132,16 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
      * @param _name Name/Title for identification
      */
     function createDividendWithCheckpointAndExclusions(
-        uint256 _maturity, 
-        uint256 _expiry, 
-        address _token, 
-        uint256 _amount, 
-        uint256 _checkpointId, 
+        uint256 _maturity,
+        uint256 _expiry,
+        address _token,
+        uint256 _amount,
+        uint256 _checkpointId,
         address[] _excluded,
         bytes32 _name
-    ) 
+    )
         public
-        withPerm(MANAGE)      
+        withPerm(MANAGE)
     {
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, _token, _amount, _checkpointId, _excluded, _name);
     }
@@ -158,15 +157,15 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
      * @param _name Name/Title for identification
      */
     function _createDividendWithCheckpointAndExclusions(
-        uint256 _maturity, 
-        uint256 _expiry, 
-        address _token, 
-        uint256 _amount, 
-        uint256 _checkpointId, 
+        uint256 _maturity,
+        uint256 _expiry,
+        address _token,
+        uint256 _amount,
+        uint256 _checkpointId,
         address[] _excluded,
         bytes32 _name
-    ) 
-        internal  
+    )
+        internal
     {
         ISecurityToken securityTokenInstance = ISecurityToken(securityToken);
         require(_excluded.length <= EXCLUDED_ADDRESS_LIMIT, "Too many addresses excluded");
@@ -210,7 +209,7 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
     }
 
     /**
-     * @notice Emits the ERC20DividendDeposited event. 
+     * @notice Emits the ERC20DividendDeposited event.
      * Seperated into a different function as a workaround for stack too deep error
      */
     function _emitERC20DividendDepositedEvent(
@@ -242,10 +241,12 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
         uint256 claimAfterWithheld = claim.sub(withheld);
         if (claimAfterWithheld > 0) {
             require(IERC20(dividendTokens[_dividendIndex]).transfer(_payee, claimAfterWithheld), "transfer failed");
-            _dividend.dividendWithheld = _dividend.dividendWithheld.add(withheld);
-            investorWithheld[_payee] = investorWithheld[_payee].add(withheld);
-            emit ERC20DividendClaimed(_payee, _dividendIndex, dividendTokens[_dividendIndex], claim, withheld);
         }
+        if (withheld > 0) {
+            _dividend.totalWithheld = _dividend.totalWithheld.add(withheld);
+            _dividend.withheld[_payee] = withheld;
+        }
+        emit ERC20DividendClaimed(_payee, _dividendIndex, dividendTokens[_dividendIndex], claim, withheld);
     }
 
     /**
@@ -260,9 +261,8 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
         dividends[_dividendIndex].reclaimed = true;
         Dividend storage dividend = dividends[_dividendIndex];
         uint256 remainingAmount = dividend.amount.sub(dividend.claimedAmount);
-        address owner = IOwnable(securityToken).owner();
-        require(IERC20(dividendTokens[_dividendIndex]).transfer(owner, remainingAmount), "transfer failed");
-        emit ERC20DividendReclaimed(owner, _dividendIndex, dividendTokens[_dividendIndex], remainingAmount);
+        require(IERC20(dividendTokens[_dividendIndex]).transfer(wallet, remainingAmount), "transfer failed");
+        emit ERC20DividendReclaimed(wallet, _dividendIndex, dividendTokens[_dividendIndex], remainingAmount);
     }
 
     /**
@@ -272,11 +272,10 @@ contract ERC20DividendCheckpoint is DividendCheckpoint {
     function withdrawWithholding(uint256 _dividendIndex) external withPerm(MANAGE) {
         require(_dividendIndex < dividends.length, "Invalid dividend");
         Dividend storage dividend = dividends[_dividendIndex];
-        uint256 remainingWithheld = dividend.dividendWithheld.sub(dividend.dividendWithheldReclaimed);
-        dividend.dividendWithheldReclaimed = dividend.dividendWithheld;
-        address owner = IOwnable(securityToken).owner();
-        require(IERC20(dividendTokens[_dividendIndex]).transfer(owner, remainingWithheld), "transfer failed");
-        emit ERC20DividendWithholdingWithdrawn(owner, _dividendIndex, dividendTokens[_dividendIndex], remainingWithheld);
+        uint256 remainingWithheld = dividend.totalWithheld.sub(dividend.totalWithheldWithdrawn);
+        dividend.totalWithheldWithdrawn = dividend.totalWithheld;
+        require(IERC20(dividendTokens[_dividendIndex]).transfer(wallet, remainingWithheld), "transfer failed");
+        emit ERC20DividendWithholdingWithdrawn(wallet, _dividendIndex, dividendTokens[_dividendIndex], remainingWithheld);
     }
 
 }

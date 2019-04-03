@@ -117,7 +117,7 @@ You can easily navigate through it with the sidebar directory in order to run th
 
 ## Mainnet
 
-### v2.0.0 
+### v2.1.0 
 
 | Contract                                                         | Address                                                                                                                       |
 | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
@@ -127,15 +127,15 @@ You can easily navigate through it with the sidebar directory in order to run th
 | Feature Registry:                                            | [0xa3eacb03622bf1513880892b7270d965f693ffb5](https://etherscan.io/address/0xa3eacb03622bf1513880892b7270d965f693ffb5)                                              |
 | ETHOracle:                                                   | [0x60055e9a93aae267da5a052e95846fa9469c0e7a](https://etherscan.io/address/0x60055e9a93aae267da5a052e95846fa9469c0e7a)                                              |
 | POLYOracle:                                                   | [0x52cb4616E191Ff664B0bff247469ce7b74579D1B](https://etherscan.io/address/0x52cb4616E191Ff664B0bff247469ce7b74579D1B)                                              |
-| General Transfer Manager Factory:                              | [0xdc95598ef2bbfdb66d02d5f3eea98ea39fbc8b26](https://etherscan.io/address/0xdc95598ef2bbfdb66d02d5f3eea98ea39fbc8b26)                                              |
+| General Transfer Manager Factory (2.0.0):                              | [0xdc95598ef2bbfdb66d02d5f3eea98ea39fbc8b26](https://etherscan.io/address/0xdc95598ef2bbfdb66d02d5f3eea98ea39fbc8b26)                                              |
+| General Transfer Manager Factory (2.1.0):                              | [0xa8b60c9b7054782f46931e35e7012037a574ecee](https://etherscan.io/address/0xa8b60c9b7054782f46931e35e7012037a574ecee)                                              |
 | General Permission Manager Factory:                             | [0xf0aa1856360277c60052d6095c5b787b01388cdd](https://etherscan.io/address/0xf0aa1856360277c60052d6095c5b787b01388cdd)                                              |
-| CappedSTOFactory:                                               | [0x77d89663e8819023a87bfe2bc9baaa6922c0e57c](https://etherscan.io/address/0x77d89663e8819023a87bfe2bc9baaa6922c0e57c)                                              |
-| USDTieredSTO Factory:                                           | [0x5a3a30bddae1f857a19b1aed93b5cdb3c3da809a](https://etherscan.io/address/0x5a3a30bddae1f857a19b1aed93b5cdb3c3da809a)                                              |
-| EthDividendsCheckpointFactory:                                  | [0x968c74c52f15b2de323eca8c677f6c9266bfefd6](https://etherscan.io/address/0x968c74c52f15b2de323eca8c677f6c9266bfefd6)                                              |
-| ERC20 Dividends Checkpoint Factory:                             | [0x82f9f1ab41bacb1433c79492e54bf13bccd7f9ae](https://etherscan.io/address/0x82f9f1ab41bacb1433c79492e54bf13bccd7f9ae)                                              |
-| Count Transfer Manager Factory:                               | [0xd9fd7e34d6e2c47a69e02131cf8554d52c3445d5](https://etherscan.io/address/0xd9fd7e34d6e2c47a69e02131cf8554d52c3445d5)                                              |
+| CappedSTOFactory (2.1.0):                                               | [0x26bcd18a748ade7fafb250bb014c7121a412870c](https://etherscan.io/address/0x26bcd18a748ade7fafb250bb014c7121a412870c)                                              |
+| USDTieredSTO Factory (2.1.0):                                           | [0x0148ed61ffa8e0da7908a62aa2d1f266688656c4](https://etherscan.io/address/0x0148ed61ffa8e0da7908a62aa2d1f266688656c4)                                              |
+| ERC20 Dividends Checkpoint Factory (2.1.0):                             | [0x855152c9b98babadc996a0dd71c8b3682b8f4786](https://etherscan.io/address/0x855152c9b98babadc996a0dd71c8b3682b8f4786)                                              |
+| Count Transfer Manager Factory (2.1.0):                               | [0x575ed30ec5700f369115b079be8059001e79eb7b](https://etherscan.io/address/0x575ed30ec5700f369115b079be8059001e79eb7b)                                              |
 | Percentage Transfer Manager Factory:                             | [0xe6267a9c0a227d21c95b782b1bd32bb41fc3b43b](https://etherscan.io/address/0xe6267a9c0a227d21c95b782b1bd32bb41fc3b43b)                                              |
-| Manual Approval Transfer Manager Factory (2.0.1):                        | [0x6af2afad53cb334e62b90ddbdcf3a086f654c298](https://etherscan.io/address/0x6af2afad53cb334e62b90ddbdcf3a086f654c298)                                              |
+| Manual Approval Transfer Manager Factory (2.1.0):                        | [0xe5b21cf83f5e49aba4601e8d8cf182f889208cfd](https://etherscan.io/address/0xe5b21cf83f5e49aba4601e8d8cf182f889208cfd)                                              |
 
 
 New SecurityTokenRegistry (2.0.1): 0x538136ed73011a766bf0a126a27300c3a7a2e6a6
@@ -144,36 +144,27 @@ New SecurityTokenRegistry (2.0.1): 0x538136ed73011a766bf0a126a27300c3a7a2e6a6
 New ModuleRegistry (2.0.1): 0xbc18f144ccf87f2d98e6fa0661799fcdc3170119
 (fixed bug with missing transferOwnership function)
 
-New ManualApprovalTransferManager 0x6af2afad53cb334e62b90ddbdcf3a086f654c298
-(Fixed 0x0 from bug)
-
 ## KOVAN
 
-### v2.0.0 
+### v2.1.0 
 New Kovan PolyTokenFaucet: 0xb347b9f5b56b431b2cf4e1d90a5995f7519ca792
 
 | Contract                                                         | Address                                                                                                                       |
 | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| SecurityTokenRegistry (Proxy):                                | [0xbefb81114d532bddddc724af20c3516fa75f0afb](https://kovan.etherscan.io/address/0xbefb81114d532bddddc724af20c3516fa75f0afb)                                              |
-| ModuleRegistry (Proxy):                                       | [0x0fac8d8cce224eead73c1187df96570aa80a568b](https://kovan.etherscan.io/address/0x0fac8d8cce224eead73c1187df96570aa80a568b)                                              |
-| Polymath Registry:                                            | [0x9903e7b5acfe5fa9713771a8d861eb1df8cd7046](https://kovan.etherscan.io/address/0x9903e7b5acfe5fa9713771a8d861eb1df8cd7046)                                              |
-| Feature Registry:                                            | [0xa8f85006fdacb3d59ffae564c05433f0c949e911](https://kovan.etherscan.io/address/0xa8f85006fdacb3d59ffae564c05433f0c949e911)                                              |
+| SecurityTokenRegistry (Proxy):                                | [0x91110c2f67e2881a8540417be9eadf5bc9f2f248](https://kovan.etherscan.io/address/0x91110c2f67e2881a8540417be9eadf5bc9f2f248)                                              |
+| ModuleRegistry (Proxy):                                       | [0xde6d19d7a68d453244227b6ccc5d8e6c2314627a](https://kovan.etherscan.io/address/0xde6d19d7a68d453244227b6ccc5d8e6c2314627a)                                              |
+| Polymath Registry:                                            | [0x5b215a7d39ee305ad28da29bf2f0425c6c2a00b3](https://kovan.etherscan.io/address/0x5b215a7d39ee305ad28da29bf2f0425c6c2a00b3)                                              |
+| Feature Registry:                                            | [0x8967a7cfc4b455398be2356cd05cd43b7a39697e](https://kovan.etherscan.io/address/0x8967a7cfc4b455398be2356cd05cd43b7a39697e)                                              |
 | ETHOracle:                                                   | [0xCE5551FC9d43E9D2CC255139169FC889352405C8](https://kovan.etherscan.io/address/0xCE5551FC9d43E9D2CC255139169FC889352405C8)                                              |
 | POLYOracle:                                                   | [0x461d98EF2A0c7Ac1416EF065840fF5d4C946206C](https://kovan.etherscan.io/address/0x461d98EF2A0c7Ac1416EF065840fF5d4C946206C)                                              |
-| General Transfer Manager Factory:                              | [0xfe7e2bb6c200d5222c82d0f8fecca5f8fe4ab8ce](https://kovan.etherscan.io/address/0xfe7e2bb6c200d5222c82d0f8fecca5f8fe4ab8ce)                                              |
-| General Permission Manager Factory:                             | [0xde5eaa8d73f43fc5e7badb203f03ecae2b29bd92](https://kovan.etherscan.io/address/0xde5eaa8d73f43fc5e7badb203f03ecae2b29bd92)                                              |
-| CappedSTOFactory:                                               | [0xe14d7dd044cc6cfe37548b6791416c59f19bfc0d](https://kovan.etherscan.io/address/0xe14d7dd044cc6cfe37548b6791416c59f19bfc0d)                                              |
-| USDTieredSTO Factory:                                           | [0xf9f0bb9f868d411dd9a9511a79d172449e3c15f5](https://kovan.etherscan.io/address/0xf9f0bb9f868d411dd9a9511a79d172449e3c15f5)                                              |
-| EthDividendsCheckpointFactory:                                  | [0x2861425ba5abbf50089c473b28f6c40a8ea5262a](https://kovan.etherscan.io/address/0x2861425ba5abbf50089c473b28f6c40a8ea5262a)                                              |
-| ERC20 Dividends Checkpoint Factory:                             | [0xbf9495550417feaacc43f86d2244581b6d688431](https://kovan.etherscan.io/address/0xbf9495550417feaacc43f86d2244581b6d688431)                                              |
-| Count Transfer Manager Factory:                               | [0x3c3c1f40ae2bdca82b90541b2cfbd41caa941c0e](https://kovan.etherscan.io/address/0x3c3c1f40ae2bdca82b90541b2cfbd41caa941c0e)                                              |
-| Percentage Transfer Manager Factory:                             | [0x8cd00c3914b2967a8b79815037f51c76874236b8](https://kovan.etherscan.io/address/0x8cd00c3914b2967a8b79815037f51c76874236b8)                                              |
+| General Transfer Manager Factory:                              | [0x650e9507e983077d6f822472a7dcc37626d55c7f](https://kovan.etherscan.io/address/0x650e9507e983077d6f822472a7dcc37626d55c7f)                                              |
+| General Permission Manager Factory:                             | [0xbf0bd6305b523ce055baa6dfaa9676d6b9e6090b](https://kovan.etherscan.io/address/0xbf0bd6305b523ce055baa6dfaa9676d6b9e6090b)                                              |
+| CappedSTOFactory:                                               | [0x01510b2c03296473f883c12d0723f0a46aa67f13](https://kovan.etherscan.io/address/0x01510b2c03296473f883c12d0723f0a46aa67f13)                                              |
+| USDTieredSTO Factory:                                           | [0x8b9743e6129f7b7cca04e3611b5c8cd9b1d11e90](https://kovan.etherscan.io/address/0x8b9743e6129f7b7cca04e3611b5c8cd9b1d11e90)                                              |
+| ERC20 Dividends Checkpoint Factory:                             | [0x4369751df5bcb2f12f1790f525ef212a622b9c60](https://kovan.etherscan.io/address/0x4369751df5bcb2f12f1790f525ef212a622b9c60)                                              |
+| Count Transfer Manager Factory:                               | [0xc7cf0c1ddc85c18672951f9bfeb7163ecc8f0e2f](https://kovan.etherscan.io/address/0xc7cf0c1ddc85c18672951f9bfeb7163ecc8f0e2f)                                              |
+| Percentage Transfer Manager Factory:                             | [0xfea5fcb254bcb4ada0f86903ff822d6372325cb1](https://kovan.etherscan.io/address/0xfea5fcb254bcb4ada0f86903ff822d6372325cb1)                                              |
 | Manual Approval Transfer Manager Factory:                        | [0x9faa79e2ccf0eb49aa6ebde1795ad2e951ce78f8](https://kovan.etherscan.io/address/0x9faa79e2ccf0eb49aa6ebde1795ad2e951ce78f8)                                              |
-
-
-New ManualApprovalTransferManager 0x9faa79e2ccf0eb49aa6ebde1795ad2e951ce78f8
-(Fixed 0x0 from bug)
-
 
 ## Package version requirements for your machine:
 

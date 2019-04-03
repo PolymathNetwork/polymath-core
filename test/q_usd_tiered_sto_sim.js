@@ -153,8 +153,8 @@ contract("USDTieredSTO Sim", accounts => {
                 name: "_reserveWallet"
             },
             {
-                type: "address",
-                name: "_usdToken"
+                type: "address[]",
+                name: "_usdTokens"
             }
         ]
     };
@@ -195,7 +195,7 @@ contract("USDTieredSTO Sim", accounts => {
             I_SecurityTokenRegistryProxy,
             I_STRProxied
         ] = instances;
-       
+
        I_DaiToken = await PolyTokenFaucet.new({from: POLYMATH});
 
        // STEP 5: Deploy the USDTieredSTOFactory
@@ -285,7 +285,7 @@ contract("USDTieredSTO Sim", accounts => {
                 _fundRaiseTypes[stoId],
                 _wallet[stoId],
                 _reserveWallet[stoId],
-                _usdToken[stoId]
+                [_usdToken[stoId]]
             ];
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
@@ -299,22 +299,22 @@ contract("USDTieredSTO Sim", accounts => {
             assert.equal(await I_USDTieredSTO_Array[stoId].endTime.call(), _endTime[stoId], "Incorrect _endTime in config");
             for (var i = 0; i < _ratePerTier[stoId].length; i++) {
                 assert.equal(
-                    (await I_USDTieredSTO_Array[stoId].ratePerTier.call(i)).toNumber(),
+                    (await I_USDTieredSTO_Array[stoId].tiers.call(i))[0].toNumber(),
                     _ratePerTier[stoId][i].toNumber(),
                     "Incorrect _ratePerTier in config"
                 );
                 assert.equal(
-                    (await I_USDTieredSTO_Array[stoId].ratePerTierDiscountPoly.call(i)).toNumber(),
+                    (await I_USDTieredSTO_Array[stoId].tiers.call(i))[1].toNumber(),
                     _ratePerTierDiscountPoly[stoId][i].toNumber(),
                     "Incorrect _ratePerTierDiscountPoly in config"
                 );
                 assert.equal(
-                    (await I_USDTieredSTO_Array[stoId].tokensPerTierTotal.call(i)).toNumber(),
+                    (await I_USDTieredSTO_Array[stoId].tiers.call(i))[2].toNumber(),
                     _tokensPerTierTotal[stoId][i].toNumber(),
                     "Incorrect _tokensPerTierTotal in config"
                 );
                 assert.equal(
-                    (await I_USDTieredSTO_Array[stoId].tokensPerTierDiscountPoly.call(i)).toNumber(),
+                    (await I_USDTieredSTO_Array[stoId].tiers.call(i))[3].toNumber(),
                     _tokensPerTierDiscountPoly[stoId][i].toNumber(),
                     "Incorrect _tokensPerTierDiscountPoly in config"
                 );
@@ -455,13 +455,13 @@ contract("USDTieredSTO Sim", accounts => {
                 let Tokens_discount = [];
                 for (var i = 0; i < _ratePerTier[stoId].length; i++) {
                     Tokens_total.push(
-                        (await I_USDTieredSTO_Array[stoId].tokensPerTierTotal.call(i)).sub(
-                            await I_USDTieredSTO_Array[stoId].mintedPerTierTotal.call(i)
+                        (await I_USDTieredSTO_Array[stoId].tiers.call(i))[2].sub(
+                            (await I_USDTieredSTO_Array[stoId].tiers.call(i))[4]
                         )
                     );
                     Tokens_discount.push(
-                        (await I_USDTieredSTO_Array[stoId].tokensPerTierDiscountPoly.call(i)).sub(
-                            await I_USDTieredSTO_Array[stoId].mintedPerTierDiscountPoly.call(i)
+                        (await I_USDTieredSTO_Array[stoId].tiers.call(i))[3].sub(
+                            (await I_USDTieredSTO_Array[stoId].tiers.call(i))[5]
                         )
                     );
                 }
@@ -598,7 +598,7 @@ contract("USDTieredSTO Sim", accounts => {
                     await I_DaiToken.getTokens(investment_DAI, _investor);
                     await I_DaiToken.approve(I_USDTieredSTO_Array[stoId].address, investment_DAI, { from: _investor });
                     await catchRevert(
-                        I_USDTieredSTO_Array[stoId].buyWithUSD(_investor, investment_DAI, { from: _investor, gasPrice: GAS_PRICE })
+                        I_USDTieredSTO_Array[stoId].buyWithUSD(_investor, investment_DAI, I_DaiToken.address, { from: _investor, gasPrice: GAS_PRICE })
                     );
                 } else
                     await catchRevert(
@@ -681,7 +681,7 @@ contract("USDTieredSTO Sim", accounts => {
                             .yellow
                     );
                 } else if (isDai && investment_DAI.gt(10)) {
-                    tx = await I_USDTieredSTO_Array[stoId].buyWithUSD(_investor, investment_DAI, { from: _investor, gasPrice: GAS_PRICE });
+                    tx = await I_USDTieredSTO_Array[stoId].buyWithUSD(_investor, investment_DAI, I_DaiToken.address, { from: _investor, gasPrice: GAS_PRICE });
                     gasCost = new BigNumber(GAS_PRICE).mul(tx.receipt.gasUsed);
                     console.log(
                         `buyWithUSD: ${investment_Token.div(10 ** 18)} tokens for ${investment_DAI.div(10 ** 18)} DAI by ${_investor}`

@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "../modules/STO/DummySTOFactory.sol";
+import "./DummySTOFactory.sol";
 
 contract TestSTOFactory is DummySTOFactory {
 

@@ -124,7 +124,5 @@ contract SecurityTokenStorage {
     mapping(bytes32 => uint256) internal _docIndexes;
     // Mapping from (investor, partition, operator) to approved status
     mapping (address => mapping (bytes32 => mapping (address => bool))) partitionApprovals;
-    // Mapping from (investor, operator) to approved status (can be used against any partition)
-    mapping (address => mapping (address => bool)) approvals;
 
 }

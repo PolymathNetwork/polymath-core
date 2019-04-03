@@ -110,7 +110,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
 
     function _isValidOperator(address _from, address _operator, bytes32 _partition) internal view {
         require(
-            approvals[_from][_operator] || partitionApprovals[_from][_partition][_operator],
+            allowance(_from, _operator) == uint(-1) || partitionApprovals[_from][_partition][_operator],
             "Not authorised"
         );
     }
@@ -121,6 +121,10 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
 
     function _isValidTransfer(bool _isTransfer) internal pure {
         require(_isTransfer, "Transfer Invalid");
+    }
+
+    function _isValidRedeem(bool _isRedeem) internal pure {
+        require(_isRedeem, "Invalid redeem");
     }
 
     /**
@@ -442,20 +446,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @param _tokenHolder Whom balance need to queried
      * @return Amount of tokens as per the given partitions
      */
-    function balanceOfByPartition(bytes32 _partition, address _tokenHolder) public view returns(uint256) {
+    function balanceOfByPartition(bytes32 _partition, address _tokenHolder) external view returns(uint256) {
         _balanceOfByPartition(_partition, _tokenHolder, 0);
-    }
-
-    /**
-     * @notice Transfers the ownership of tokens from a specified partition from one address to another address
-     * @param _partition The partition from which to transfer tokens
-     * @param _to The address to which to transfer tokens to
-     * @param _value The amount of tokens to transfer from `_partition`
-     * @param _data Additional data attached to the transfer of tokens
-     * @return The partition to which the transferred tokens were allocated for the _to address
-     */
-    function transferByPartition(bytes32 _partition, address _to, uint256 _value, bytes calldata _data) external returns (bytes32) {
-        return _transferByPartition(msg.sender, _to, _value, _partition, _data, address(0), "");
     }
 
     function _balanceOfByPartition(bytes32 _partition, address _tokenHolder, uint256 _additionalBalance) internal view returns(uint256) {
@@ -469,6 +461,18 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
             }
         }
         return max;
+    }
+
+    /**
+     * @notice Transfers the ownership of tokens from a specified partition from one address to another address
+     * @param _partition The partition from which to transfer tokens
+     * @param _to The address to which to transfer tokens to
+     * @param _value The amount of tokens to transfer from `_partition`
+     * @param _data Additional data attached to the transfer of tokens
+     * @return The partition to which the transferred tokens were allocated for the _to address
+     */
+    function transferByPartition(bytes32 _partition, address _to, uint256 _value, bytes calldata _data) external returns (bytes32) {
+        return _transferByPartition(msg.sender, _to, _value, _partition, _data, address(0), "");
     }
 
     function _transferByPartition(
@@ -517,7 +521,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @param _operator An address which is being authorised.
      */ 
     function authorizeOperator(address _operator) external {
-        approvals[msg.sender][_operator] = true;
+        _approve(msg.sender, _operator, uint(-1));
         emit AuthorizedOperator(_operator, msg.sender);
     }
 
@@ -529,7 +533,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @param _operator An address which is being de-authorised
      */
     function revokeOperator(address _operator) external {
-        approvals[msg.sender][_operator] = false;
+        _approve(msg.sender, _operator, 0);
         emit RevokedOperator(_operator, msg.sender);
     }
 
@@ -567,10 +571,14 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      */
     function operatorTransferByPartition(bytes32 _partition, address _from, address _to, uint256 _value, bytes calldata _data, bytes calldata _operatorData) external returns (bytes32) {
         // For the current release we are only allowing UNLOCKED partition tokens to transact
-        _isValidPartition(_partition);
-        _isValidOperator(_from, msg.sender, _partition);
+        _validateOperatorAndPartition(_partition, _from, msg.sender);
         require(_operatorData.length > 0);
         _transferByPartition(_from, _to, _value, _partition, _data, msg.sender, _operatorData);
+    }
+
+    function _validateOperatorAndPartition(bytes32 _partition, address _from, address _operator) internal view {
+        _isValidPartition(_partition);
+        _isValidOperator(_from, _operator, _partition);
     }
 
     /**
@@ -677,9 +685,9 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     function issue(
         address _tokenHolder,
         uint256 _value,
-        bytes calldata _data
+        bytes memory _data
     )
-        external
+        public
         isIssuanceAllowed
     {
         _onlyModuleOrOwner(MINT_KEY);
@@ -721,10 +729,10 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @param _value The amount by which to increase the balance
      * @param _data Additional data attached to the minting of tokens
      */
-    function issueByPartition(bytes32 _partition, address _tokenHolder, uint256 _value, bytes calldata _data) external isIssuanceAllowed {
-        _onlyModuleOrOwner(MINT_KEY);
+    function issueByPartition(bytes32 _partition, address _tokenHolder, uint256 _value, bytes calldata _data) external {
         _isValidPartition(_partition);
-        _issue(_tokenHolder, _value, _data);
+        //Use issue instead of _issue function in the favour to saving code size
+        issue(_tokenHolder, _value, _data);
         emit IssuedByPartition(_partition, _tokenHolder, _value, _data);
     }
 
@@ -741,7 +749,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
 
     function _redeem(address _from, uint256 _value, bytes memory _data) internal {
         // Add a function to validate the `_data` parameter
-        _validateRedeem(_checkAndBurn(_from, _value, _data));
+        _isValidRedeem(_checkAndBurn(_from, _value, _data));
     }
 
     /**
@@ -751,6 +759,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @param _data Additional data attached to the burning of tokens
      */
     function redeemByPartition(bytes32 _partition, uint256 _value, bytes calldata _data) external onlyModule(BURN_KEY) {
+        _isValidPartition(_partition);
         _redeemByPartition(_partition, msg.sender, _value, address(0), _data, "");
     }
 
@@ -764,7 +773,6 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     )   
         internal 
     {
-        _isValidPartition(_partition);
         _redeem(_from, _value, _data);
         emit RedeemedByPartition(_partition, _operator, _from, _value, _data, _operatorData);
     }
@@ -790,7 +798,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     {
         require(_operatorData.length > 0);
         _zeroAddressCheck(_tokenHolder);
-        _isValidOperator(_tokenHolder, msg.sender, _partition);
+        _validateOperatorAndPartition(_partition, _tokenHolder, msg.sender);
         _redeemByPartition(_partition, _tokenHolder, _value, msg.sender, _data, _operatorData);
     }
 
@@ -821,13 +829,9 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      */
     function redeemFrom(address _tokenHolder, uint256 _value, bytes calldata _data) external onlyModule(BURN_KEY) {
         // Add a function to validate the `_data` parameter
-        _validateRedeem(_updateTransfer(_tokenHolder, address(0), _value, _data));
+        _isValidRedeem(_updateTransfer(_tokenHolder, address(0), _value, _data));
         _burnFrom(_tokenHolder, _value);
         emit Redeemed(msg.sender, _tokenHolder, _value, _data);
-    }
-
-    function _validateRedeem(bool _isRedeem) internal pure {
-        require(_isRedeem, "Invalid redeem");
     }
 
     /**

@@ -200,8 +200,8 @@ contract STGetter is OZStorage, SecurityTokenStorage {
      * @param _tokenHolder The token holder to check
      * @return Whether the `_operator` is an operator for all partitions of `_tokenHolder`
      */
-    function isOperator(address _operator, address _tokenHolder) public view returns (bool) {
-        return approvals[_tokenHolder][_operator];
+    function isOperator(address _operator, address _tokenHolder) external view returns (bool) {
+        return (_allowed[_tokenHolder][_operator] == uint(-1));
     }
 
     /**
@@ -211,7 +211,7 @@ contract STGetter is OZStorage, SecurityTokenStorage {
      * @param _tokenHolder The token holder to check
      * @return Whether the `_operator` is an operator for a specified partition of `_tokenHolder`
      */
-    function isOperatorForPartition(bytes32 _partition, address _operator, address _tokenHolder) public view returns (bool) {
+    function isOperatorForPartition(bytes32 _partition, address _operator, address _tokenHolder) external view returns (bool) {
         return partitionApprovals[_tokenHolder][_partition][_operator];
     }
 

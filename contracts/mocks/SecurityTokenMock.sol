@@ -16,20 +16,17 @@ contract SecurityTokenMock is SecurityToken {
 
     /**
      * @notice constructor
-     * @param _name Name of the SecurityToken
-     * @param _symbol Symbol of the Token
-     * @param _decimals Decimals for the securityToken
      */
     constructor(
-        string memory _name,
-        string memory _symbol,
-        uint8 _decimals,
+        string memory /*_name*/,
+        string memory /*_symbol*/,
+        uint8 /*_decimals*/,
         uint256 /* _granularity */,
         string memory /* _tokenDetails */,
         address _polymathRegistry,
         address _delegate
     )
-        public        
+        public
     {
         _owner = msg.sender;
         polymathRegistry = _polymathRegistry;

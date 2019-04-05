@@ -18,10 +18,10 @@ contract ManualApprovalTransferManagerFactory is ModuleFactory {
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
     ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
     {
-        version = "2.0.1";
+        version = "2.1.0";
         name = "ManualApprovalTransferManager";
         title = "Manual Approval Transfer Manager";
-        description = "Manage transfers using single approvals / blocking";
+        description = "Manage transfers using single approvals";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
     }
@@ -53,7 +53,7 @@ contract ManualApprovalTransferManagerFactory is ModuleFactory {
      */
     function getInstructions() external view returns(string) {
         /*solium-disable-next-line max-len*/
-        return "Allows an issuer to set manual approvals or blocks for specific pairs of addresses and amounts. Init function takes no parameters.";
+        return "Allows an issuer to set manual approvals for specific pairs of addresses and amounts. Init function takes no parameters.";
     }
 
     /**

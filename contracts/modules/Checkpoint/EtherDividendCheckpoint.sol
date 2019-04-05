@@ -8,6 +8,7 @@ import "../../interfaces/IOwnable.sol";
  */
 contract EtherDividendCheckpoint is DividendCheckpoint {
     using SafeMath for uint256;
+
     event EtherDividendDeposited(
         address indexed _depositor,
         uint256 _checkpointId,
@@ -16,13 +17,13 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         uint256 _expiry,
         uint256 _amount,
         uint256 _totalSupply,
-        uint256 _dividendIndex,
+        uint256 indexed _dividendIndex,
         bytes32 indexed _name
     );
-    event EtherDividendClaimed(address indexed _payee, uint256 _dividendIndex, uint256 _amount, uint256 _withheld);
-    event EtherDividendReclaimed(address indexed _claimer, uint256 _dividendIndex, uint256 _claimedAmount);
-    event EtherDividendClaimFailed(address indexed _payee, uint256 _dividendIndex, uint256 _amount, uint256 _withheld);
-    event EtherDividendWithholdingWithdrawn(address indexed _claimer, uint256 _dividendIndex, uint256 _withheldAmount);
+    event EtherDividendClaimed(address indexed _payee, uint256 indexed _dividendIndex, uint256 _amount, uint256 _withheld);
+    event EtherDividendReclaimed(address indexed _claimer, uint256 indexed _dividendIndex, uint256 _claimedAmount);
+    event EtherDividendClaimFailed(address indexed _payee, uint256 indexed _dividendIndex, uint256 _amount, uint256 _withheld);
+    event EtherDividendWithholdingWithdrawn(address indexed _claimer, uint256 indexed _dividendIndex, uint256 _withheldAmount);
 
     /**
      * @notice Constructor
@@ -56,7 +57,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         uint256 _expiry,
         uint256 _checkpointId,
         bytes32 _name
-    ) 
+    )
         external
         payable
         withPerm(MANAGE)
@@ -76,7 +77,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         uint256 _expiry,
         address[] _excluded,
         bytes32 _name
-    ) 
+    )
         public
         payable
         withPerm(MANAGE)
@@ -94,10 +95,10 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
      * @param _name Name/title for identification
      */
     function createDividendWithCheckpointAndExclusions(
-        uint256 _maturity, 
-        uint256 _expiry, 
-        uint256 _checkpointId, 
-        address[] _excluded, 
+        uint256 _maturity,
+        uint256 _expiry,
+        uint256 _checkpointId,
+        address[] _excluded,
         bytes32 _name
     )
         public
@@ -116,12 +117,12 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
      * @param _name Name/title for identification
      */
     function _createDividendWithCheckpointAndExclusions(
-        uint256 _maturity, 
-        uint256 _expiry, 
-        uint256 _checkpointId, 
-        address[] _excluded, 
+        uint256 _maturity,
+        uint256 _expiry,
+        uint256 _checkpointId,
+        address[] _excluded,
         bytes32 _name
-    ) 
+    )
         internal
     {
         require(_excluded.length <= EXCLUDED_ADDRESS_LIMIT, "Too many addresses excluded");
@@ -169,19 +170,19 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
      */
     function _payDividend(address _payee, Dividend storage _dividend, uint256 _dividendIndex) internal {
         (uint256 claim, uint256 withheld) = calculateDividend(_dividendIndex, _payee);
-        _dividend.claimed[_payee] = true;      
+        _dividend.claimed[_payee] = true;
         uint256 claimAfterWithheld = claim.sub(withheld);
-        if (claimAfterWithheld > 0) {
-            /*solium-disable-next-line security/no-send*/
-            if (_payee.send(claimAfterWithheld)) {
-                _dividend.claimedAmount = _dividend.claimedAmount.add(claim);
-                _dividend.dividendWithheld = _dividend.dividendWithheld.add(withheld);
-                investorWithheld[_payee] = investorWithheld[_payee].add(withheld);
-                emit EtherDividendClaimed(_payee, _dividendIndex, claim, withheld);
-            } else {
-                _dividend.claimed[_payee] = false;
-                emit EtherDividendClaimFailed(_payee, _dividendIndex, claim, withheld);
+        /*solium-disable-next-line security/no-send*/
+        if (_payee.send(claimAfterWithheld)) {
+            _dividend.claimedAmount = _dividend.claimedAmount.add(claim);
+            if (withheld > 0) {
+                _dividend.totalWithheld = _dividend.totalWithheld.add(withheld);
+                _dividend.withheld[_payee] = withheld;
             }
+            emit EtherDividendClaimed(_payee, _dividendIndex, claim, withheld);
+        } else {
+            _dividend.claimed[_payee] = false;
+            emit EtherDividendClaimFailed(_payee, _dividendIndex, claim, withheld);
         }
     }
 
@@ -197,9 +198,8 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         Dividend storage dividend = dividends[_dividendIndex];
         dividend.reclaimed = true;
         uint256 remainingAmount = dividend.amount.sub(dividend.claimedAmount);
-        address owner = IOwnable(securityToken).owner();
-        owner.transfer(remainingAmount);
-        emit EtherDividendReclaimed(owner, _dividendIndex, remainingAmount);
+        wallet.transfer(remainingAmount);
+        emit EtherDividendReclaimed(wallet, _dividendIndex, remainingAmount);
     }
 
     /**
@@ -209,11 +209,10 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
     function withdrawWithholding(uint256 _dividendIndex) external withPerm(MANAGE) {
         require(_dividendIndex < dividends.length, "Incorrect dividend index");
         Dividend storage dividend = dividends[_dividendIndex];
-        uint256 remainingWithheld = dividend.dividendWithheld.sub(dividend.dividendWithheldReclaimed);
-        dividend.dividendWithheldReclaimed = dividend.dividendWithheld;
-        address owner = IOwnable(securityToken).owner();
-        owner.transfer(remainingWithheld);
-        emit EtherDividendWithholdingWithdrawn(owner, _dividendIndex, remainingWithheld);
+        uint256 remainingWithheld = dividend.totalWithheld.sub(dividend.totalWithheldWithdrawn);
+        dividend.totalWithheldWithdrawn = dividend.totalWithheld;
+        wallet.transfer(remainingWithheld);
+        emit EtherDividendWithholdingWithdrawn(wallet, _dividendIndex, remainingWithheld);
     }
 
 }

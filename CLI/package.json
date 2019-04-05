@@ -4,17 +4,21 @@
   "description": "CLI for Polymath-core",
   "main": "polymath-cli.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "stable_coin": "scripts/stable_coin.sh"
   },
   "author": "Polymath Inc",
   "license": "MIT",
   "dependencies": {
+    "bignumber.js": "^8.1.1",
     "chalk": "^2.4.1",
     "commander": "^2.16.0",
+    "csv-parse": "^4.0.1",
+    "ethers": "^4.0.7",
     "moment": "^2.22.2",
     "readline-sync": "^1.4.9",
     "request": "^2.88.0",
     "request-promise": "^4.2.2",
-    "web3": "1.0.0-beta.34"
+    "table": "^5.1.1",
+    "web3": "1.0.0-beta.35"
   }
 }

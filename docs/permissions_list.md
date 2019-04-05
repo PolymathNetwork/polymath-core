@@ -143,7 +143,7 @@
             <td>allocateTokensMulti()</td>
         </tr>
         <tr>
-            <td rowspan=39>TransferManager</td>
+            <td rowspan=42>TransferManager</td>
             <td>CountTransferManager</td>
             <td>changeHolderCount()</td>
             <td>withPerm(ADMIN)</td>
@@ -176,18 +176,12 @@
             <td>modifyWhitelistMulti()</td>
         </tr>
         <tr>
-          <td rowspan=4>ManualApprovalTransferManager</td>
+          <td rowspan=2>ManualApprovalTransferManager</td>
           <td>addManualApproval()</td>
-          <td rowspan=4>withPerm(TRANSFER_APPROVAL)</td>
-        </tr>
-        <tr>
-          <td>addManualBlocking()</td>
+          <td rowspan=2>withPerm(TRANSFER_APPROVAL)</td>
         </tr>
         <tr>
           <td>revokeManualApproval()</td>
-        </tr>
-        <tr>
-          <td>revokeManualBlocking()</td>
         </tr>
         <tr>
           <td rowspan=4>PercentageTransferManager</td>
@@ -205,72 +199,142 @@
             <td> changeHolderPercentage() </td>
         </tr>
         <tr>
-            <td rowspan=4> LockupVolumeRestrictionTM</td>
-            <td>addLockup()</td>
-            <td rowspan=4> withPerm(ADMIN) </td>
+            <td rowspan=13> VolumeRestrictionTM </td>
+            <td> changeExemptWalletList() </td>
+            <td rowspan=13> withPerm(ADMIN) </td>
         </tr>
         <tr>
-            <td> addLockUpMulti() </td>
+            <td>addIndividualRestriction()</td>
         </tr>
         <tr>
-            <td> removeLockUp() </td>
+            <td>addIndividualRestrictionMulti()</td>
         </tr>
         <tr>
-            <td> modifyLockUp() </td>
+            <td>addGlobalRestriction()</td>
         </tr>
         <tr>
-            <td rowspan=17> SingleTradeVolumeRestrictionTM </td>
-            <td> setAllowPrimaryIssuance() </td>
-            <td rowspan=17> withPerm(ADMIN) </td>
+            <td>addDailyGlobalRestriction()</td>
         </tr>
         <tr>
-            <td>changeTransferLimitToPercentage()</td>
+            <td>removeIndividualRestriction()</td>
         </tr>
         <tr>
-            <td>changeTransferLimitToTokens()</td>
+            <td>removeIndividualRestrictionMulti()</td>
         </tr>
         <tr>
-            <td>changeGlobalLimitInTokens()</td>
+            <td>removeGlobalRestriction()</td>
         </tr>
         <tr>
-            <td>changeGlobalLimitInPercentage()</td>
+            <td>removeDailyGlobalRestriction()</td>
         </tr>
         <tr>
-            <td>addExemptWallet()</td>
+            <td>modifyIndividualRestriction()</td>
         </tr>
         <tr>
-            <td>removeExemptWallet()</td>
+            <td>modifyIndividualRestrictionMulti()</td>
         </tr>
         <tr>
-            <td>addExemptWalletMulti()</td>
+            <td>modifyGlobalRestriction()</td>
         </tr>
         <tr>
-            <td>removeExemptWalletMulti()</td>
+            <td>modifyDailyGlobalRestriction()</td>
+        </tr>     
+        <tr>
+            <td rowspan=14> BlacklistTransferManager </td>
+            <td> addBlacklistType() </td>
+            <td rowspan=14> withPerm(ADMIN) </td>
         </tr>
         <tr>
-            <td>setTransferLimitInTokens()</td>
+            <td> addBlacklistTypeMulti() </td>
         </tr>
         <tr>
-            <td>setTransferLimitInPercentage()</td>
+            <td> modifyBlacklistType() </td>
         </tr>
         <tr>
-            <td>removeTransferLimitInPercentage()</td>
+            <td> modifyBlacklistTypeMulti() </td>
         </tr>
         <tr>
-            <td>removeTransferLimitInTokens()</td>
+            <td> deleteBlacklistType() </td>
         </tr>
         <tr>
-            <td>setTransferLimitInTokensMulti()</td>
+            <td> deleteBlacklistTypeMulti() </td>
         </tr>
         <tr>
-            <td>setTransferLimitInPercentageMulti()</td>
+            <td> addInvestorToBlacklist() </td>
         </tr>
         <tr>
-            <td>removeTransferLimitInTokensMulti()</td>
+            <td> addInvestorToBlacklistMulti() </td>
         </tr>
         <tr>
-            <td> removeTransferLimitInPercentageMulti </td>
+            <td> addMultiInvestorToBlacklistMulti() </td>
         </tr>
+        <tr>
+            <td> addInvestorToNewBlacklist() </td>
+        </tr>
+        <tr>
+            <td> deleteInvestorFromAllBlacklist() </td>
+        </tr>
+        <tr>
+            <td> deleteInvestorFromAllBlacklistMulti() </td>
+        </tr>
+        <tr>
+            <td> deleteInvestorFromBlacklist() </td>
+        </tr>
+        <tr>
+            <td> deleteMultiInvestorsFromBlacklistMulti() </td>
+        </tr>
+        <tr>
+            <td rowspan=16>Wallet</td>
+            <td rowspan=16>VestingEscrowWallet</td>
+            <td>changeTreasuryWallet()</td>
+            <td>onlyOwner</td>
+        </tr>
+        <tr>
+            <td>depositTokens()</td>
+            <td rowspan=15>withPerm(ADMIN)</td>
+        </tr>
+        <tr>
+            <td>sendToTreasury()</td>
+        </tr>
+        <tr>
+            <td>pushAvailableTokens()</td>
+        </tr>
+        <tr>
+            <td>addTemplate()</td>
+        </tr>
+        <tr>
+            <td>removeTemplate()</td>
+        </tr>
+        <tr>
+            <td>addSchedule()</td>
+        </tr>
+        <tr>
+            <td>addScheduleFromTemplate()</td>
+        </tr>
+        <tr>
+            <td>modifySchedule()</td>
+        </tr>
+        <tr>
+            <td>revokeSchedule()</td>
+        </tr>
+        <tr>
+            <td>revokeAllSchedules()</td>
+        </tr>
+        <tr>
+            <td>pushAvailableTokensMulti()</td>
+        </tr>
+        <tr>
+            <td>addScheduleMulti()</td>
+        </tr>
+        <tr>
+            <td>addScheduleFromTemplateMulti()</td>
+        </tr>
+        <tr>
+            <td>revokeSchedulesMulti()</td>
+        </tr>
+        <tr>
+            <td>modifyScheduleMulti()</td>
+        </tr>                                                                                                        
     </tbody>
  </table>
  

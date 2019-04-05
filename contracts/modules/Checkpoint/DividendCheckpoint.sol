@@ -8,7 +8,9 @@
 pragma solidity ^0.4.24;
 
 import "./ICheckpoint.sol";
+import "./DividendCheckpointStorage.sol";
 import "../Module.sol";
+import "../../Pausable.sol";
 import "../../interfaces/ISecurityToken.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/math/Math.sol";
@@ -17,55 +19,71 @@ import "openzeppelin-solidity/contracts/math/Math.sol";
  * @title Checkpoint module for issuing ether dividends
  * @dev abstract contract
  */
-contract DividendCheckpoint is ICheckpoint, Module {
+contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module, Pausable {
     using SafeMath for uint256;
-
-    uint256 public EXCLUDED_ADDRESS_LIMIT = 50;
-    bytes32 public constant DISTRIBUTE = "DISTRIBUTE";
-    bytes32 public constant MANAGE = "MANAGE";
-    bytes32 public constant CHECKPOINT = "CHECKPOINT";
-
-    struct Dividend {
-        uint256 checkpointId;
-        uint256 created; // Time at which the dividend was created
-        uint256 maturity; // Time after which dividend can be claimed - set to 0 to bypass
-        uint256 expiry;  // Time until which dividend can be claimed - after this time any remaining amount can be withdrawn by issuer -
-                         // set to very high value to bypass
-        uint256 amount; // Dividend amount in WEI
-        uint256 claimedAmount; // Amount of dividend claimed so far
-        uint256 totalSupply; // Total supply at the associated checkpoint (avoids recalculating this)
-        bool reclaimed;  // True if expiry has passed and issuer has reclaimed remaining dividend
-        uint256 dividendWithheld;
-        uint256 dividendWithheldReclaimed;
-        mapping (address => bool) claimed; // List of addresses which have claimed dividend
-        mapping (address => bool) dividendExcluded; // List of addresses which cannot claim dividends
-        bytes32 name; // Name/title - used for identification
-    }
-
-    // List of all dividends
-    Dividend[] public dividends;
-
-    // List of addresses which cannot claim dividends
-    address[] public excluded;
-
-    // Mapping from address to withholding tax as a percentage * 10**16
-    mapping (address => uint256) public withholdingTax;
-
-    // Total amount of ETH withheld per investor
-    mapping (address => uint256) public investorWithheld;
 
     event SetDefaultExcludedAddresses(address[] _excluded, uint256 _timestamp);
     event SetWithholding(address[] _investors, uint256[] _withholding, uint256 _timestamp);
     event SetWithholdingFixed(address[] _investors, uint256 _withholding, uint256 _timestamp);
+    event SetWallet(address indexed _oldWallet, address indexed _newWallet, uint256 _timestamp);
+    event UpdateDividendDates(uint256 indexed _dividendIndex, uint256 _maturity, uint256 _expiry);
 
     modifier validDividendIndex(uint256 _dividendIndex) {
+        _validDividendIndex(_dividendIndex);
+        _;
+    }
+
+    function _validDividendIndex(uint256 _dividendIndex) internal view {
         require(_dividendIndex < dividends.length, "Invalid dividend");
         require(!dividends[_dividendIndex].reclaimed, "Dividend reclaimed");
         /*solium-disable-next-line security/no-block-members*/
         require(now >= dividends[_dividendIndex].maturity, "Dividend maturity in future");
         /*solium-disable-next-line security/no-block-members*/
         require(now < dividends[_dividendIndex].expiry, "Dividend expiry in past");
-        _;
+    }
+
+    /**
+     * @notice Pause (overridden function)
+     */
+    function pause() public onlyOwner {
+        super._pause();
+    }
+
+    /**
+     * @notice Unpause (overridden function)
+     */
+    function unpause() public onlyOwner {
+        super._unpause();
+    }
+
+    /**
+    * @notice Reclaims ERC20Basic compatible tokens
+    * @dev We duplicate here due to the overriden owner & onlyOwner
+    * @param _tokenContract The address of the token contract
+    */
+    function reclaimERC20(address _tokenContract) external onlyOwner {
+        require(_tokenContract != address(0), "Invalid address");
+        IERC20 token = IERC20(_tokenContract);
+        uint256 balance = token.balanceOf(address(this));
+        require(token.transfer(msg.sender, balance), "Transfer failed");
+    }
+
+    /**
+    * @notice Reclaims ETH
+    * @dev We duplicate here due to the overriden owner & onlyOwner
+    */
+    function reclaimETH() external onlyOwner {
+        msg.sender.transfer(address(this).balance);
+    }
+
+    /**
+     * @notice Function used to intialize the contract variables
+     * @param _wallet Ethereum account address to receive reclaimed dividends and tax
+     */
+    function configure(
+        address _wallet
+    ) public onlyFactory {
+        _setWallet(_wallet);
     }
 
     /**
@@ -73,7 +91,21 @@ contract DividendCheckpoint is ICheckpoint, Module {
     * @return bytes4
     */
     function getInitFunction() public pure returns (bytes4) {
-        return bytes4(0);
+        return this.configure.selector;
+    }
+
+    /**
+     * @notice Function used to change wallet address
+     * @param _wallet Ethereum account address to receive reclaimed dividends and tax
+     */
+    function changeWallet(address _wallet) external onlyOwner {
+        _setWallet(_wallet);
+    }
+
+    function _setWallet(address _wallet) internal {
+        require(_wallet != address(0));
+        emit SetWallet(wallet, _wallet, now);
+        wallet = _wallet;
     }
 
     /**
@@ -175,7 +207,8 @@ contract DividendCheckpoint is ICheckpoint, Module {
         validDividendIndex(_dividendIndex)
     {
         Dividend storage dividend = dividends[_dividendIndex];
-        address[] memory investors = ISecurityToken(securityToken).getInvestors();
+        uint256 checkpointId = dividend.checkpointId;
+        address[] memory investors = ISecurityToken(securityToken).getInvestorsAt(checkpointId);
         uint256 numberInvestors = Math.min256(investors.length, _start.add(_iterations));
         for (uint256 i = _start; i < numberInvestors; i++) {
             address payee = investors[i];
@@ -189,7 +222,7 @@ contract DividendCheckpoint is ICheckpoint, Module {
      * @notice Investors can pull their own dividends
      * @param _dividendIndex Dividend to pull
      */
-    function pullDividendPayment(uint256 _dividendIndex) public validDividendIndex(_dividendIndex)
+    function pullDividendPayment(uint256 _dividendIndex) public validDividendIndex(_dividendIndex) whenNotPaused
     {
         Dividend storage dividend = dividends[_dividendIndex];
         require(!dividend.claimed[msg.sender], "Dividend already claimed");
@@ -258,6 +291,161 @@ contract DividendCheckpoint is ICheckpoint, Module {
      * @param _dividendIndex Dividend to withdraw from
      */
     function withdrawWithholding(uint256 _dividendIndex) external;
+
+    /**
+     * @notice Allows issuer to change maturity / expiry dates for dividends
+     * @dev NB - setting the maturity of a currently matured dividend to a future date
+     * @dev will effectively refreeze claims on that dividend until the new maturity date passes
+     * @ dev NB - setting the expiry date to a past date will mean no more payments can be pulled
+     * @dev or pushed out of a dividend
+     * @param _dividendIndex Dividend to withdraw from
+     * @param _maturity updated maturity date
+     * @param _expiry updated expiry date
+     */
+    function updateDividendDates(uint256 _dividendIndex, uint256 _maturity, uint256 _expiry) external onlyOwner {
+        require(_dividendIndex < dividends.length, "Invalid dividend");
+        require(_expiry > _maturity, "Expiry before maturity");
+        Dividend storage dividend = dividends[_dividendIndex];
+        dividend.expiry = _expiry;
+        dividend.maturity = _maturity;
+        emit UpdateDividendDates(_dividendIndex, _maturity, _expiry);
+    }
+
+    /**
+     * @notice Get static dividend data
+     * @return uint256[] timestamp of dividends creation
+     * @return uint256[] timestamp of dividends maturity
+     * @return uint256[] timestamp of dividends expiry
+     * @return uint256[] amount of dividends
+     * @return uint256[] claimed amount of dividends
+     * @return bytes32[] name of dividends
+     */
+    function getDividendsData() external view returns (
+        uint256[] memory createds,
+        uint256[] memory maturitys,
+        uint256[] memory expirys,
+        uint256[] memory amounts,
+        uint256[] memory claimedAmounts,
+        bytes32[] memory names)
+    {
+        createds = new uint256[](dividends.length);
+        maturitys = new uint256[](dividends.length);
+        expirys = new uint256[](dividends.length);
+        amounts = new uint256[](dividends.length);
+        claimedAmounts = new uint256[](dividends.length);
+        names = new bytes32[](dividends.length);
+        for (uint256 i = 0; i < dividends.length; i++) {
+            (createds[i], maturitys[i], expirys[i], amounts[i], claimedAmounts[i], names[i]) = getDividendData(i);
+        }
+    }
+
+    /**
+     * @notice Get static dividend data
+     * @return uint256 timestamp of dividend creation
+     * @return uint256 timestamp of dividend maturity
+     * @return uint256 timestamp of dividend expiry
+     * @return uint256 amount of dividend
+     * @return uint256 claimed amount of dividend
+     * @return bytes32 name of dividend
+     */
+    function getDividendData(uint256 _dividendIndex) public view returns (
+        uint256 created,
+        uint256 maturity,
+        uint256 expiry,
+        uint256 amount,
+        uint256 claimedAmount,
+        bytes32 name)
+    {
+        created = dividends[_dividendIndex].created;
+        maturity = dividends[_dividendIndex].maturity;
+        expiry = dividends[_dividendIndex].expiry;
+        amount = dividends[_dividendIndex].amount;
+        claimedAmount = dividends[_dividendIndex].claimedAmount;
+        name = dividends[_dividendIndex].name;
+    }
+
+    /**
+     * @notice Retrieves list of investors, their claim status and whether they are excluded
+     * @param _dividendIndex Dividend to withdraw from
+     * @return address[] list of investors
+     * @return bool[] whether investor has claimed
+     * @return bool[] whether investor is excluded
+     * @return uint256[] amount of withheld tax (estimate if not claimed)
+     * @return uint256[] amount of claim (estimate if not claimeed)
+     * @return uint256[] investor balance
+     */
+    function getDividendProgress(uint256 _dividendIndex) external view returns (
+        address[] memory investors,
+        bool[] memory resultClaimed,
+        bool[] memory resultExcluded,
+        uint256[] memory resultWithheld,
+        uint256[] memory resultAmount,
+        uint256[] memory resultBalance)
+    {
+        require(_dividendIndex < dividends.length, "Invalid dividend");
+        //Get list of Investors
+        Dividend storage dividend = dividends[_dividendIndex];
+        uint256 checkpointId = dividend.checkpointId;
+        investors = ISecurityToken(securityToken).getInvestorsAt(checkpointId);
+        resultClaimed = new bool[](investors.length);
+        resultExcluded = new bool[](investors.length);
+        resultWithheld = new uint256[](investors.length);
+        resultAmount = new uint256[](investors.length);
+        resultBalance = new uint256[](investors.length);
+        for (uint256 i; i < investors.length; i++) {
+            resultClaimed[i] = dividend.claimed[investors[i]];
+            resultExcluded[i] = dividend.dividendExcluded[investors[i]];
+            resultBalance[i] = ISecurityToken(securityToken).balanceOfAt(investors[i], dividend.checkpointId);
+            if (!resultExcluded[i]) {
+                if (resultClaimed[i]) {
+                    resultWithheld[i] = dividend.withheld[investors[i]];
+                    resultAmount[i] = resultBalance[i].mul(dividend.amount).div(dividend.totalSupply).sub(resultWithheld[i]);
+                } else {
+                    (uint256 claim, uint256 withheld) = calculateDividend(_dividendIndex, investors[i]);
+                    resultWithheld[i] = withheld;
+                    resultAmount[i] = claim.sub(withheld);
+                }
+            }
+        }
+    }
+
+    /**
+     * @notice Retrieves list of investors, their balances, and their current withholding tax percentage
+     * @param _checkpointId Checkpoint Id to query for
+     * @return address[] list of investors
+     * @return uint256[] investor balances
+     * @return uint256[] investor withheld percentages
+     */
+    function getCheckpointData(uint256 _checkpointId) external view returns (address[] memory investors, uint256[] memory balances, uint256[] memory withholdings) {
+        require(_checkpointId <= ISecurityToken(securityToken).currentCheckpointId(), "Invalid checkpoint");
+        investors = ISecurityToken(securityToken).getInvestorsAt(_checkpointId);
+        balances = new uint256[](investors.length);
+        withholdings = new uint256[](investors.length);
+        for (uint256 i; i < investors.length; i++) {
+            balances[i] = ISecurityToken(securityToken).balanceOfAt(investors[i], _checkpointId);
+            withholdings[i] = withholdingTax[investors[i]];
+        }
+    }
+
+    /**
+     * @notice Checks whether an address is excluded from claiming a dividend
+     * @param _dividendIndex Dividend to withdraw from
+     * @return bool whether the address is excluded
+     */
+    function isExcluded(address _investor, uint256 _dividendIndex) external view returns (bool) {
+        require(_dividendIndex < dividends.length, "Invalid dividend");
+        return dividends[_dividendIndex].dividendExcluded[_investor];
+    }
+
+    /**
+     * @notice Checks whether an address has claimed a dividend
+     * @param _dividendIndex Dividend to withdraw from
+     * @return bool whether the address has claimed
+     */
+    function isClaimed(address _investor, uint256 _dividendIndex) external view returns (bool) {
+        require(_dividendIndex < dividends.length, "Invalid dividend");
+        return dividends[_dividendIndex].claimed[_investor];
+    }
 
     /**
      * @notice Return the permissions flag that are associated with this module

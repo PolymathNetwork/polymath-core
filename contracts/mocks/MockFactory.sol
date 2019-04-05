@@ -1,6 +1,6 @@
 pragma solidity ^0.4.24;
 
-import "../modules/STO/DummySTOFactory.sol";
+import "./DummySTOFactory.sol";
 
 /**
  * @title Mock Contract Not fit for production environment
@@ -32,7 +32,7 @@ contract MockFactory is DummySTOFactory {
             res[1] = 1;
             return res;
         }
-        
+
     }
 
     function changeTypes() external onlyOwner {

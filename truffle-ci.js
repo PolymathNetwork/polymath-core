@@ -1,6 +1,8 @@
 require('babel-register');
 require('babel-polyfill');
 
+let HDWalletProvider = require("truffle-hdwallet-provider");
+
 module.exports = {
   networks: {
     development: {
@@ -8,6 +10,13 @@ module.exports = {
       port: 8545,
       network_id: '*', // Match any network id
       gas: 7900000,
+    },
+    kovan: {
+      provider: () => {
+        return new HDWalletProvider(process.env.PRIVATE_KEY, "https://kovan.mudit.blog/");
+      },
+      network_id: '42',
+      gasPrice: 2000000000
     },
     coverage: {
       host: "localhost",
@@ -17,6 +26,17 @@ module.exports = {
       gasPrice: 0x01      // <-- Use this low gas price
     }
   },
+  compilers: {
+    solc: {
+      version: "native",  
+      settings: {
+        optimizer: {
+          enabled: true, 
+          runs: 200    
+        }
+      }
+    }
+  },
   solc: {
     optimizer: {
       enabled: true,
@@ -24,10 +44,6 @@ module.exports = {
     },
   },
   mocha: {
-    enableTimeouts: false,
-    reporter: "mocha-junit-reporter",
-    reporterOptions: {
-      mochaFile: './test-results/mocha/results.xml'
-    }
+    enableTimeouts: false
   }
 };

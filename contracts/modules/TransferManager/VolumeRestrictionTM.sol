@@ -159,7 +159,8 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
      * @param _startTime Unix timestamp at which restriction get into effect
      * @param _rollingPeriodInDays Rolling period in days (Minimum value should be 1 day)
      * @param _endTime Unix timestamp at which restriction effects will gets end.
-     * @param _restrictionType It will be 0 or 1 (i.e 0 for fixed while 1 for Percentage)
+     * @param _restrictionType Whether it will be `Fixed` (fixed no. of tokens allowed to transact)
+     * or `Percentage` (tokens are calculated as per the totalSupply in the fly).
      */
     function addIndividualRestriction(
         address _holder,
@@ -228,7 +229,8 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
      * @param _allowedTokens Amount of tokens allowed to be traded for all token holder.
      * @param _startTime Unix timestamp at which restriction get into effect
      * @param _endTime Unix timestamp at which restriction effects will gets end.
-     * @param _restrictionType It will be 0 or 1 (i.e 0 for fixed while 1 for Percentage)
+     * @param _restrictionType Whether it will be `Fixed` (fixed no. of tokens allowed to transact)
+     * or `Percentage` (tokens are calculated as per the totalSupply in the fly). 
      */
     function addIndividualDailyRestriction(
         address _holder,
@@ -288,7 +290,8 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
      * @param _allowedTokens Array of amount of tokens allowed to be trade for a given address.
      * @param _startTimes Array of unix timestamps at which restrictions get into effect
      * @param _endTimes Array of unix timestamps at which restriction effects will gets end.
-     * @param _restrictionTypes Array of restriction types value will be 0 or 1 (i.e 0 for fixed while 1 for Percentage)
+     * @param _restrictionTypes Array of restriction types value whether it will be `Fixed` (fixed no. of tokens allowed to transact)
+     * or `Percentage` (tokens are calculated as per the totalSupply in the fly).
      */
     function addIndividualDailyRestrictionMulti(
         address[] _holders,
@@ -320,7 +323,8 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
      * @param _startTimes Array of unix timestamps at which restrictions get into effect
      * @param _rollingPeriodInDays Array of rolling period in days (Minimum value should be 1 day)
      * @param _endTimes Array of unix timestamps at which restriction effects will gets end.
-     * @param _restrictionTypes Array of restriction types value will be 0 or 1 (i.e 0 for fixed while 1 for Percentage)
+     * @param _restrictionTypes Array of restriction types value whether it will be `Fixed` (fixed no. of tokens allowed to transact)
+     * or `Percentage` (tokens are calculated as per the totalSupply in the fly).
      */
     function addIndividualRestrictionMulti(
         address[] _holders,
@@ -352,7 +356,8 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
      * @param _startTime Unix timestamp at which restriction get into effect
      * @param _rollingPeriodInDays Rolling period in days (Minimum value should be 1 day)
      * @param _endTime Unix timestamp at which restriction effects will gets end.
-     * @param _restrictionType It will be 0 or 1 (i.e 0 for fixed while 1 for Percentage)
+     * @param _restrictionType Whether it will be `Fixed` (fixed no. of tokens allowed to transact)
+     * or `Percentage` (tokens are calculated as per the totalSupply in the fly).
      */
     function addDefaultRestriction(
         uint256 _allowedTokens,
@@ -387,7 +392,8 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
      * @param _allowedTokens Amount of tokens allowed to be traded for all token holder.
      * @param _startTime Unix timestamp at which restriction get into effect
      * @param _endTime Unix timestamp at which restriction effects will gets end.
-     * @param _restrictionType It will be 0 or 1 (i.e 0 for fixed while 1 for Percentage)
+     * @param _restrictionType Whether it will be `Fixed` (fixed no. of tokens allowed to transact)
+     * or `Percentage` (tokens are calculated as per the totalSupply in the fly).
      */
     function addDefaultDailyRestriction(
         uint256 _allowedTokens,
@@ -499,7 +505,8 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
      * @param _startTime Unix timestamp at which restriction get into effect
      * @param _rollingPeriodInDays Rolling period in days (Minimum value should be 1 day)
      * @param _endTime Unix timestamp at which restriction effects will gets end.
-     * @param _restrictionType It will be 0 or 1 (i.e 0 for fixed while 1 for Percentage)
+     * @param _restrictionType Whether it will be `Fixed` (fixed no. of tokens allowed to transact)
+     * or `Percentage` (tokens are calculated as per the totalSupply in the fly).
      */
     function modifyIndividualRestriction(
         address _holder,
@@ -561,7 +568,8 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
      * @param _allowedTokens Amount of tokens allowed to be trade for a given address.
      * @param _startTime Unix timestamp at which restriction get into effect
      * @param _endTime Unix timestamp at which restriction effects will gets end.
-     * @param _restrictionType It will be 0 or 1 (i.e 0 for fixed while 1 for Percentage)
+     * @param _restrictionType Whether it will be `Fixed` (fixed no. of tokens allowed to transact)
+     * or `Percentage` (tokens are calculated as per the totalSupply in the fly).
      */
     function modifyIndividualDailyRestriction(
         address _holder,
@@ -620,7 +628,8 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
      * @param _allowedTokens Array of amount of tokens allowed to be trade for a given address.
      * @param _startTimes Array of unix timestamps at which restrictions get into effect
      * @param _endTimes Array of unix timestamps at which restriction effects will gets end.
-     * @param _restrictionTypes Array of restriction types value will be 0 or 1 (i.e 0 for fixed while 1 for Percentage)
+     * @param _restrictionTypes Array of restriction types value whether it will be `Fixed` (fixed no. of tokens allowed to transact)
+     * or `Percentage` (tokens are calculated as per the totalSupply in the fly).
      */
     function modifyIndividualDailyRestrictionMulti(
         address[] _holders,
@@ -652,7 +661,8 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
      * @param _startTimes Array of unix timestamps at which restrictions get into effect
      * @param _rollingPeriodInDays Array of rolling period in days (Minimum value should be 1 day)
      * @param _endTimes Array of unix timestamps at which restriction effects will gets end.
-     * @param _restrictionTypes Array of restriction types value will be 0 or 1 (i.e 0 for fixed while 1 for Percentage)
+     * @param _restrictionTypes Array of restriction types value whether it will be `Fixed` (fixed no. of tokens allowed to transact)
+     * or `Percentage` (tokens are calculated as per the totalSupply in the fly).
      */
     function modifyIndividualRestrictionMulti(
         address[] _holders,
@@ -684,7 +694,8 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
      * @param _startTime Unix timestamp at which restriction get into effect
      * @param _rollingPeriodInDays Rolling period in days (Minimum value should be 1 day)
      * @param _endTime Unix timestamp at which restriction effects will gets end.
-     * @param _restrictionType It will be 0 or 1 (i.e 0 for fixed while 1 for Percentage)
+     * @param _restrictionType Whether it will be `Fixed` (fixed no. of tokens allowed to transact)
+     * or `Percentage` (tokens are calculated as per the totalSupply in the fly).
      */
     function modifyDefaultRestriction(
         uint256 _allowedTokens,
@@ -722,7 +733,8 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
      * @param _allowedTokens Amount of tokens allowed to be traded for all token holder.
      * @param _startTime Unix timestamp at which restriction get into effect
      * @param _endTime Unix timestamp at which restriction effects will gets end.
-     * @param _restrictionType It will be 0 or 1 (i.e 0 for fixed while 1 for Percentage)
+     * @param _restrictionType Whether it will be `Fixed` (fixed no. of tokens allowed to transact)
+     * or `Percentage` (tokens are calculated as per the totalSupply in the fly).
      */
     function modifyDefaultDailyRestriction(
         uint256 _allowedTokens,
@@ -880,11 +892,11 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
     }
 
     function _dailyTxCheck(
-        address from,
-        uint256 amount,
-        uint256 dailyLastTradedDayTime,
-        VolumeRestriction memory restriction,
-        bool isDefault
+        address _from,
+        uint256 _amount,
+        uint256 _dailyLastTradedDayTime,
+        VolumeRestriction memory _restriction,
+        bool _isDefault
     )
         internal
         view
@@ -892,21 +904,31 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
     {
         // Checking whether the daily restriction is added or not if yes then calculate
         // the total amount get traded on a particular day (~ _fromTime)
-        if ( now <= restriction.endTime && now >= restriction.startTime) {
+        if ( now <= _restriction.endTime && now >= _restriction.startTime) {
             uint256 txSumOfDay = 0;
             // This if condition will be executed when the individual daily restriction executed first time
-            if (dailyLastTradedDayTime == 0 || dailyLastTradedDayTime < restriction.startTime)
-                dailyLastTradedDayTime = restriction.startTime.add(BokkyPooBahsDateTimeLibrary.diffDays(restriction.startTime, now).mul(1 days));
-            else if (now.sub(dailyLastTradedDayTime) >= 1 days)
-                dailyLastTradedDayTime = dailyLastTradedDayTime.add(BokkyPooBahsDateTimeLibrary.diffDays(dailyLastTradedDayTime, now).mul(1 days));
+            if (_dailyLastTradedDayTime == 0 || _dailyLastTradedDayTime < _restriction.startTime)
+                _dailyLastTradedDayTime = _restriction.startTime.add(BokkyPooBahsDateTimeLibrary.diffDays(_restriction.startTime, now).mul(1 days));
+            else if (now.sub(_dailyLastTradedDayTime) >= 1 days)
+                _dailyLastTradedDayTime = _dailyLastTradedDayTime.add(BokkyPooBahsDateTimeLibrary.diffDays(_dailyLastTradedDayTime, now).mul(1 days));
             // Assgining total sum traded on dailyLastTradedDayTime timestamp
-            if (isDefault)
-                txSumOfDay = defaultBucket[from][dailyLastTradedDayTime];
+            if (_isDefault)
+                txSumOfDay = defaultBucket[_from][_dailyLastTradedDayTime];
             else
-                txSumOfDay = bucket[from][dailyLastTradedDayTime];
-            return (_checkValidAmountToTransact(isDefault, from, txSumOfDay, amount, restriction.typeOfRestriction, restriction.allowedTokens), dailyLastTradedDayTime);
+                txSumOfDay = bucket[_from][_dailyLastTradedDayTime];
+            return (
+                _checkValidAmountToTransact(
+                _isDefault,
+                _from,
+                txSumOfDay,
+                _amount,
+                _restriction.typeOfRestriction,
+                _restriction.allowedTokens
+                ), 
+                _dailyLastTradedDayTime
+            );
         }
-        return (true, dailyLastTradedDayTime);
+        return (true, _dailyLastTradedDayTime);
     }
 
     /// Internal function for the bucket check
@@ -1041,7 +1063,6 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
         internal
         pure
     {
-        require(uint256(_restrictionType) < 2);
         if (isModifyDaily)
             require(_startTime >= _earliestStartTime, "Invalid startTime");
         else
@@ -1182,22 +1203,22 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
     }
 
     function _setValues(
-        VolumeRestriction memory restriction,
-        uint256[] memory allowedTokens,
-        uint256[] memory startTime,
-        uint256[] memory rollingPeriodInDays,
-        uint256[] memory endTime,
-        RestrictionType[] memory typeOfRestriction,
-        uint256 index
+        VolumeRestriction memory _restriction,
+        uint256[] memory _allowedTokens,
+        uint256[] memory _startTime,
+        uint256[] memory _rollingPeriodInDays,
+        uint256[] memory _endTime,
+        RestrictionType[] memory _typeOfRestriction,
+        uint256 _index
     )
         internal
         pure
     {
-        allowedTokens[index] = restriction.allowedTokens;
-        startTime[index] = restriction.startTime;
-        rollingPeriodInDays[index] = restriction.rollingPeriodInDays;
-        endTime[index] = restriction.endTime;
-        typeOfRestriction[index] = restriction.typeOfRestriction;
+        _allowedTokens[_index] = _restriction.allowedTokens;
+        _startTime[_index] = _restriction.startTime;
+        _rollingPeriodInDays[_index] = _restriction.rollingPeriodInDays;
+        _endTime[_index] = _restriction.endTime;
+        _typeOfRestriction[_index] = _restriction.typeOfRestriction;
     }
 
     function _checkLengthOfArray(

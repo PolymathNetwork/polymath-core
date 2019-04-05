@@ -12,6 +12,17 @@ contract STGetter is OZStorage, SecurityTokenStorage {
     using SafeMath for uint256;
 
     /**
+     * @notice A security token issuer can specify that issuance has finished for the token
+     * (i.e. no new tokens can be minted or issued).
+     * @dev If a token returns FALSE for `isIssuable()` then it MUST always return FALSE in the future.
+     * If a token returns FALSE for `isIssuable()` then it MUST never allow additional tokens to be issued.
+     * @return bool `true` signifies the minting is allowed. While `false` denotes the end of minting
+     */
+    function isIssuable() external view returns (bool) {
+        return issuance;
+    }
+
+    /**
      * @notice Gets list of times that checkpoints were created
      * @return List of checkpoint times
      */

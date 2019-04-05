@@ -2,7 +2,6 @@ pragma solidity ^0.5.0;
 
 import "../proxy/Proxy.sol";
 import "../PolymathRegistry.sol";
-import "../libraries/KindMath.sol";
 import "../interfaces/IModule.sol";
 import "./SecurityTokenStorage.sol";
 import "../libraries/TokenLib.sol";
@@ -127,12 +126,25 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
         require(_isRedeem, "Invalid redeem");
     }
 
+    function _isSignedByOwner(bool _signed) internal pure {
+        require(_signed, "Owner did not sign");
+    }
+
+    function _isIssuanceAllowed() internal view {
+        require(issuance, "Issuance frozen");
+    }
+
+    // Function to check whether the msg.sender is authorised or not
+    function _onlyController() internal view {
+        require(msg.sender == controller && isControllable(), "Not Authorised");
+    }
+
     /**
      * @dev Throws if called by any account other than the owner.
+     * @dev using the internal function instead of modifier to save the code size
      */
-    modifier onlyOwner() {
+    function _onlyOwner() internal view {
         require(isOwner());
-        _;
     }
 
     /**
@@ -144,24 +156,12 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     }
 
     // Require msg.sender to be the specified module type
-    modifier onlyModule(uint8 _type) {
+    function _onlyModule(uint8 _type) internal view {
         require(_isModule(msg.sender, _type));
-        _;
-    }
-
-    modifier isIssuanceAllowed() {
-        require(issuance, "Issuance frozen");
-        _;
     }
 
     modifier checkGranularity(uint256 _value) {
         require(_value % granularity == 0, "Invalid granularity");
-        _;
-    }
-
-    // Modifier to check whether the msg.sender is authorised or not
-    modifier onlyController() {
-        require(msg.sender == controller, "Not Authorised");
         _;
     }
 
@@ -184,9 +184,9 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
         bool _archived
     )
         public
-        onlyOwner
         nonReentrant
     {
+        _onlyOwner();
         //Check that the module factory exists in the ModuleRegistry - will throw otherwise
         IModuleRegistry(moduleRegistry).useModule(_moduleFactory, false);
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
@@ -236,7 +236,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     * @notice Archives a module attached to the SecurityToken
     * @param _module address of module to archive
     */
-    function archiveModule(address _module) external onlyOwner {
+    function archiveModule(address _module) external {
+        _onlyOwner();
         TokenLib.archiveModule(modulesToData[_module]);
     }
 
@@ -244,14 +245,16 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     * @notice Upgrades a module attached to the SecurityToken
     * @param _module address of module to archive
     */
-    function upgradeModule(address _module) external onlyOwner {
+    function upgradeModule(address _module) external {
+        _onlyOwner();
         TokenLib.upgradeModule(moduleRegistry, modulesToData[_module]);
     }
 
     /**
     * @notice Upgrades security token
     */
-    function upgradeToken() external onlyOwner {
+    function upgradeToken() external {
+        _onlyOwner();
         IUpgradableTokenFactory(tokenFactory).upgradeToken(7);
         emit TokenUpgraded(securityTokenVersion.major, securityTokenVersion.minor, securityTokenVersion.patch);
     }
@@ -260,7 +263,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     * @notice Unarchives a module attached to the SecurityToken
     * @param _module address of module to unarchive
     */
-    function unarchiveModule(address _module) external onlyOwner {
+    function unarchiveModule(address _module) external {
+        _onlyOwner();
         TokenLib.unarchiveModule(moduleRegistry, modulesToData[_module]);
     }
 
@@ -268,7 +272,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     * @notice Removes a module attached to the SecurityToken
     * @param _module address of module to unarchive
     */
-    function removeModule(address _module) external onlyOwner {
+    function removeModule(address _module) external {
+        _onlyOwner();
         TokenLib.removeModule(_module, modules, modulesToData, names);
     }
 
@@ -278,7 +283,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     * @param _tokenContract Address of the ERC20Basic compliance token
     * @param _value amount of POLY to withdraw
     */
-    function withdrawERC20(address _tokenContract, uint256 _value) external onlyOwner {
+    function withdrawERC20(address _tokenContract, uint256 _value) external {
+        _onlyOwner();
         IERC20 token = IERC20(_tokenContract);
         require(token.transfer(owner(), _value));
     }
@@ -289,7 +295,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     * @param _change change in allowance
     * @param _increase true if budget has to be increased, false if decrease
     */
-    function changeModuleBudget(address _module, uint256 _change, bool _increase) external onlyOwner {
+    function changeModuleBudget(address _module, uint256 _change, bool _increase) external {
+        _onlyOwner();
         TokenLib.changeModuleBudget(_module, _change, _increase, polyToken, modulesToData);
     }
 
@@ -297,7 +304,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @notice updates the tokenDetails associated with the token
      * @param _newTokenDetails New token details
      */
-    function updateTokenDetails(string calldata _newTokenDetails) external onlyOwner {
+    function updateTokenDetails(string calldata _newTokenDetails) external {
+        _onlyOwner();
         emit UpdateTokenDetails(tokenDetails, _newTokenDetails);
         tokenDetails = _newTokenDetails;
     }
@@ -306,7 +314,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     * @notice Allows owner to change token granularity
     * @param _granularity granularity level of the token
     */
-    function changeGranularity(uint256 _granularity) external onlyOwner {
+    function changeGranularity(uint256 _granularity) external {
+        _onlyOwner();
         require(_granularity != 0, "Invalid granularity");
         emit GranularityChanged(granularity, _granularity);
         granularity = _granularity;
@@ -316,7 +325,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     * @notice Allows owner to change data store
     * @param _dataStore Address of the token data store
     */
-    function changeDataStore(address _dataStore) external onlyOwner {
+    function changeDataStore(address _dataStore) external {
+        _onlyOwner();
         _zeroAddressCheck(_dataStore);
         dataStore = _dataStore;
     }
@@ -325,7 +335,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     * @notice Allows owner to change token name
     * @param _name new name of the token
     */
-    function changeName(string calldata _name) external onlyOwner {
+    function changeName(string calldata _name) external {
+        _onlyOwner();
         emit UpdateTokenName(name, _name);
         name = _name;
     }
@@ -334,7 +345,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @notice Allows to change the treasury wallet address
      * @param _wallet Ethereum address of the treasury wallet
      */
-    function changeTreasuryWallet(address _wallet) external onlyOwner {
+    function changeTreasuryWallet(address _wallet) external {
+        _onlyOwner();
         _zeroAddressCheck(_wallet);
         emit TreasuryWalletChanged(IDataStore(dataStore).getAddress(TREASURY), _wallet);
         IDataStore(dataStore).setAddress(TREASURY, _wallet);
@@ -353,7 +365,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     /**
      * @notice freezes transfers
      */
-    function freezeTransfers() external onlyOwner {
+    function freezeTransfers() external {
+        _onlyOwner();
         require(!transfersFrozen);
         transfersFrozen = true;
         /*solium-disable-next-line security/no-block-members*/
@@ -363,7 +376,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     /**
      * @notice Unfreeze transfers
      */
-    function unfreezeTransfers() external onlyOwner {
+    function unfreezeTransfers() external {
+        _onlyOwner();
         require(transfersFrozen);
         transfersFrozen = false;
         /*solium-disable-next-line security/no-block-members*/
@@ -652,22 +666,13 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     }
 
     /**
-     * @notice A security token issuer can specify that issuance has finished for the token
-     * (i.e. no new tokens can be minted or issued).
-     * @dev If a token returns FALSE for `isIssuable()` then it MUST always return FALSE in the future.
-     * If a token returns FALSE for `isIssuable()` then it MUST never allow additional tokens to be issued.
-     * @return bool `true` signifies the minting is allowed. While `false` denotes the end of minting
-     */
-    function isIssuable() external view returns (bool) {
-        return issuance;
-    }
-
-    /**
      * @notice Permanently freeze issuance of this security token.
      * @dev It MUST NOT be possible to increase `totalSuppy` after this function is called.
      */
-    function freezeIssuance(bytes calldata _signature) external isIssuanceAllowed onlyOwner {
-        require(owner() == TokenLib.recoverFreezeIssuanceAckSigner(_signature), "Owner did not sign");
+    function freezeIssuance(bytes calldata _signature) external {
+        _onlyOwner();
+        _isIssuanceAllowed();
+        _isSignedByOwner(owner() == TokenLib.recoverFreezeIssuanceAckSigner(_signature));
         issuance = false;
         /*solium-disable-next-line security/no-block-members*/
         emit FreezeIssuance();
@@ -688,8 +693,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
         bytes memory _data
     )
         public
-        isIssuanceAllowed
     {
+        _isIssuanceAllowed();
         _onlyModuleOrOwner(MINT_KEY);
         _issue(_tokenHolder, _value, _data);
     }
@@ -714,7 +719,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @param _values A list of number of tokens get minted and transfer to corresponding address of the investor from _tokenHolders[] list
      * @return success
      */
-    function issueMulti(address[] calldata _tokenHolders, uint256[] calldata _values) external isIssuanceAllowed {
+    function issueMulti(address[] calldata _tokenHolders, uint256[] calldata _values) external {
+        _isIssuanceAllowed();
         _onlyModuleOrOwner(MINT_KEY);
         require(_tokenHolders.length == _values.length, "Incorrect inputs");
         for (uint256 i = 0; i < _tokenHolders.length; i++) {
@@ -743,7 +749,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @param _value The amount of tokens need to be redeemed
      * @param _data The `bytes _data` it can be used in the token contract to authenticate the redemption.
      */
-    function redeem(uint256 _value, bytes calldata _data) external onlyModule(BURN_KEY) {
+    function redeem(uint256 _value, bytes calldata _data) external {
+        _onlyModule(BURN_KEY);
         _redeem(msg.sender, _value, _data);
     }
 
@@ -758,7 +765,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @param _value The amount by which to decrease the balance
      * @param _data Additional data attached to the burning of tokens
      */
-    function redeemByPartition(bytes32 _partition, uint256 _value, bytes calldata _data) external onlyModule(BURN_KEY) {
+    function redeemByPartition(bytes32 _partition, uint256 _value, bytes calldata _data) external {
+        _onlyModule(BURN_KEY);
         _isValidPartition(_partition);
         _redeemByPartition(_partition, msg.sender, _value, address(0), _data, "");
     }
@@ -794,8 +802,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
         bytes calldata _operatorData
     ) 
         external
-        onlyModule(BURN_KEY) 
     {
+        _onlyModule(BURN_KEY); 
         require(_operatorData.length > 0);
         _zeroAddressCheck(_tokenHolder);
         _validateOperatorAndPartition(_partition, _tokenHolder, msg.sender);
@@ -827,7 +835,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @param _value The amount of tokens need to be redeemed
      * @param _data The `bytes _data` it can be used in the token contract to authenticate the redemption.
      */
-    function redeemFrom(address _tokenHolder, uint256 _value, bytes calldata _data) external onlyModule(BURN_KEY) {
+    function redeemFrom(address _tokenHolder, uint256 _value, bytes calldata _data) external {
+        _onlyModule(BURN_KEY);
         // Add a function to validate the `_data` parameter
         _isValidRedeem(_updateTransfer(_tokenHolder, address(0), _value, _data));
         _burnFrom(_tokenHolder, _value);
@@ -854,7 +863,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @notice Used by the issuer to set the controller addresses
      * @param _controller address of the controller
      */
-    function setController(address _controller) public onlyOwner {
+    function setController(address _controller) public {
+        _onlyOwner();
         require(isControllable());
         emit SetController(controller, _controller);
         controller = _controller;
@@ -864,8 +874,9 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @notice Used by the issuer to permanently disable controller functionality
      * @dev enabled via feature switch "disableControllerAllowed"
      */
-    function disableController(bytes calldata _signature) external onlyOwner {
-        require(owner() == TokenLib.recoverDisableControllerAckSigner(_signature), "Owner did not sign");
+    function disableController(bytes calldata _signature) external {
+        _onlyOwner();
+        _isSignedByOwner(owner() == TokenLib.recoverDisableControllerAckSigner(_signature));
         require(isControllable());
         controllerDisabled = true;
         delete controller;
@@ -914,18 +925,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
             return (false, 0x50, "Invalid granularity");
         }
         (success, appCode) = TokenLib.verifyTransfer(modules[TRANSFER_KEY], modulesToData, _from, _to, _value, _data, transfersFrozen);
-        if (!success)
-            return (false, 0x50, appCode);
-
-        else if (balanceOf(_from) < _value)
-            return (false, 0x52, bytes32(0));
-
-        else if (_to == address(0))
-            return (false, 0x57, bytes32(0));
-
-        else if (!KindMath.checkAdd(balanceOf(_to), _value))
-            return (false, 0x50, bytes32(0));
-        return (true, 0x51, bytes32(0));
+        return TokenLib.canTransfer(success, appCode, _to, _value, balanceOf(_from), balanceOf(_to));
     }
 
     /**
@@ -956,8 +956,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
             bytes32 toPartition;
             if (success) {
                 uint256 beforeBalance = _balanceOfByPartition(_partition, _to, 0);
-                uint256 afterBalance = _balanceOfByPartition(_partition, _to, _value);
-                toPartition = _returnPartition(beforeBalance, afterBalance, _value);
+                uint256 afterbalance = _balanceOfByPartition(_partition, _to, _value);
+                toPartition = _returnPartition(beforeBalance, afterbalance, _value);
             }
             return (esc, appStatusCode, toPartition);
         }
@@ -971,15 +971,9 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @param _uri Off-chain uri of the document from where it is accessible to investors/advisors to read.
      * @param _documentHash hash (of the contents) of the document.
      */
-    function setDocument(bytes32 _name, string calldata _uri, bytes32 _documentHash) external onlyOwner {
-        require(_name != bytes32(0), "Bad name");
-        require(bytes(_uri).length > 0, "Bad uri");
-        if (_documents[_name].lastModified == uint256(0)) {
-            _docNames.push(_name);
-            _docIndexes[_name] = _docNames.length;
-        }
-        _documents[_name] = Document(_documentHash, now, _uri);
-        emit DocumentUpdated(_name, _uri, _documentHash);
+    function setDocument(bytes32 _name, string calldata _uri, bytes32 _documentHash) external {
+        _onlyOwner();
+        TokenLib.setDocument(_documents, _docNames, _docIndexes, _name, _uri, _documentHash);
     }
 
     /**
@@ -987,16 +981,9 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @dev Can only be executed by the owner of the contract.
      * @param _name Name of the document. It should be unique always
      */
-    function removeDocument(bytes32 _name) external onlyOwner {
-        require(_documents[_name].lastModified != uint256(0), "Not existed");
-        uint256 index = _docIndexes[_name] - 1;
-        if (index != _docNames.length - 1) {
-            _docNames[index] = _docNames[_docNames.length - 1];
-            _docIndexes[_docNames[index]] = index + 1;
-        }
-        _docNames.length--;
-        emit DocumentRemoved(_name, _documents[_name].uri, _documents[_name].docHash);
-        delete _documents[_name];
+    function removeDocument(bytes32 _name) external {
+        _onlyOwner();
+        TokenLib.removeDocument(_documents, _docNames, _docIndexes, _name);
     }
 
     /**
@@ -1023,8 +1010,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @param _operatorData data attached to the transfer by controller to emit in event. (It is more like a reason string
      * for calling this function (aka force transfer) which provides the transparency on-chain).
      */
-    function controllerTransfer(address _from, address _to, uint256 _value, bytes calldata _data, bytes calldata _operatorData) external onlyController {
-        require(isControllable());
+    function controllerTransfer(address _from, address _to, uint256 _value, bytes calldata _data, bytes calldata _operatorData) external {
+        _onlyController();
         _updateTransfer(_from, _to, _value, _data);
         _transfer(_from, _to, _value);
         emit ControllerTransfer(msg.sender, _from, _to, _value, _data, _operatorData);
@@ -1042,8 +1029,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @param _operatorData data attached to the transfer by controller to emit in event. (It is more like a reason string
      * for calling this function (aka force transfer) which provides the transparency on-chain).
      */
-    function controllerRedeem(address _tokenHolder, uint256 _value, bytes calldata _data, bytes calldata _operatorData) external onlyController {
-        require(isControllable());
+    function controllerRedeem(address _tokenHolder, uint256 _value, bytes calldata _data, bytes calldata _operatorData) external {
+        _onlyController();
         _checkAndBurn(_tokenHolder, _value, _data);
         emit ControllerRedemption(msg.sender, _tokenHolder, _value, _data, _operatorData);
     }
@@ -1052,7 +1039,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
         return getterDelegate;
     }
 
-    function updateFromRegistry() public onlyOwner {
+    function updateFromRegistry() public {
+        _onlyOwner();
         moduleRegistry = PolymathRegistry(polymathRegistry).getAddress("ModuleRegistry");
         securityTokenRegistry = PolymathRegistry(polymathRegistry).getAddress("SecurityTokenRegistry");
         polyToken = PolymathRegistry(polymathRegistry).getAddress("PolyToken");
@@ -1078,7 +1066,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @dev Allows the current owner to transfer control of the contract to a newOwner.
      * @param newOwner The address to transfer ownership to.
      */
-    function transferOwnership(address newOwner) public onlyOwner {
+    function transferOwnership(address newOwner) public {
+        _onlyOwner();
         _transferOwnership(newOwner);
     }
 

@@ -21,6 +21,9 @@ const TokenLib = artifacts.require('./TokenLib.sol');
 const SecurityToken = artifacts.require('./tokens/SecurityToken.sol')
 
 let BigNumber = require('bignumber.js');
+
+// Never return exponential notation because it interferes with truffle deploy
+BigNumber.config({ EXPONENTIAL_AT: 1e+9});
 const cappedSTOSetupCost = new BigNumber(20000).times(new BigNumber(10).pow(18));   // 20K POLY fee
 const usdTieredSTOSetupCost = new BigNumber(100000).times(new BigNumber(10).pow(18));   // 100K POLY fee
 const initRegFee = new BigNumber(250).times(new BigNumber(10).pow(18));      // 250 POLY fee for registering ticker or security token in registry
@@ -46,12 +49,12 @@ module.exports = function (deployer, network, accounts) {
         UsdToken = mockedUSDToken.address;
       });
     });
-    deployer.deploy(MockOracle, PolyToken, "POLY", "USD", new BigNumber(0.5).times(new BigNumber(10).pow(18)), {from: PolymathAccount}).then(() => {
+      deployer.deploy(MockOracle, PolyToken, web3.utils.asciiToHex("POLY"), web3.utils.asciiToHex("USD"), new BigNumber(0.5).times(new BigNumber(10).pow(18)), {from: PolymathAccount}).then(() => {
       MockOracle.deployed().then((mockedOracle) => {
         POLYOracle = mockedOracle.address;
       });
     });
-    deployer.deploy(MockOracle, 0, "ETH", "USD", new BigNumber(500).times(new BigNumber(10).pow(18)), {from: PolymathAccount}).then(() => {
+      deployer.deploy(MockOracle, "0x0000000000000000000000000000000000000000" , web3.utils.asciiToHex("ETH"), web3.utils.asciiToHex("USD"), new BigNumber(500).times(new BigNumber(10).pow(18)), {from: PolymathAccount}).then(() => {
       MockOracle.deployed().then((mockedOracle) => {
         ETHOracle = mockedOracle.address;
       });
@@ -140,10 +143,10 @@ module.exports = function (deployer, network, accounts) {
   }).then(() => {
     return deployer.deploy(ModuleRegistryProxy, {from: PolymathAccount});
   }).then(() => {
-    let bytesProxyMR = web3.eth.abi.encodeFunctionCall(functionSignatureProxyMR, [polymathRegistry.address, PolymathAccount]);
-    return ModuleRegistryProxy.at(ModuleRegistryProxy.address).upgradeToAndCall("1.0.0", ModuleRegistry.address, bytesProxyMR, {from: PolymathAccount});
+      let bytesProxyMR = web3.eth.abi.encodeFunctionCall(functionSignatureProxyMR, [polymathRegistry.address, PolymathAccount]);
+      return ModuleRegistryProxy.at(ModuleRegistryProxy.address).then((res) => {return res.upgradeToAndCall("1.0.0", ModuleRegistry.address, bytesProxyMR, {from: PolymathAccount})});
   }).then(() => {
-    moduleRegistry = ModuleRegistry.at(ModuleRegistryProxy.address);
+    ModuleRegistry.at(ModuleRegistryProxy.address).then((res)=>{moduleRegistry = res;});
     // Add module registry to polymath registry
     return polymathRegistry.changeAddress("ModuleRegistry", ModuleRegistryProxy.address, {from: PolymathAccount});
   }).then(() => {
@@ -190,7 +193,7 @@ module.exports = function (deployer, network, accounts) {
     return deployer.deploy(SecurityTokenRegistryProxy, {from: PolymathAccount});
   }).then(() => {
     let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignatureProxy, [PolymathRegistry.address, STFactory.address, initRegFee, initRegFee, PolyToken, PolymathAccount]);
-    return SecurityTokenRegistryProxy.at(SecurityTokenRegistryProxy.address).upgradeToAndCall("1.0.0", SecurityTokenRegistry.address, bytesProxy, {from: PolymathAccount});
+      return SecurityTokenRegistryProxy.at(SecurityTokenRegistryProxy.address).then((res) => {return res.upgradeToAndCall("1.0.0", SecurityTokenRegistry.address, bytesProxy, {from: PolymathAccount})});
   }).then(() => {
     // Assign the address into the SecurityTokenRegistry key
    return polymathRegistry.changeAddress("SecurityTokenRegistry", SecurityTokenRegistryProxy.address, {from: PolymathAccount});

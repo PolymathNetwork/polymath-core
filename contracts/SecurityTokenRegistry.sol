@@ -141,11 +141,13 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @notice Modifier to make a function callable only when the contract is not paused.
      */
     modifier whenNotPausedOrOwner() {
-        if (msg.sender == owner()) _;
-        else {
+        _whenNotPausedOrOwner();
+        _;
+    }
+
+    function _whenNotPausedOrOwner() internal view {
+        if (msg.sender != owner())
             require(!isPaused(), "Paused");
-            _;
-        }
     }
 
     /**
@@ -183,7 +185,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         address _owner,
         address _getterContract
     )
-        external
+        public
         payable
     {
         require(!getBoolValue(INITIALIZE),"Initialized");
@@ -267,7 +269,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @param _ticker is unique token ticker
      * @param _tokenName is the name of the token
      */
-    function registerTicker(address _owner, string calldata _ticker, string calldata _tokenName) external whenNotPausedOrOwner {
+    function registerTicker(address _owner, string memory _ticker, string memory _tokenName) public whenNotPausedOrOwner {
         require(_owner != address(0), "Bad address");
         require(bytes(_ticker).length > 0 && bytes(_ticker).length <= 10, "Bad ticker");
         // Attempt to charge the reg fee if it is > 0 USD
@@ -316,13 +318,13 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      */
     function modifyTicker(
         address _owner,
-        string calldata _ticker,
-        string calldata _tokenName,
+        string memory _ticker,
+        string memory _tokenName,
         uint256 _registrationDate,
         uint256 _expiryDate,
         bool _status
     )
-        external
+        public
         onlyOwner
     {
         require(bytes(_ticker).length > 0 && bytes(_ticker).length <= 10, "Bad ticker");
@@ -368,7 +370,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @notice Removes the ticker details, associated ownership & security token mapping
      * @param _ticker is the token ticker
      */
-    function removeTicker(string calldata _ticker) external onlyOwner {
+    function removeTicker(string memory _ticker) public onlyOwner {
         string memory ticker = Util.upper(_ticker);
         address owner = _tickerOwner(ticker);
         require(owner != address(0), "Bad ticker");
@@ -429,15 +431,15 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         internal
     {
         bytes32 key = Encoder.getKey("registeredTickers_owner", _ticker);
-        if (getAddressValue(key) != _owner) set(key, _owner);
+        set(key, _owner);
         key = Encoder.getKey("registeredTickers_registrationDate", _ticker);
-        if (getUintValue(key) != _registrationDate) set(key, _registrationDate);
+        set(key, _registrationDate);
         key = Encoder.getKey("registeredTickers_expiryDate", _ticker);
-        if (getUintValue(key) != _expiryDate) set(key, _expiryDate);
+        set(key, _expiryDate);
         key = Encoder.getKey("registeredTickers_tokenName", _ticker);
-        if (Encoder.getKey(getStringValue(key)) != Encoder.getKey(_tokenName)) set(key, _tokenName);
+        set(key, _tokenName);
         key = Encoder.getKey("registeredTickers_status", _ticker);
-        if (getBoolValue(key) != _status) set(key, _status);
+        set(key, _status);
     }
 
     /**
@@ -445,7 +447,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @param _newOwner is the address of the new owner of the ticker
      * @param _ticker is the ticker symbol
      */
-    function transferTickerOwnership(address _newOwner, string calldata _ticker) external whenNotPausedOrOwner {
+    function transferTickerOwnership(address _newOwner, string memory _ticker) public whenNotPausedOrOwner {
         string memory ticker = Util.upper(_ticker);
         require(_newOwner != address(0), "Bad address");
         bytes32 ownerKey = Encoder.getKey("registeredTickers_owner", ticker);
@@ -480,7 +482,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @notice Changes the expiry time for the token ticker. Only available to Polymath.
      * @param _newExpiry is the new expiry for newly generated tickers
      */
-    function changeExpiryLimit(uint256 _newExpiry) external onlyOwner {
+    function changeExpiryLimit(uint256 _newExpiry) public onlyOwner {
         require(_newExpiry >= 1 days, "Bad dates");
         emit ChangeExpiryLimit(getUintValue(EXPIRYLIMIT), _newExpiry);
         set(EXPIRYLIMIT, _newExpiry);
@@ -502,14 +504,14 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * - if _protocolVersion == 0 then latest version of securityToken will be generated
      */
     function generateSecurityToken(
-        string calldata _name,
-        string calldata _ticker,
-        string calldata _tokenDetails,
+        string memory _name,
+        string memory _ticker,
+        string memory _tokenDetails,
         bool _divisible,
         address _treasuryWallet,
         uint256 _protocolVersion
     )
-        external
+        public
         whenNotPausedOrOwner
     {
         uint256 protocolVersion = _protocolVersion;
@@ -603,14 +605,14 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @param _deployedAt is the timestamp at which the security token is deployed
      */
     function modifySecurityToken(
-        string calldata _name,
-        string calldata _ticker,
+        string memory _name,
+        string memory _ticker,
         address _owner,
         address _securityToken,
-        string calldata _tokenDetails,
+        string memory _tokenDetails,
         uint256 _deployedAt
     )
-        external
+        public
         onlyOwner
     {
         require(bytes(_name).length > 0 && bytes(_ticker).length > 0, "Bad data");
@@ -664,7 +666,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     * @dev Allows the current owner to transfer control of the contract to a newOwner.
     * @param _newOwner The address to transfer ownership to.
     */
-    function transferOwnership(address _newOwner) external onlyOwner {
+    function transferOwnership(address _newOwner) public onlyOwner {
         require(_newOwner != address(0), "Bad address");
         emit OwnershipTransferred(getAddressValue(OWNER), _newOwner);
         set(OWNER, _newOwner);
@@ -692,7 +694,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     * @notice Sets the ticker registration fee in USD tokens. Only Polymath.
     * @param _tickerRegFee is the registration fee in USD tokens (base 18 decimals)
     */
-    function changeTickerRegistrationFee(uint256 _tickerRegFee) external onlyOwner {
+    function changeTickerRegistrationFee(uint256 _tickerRegFee) public onlyOwner {
         uint256 fee = getUintValue(TICKERREGFEE);
         require(fee != _tickerRegFee, "Bad fee");
         _changeTickerRegistrationFee(fee, _tickerRegFee);
@@ -707,7 +709,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     * @notice Sets the ticker registration fee in USD tokens. Only Polymath.
     * @param _stLaunchFee is the registration fee in USD tokens (base 18 decimals)
     */
-    function changeSecurityLaunchFee(uint256 _stLaunchFee) external onlyOwner {
+    function changeSecurityLaunchFee(uint256 _stLaunchFee) public onlyOwner {
         uint256 fee = getUintValue(STLAUNCHFEE);
         require(fee != _stLaunchFee, "Bad fee");
         _changeSecurityLaunchFee(fee, _stLaunchFee);
@@ -724,7 +726,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     * @param _stLaunchFee is the st generation fee (base 18 decimals)
     * @param _isFeeInPoly defines if the fee is in poly or usd
     */
-    function changeFeesAmountAndCurrency(uint256 _tickerRegFee, uint256 _stLaunchFee, bool _isFeeInPoly) external onlyOwner {
+    function changeFeesAmountAndCurrency(uint256 _tickerRegFee, uint256 _stLaunchFee, bool _isFeeInPoly) public onlyOwner {
         uint256 tickerFee = getUintValue(TICKERREGFEE);
         uint256 stFee = getUintValue(STLAUNCHFEE);
         bool isOldFeesInPoly = getBoolValue(IS_FEE_IN_POLY);
@@ -739,7 +741,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     * @notice Reclaims all ERC20Basic compatible tokens
     * @param _tokenContract is the address of the token contract
     */
-    function reclaimERC20(address _tokenContract) external onlyOwner {
+    function reclaimERC20(address _tokenContract) public onlyOwner {
         require(_tokenContract != address(0), "Bad address");
         IERC20 token = IERC20(_tokenContract);
         uint256 balance = token.balanceOf(address(this));
@@ -755,7 +757,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     * @param _minor Minor version of the proxy.
     * @param _patch Patch version of the proxy
     */
-    function setProtocolFactory(address _STFactoryAddress, uint8 _major, uint8 _minor, uint8 _patch) external onlyOwner {
+    function setProtocolFactory(address _STFactoryAddress, uint8 _major, uint8 _minor, uint8 _patch) public onlyOwner {
         _setProtocolFactory(_STFactoryAddress, _major, _minor, _patch);
     }
 
@@ -773,7 +775,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     * @param _minor Minor version of the proxy.
     * @param _patch Patch version of the proxy
     */
-    function removeProtocolFactory(uint8 _major, uint8 _minor, uint8 _patch) external onlyOwner {
+    function removeProtocolFactory(uint8 _major, uint8 _minor, uint8 _patch) public onlyOwner {
         uint24 _packedVersion = VersionUtils.pack(_major, _minor, _patch);
         require(getUintValue(Encoder.getKey("latestVersion")) != _packedVersion, "Cannot remove latestVersion");
         emit ProtocolFactoryRemoved(getAddressValue(Encoder.getKey("protocolVersionST", _packedVersion)), _major, _minor, _patch);
@@ -788,7 +790,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     * @param _minor Minor version of the proxy.
     * @param _patch Patch version of the proxy
     */
-    function setLatestVersion(uint8 _major, uint8 _minor, uint8 _patch) external onlyOwner {
+    function setLatestVersion(uint8 _major, uint8 _minor, uint8 _patch) public onlyOwner {
         _setLatestVersion(_major, _minor, _patch);
     }
 
@@ -803,7 +805,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @notice Changes the PolyToken address. Only Polymath.
      * @param _newAddress is the address of the polytoken.
      */
-    function updatePolyTokenAddress(address _newAddress) external onlyOwner {
+    function updatePolyTokenAddress(address _newAddress) public onlyOwner {
         require(_newAddress != address(0), "Bad address");
         set(POLYTOKEN, _newAddress);
     }

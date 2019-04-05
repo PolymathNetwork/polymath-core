@@ -5,6 +5,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IOwnable.sol";
 import "./interfaces/ISTFactory.sol";
 import "./interfaces/ISecurityTokenRegistry.sol";
+import "./interfaces/ISecurityToken.sol";
 import "./interfaces/IPolymathRegistry.sol";
 import "./interfaces/IOracle.sol";
 import "./storage/EternalStorage.sol";
@@ -525,7 +526,38 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         require(_tickerOwner(ticker) == msg.sender, "Not authorised");
         /*solium-disable-next-line security/no-block-members*/
         require(getUintValue(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now, "Ticker expired");
-        _deployToken(_name, ticker, _tokenDetails, msg.sender, _divisible, _treasuryWallet, protocolVersion);
+        (uint256 _usdFee, uint256 _polyFee) = _takeFee(STLAUNCHFEE);
+        _deployToken(_name, ticker, _tokenDetails, msg.sender, _divisible, _treasuryWallet, protocolVersion, _usdFee, _polyFee);
+    }
+
+    /**
+     * @notice Deploys an instance of a new Security Token and replaces the old one in the registry
+     * This can be used to upgrade from version 2.0 of ST to 3.0 or in case something goes wrong with earlier ST
+     * @dev This function needs to be in STR 3.0. Defined public to avoid stack overflow
+     * @param _name is the name of the token
+     * @param _ticker is the ticker symbol of the security token
+     * @param _tokenDetails is the off-chain details of the token
+     * @param _divisible is whether or not the token is divisible
+     */
+    function refreshSecurityToken(
+        string memory _name,
+        string memory _ticker,
+        string memory _tokenDetails,
+        bool _divisible,
+        address _treasuryWallet
+    )
+        public whenNotPausedOrOwner returns (address)
+    {
+        require(bytes(_name).length > 0 && bytes(_ticker).length > 0, "Bad ticker");
+        require(_treasuryWallet != address(0), "0x0 not allowed");
+        string memory ticker = Util.upper(_ticker);
+        bytes32 statusKey = Encoder.getKey("registeredTickers_status", ticker);
+        require(getBoolValue(statusKey), "not deployed");
+        address st = getAddressValue(Encoder.getKey("tickerToSecurityToken", ticker));
+        address stOwner = IOwnable(st).owner();
+        require(msg.sender == stOwner, "Unauthroized");
+        require(ISecurityToken(st).transfersFrozen(), "Transfers not frozen");
+        _deployToken(_name, ticker, _tokenDetails, stOwner, _divisible, _treasuryWallet, getUintValue(Encoder.getKey("latestVersion")), 0, 0);
     }
 
     function _deployToken(
@@ -535,11 +567,12 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         address _issuer,
         bool _divisible,
         address _wallet,
-        uint256 _protocolVersion
+        uint256 _protocolVersion,
+        uint256 _usdFee,
+        uint256 _polyFee
     )
         internal
     {
-        (uint256 _usdFee, uint256 _polyFee) = _takeFee(STLAUNCHFEE);
         address newSecurityTokenAddress = ISTFactory(getAddressValue(Encoder.getKey("protocolVersionST", _protocolVersion))).deployToken(
             _name,
             _ticker,
@@ -556,7 +589,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         set(Encoder.getKey("tickerToSecurityToken", _ticker), newSecurityTokenAddress);
         /*solium-disable-next-line security/no-block-members*/
         emit NewSecurityToken(
-            _ticker, _name, newSecurityTokenAddress, msg.sender, now, msg.sender, false, _usdFee, _polyFee, _protocolVersion
+            _ticker, _name, newSecurityTokenAddress, _issuer, now, msg.sender, false, _usdFee, _polyFee, _protocolVersion
         );
     }
 

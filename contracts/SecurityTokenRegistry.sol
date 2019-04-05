@@ -553,8 +553,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         require(bytes(_name).length > 0 && bytes(_ticker).length > 0, "Bad ticker");
         require(_treasuryWallet != address(0), "0x0 not allowed");
         string memory ticker = Util.upper(_ticker);
-        bytes32 statusKey = Encoder.getKey("registeredTickers_status", ticker);
-        require(getBoolValue(statusKey), "not deployed");
+        require(_tickerStatus(ticker), "not deployed");
         address st = getAddressValue(Encoder.getKey("tickerToSecurityToken", ticker));
         address stOwner = IOwnable(st).owner();
         require(msg.sender == stOwner, "Unauthroized");

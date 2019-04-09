@@ -139,9 +139,9 @@ process.env.COVERAGE ? contract.skip : contract("ScheduledCheckpoint", async (ac
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, token_owner, 0, { from: token_owner });
 
             // Verify the successful generation of the security token
-            assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
+            assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
-            I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+            I_SecurityToken = await SecurityToken.at(tx.logs[1].args._securityTokenAddress);
             stGetter = await STGetter.at(I_SecurityToken.address);
             assert.equal(await stGetter.getTreasuryWallet.call(), token_owner, "Incorrect wallet set");
             const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
@@ -160,7 +160,7 @@ process.env.COVERAGE ? contract.skip : contract("ScheduledCheckpoint", async (ac
     describe("Buy tokens using on-chain whitelist", async () => {
         it("Should successfully attach the ScheduledCheckpoint with the security token", async () => {
             await I_SecurityToken.changeGranularity(1, { from: token_owner });
-            const tx = await I_SecurityToken.addModule(I_ScheduledCheckpointFactory.address, "0x0", new BN(0), new BN(0), { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_ScheduledCheckpointFactory.address, "0x0", new BN(0), new BN(0), false, { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toString(), 4, "ScheduledCheckpoint doesn't get deployed");
             assert.equal(tx.logs[2].args._types[1].toString(), 2, "ScheduledCheckpoint doesn't get deployed");
             assert.equal(

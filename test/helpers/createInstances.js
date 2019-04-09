@@ -10,6 +10,7 @@ const CappedSTO = artifacts.require("./CappedSTO.sol");
 const SecurityTokenRegistryProxy = artifacts.require("./SecurityTokenRegistryProxy.sol");
 const SecurityTokenRegistry = artifacts.require("./SecurityTokenRegistry.sol");
 const SecurityTokenRegistryMock = artifacts.require("./SecurityTokenRegistryMock.sol");
+const SecurityTokenLogic = artifacts.require("./SecurityToken.sol");
 const ERC20DividendCheckpoint = artifacts.require("./ERC20DividendCheckpoint.sol");
 const EtherDividendCheckpoint = artifacts.require("./EtherDividendCheckpoint.sol");
 const ERC20DividendCheckpointFactory = artifacts.require("./ERC20DividendCheckpointFactory.sol");
@@ -113,7 +114,7 @@ let I_PLCRVotingCheckpointFactory;
 // Initial fee for ticker registry and security token registry
 const initRegFee = new BN(web3.utils.toWei("250"));
 
-const STRProxyParameters = ["address", "address", "uint256", "uint256", "address", "address"];
+const STRProxyParameters = ["address", "uint256", "uint256", "address", "address"];
 const MRProxyParameters = ["address", "address"];
 
 /// Function use to launch the polymath ecossystem.
@@ -239,9 +240,22 @@ async function deployGTM(account_polymath) {
 
 async function deploySTFactory(account_polymath) {
     I_STGetter = await STGetter.new({from: account_polymath});
+    I_SecurityToken = await SecurityTokenLogic.new("", "", 0, {from: account_polymath});
+    console.log("STL - " + I_SecurityToken.address);
     let I_DataStoreLogic = await DataStoreLogic.new({ from: account_polymath });
     let I_DataStoreFactory = await DataStoreFactory.new(I_DataStoreLogic.address, { from: account_polymath });
-    I_STFactory = await STFactory.new(I_GeneralTransferManagerFactory.address, I_DataStoreFactory.address, I_STGetter.address, { from: account_polymath });
+    const tokenInitBytes = {
+        name: "initialize",
+        type: "function",
+        inputs: [
+            {
+                type: "address",
+                name: "_getterDelegate"
+            }
+        ]
+    };
+    let tokenInitBytesCall = web3.eth.abi.encodeFunctionCall(tokenInitBytes, [I_STGetter.address]);
+    I_STFactory = await STFactory.new(I_PolymathRegistry.address, I_GeneralTransferManagerFactory.address, I_DataStoreFactory.address, "3.0.0", I_SecurityToken.address, tokenInitBytesCall, { from: account_polymath });
 
     assert.notEqual(I_STFactory.address.valueOf(), "0x0000000000000000000000000000000000000000", "STFactory contract was not deployed");
 
@@ -263,7 +277,6 @@ async function deploySTR(account_polymath) {
 
     let bytesProxy = encodeProxyCall(STRProxyParameters, [
         I_PolymathRegistry.address,
-        I_STFactory.address,
         initRegFee,
         initRegFee,
         account_polymath,
@@ -271,6 +284,8 @@ async function deploySTR(account_polymath) {
     ]);
     await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.0.0", I_SecurityTokenRegistry.address, bytesProxy, { from: account_polymath });
     I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
+    await I_STRProxied.setProtocolFactory(I_STFactory.address, 3, 0, 0);
+    await I_STRProxied.setLatestVersion(3, 0, 0);
     I_STRGetter = await STRGetter.at(I_SecurityTokenRegistryProxy.address);
     return new Array(I_SecurityTokenRegistry, I_SecurityTokenRegistryProxy, I_STRProxied, I_STRGetter);
 }
@@ -285,12 +300,12 @@ async function setInPolymathRegistry(account_polymath) {
 
 async function registerGTM(account_polymath) {
     await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
-    await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, true, { from: account_polymath });
+    await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
 }
 
 async function registerAndVerifyByMR(factoryAdrress, owner, mr) {
     await mr.registerModule(factoryAdrress, { from: owner });
-    await mr.verifyModule(factoryAdrress, true, { from: owner });
+    await mr.verifyModule(factoryAdrress, { from: owner });
 }
 
 /// Deploy the TransferManagers

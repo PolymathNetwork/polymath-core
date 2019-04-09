@@ -32,8 +32,8 @@ contract ManualApprovalTransferManagerFactory is UpgradableModuleFactory {
         typesData.push(2);
         tagsData.push("Manual Approval");
         tagsData.push("Transfer Restriction");
-        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
     }
 
     /**
@@ -46,7 +46,7 @@ contract ManualApprovalTransferManagerFactory is UpgradableModuleFactory {
         external
         returns(address)
     {
-        address manualTransferManager = address(new ManualApprovalTransferManagerProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
+        address manualTransferManager = address(new ManualApprovalTransferManagerProxy(logicContracts[latestUpgrade].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestUpgrade].logicContract));
         _initializeModule(manualTransferManager, _data);
         return manualTransferManager;
     }

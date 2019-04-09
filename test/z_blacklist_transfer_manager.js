@@ -83,7 +83,7 @@ contract('BlacklistTransferManager', accounts => {
         assert.equal(
             web3.utils.fromWei(
                 (
-                    await I_BlacklistTransferManager.getTokensByPartition.call(web3.utils.toHex("LOCKED"), investorAddress)
+                    await I_BlacklistTransferManager.getTokensByPartition.call(web3.utils.toHex("LOCKED"), investorAddress, new BN(0))
                 ).toString()
             ),
             lockedValue
@@ -92,7 +92,7 @@ contract('BlacklistTransferManager', accounts => {
         assert.equal(
             web3.utils.fromWei(
                 (
-                    await I_BlacklistTransferManager.getTokensByPartition.call(web3.utils.toHex("UNLOCKED"), investorAddress)
+                    await I_BlacklistTransferManager.getTokensByPartition.call(web3.utils.toHex("UNLOCKED"), investorAddress, new BN(0))
                 ).toString()
             ),
             unlockedValue

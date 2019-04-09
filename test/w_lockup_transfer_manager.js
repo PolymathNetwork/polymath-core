@@ -672,22 +672,22 @@ contract('LockUpTransferManager', accounts => {
             // 2 from a period and 1 is already unlocked
             await increaseTime(21);
             console.log(`\t Total balance: ${web3.utils.fromWei((await I_SecurityToken.balanceOf.call(account_investor3)).toString())}`);
-            console.log(`\t Locked balance: ${web3.utils.fromWei((await stGetter.balanceOfByPartition.call(web3.utils.utf8ToHex(`LOCKED`), account_investor3)).toString())}`);
-            console.log(`\t Unlocked balance: ${web3.utils.fromWei((await stGetter.balanceOfByPartition.call(web3.utils.utf8ToHex(`UNLOCKED`), account_investor3)).toString())}`);
+            console.log(`\t Locked balance: ${web3.utils.fromWei((await I_SecurityToken.balanceOfByPartition.call(web3.utils.utf8ToHex(`LOCKED`), account_investor3)).toString())}`);
+            console.log(`\t Unlocked balance: ${web3.utils.fromWei((await I_SecurityToken.balanceOfByPartition.call(web3.utils.utf8ToHex(`UNLOCKED`), account_investor3)).toString())}`);
             await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('3'), { from: account_investor3 })
         })
 
         it("Should check the balance of the locked tokens", async() => {
             console.log(`\t Total balance: ${web3.utils.fromWei((await I_SecurityToken.balanceOf.call(account_investor3)).toString())}`);
-            console.log(`\t Locked balance: ${web3.utils.fromWei((await stGetter.balanceOfByPartition.call(web3.utils.utf8ToHex(`LOCKED`), account_investor3)).toString())}`);
-            console.log(`\t Unlocked balance: ${web3.utils.fromWei((await stGetter.balanceOfByPartition.call(web3.utils.utf8ToHex(`UNLOCKED`), account_investor3)).toString())}`);
+            console.log(`\t Locked balance: ${web3.utils.fromWei((await I_SecurityToken.balanceOfByPartition.call(web3.utils.utf8ToHex(`LOCKED`), account_investor3)).toString())}`);
+            console.log(`\t Unlocked balance: ${web3.utils.fromWei((await I_SecurityToken.balanceOfByPartition.call(web3.utils.utf8ToHex(`UNLOCKED`), account_investor3)).toString())}`);
             assert.equal(
                 web3.utils.fromWei((await I_SecurityToken.balanceOf.call(account_investor3)).toString()),
-                web3.utils.fromWei((await stGetter.balanceOfByPartition.call(web3.utils.utf8ToHex(`LOCKED`), account_investor3)).toString())
+                web3.utils.fromWei((await I_SecurityToken.balanceOfByPartition.call(web3.utils.utf8ToHex(`LOCKED`), account_investor3)).toString())
             );
-            console.log(`\t Wrong partition: ${web3.utils.fromWei((await stGetter.balanceOfByPartition.call(web3.utils.toHex(`OCKED`), account_investor3)).toString())}`);
+            console.log(`\t Wrong partition: ${web3.utils.fromWei((await I_SecurityToken.balanceOfByPartition.call(web3.utils.toHex(`OCKED`), account_investor3)).toString())}`);
             assert.equal(
-                web3.utils.fromWei((await stGetter.balanceOfByPartition.call(web3.utils.toHex(`OCKED`), account_investor3)).toString()),
+                web3.utils.fromWei((await I_SecurityToken.balanceOfByPartition.call(web3.utils.toHex(`OCKED`), account_investor3)).toString()),
                 0
             );
         });
@@ -700,8 +700,8 @@ contract('LockUpTransferManager', accounts => {
             await catchRevert(
                 I_SecurityToken.transfer(account_investor1, web3.utils.toWei('3'), { from: account_investor3 })
             )
-            let lockedBalance = web3.utils.fromWei((await I_LockUpTransferManager.getTokensByPartition.call(web3.utils.utf8ToHex(`LOCKED`), account_investor3)).toString());
-            let unlockedBalance = web3.utils.fromWei((await I_LockUpTransferManager.getTokensByPartition.call(web3.utils.utf8ToHex(`UNLOCKED`), account_investor3)).toString());
+            let lockedBalance = web3.utils.fromWei((await I_LockUpTransferManager.getTokensByPartition.call(web3.utils.utf8ToHex(`LOCKED`), account_investor3, new BN(0))).toString());
+            let unlockedBalance = web3.utils.fromWei((await I_LockUpTransferManager.getTokensByPartition.call(web3.utils.utf8ToHex(`UNLOCKED`), account_investor3, new BN(0))).toString());
             console.log(`\t Total balance: ${web3.utils.fromWei((await I_SecurityToken.balanceOf.call(account_investor3)).toString())}`);
             console.log(`\t Locked balance of the investor by the lockup: ${web3.utils.fromWei((await I_LockUpTransferManager.getLockedTokenToUser.call(account_investor3)).toString())}`);            
             console.log(`Paused status: ${await I_LockUpTransferManager.paused.call()}`);
@@ -720,8 +720,8 @@ contract('LockUpTransferManager', accounts => {
             // more token from the lockup 2
             await increaseTime(21);
 
-            let lockedBalance = web3.utils.fromWei((await stGetter.balanceOfByPartition.call(web3.utils.utf8ToHex(`LOCKED`), account_investor3)).toString());
-            let unlockedBalance = web3.utils.fromWei((await stGetter.balanceOfByPartition.call(web3.utils.utf8ToHex(`UNLOCKED`), account_investor3)).toString());
+            let lockedBalance = web3.utils.fromWei((await I_SecurityToken.balanceOfByPartition.call(web3.utils.utf8ToHex(`LOCKED`), account_investor3)).toString());
+            let unlockedBalance = web3.utils.fromWei((await I_SecurityToken.balanceOfByPartition.call(web3.utils.utf8ToHex(`UNLOCKED`), account_investor3)).toString());
             console.log(`\t Total balance: ${web3.utils.fromWei((await I_SecurityToken.balanceOf.call(account_investor3)).toString())}`);
             console.log(`\t Locked balance: ${lockedBalance}`);
             console.log(` \t Unlocked Amount for lockup 1: ${web3.utils.fromWei(((await I_LockUpTransferManager.getLockUp.call(web3.utils.fromAscii("c_lockup")))[4]).toString())}`)
@@ -734,8 +734,8 @@ contract('LockUpTransferManager', accounts => {
                 web3.utils.toWei('3', 'ether')
             );
             console.log("After transaction");
-            lockedBalance = web3.utils.fromWei((await stGetter.balanceOfByPartition.call(web3.utils.utf8ToHex(`LOCKED`), account_investor3)).toString());
-            unlockedBalance = web3.utils.fromWei((await stGetter.balanceOfByPartition.call(web3.utils.utf8ToHex(`UNLOCKED`), account_investor3)).toString());
+            lockedBalance = web3.utils.fromWei((await I_SecurityToken.balanceOfByPartition.call(web3.utils.utf8ToHex(`LOCKED`), account_investor3)).toString());
+            unlockedBalance = web3.utils.fromWei((await I_SecurityToken.balanceOfByPartition.call(web3.utils.utf8ToHex(`UNLOCKED`), account_investor3)).toString());
             console.log(`\t Total balance: ${web3.utils.fromWei((await I_SecurityToken.balanceOf.call(account_investor3)).toString())}`);
             console.log(`\t Locked balance: ${lockedBalance}`);
             console.log(` \t Unlocked Amount for lockup 1: ${web3.utils.fromWei(((await I_LockUpTransferManager.getLockUp.call(web3.utils.fromAscii("c_lockup")))[4]).toString())}`)

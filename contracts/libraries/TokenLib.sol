@@ -464,7 +464,7 @@ library TokenLib {
         uint256 balanceOfTo
     )   
         public
-        view 
+        pure 
         returns (bool, byte, bytes32) 
     {
         if (!success)

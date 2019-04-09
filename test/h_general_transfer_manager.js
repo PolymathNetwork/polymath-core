@@ -1195,20 +1195,19 @@ contract("GeneralTransferManager", async (accounts) => {
                 ).toString()
                 ),
                 1
-            );
+            );            
             assert.equal(
                 web3.utils.fromWei(
                 (
-                    await I_GeneralTransferManager.getTokensByPartition.call(web3.utils.toHex("LOCKED"), account_investor2)
+                    await I_GeneralTransferManager.getTokensByPartition.call(web3.utils.toHex("LOCKED"), account_investor2, new BN(0))
                 ).toString()
                 ),
                 0
-            );
-
+            );           
             assert.equal(
                 web3.utils.fromWei(
                 (
-                    await I_GeneralTransferManager.getTokensByPartition.call(web3.utils.toHex("UNLOCKED"), account_investor2)
+                    await I_GeneralTransferManager.getTokensByPartition.call(web3.utils.toHex("UNLOCKED"), account_investor2, new BN(0))
                 ).toString()
                 ),
                 1
@@ -1234,7 +1233,7 @@ contract("GeneralTransferManager", async (accounts) => {
             assert.equal(
                 web3.utils.fromWei(
                 (
-                    await I_GeneralTransferManager.getTokensByPartition.call(web3.utils.toHex("LOCKED"), account_investor2)
+                    await I_GeneralTransferManager.getTokensByPartition.call(web3.utils.toHex("LOCKED"), account_investor2, new BN(0))
                 ).toString()
                 ),
                 1
@@ -1243,7 +1242,7 @@ contract("GeneralTransferManager", async (accounts) => {
             assert.equal(
                 web3.utils.fromWei(
                 (
-                    await I_GeneralTransferManager.getTokensByPartition.call(web3.utils.toHex("UNLOCKED"), account_investor2)
+                    await I_GeneralTransferManager.getTokensByPartition.call(web3.utils.toHex("UNLOCKED"), account_investor2, new BN(0))
                 ).toString()
                 ),
                 0
@@ -1255,7 +1254,7 @@ contract("GeneralTransferManager", async (accounts) => {
             assert.equal(
                 web3.utils.fromWei(
                 (
-                    await I_GeneralTransferManager.getTokensByPartition.call(web3.utils.toHex("LOCKED"), account_investor2)
+                    await I_GeneralTransferManager.getTokensByPartition.call(web3.utils.toHex("LOCKED"), account_investor2, new BN(0))
                 ).toString()
                 ),
                 0
@@ -1264,7 +1263,7 @@ contract("GeneralTransferManager", async (accounts) => {
             assert.equal(
                 web3.utils.fromWei(
                 (
-                    await I_GeneralTransferManager.getTokensByPartition.call(web3.utils.toHex("UNLOCKED"), account_investor2)
+                    await I_GeneralTransferManager.getTokensByPartition.call(web3.utils.toHex("UNLOCKED"), account_investor2, new BN(0))
                 ).toString()
                 ),
                 1

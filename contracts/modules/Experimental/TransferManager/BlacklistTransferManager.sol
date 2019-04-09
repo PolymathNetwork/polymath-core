@@ -416,7 +416,7 @@ contract BlacklistTransferManager is TransferManager {
      * @param _additionalBalance It is the `_value` that transfer during transfer/transferFrom function call
      */
     function getTokensByPartition(bytes32 _partition, address _tokenHolder, uint256 _additionalBalance) external view returns(uint256) {
-        uint256 currentBalance = (msg.sender == securityToken) ? (IERC20(securityToken).balanceOf(_tokenHolder)).add(_additionalBalance) : uint256(0);
+        uint256 currentBalance = (msg.sender == securityToken) ? (IERC20(securityToken).balanceOf(_tokenHolder)).add(_additionalBalance) : IERC20(securityToken).balanceOf(_tokenHolder);
         if (paused && _partition == UNLOCKED)
             return currentBalance;
             

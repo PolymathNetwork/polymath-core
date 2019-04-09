@@ -1090,7 +1090,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         uint256 allowedAmountToTransact;
         uint256 fromTimestamp;
         uint256 dailyTime;
-        uint256 currentBalance = (msg.sender == securityToken) ? (IERC20(securityToken).balanceOf(_tokenHolder)).add(_additionalBalance) : uint256(0);
+        uint256 currentBalance = (msg.sender == securityToken) ? (IERC20(securityToken).balanceOf(_tokenHolder)).add(_additionalBalance) : IERC20(securityToken).balanceOf(_tokenHolder);
         if (paused)
             return (_partition == UNLOCKED ? currentBalance: 0);
         

@@ -76,7 +76,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @dev Expected to be called atomically with the proxy being created, by the owner of the token
      * @dev Can only be called once
      */
-    function initialize(address _getterDelegate) external {
+    function initialize(address _getterDelegate) public {
         //Expected to be called atomically with the proxy being created
         require(!initialized, "Already initialized");
         getterDelegate = _getterDelegate;
@@ -108,9 +108,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     }
 
     function _isValidOperator(address _from, address _operator, bytes32 _partition) internal view {
-        require(
-            allowance(_from, _operator) == uint(-1) || partitionApprovals[_from][_partition][_operator],
-            "Not authorised"
+        _isAuthorised(
+            allowance(_from, _operator) == uint(-1) || partitionApprovals[_from][_partition][_operator]
         );
     }
 
@@ -136,7 +135,11 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
 
     // Function to check whether the msg.sender is authorised or not
     function _onlyController() internal view {
-        require(msg.sender == controller && isControllable(), "Not Authorised");
+        _isAuthorised(msg.sender == controller && isControllable());
+    }
+
+    function _isAuthorised(bool _authorised) internal pure {
+        require(_authorised, "Not Authorised");
     }
 
     /**
@@ -423,7 +426,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     function _transferWithData(address _from, address _to, uint256 _value, bytes memory _data) internal {
         _isValidTransfer(_updateTransfer(_from, _to, _value, _data));
         // Using the internal function instead of super.transfer() in the favour of reducing the code size 
-        _transfer(msg.sender, _to, _value);
+        _transfer(_from, _to, _value);
     }
 
     /**
@@ -506,12 +509,12 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
         // require(balanceOfByPartition(_partition, msg.sender) >= _value);
         // NB - Above condition will be automatically checked using the executeTransfer() function execution.
         // NB - passing `_additionalBalance` value is 0 because accessing the balance before transfer
-        uint256 balanceBeforeTransferLocked = _balanceOfByPartition(LOCKED, _to, 0);
+        uint256 balanceBeforeTransferLocked = _balanceOfByPartition(_partition, _to, 0);
         _transferWithData(_from, _to, _value, _data);
         // NB - passing `_additonalBalance` valie is 0 because balance of `_to` was updated in the transfer call
-        uint256 balanceAfterTransferLocked = _balanceOfByPartition(LOCKED, _to, 0);
+        uint256 balanceAfterTransferLocked = _balanceOfByPartition(_partition, _to, 0);
         toPartition =  _returnPartition(balanceBeforeTransferLocked, balanceAfterTransferLocked, _value);
-        emit TransferByPartition(toPartition, _operator, _from, _to, _value, _data, _operatorData);
+        emit TransferByPartition(_partition, _operator, _from, _to, _value, _data, _operatorData);
     }
 
     function _returnPartition(uint256 _beforeBalance, uint256 _afterBalance, uint256 _value) internal pure returns(bytes32 toPartition) {
@@ -596,7 +599,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     {
         // For the current release we are only allowing UNLOCKED partition tokens to transact
         _validateOperatorAndPartition(_partition, _from, msg.sender);
-        require(_operatorData.length > 0);
+        require(_operatorData[0] != 0);
         return _transferByPartition(_from, _to, _value, _partition, _data, msg.sender, _operatorData);
     }
 

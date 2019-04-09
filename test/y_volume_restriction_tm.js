@@ -127,7 +127,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         assert.equal(
             web3.utils.fromWei(
                 (
-                    await I_VolumeRestrictionTM.getTokensByPartition.call(web3.utils.toHex("LOCKED"), investorAddress)
+                    await I_VolumeRestrictionTM.getTokensByPartition.call(web3.utils.toHex("LOCKED"), investorAddress, new BN(0))
                 ).toString()
             ),
             lockedValue
@@ -136,7 +136,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         assert.equal(
             web3.utils.fromWei(
                 (
-                    await I_VolumeRestrictionTM.getTokensByPartition.call(web3.utils.toHex("UNLOCKED"), investorAddress)
+                    await I_VolumeRestrictionTM.getTokensByPartition.call(web3.utils.toHex("UNLOCKED"), investorAddress, new BN(0))
                 ).toString()
             ),
             unlockedValue
@@ -1310,14 +1310,14 @@ contract('VolumeRestrictionTransferManager', accounts => {
             console.log(
                 web3.utils.fromWei(
                     (
-                        await I_VolumeRestrictionTM.getTokensByPartition.call(web3.utils.toHex("LOCKED"), account_investor3)
+                        await I_VolumeRestrictionTM.getTokensByPartition.call(web3.utils.toHex("LOCKED"), account_investor3, new BN(0))
                     ).toString()
                 )
             )
             console.log(
                 web3.utils.fromWei(
                     (
-                        await I_VolumeRestrictionTM.getTokensByPartition.call(web3.utils.toHex("UNLOCKED"), account_investor3)
+                        await I_VolumeRestrictionTM.getTokensByPartition.call(web3.utils.toHex("UNLOCKED"), account_investor3, new BN(0))
                     ).toString()
                 )
             )

@@ -97,8 +97,8 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     // Emit when ownership of the ticker gets changed
     event ChangeTickerOwnership(string _ticker, address indexed _oldOwner, address indexed _newOwner);
-    // Emit at the time of launching a new security token
-    event NewSecurityToken(
+    // Emit at the time of launching a new security token of version 3.0+
+    event NewSecurityTokenCreated(
         string _ticker,
         string _name,
         address indexed _securityTokenAddress,
@@ -110,7 +110,21 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         uint256 _polyFee,
         uint256 _protocolVersion
     );
+    // Emit at the time of launching a new security token v2.0.
+    // _registrationFee is in poly
+    event NewSecurityToken(
+        string _ticker,
+        string _name,
+        address indexed _securityTokenAddress,
+        address indexed _owner,
+        uint256 _addedAt,
+        address _registrant,
+        bool _fromAdmin,
+        uint256 _registrationFee
+    );
     // Emit after ticker registration
+    // _registrationFee is in poly
+    // fee in usd is not being emitted to maintain backwards compatibility
     event RegisterTicker(
         address indexed _owner,
         string _ticker,
@@ -118,8 +132,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         uint256 indexed _registrationDate,
         uint256 indexed _expiryDate,
         bool _fromAdmin,
-        uint256 _usdFee,
-        uint256 _polyFee
+        uint256 _registrationFee
     );
     event ProtocolFactorySet(address indexed _STFactory, uint8 _major, uint8 _minor, uint8 _patch);
     event LatestVersionSet(uint8 _major, uint8 _minor, uint8 _patch);
@@ -242,6 +255,22 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     }
 
     /**
+     * @notice Gets the security token launch fee
+     * @return Fee amount
+     */
+    function getSecurityTokenLaunchFee() public returns(uint256 polyFee) {
+        (, polyFee) = getFees(STLAUNCHFEE);
+    }
+
+    /**
+     * @notice Gets the ticker registration fee
+     * @return Fee amount
+     */
+    function getTickerRegistrationFee() public returns(uint256 polyFee) {
+        (, polyFee) = getFees(TICKERREGFEE);
+    }
+
+    /**
      * @notice Set the getter contract address
      * @param _getterContract Address of the contract
      */
@@ -270,7 +299,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         require(_owner != address(0), "Bad address");
         require(bytes(_ticker).length > 0 && bytes(_ticker).length <= 10, "Bad ticker");
         // Attempt to charge the reg fee if it is > 0 USD
-        (uint256 _usdFee, uint256 _polyFee) = _takeFee(TICKERREGFEE);
+        (, uint256 _polyFee) = _takeFee(TICKERREGFEE);
         string memory ticker = Util.upper(_ticker);
         require(_tickerAvailable(ticker), "Ticker reserved");
         // Check whether ticker was previously registered (and expired)
@@ -279,7 +308,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
             _deleteTickerOwnership(previousOwner, ticker);
         }
         /*solium-disable-next-line security/no-block-members*/
-        _addTicker(_owner, ticker, _tokenName, now, now.add(getUintValue(EXPIRYLIMIT)), false, false, _usdFee, _polyFee);
+        _addTicker(_owner, ticker, _tokenName, now, now.add(getUintValue(EXPIRYLIMIT)), false, false, _polyFee);
     }
 
     /**
@@ -293,14 +322,13 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         uint256 _expiryDate,
         bool _status,
         bool _fromAdmin,
-        uint256 _usdFee,
         uint256 _polyFee
     )
         internal
     {
         _setTickerOwnership(_owner, _ticker);
         _storeTickerDetails(_ticker, _owner, _registrationDate, _expiryDate, _tokenName, _status);
-        emit RegisterTicker(_owner, _ticker, _tokenName, _registrationDate, _expiryDate, _fromAdmin, _usdFee, _polyFee);
+        emit RegisterTicker(_owner, _ticker, _tokenName, _registrationDate, _expiryDate, _fromAdmin, _polyFee);
     }
 
     /**
@@ -356,7 +384,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         if (_status) {
             require(getAddressValue(Encoder.getKey("tickerToSecurityToken", _ticker)) != address(0), "Not registered");
         }
-        _addTicker(_owner, _ticker, _tokenName, _registrationDate, _expiryDate, _status, true, uint256(0), uint256(0));
+        _addTicker(_owner, _ticker, _tokenName, _registrationDate, _expiryDate, _status, true, uint256(0));
     }
 
     function _tickerOwner(string memory _ticker) internal view returns(address) {
@@ -490,6 +518,25 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     /////////////////////////////
 
     /**
+     * @notice Deploys an instance of a new Security Token of version 2.0 and records it to the registry
+     * @dev this function is for backwards compatibilty with 2.0 dApp.
+     * @param _name is the name of the token
+     * @param _ticker is the ticker symbol of the security token
+     * @param _tokenDetails is the off-chain details of the token
+     * @param _divisible is whether or not the token is divisible
+     */
+    function generateSecurityToken(
+        string calldata _name,
+        string calldata _ticker,
+        string calldata _tokenDetails,
+        bool _divisible
+    )
+        external
+    {
+        generateNewSecurityToken(_name, _ticker, _tokenDetails, _divisible, msg.sender, 0);
+    }
+
+    /**
      * @notice Deploys an instance of a new Security Token and records it to the registry
      * @param _name is the name of the token
      * @param _ticker is the ticker symbol of the security token
@@ -500,15 +547,15 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * - `_protocolVersion` is the packed value of uin8[3] array (it will be calculated offchain)
      * - if _protocolVersion == 0 then latest version of securityToken will be generated
      */
-    function generateSecurityToken(
-        string calldata _name,
-        string calldata _ticker,
-        string calldata _tokenDetails,
+    function generateNewSecurityToken(
+        string memory _name,
+        string memory _ticker,
+        string memory _tokenDetails,
         bool _divisible,
         address _treasuryWallet,
         uint256 _protocolVersion
     )
-        external
+        public
         whenNotPausedOrOwner
     {
         uint256 protocolVersion = _protocolVersion;
@@ -555,9 +602,17 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         _storeSecurityTokenData(newSecurityTokenAddress, _ticker, _tokenDetails, now);
         set(Encoder.getKey("tickerToSecurityToken", _ticker), newSecurityTokenAddress);
         /*solium-disable-next-line security/no-block-members*/
-        emit NewSecurityToken(
-            _ticker, _name, newSecurityTokenAddress, msg.sender, now, msg.sender, false, _usdFee, _polyFee, _protocolVersion
-        );
+        if (_protocolVersion == getUintValue(Encoder.getKey("latestVersion"))) {
+            // For backwards compatibilty. Should be removed with an update when we disable st 2.0 generation.
+            emit NewSecurityToken(
+                _ticker, _name, newSecurityTokenAddress, _issuer, now, _issuer, false, _polyFee
+            );
+        } else {
+            emit NewSecurityTokenCreated(
+                _ticker, _name, newSecurityTokenAddress, _issuer, now, _issuer, false, _usdFee, _polyFee, _protocolVersion
+            );
+        }
+
     }
 
     /**
@@ -595,7 +650,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         set(Encoder.getKey("tickerToSecurityToken", ticker), _securityToken);
         _modifyTicker(_owner, ticker, _name, registrationTime, expiryTime, true);
         _storeSecurityTokenData(_securityToken, ticker, _tokenDetails, _deployedAt);
-        emit NewSecurityToken(
+        emit NewSecurityTokenCreated(
             ticker, _name, _securityToken, _owner, _deployedAt, msg.sender, true, uint256(0), uint256(0), 0
         );
     }

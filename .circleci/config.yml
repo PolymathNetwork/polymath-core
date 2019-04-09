@@ -8,7 +8,6 @@ jobs:
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
       - run: yarn install
-      - run: sudo npm i truffle -g
       - run: node --version
       - run: truffle version
       - run: truffle compile
@@ -25,7 +24,6 @@ jobs:
       - restore_cache:
           key: dependency-cache-{{ checksum "package.json" }}
       - run: yarn install
-      - run: sudo npm i truffle -g
       - run: node --version
       - run: truffle version
       - run: npm run test
@@ -78,17 +76,10 @@ jobs:
       - image: maxsam4/solidity-kit:0.4.24
     steps:
       - checkout
-      - restore_cache:
-          key: dependency-cache-{{ checksum "package.json" }}
       - run: yarn install
-      - run: sudo npm i truffle -g
       - run: node --version
       - run: truffle version
       - run: npm run docs
-      - save_cache:
-          key: dependency-cache-{{ checksum "package.json" }}
-          paths:
-            - node_modules
 workflows:
   version: 2
   commit:

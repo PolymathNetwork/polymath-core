@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/node:8
+      - image: maxsam4/solidity-kit:0.4.24
     steps:
       - checkout
       - restore_cache:
@@ -18,7 +18,7 @@ jobs:
             - node_modules
   test:
     docker:
-      - image: circleci/node:8
+      - image: maxsam4/solidity-kit:0.4.24
     parallelism: 2
     steps:
       - checkout
@@ -75,7 +75,7 @@ jobs:
             - node_modules
   docs:
     docker:
-      - image: circleci/node:8
+      - image: maxsam4/solidity-kit:0.4.24
     steps:
       - checkout
       - restore_cache:

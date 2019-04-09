@@ -240,7 +240,9 @@ contract("SecurityTokenRegistry", async (accounts) => {
             await I_STRProxied.setProtocolFactory(I_STFactory.address, 3, 0, 0);
             await I_STRProxied.setLatestVersion(3, 0, 0);
 
-            console.log(await I_Getter.getSTFactoryAddress());
+            let latestSTF = await I_Getter.getSTFactoryAddress();
+            console.log(latestSTF);
+            assert.equal(await I_Getter.getSTFactoryAddressOfVersion(196608), latestSTF); //196608 is 3.0.0 in packed format
             let info = await I_Getter.getLatestProtocolVersion();
             for (let i = 0; i < info.length; i++) {
                 console.log(info[i].toNumber());

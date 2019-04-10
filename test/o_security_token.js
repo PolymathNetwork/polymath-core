@@ -796,7 +796,7 @@ contract("SecurityToken", async (accounts) => {
             let tokenInitBytesCall = web3.eth.abi.encodeFunctionCall(tokenInitBytes, [mockSTGetter.address, 10]);
             await I_STFactory.setLogicContract("3.0.1", mockSecurityTokenLogic.address, tokenInitBytesCall, {from: account_polymath});
             // NB - the mockSecurityTokenLogic sets its internal version to 3.0.0 not 3.0.1
-            let tx = await I_SecurityToken.upgradeToken({from: token_owner, gas: 6000000});
+            let tx = await I_SecurityToken.upgradeToken({from: token_owner, gas: 7000000});
             assert.equal(tx.logs[0].args._major, 3);
             assert.equal(tx.logs[0].args._minor, 0);
             assert.equal(tx.logs[0].args._patch, 0);
@@ -1652,6 +1652,65 @@ contract("SecurityToken", async (accounts) => {
             let afterTotalSupply = await I_SecurityToken.totalSupply.call();
             assert.equal(web3.utils.fromWei(beforeTotalSupply.sub(afterTotalSupply)), 10);
         });
+
+        it("Should failed to call operatorRedeemByPartition -- msg.sender is not authorised", async() => {
+            await catchRevert(
+                I_SecurityToken.operatorRedeemByPartition(
+                    web3.utils.toHex("UNLOCKED"),
+                    account_investor1,
+                    web3.utils.toWei("10"),
+                    "0x0",
+                    web3.utils.toHex("Valid call from the operator"),
+                    {
+                        from: account_delegate
+                    }
+                )
+            );
+        });
+
+        it("Should fail when partition is not valid", async() => {
+            await I_SecurityToken.authorizeOperator(I_MockRedemptionManager.address, {from: account_investor1});
+            await I_MockRedemptionManager.operatorTransferToRedeem(
+                web3.utils.toWei("20"),
+                web3.utils.toHex("UNLOCKED"),
+                "0x0",
+                web3.utils.toHex("Valid call from the operator"),
+                {
+                    from: account_investor1
+                }
+            );
+
+            await catchRevert(
+                I_MockRedemptionManager.operatorRedeemTokensByPartition(
+                    web3.utils.toWei("20"),
+                    web3.utils.toHex("LOCKED"),
+                    "0x0",
+                    web3.utils.toHex("Valid call from the operator"),
+                    {
+                        from: account_investor1
+                    }
+                )
+            );
+        });
+
+        it("Should successfully redeem tokens by operator", async() => {
+            let beforeTotalSupply = await I_SecurityToken.totalSupply.call();
+            let tx = await I_MockRedemptionManager.operatorRedeemTokensByPartition(
+                    web3.utils.toWei("10"),
+                    web3.utils.toHex("UNLOCKED"),
+                    "0x0",
+                    web3.utils.toHex("Valid call from the operator"),
+                    {
+                        from: account_investor1
+                    }
+            );
+            assert.equal(web3.utils.hexToUtf8(tx.logs[0].args._partition), "UNLOCKED");
+            assert.equal(tx.logs[0].args._operator, I_MockRedemptionManager.address);
+            assert.equal(tx.logs[0].args._investor, account_investor1);
+
+            let afterTotalSupply = await I_SecurityToken.totalSupply.call();
+            assert.equal(web3.utils.fromWei(beforeTotalSupply.sub(afterTotalSupply)), 10);
+        })
     });
 
     describe("Test cases for the storage", async() => {

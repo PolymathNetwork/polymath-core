@@ -86,7 +86,12 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
         initialized = true;
     }
 
-    function _isModule(address _module, uint8 _type) internal view returns(bool) {
+    /**
+     * @notice Checks if an address is a module of certain type
+     * @param _module Address to check
+     * @param _type type to check against
+     */
+    function isModule(address _module, uint8 _type) public view returns(bool) {
         if (modulesToData[_module].module != _module || modulesToData[_module].isArchived)
             return false;
         for (uint256 i = 0; i < modulesToData[_module].moduleTypes.length; i++) {
@@ -100,7 +105,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     // Require msg.sender to be the specified module type or the owner of the token
     function _onlyModuleOrOwner(uint8 _type) internal view {
         if (msg.sender != owner())
-            require(_isModule(msg.sender, _type));
+            require(isModule(msg.sender, _type));
     }
 
     function _isValidPartition(bytes32 _partition) internal pure {
@@ -154,7 +159,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @dev Require msg.sender to be the specified module type
      */
     function _onlyModule(uint8 _type) internal view {
-        require(_isModule(msg.sender, _type));
+        require(isModule(msg.sender, _type));
     }
 
     /**
@@ -260,7 +265,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     */
     function upgradeToken() external {
         _onlyOwner();
-        IUpgradableTokenFactory(tokenFactory).upgradeToken(7);
+        IUpgradableTokenFactory(tokenFactory).upgradeToken(10);
         emit TokenUpgraded(securityTokenVersion.major, securityTokenVersion.minor, securityTokenVersion.patch);
     }
 
@@ -465,7 +470,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @param _tokenHolder Whom balance need to queried
      * @return Amount of tokens as per the given partitions
      */
-    function balanceOfByPartition(bytes32 _partition, address _tokenHolder) external view returns(uint256) {
+    function balanceOfByPartition(bytes32 _partition, address _tokenHolder) public view returns(uint256) {
         return _balanceOfByPartition(_partition, _tokenHolder, 0);
     }
 
@@ -488,7 +493,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @param _data Additional data attached to the transfer of tokens
      * @return The partition to which the transferred tokens were allocated for the _to address
      */
-    function transferByPartition(bytes32 _partition, address _to, uint256 _value, bytes calldata _data) external returns (bytes32) {
+    function transferByPartition(bytes32 _partition, address _to, uint256 _value, bytes memory _data) public returns (bytes32) {
         return _transferByPartition(msg.sender, _to, _value, _partition, _data, address(0), "");
     }
 
@@ -537,7 +542,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * Logic for this restriction is written in `operatorTransferByPartition()` function.
      * @param _operator An address which is being authorised.
      */ 
-    function authorizeOperator(address _operator) external {
+    function authorizeOperator(address _operator) public {
         _approve(msg.sender, _operator, uint(-1));
         emit AuthorizedOperator(_operator, msg.sender);
     }
@@ -549,7 +554,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * Logic for this restriction is written in `operatorTransferByPartition()` function.
      * @param _operator An address which is being de-authorised
      */
-    function revokeOperator(address _operator) external {
+    function revokeOperator(address _operator) public {
         _approve(msg.sender, _operator, 0);
         emit RevokedOperator(_operator, msg.sender);
     }
@@ -559,7 +564,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @param _partition The partition to which the operator is authorised
      * @param _operator An address which is being authorised
      */
-    function authorizeOperatorByPartition(bytes32 _partition, address _operator) external {
+    function authorizeOperatorByPartition(bytes32 _partition, address _operator) public {
         _isValidPartition(_partition);
         partitionApprovals[msg.sender][_partition][_operator] = true;
         emit AuthorizedOperatorByPartition(_partition, _operator, msg.sender);
@@ -570,7 +575,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @param _partition The partition to which the operator is de-authorised
      * @param _operator An address which is being de-authorised
      */
-    function revokeOperatorByPartition(bytes32 _partition, address _operator) external {
+    function revokeOperatorByPartition(bytes32 _partition, address _operator) public {
         _isValidPartition(_partition);
         partitionApprovals[msg.sender][_partition][_operator] = false;
         emit RevokedOperatorByPartition(_partition, _operator, msg.sender);
@@ -817,19 +822,10 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
         external
     {
         _onlyModule(BURN_KEY); 
-        require(_operatorData.length > 0);
+        require(_operatorData[0] != 0);
         _zeroAddressCheck(_tokenHolder);
         _validateOperatorAndPartition(_partition, _tokenHolder, msg.sender);
         _redeemByPartition(_partition, _tokenHolder, _value, msg.sender, _data, _operatorData);
-    }
-
-    /**
-     * @notice Checks if an address is a module of certain type
-     * @param _module Address to check
-     * @param _type type to check against
-     */
-    function isModule(address _module, uint8 _type) external view returns(bool) {
-        return _isModule(_module, _type);
     }
 
     function _checkAndBurn(address _from, uint256 _value, bytes memory _data) internal returns(bool verified) {
@@ -933,7 +929,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
         bytes32 appCode;
         bool success;
         if (_value % granularity != 0) {
-            return (false, 0x50, "Invalid granularity");
+            return (false, 0x50, bytes32(0));
         }
         (success, appCode) = TokenLib.verifyTransfer(modules[TRANSFER_KEY], modulesToData, _from, _to, _value, _data, transfersFrozen);
         return TokenLib.canTransfer(success, appCode, _to, _value, balanceOf(_from), balanceOf(_to));

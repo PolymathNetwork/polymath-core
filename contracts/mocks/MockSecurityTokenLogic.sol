@@ -13,7 +13,6 @@ import "../tokens/SecurityToken.sol";
  * @notice - https://github.com/ethereum/solidity/issues/4847
  */
 contract MockSecurityTokenLogic is SecurityToken {
-    using SafeMath for uint256;
 
     event UpgradeEvent(uint256 _upgrade);
 

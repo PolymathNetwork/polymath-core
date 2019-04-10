@@ -122,6 +122,16 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         uint256 _usdFee,
         uint256 _polyFee
     );
+    // Emit at when issuer refreshes exisiting token
+    event SecurityTokenRefreshed(
+        string _ticker,
+        string _name,
+        address indexed _securityTokenAddress,
+        address indexed _owner,
+        uint256 _addedAt,
+        address _registrant,
+        uint256 _protocolVersion
+    );
     event ProtocolFactorySet(address indexed _STFactory, uint8 _major, uint8 _minor, uint8 _patch);
     event LatestVersionSet(uint8 _major, uint8 _minor, uint8 _patch);
     event ProtocolFactoryRemoved(address indexed _STFactory, uint8 _major, uint8 _minor, uint8 _patch);
@@ -529,7 +539,11 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         /*solium-disable-next-line security/no-block-members*/
         require(getUintValue(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now, "Ticker expired");
         (uint256 _usdFee, uint256 _polyFee) = _takeFee(STLAUNCHFEE);
-        _deployToken(_name, ticker, _tokenDetails, msg.sender, _divisible, _treasuryWallet, protocolVersion, _usdFee, _polyFee);
+        address newSecurityTokenAddress =
+            _deployToken(_name, ticker, _tokenDetails, msg.sender, _divisible, _treasuryWallet, protocolVersion, _usdFee, _polyFee);
+        emit NewSecurityToken(
+            _ticker, _name, newSecurityTokenAddress, msg.sender, now, msg.sender, false, _usdFee, _polyFee, protocolVersion
+        );
     }
 
     /**
@@ -558,7 +572,12 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         address stOwner = IOwnable(st).owner();
         require(msg.sender == stOwner, "Unauthroized");
         require(ISecurityToken(st).transfersFrozen(), "Transfers not frozen");
-        _deployToken(_name, ticker, _tokenDetails, stOwner, _divisible, _treasuryWallet, getUintValue(Encoder.getKey("latestVersion")), 0, 0);
+        uint256 protocolVersion = getUintValue(Encoder.getKey("latestVersion"));
+        address newSecurityTokenAddress =
+            _deployToken(_name, ticker, _tokenDetails, stOwner, _divisible, _treasuryWallet, protocolVersion, 0, 0);
+        emit SecurityTokenRefreshed(
+            _ticker, _name, newSecurityTokenAddress, stOwner, now, stOwner, protocolVersion
+        );
     }
 
     function _deployToken(
@@ -573,8 +592,9 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         uint256 _polyFee
     )
         internal
+        returns(address newSecurityTokenAddress)
     {
-        address newSecurityTokenAddress = ISTFactory(getAddressValue(Encoder.getKey("protocolVersionST", _protocolVersion))).deployToken(
+        newSecurityTokenAddress = ISTFactory(getAddressValue(Encoder.getKey("protocolVersionST", _protocolVersion))).deployToken(
             _name,
             _ticker,
             18,
@@ -588,10 +608,6 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         /*solium-disable-next-line security/no-block-members*/
         _storeSecurityTokenData(newSecurityTokenAddress, _ticker, _tokenDetails, now);
         set(Encoder.getKey("tickerToSecurityToken", _ticker), newSecurityTokenAddress);
-        /*solium-disable-next-line security/no-block-members*/
-        emit NewSecurityToken(
-            _ticker, _name, newSecurityTokenAddress, _issuer, now, msg.sender, false, _usdFee, _polyFee, _protocolVersion
-        );
     }
 
     /**

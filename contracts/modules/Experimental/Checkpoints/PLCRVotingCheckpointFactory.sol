@@ -32,8 +32,8 @@ contract PLCRVotingCheckpointFactory is ModuleFactory {
         tagsData.push("Vote");
         tagsData.push("Checkpoint");
         tagsData.push("PLCR");
-        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
 
     }
 

@@ -140,9 +140,9 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
                 let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, token_owner, 0, { from: token_owner });
     
                 // Verify the successful generation of the security token
-                assert.equal(tx.logs[2].args._ticker, symbol, "SecurityToken doesn't get deployed");
+                assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
     
-                I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+                I_SecurityToken = await SecurityToken.at(tx.logs[1].args._securityTokenAddress);
                 stGetter = await STGetter.at(I_SecurityToken.address);
                 const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
                 // Verify that GeneralTransferManager module get added successfully or not
@@ -156,7 +156,7 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
             });
 
             it("\t\t Should attach the voting module with the ST \n", async() => {
-                let tx = await I_SecurityToken.addModule(I_WeightedVoteCheckpointFactory.address, "0x0", 0, 0, {from: token_owner});
+                let tx = await I_SecurityToken.addModule(I_WeightedVoteCheckpointFactory.address, "0x0", 0, 0, false, {from: token_owner});
                 assert.equal(tx.logs[2].args._types[0], checkpointKey, "Checkpoint doesn't get deployed");
                 assert.equal(web3.utils.hexToString(tx.logs[2].args._name), "WeightedVoteCheckpoint", "WeightedVoteCheckpoint module was not added");
                 I_WeightedVoteCheckpoint = await WeightedVoteCheckpoint.at(tx.logs[2].args._module);
@@ -164,14 +164,14 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
 
             it("\t\t Should fail to attach the voting module because allowance is unsufficent \n", async() => {
                 await catchRevert(
-                    I_SecurityToken.addModule(P_WeightedVoteCheckpointFactory.address, "0x0", new BN(web3.utils.toWei("500")), 0, {from: token_owner})
+                    I_SecurityToken.addModule(P_WeightedVoteCheckpointFactory.address, "0x0", new BN(web3.utils.toWei("500")), 0, false, {from: token_owner})
                 );
             });
 
             it("\t\t Should attach the voting module with the ST \n", async() => {
                 let id = await takeSnapshot();
                 await I_PolyToken.transfer(I_SecurityToken.address, new BN(web3.utils.toWei("2000", "ether")), { from: token_owner });
-                let tx = await I_SecurityToken.addModule(P_WeightedVoteCheckpointFactory.address, "0x0", new BN(web3.utils.toWei("2000")), 0, {from: token_owner});
+                let tx = await I_SecurityToken.addModule(P_WeightedVoteCheckpointFactory.address, "0x0", new BN(web3.utils.toWei("2000")), 0, false, {from: token_owner});
                 assert.equal(tx.logs[3].args._types[0], checkpointKey, "Checkpoint doesn't get deployed");
                 assert.equal(web3.utils.hexToString(tx.logs[3].args._name), "WeightedVoteCheckpoint", "WeightedVoteCheckpoint module was not added");
                 await revertToSnapshot(id);

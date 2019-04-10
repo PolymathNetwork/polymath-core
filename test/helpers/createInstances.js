@@ -50,6 +50,7 @@ const VolumeRestrictionTMFactory = artifacts.require("./VolumeRestrictionTMFacto
 const VolumeRestrictionTM = artifacts.require("./VolumeRestrictionTM.sol");
 const VestingEscrowWalletFactory = artifacts.require("./VestingEscrowWalletFactory.sol");
 const VestingEscrowWallet = artifacts.require("./VestingEscrowWallet.sol");
+const WeightedVoteCheckpointFactory = artifacts.require("./WeightedVoteCheckpointFactory.sol");
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -76,6 +77,7 @@ let I_ERC20DividendCheckpointLogic;
 let I_ERC20DividendCheckpointFactory;
 let I_GeneralPermissionManagerLogic;
 let I_VolumeRestrictionTMFactory;
+let I_WeightedVoteCheckpointFactory;
 let I_GeneralPermissionManagerFactory;
 let I_GeneralTransferManagerLogic;
 let I_GeneralTransferManagerFactory;
@@ -604,4 +606,18 @@ export async function deploySignedTMAndVerifyed(accountPolymath, MRProxyInstance
 
     await registerAndVerifyByMR(I_SignedTransferManagerFactory.address, accountPolymath, MRProxyInstance);
     return new Array(I_SignedTransferManagerFactory);
+}
+
+// Deploy the voting modules
+
+export async function deployWeightedVoteCheckpoint(accountPolymath, MRProxyInstance, setupCost) {
+    I_WeightedVoteCheckpointFactory = await WeightedVoteCheckpointFactory.new(setupCost, new BN(0), I_PolymathRegistry.address, { from: accountPolymath });
+    assert.notEqual(
+        I_WeightedVoteCheckpointFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "WeightedVoteCheckpointFactory contract was not deployed"
+    );
+
+    await registerAndVerifyByMR(I_WeightedVoteCheckpointFactory.address, accountPolymath, MRProxyInstance);
+    return new Array(I_WeightedVoteCheckpointFactory);
 }

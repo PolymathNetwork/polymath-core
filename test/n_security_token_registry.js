@@ -1122,6 +1122,66 @@ contract("SecurityTokenRegistry", async (accounts) => {
         });
     });
 
+    describe("Test case for refreshing a security token", async () => {
+        it("Should fail if msg.sender is not ST owner", async () => {
+            await catchRevert(
+                I_STRProxied.refreshSecurityToken("refreshedToken", symbol, "refreshedToken", true, token_owner, {
+                    from: account_delegate
+                })
+            );
+        });
+
+        it("Should fail if ticker is not deployed", async () => {
+            await catchRevert(
+                I_STRProxied.refreshSecurityToken("refreshedToken", "LOGLOG3", "refreshedToken", true, token_owner, {
+                    from: token_owner
+                })
+            );
+        });
+
+        it("Should fail if name is 0 length", async () => {
+            await catchRevert(
+                I_STRProxied.refreshSecurityToken("", symbol, "refreshedToken", true, token_owner, {
+                    from: token_owner
+                })
+            );
+        });
+
+        it("Should fail if null treasurey wallet", async () => {
+            await catchRevert(
+                I_STRProxied.refreshSecurityToken("refreshedToken", symbol, "refreshedToken", true, address_zero, {
+                    from: token_owner
+                })
+            );
+        });
+
+        it("Should fail if transfers not frozen", async () => {
+            await catchRevert(
+                I_STRProxied.refreshSecurityToken("refreshedToken", symbol, "refreshedToken", true, token_owner, {
+                    from: token_owner
+                })
+            );
+        });
+
+        it("Should refresh security token", async () => {
+            let snapid = await takeSnapshot();
+            let oldStAddress = await I_Getter.getSecurityTokenAddress(symbol);
+            let oldSt = await SecurityToken.at(oldStAddress);
+            await oldSt.freezeTransfers({ from:token_owner });
+            let tx = await I_STRProxied.refreshSecurityToken("refreshedToken", symbol, "refreshedToken", true, token_owner, {
+                from: token_owner
+            });
+            assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken not deployed");
+            let newStAddress = await I_Getter.getSecurityTokenAddress(symbol);
+            let securityTokenTmp = tx.logs[1].args._securityTokenAddress;
+            assert.equal(newStAddress, securityTokenTmp, "ST address not updated");
+            let newST = await SecurityToken.at(newStAddress);
+            assert.notEqual(oldStAddress, newStAddress, "new ST not generated");
+            assert.equal(await newST.name(), "refreshedToken", "ST not deployed properly");
+            await revertToSnapshot(snapid);
+        });
+    });
+
     describe("Test cases for getters", async () => {
         it("Should get the security token address", async () => {
             let address = await I_Getter.getSecurityTokenAddress.call(symbol);

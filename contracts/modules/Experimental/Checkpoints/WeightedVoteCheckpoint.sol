@@ -1,7 +1,6 @@
 pragma solidity ^0.5.0;
 
-import "../../Module.sol";
-import "../../Checkpoint/ICheckpoint.sol";
+import "./VotingCheckpoint.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
@@ -10,25 +9,35 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
  * @notice In this module every token holder has voting right (Should be greater than zero)
  * Tally will be calculated as per the weight (balance of the token holder)
  */
-contract WeightedVoteCheckpoint is ICheckpoint, Module {
+contract WeightedVoteCheckpoint is VotingCheckpoint {
     using SafeMath for uint256;
 
     struct Ballot {
-        uint256 checkpointId;
-        uint64 startTime;
-        uint64 endTime;
-        uint64 totalVoters;
-        uint56 totalProposals;
-        bool isActive;
-        mapping(uint256 => uint256) proposalToVotes;
-        mapping(address => uint256) investorToProposal;
+        uint256 checkpointId; // Checkpoint At which ballot created
+        uint256 quorum;       // Should be a multiple of 10 ** 16
+        uint64 startTime;      // Timestamp at which ballot will come into effect
+        uint64 endTime;         // Timestamp at which ballot will no more into effect
+        uint64 totalProposals;  // Count of proposals allowed for a given ballot
+        uint56 totalVoters;     // Count of voters who vote for the given ballot  
+        bool isActive;          // flag used to turn off/on the ballot
+        mapping(uint256 => uint256) proposalToVotes;  // Mapping for proposal to total weight collected by the proposal
+        mapping(address => uint256) investorToProposal; // mapping for storing vote details of a voter
+        mapping(address => bool) exemptedVoters; // Mapping for blacklist voters
     }
 
     Ballot[] ballots;
 
-    event BallotCreated(uint256 _startTime, uint256 _endTime, uint256 indexed _ballotId, uint256 indexed _checkpointId, uint256 _noOfProposals);
-    event VoteCast(uint256 indexed _ballotId, uint256 indexed _proposalId, address indexed _investor, uint256 _weight);
+    event BallotCreated(
+        uint256 indexed _ballotId,
+        uint256 indexed _checkpointId,
+        uint256 _startTime,
+        uint256 _endTime,
+        uint256 _noOfProposals,
+        uint256 _proposedQuorum
+    );
+    event VoteCast(address indexed _voter,  uint256 _weight, uint256 indexed _ballotId, uint256 indexed _proposalId);
     event BallotStatusChanged(uint256 indexed _ballotId, bool _isActive);
+    event ChangedBallotExemptedVotersList(uint256 indexed _ballotId, address indexed_voter, bool _change);
 
     /**
      * @notice Constructor
@@ -53,17 +62,27 @@ contract WeightedVoteCheckpoint is ICheckpoint, Module {
      * @notice Allows the token issuer to create a ballot
      * @param _duration The duration of the voting period in seconds
      * @param _noOfProposals Number of proposals
+     * @param _proposedQuorum Minimum Quorum  percentage required to make a proposal won
      */
-    function createBallot(uint256 _duration, uint256 _noOfProposals) external withPerm(ADMIN) {
-        require(_duration > 0, "Incorrect ballot duration.");
+    function createBallot(uint256 _duration, uint256 _noOfProposals, uint256 _proposedQuorum) external withPerm(ADMIN) {
+        require(_duration > 0, "Incorrect ballot duration");
         uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
         uint256 endTime = now.add(_duration);
-        _createCustomBallot(now, endTime, checkpointId, _noOfProposals);
+        _createCustomBallot(checkpointId, _proposedQuorum, now, endTime, _noOfProposals);
     }
 
-    function _createCustomBallot(uint256 _startTime, uint256 _endTime, uint256 _checkpointId, uint256 _noOfProposals) internal {
+    function _createCustomBallot(
+        uint256 _checkpointId,
+        uint256 _proposedQuorum,
+        uint256 _startTime,
+        uint256 _endTime,
+        uint256 _noOfProposals
+    ) 
+        internal
+    {
         require(_noOfProposals > 1, "Incorrect proposals no");
         require(_endTime > _startTime, "Times are not valid");
+        require(_proposedQuorum <= 100 * 10 ** 16 && _proposedQuorum > 0, "Invalid quorum percentage"); // not more than 100 %
         require(
             uint64(_startTime) == _startTime &&
             uint64(_endTime) == _endTime &&
@@ -73,23 +92,24 @@ contract WeightedVoteCheckpoint is ICheckpoint, Module {
         uint256 ballotId = ballots.length;
         ballots.push(
             Ballot(
-                _checkpointId, uint64(_startTime), uint64(_endTime), uint64(0), uint56(_noOfProposals), true
+                _checkpointId, _proposedQuorum, uint64(_startTime), uint64(_endTime), uint56(_noOfProposals), uint64(0), true
             )
         );
-        emit BallotCreated(_startTime, _endTime, ballotId, _checkpointId, _noOfProposals);
+        emit BallotCreated(ballotId, _checkpointId, _startTime, _endTime, _noOfProposals, _proposedQuorum);
     }
 
     /**
      * @notice Allows the token issuer to create a ballot with custom settings
+     * @param _checkpointId Index of the checkpoint to use for token balances
+     * @param _proposedQuorum Minimum Quorum  percentage required to make a proposal won
      * @param _startTime Start time of the voting period in Unix Epoch time
      * @param _endTime End time of the voting period in Unix Epoch time
-     * @param _checkpointId Index of the checkpoint to use for token balances
      * @param _noOfProposals Number of proposals
      */
-    function createCustomBallot(uint256 _startTime, uint256 _endTime, uint256 _checkpointId, uint256 _noOfProposals) external withPerm(ADMIN) {
+    function createCustomBallot(uint256 _checkpointId, uint256 _proposedQuorum, uint256 _startTime, uint256 _endTime, uint256 _noOfProposals) external withPerm(ADMIN) {
         require(_checkpointId <= ISecurityToken(securityToken).currentCheckpointId(), "Invalid checkpoint Id");
         require(_startTime >= now, "Invalid startTime");
-        _createCustomBallot(_startTime, _endTime, _checkpointId, _noOfProposals);
+        _createCustomBallot(_checkpointId, _proposedQuorum, _startTime, _endTime, _noOfProposals);
     }
 
     /**
@@ -100,7 +120,7 @@ contract WeightedVoteCheckpoint is ICheckpoint, Module {
     function castVote(uint256 _ballotId, uint256 _proposalId) external {
         require(_ballotId < ballots.length, "Incorrect ballot Id");
         Ballot storage ballot = ballots[_ballotId];
-
+        require(isVoterAllowed(_ballotId, msg.sender), "Invalid voter");
         uint256 weight = ISecurityToken(securityToken).balanceOfAt(msg.sender, ballot.checkpointId);
         require(weight > 0, "weight should be > 0");
         require(ballot.totalProposals >= _proposalId && _proposalId > 0, "Incorrect proposals Id");
@@ -111,8 +131,50 @@ contract WeightedVoteCheckpoint is ICheckpoint, Module {
         ballot.investorToProposal[msg.sender] = _proposalId;
         ballot.totalVoters = ballot.totalVoters + 1;
         ballot.proposalToVotes[_proposalId] = ballot.proposalToVotes[_proposalId].add(weight);
-        emit VoteCast(_ballotId, _proposalId, msg.sender, weight);
+        emit VoteCast(msg.sender, weight, _ballotId, _proposalId);
     }
+
+    /**
+     * Change the given ballot exempted list
+     * @param _ballotId Given ballot Id
+     * @param _voter Address of the voter
+     * @param _change Whether it is exempted or not
+     */
+    function changeBallotExemptedVotersList(uint256 _ballotId, address _voter, bool _change) external withPerm(ADMIN) {
+        _changeBallotExemptedVotersList(_ballotId, _voter, _change);
+    }
+
+    /**
+     * Change the given ballot exempted list (Multi)
+     * @param _ballotId Given ballot Id
+     * @param _voters Address of the voter
+     * @param _changes Whether it is exempted or not
+     */
+    function changeBallotExemptedVotersListMulti(uint256 _ballotId, address[] calldata _voters, bool[] calldata _changes) external withPerm(ADMIN) {
+        require(_voters.length == _changes.length, "Array length mismatch");
+        for (uint256 i = 0; i < _voters.length; i++) {
+            _changeBallotExemptedVotersList(_ballotId, _voters[i], _changes[i]);
+        }
+    }
+
+    function _changeBallotExemptedVotersList(uint256 _ballotId, address _voter, bool _change) internal {
+        require(_voter != address(0), "Invalid address");
+        _validBallotId(_ballotId);
+        require(ballots[_ballotId].exemptedVoters[_voter] != _change, "No change");
+        ballots[_ballotId].exemptedVoters[_voter] = _change;
+        emit ChangedBallotExemptedVotersList(_ballotId, _voter, _change);
+    }
+
+    /**
+     * Use to check whether the voter is allowed to vote or not
+     * @param _ballotId The index of the target ballot
+     * @param _voter Address of the voter
+     * @return bool 
+     */
+    function isVoterAllowed(uint256 _ballotId, address _voter) public view returns(bool) {
+        bool allowed = (ballots[_ballotId].exemptedVoters[_voter] || (defaultExemptIndex[_voter] != 0));
+        return !allowed;
+    } 
 
     /**
      * @notice Allows the token issuer to set the active stats of a ballot
@@ -133,47 +195,53 @@ contract WeightedVoteCheckpoint is ICheckpoint, Module {
      * @return uint256 voteWeighting
      * @return uint256 tieWith
      * @return uint256 winningProposal
-     * @return uint256 remainingTime
+     * @return bool isVotingSucceed
      * @return uint256 totalVotes
      */
     function getBallotResults(uint256 _ballotId) external view returns (
         uint256[] memory voteWeighting,
         uint256[] memory tieWith,
         uint256 winningProposal,
-        uint256 remainingTime,
+        bool isVotingSucceed,
         uint256 totalVotes
     ) {
         if (_ballotId >= ballots.length)
-            return (new uint256[](0), new uint256[](0), winningProposal, remainingTime, totalVotes);
+            return (new uint256[](0), new uint256[](0), winningProposal, isVotingSucceed, totalVotes);
 
         Ballot storage ballot = ballots[_ballotId];
+        uint256 i;
         uint256 counter = 0;
         uint256 maxWeight = 0;
-        uint256 i;
+        uint256 supplyAtCheckpoint = ISecurityToken(securityToken).totalSupplyAt(ballot.checkpointId);
+        uint256 quorumWeight = (supplyAtCheckpoint.mul(ballot.quorum)).div(10 ** 18);
+        voteWeighting = new uint256[](ballot.totalProposals);
         for (i = 0; i < ballot.totalProposals; i++) {
-            if (maxWeight < ballot.proposalToVotes[i+1]) {
-                maxWeight = ballot.proposalToVotes[i+1];
-                winningProposal = i + 1;
+            voteWeighting[i] = ballot.proposalToVotes[i + 1];
+            if (maxWeight < ballot.proposalToVotes[i + 1]) {
+                maxWeight = ballot.proposalToVotes[i + 1];
+                if (maxWeight >= quorumWeight)
+                    winningProposal = i + 1;
             }
         }
-        for (i = 0; i < ballot.totalProposals; i++) {
-            if (maxWeight == ballot.proposalToVotes[i+1])
-                counter ++;
+        if (maxWeight >= quorumWeight) {
+            isVotingSucceed = true;
+            for (i = 0; i < ballot.totalProposals; i++) {
+                if (maxWeight == ballot.proposalToVotes[i + 1] && (i + 1) != winningProposal)
+                    counter ++;
+            }
         }
-        voteWeighting = new uint256[](ballot.totalProposals);
+        
         tieWith = new uint256[](counter);
-        counter = 0;
-        for (i = 0; i < ballot.totalProposals; i++) {
-            voteWeighting[i] = ballot.proposalToVotes[i+1];
-            if (maxWeight == ballot.proposalToVotes[i+1]) {
-                tieWith[counter] = i+1;
-                counter ++;
-            }   
+        if (counter > 0) {
+            counter = 0;
+            for (i = 0; i < ballot.totalProposals; i++) {
+                if (maxWeight == ballot.proposalToVotes[i + 1] && (i + 1) != winningProposal) {
+                    tieWith[counter] = i + 1;
+                    counter ++;
+                }   
+            }
         }
-        if (ballot.endTime >= uint64(now))
-            remainingTime = uint256(ballot.endTime).sub(now);
         totalVotes = uint256(ballot.totalVoters);
-        return (voteWeighting, tieWith, winningProposal, remainingTime, totalVotes);
     }
 
     /**
@@ -188,18 +256,27 @@ contract WeightedVoteCheckpoint is ICheckpoint, Module {
     }
 
     /**
-     * @notice Get the stats of the ballot
+     * @notice Get the details of the ballot
      * @param _ballotId The index of the target ballot
+     * @return uint256 quorum
+     * @return uint256 totalSupplyAtCheckpoint
+     * @return uint256 checkpointId
+     * @return uint256 startTime
+     * @return uint256 endTime
+     * @return uint256 totalProposals
+     * @return uint256 totalVoters
+     * @return bool isActive 
      */
-    function getBallotStats(uint256 _ballotId) external view returns(uint256, uint256, uint64, uint64, uint64, uint64, bool) {
+    function getBallotDetails(uint256 _ballotId) external view returns(uint256, uint256, uint256, uint256, uint256, uint256, uint256, bool) {
         Ballot memory ballot = ballots[_ballotId];
         return (
-            ballot.checkpointId,
+            ballot.quorum,
             ISecurityToken(securityToken).totalSupplyAt(ballot.checkpointId),
+            ballot.checkpointId,
             ballot.startTime,
             ballot.endTime,
-            ballot.totalVoters,
             ballot.totalProposals,
+            ballot.totalVoters,
             ballot.isActive
         );
     }

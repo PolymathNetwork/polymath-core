@@ -2,11 +2,12 @@ import latestTime from "./helpers/latestTime";
 import { duration, ensureException, promisifyLogWatch, latestBlock } from "./helpers/utils";
 import { takeSnapshot, increaseTime, revertToSnapshot } from "./helpers/time";
 import { encodeModuleCall } from "./helpers/encodeCall";
-import { setUpPolymathNetwork, deployGPMAndVerifyed } from "./helpers/createInstances";
+import { setUpPolymathNetwork, deployGPMAndVerifyed, deployDummySTOAndVerifyed } from "./helpers/createInstances";
 import { catchRevert } from "./helpers/exceptions";
 
 const CappedSTOFactory = artifacts.require("./CappedSTOFactory.sol");
 const CappedSTO = artifacts.require("./CappedSTO.sol");
+const DummySTO = artifacts.require("./DummySTO.sol");
 const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager");
@@ -54,6 +55,7 @@ contract("CappedSTO", accounts => {
     let I_SecurityToken_POLY;
     let I_CappedSTO_Array_ETH = [];
     let I_CappedSTO_Array_POLY = [];
+    let I_DummySTO;
     let I_PolyToken;
     let I_PolymathRegistry;
     let I_STRProxied;
@@ -441,7 +443,7 @@ contract("CappedSTO", accounts => {
         });
 
         it("Should restrict to buy tokens after hiting the cap in second tx first tx pass", async () => {
-            
+
 
             // Fallback transaction
             await web3.eth.sendTransaction({
@@ -850,6 +852,58 @@ contract("CappedSTO", accounts => {
             });
         });
 
+        describe("Check that we can reclaim ETH and ERC20 tokens from an STO", async () => {
+            //xxx
+            it("should attach a dummy STO", async () => {
+                let I_DummySTOFactory;
+                [I_DummySTOFactory] = await deployDummySTOAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
+                const DummySTOParameters = ["uint256", "uint256", "uint256", "string"];
+                let startTime = latestTime() + duration.days(1);
+                let endTime = startTime + duration.days(30);
+                const cap = web3.utils.toWei("10000");
+                const dummyBytesSig = encodeModuleCall(DummySTOParameters, [startTime, endTime, cap, "Hello"]);
+                const tx = await I_SecurityToken_ETH.addModule(I_DummySTOFactory.address, dummyBytesSig, maxCost, 0, { from: token_owner });
+                assert.equal(tx.logs[2].args._types[0], stoKey, `Wrong module type added`);
+                assert.equal(
+                    web3.utils.hexToString(tx.logs[2].args._name),
+                    "DummySTO",
+                    `Wrong STO module added`
+                );
+                I_DummySTO = DummySTO.at(tx.logs[2].args._module);
+            });
+            it("should send some funds and ERC20 to the DummySTO", async () => {
+                let tx = await web3.eth.sendTransaction({
+                    from: account_investor1,
+                    to: I_DummySTO.address,
+                    gas: 2100000,
+                    value: web3.utils.toWei("1", "ether")
+                });
+                let dummyETH = BigNumber(await web3.eth.getBalance(I_DummySTO.address));
+                assert.equal(dummyETH.toNumber(), web3.utils.toWei("1", "ether"));
+                await I_PolyToken.getTokens(web3.utils.toWei("2", "ether"), I_DummySTO.address);
+                let dummyPOLY = BigNumber(await I_PolyToken.balanceOf(I_DummySTO.address));
+                assert.equal(dummyPOLY.toNumber(), web3.utils.toWei("2", "ether"));
+            });
+
+            it("should reclaim ETH and ERC20 from STO", async () => {
+                let initialIssuerETH = BigNumber(await web3.eth.getBalance(token_owner));
+                let initialIssuerPOLY = BigNumber(await I_PolyToken.balanceOf(token_owner));
+                await catchRevert(I_DummySTO.reclaimERC20(I_PolyToken.address, {from: account_polymath, gasPrice: 0}));
+                await catchRevert(I_DummySTO.reclaimETH( {from: account_polymath, gasPrice: 0}));
+                let tx = await I_DummySTO.reclaimERC20(I_PolyToken.address, {from: token_owner, gasPrice: 0});
+                let tx2 = await I_DummySTO.reclaimETH({from: token_owner, gasPrice: 0});
+                let finalIssuerETH = BigNumber(await web3.eth.getBalance(token_owner));
+                let finalIssuerPOLY = BigNumber(await I_PolyToken.balanceOf(token_owner));
+                assert.equal(finalIssuerETH.sub(initialIssuerETH).toNumber(), web3.utils.toWei("1", "ether"));
+                assert.equal(finalIssuerPOLY.sub(initialIssuerPOLY).toNumber(), web3.utils.toWei("2", "ether"));
+                let dummyETH = BigNumber(await web3.eth.getBalance(I_DummySTO.address));
+                assert.equal(dummyETH.toNumber(), 0);
+                let dummyPOLY = BigNumber(await I_PolyToken.balanceOf(I_DummySTO.address));
+                assert.equal(dummyPOLY.toNumber(), 0);
+            });
+        });
+
+
         describe("Test cases for the CappedSTOFactory", async () => {
             it("should get the exact details of the factory", async () => {
                 assert.equal((await I_CappedSTOFactory.getSetupCost.call()).toNumber(), cappedSTOSetupCost);
@@ -996,7 +1050,7 @@ contract("CappedSTO", accounts => {
         it("Should successfully invest in second STO", async () => {
             const polyToInvest = 1000;
             const stToReceive = (polyToInvest * P_rate)/Math.pow(10, 18);
-            
+
             await I_PolyToken.getTokens(polyToInvest * Math.pow(10, 18), account_investor3);
 
             let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor3, P_fromTime, P_toTime, P_expiryTime, true, {

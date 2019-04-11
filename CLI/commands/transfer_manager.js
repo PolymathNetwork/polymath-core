@@ -304,6 +304,11 @@ async function addTransferManagerModule() {
 async function generalTransferManager() {
   console.log('\n', chalk.blue(`General Transfer Manager at ${currentTransferManager.options.address}`), '\n');
 
+  let moduleFactoryABI = abis.moduleFactory();
+  let factoryAddress = await currentTransferManager.methods.factory().call();
+  let moduleFactory = new web3.eth.Contract(moduleFactoryABI, factoryAddress);
+  let moduleVersion = await moduleFactory.methods.version().call();
+
   // Show current data
   let displayIssuanceAddress = await currentTransferManager.methods.issuanceAddress().call();
   let displaySigningAddress = await currentTransferManager.methods.signingAddress().call();
@@ -311,27 +316,37 @@ async function generalTransferManager() {
   let displayAllowAllWhitelistTransfers = await currentTransferManager.methods.allowAllWhitelistTransfers().call();
   let displayAllowAllWhitelistIssuances = await currentTransferManager.methods.allowAllWhitelistIssuances().call();
   let displayAllowAllBurnTransfers = await currentTransferManager.methods.allowAllBurnTransfers().call();
-  let displayDefaults = await currentTransferManager.methods.defaults().call();
-  let displayInvestors = await currentTransferManager.methods.getInvestors().call();
-
+  let displayDefaults;
+  let displayInvestors;
+  if (moduleVersion != '1.0.0') {
+    displayDefaults = await currentTransferManager.methods.defaults().call();
+    displayInvestors = await currentTransferManager.methods.getInvestors().call();
+  }
   console.log(`- Issuance address:                ${displayIssuanceAddress}`);
   console.log(`- Signing address:                 ${displaySigningAddress}`);
   console.log(`- Allow all transfers:             ${displayAllowAllTransfers ? `YES` : `NO`}`);
   console.log(`- Allow all whitelist transfers:   ${displayAllowAllWhitelistTransfers ? `YES` : `NO`}`);
   console.log(`- Allow all whitelist issuances:   ${displayAllowAllWhitelistIssuances ? `YES` : `NO`}`);
   console.log(`- Allow all burn transfers:        ${displayAllowAllBurnTransfers ? `YES` : `NO`}`);
-  console.log(`- Default times:`);
-  console.log(`   - From time:                    ${displayDefaults.fromTime} (${moment.unix(displayDefaults.fromTime).format('MMMM Do YYYY, HH:mm:ss')})`);
-  console.log(`   - To time:                      ${displayDefaults.toTime} (${moment.unix(displayDefaults.toTime).format('MMMM Do YYYY, HH:mm:ss')})`);
-  console.log(`- Investors:                       ${displayInvestors.length}`);
+  if (displayDefaults) {
+    console.log(`- Default times:`);
+    console.log(`   - From time:                    ${displayDefaults.fromTime} (${moment.unix(displayDefaults.fromTime).format('MMMM Do YYYY, HH:mm:ss')})`);
+    console.log(`   - To time:                      ${displayDefaults.toTime} (${moment.unix(displayDefaults.toTime).format('MMMM Do YYYY, HH:mm:ss')})`);
+  }
+  if (displayInvestors) {
+    console.log(`- Investors:                       ${displayInvestors.length}`);
+  }
   // ------------------
 
   let options = [];
-  if (displayInvestors.length > 0) {
+  if (displayInvestors && displayInvestors.length > 0) {
     options.push(`Show investors`, `Show whitelist data`);
   }
-  options.push('Modify whitelist', 'Modify whitelist from CSV', /*'Modify Whitelist Signed',*/
-    'Change the default times used when they are zero', `Change issuance address`, 'Change signing address');
+  options.push('Modify whitelist', 'Modify whitelist from CSV') /*'Modify Whitelist Signed',*/
+  if (displayDefaults) {
+    options.push('Change the default times used when they are zero');
+  }
+  options.push(`Change issuance address`, 'Change signing address');
 
   if (displayAllowAllTransfers) {
     options.push('Disallow all transfers');
@@ -401,8 +416,12 @@ async function generalTransferManager() {
       let canBuyFromSTO = readlineSync.keyInYNStrict('Can the investor buy from security token offerings?');
       let modifyWhitelistAction = currentTransferManager.methods.modifyWhitelist(investor, fromTime, toTime, expiryTime, canBuyFromSTO);
       let modifyWhitelistReceipt = await common.sendTransaction(modifyWhitelistAction);
-      let modifyWhitelistEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, modifyWhitelistReceipt.logs, 'ModifyWhitelist');
-      console.log(chalk.green(`${modifyWhitelistEvent._investor} has been whitelisted sucessfully!`));
+      if (moduleVersion != '1.0.0') {
+        let modifyWhitelistEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, modifyWhitelistReceipt.logs, 'ModifyWhitelist');
+        console.log(chalk.green(`${modifyWhitelistEvent._investor} has been whitelisted sucessfully!`));
+      } else {
+        console.log(chalk.green(`${investor} has been whitelisted sucessfully!`));
+      }
       break;
     case 'Modify whitelist from CSV':
       await modifyWhitelistInBatch();

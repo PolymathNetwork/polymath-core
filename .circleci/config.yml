@@ -57,6 +57,22 @@ jobs:
             - node_modules
       - store_artifacts:
           path: ./coverage/lcov.info
+  deploy_kovan:
+    docker:
+      - image: maxsam4/solidity-kit:0.4.24
+    steps:
+      - checkout
+      - restore_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+      - run: yarn install
+      - run: node --version
+      - run: truffle version
+      - run: mv truffle-ci.js truffle-config.js
+      - run: npm run deploy-kovan
+      - save_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+          paths:
+            - node_modules
   docs:
     docker:
       - image: circleci/node:8
@@ -98,3 +114,13 @@ workflows:
             branches:
               only:
                 - master
+  deploy:
+    jobs:
+      - deploy_kovan:
+          filters:
+            branches:
+              only:
+                - master
+                - dev-2.1.0
+                - dev-2.2.0
+                - dev-3.0.0

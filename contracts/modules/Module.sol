@@ -56,4 +56,5 @@ contract Module is IModule, ModuleStorage {
         require(polyToken.transferFrom(securityToken, Ownable(factory).owner(), _amount), "Unable to take fee");
         return true;
     }
+
 }

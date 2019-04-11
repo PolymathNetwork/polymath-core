@@ -6,6 +6,7 @@ const gbl = require('./common/global');
 const contracts = require('./helpers/contract_addresses');
 const abis = require('./helpers/contract_abis');
 const csvParse = require('./helpers/csv');
+const BigNumber = require('bignumber.js');
 const { table } = require('table')
 
 const EXCLUSIONS_DATA_CSV = `${__dirname}/../data/Checkpoint/exclusions_data.csv`;
@@ -146,7 +147,7 @@ async function dividendsManager() {
   if (currentDividends.length > 0) {
     options.push('Manage existing dividends');
   }
-  options.push('Create new dividends');
+  options.push('Create new dividends', 'Reclaim ETH or ERC20 tokens from contract');
 
   let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
   let selected = index != -1 ? options[index] : 'RETURN';
@@ -177,6 +178,9 @@ async function dividendsManager() {
       break;
     case 'Create new dividends':
       await createDividends();
+      break;
+    case 'Reclaim ETH or ERC20 tokens from contract':
+      await reclaimFromContract();
       break;
     case 'RETURN':
       return;
@@ -238,10 +242,12 @@ async function manageExistingDividend(dividendIndex) {
   let dividend = await currentDividendsModule.methods.dividends(dividendIndex).call();
   let dividendTokenAddress = gbl.constants.ADDRESS_ZERO;
   let dividendTokenSymbol = 'ETH';
+  let dividendTokenDecimals = 18;
   if (dividendsType === 'ERC20') {
     dividendTokenAddress = await currentDividendsModule.methods.dividendTokens(dividendIndex).call();
+    dividendTokenSymbol = await getERC20TokenSymbol(dividendTokenAddress);
     let erc20token = new web3.eth.Contract(abis.erc20(), dividendTokenAddress);
-    dividendTokenSymbol = await erc20token.methods.symbol().call();
+    dividendTokenDecimals = await erc20token.methods.decimals().call();
   }
   let progress = await currentDividendsModule.methods.getDividendProgress(dividendIndex).call();
   let investorArray = progress[0];
@@ -267,12 +273,12 @@ async function manageExistingDividend(dividendIndex) {
   console.log(`- Maturity:              ${moment.unix(dividend.maturity).format('MMMM Do YYYY, HH:mm:ss')}`);
   console.log(`- Expiry:                ${moment.unix(dividend.expiry).format('MMMM Do YYYY, HH:mm:ss')}`);
   console.log(`- At checkpoint:         ${dividend.checkpointId}`);
-  console.log(`- Amount:                ${web3.utils.fromWei(dividend.amount)} ${dividendTokenSymbol}`);
-  console.log(`- Claimed amount:        ${web3.utils.fromWei(dividend.claimedAmount)} ${dividendTokenSymbol}`);
+  console.log(`- Amount:                ${dividend.amount / Math.pow(10, dividendTokenDecimals)} ${dividendTokenSymbol}`);
+  console.log(`- Claimed amount:        ${dividend.claimedAmount / Math.pow(10, dividendTokenDecimals)} ${dividendTokenSymbol}`);
   console.log(`- Taxes:`);
-  console.log(`    To withhold:         ${web3.utils.fromWei(taxesToWithHeld)} ${dividendTokenSymbol}`);
-  console.log(`    Withheld to-date:    ${web3.utils.fromWei(dividend.totalWithheld)} ${dividendTokenSymbol}`);
-  console.log(`    Withdrawn to-date:   ${web3.utils.fromWei(dividend.totalWithheldWithdrawn)} ${dividendTokenSymbol}`);
+  console.log(`    To withhold:         ${taxesToWithHeld / Math.pow(10, dividendTokenDecimals)} ${dividendTokenSymbol}`);
+  console.log(`    Withheld to-date:    ${dividend.totalWithheld / Math.pow(10, dividendTokenDecimals)} ${dividendTokenSymbol}`);
+  console.log(`    Withdrawn to-date:   ${dividend.totalWithheldWithdrawn / Math.pow(10, dividendTokenDecimals)} ${dividendTokenSymbol}`);
   console.log(`- Total investors:       ${investorArray.length}`);
   console.log(`   Have already claimed: ${claimedInvestors} (${investorArray.length - excludedInvestors !== 0 ? claimedInvestors / (investorArray.length - excludedInvestors) * 100 : 0}%)`);
   console.log(`   Excluded:             ${excludedInvestors} `);
@@ -301,6 +307,7 @@ async function manageExistingDividend(dividendIndex) {
       showReport(
         web3.utils.hexToUtf8(dividend.name),
         dividendTokenSymbol,
+        dividendTokenDecimals,
         dividend.amount, // Total amount of dividends sent
         dividend.totalWithheld, // Total amount of taxes withheld
         dividend.claimedAmount, // Total amount of dividends distributed
@@ -315,14 +322,17 @@ async function manageExistingDividend(dividendIndex) {
       await pushDividends(dividendIndex, dividend.checkpointId);
       break;
     case 'Explore account':
-      await exploreAccount(dividendIndex, dividendTokenAddress, dividendTokenSymbol);
+      await exploreAccount(dividendIndex, dividendTokenAddress, dividendTokenSymbol, dividendTokenDecimals);
       break;
     case 'Withdraw withholding':
-      await withdrawWithholding(dividendIndex, dividendTokenSymbol);
+      await withdrawWithholding(dividendIndex, dividendTokenSymbol, dividendTokenDecimals);
       break;
     case 'Reclaim expired dividends':
-      await reclaimedDividend(dividendIndex, dividendTokenSymbol);
+      await reclaimedDividend(dividendIndex, dividendTokenSymbol, dividendTokenDecimals);
       return;
+    case 'Reclaim ETH or ERC20 tokens from contract':
+      await reclaim
+      break;
     case 'RETURN':
       return;
   }
@@ -377,6 +387,7 @@ async function createDividends() {
   let dividendName = readlineSync.question(`Enter a name or title to indetify this dividend: `);
   let dividendToken = gbl.constants.ADDRESS_ZERO;
   let dividendSymbol = 'ETH';
+  let dividendTokenDecimals = 18;
   let token;
   if (dividendsType === 'ERC20') {
     do {
@@ -387,20 +398,22 @@ async function createDividends() {
         limitMessage: "Must be a valid ERC20 address",
         defaultInput: polyToken.options.address
       });
-      token = new web3.eth.Contract(abis.erc20(), dividendToken);
-      try {
-        dividendSymbol = await token.methods.symbol().call();
-      } catch (err) {
+      let erc20Symbol = await getERC20TokenSymbol(dividendToken);
+      if (erc20Symbol != null) {
+        token = new web3.eth.Contract(abis.erc20(), dividendToken);
+        dividendSymbol = erc20Symbol;
+        dividendTokenDecimals = await token.methods.decimals().call();
+      } else {
         console.log(chalk.red(`${dividendToken} is not a valid ERC20 token address!!`));
       }
     } while (dividendSymbol === 'ETH');
   }
   let dividendAmount = readlineSync.question(`How much ${dividendSymbol} would you like to distribute to token holders? `);
 
-  let dividendAmountBN = new web3.utils.BN(dividendAmount);
-  let issuerBalance = new web3.utils.BN(web3.utils.fromWei(await getBalance(Issuer.address, dividendToken)));
+  let dividendAmountBN = new BigNumber(dividendAmount).times(Math.pow(10, dividendTokenDecimals));
+  let issuerBalance = new BigNumber(await getBalance(Issuer.address, dividendToken));
   if (issuerBalance.lt(dividendAmountBN)) {
-    console.log(chalk.red(`You have ${issuerBalance} ${dividendSymbol}.You need ${dividendAmountBN.sub(issuerBalance)} ${dividendSymbol} more!`));
+    console.log(chalk.red(`You have ${issuerBalance / Math.pow(10, dividendTokenDecimals)} ${dividendSymbol}. You need ${(dividendAmountBN - issuerBalance) / Math.pow(10, dividendTokenDecimals)} ${dividendSymbol} more!`));
   } else {
     let checkpointId = await selectCheckpoint(true); // If there are no checkpoints, it must create a new one
     let now = Math.floor(Date.now() / 1000);
@@ -412,21 +425,21 @@ async function createDividends() {
 
     let createDividendAction;
     if (dividendsType == 'ERC20') {
-      let approveAction = token.methods.approve(currentDividendsModule._address, web3.utils.toWei(dividendAmountBN));
+      let approveAction = token.methods.approve(currentDividendsModule._address, dividendAmountBN);
       await common.sendTransaction(approveAction);
       if (checkpointId > 0) {
         if (useDefaultExcluded) {
-          createDividendAction = currentDividendsModule.methods.createDividendWithCheckpoint(maturityTime, expiryTime, token.options.address, web3.utils.toWei(dividendAmountBN), checkpointId, web3.utils.toHex(dividendName));
+          createDividendAction = currentDividendsModule.methods.createDividendWithCheckpoint(maturityTime, expiryTime, token.options.address, dividendAmountBN, checkpointId, web3.utils.toHex(dividendName));
         } else {
           let excluded = getExcludedFromDataFile();
-          createDividendAction = currentDividendsModule.methods.createDividendWithCheckpointAndExclusions(maturityTime, expiryTime, token.options.address, web3.utils.toWei(dividendAmountBN), checkpointId, excluded[0], web3.utils.toHex(dividendName));
+          createDividendAction = currentDividendsModule.methods.createDividendWithCheckpointAndExclusions(maturityTime, expiryTime, token.options.address, dividendAmountBN, checkpointId, excluded[0], web3.utils.toHex(dividendName));
         }
       } else {
         if (useDefaultExcluded) {
-          createDividendAction = currentDividendsModule.methods.createDividend(maturityTime, expiryTime, token.options.address, web3.utils.toWei(dividendAmountBN), web3.utils.toHex(dividendName));
+          createDividendAction = currentDividendsModule.methods.createDividend(maturityTime, expiryTime, token.options.address, dividendAmountBN, web3.utils.toHex(dividendName));
         } else {
           let excluded = getExcludedFromDataFile();
-          createDividendAction = currentDividendsModule.methods.createDividendWithExclusions(maturityTime, expiryTime, token.options.address, web3.utils.toWei(dividendAmountBN), excluded[0], web3.utils.toHex(dividendName));
+          createDividendAction = currentDividendsModule.methods.createDividendWithExclusions(maturityTime, expiryTime, token.options.address, dividendAmountBN, excluded[0], web3.utils.toHex(dividendName));
         }
       }
       let receipt = await common.sendTransaction(createDividendAction);
@@ -448,12 +461,39 @@ async function createDividends() {
           createDividendAction = currentDividendsModule.methods.createDividendWithExclusions(maturityTime, expiryTime, excluded, web3.utils.toHex(dividendName));
         }
       }
-      let receipt = await common.sendTransaction(createDividendAction, { value: web3.utils.toWei(dividendAmountBN) });
+      let receipt = await common.sendTransaction(createDividendAction, { value: dividendAmountBN });
       let event = common.getEventFromLogs(currentDividendsModule._jsonInterface, receipt.logs, 'EtherDividendDeposited');
       console.log(`
 Dividend ${ event._dividendIndex} deposited`
       );
     }
+  }
+}
+
+async function reclaimFromContract() {
+  let options = ['ETH', 'ERC20'];
+  let index = readlineSync.keyInSelect(options, 'What do you want to reclaim?', { cancel: 'RETURN' });
+  let selected = index != -1 ? options[index] : 'RETURN';
+  switch (selected) {
+    case 'ETH':
+      let ethBalance = await web3.eth.getBalance(currentDividendsModule.options.address);
+      console.log(chalk.yellow(`Current ETH balance: ${web3.utils.fromWei(ethBalance)} ETH`));
+      let reclaimETHAction = currentDividendsModule.methods.reclaimETH();
+      await common.sendTransaction(reclaimETHAction);
+      console.log(chalk.green('ETH has been reclaimed succesfully!'));
+      break;
+    case 'ERC20':
+      let erc20Address = readlineSync.question('Enter the ERC20 token address to reclaim (POLY = ' + polyToken.options.address + '): ', {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address",
+        defaultInput: polyToken.options.address
+      });
+      let reclaimERC20Action = currentDividendsModule.methods.reclaimERC20(erc20Address);
+      await common.sendTransaction(reclaimERC20Action);
+      console.log(chalk.green('ERC20 has been reclaimed succesfully!'));
+      break
   }
 }
 
@@ -470,7 +510,7 @@ function showInvestors(investorsArray, claimedArray, excludedArray) {
   console.log(table(dataTable));
 }
 
-function showReport(_name, _tokenSymbol, _amount, _witthheld, _claimed, _investorArray, _claimedArray, _excludedArray, _withheldArray, _amountArray) {
+function showReport(_name, _tokenSymbol, _tokenDecimals, _amount, _witthheld, _claimed, _investorArray, _claimedArray, _excludedArray, _withheldArray, _amountArray) {
   let title = `${_name.toUpperCase()} DIVIDEND REPORT`;
   let dataTable =
     [[
@@ -485,10 +525,10 @@ function showReport(_name, _tokenSymbol, _amount, _witthheld, _claimed, _investo
     let investor = _investorArray[i];
     let excluded = _excludedArray[i];
     let withdrawn = _claimedArray[i] ? 'YES' : 'NO';
-    let amount = !excluded ? web3.utils.fromWei(web3.utils.toBN(_amountArray[i]).add(web3.utils.toBN(_withheldArray[i]))) : 0;
-    let withheld = !excluded ? web3.utils.fromWei(_withheldArray[i]) : 'NA';
+    let amount = !excluded ? new BigNumber(_amountArray[i]).plus(_withheldArray[i]).div((Math.pow(10, _tokenDecimals))) : 0;
+    let withheld = !excluded ? parseFloat(_withheldArray[i]) / Math.pow(10, _tokenDecimals) : 'NA';
     let withheldPercentage = (!excluded) ? (withheld !== '0' ? parseFloat(withheld) / parseFloat(amount) * 100 : 0) : 'NA';
-    let received = !excluded ? web3.utils.fromWei(_amountArray[i]) : 0;
+    let received = !excluded ? parseFloat(_amountArray[i]) / Math.pow(10, _tokenDecimals) : 0;
     dataTable.push([
       investor,
       amount,
@@ -501,9 +541,9 @@ function showReport(_name, _tokenSymbol, _amount, _witthheld, _claimed, _investo
   console.log(chalk.yellow(`-----------------------------------------------------------------------------------------------------------------------------------------------------------`));
   console.log(title.padStart((50 - title.length) / 2, '*').padEnd((50 - title.length) / 2, '*'));
   console.log();
-  console.log(`- Total amount of dividends sent: ${web3.utils.fromWei(_amount)} ${_tokenSymbol} `);
-  console.log(`- Total amount of taxes withheld: ${web3.utils.fromWei(_witthheld)} ${_tokenSymbol} `);
-  console.log(`- Total amount of dividends distributed: ${web3.utils.fromWei(_claimed)} ${_tokenSymbol} `);
+  console.log(`- Total amount of dividends sent: ${parseFloat(_amount) / Math.pow(10, _tokenDecimals)} ${_tokenSymbol} `);
+  console.log(`- Total amount of taxes withheld: ${parseFloat(_witthheld) / Math.pow(10, _tokenDecimals)} ${_tokenSymbol} `);
+  console.log(`- Total amount of dividends distributed: ${parseFloat(_claimed) / Math.pow(10, _tokenDecimals)} ${_tokenSymbol} `);
   console.log(`- Total amount of investors: ${_investorArray.length} `);
   console.log();
   console.log(table(dataTable));
@@ -536,7 +576,7 @@ async function pushDividends(dividendIndex, checkpointId) {
   }
 }
 
-async function exploreAccount(dividendIndex, dividendTokenAddress, dividendTokenSymbol) {
+async function exploreAccount(dividendIndex, dividendTokenAddress, dividendTokenSymbol, dividendTokenDecimals) {
   let account = readlineSync.question('Enter address to explore: ', {
     limit: function (input) {
       return web3.utils.isAddress(input);
@@ -553,47 +593,51 @@ async function exploreAccount(dividendIndex, dividendTokenAddress, dividendToken
 
   console.log();
   console.log(`Security token balance: ${web3.utils.fromWei(securityTokenBalance)} ${tokenSymbol} `);
-  console.log(`Dividend token balance: ${web3.utils.fromWei(dividendTokenBalance)} ${dividendTokenSymbol} `);
+  console.log(`Dividend token balance: ${dividendTokenBalance / Math.pow(10, dividendTokenDecimals)} ${dividendTokenSymbol} `);
   console.log(`Is excluded: ${isExcluded ? 'YES' : 'NO'} `);
   if (!isExcluded) {
     console.log(`Has claimed: ${hasClaimed ? 'YES' : 'NO'} `);
     if (!hasClaimed) {
-      console.log(`Dividends available: ${web3.utils.fromWei(dividendBalance)} ${dividendTokenSymbol} `);
-      console.log(`Tax withheld: ${web3.utils.fromWei(dividendTax)} ${dividendTokenSymbol} `);
+      console.log(`Dividends available: ${dividendBalance / Math.pow(10, dividendTokenDecimals)} ${dividendTokenSymbol} `);
+      console.log(`Tax withheld: ${dividendTax / Math.pow(10, dividendTokenDecimals)} ${dividendTokenSymbol} `);
     }
   }
   console.log();
 }
 
-async function withdrawWithholding(dividendIndex, dividendTokenSymbol) {
+async function withdrawWithholding(dividendIndex, dividendTokenSymbol, dividendTokenDecimals) {
   let action = currentDividendsModule.methods.withdrawWithholding(dividendIndex);
   let receipt = await common.sendTransaction(action);
   let eventName = dividendsType === 'ERC20' ? 'ERC20DividendWithholdingWithdrawn' : 'EtherDividendWithholdingWithdrawn';
   let event = common.getEventFromLogs(currentDividendsModule._jsonInterface, receipt.logs, eventName);
-  console.log(chalk.green(`Successfully withdrew ${web3.utils.fromWei(event._withheldAmount)} ${dividendTokenSymbol} from dividend ${event._dividendIndex} tax withholding.`));
+  console.log(chalk.green(`Successfully withdrew ${event._withheldAmount / Math.pow(10, dividendTokenDecimals)} ${dividendTokenSymbol} from dividend ${event._dividendIndex} tax withholding.`));
 }
 
-async function reclaimedDividend(dividendIndex, dividendTokenSymbol) {
+async function reclaimedDividend(dividendIndex, dividendTokenSymbol, dividendTokenDecimals) {
   let action = currentDividendsModule.methods.reclaimDividend(dividendIndex);
   let receipt = await common.sendTransaction(action);
   let eventName = dividendsType === 'ERC20' ? 'ERC20DividendReclaimed' : 'EtherDividendReclaimed';
   let event = common.getEventFromLogs(currentDividendsModule._jsonInterface, receipt.logs, eventName);
   console.log(`
-Reclaimed amount ${ web3.utils.fromWei(event._claimedAmount)} ${dividendTokenSymbol}
+Reclaimed amount ${event._claimedAmount / Math.pow(10, dividendTokenDecimals)} ${dividendTokenSymbol}
 to account ${ event._claimer} `
   );
 }
 
 async function addDividendsModule() {
   let availableModules = await moduleRegistry.methods.getModulesByTypeAndToken(gbl.constants.MODULES_TYPES.DIVIDENDS, securityToken.options.address).call();
-  let options = await Promise.all(availableModules.map(async function (m) {
+  let moduleList = await Promise.all(availableModules.map(async function (m) {
     let moduleFactoryABI = abis.moduleFactory();
     let moduleFactory = new web3.eth.Contract(moduleFactoryABI, m);
-    return web3.utils.hexToUtf8(await moduleFactory.methods.name().call());
+    let moduleName = web3.utils.hexToUtf8(await moduleFactory.methods.name().call());
+    let moduleVersion = await moduleFactory.methods.version().call();
+    return { name: moduleName, version: moduleVersion, factoryAddress: m };
   }));
 
+  let options = moduleList.map(m => `${m.name} - ${m.version} (${m.factoryAddress})`);
+
   let index = readlineSync.keyInSelect(options, 'Which dividends module do you want to add? ', { cancel: 'Return' });
-  if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]} module? `)) {
+  if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]}? `)) {
     let wallet = readlineSync.question('Enter the account address to receive reclaimed dividends and tax: ', {
       limit: function (input) {
         return web3.utils.isAddress(input);
@@ -603,7 +647,7 @@ async function addDividendsModule() {
     let configureFunction = abis.erc20DividendCheckpoint().find(o => o.name === 'configure' && o.type === 'function');
     let bytes = web3.eth.abi.encodeFunctionCall(configureFunction, [wallet]);
 
-    let selectedDividendFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, gbl.constants.MODULES_TYPES.DIVIDENDS, options[index]);
+    let selectedDividendFactoryAddress = moduleList[index].factoryAddress;
     let addModuleAction = securityToken.methods.addModule(selectedDividendFactoryAddress, bytes, 0, 0);
     let receipt = await common.sendTransaction(addModuleAction);
     let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
@@ -695,7 +739,7 @@ async function selectDividend(dividends) {
   let result = null;
   let options = dividends.map(function (d) {
     return `${d.name}
-    Amount: ${web3.utils.fromWei(d.amount)} ${d.tokenSymbol}
+    Amount: ${parseFloat(d.amount) / Math.pow(10, d.tokenDecimals)} ${d.tokenSymbol}
     Status: ${isExpiredDividend(d) ? 'Expired' : hasRemaining(d) ? 'In progress' : 'Completed'}
     Token: ${d.tokenSymbol}
     Created: ${moment.unix(d.created).format('MMMM Do YYYY, HH:mm:ss')}
@@ -711,7 +755,7 @@ async function selectDividend(dividends) {
 }
 
 async function getDividends() {
-  function DividendData(_index, _created, _maturity, _expiry, _amount, _claimedAmount, _name, _tokenSymbol) {
+  function DividendData(_index, _created, _maturity, _expiry, _amount, _claimedAmount, _name, _tokenSymbol, _tokenDecimals) {
     this.index = _index;
     this.created = _created;
     this.maturity = _maturity;
@@ -720,6 +764,7 @@ async function getDividends() {
     this.claimedAmount = _claimedAmount;
     this.name = _name;
     this.tokenSymbol = _tokenSymbol;
+    this.tokenDecimals = _tokenDecimals;
   }
 
   let dividends = [];
@@ -732,10 +777,12 @@ async function getDividends() {
   let nameArray = dividendsData.names;
   for (let i = 0; i < nameArray.length; i++) {
     let tokenSymbol = 'ETH';
+    let dividendTokenDecimals = 18;
     if (dividendsType === 'ERC20') {
       let tokenAddress = await currentDividendsModule.methods.dividendTokens(i).call();
+      tokenSymbol = await getERC20TokenSymbol(tokenAddress);
       let erc20token = new web3.eth.Contract(abis.erc20(), tokenAddress);
-      tokenSymbol = await erc20token.methods.symbol().call();
+      dividendTokenDecimals = await erc20token.methods.decimals().call();
     }
     dividends.push(
       new DividendData(
@@ -746,7 +793,8 @@ async function getDividends() {
         amountArray[i],
         claimedAmountArray[i],
         web3.utils.hexToUtf8(nameArray[i]),
-        tokenSymbol
+        tokenSymbol,
+        dividendTokenDecimals
       )
     );
   }
@@ -879,6 +927,22 @@ async function selectToken() {
   }
 
   return result;
+}
+
+async function getERC20TokenSymbol(tokenAddress) {
+  let tokenSymbol = null;
+  try {
+    let erc20token = new web3.eth.Contract(abis.erc20(), tokenAddress);
+    tokenSymbol = await erc20token.methods.symbol().call();
+  } catch (err) {
+    try {
+      // Some ERC20 tokens use bytes32 for symbol instead of string
+      let erc20token = new web3.eth.Contract(abis.alternativeErc20(), tokenAddress);
+      tokenSymbol = web3.utils.hexToUtf8(await erc20token.methods.symbol().call());
+    } catch (err) {
+    }
+  }
+  return tokenSymbol;
 }
 
 module.exports = {

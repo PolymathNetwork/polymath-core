@@ -8,6 +8,7 @@
   },
   "scripts": {
     "test": "scripts/test.sh 2> /dev/null",
+    "deploy-kovan": "scripts/deploy.sh",
     "wintest": "scripts\\wintest.cmd",
     "wincov": "scripts\\wincov.cmd",
     "docs": "scripts/docs.sh",
@@ -69,7 +70,7 @@
     "fs": "0.0.2",
     "openzeppelin-solidity": "1.10.0",
     "prompt": "^1.0.0",
-    "truffle-hdwallet-provider-privkey": "0.3.0",
+    "truffle-hdwallet-provider-privkey": "^0.3.0",
     "web3": "1.0.0-beta.34"
   },
   "devDependencies": {
@@ -91,6 +92,7 @@
     "solidity-docgen": "^0.1.0",
     "solium": "^1.1.8",
     "truffle": "4.1.14",
+    "truffle-hdwallet-provider": "^1.0.3",
     "truffle-wallet-provider": "0.0.5"
   },
   "greenkeeper": {

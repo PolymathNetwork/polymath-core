@@ -72,7 +72,7 @@ function selectExistingSTO(stoModules, showPaused) {
   if (!showPaused) {
     filteredModules = stoModules.filter(m => !m.paused);
   }
-  let options = filteredModules.map(m => `${m.name} at ${m.address}`);
+  let options = filteredModules.map(m => `${m.name} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Select a module: ', { cancel: false });
   console.log('Selected:', options[index], '\n');
   let selectedName = filteredModules[index].name;
@@ -119,27 +119,34 @@ async function modifySTO(selectedSTO, currentSTO) {
 async function addSTOModule(stoConfig) {
   console.log(chalk.blue('Launch STO - Configuration'));
 
+  let factorySelected;
   let optionSelected;
   if (typeof stoConfig === 'undefined') {
     let availableModules = await moduleRegistry.methods.getModulesByTypeAndToken(gbl.constants.MODULES_TYPES.STO, securityToken.options.address).call();
-    let options = await Promise.all(availableModules.map(async function (m) {
+    moduleList = await Promise.all(availableModules.map(async function (m) {
       let moduleFactoryABI = abis.moduleFactory();
       let moduleFactory = new web3.eth.Contract(moduleFactoryABI, m);
-      return web3.utils.hexToUtf8(await moduleFactory.methods.name().call());
+      let moduleName = web3.utils.hexToUtf8(await moduleFactory.methods.name().call());
+      let moduleVersion = await moduleFactory.methods.version().call();
+      return { name: moduleName, version: moduleVersion, factoryAddress: m };
     }));
+    let options = moduleList.map(m => `${m.name} - ${m.version} (${m.factoryAddress})`);
+
     let index = readlineSync.keyInSelect(options, 'What type of STO do you want?', { cancel: 'RETURN' });
-    optionSelected = index != -1 ? options[index] : 'RETURN';
+    optionSelected = index != -1 ? moduleList[index].name : 'RETURN';
+    factorySelected = moduleList[index].factoryAddress;
   } else {
     optionSelected = stoConfig.type;
+    factorySelected = await await contracts.getModuleFactoryAddressByName(securityToken.options.address, gbl.constants.MODULES_TYPES.STO, optionSelected);
   }
   console.log('Selected:', optionSelected, '\n');
   switch (optionSelected) {
     case 'CappedSTO':
-      let cappedSTO = await cappedSTO_launch(stoConfig);
+      let cappedSTO = await cappedSTO_launch(stoConfig, factorySelected);
       await cappedSTO_status(cappedSTO);
       break;
     case 'USDTieredSTO':
-      let usdTieredSTO = await usdTieredSTO_launch(stoConfig);
+      let usdTieredSTO = await usdTieredSTO_launch(stoConfig, factorySelected);
       await usdTieredSTO_status(usdTieredSTO);
       break;
   }
@@ -148,12 +155,11 @@ async function addSTOModule(stoConfig) {
 ////////////////
 // Capped STO //
 ////////////////
-async function cappedSTO_launch(stoConfig) {
+async function cappedSTO_launch(stoConfig, factoryAddress) {
   console.log(chalk.blue('Launch STO - Capped STO in No. of Tokens'));
 
   let cappedSTOFactoryABI = abis.cappedSTOFactory();
-  let cappedSTOFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, gbl.constants.MODULES_TYPES.STO, "CappedSTO");
-  let cappedSTOFactory = new web3.eth.Contract(cappedSTOFactoryABI, cappedSTOFactoryAddress);
+  let cappedSTOFactory = new web3.eth.Contract(cappedSTOFactoryABI, factoryAddress);
   cappedSTOFactory.setProvider(web3.currentProvider);
   let stoFee = new web3.utils.BN(await cappedSTOFactory.methods.getSetupCost().call());
 
@@ -217,7 +223,7 @@ async function cappedSTO_launch(stoConfig) {
     cappedSTOconfig.wallet]
   );
 
-  let addModuleAction = securityToken.methods.addModule(cappedSTOFactoryAddress, bytesSTO, stoFee, 0);
+  let addModuleAction = securityToken.methods.addModule(cappedSTOFactory.options.address, bytesSTO, stoFee, 0);
   let receipt = await common.sendTransaction(addModuleAction);
   let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
   console.log(`STO deployed at address: ${event._module}`);
@@ -508,12 +514,11 @@ function timesConfigUSDTieredSTO(stoConfig) {
   return times;
 }
 
-async function usdTieredSTO_launch(stoConfig) {
+async function usdTieredSTO_launch(stoConfig, factoryAddress) {
   console.log(chalk.blue('Launch STO - USD pegged tiered STO'));
 
   let usdTieredSTOFactoryABI = abis.usdTieredSTOFactory();
-  let usdTieredSTOFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, gbl.constants.MODULES_TYPES.STO, 'USDTieredSTO');
-  let usdTieredSTOFactory = new web3.eth.Contract(usdTieredSTOFactoryABI, usdTieredSTOFactoryAddress);
+  let usdTieredSTOFactory = new web3.eth.Contract(usdTieredSTOFactoryABI, factoryAddress);
   usdTieredSTOFactory.setProvider(web3.currentProvider);
   let stoFee = new web3.utils.BN(await usdTieredSTOFactory.methods.getSetupCost().call());
 
@@ -558,7 +563,7 @@ async function usdTieredSTO_launch(stoConfig) {
     addresses.usdToken]
   );
 
-  let addModuleAction = securityToken.methods.addModule(usdTieredSTOFactoryAddress, bytesSTO, stoFee, 0);
+  let addModuleAction = securityToken.methods.addModule(usdTieredSTOFactory.options.address, bytesSTO, stoFee, 0);
   let receipt = await common.sendTransaction(addModuleAction);
   let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
   console.log(`STO deployed at address: ${event._module}`);
@@ -782,6 +787,8 @@ async function usdTieredSTO_configure(currentSTO) {
         'Modify limits configuration', 'Modify funding configuration');
     }
 
+    options.push('Reclaim ETH or ERC20 token from contract');
+
     let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
     let selected = index != -1 ? options[index] : 'Exit';
     switch (selected) {
@@ -839,6 +846,9 @@ async function usdTieredSTO_configure(currentSTO) {
       case 'Modify funding configuration':
         await modfifyFunding(currentSTO);
         await usdTieredSTO_status(currentSTO);
+        break;
+      case 'Reclaim ETH or ERC20 token from contract':
+        await reclaimFromContract(currentSTO);
         break;
     }
   }
@@ -963,6 +973,33 @@ async function modfifyTiers(currentSTO) {
   await common.sendTransaction(modifyTiersAction);
 }
 
+async function reclaimFromContract(currentSTO) {
+  let options = ['ETH', 'ERC20'];
+  let index = readlineSync.keyInSelect(options, 'What do you want to reclaim?', { cancel: 'RETURN' });
+  let selected = index != -1 ? options[index] : 'RETURN';
+  switch (selected) {
+    case 'ETH':
+      let ethBalance = await this.getBalance(currentSTO.options.address, gbl.constants.FUND_RAISE_TYPES.ETH);
+      console.log(chalk.yellow(`Current ETH balance: ${web3.utils.fromWei(ethBalance)} ETH`));
+      let reclaimETHAction = currentSTO.methods.reclaimETH();
+      await common.sendTransaction(reclaimETHAction);
+      console.log(chalk.green('ETH has been reclaimed succesfully!'));
+      break;
+    case 'ERC20':
+      let erc20Address = readlineSync.question('Enter the ERC20 token address to reclaim (POLY = ' + polyToken.options.address + '): ', {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address",
+        defaultInput: polyToken.options.address
+      });
+      let reclaimERC20Action = currentSTO.methods.reclaimERC20(erc20Address);
+      await common.sendTransaction(reclaimERC20Action);
+      console.log(chalk.green('ERC20 has been reclaimed succesfully!'));
+      break
+  }
+}
+
 //////////////////////
 // HELPER FUNCTIONS //
 //////////////////////
@@ -972,17 +1009,20 @@ async function getBalance(from, type) {
       return await web3.eth.getBalance(from);
     case gbl.constants.FUND_RAISE_TYPES.POLY:
       return await polyToken.methods.balanceOf(from).call();
+    default:
+      return '0';
   }
 }
 
 async function getAllModulesByType(type) {
-  function ModuleInfo(_moduleType, _name, _address, _factoryAddress, _archived, _paused) {
+  function ModuleInfo(_moduleType, _name, _address, _factoryAddress, _archived, _paused, _version) {
     this.name = _name;
     this.type = _moduleType;
     this.address = _address;
     this.factoryAddress = _factoryAddress;
     this.archived = _archived;
     this.paused = _paused;
+    this.version = _version;
   }
 
   let modules = [];
@@ -998,7 +1038,10 @@ async function getAllModulesByType(type) {
       let contractTemp = new web3.eth.Contract(abiTemp, details[1]);
       pausedTemp = await contractTemp.methods.paused().call();
     }
-    modules.push(new ModuleInfo(type, nameTemp, details[1], details[2], details[3], pausedTemp));
+    let factoryAbi = abis.moduleFactory();
+    let factory = new web3.eth.Contract(factoryAbi, details[2]);
+    let versionTemp = await factory.methods.version().call();
+    modules.push(new ModuleInfo(type, nameTemp, details[1], details[2], details[3], pausedTemp, versionTemp));
   }
 
   return modules;

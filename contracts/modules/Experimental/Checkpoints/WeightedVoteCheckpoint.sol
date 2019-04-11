@@ -86,13 +86,13 @@ contract WeightedVoteCheckpoint is VotingCheckpoint {
         require(
             uint64(_startTime) == _startTime &&
             uint64(_endTime) == _endTime &&
-            uint56(_noOfProposals) == _noOfProposals,
+            uint64(_noOfProposals) == _noOfProposals,
             "values get overflowed"
         );
         uint256 ballotId = ballots.length;
         ballots.push(
             Ballot(
-                _checkpointId, _proposedQuorum, uint64(_startTime), uint64(_endTime), uint56(_noOfProposals), uint64(0), true
+                _checkpointId, _proposedQuorum, uint64(_startTime), uint64(_endTime), uint64(_noOfProposals), uint56(0), true
             )
         );
         emit BallotCreated(ballotId, _checkpointId, _startTime, _endTime, _noOfProposals, _proposedQuorum);
@@ -118,7 +118,7 @@ contract WeightedVoteCheckpoint is VotingCheckpoint {
      * @param _proposalId Id of the proposal which investor want to vote for proposal
      */
     function castVote(uint256 _ballotId, uint256 _proposalId) external {
-        require(_ballotId < ballots.length, "Incorrect ballot Id");
+        _validBallotId(_ballotId);
         Ballot storage ballot = ballots[_ballotId];
         require(isVoterAllowed(_ballotId, msg.sender), "Invalid voter");
         uint256 weight = ISecurityToken(securityToken).balanceOfAt(msg.sender, ballot.checkpointId);
@@ -289,6 +289,10 @@ contract WeightedVoteCheckpoint is VotingCheckpoint {
         bytes32[] memory allPermissions = new bytes32[](1);
         allPermissions[0] = ADMIN;
         return allPermissions;
+    }
+
+    function _validBallotId(uint256 _ballotId) internal view {
+        require(ballots.length > _ballotId, "Index out of bound");
     }
 
 }

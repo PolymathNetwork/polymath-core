@@ -182,19 +182,31 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
 
             it("\t\t Should fail to create ballot -- bad owner \n", async() => {
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.createBallot(new BN(duration.days(5)), new BN(5), {from: account_polymath})
+                    I_WeightedVoteCheckpoint.createBallot(new BN(duration.days(5)), new BN(5), new BN(51).mul(new BN(10).pow(new BN(16))), {from: account_polymath})
                 ); 
             });
 
             it("\t\t Should fail to create ballot -- bad duration \n", async() => {
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.createBallot(new BN(0), new BN(5), {from: token_owner})
+                    I_WeightedVoteCheckpoint.createBallot(new BN(0), new BN(5), new BN(51).mul(new BN(10).pow(new BN(16))), {from: token_owner})
                 ); 
             });
 
             it("\t\t Should fail to create ballot -- bad no of proposals \n", async() => {
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.createBallot(new BN(duration.days(5)), new BN(1), {from: token_owner})
+                    I_WeightedVoteCheckpoint.createBallot(new BN(duration.days(5)), new BN(1), new BN(51).mul(new BN(10).pow(new BN(16))), {from: token_owner})
+                ); 
+            });
+
+            it("\t\t Should fail to create ballot -- zero value of quorum \n", async() => {
+                await catchRevert(
+                    I_WeightedVoteCheckpoint.createBallot(new BN(duration.days(5)), new BN(1), new BN(0), {from: token_owner})
+                ); 
+            });
+
+            it("\t\t Should fail to create ballot -- value of quorum is more than the limit\n", async() => {
+                await catchRevert(
+                    I_WeightedVoteCheckpoint.createBallot(new BN(duration.days(5)), new BN(1), new BN(51).mul(new BN(10).pow(new BN(17))), {from: token_owner})
                 ); 
             });
 
@@ -230,12 +242,12 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
                 let startTime = new BN(await latestTime());
                 let endTime = new BN(await latestTime() + duration.days(4));
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.createCustomBallot(startTime, endTime, new BN(100), new BN(5), {from: token_owner})
+                    I_WeightedVoteCheckpoint.createCustomBallot(new BN(5), new BN(51).mul(new BN(10).pow(new BN(17))), startTime, endTime, new BN(100), {from: token_owner})
                 );
             });
 
             it("\t\t Should create the ballot successfully \n", async() => {
-                let tx = await I_WeightedVoteCheckpoint.createBallot(new BN(duration.days(5)), new BN(3), {from: token_owner});
+                let tx = await I_WeightedVoteCheckpoint.createBallot(new BN(duration.days(5)), new BN(3), new BN(51).mul(new BN(10).pow(new BN(17))), {from: token_owner});
                 assert.equal((tx.logs[0].args._noOfProposals).toString(), 3);
                 assert.equal((tx.logs[0].args._checkpointId).toString(), 1);
                 assert.equal((tx.logs[0].args._ballotId).toString(), 0);
@@ -268,7 +280,8 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
                 assert.equal(tx.logs[0].args._proposalId, 1);
                 assert.equal(tx.logs[0].args._investor, account_investor1);  
                 
-                let data = await I_WeightedVoteCheckpoint.getBallotStats.call(new BN(0));
+                let data = await I_WeightedVoteCheckpoint.getBallotDetails.call(new BN(0));
+                console.log(data);
                 assert.equal(data[4], 1);
                 assert.equal(data[5], 3);
                 assert.equal(data[6], true);
@@ -280,7 +293,7 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
                 assert.equal(tx.logs[0].args._proposalId, 2);
                 assert.equal(tx.logs[0].args._investor, account_investor2);  
                 
-                let data = await I_WeightedVoteCheckpoint.getBallotStats.call(new BN(0));
+                let data = await I_WeightedVoteCheckpoint.getBallotDetails.call(new BN(0));
                 assert.equal(data[4], 2);
                 assert.equal(data[5], 3);
                 assert.equal(data[6], true);
@@ -290,7 +303,11 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
                 await catchRevert(
                     I_WeightedVoteCheckpoint.castVote(new BN(0), new BN(2), {from: account_investor2})
                 );
-            })
+            });
+
+            it("\t\t Should add the voter in to the ballot exemption list", async() => {
+
+            });
 
             it("\t\t Should fail to change the ballot status-- bad owner \n", async() => {
                 await catchRevert(
@@ -328,7 +345,7 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
                 assert.equal(tx.logs[0].args._proposalId, 1);
                 assert.equal(tx.logs[0].args._investor, account_investor3);  
                 
-                let data = await I_WeightedVoteCheckpoint.getBallotStats.call(new BN(0));
+                let data = await I_WeightedVoteCheckpoint.getBallotDetails.call(new BN(0));
                 assert.equal(data[4], 3);
                 assert.equal(data[5], 3);
                 assert.equal(data[6], true);

@@ -236,7 +236,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     * @notice Upgrades security token
     */
     function upgradeToken() external onlyOwner {
-        IUpgradableTokenFactory(tokenFactory).upgradeToken(7);
+        IUpgradableTokenFactory(tokenFactory).upgradeToken(10);
         emit TokenUpgraded(securityTokenVersion.major, securityTokenVersion.minor, securityTokenVersion.patch);
     }
 

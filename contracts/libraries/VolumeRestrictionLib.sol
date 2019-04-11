@@ -1,6 +1,7 @@
 pragma solidity ^0.5.0;
 
 import "../interfaces/IDataStore.sol";
+import "./BokkyPooBahsDateTimeLibrary.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "../modules/TransferManager/VRTM/VolumeRestrictionTMStorage.sol";
 
@@ -14,32 +15,12 @@ library VolumeRestrictionLib {
     bytes32 internal constant INVESTORSKEY = 0xdf3a8dd24acdd05addfc6aeffef7574d2de3f844535ec91e8e0f3e45dba96731; //keccak256(abi.encodePacked("INVESTORS"))
     bytes32 internal constant WHITELIST = "WHITELIST";
 
-    function _checkLengthOfArray(
-        address[] memory _holders,
-        uint256[] memory _allowedTokens,
-        uint256[] memory _startTimes,
-        uint256[] memory _rollingPeriodInDays,
-        uint256[] memory _endTimes,
-        uint256[] memory _restrictionTypes
-    )
-        internal
-        pure
-    {
-        require(
-            _holders.length == _allowedTokens.length &&
-            _allowedTokens.length == _startTimes.length &&
-            _startTimes.length == _rollingPeriodInDays.length &&
-            _rollingPeriodInDays.length == _endTimes.length &&
-            _endTimes.length == _restrictionTypes.length,
-            "Length mismatch"
-        );
-    }
 
     function deleteHolderFromList(
-        mapping(address => uint8) storage holderToRestrictionType,
+        mapping(address => VolumeRestrictionTMStorage.TypeOfPeriod) storage _holderToRestrictionType,
         address _holder,
         IDataStore _dataStore,
-        uint8 _typeOfPeriod
+        VolumeRestrictionTMStorage.TypeOfPeriod _typeOfPeriod
     )
         public
     {
@@ -49,19 +30,19 @@ library VolumeRestrictionLib {
         // if removing restriction is individual then typeOfPeriod is TypeOfPeriod.OneDay
         // in uint8 its value is 1. if removing restriction is daily individual then typeOfPeriod
         // is TypeOfPeriod.MultipleDays in uint8 its value is 0.
-        if (holderToRestrictionType[_holder] != uint8(VolumeRestrictionTMStorage.TypeOfPeriod.Both)) {
+        if (_holderToRestrictionType[_holder] != VolumeRestrictionTMStorage.TypeOfPeriod.Both) {
             uint256 flags = _dataStore.getUint256(_getKey(INVESTORFLAGS, _holder));
             flags = flags & ~(ONE << INDEX);
             _dataStore.setUint256(_getKey(INVESTORFLAGS, _holder), flags);
         } else {
-            holderToRestrictionType[_holder] = _typeOfPeriod;
+            _holderToRestrictionType[_holder] = _typeOfPeriod;
         }
     }
 
     function addRestrictionData(
-        mapping(address => uint8) storage holderToRestrictionType,
+        mapping(address => VolumeRestrictionTMStorage.TypeOfPeriod) storage _holderToRestrictionType,
         address _holder,
-        uint8 _callFrom,
+        VolumeRestrictionTMStorage.TypeOfPeriod _callFrom,
         uint256 _endTime,
         IDataStore _dataStore
     )
@@ -77,10 +58,37 @@ library VolumeRestrictionLib {
             flags = flags | (ONE << INDEX);
             _dataStore.setUint256(_getKey(INVESTORFLAGS, _holder), flags);
         }
-        uint8 _type = _getTypeOfPeriod(holderToRestrictionType[_holder], _callFrom, _endTime);
-        holderToRestrictionType[_holder] = _type;
+        VolumeRestrictionTMStorage.TypeOfPeriod _type = _getTypeOfPeriod(_holderToRestrictionType[_holder], _callFrom, _endTime);
+        _holderToRestrictionType[_holder] = _type;
     }
 
+    function isValidAmountAfterRestrictionChanges(
+        uint256 _amountTradedLastDay,
+        uint256 _amount,
+        uint256 _sumOfLastPeriod,
+        uint256 _allowedAmount,
+        uint256 _lastTradedTimestamp
+    )
+        public
+        view
+        returns(bool)
+    {   
+        // if restriction is to check whether the current transaction is performed within the 24 hours
+        // span after the last transaction performed by the user 
+        if (BokkyPooBahsDateTimeLibrary.diffSeconds(_lastTradedTimestamp, now) < 86400) {
+            (,, uint256 lastTxDay) = BokkyPooBahsDateTimeLibrary.timestampToDate(_lastTradedTimestamp);
+            (,, uint256 currentTxDay) = BokkyPooBahsDateTimeLibrary.timestampToDate(now);
+            // This if statement is to check whether the last transaction timestamp (of `individualRestriction[_from]`
+            // when `_isDefault` is true or defaultRestriction when `_isDefault` is false) is comes within the same day of the current
+            // transaction timestamp or not.
+            if (lastTxDay == currentTxDay) {
+                // Not allow to transact more than the current transaction restriction allowed amount
+                if ((_sumOfLastPeriod.add(_amount)).add(_amountTradedLastDay) > _allowedAmount)
+                    return false;
+            }
+        }
+        return true;
+    }
 
     /**
      * @notice Provide the restriction details of all the restricted addresses
@@ -93,7 +101,7 @@ library VolumeRestrictionLib {
      * of the restriction corresponds to restricted address
      */
     function getRestrictionData(
-        mapping(address => uint8) storage holderToRestrictionType,
+        mapping(address => VolumeRestrictionTMStorage.TypeOfPeriod) storage _holderToRestrictionType,
         VolumeRestrictionTMStorage.IndividualRestrictions storage _individualRestrictions,
         IDataStore _dataStore
     )
@@ -105,7 +113,7 @@ library VolumeRestrictionLib {
             uint256[] memory startTime,
             uint256[] memory rollingPeriodInDays,
             uint256[] memory endTime,
-            uint8[] memory typeOfRestriction
+            VolumeRestrictionTMStorage.RestrictionType[] memory typeOfRestriction
             )
     {
         address[] memory investors = _dataStore.getAddressArray(INVESTORSKEY);
@@ -113,7 +121,7 @@ library VolumeRestrictionLib {
         uint256 i;
         for (i = 0; i < investors.length; i++) {
             if (_isVolRestricted(_dataStore.getUint256(_getKey(INVESTORFLAGS, investors[i])))) {
-                counter = counter + (holderToRestrictionType[investors[i]] == uint8(2) ? 2 : 1);
+                counter = counter + (_holderToRestrictionType[investors[i]] == VolumeRestrictionTMStorage.TypeOfPeriod.Both ? 2 : 1);
             }
         }
         allAddresses = new address[](counter);
@@ -121,18 +129,18 @@ library VolumeRestrictionLib {
         startTime = new uint256[](counter);
         rollingPeriodInDays = new uint256[](counter);
         endTime = new uint256[](counter);
-        typeOfRestriction = new uint8[](counter);
+        typeOfRestriction = new VolumeRestrictionTMStorage.RestrictionType[](counter);
         counter = 0;
         for (i = 0; i < investors.length; i++) {
             if (_isVolRestricted(_dataStore.getUint256(_getKey(INVESTORFLAGS, investors[i])))) {
                 allAddresses[counter] = investors[i];
-                if (holderToRestrictionType[investors[i]] == uint8(VolumeRestrictionTMStorage.TypeOfPeriod.MultipleDays)) {
+                if (_holderToRestrictionType[investors[i]] == VolumeRestrictionTMStorage.TypeOfPeriod.MultipleDays) {
                     _setValues(_individualRestrictions.individualRestriction[investors[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
                 }
-                else if (holderToRestrictionType[investors[i]] == uint8(VolumeRestrictionTMStorage.TypeOfPeriod.OneDay)) {
+                else if (_holderToRestrictionType[investors[i]] == VolumeRestrictionTMStorage.TypeOfPeriod.OneDay) {
                     _setValues(_individualRestrictions.individualDailyRestriction[investors[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
                 }
-                else if (holderToRestrictionType[investors[i]] == uint8(VolumeRestrictionTMStorage.TypeOfPeriod.Both)) {
+                else if (_holderToRestrictionType[investors[i]] == VolumeRestrictionTMStorage.TypeOfPeriod.Both) {
                     _setValues(_individualRestrictions.individualRestriction[investors[i]], allowedTokens, startTime, rollingPeriodInDays, endTime, typeOfRestriction, counter);
                     counter++;
                     allAddresses[counter] = investors[i];
@@ -144,22 +152,22 @@ library VolumeRestrictionLib {
     }
 
     function _setValues(
-        VolumeRestrictionTMStorage.VolumeRestriction memory restriction,
-        uint256[] memory allowedTokens,
-        uint256[] memory startTime,
-        uint256[] memory rollingPeriodInDays,
-        uint256[] memory endTime,
-        uint8[] memory typeOfRestriction,
-        uint256 index
+        VolumeRestrictionTMStorage.VolumeRestriction memory _restriction,
+        uint256[] memory _allowedTokens,
+        uint256[] memory _startTime,
+        uint256[] memory _rollingPeriodInDays,
+        uint256[] memory _endTime,
+        VolumeRestrictionTMStorage.RestrictionType[] memory _typeOfRestriction,
+        uint256 _index
     )
         internal
         pure
     {
-        allowedTokens[index] = restriction.allowedTokens;
-        startTime[index] = restriction.startTime;
-        rollingPeriodInDays[index] = restriction.rollingPeriodInDays;
-        endTime[index] = restriction.endTime;
-        typeOfRestriction[index] = uint8(restriction.typeOfRestriction);
+        _allowedTokens[_index] = _restriction.allowedTokens;
+        _startTime[_index] = _restriction.startTime;
+        _rollingPeriodInDays[_index] = _restriction.rollingPeriodInDays;
+        _endTime[_index] = _restriction.endTime;
+        _typeOfRestriction[_index] = _restriction.typeOfRestriction;
     }
 
     function _isVolRestricted(uint256 _flags) internal pure returns(bool) {
@@ -167,9 +175,17 @@ library VolumeRestrictionLib {
         return (volRestricted > 0 ? true : false);
     }
 
-    function _getTypeOfPeriod(uint8 _currentTypeOfPeriod, uint8 _callFrom, uint256 _endTime) internal pure returns(uint8) {
+    function _getTypeOfPeriod(
+        VolumeRestrictionTMStorage.TypeOfPeriod _currentTypeOfPeriod,
+        VolumeRestrictionTMStorage.TypeOfPeriod _callFrom,
+        uint256 _endTime
+    ) 
+        internal
+        pure
+        returns(VolumeRestrictionTMStorage.TypeOfPeriod)
+    {
         if (_currentTypeOfPeriod != _callFrom && _endTime != uint256(0))
-            return uint8(VolumeRestrictionTMStorage.TypeOfPeriod.Both);
+            return VolumeRestrictionTMStorage.TypeOfPeriod.Both;
         else
             return _callFrom;
     }

@@ -370,8 +370,21 @@ contract('VestingEscrowWallet', accounts => {
             );
         });
 
-        it("Should withdraw tokens to a treasury", async () => {
-            let numberOfTokens = 25000;
+        it("Should withdraw partial tokens to a treasury", async () => {
+            let numberOfTokens = 5000;
+            const tx = await I_VestingEscrowWallet.sendToTreasury(numberOfTokens, {from: wallet_operator});
+
+            assert.equal(tx.logs[0].args._numberOfTokens, numberOfTokens);
+
+            let unassignedTokens = await I_VestingEscrowWallet.unassignedTokens.call();
+            assert.equal(unassignedTokens, 20000);
+
+            let balance = await I_SecurityToken.balanceOf.call(I_VestingEscrowWallet.address);
+            assert.equal(balance.toString(), 20000);
+        });
+
+        it("Should withdraw all tokens to a treasury", async () => {
+            let numberOfTokens = 20000;
             const tx = await I_VestingEscrowWallet.sendToTreasury(numberOfTokens, {from: wallet_operator});
 
             assert.equal(tx.logs[0].args._numberOfTokens, numberOfTokens);

@@ -935,6 +935,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             // verify the partition balance
             let currentBalance = web3.utils.fromWei((await I_SecurityToken.balanceOf.call(account_investor1)).toString());
             let percentatgeBalance = dataRestriction[0].div(new BN(10).pow(new BN(16))).toString();
+            await increaseTime(2);
             await verifyPartitionBalance(account_investor1, 29.7, percentatgeBalance);
         });
 

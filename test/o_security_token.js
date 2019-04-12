@@ -1389,6 +1389,19 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(tx.logs[0].args._investor, account_investor2, "Failed in adding the investor in whitelist");
 
             await increaseTime(5);
+
+            let data = await I_SecurityToken.canTransferByPartition.call(
+                account_investor1,
+                account_investor2,
+                web3.utils.toHex("LOCKED"),
+                new BN(web3.utils.toWei("15")),
+                "0x0"
+            );
+
+            assert.equal(data[0], 0x50);
+            assert.equal(web3.utils.hexToUtf8(data[1]), "");
+            assert.equal(web3.utils.hexToUtf8(data[2]), "");
+
             await catchRevert(
                 I_SecurityToken.transferByPartition(
                     web3.utils.toHex("LOCKED"),
@@ -1415,6 +1428,18 @@ contract("SecurityToken", async (accounts) => {
                 ),
                 "UNLOCKED"
             );
+
+            data = await I_SecurityToken.canTransferByPartition.call(
+                account_investor1,
+                account_investor2,
+                web3.utils.toHex("UNLOCKED"),
+                new BN(web3.utils.toWei("15")),
+                "0x0"
+            );
+
+            assert.equal(data[0], 0x51);
+            assert.equal(web3.utils.hexToUtf8(data[1]), "");
+            assert.equal(web3.utils.hexToUtf8(data[2]), "UNLOCKED");
 
             tx = await I_SecurityToken.transferByPartition(
                         web3.utils.toHex("UNLOCKED"),

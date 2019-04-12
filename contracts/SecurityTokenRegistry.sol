@@ -546,7 +546,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     )
         external
     {
-        generateNewSecurityToken(_name, _ticker, _tokenDetails, _divisible, msg.sender, 0);
+        generateNewSecurityToken(_name, _ticker, _tokenDetails, _divisible, msg.sender, VersionUtils.pack(2, 0, 0));
     }
 
     /**
@@ -571,26 +571,32 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         public
         whenNotPausedOrOwner
     {
-        uint256 protocolVersion = _protocolVersion;
         require(bytes(_name).length > 0 && bytes(_ticker).length > 0, "Bad ticker");
         require(_treasuryWallet != address(0), "0x0 not allowed");
         if (_protocolVersion == 0) {
-            protocolVersion = getUintValue(Encoder.getKey("latestVersion"));
+            _protocolVersion = getUintValue(Encoder.getKey("latestVersion"));
         }
-        require(protocolVersion != uint256(0), "Invalid version");
-        string memory ticker = Util.upper(_ticker);
-        bytes32 statusKey = Encoder.getKey("registeredTickers_status", ticker);
+        _ticker = Util.upper(_ticker);
+        bytes32 statusKey = Encoder.getKey("registeredTickers_status", _ticker);
         require(!getBoolValue(statusKey), "Already deployed");
         set(statusKey, true);
-        require(_tickerOwner(ticker) == msg.sender, "Not authorised");
+        address issuer = msg.sender;
+        require(_tickerOwner(_ticker) == issuer, "Not authorised");
         /*solium-disable-next-line security/no-block-members*/
-        require(getUintValue(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now, "Ticker expired");
+        require(getUintValue(Encoder.getKey("registeredTickers_expiryDate", _ticker)) >= now, "Ticker expired");
         (uint256 _usdFee, uint256 _polyFee) = _takeFee(STLAUNCHFEE);
         address newSecurityTokenAddress =
-            _deployToken(_name, ticker, _tokenDetails, msg.sender, _divisible, _treasuryWallet, protocolVersion, _usdFee, _polyFee);
-        emit NewSecurityToken(
-            _ticker, _name, newSecurityTokenAddress, msg.sender, now, msg.sender, false, _usdFee, _polyFee, protocolVersion
-        );
+            _deployToken(_name, _ticker, _tokenDetails, issuer, _divisible, _treasuryWallet, _protocolVersion, _usdFee, _polyFee);
+        if (_protocolVersion == VersionUtils.pack(2, 0, 0)) {
+            // For backwards compatibilty. Should be removed with an update when we disable st 2.0 generation.
+            emit NewSecurityToken(
+                _ticker, _name, newSecurityTokenAddress, issuer, now, issuer, false, _polyFee
+            );
+        } else {
+            emit NewSecurityTokenCreated(
+                _ticker, _name, newSecurityTokenAddress, issuer, now, issuer, false, _usdFee, _polyFee, _protocolVersion
+            );
+        }
     }
 
     /**
@@ -619,7 +625,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         address stOwner = IOwnable(st).owner();
         require(msg.sender == stOwner, "Unauthroized");
         require(ISecurityToken(st).transfersFrozen(), "Transfers not frozen");
-        uint256 protocolVersion = getUintValue(Encoder.getKey("latestVersion"));
+        uint256 protocolVersion = VersionUtils.pack(3, 0, 0);
         address newSecurityTokenAddress =
             _deployToken(_name, ticker, _tokenDetails, stOwner, _divisible, _treasuryWallet, protocolVersion, 0, 0);
         emit SecurityTokenRefreshed(
@@ -655,21 +661,6 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         /*solium-disable-next-line security/no-block-members*/
         _storeSecurityTokenData(newSecurityTokenAddress, _ticker, _tokenDetails, now);
         set(Encoder.getKey("tickerToSecurityToken", _ticker), newSecurityTokenAddress);
-<<<<<<< HEAD
-        /*solium-disable-next-line security/no-block-members*/
-        if (_protocolVersion == getUintValue(Encoder.getKey("latestVersion"))) {
-            // For backwards compatibilty. Should be removed with an update when we disable st 2.0 generation.
-            emit NewSecurityToken(
-                _ticker, _name, newSecurityTokenAddress, _issuer, now, _issuer, false, _polyFee
-            );
-        } else {
-            emit NewSecurityTokenCreated(
-                _ticker, _name, newSecurityTokenAddress, _issuer, now, _issuer, false, _usdFee, _polyFee, _protocolVersion
-            );
-        }
-
-=======
->>>>>>> dev-3.0.0
     }
 
     /**

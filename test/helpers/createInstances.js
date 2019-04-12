@@ -20,6 +20,7 @@ const ManualApprovalTransferManagerFactory = artifacts.require("./ManualApproval
 const TrackedRedemptionFactory = artifacts.require("./TrackedRedemptionFactory.sol");
 const PercentageTransferManagerFactory = artifacts.require("./PercentageTransferManagerFactory.sol");
 const PercentageTransferManager = artifacts.require("./PercentageTransferManager.sol");
+const BlacklistTransferManager = artifacts.require("./BlacklistTransferManager.sol");
 const BlacklistTransferManagerFactory = artifacts.require("./BlacklistTransferManagerFactory.sol");
 const ScheduledCheckpointFactory = artifacts.require('./ScheduledCheckpointFactory.sol');
 const USDTieredSTOFactory = artifacts.require("./USDTieredSTOFactory.sol");
@@ -50,6 +51,7 @@ const VolumeRestrictionTMFactory = artifacts.require("./VolumeRestrictionTMFacto
 const VolumeRestrictionTM = artifacts.require("./VolumeRestrictionTM.sol");
 const VestingEscrowWalletFactory = artifacts.require("./VestingEscrowWalletFactory.sol");
 const VestingEscrowWallet = artifacts.require("./VestingEscrowWallet.sol");
+const PLCRVotingCheckpointFactory = artifacts.require("./PLCRVotingCheckpointFactory.sol");
 const WeightedVoteCheckpointFactory = artifacts.require("./WeightedVoteCheckpointFactory.sol");
 
 const Web3 = require("web3");
@@ -100,6 +102,7 @@ let I_STFactory;
 let I_USDTieredSTOLogic;
 let I_PolymathRegistry;
 let I_SecurityTokenRegistryProxy;
+let I_BlacklistTransferManagerLogic;
 let I_BlacklistTransferManagerFactory;
 let I_VestingEscrowWalletLogic;
 let I_STRProxied;
@@ -110,6 +113,7 @@ let I_SignedTransferManagerFactory;
 let I_USDOracle;
 let I_POLYOracle;
 let I_StablePOLYOracle;
+let I_PLCRVotingCheckpointFactory;
 
 // Initial fee for ticker registry and security token registry
 const initRegFee = new BN(web3.utils.toWei("250"));
@@ -383,8 +387,8 @@ export async function deployPercentageTMAndVerified(accountPolymath, MRProxyInst
 }
 
 export async function deployBlacklistTMAndVerified(accountPolymath, MRProxyInstance, setupCost, feeInPoly = false) {
-
-    I_BlacklistTransferManagerFactory = await BlacklistTransferManagerFactory.new(setupCost, new BN(0), I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
+    I_BlacklistTransferManagerLogic = await BlacklistTransferManager.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
+    I_BlacklistTransferManagerFactory = await BlacklistTransferManagerFactory.new(setupCost, new BN(0), I_BlacklistTransferManagerLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
     assert.notEqual(
         I_BlacklistTransferManagerFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",
@@ -608,6 +612,19 @@ export async function deploySignedTMAndVerifyed(accountPolymath, MRProxyInstance
     return new Array(I_SignedTransferManagerFactory);
 }
 
+// Deploy voting modules
+
+export async function deployPLCRVoteCheckpoint(accountPolymath, MRProxyInstance, setupCost) {
+    I_PLCRVotingCheckpointFactory = await PLCRVotingCheckpointFactory.new(setupCost, new BN(0), I_PolymathRegistry.address, { from: accountPolymath });
+    assert.notEqual(
+        I_PLCRVotingCheckpointFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "PLCRVotingCheckpointFactory contract was not deployed"
+    );
+
+     await registerAndVerifyByMR(I_PLCRVotingCheckpointFactory.address, accountPolymath, MRProxyInstance);
+    return new Array(I_PLCRVotingCheckpointFactory);
+}
 // Deploy the voting modules
 
 export async function deployWeightedVoteCheckpoint(accountPolymath, MRProxyInstance, setupCost) {

@@ -1,13 +1,12 @@
 pragma solidity ^0.5.0;
 
-import "./BlacklistTransferManager.sol";
+import "./PLCRVotingCheckpoint.sol";
 import "../../ModuleFactory.sol";
-import "../../../libraries/Util.sol";
 
 /**
- * @title Factory for deploying BlacklistManager module
+ * @title Factory for deploying PLCRVotingCheckpoint module
  */
-contract BlacklistTransferManagerFactory is ModuleFactory {
+contract PLCRVotingCheckpointFactory is ModuleFactory {
 
     /**
      * @notice Constructor
@@ -16,33 +15,35 @@ contract BlacklistTransferManagerFactory is ModuleFactory {
      * @param _polymathRegistry Address of the Polymath registry
      * @param _isCostInPoly true = cost in Poly, false = USD
      */
-    constructor(
+    constructor (
         uint256 _setupCost,
         uint256 _usageCost,
         address _polymathRegistry,
         bool _isCostInPoly
-    )
-        public ModuleFactory(_setupCost, _usageCost, _polymathRegistry, _isCostInPoly)
+    ) 
+        public
+        ModuleFactory(_setupCost, _usageCost, _polymathRegistry, _isCostInPoly)
     {
         initialVersion = "3.0.0";
-        name = "BlacklistTransferManager";
-        title = "Blacklist Transfer Manager";
-        description = "Automate blacklist to restrict selling";
-        typesData.push(2);
-        tagsData.push("Blacklist");
-        tagsData.push("Transfer Restriction");
+        name = "PLCRVotingCheckpoint";
+        title = "PLCR Voting Checkpoint";
+        description = "Commit & reveal technique used for voting";
+        typesData.push(4);
+        tagsData.push("Vote");
+        tagsData.push("Checkpoint");
+        tagsData.push("PLCR");
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
+
     }
 
-     /**
+    /**
      * @notice used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
     function deploy(bytes calldata _data) external returns(address) {
-        address blacklistTransferManager = address(new BlacklistTransferManager(msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken")));
-        _initializeModule(blacklistTransferManager, _data);
-        return blacklistTransferManager;
+        address plcrVotingCheckpoint = address(new PLCRVotingCheckpoint(msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken")));
+        _initializeModule(plcrVotingCheckpoint, _data);
+        return plcrVotingCheckpoint;
     }
-
 }

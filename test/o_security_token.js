@@ -826,7 +826,7 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should transfer from whitelist investor1 to whitelist investor 2 -- value = 0", async () => {
             let tx = await I_SecurityToken.transfer(account_investor2, new BN(0), { from: account_investor1, gas: 2500000 });
-            assert.equal(tx.logs[0].args.value.toNumber(), 0);
+            assert.equal(tx.logs[1].args.value.toNumber(), 0);
         });
 
         it("Should transferFrom from one investor to other", async () => {
@@ -840,7 +840,7 @@ contract("SecurityToken", async (accounts) => {
             let log = await I_SecurityToken.transferFrom(account_investor2, account_investor3, new BN(2).mul(new BN(10).pow(new BN(18))), {
                 from: account_investor1
             });
-            assert.equal(log.logs[0].args.value.toString(), new BN(2).mul(new BN(10).pow(new BN(18))).toString());
+            assert.equal(log.logs[1].args.value.toString(), new BN(2).mul(new BN(10).pow(new BN(18))).toString());
         });
 
         it("Should Fail in trasferring from whitelist investor1 to non-whitelist investor", async () => {
@@ -1057,7 +1057,7 @@ contract("SecurityToken", async (accounts) => {
             let investors = await stGetter.getInvestors.call();
             let tx = await I_SecurityToken.controllerRedeem(account_temp, currentBalance, "0x0", "0x0", { from: account_controller });
             // console.log(tx.logs[1].args._value.toNumber(), currentBalance.toNumber());
-            assert.equal(tx.logs[1].args._value.toString(), currentBalance.toString());
+            assert.equal(tx.logs[2].args._value.toString(), currentBalance.toString());
             let newInvestorCount = await I_SecurityToken.holderCount.call();
             // console.log(newInvestorCount.toString());
             assert.equal(newInvestorCount.toNumber() + 1, currentInvestorCount.toNumber(), "Investor count drops by one");
@@ -1289,8 +1289,8 @@ contract("SecurityToken", async (accounts) => {
                 end_balInv2.toString(),
                 "Investor balance not changed"
             );
-            let eventForceTransfer = tx.logs[1];
-            let eventTransfer = tx.logs[0];
+            let eventForceTransfer = tx.logs[2];
+            let eventTransfer = tx.logs[1];
             assert.equal(account_controller, eventForceTransfer.args._controller, "Event not emitted as expected");
             assert.equal(account_investor1, eventForceTransfer.args._from, "Event not emitted as expected");
             assert.equal(account_investor2, eventForceTransfer.args._to, "Event not emitted as expected");

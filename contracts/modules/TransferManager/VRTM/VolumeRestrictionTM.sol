@@ -125,7 +125,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
                 isGlobal
             );
         }
-        return success; 
+        return success;
     }
 
     /**
@@ -139,15 +139,15 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         address /*_to*/ ,
         uint256 _amount,
         bytes memory /*_data*/
-    ) 
+    )
         public
         view
         returns (Result, bytes32)
     {
-       
+
         (Result success,,,,,,) = _verifyTransfer(_from, _amount);
         if (success == Result.INVALID)
-            return (success, bytes32(uint256(address(this)) << 96)); 
+            return (success, bytes32(uint256(address(this)) << 96));
         return (Result.NA, bytes32(0));
     }
 
@@ -160,11 +160,11 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
     function _verifyTransfer(
         address _from,
         uint256 _amount
-    ) 
+    )
         internal
         view
         returns (Result, uint256, uint256, uint256, uint256, uint256, bool)
-    {   
+    {
         // If `_from` is present in the exemptionList or it is `0x0` address then it will not follow the vol restriction
         if (!paused && _from != address(0) && exemptions.exemptIndex[_from] == 0) {
             // Checking the individual restriction if the `_from` comes in the individual category
@@ -1187,7 +1187,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
      */
     function getTokensByPartition(address /*_owner*/, bytes32 /*_partition*/) external view returns(uint256){
         return 0;
-    } 
+    }
 
     /**
      * @notice Returns the permissions flag that are associated with Percentage transfer Manager

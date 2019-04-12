@@ -34,6 +34,6 @@ contract GeneralTransferManagerStorage {
         bool toRestricted;
     }
 
-    mapping(TransferType => TransferRequirements) public transferRequirements;
+    mapping(uint8 => TransferRequirements) public transferRequirements;
     // General = 0, Issuance = 1, Redemption = 2
 }

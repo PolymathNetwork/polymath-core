@@ -26,9 +26,9 @@ contract GeneralTransferManagerProxy is GeneralTransferManagerStorage, ModuleSto
     {
         require(_implementation != address(0), "Implementation address should not be 0x");
         _upgradeTo(_version, _implementation);
-        transferRequirements[TransferType.GENERAL] = TransferRequirements(true, true, true, true);
-        transferRequirements[TransferType.ISSUANCE] = TransferRequirements(false, true, false, false);
-        transferRequirements[TransferType.REDEMPTION] = TransferRequirements(true, false, false, false);
+        transferRequirements[uint8(TransferType.GENERAL)] = TransferRequirements(true, true, true, true);
+        transferRequirements[uint8(TransferType.ISSUANCE)] = TransferRequirements(false, true, false, false);
+        transferRequirements[uint8(TransferType.REDEMPTION)] = TransferRequirements(true, false, false, false);
     }
 
 }

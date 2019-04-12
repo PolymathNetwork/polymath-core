@@ -102,7 +102,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     function executeTransfer(
         address _from,
         address _to,
-        uint256 _amount,
+        uint256 /*_amount*/,
         bytes calldata _data
     ) external returns(Result) {
         if (_data.length > 32) {
@@ -164,11 +164,11 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
             uint64 canReceiveAfter;
 
             if (_from == issuanceAddress) {
-                txReq = transferRequirements[1]; //Issuance
+                txReq = transferRequirements[uint8(TransferType.ISSUANCE)];
             } else if (_to == address(0)) {
-                txReq = transferRequirements[2]; //Redemption
+                txReq = transferRequirements[uint8(TransferType.REDEMPTION)];
             } else {
-                txReq = transferRequirements[0]; //General Transfer
+                txReq = transferRequirements[uint8(TransferType.GENERAL)];
             }
 
             (canSendAfter, fromExpiry, canReceiveAfter, toExpiry) = _getValuesForTransfer(_from, _to);
@@ -254,7 +254,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         bool _toRestricted
     ) internal {
         require(uint8(_transferType) < 3, "Invalid TransferType");
-        transferRequirements[_transferType] =
+        transferRequirements[uint8(_transferType)] =
             TransferRequirements(
                 _fromValidKYC,
                 _toValidKYC,
@@ -353,7 +353,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         IDataStore dataStore = getDataStore();
         if (!_isExistingInvestor(_investor, dataStore)) {
            dataStore.insertAddress(INVESTORSKEY, _investor);
-           //KYC data can not be present if added is false and hence we can set packed KYC as uint256(1) to set added as true
+           //KYC data can not be present if _isExistingInvestor is false and hence we can set packed KYC as uint256(1) to set `added` as true
            dataStore.setUint256(_getKey(WHITELIST, _investor), uint256(1));
         }
         //NB Flags are packed together in a uint256 to save gas. We can have a maximum of 256 flags.

@@ -1,9 +1,9 @@
 pragma solidity ^0.5.0;
 
 import "./LockUpTransferManagerStorage.sol";
-import "../../../../proxy/OwnedUpgradeabilityProxy.sol";
-import "../../../../Pausable.sol";
-import "../../../../storage/modules/ModuleStorage.sol";
+import "../../../proxy/OwnedUpgradeabilityProxy.sol";
+import "../../../Pausable.sol";
+import "../../../storage/modules/ModuleStorage.sol";
 
 /**
  * @title CountTransferManager module Proxy

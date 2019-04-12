@@ -448,7 +448,7 @@ contract('LockUpTransferManager', accounts => {
                     currentTime.add(new BN(duration.seconds(1))),
                     new BN(duration.seconds(400000)),
                     new BN(duration.seconds(100000)),
-                    web3.utils.fromAscii("a_lockup"),
+                    web3.utils.fromAscii("a_lockup2"),
                     {
                         from: token_owner
                     }
@@ -952,6 +952,9 @@ contract('LockUpTransferManager', accounts => {
             // attaching the lockup to a user
 
             await I_LockUpTransferManager.addLockUpByName(account_investor2, web3.utils.fromAscii("l_lockup"), {from: token_owner});
+
+            //Should not allow to add a user to a lockup multiple times
+            await catchRevert(I_LockUpTransferManager.addLockUpByName(account_investor2, web3.utils.fromAscii("l_lockup"), {from: token_owner}));
 
             // try to delete the lockup but fail
 

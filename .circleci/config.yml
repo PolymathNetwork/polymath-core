@@ -54,6 +54,21 @@ jobs:
             - node_modules
       - store_artifacts:
           path: ./coverage/lcov.info
+  clash-check:
+    docker:
+      - image: maxsam4/solidity-kit
+    steps:
+      - checkout
+      - restore_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+      - run: yarn install
+      - run: node --version
+      - run: truffle version
+      - run: npm run clash-check
+      - save_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+          paths:
+            - node_modules
   docs:
     docker:
       - image: maxsam4/solidity-kit
@@ -74,6 +89,7 @@ workflows:
   commit:
     jobs:
       - coverage
+      - clash-check
   daily-builds:
     triggers:
       - schedule:

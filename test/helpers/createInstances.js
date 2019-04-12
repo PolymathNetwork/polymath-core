@@ -20,6 +20,7 @@ const ManualApprovalTransferManagerFactory = artifacts.require("./ManualApproval
 const TrackedRedemptionFactory = artifacts.require("./TrackedRedemptionFactory.sol");
 const PercentageTransferManagerFactory = artifacts.require("./PercentageTransferManagerFactory.sol");
 const PercentageTransferManager = artifacts.require("./PercentageTransferManager.sol");
+const BlacklistTransferManager = artifacts.require("./BlacklistTransferManager.sol");
 const BlacklistTransferManagerFactory = artifacts.require("./BlacklistTransferManagerFactory.sol");
 const ScheduledCheckpointFactory = artifacts.require('./ScheduledCheckpointFactory.sol');
 const USDTieredSTOFactory = artifacts.require("./USDTieredSTOFactory.sol");
@@ -103,6 +104,7 @@ let I_STFactory;
 let I_USDTieredSTOLogic;
 let I_PolymathRegistry;
 let I_SecurityTokenRegistryProxy;
+let I_BlacklistTransferManagerLogic;
 let I_BlacklistTransferManagerFactory;
 let I_VestingEscrowWalletLogic;
 let I_STRProxied;
@@ -389,8 +391,8 @@ export async function deployPercentageTMAndVerified(accountPolymath, MRProxyInst
 }
 
 export async function deployBlacklistTMAndVerified(accountPolymath, MRProxyInstance, setupCost, feeInPoly = false) {
-
-    I_BlacklistTransferManagerFactory = await BlacklistTransferManagerFactory.new(setupCost, new BN(0), I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
+    I_BlacklistTransferManagerLogic = await BlacklistTransferManager.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
+    I_BlacklistTransferManagerFactory = await BlacklistTransferManagerFactory.new(setupCost, new BN(0), I_BlacklistTransferManagerLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
     assert.notEqual(
         I_BlacklistTransferManagerFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",

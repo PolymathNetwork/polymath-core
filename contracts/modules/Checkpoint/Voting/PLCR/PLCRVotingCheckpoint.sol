@@ -27,7 +27,7 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
         uint256 _proposedQuorum
     );
     event BallotStatusChanged(uint256 indexed _ballotId, bool _newStatus);
-    event ChangedBallotExemptedVotersList(uint256 indexed _ballotId, address indexed_voter, bool _change);
+    event ChangedBallotExemptedVotersList(uint256 indexed _ballotId, address indexed _voter, bool _change);
 
     constructor(address _securityToken, address _polyAddress)
     public

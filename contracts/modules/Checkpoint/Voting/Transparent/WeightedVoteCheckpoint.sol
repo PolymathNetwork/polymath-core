@@ -23,7 +23,7 @@ contract WeightedVoteCheckpoint is WeightedVoteCheckpointStorage, VotingCheckpoi
     );
     event VoteCast(address indexed _voter,  uint256 _weight, uint256 indexed _ballotId, uint256 indexed _proposalId);
     event BallotStatusChanged(uint256 indexed _ballotId, bool _isActive);
-    event ChangedBallotExemptedVotersList(uint256 indexed _ballotId, address indexed_voter, bool _change);
+    event ChangedBallotExemptedVotersList(uint256 indexed _ballotId, address indexed _voter, bool _change);
 
     /**
      * @notice Constructor

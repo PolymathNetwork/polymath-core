@@ -37,8 +37,10 @@ contract VotingCheckpoint is VotingCheckpointStorage, ICheckpoint, IVoting, Modu
             defaultExemptedVoters.push(_voter);
             defaultExemptIndex[_voter] = defaultExemptedVoters.length;
         } else {
-            defaultExemptedVoters[defaultExemptIndex[_voter] - 1] = defaultExemptedVoters[defaultExemptedVoters.length - 1];
-            defaultExemptIndex[defaultExemptedVoters[defaultExemptIndex[_voter] - 1]] = defaultExemptIndex[_voter];
+            if (defaultExemptedVoters.length != defaultExemptIndex[_voter]) {
+                defaultExemptedVoters[defaultExemptIndex[_voter] - 1] = defaultExemptedVoters[defaultExemptedVoters.length - 1];
+                defaultExemptIndex[defaultExemptedVoters[defaultExemptIndex[_voter] - 1]] = defaultExemptIndex[_voter];
+            }
             delete defaultExemptIndex[_voter];
             defaultExemptedVoters.length --;
         }

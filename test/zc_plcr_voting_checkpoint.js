@@ -86,23 +86,23 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
         // ----------- POLYMATH NETWORK Configuration ------------
 
        // Step 1: Deploy the genral PM ecosystem
-       let instances = await setUpPolymathNetwork(account_polymath, token_owner);
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
 
-       [
-           I_PolymathRegistry,
-           I_PolyToken,
-           I_FeatureRegistry,
-           I_ModuleRegistry,
-           I_ModuleRegistryProxy,
-           I_MRProxied,
-           I_GeneralTransferManagerFactory,
-           I_STFactory,
-           I_SecurityTokenRegistry,
-           I_SecurityTokenRegistryProxy,
-           I_STRProxied,
-           I_STRGetter,
-           I_STGetter
-       ] = instances;
+        [
+            I_PolymathRegistry,
+            I_PolyToken,
+            I_FeatureRegistry,
+            I_ModuleRegistry,
+            I_ModuleRegistryProxy,
+            I_MRProxied,
+            I_GeneralTransferManagerFactory,
+            I_STFactory,
+            I_SecurityTokenRegistry,
+            I_SecurityTokenRegistryProxy,
+            I_STRProxied,
+            I_STRGetter,
+            I_STGetter
+        ] = instances;
 
 
         // STEP 4: Deploy the WeightedVoteCheckpoint
@@ -332,6 +332,49 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
                 assert.isTrue(data[7]);
             });
 
+            it("\t\t Should fail to add voter in ballot exemption list -- address is zero", async() => {
+                await catchRevert(
+                    I_PLCRVotingCheckpoint.changeBallotExemptedVotersList(new BN(0), "0x0000000000000000000000000000000000000000", true, {from: token_owner})
+                );
+            });
+
+            it("\t\t Should fail to add voter in ballot exemption list -- invalid ballot id", async() => {
+                await catchRevert(
+                    I_PLCRVotingCheckpoint.changeBallotExemptedVotersList(new BN(5), account_investor1, true, {from: token_owner})
+                );
+            });
+
+            it("\t\t Should add the voter in to the ballot exemption list", async() => {
+                let tx = await I_PLCRVotingCheckpoint.changeBallotExemptedVotersList(new BN(0), account_investor1, true, {from: token_owner});
+                assert.equal((tx.logs[0].args._ballotId).toString(), 0);
+                assert.equal(tx.logs[0].args._voter, account_investor1);
+                assert.equal(tx.logs[0].args._change, true);
+            });
+
+            it("\t\t Should fail to add voter in ballot exemption list -- doing the same change again", async() => {
+                await catchRevert(
+                    I_PLCRVotingCheckpoint.changeBallotExemptedVotersList(new BN(0), account_investor1, true, {from: token_owner})
+                );
+            });
+
+            it("\t\t Should fail to vote -- voter is present in the exemption list", async() => {
+                let salt = getRandom();
+                await catchRevert(
+                    I_PLCRVotingCheckpoint.commitVote(new BN(0), web3.utils.soliditySha3(2, salt), {from: account_investor1})
+                );
+            });
+
+            it("\t\t Should add the multiple voter in to the ballot exemption list -- failed ", async() => {
+                await catchRevert(
+                    I_PLCRVotingCheckpoint.changeBallotExemptedVotersListMulti(new BN(0), [account_investor1, account_investor2], [false], {from: token_owner})
+                );
+            });
+
+            it("\t\t Should add the multiple voter in to the ballot exemption list", async() => {
+                await I_PLCRVotingCheckpoint.changeBallotExemptedVotersListMulti(new BN(0), [account_investor1], [false], {from: token_owner});
+                assert.isTrue(await I_PLCRVotingCheckpoint.isVoterAllowed.call(new BN(0), account_investor1));
+            });
+
             it("\t\t Should successfully vote by account investor1 \n", async() => {
                 let salt = getRandom();
                 saltArray.push(salt);
@@ -350,6 +393,36 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
                 await catchRevert(
                     I_PLCRVotingCheckpoint.commitVote(new BN(0), web3.utils.soliditySha3(1, salt), {from: account_investor1})
                 )
+            });
+
+            it("\t\t Should fail to add voter in default exemption list -- address is zero", async() => {
+                await catchRevert(
+                    I_PLCRVotingCheckpoint.changeDefaultExemptedVotersList("0x0000000000000000000000000000000000000000", true, {from: token_owner})
+                );
+            });
+
+            it("\t\t Should add the voter in to the default exemption list", async() => {
+                let tx = await I_PLCRVotingCheckpoint.changeDefaultExemptedVotersList(account_investor3, true, {from: token_owner});
+                assert.equal(tx.logs[0].args._voter, account_investor3);
+                assert.equal(tx.logs[0].args._change, true);
+            });
+
+            it("\t\t Should fail to add voter in default exemption list -- doing the same change again", async() => {
+                await catchRevert(
+                    I_PLCRVotingCheckpoint.changeDefaultExemptedVotersList(account_investor3, true, {from: token_owner})
+                );
+            });
+
+            it("\t\t Should fail to vote -- voter is present in the exemption list", async() => {
+                let salt = getRandom();
+                await catchRevert(
+                    I_PLCRVotingCheckpoint.commitVote(new BN(0), web3.utils.soliditySha3(1, salt), {from: account_investor3})
+                );
+            });
+
+            it("\t\t Should change the default exemption list by allowing investor 1 to vote", async() => {
+                await I_PLCRVotingCheckpoint.changeDefaultExemptedVotersList(account_investor3, false, {from: token_owner});
+                assert.isTrue(await I_PLCRVotingCheckpoint.isVoterAllowed.call(new BN(0), account_investor3));
             });
 
             it("\t\t Should successfully vote by account investor3 \n", async() => {

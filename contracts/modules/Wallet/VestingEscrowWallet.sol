@@ -94,7 +94,7 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, Wallet {
         require(_numberOfTokens > 0, "Should be > 0");
         require(
             ISecurityToken(securityToken).transferFrom(msg.sender, address(this), _numberOfTokens),
-            "Failed transferFrom due to insufficent Allowance provided"
+            "Failed transferFrom"
         );
         unassignedTokens = unassignedTokens.add(_numberOfTokens);
         emit DepositTokens(_numberOfTokens, msg.sender);
@@ -104,13 +104,12 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, Wallet {
      * @notice Sends unassigned tokens to the treasury wallet
      * @param _amount Amount of tokens that should be send to the treasury wallet
      */
-    function sendToTreasury(uint256 _amount) external withPerm(OPERATOR) {
+    function sendToTreasury(uint256 _amount) public withPerm(OPERATOR) {
         require(_amount > 0, "Amount cannot be zero");
         require(_amount <= unassignedTokens, "Amount is greater than unassigned tokens");
-        uint256 amount = unassignedTokens;
-        unassignedTokens = 0;
-        require(ISecurityToken(securityToken).transfer(getTreasuryWallet(), amount), "Transfer failed");
-        emit SendToTreasury(amount, msg.sender);
+        unassignedTokens = unassignedTokens - _amount;
+        require(ISecurityToken(securityToken).transfer(getTreasuryWallet(), _amount), "Transfer failed");
+        emit SendToTreasury(_amount, msg.sender);
     }
 
     /**
@@ -274,7 +273,7 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, Wallet {
      * @param _templateName Name of the template was used for schedule creation
      * @param _startTime Start time of the created vesting schedule
      */
-    function modifySchedule(address _beneficiary, bytes32 _templateName, uint256 _startTime) public withPerm(ADMIN) {
+    function modifySchedule(address _beneficiary, bytes32 _templateName, uint256 _startTime) external withPerm(ADMIN) {
         _modifySchedule(_beneficiary, _templateName, _startTime);
     }
 
@@ -433,7 +432,7 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, Wallet {
      * @param _fromIndex Start index of array of beneficiary's addresses
      * @param _toIndex End index of array of beneficiary's addresses
      */
-    function pushAvailableTokensMulti(uint256 _fromIndex, uint256 _toIndex) external withPerm(OPERATOR) {
+    function pushAvailableTokensMulti(uint256 _fromIndex, uint256 _toIndex) public withPerm(OPERATOR) {
         require(_toIndex <= beneficiaries.length - 1, "Array out of bound");
         for (uint256 i = _fromIndex; i <= _toIndex; i++) {
             if (schedules[beneficiaries[i]].length !=0)
@@ -481,11 +480,11 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, Wallet {
      * @param _startTimes Array of the vesting start time
      */
     function addScheduleFromTemplateMulti(
-        address[] calldata _beneficiaries,
-        bytes32[] calldata _templateNames,
-        uint256[] calldata _startTimes
+        address[] memory _beneficiaries,
+        bytes32[] memory _templateNames,
+        uint256[] memory _startTimes
     )
-        external
+        public
         withPerm(ADMIN)
     {
         require(_beneficiaries.length == _templateNames.length && _beneficiaries.length == _startTimes.length, "Arrays sizes mismatch");
@@ -498,7 +497,7 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, Wallet {
      * @notice Used to bulk revoke vesting schedules for each of the beneficiaries
      * @param _beneficiaries Array of the beneficiary's addresses
      */
-    function revokeSchedulesMulti(address[] calldata _beneficiaries) external withPerm(ADMIN) {
+    function revokeSchedulesMulti(address[] memory _beneficiaries) public withPerm(ADMIN) {
         for (uint256 i = 0; i < _beneficiaries.length; i++) {
             _revokeAllSchedules(_beneficiaries[i]);
         }

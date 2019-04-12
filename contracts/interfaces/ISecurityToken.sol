@@ -463,4 +463,9 @@ interface ISecurityToken {
      * @return bool `true` signifies the minting is allowed. While `false` denotes the end of minting
      */
     function isIssuable() external view returns (bool);
+
+    /**
+    * @notice Returns if transfers are currently frozen or not
+    */
+    function transfersFrozen() external view returns (bool);
 }

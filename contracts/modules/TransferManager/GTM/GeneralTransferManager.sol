@@ -40,7 +40,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     );
 
     event ModifyTransferRequirements(
-        uint256 indexed _transferType,
+        TransferType indexed _transferType,
         bool _fromValidKYC,
         bool _toValidKYC,
         bool _fromRestricted,
@@ -115,7 +115,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
             if (target == address(this))
                 _processTransferSignature(nonce, validFrom, validTo, data);
         }
-        (Result success,) = verifyTransfer(_from, _to, _amount, _data);
+        (Result success,) = _verifyTransfer(_from, _to);
         return success;
     }
 
@@ -142,6 +142,17 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         bytes memory /* _data */
     )
         public
+        view
+        returns(Result, bytes32)
+    {
+        return _verifyTransfer(_from, _to);
+    }
+
+    function _verifyTransfer(
+        address _from,
+        address _to
+    )
+        internal
         view
         returns(Result, bytes32)
     {
@@ -186,7 +197,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     * @param _toRestricted Defines if transfer time restriction is checked for the receiver
     */
     function modifyTransferRequirements(
-        uint256 _transferType,
+        TransferType _transferType,
         bool _fromValidKYC,
         bool _toValidKYC,
         bool _fromRestricted,
@@ -210,7 +221,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     * @param _toRestricted Defines if transfer time restriction is checked for the receiver
     */
     function modifyTransferRequirementsMulti(
-        uint256[] memory _transferTypes,
+        TransferType[] memory _transferTypes,
         bool[] memory _fromValidKYC,
         bool[] memory _toValidKYC,
         bool[] memory _fromRestricted,
@@ -236,13 +247,13 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     }
 
     function _modifyTransferRequirements(
-        uint256 _transferType,
+        TransferType _transferType,
         bool _fromValidKYC,
         bool _toValidKYC,
         bool _fromRestricted,
         bool _toRestricted
     ) internal {
-        require(_transferType < 3, "Invalid TransferType");
+        require(uint8(_transferType) < 3, "Invalid TransferType");
         transferRequirements[_transferType] =
             TransferRequirements(
                 _fromValidKYC,
@@ -500,13 +511,11 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
 
         if (_checkSig(hash, _signature, _nonce)) {
             for (uint256 i = 0; i < _investor.length; i++) {
-                require(
-                    uint64(_canSendAfter[i]) == _canSendAfter[i] &&
+                if (uint64(_canSendAfter[i]) == _canSendAfter[i] &&
                     uint64(_canReceiveAfter[i]) == _canReceiveAfter[i] &&
-                    uint64(_expiryTime[i]) == _expiryTime[i],
-                    "uint64 overflow"
-                );
-                _modifyKYCData(_investor[i], uint64(_canSendAfter[i]), uint64(_canReceiveAfter[i]), uint64(_expiryTime[i]));
+                    uint64(_expiryTime[i]) == _expiryTime[i]
+                )
+                    _modifyKYCData(_investor[i], uint64(_canSendAfter[i]), uint64(_canReceiveAfter[i]), uint64(_expiryTime[i]));
             }
             return true;
         }

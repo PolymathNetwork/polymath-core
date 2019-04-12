@@ -10,6 +10,8 @@ contract GeneralTransferManagerStorage {
     bytes32 public constant INVESTORFLAGS = "INVESTORFLAGS";
     uint256 internal constant ONE = uint256(1);
 
+    enum TransferType { GENERAL, ISSUANCE, REDEMPTION }
+
     //Address from which issuances come
     address public issuanceAddress;
 
@@ -32,6 +34,6 @@ contract GeneralTransferManagerStorage {
         bool toRestricted;
     }
 
-    mapping(uint256 => TransferRequirements) public transferRequirements;
+    mapping(TransferType => TransferRequirements) public transferRequirements;
     // General = 0, Issuance = 1, Redemption = 2
 }

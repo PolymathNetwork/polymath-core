@@ -540,7 +540,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         require(getUintValue(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now, "Ticker expired");
         (uint256 _usdFee, uint256 _polyFee) = _takeFee(STLAUNCHFEE);
         address newSecurityTokenAddress =
-            _deployToken(_name, ticker, _tokenDetails, msg.sender, _divisible, _treasuryWallet, protocolVersion, _usdFee, _polyFee);
+            _deployToken(_name, ticker, _tokenDetails, msg.sender, _divisible, _treasuryWallet, protocolVersion);
         emit NewSecurityToken(
             _ticker, _name, newSecurityTokenAddress, msg.sender, now, msg.sender, false, _usdFee, _polyFee, protocolVersion
         );
@@ -574,7 +574,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         require(ISecurityToken(st).transfersFrozen(), "Transfers not frozen");
         uint256 protocolVersion = getUintValue(Encoder.getKey("latestVersion"));
         address newSecurityTokenAddress =
-            _deployToken(_name, ticker, _tokenDetails, stOwner, _divisible, _treasuryWallet, protocolVersion, 0, 0);
+            _deployToken(_name, ticker, _tokenDetails, stOwner, _divisible, _treasuryWallet, protocolVersion);
         emit SecurityTokenRefreshed(
             _ticker, _name, newSecurityTokenAddress, stOwner, now, stOwner, protocolVersion
         );
@@ -587,9 +587,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         address _issuer,
         bool _divisible,
         address _wallet,
-        uint256 _protocolVersion,
-        uint256 _usdFee,
-        uint256 _polyFee
+        uint256 _protocolVersion
     )
         internal
         returns(address newSecurityTokenAddress)

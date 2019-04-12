@@ -611,4 +611,9 @@ interface ISecurityToken {
     ) 
         external
         returns (bytes32);
+
+    /*
+    * @notice Returns if transfers are currently frozen or not
+    */
+    function transfersFrozen() external view returns (bool);
 }

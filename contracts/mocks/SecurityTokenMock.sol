@@ -18,11 +18,6 @@ contract SecurityTokenMock is SecurityToken {
      * @notice constructor
      */
     constructor(
-        string memory /* _name */,
-        string memory /* _symbol */,
-        uint8 /* _decimals */,
-        uint256 /* _granularity */,
-        string memory /* _tokenDetails */,
         address _polymathRegistry,
         address _delegate
     )

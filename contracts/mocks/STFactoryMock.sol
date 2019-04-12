@@ -2,19 +2,14 @@ pragma solidity ^0.5.0;
 
 import "./SecurityTokenMock.sol";
 import "../interfaces/ISTFactory.sol";
-import "../datastore/DataStoreFactory.sol";
 
 /**
  * @title Proxy for deploying SecurityToken instances
  */
 contract STFactoryMock is ISTFactory {
-    address public transferManagerFactory;
     address public stDelegate;
-    DataStoreFactory public dataStoreFactory;
 
     constructor(address _transferManagerFactory, address _dataStoreFactory, address _stDelegate) public {
-        transferManagerFactory = _transferManagerFactory;
-        dataStoreFactory = DataStoreFactory(_dataStoreFactory);
         stDelegate = _stDelegate;
     }
 
@@ -36,16 +31,9 @@ contract STFactoryMock is ISTFactory {
         returns(address)
     {
         SecurityTokenMock newSecurityToken = new SecurityTokenMock(
-            _name,
-            _symbol,
-            _decimals,
-            _divisible ? 1 : uint256(10) ** _decimals,
-            _tokenDetails,
             _polymathRegistry,
             stDelegate
         );
-        //NB When dataStore is generated, the security token address is automatically set via the constructor in DataStoreProxy.
-        newSecurityToken.addModule(transferManagerFactory, "", 0, 0, false);
         newSecurityToken.transferOwnership(_issuer);
         return address(newSecurityToken);
     }

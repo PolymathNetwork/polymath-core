@@ -70,6 +70,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     event DisableController();
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event TokenUpgraded(uint8 _major, uint8 _minor, uint8 _patch);
+    event Restrictions(address[] modules, bytes32[] names, bool[] isArchived, ITransferManager.Result[] valids);
 
     /**
      * @notice Initialization function
@@ -467,26 +468,37 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
             bool isValid;
             bool isForceValid;
             bool unarchived;
-            address module;
-            uint256 tmLength = modules[TRANSFER_KEY].length;
-            for (uint256 i = 0; i < tmLength; i++) {
-                module = modules[TRANSFER_KEY][i];
-                if (!modulesToData[module].isArchived) {
-                    unarchived = true;
-                    ITransferManager.Result valid = ITransferManager(module).executeTransfer(_from, _to, _value, _data);
-                    if (valid == ITransferManager.Result.INVALID) {
-                        isInvalid = true;
-                    } else if (valid == ITransferManager.Result.VALID) {
-                        isValid = true;
-                    } else if (valid == ITransferManager.Result.FORCE_VALID) {
-                        isForceValid = true;
-                    }
-                }
-            }
+            bytes32[] memory logName = new bytes32[](modules[TRANSFER_KEY].length);
+            bool[] memory logArchive = new bool[](modules[TRANSFER_KEY].length);
+            ITransferManager.Result[] memory logValid = new ITransferManager.Result[](modules[TRANSFER_KEY].length);
+            (unarchived, isForceValid, isInvalid, isValid) = _execute(modules[TRANSFER_KEY], _from, _to, _value, _data, logName, logArchive, logValid);
+
+            emit Restrictions(modules[TRANSFER_KEY], logName, logArchive, logValid);
+
             // If no unarchived modules, return true by default
             return unarchived ? (isForceValid ? true : (isInvalid ? false : isValid)) : true;
         }
         return false;
+    }
+
+    function _execute(address[] memory _modules, address _from, address _to, uint256 _value, bytes memory _data, bytes32[] memory _logName, bool[] memory _logArchive, ITransferManager.Result[] memory _logValid) internal returns (bool unarchived, bool isForceValid, bool isInvalid, bool isValid) {
+        for (uint256 i = 0; i < _modules.length; i++) {
+            _logName[i] = modulesToData[_modules[i]].name;
+            _logArchive[i] = modulesToData[_modules[i]].isArchived;
+            if (!_logArchive[i]) {
+                unarchived = true;
+                ITransferManager.Result valid = ITransferManager(_modules[i]).executeTransfer(_from, _to, _value, _data);
+                _logValid[i] = valid;
+                if (valid == ITransferManager.Result.INVALID) {
+                    isInvalid = true;
+                } else if (valid == ITransferManager.Result.VALID) {
+                    isValid = true;
+                } else if (valid == ITransferManager.Result.FORCE_VALID) {
+                    isForceValid = true;
+                }
+            }
+        }
+        return (unarchived, isForceValid, isInvalid, isValid);
     }
 
     /**

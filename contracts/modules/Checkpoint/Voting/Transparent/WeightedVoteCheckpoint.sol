@@ -1,6 +1,7 @@
 pragma solidity ^0.5.0;
 
-import "./VotingCheckpoint.sol";
+import "../VotingCheckpoint.sol";
+import "./WeightedVoteCheckpointStorage.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
@@ -9,23 +10,8 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
  * @notice In this module every token holder has voting right (Should be greater than zero)
  * Tally will be calculated as per the weight (balance of the token holder)
  */
-contract WeightedVoteCheckpoint is VotingCheckpoint {
+contract WeightedVoteCheckpoint is WeightedVoteCheckpointStorage, VotingCheckpoint {
     using SafeMath for uint256;
-
-    struct Ballot {
-        uint256 checkpointId; // Checkpoint At which ballot created
-        uint256 quorum;       // Should be a multiple of 10 ** 16
-        uint64 startTime;      // Timestamp at which ballot will come into effect
-        uint64 endTime;         // Timestamp at which ballot will no more into effect
-        uint64 totalProposals;  // Count of proposals allowed for a given ballot
-        uint56 totalVoters;     // Count of voters who vote for the given ballot  
-        bool isActive;          // flag used to turn off/on the ballot
-        mapping(uint256 => uint256) proposalToVotes;  // Mapping for proposal to total weight collected by the proposal
-        mapping(address => uint256) investorToProposal; // mapping for storing vote details of a voter
-        mapping(address => bool) exemptedVoters; // Mapping for blacklist voters
-    }
-
-    Ballot[] ballots;
 
     event BallotCreated(
         uint256 indexed _ballotId,

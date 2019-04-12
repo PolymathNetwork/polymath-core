@@ -1,12 +1,11 @@
 pragma solidity ^0.5.0;
 
-import "./IVoting.sol";
+import "../../../interfaces/IVoting.sol";
 import "../../Module.sol";
+import ".././ICheckpoint.sol";
+import "../../../storage/modules/Checkpoint/Voting/VotingCheckpointStorage.sol";
 
-contract VotingCheckpoint is IVoting, Module {
-
-    mapping(address => uint256) defaultExemptIndex;
-    address[] defaultExemptedVoters;
+contract VotingCheckpoint is VotingCheckpointStorage, ICheckpoint, IVoting, Module {
 
     event ChangedDefaultExemptedVotersList(address indexed _voter, bool _change);
 

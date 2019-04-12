@@ -28,16 +28,16 @@ contract CountTransferManager is CountTransferManagerStorage, TransferManager {
         address _from,
         address _to,
         uint256 _amount,
-        bytes calldata _data
+        bytes calldata /*_data*/
     )
         external
         returns(Result)
     {
-        (Result success,) = verifyTransfer(_from, _to, _amount, _data);
+        (Result success, ) = _verifyTransfer(_from, _to, _amount);
         return success;
     }
 
-    /** 
+    /**
      * @notice Used to verify the transfer transaction and prevent a transfer if it passes the allowed amount of token holders
      * @param _from Address of the sender
      * @param _to Address of the receiver
@@ -48,10 +48,22 @@ contract CountTransferManager is CountTransferManagerStorage, TransferManager {
         address _to,
         uint256 _amount,
         bytes memory /* _data */
-    ) 
+    )
         public
-        view 
-        returns(Result, bytes32) 
+        view
+        returns(Result, bytes32)
+    {
+        return _verifyTransfer(_from, _to, _amount);
+    }
+
+    function _verifyTransfer(
+        address _from,
+        address _to,
+        uint256 _amount
+    )
+        internal
+        view
+        returns(Result, bytes32)
     {
         if (!paused) {
             if (maxHolderCount < ISecurityToken(securityToken).holderCount()) {
@@ -96,7 +108,7 @@ contract CountTransferManager is CountTransferManagerStorage, TransferManager {
      */
     function getTokensByPartition(address /*_owner*/, bytes32 /*_partition*/) external view returns(uint256){
         return 0;
-    } 
+    }
 
     /**
      * @notice Returns the permissions flag that are associated with CountTransferManager

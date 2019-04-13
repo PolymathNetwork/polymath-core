@@ -135,9 +135,11 @@ library TokenLib {
     * @notice Unarchives a module attached to the SecurityToken
     * @param _moduleData Storage data
     */
-    function unarchiveModule(SecurityTokenStorage.ModuleData storage _moduleData) public {
+    function unarchiveModule(address _moduleRegistry, SecurityTokenStorage.ModuleData storage _moduleData) public {
         require(_moduleData.isArchived, "Module unarchived");
         /*solium-disable-next-line security/no-block-members*/
+        // Check the version is still valid - can only be false if token was upgraded between unarchive / archive
+        IModuleRegistry(_moduleRegistry).useModule(_moduleData.moduleFactory, true);
         emit ModuleUnarchived(_moduleData.moduleTypes, _moduleData.module);
         _moduleData.isArchived = false;
     }
@@ -146,8 +148,10 @@ library TokenLib {
     * @notice Upgrades a module attached to the SecurityToken
     * @param _moduleData Storage data
     */
-    function upgradeModule(SecurityTokenStorage.ModuleData storage _moduleData) public {
+    function upgradeModule(address _moduleRegistry, SecurityTokenStorage.ModuleData storage _moduleData) public {
         require(_moduleData.module != address(0), "Module missing");
+        //Check module is verified and within version bounds
+        IModuleRegistry(_moduleRegistry).useModule(_moduleData.moduleFactory, true);
         // Will revert if module isn't upgradable
         UpgradableModuleFactory(_moduleData.moduleFactory).upgrade(_moduleData.module);
         emit ModuleUpgraded(_moduleData.moduleTypes, _moduleData.module);

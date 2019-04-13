@@ -11,8 +11,13 @@ contract SignedTransferManagerFactory is ModuleFactory {
     /**
      * @notice Constructor
      */
-    constructor (uint256 _setupCost, uint256 _usageCost, address _polymathRegistry) public
-    ModuleFactory(_setupCost, _usageCost, _polymathRegistry)
+    constructor(
+        uint256 _setupCost,
+        uint256 _usageCost,
+        address _polymathRegistry,
+        bool _isCostInPoly
+    )
+        public ModuleFactory(_setupCost, _usageCost, _polymathRegistry, _isCostInPoly)
     {
         initialVersion = "3.0.0";
         name = "SignedTransferManager";
@@ -22,8 +27,8 @@ contract SignedTransferManagerFactory is ModuleFactory {
         typesData.push(6);
         tagsData.push("Signed");
         tagsData.push("Transfer Restriction");
-        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
     }
 
 

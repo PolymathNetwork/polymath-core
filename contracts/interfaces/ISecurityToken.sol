@@ -31,6 +31,13 @@ interface ISecurityToken {
     function canTransfer(address _to, uint256 _value, bytes calldata _data) external view returns (bool, byte, bytes32);
 
     /**
+     * @notice Initialization function
+     * @dev Expected to be called atomically with the proxy being created, by the owner of the token
+     * @dev Can only be called once
+     */
+    function initialize() external;
+
+    /**
      * @notice Transfers of securities may fail for a number of reasons. So this function will used to understand the
      * cause of failure by getting the byte value. Which will be the ESC that follows the EIP 1066. ESC can be mapped
      * with a reson string to understand the failure cause, table of Ethereum status code will always reside off-chain
@@ -247,12 +254,19 @@ interface ISecurityToken {
     */
     function changeDataStore(address _dataStore) external;
 
-   /**
-    * @notice Allows the owner to withdraw unspent POLY stored by them on the ST or any ERC20 token.
-    * @dev Owner can transfer POLY to the ST which will be used to pay for modules that require a POLY fee.
-    * @param _tokenContract Address of the ERC20Basic compliance token
-    * @param _value Amount of POLY to withdraw
-    */
+
+    /**
+     * @notice Allows to change the treasury wallet address
+     * @param _wallet Ethereum address of the treasury wallet
+     */
+    function changeTreasuryWallet(address _wallet) external;
+
+    /**
+     * @notice Allows the owner to withdraw unspent POLY stored by them on the ST or any ERC20 token.
+     * @dev Owner can transfer POLY to the ST which will be used to pay for modules that require a POLY fee.
+     * @param _tokenContract Address of the ERC20Basic compliance token
+     * @param _value Amount of POLY to withdraw
+     */
     function withdrawERC20(address _tokenContract, uint256 _value) external;
 
     /**
@@ -268,6 +282,12 @@ interface ISecurityToken {
      * @param _newTokenDetails New token details
      */
     function updateTokenDetails(string calldata _newTokenDetails) external;
+
+    /**
+    * @notice Allows owner to change token name
+    * @param _name new name of the token
+    */
+    function changeName(string calldata _name) external;
 
     /**
     * @notice Allows the owner to change token granularity
@@ -299,13 +319,15 @@ interface ISecurityToken {
       * @param _maxCost max amount of POLY willing to pay to the module.
       * @param _budget max amount of ongoing POLY willing to assign to the module.
       * @param _label custom module label.
+      * @param _archived whether to add the module as an archived module
       */
     function addModuleWithLabel(
         address _moduleFactory,
         bytes calldata _data,
         uint256 _maxCost,
         uint256 _budget,
-        bytes32 _label
+        bytes32 _label,
+        bool _archived
     ) external;
 
     /**
@@ -319,8 +341,9 @@ interface ISecurityToken {
      * @param _data is data packed into bytes used to further configure the module (See STO usage)
      * @param _maxCost max amount of POLY willing to pay to module. (WIP)
      * @param _budget max amount of ongoing POLY willing to assign to the module.
+     * @param _archived whether to add the module as an archived module
      */
-    function addModule(address _moduleFactory, bytes calldata _data, uint256 _maxCost, uint256 _budget) external;
+    function addModule(address _moduleFactory, bytes calldata _data, uint256 _maxCost, uint256 _budget, bool _archived) external;
 
     /**
     * @notice Archives a module attached to the SecurityToken
@@ -439,6 +462,17 @@ interface ISecurityToken {
     function granularity() external view returns(uint256);
 
     /**
+    * @notice Upgrades a module attached to the SecurityToken
+    * @param _module address of module to archive
+    */
+    function upgradeModule(address _module) external;
+
+    /**
+    * @notice Upgrades security token
+    */
+    function upgradeToken() external;
+
+    /**
      * @notice A security token issuer can specify that issuance has finished for the token
      * (i.e. no new tokens can be minted or issued).
      * @dev If a token returns FALSE for `isIssuable()` then it MUST always return FALSE in the future.
@@ -446,4 +480,9 @@ interface ISecurityToken {
      * @return bool `true` signifies the minting is allowed. While `false` denotes the end of minting
      */
     function isIssuable() external view returns (bool);
+
+    /**
+    * @notice Returns if transfers are currently frozen or not
+    */
+    function transfersFrozen() external view returns (bool);
 }

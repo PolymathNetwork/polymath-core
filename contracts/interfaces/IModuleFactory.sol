@@ -5,6 +5,7 @@ pragma solidity ^0.5.0;
  */
 interface IModuleFactory {
     event ChangeSetupCost(uint256 _oldSetupCost, uint256 _newSetupCost);
+    event ChangeCostType(bool _isOldCostInPoly, bool _isNewCostInPoly);
     event ChangeUsageCost(uint256 _oldUsageCost, uint256 _newUsageCost);
     event GenerateModuleFromFactory(
         address _module,
@@ -70,6 +71,14 @@ interface IModuleFactory {
      * @param _newUsageCost New usage fee
      */
     function changeUsageCost(uint256 _newUsageCost) external;
+
+    /**
+     * @notice Used to change the currency and amount of usage and setup cost
+     * @param _setupCost new setup cost
+     * @param _usageCost new usage cost
+     * @param _isCostInPoly new usage cost currency. USD or POLY
+     */
+    function changeCostsAndType(uint256 _setupCost, uint256 _usageCost, bool _isCostInPoly) external;
 
     /**
      * @notice Function use to change the lower and upper bound of the compatible version st

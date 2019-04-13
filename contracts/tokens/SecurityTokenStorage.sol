@@ -8,6 +8,8 @@ contract SecurityTokenStorage {
     uint8 constant CHECKPOINT_KEY = 4;
     uint8 constant BURN_KEY = 5;
     uint8 constant DATA_KEY = 6;
+    uint8 constant WALLET_KEY = 7;
+
     bytes32 internal constant INVESTORSKEY = 0xdf3a8dd24acdd05addfc6aeffef7574d2de3f844535ec91e8e0f3e45dba96731; //keccak256(abi.encodePacked("INVESTORS"))
     bytes32 internal constant TREASURY = 0xaae8817359f3dcb67d050f44f3e49f982e0359d90ca4b5f18569926304aaece6; //keccak256(abi.encodePacked("TREASURY_WALLET"))
 
@@ -46,6 +48,16 @@ contract SecurityTokenStorage {
         uint256 value;
     }
 
+    //Naming scheme to match Ownable
+    address public _owner;
+    address public tokenFactory;
+    bool public initialized;
+
+    // ERC20 Details
+    string public name;
+    string public symbol;
+    uint8 public decimals;
+
     // Address of the controller which is a delegated entity
     // set by the issuer/owner of the token
     address public controller;
@@ -54,7 +66,7 @@ contract SecurityTokenStorage {
     address public moduleRegistry;
     address public securityTokenRegistry;
     address public polyToken;
-    address public delegate;
+    address public getterDelegate;
     // Address of the data store used to store shared data
     address public dataStore;
 
@@ -111,5 +123,4 @@ contract SecurityTokenStorage {
     mapping(bytes32 => Document) internal _documents;
     // mapping to store the document name indexes
     mapping(bytes32 => uint256) internal _docIndexes;
-
 }

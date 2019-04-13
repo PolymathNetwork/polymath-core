@@ -14,9 +14,17 @@ contract VolumeRestrictionTMFactory is UpgradableModuleFactory {
      * @param _usageCost Usage cost of the module
      * @param _logicContract Contract address that contains the logic related to `description`
      * @param _polymathRegistry Address of the Polymath registry
+     * @param _isCostInPoly true = cost in Poly, false = USD
      */
-    constructor (uint256 _setupCost, uint256 _usageCost, address _logicContract, address _polymathRegistry) public
-    UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry)
+    constructor (
+        uint256 _setupCost,
+        uint256 _usageCost,
+        address _logicContract,
+        address _polymathRegistry,
+        bool _isCostInPoly
+    )
+        public
+        UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry, _isCostInPoly)
     {
         name = "VolumeRestrictionTM";
         title = "Volume Restriction Transfer Manager";
@@ -26,8 +34,8 @@ contract VolumeRestrictionTMFactory is UpgradableModuleFactory {
         tagsData.push("Rolling Period");
         tagsData.push("Volume");
         tagsData.push("Transfer Restriction");
-        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
     }
 
      /**
@@ -35,7 +43,7 @@ contract VolumeRestrictionTMFactory is UpgradableModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes calldata _data) external returns(address) {
-        address volumeRestrictionTransferManager = address(new VolumeRestrictionTMProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
+        address volumeRestrictionTransferManager = address(new VolumeRestrictionTMProxy(logicContracts[latestUpgrade].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestUpgrade].logicContract));
         _initializeModule(volumeRestrictionTransferManager, _data);
         return volumeRestrictionTransferManager;
     }

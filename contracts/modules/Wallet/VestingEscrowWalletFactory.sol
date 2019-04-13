@@ -1,9 +1,9 @@
 pragma solidity ^0.5.0;
 
 import "./VestingEscrowWalletProxy.sol";
-import "../../../interfaces/IBoot.sol";
-import "../../UpgradableModuleFactory.sol";
-import "../../../libraries/Util.sol";
+import "../../interfaces/IBoot.sol";
+import "../UpgradableModuleFactory.sol";
+import "../../libraries/Util.sol";
 
 /**
  * @title Factory for deploying VestingEscrowWallet module
@@ -13,8 +13,15 @@ contract VestingEscrowWalletFactory is UpgradableModuleFactory {
     /**
      * @notice Constructor
      */
-    constructor (uint256 _setupCost, uint256 _usageCost, address _logicContract, address _polymathRegistry) public
-    UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry)
+    constructor (
+        uint256 _setupCost,
+        uint256 _usageCost,
+        address _logicContract,
+        address _polymathRegistry,
+        bool _isCostInPoly
+    )
+        public
+        UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry, _isCostInPoly)
     {
         name = "VestingEscrowWallet";
         title = "Vesting Escrow Wallet";
@@ -23,8 +30,8 @@ contract VestingEscrowWalletFactory is UpgradableModuleFactory {
         tagsData.push("Vesting");
         tagsData.push("Escrow");
         tagsData.push("Transfer Restriction");
-        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
     }
 
     /**
@@ -33,7 +40,7 @@ contract VestingEscrowWalletFactory is UpgradableModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes calldata _data) external returns(address) {
-        address vestingEscrowWallet = address(new VestingEscrowWalletProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
+        address vestingEscrowWallet = address(new VestingEscrowWalletProxy(logicContracts[latestUpgrade].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestUpgrade].logicContract));
         _initializeModule(vestingEscrowWallet, _data);
         return vestingEscrowWallet;
     }

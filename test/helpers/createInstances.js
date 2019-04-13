@@ -475,15 +475,14 @@ export async function deployCappedSTOAndVerifyed(accountPolymath, MRProxyInstanc
     return Promise.all(new Array(I_CappedSTOFactory));
 }
 
-<<<<<<< HEAD
-export async function deployPOLYPeggedSTOAndVerified(accountPolymath, MRProxyInstance, setupCost) {
+export async function deployPOLYPeggedSTOAndVerified(accountPolymath, MRProxyInstance, setupCost, feeInPoly = false) {
     I_POLYPeggedSTOLogic = await POLYPeggedSTO.new(
         "0x0000000000000000000000000000000000000000",
         "0x0000000000000000000000000000000000000000",
         { from: accountPolymath }
     );
 
-    I_POLYPeggedSTOFactory = await POLYPeggedSTOFactory.new(setupCost, new BN(0), I_POLYPeggedSTOLogic.address, I_PolymathRegistry.address, { from: accountPolymath });
+    I_POLYPeggedSTOFactory = await POLYPeggedSTOFactory.new(setupCost, new BN(0), I_POLYPeggedSTOLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
 
     assert.notEqual(
         I_POLYPeggedSTOFactory.address.valueOf(),
@@ -495,10 +494,7 @@ export async function deployPOLYPeggedSTOAndVerified(accountPolymath, MRProxyIns
     return Promise.all(new Array(I_POLYPeggedSTOFactory));
 }
 
-export async function deployPresaleSTOAndVerified(accountPolymath, MRProxyInstance, setupCost) {
-=======
 export async function deployPresaleSTOAndVerified(accountPolymath, MRProxyInstance, setupCost, feeInPoly = false) {
->>>>>>> upstream/dev-3.0.0
     I_PreSaleSTOLogic = await PreSaleSTO.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
     I_PreSaleSTOFactory = await PreSaleSTOFactory.new(setupCost, new BN(0), I_PreSaleSTOLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
 

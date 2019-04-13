@@ -16,22 +16,24 @@ contract POLYPeggedSTOFactory is UpgradableModuleFactory {
      * @param _usageCost Usage cost of the module
      * @param _logicContract Contract address that contains the logic related to `description`
      * @param _polymathRegistry Address of the Polymath registry
+     * @param _isCostInPoly true = cost in Poly, false = USD
      */
-    constructor(
+    constructor (
         uint256 _setupCost,
         uint256 _usageCost,
         address _logicContract,
-        address _polymathRegistry
+        address _polymathRegistry,
+        bool _isCostInPoly
     )
         public
-        UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry)
+        UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry, _isCostInPoly)
     {
         name = "POLYPeggedSTO";
         title = "POLY - Pegged to USD - STO";
         /*solium-disable-next-line max-len*/
         description = "This smart contract creates a maximum number of tokens (i.e. hard cap) which the total aggregate of tokens acquired by all investors cannot exceed. Security tokens are sent to the investor upon reception of the funds (POLY). Tokens are allocated based on the USD value of POLY at the time of investment. This STO supports options for a minimum investment limit for all investors, maximum investment limit for non-accredited investors and an option to mint unsold tokens to a treasury wallet upon termination of the offering.";
-        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
         // set default tags
         typesData.push(3);
         tagsData.push("Capped");
@@ -46,7 +48,7 @@ contract POLYPeggedSTOFactory is UpgradableModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes calldata _data) external returns(address) {
-        address polyPeggedSTO = address(new POLYPeggedSTOProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
+        address polyPeggedSTO = address(new POLYPeggedSTOProxy(logicContracts[latestUpgrade].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestUpgrade].logicContract));
         _initializeModule(polyPeggedSTO, _data);
         return address(polyPeggedSTO);
     }

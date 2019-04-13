@@ -482,7 +482,7 @@ export async function deployPOLYCappedSTOAndVerified(accountPolymath, MRProxyIns
         { from: accountPolymath }
     );
 
-    I_POLYCappedSTOFactory = await POLYCappedSTOFactory.new(setupCost, new BN(0), I_POLYCappedSTOLogic.address, I_PolymathRegistry.address, { from: accountPolymath });
+    I_POLYCappedSTOFactory = await POLYCappedSTOFactory.new(setupCost, new BN(0), I_POLYCappedSTOLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
 
     assert.notEqual(
         I_POLYCappedSTOFactory.address.valueOf(),

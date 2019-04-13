@@ -19,20 +19,27 @@ interface ISecurityToken {
 
     /**
      * @notice Transfers of securities may fail for a number of reasons. So this function will used to understand the
-     * cause of failure by getting the byte value. Which will be the ESC that follows the EIP 1066. ESC can be mapped 
+     * cause of failure by getting the byte value. Which will be the ESC that follows the EIP 1066. ESC can be mapped
      * with a reson string to understand the failure cause, table of Ethereum status code will always reside off-chain
      * @param _to address The address which you want to transfer to
      * @param _value uint256 the amount of tokens to be transferred
      * @param _data The `bytes _data` allows arbitrary data to be submitted alongside the transfer.
      * @return bool It signifies whether the transaction will be executed or not.
      * @return byte Ethereum status code (ESC)
-     * @return bytes32 Application specific reason code 
+     * @return bytes32 Application specific reason code
      */
     function canTransfer(address _to, uint256 _value, bytes calldata _data) external view returns (bool, byte, bytes32);
 
     /**
+     * @notice Initialization function
+     * @dev Expected to be called atomically with the proxy being created, by the owner of the token
+     * @dev Can only be called once
+     */
+    function initialize() external;
+
+    /**
      * @notice Transfers of securities may fail for a number of reasons. So this function will used to understand the
-     * cause of failure by getting the byte value. Which will be the ESC that follows the EIP 1066. ESC can be mapped 
+     * cause of failure by getting the byte value. Which will be the ESC that follows the EIP 1066. ESC can be mapped
      * with a reson string to understand the failure cause, table of Ethereum status code will always reside off-chain
      * @param _from address The address which you want to send tokens from
      * @param _to address The address which you want to transfer to
@@ -40,7 +47,7 @@ interface ISecurityToken {
      * @param _data The `bytes _data` allows arbitrary data to be submitted alongside the transfer.
      * @return bool It signifies whether the transaction will be executed or not.
      * @return byte Ethereum status code (ESC)
-     * @return bytes32 Application specific reason code 
+     * @return bytes32 Application specific reason code
      */
     function canTransferFrom(address _from, address _to, uint256 _value, bytes calldata _data) external view returns (bool, byte, bytes32);
 
@@ -114,7 +121,7 @@ interface ISecurityToken {
     /**
      * @notice This function redeem an amount of the token of a msg.sender. For doing so msg.sender may incentivize
      * using different ways that could be implemented with in the `redeem` function definition. But those implementations
-     * are out of the scope of the ERC1594. 
+     * are out of the scope of the ERC1594.
      * @param _value The amount of tokens need to be redeemed
      * @param _data The `bytes _data` it can be used in the token contract to authenticate the redemption.
      */
@@ -123,7 +130,7 @@ interface ISecurityToken {
     /**
      * @notice This function redeem an amount of the token of a msg.sender. For doing so msg.sender may incentivize
      * using different ways that could be implemented with in the `redeem` function definition. But those implementations
-     * are out of the scope of the ERC1594. 
+     * are out of the scope of the ERC1594.
      * @dev It is analogy to `transferFrom`
      * @param _tokenHolder The account whose tokens gets redeemed.
      * @param _value The amount of tokens need to be redeemed
@@ -212,6 +219,15 @@ interface ISecurityToken {
     function getInvestorsAt(uint256 _checkpointId) external view returns(address[] memory);
 
     /**
+     * @notice returns an array of investors with non zero balance at a given checkpoint
+     * @param _checkpointId Checkpoint id at which investor list is to be populated
+     * @param _start Position of investor to start iteration from
+     * @param _end Position of investor to stop iteration at
+     * @return list of investors
+     */
+    function getInvestorsSubsetAt(uint256 _checkpointId, uint256 _start, uint256 _end) external view returns(address[] memory);
+
+    /**
      * @notice generates subset of investors
      * NB - can be used in batches if investor list is large
      * @param _start Position of investor to start iteration from
@@ -238,12 +254,19 @@ interface ISecurityToken {
     */
     function changeDataStore(address _dataStore) external;
 
-   /**
-    * @notice Allows the owner to withdraw unspent POLY stored by them on the ST or any ERC20 token.
-    * @dev Owner can transfer POLY to the ST which will be used to pay for modules that require a POLY fee.
-    * @param _tokenContract Address of the ERC20Basic compliance token
-    * @param _value Amount of POLY to withdraw
-    */
+
+    /**
+     * @notice Allows to change the treasury wallet address
+     * @param _wallet Ethereum address of the treasury wallet
+     */
+    function changeTreasuryWallet(address _wallet) external;
+
+    /**
+     * @notice Allows the owner to withdraw unspent POLY stored by them on the ST or any ERC20 token.
+     * @dev Owner can transfer POLY to the ST which will be used to pay for modules that require a POLY fee.
+     * @param _tokenContract Address of the ERC20Basic compliance token
+     * @param _value Amount of POLY to withdraw
+     */
     function withdrawERC20(address _tokenContract, uint256 _value) external;
 
     /**
@@ -259,6 +282,12 @@ interface ISecurityToken {
      * @param _newTokenDetails New token details
      */
     function updateTokenDetails(string calldata _newTokenDetails) external;
+
+    /**
+    * @notice Allows owner to change token name
+    * @param _name new name of the token
+    */
+    function changeName(string calldata _name) external;
 
     /**
     * @notice Allows the owner to change token granularity
@@ -290,13 +319,15 @@ interface ISecurityToken {
       * @param _maxCost max amount of POLY willing to pay to the module.
       * @param _budget max amount of ongoing POLY willing to assign to the module.
       * @param _label custom module label.
+      * @param _archived whether to add the module as an archived module
       */
     function addModuleWithLabel(
         address _moduleFactory,
         bytes calldata _data,
         uint256 _maxCost,
         uint256 _budget,
-        bytes32 _label
+        bytes32 _label,
+        bool _archived
     ) external;
 
     /**
@@ -310,8 +341,9 @@ interface ISecurityToken {
      * @param _data is data packed into bytes used to further configure the module (See STO usage)
      * @param _maxCost max amount of POLY willing to pay to module. (WIP)
      * @param _budget max amount of ongoing POLY willing to assign to the module.
+     * @param _archived whether to add the module as an archived module
      */
-    function addModule(address _moduleFactory, bytes calldata _data, uint256 _maxCost, uint256 _budget) external;
+    function addModule(address _moduleFactory, bytes calldata _data, uint256 _maxCost, uint256 _budget, bool _archived) external;
 
     /**
     * @notice Archives a module attached to the SecurityToken
@@ -347,8 +379,8 @@ interface ISecurityToken {
      * @param _value uint256 the amount of tokens to be transferred
      * @param _data data to validate the transfer. (It is not used in this reference implementation
      * because use of `_data` parameter is implementation specific).
-     * @param _operatorData data attached to the transfer by controller to emit in event. (It is more like a reason string 
-     * for calling this function (aka force transfer) which provides the transparency on-chain). 
+     * @param _operatorData data attached to the transfer by controller to emit in event. (It is more like a reason string
+     * for calling this function (aka force transfer) which provides the transparency on-chain).
      */
     function controllerTransfer(address _from, address _to, uint256 _value, bytes calldata _data, bytes calldata _operatorData) external;
 
@@ -361,8 +393,8 @@ interface ISecurityToken {
      * @param _value uint256 the amount of tokens need to be redeemed.
      * @param _data data to validate the transfer. (It is not used in this reference implementation
      * because use of `_data` parameter is implementation specific).
-     * @param _operatorData data attached to the transfer by controller to emit in event. (It is more like a reason string 
-     * for calling this function (aka force transfer) which provides the transparency on-chain). 
+     * @param _operatorData data attached to the transfer by controller to emit in event. (It is more like a reason string
+     * for calling this function (aka force transfer) which provides the transparency on-chain).
      */
     function controllerRedeem(address _tokenHolder, uint256 _value, bytes calldata _data, bytes calldata _operatorData) external;
 
@@ -413,6 +445,17 @@ interface ISecurityToken {
     function granularity() external view returns(uint256);
 
     /**
+    * @notice Upgrades a module attached to the SecurityToken
+    * @param _module address of module to archive
+    */
+    function upgradeModule(address _module) external;
+
+    /**
+    * @notice Upgrades security token
+    */
+    function upgradeToken() external;
+
+    /**
      * @notice A security token issuer can specify that issuance has finished for the token
      * (i.e. no new tokens can be minted or issued).
      * @dev If a token returns FALSE for `isIssuable()` then it MUST always return FALSE in the future.
@@ -420,4 +463,9 @@ interface ISecurityToken {
      * @return bool `true` signifies the minting is allowed. While `false` denotes the end of minting
      */
     function isIssuable() external view returns (bool);
+
+    /**
+    * @notice Returns if transfers are currently frozen or not
+    */
+    function transfersFrozen() external view returns (bool);
 }

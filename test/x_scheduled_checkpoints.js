@@ -1,6 +1,6 @@
 import latestTime from "./helpers/latestTime";
 import { duration, promisifyLogWatch, latestBlock } from "./helpers/utils";
-import { takeSnapshot, increaseTime, revertToSnapshot } from "./helpers/time";
+import { takeSnapshot, increaseTime, revertToSnapshot, jumpToTime } from "./helpers/time";
 import { encodeProxyCall, encodeModuleCall } from "./helpers/encodeCall";
 import { setUpPolymathNetwork, deployScheduleCheckpointAndVerified } from "./helpers/createInstances";
 
@@ -13,7 +13,7 @@ const Web3 = require("web3");
 let BN = Web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
-contract("ScheduledCheckpoint", async (accounts) => {
+process.env.COVERAGE ? contract.skip : contract("ScheduledCheckpoint", async (accounts) => {
 
     const SECONDS = 0;
     const DAYS = 1;
@@ -73,7 +73,6 @@ contract("ScheduledCheckpoint", async (accounts) => {
     const one_address = "0x0000000000000000000000000000000000000001";
 
     before(async () => {
-        currentTime = new BN(await latestTime());
         account_polymath = accounts[0];
         account_issuer = accounts[1];
 
@@ -81,7 +80,10 @@ contract("ScheduledCheckpoint", async (accounts) => {
 
         account_investor1 = accounts[7];
         account_investor2 = accounts[8];
-        account_investor3 = accounts[9];
+        account_investor3 = accounts[9]; 
+        //await jumpToTime(Math.floor((new Date().getTime())/1000));
+        await jumpToTime(1553040000); // 03/20/2019 @ 12:00am (UTC)
+        currentTime = new BN(await latestTime());
 
         // Step 1: Deploy the genral PM ecosystem
         let instances = await setUpPolymathNetwork(account_polymath, token_owner);
@@ -137,9 +139,9 @@ contract("ScheduledCheckpoint", async (accounts) => {
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, token_owner, 0, { from: token_owner });
 
             // Verify the successful generation of the security token
-            assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
+            assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
-            I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+            I_SecurityToken = await SecurityToken.at(tx.logs[1].args._securityTokenAddress);
             stGetter = await STGetter.at(I_SecurityToken.address);
             assert.equal(await stGetter.getTreasuryWallet.call(), token_owner, "Incorrect wallet set");
             const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
@@ -158,7 +160,7 @@ contract("ScheduledCheckpoint", async (accounts) => {
     describe("Buy tokens using on-chain whitelist", async () => {
         it("Should successfully attach the ScheduledCheckpoint with the security token", async () => {
             await I_SecurityToken.changeGranularity(1, { from: token_owner });
-            const tx = await I_SecurityToken.addModule(I_ScheduledCheckpointFactory.address, "0x0", new BN(0), new BN(0), { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_ScheduledCheckpointFactory.address, "0x0", new BN(0), new BN(0), false, { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toString(), 4, "ScheduledCheckpoint doesn't get deployed");
             assert.equal(tx.logs[2].args._types[1].toString(), 2, "ScheduledCheckpoint doesn't get deployed");
             assert.equal(

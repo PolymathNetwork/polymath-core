@@ -24,6 +24,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
     event SetWithholding(address[] _investors, uint256[] _withholding);
     event SetWithholdingFixed(address[] _investors, uint256 _withholding);
     event SetWallet(address indexed _oldWallet, address indexed _newWallet);
+    event UpdateDividendDates(uint256 indexed _dividendIndex, uint256 _maturity, uint256 _expiry);
 
     function _validDividendIndex(uint256 _dividendIndex) internal view {
         require(_dividendIndex < dividends.length, "Invalid dividend");
@@ -81,7 +82,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
         if (wallet == address(0)) {
             address payable treasuryWallet = address(uint160(IDataStore(getDataStore()).getAddress(TREASURY)));
             require(address(treasuryWallet) != address(0), "Invalid address");
-            return treasuryWallet; 
+            return treasuryWallet;
         }
         else
             return wallet;
@@ -166,21 +167,24 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @notice Issuer can push dividends using the investor list from the security token
      * @param _dividendIndex Dividend to push
      * @param _start Index in investor list at which to start pushing dividends
-     * @param _iterations Number of addresses to push dividends for
+     * @param _end Index in investor list at which to stop pushing dividends
      */
     function pushDividendPayment(
         uint256 _dividendIndex,
         uint256 _start,
-        uint256 _iterations
-    ) public
-      withPerm(OPERATOR)
+        uint256 _end
+    )
+        public
+        withPerm(OPERATOR)
     {
+        //NB If possible, please use pushDividendPaymentToAddresses as it is cheaper than this function
         _validDividendIndex(_dividendIndex);
         Dividend storage dividend = dividends[_dividendIndex];
         uint256 checkpointId = dividend.checkpointId;
-        address[] memory investors = ISecurityToken(securityToken).getInvestorsAt(checkpointId);
-        uint256 numberInvestors = Math.min(investors.length, _start.add(_iterations));
-        for (uint256 i = _start; i < numberInvestors; i++) {
+        address[] memory investors = ISecurityToken(securityToken).getInvestorsSubsetAt(checkpointId, _start, _end);
+        // The investors list maybe smaller than _end - _start becuase it only contains addresses that had a positive balance
+        // the _start and _end used here are for the address list stored in the dataStore
+        for (uint256 i = 0; i < investors.length; i++) {
             address payable payee = address(uint160(investors[i]));
             if ((!dividend.claimed[payee]) && (!dividend.dividendExcluded[payee])) {
                 _payDividend(payee, dividend, _dividendIndex);
@@ -192,7 +196,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @notice Investors can pull their own dividends
      * @param _dividendIndex Dividend to pull
      */
-    function pullDividendPayment(uint256 _dividendIndex) public {
+    function pullDividendPayment(uint256 _dividendIndex) public whenNotPaused {
         _validDividendIndex(_dividendIndex);
         Dividend storage dividend = dividends[_dividendIndex];
         require(!dividend.claimed[msg.sender], "Dividend already claimed");
@@ -261,6 +265,26 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @param _dividendIndex Dividend to withdraw from
      */
     function withdrawWithholding(uint256 _dividendIndex) external;
+
+    /**
+     * @notice Allows issuer to change maturity / expiry dates for dividends
+     * @dev NB - setting the maturity of a currently matured dividend to a future date
+     * @dev will effectively refreeze claims on that dividend until the new maturity date passes
+     * @ dev NB - setting the expiry date to a past date will mean no more payments can be pulled
+     * @dev or pushed out of a dividend
+     * @param _dividendIndex Dividend to withdraw from
+     * @param _maturity updated maturity date
+     * @param _expiry updated expiry date
+     */
+    function updateDividendDates(uint256 _dividendIndex, uint256 _maturity, uint256 _expiry) external withPerm(ADMIN) {
+        require(_dividendIndex < dividends.length, "Invalid dividend");
+        require(_expiry > _maturity, "Expiry before maturity");
+        Dividend storage dividend = dividends[_dividendIndex];
+        require(dividend.expiry > now, "Dividend already expired");
+        dividend.expiry = _expiry;
+        dividend.maturity = _maturity;
+        emit UpdateDividendDates(_dividendIndex, _maturity, _expiry);
+    }
 
     /**
      * @notice Get static dividend data

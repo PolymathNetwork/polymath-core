@@ -1,6 +1,6 @@
 pragma solidity ^0.5.0;
 
-import "../modules/STO/Dummy/DummySTOFactory.sol";
+import "./Dummy/DummySTOFactory.sol";
 
 contract TestSTOFactory is DummySTOFactory {
     /**
@@ -14,10 +14,11 @@ contract TestSTOFactory is DummySTOFactory {
         uint256 _setupCost,
         uint256 _usageCost,
         address _logicContract,
-        address _polymathRegistry
+        address _polymathRegistry,
+        bool _isFeeInPoly
     )
         public
-        DummySTOFactory(_setupCost, _usageCost, _logicContract, _polymathRegistry)
+        DummySTOFactory(_setupCost, _usageCost, _logicContract, _polymathRegistry, _isFeeInPoly)
     {
         name = "TestSTO";
         title = "Test STO";

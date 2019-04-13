@@ -170,19 +170,17 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         (uint256 claim, uint256 withheld) = calculateDividend(_dividendIndex, _payee);
         _dividend.claimed[_payee] = true;
         uint256 claimAfterWithheld = claim.sub(withheld);
-        if (claimAfterWithheld > 0) {
-            /*solium-disable-next-line security/no-send*/
-            if (_payee.send(claimAfterWithheld)) {
-                _dividend.claimedAmount = _dividend.claimedAmount.add(claim);
-                if (withheld > 0) {
-                    _dividend.totalWithheld = _dividend.totalWithheld.add(withheld);
-                    _dividend.withheld[_payee] = withheld;
-                }
-                emit EtherDividendClaimed(_payee, _dividendIndex, claim, withheld);
-            } else {
-                _dividend.claimed[_payee] = false;
-                emit EtherDividendClaimFailed(_payee, _dividendIndex, claim, withheld);
+        /*solium-disable-next-line security/no-send*/
+        if (_payee.send(claimAfterWithheld)) {
+            _dividend.claimedAmount = _dividend.claimedAmount.add(claim);
+            if (withheld > 0) {
+                _dividend.totalWithheld = _dividend.totalWithheld.add(withheld);
+                _dividend.withheld[_payee] = withheld;
             }
+            emit EtherDividendClaimed(_payee, _dividendIndex, claim, withheld);
+        } else {
+            _dividend.claimed[_payee] = false;
+            emit EtherDividendClaimFailed(_payee, _dividendIndex, claim, withheld);
         }
     }
 

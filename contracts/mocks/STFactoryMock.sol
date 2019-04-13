@@ -29,11 +29,11 @@ contract STFactoryMock is ISTFactory {
         string calldata _tokenDetails,
         address _issuer,
         bool _divisible,
-        address _treasuryWallet,
+        address /* _treasuryWallet */,
         address _polymathRegistry
-    ) 
-        external 
-        returns(address) 
+    )
+        external
+        returns(address)
     {
         SecurityTokenMock newSecurityToken = new SecurityTokenMock(
             _name,
@@ -45,9 +45,7 @@ contract STFactoryMock is ISTFactory {
             stDelegate
         );
         //NB When dataStore is generated, the security token address is automatically set via the constructor in DataStoreProxy.
-        newSecurityToken.changeDataStore(dataStoreFactory.generateDataStore(address(newSecurityToken)));
-        newSecurityToken.changeTreasuryWallet(_treasuryWallet);
-        newSecurityToken.addModule(transferManagerFactory, "", 0, 0);
+        newSecurityToken.addModule(transferManagerFactory, "", 0, 0, false);
         newSecurityToken.transferOwnership(_issuer);
         return address(newSecurityToken);
     }

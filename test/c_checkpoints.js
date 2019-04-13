@@ -129,9 +129,9 @@ contract("Checkpoints", async function(accounts) {
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, token_owner, 0, { from: token_owner });
 
             // Verify the successful generation of the security token
-            assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
+            assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
-            I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+            I_SecurityToken = await SecurityToken.at(tx.logs[1].args._securityTokenAddress);
             stGetter = await STGetter.at(I_SecurityToken.address);
             const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
@@ -247,7 +247,9 @@ contract("Checkpoints", async function(accounts) {
                         " TotalSupply: " +
                         JSON.stringify(totalSupply)
                 );
-                await I_SecurityToken.createCheckpoint({ from: token_owner });
+                let investorLength = await stGetter.getInvestorCount();
+                let tx = await I_SecurityToken.createCheckpoint({ from: token_owner });
+                assert.equal((tx.logs[0].args[1]).toString(), investorLength.toString());
                 let checkpointTimes = await stGetter.getCheckpointTimes();
                 assert.equal(checkpointTimes.length, j + 1);
                 console.log("Checkpoint Times: " + checkpointTimes);

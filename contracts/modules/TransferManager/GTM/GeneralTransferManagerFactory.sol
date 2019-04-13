@@ -14,15 +14,17 @@ contract GeneralTransferManagerFactory is UpgradableModuleFactory {
      * @param _usageCost Usage cost of the module
      * @param _logicContract Contract address that contains the logic related to `description`
      * @param _polymathRegistry Address of the Polymath registry
+     * @param _isCostInPoly true = cost in Poly, false = USD
      */
-    constructor(
+    constructor (
         uint256 _setupCost,
         uint256 _usageCost,
         address _logicContract,
-        address _polymathRegistry
+        address _polymathRegistry,
+        bool _isCostInPoly
     )
         public
-        UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry)
+        UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry, _isCostInPoly)
     {
         name = "GeneralTransferManager";
         title = "General Transfer Manager";
@@ -31,8 +33,8 @@ contract GeneralTransferManagerFactory is UpgradableModuleFactory {
         typesData.push(6);
         tagsData.push("General");
         tagsData.push("Transfer Restriction");
-        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
     }
 
     /**
@@ -45,7 +47,7 @@ contract GeneralTransferManagerFactory is UpgradableModuleFactory {
         external
         returns(address)
     {
-        address generalTransferManager = address(new GeneralTransferManagerProxy(logicContracts[latestVersion].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestVersion].logicContract));
+        address generalTransferManager = address(new GeneralTransferManagerProxy(logicContracts[latestUpgrade].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestUpgrade].logicContract));
         _initializeModule(generalTransferManager, _data);
         return generalTransferManager;
     }

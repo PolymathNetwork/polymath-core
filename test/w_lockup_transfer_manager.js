@@ -144,9 +144,9 @@ contract('LockUpTransferManager', accounts => {
             let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, token_owner, 0, { from: token_owner });
 
             // Verify the successful generation of the security token
-            assert.equal(tx.logs[2].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
+            assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
-            I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+            I_SecurityToken = await SecurityToken.at(tx.logs[1].args._securityTokenAddress);
             stGetter = await STGetter.at(I_SecurityToken.address);
             assert.equal(await stGetter.getTreasuryWallet.call(), token_owner, "Incorrect wallet set");
             const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
@@ -177,9 +177,9 @@ contract('LockUpTransferManager', accounts => {
             let tx = await I_STRProxied.generateSecurityToken(name2, symbol2, tokenDetails, true, token_owner, 0, { from: token_owner });
 
             // Verify the successful generation of the security token
-            assert.equal(tx.logs[2].args._ticker, symbol2.toUpperCase(), "SecurityToken doesn't get deployed");
+            assert.equal(tx.logs[1].args._ticker, symbol2.toUpperCase(), "SecurityToken doesn't get deployed");
 
-            I_SecurityToken_div = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
+            I_SecurityToken_div = await SecurityToken.at(tx.logs[1].args._securityTokenAddress);
             stGetter_div = await STGetter.at(I_SecurityToken_div.address);
             assert.equal(await stGetter_div.getTreasuryWallet.call(), token_owner, "Incorrect wallet set");
             const log = (await I_SecurityToken_div.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
@@ -255,7 +255,7 @@ contract('LockUpTransferManager', accounts => {
         it("Should unsuccessfully attach the LockUpTransferManager factory with the security token -- failed because Token is not paid", async () => {
             await I_PolyToken.getTokens(web3.utils.toWei("2000", "ether"), token_owner);
             await catchRevert(
-                 I_SecurityToken.addModule(P_LockUpTransferManagerFactory.address, "0x", new BN(web3.utils.toWei("2000", "ether")), 0, { from: token_owner })
+                 I_SecurityToken.addModule(P_LockUpTransferManagerFactory.address, "0x", new BN(web3.utils.toWei("2000", "ether")), 0, false, { from: token_owner })
             )
         });
 
@@ -263,7 +263,7 @@ contract('LockUpTransferManager', accounts => {
             let snapId = await takeSnapshot();
             await I_PolyToken.transfer(I_SecurityToken.address, new BN(web3.utils.toWei("2000", "ether")), {from: token_owner});
             console.log((await P_LockUpTransferManagerFactory.setupCost.call()).toString());
-            const tx = await I_SecurityToken.addModule(P_LockUpTransferManagerFactory.address, "0x", new BN(web3.utils.toWei("2000", "ether")), new BN(0), { from: token_owner });
+            const tx = await I_SecurityToken.addModule(P_LockUpTransferManagerFactory.address, "0x", new BN(web3.utils.toWei("2000", "ether")), new BN(0), false, { from: token_owner });
             assert.equal(tx.logs[3].args._types[0].toString(), transferManagerKey, "LockUpVolumeRestrictionTMFactory doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[3].args._name)
@@ -276,7 +276,7 @@ contract('LockUpTransferManager', accounts => {
         });
 
         it("Should successfully attach the LockUpVolumeRestrictionTMFactory with the non-divisible security token", async () => {
-            const tx = await I_SecurityToken.addModule(I_LockUpTransferManagerFactory.address, "0x", 0, 0, { from: token_owner });
+            const tx = await I_SecurityToken.addModule(I_LockUpTransferManagerFactory.address, "0x", 0, 0, false, { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toString(), transferManagerKey, "LockUpVolumeRestrictionTMFactory doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name)
@@ -288,7 +288,7 @@ contract('LockUpTransferManager', accounts => {
         });
 
         it("Should successfully attach the LockUpVolumeRestrictionTMFactory with the divisible security token", async () => {
-            const tx = await I_SecurityToken_div.addModule(I_LockUpTransferManagerFactory.address, "0x", 0, 0, { from: token_owner });
+            const tx = await I_SecurityToken_div.addModule(I_LockUpTransferManagerFactory.address, "0x", 0, 0, false, { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toString(), transferManagerKey, "LockUpVolumeRestrictionTMFactory doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[2].args._name)
@@ -448,7 +448,7 @@ contract('LockUpTransferManager', accounts => {
                     currentTime.add(new BN(duration.seconds(1))),
                     new BN(duration.seconds(400000)),
                     new BN(duration.seconds(100000)),
-                    web3.utils.fromAscii("a_lockup"),
+                    web3.utils.fromAscii("a_lockup2"),
                     {
                         from: token_owner
                     }
@@ -953,13 +953,16 @@ contract('LockUpTransferManager', accounts => {
 
             await I_LockUpTransferManager.addLockUpByName(account_investor2, web3.utils.fromAscii("l_lockup"), {from: token_owner});
 
+            //Should not allow to add a user to a lockup multiple times
+            await catchRevert(I_LockUpTransferManager.addLockUpByName(account_investor2, web3.utils.fromAscii("l_lockup"), {from: token_owner}));
+
             // try to delete the lockup but fail
 
             await catchRevert(
                 I_LockUpTransferManager.removeLockupType(web3.utils.fromAscii("l_lockup"), {from: token_owner})
             );
         })
-        
+
         it("Should get the data of all lockups", async() => {
             console.log(await I_LockUpTransferManager.getAllLockupData.call());
         });

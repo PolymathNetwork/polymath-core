@@ -57,6 +57,25 @@ async function takeSnapshot() {
     });
 }
 
+async function jumpToTime(timestamp) {
+  await new Promise(
+    (resolve, reject) => {
+      web3.currentProvider.send({
+        jsonrpc: '2.0',
+        method: "evm_mine",
+        params: [timestamp],
+      },
+      (err, result) => {
+        if (err) {
+          return reject(err);
+        }
+        resolve(result.result);
+      }
+    );
+  });
+  await advanceBlock();
+}
+
 async function revertToSnapshot(snapShotId) {
     return new Promise((resolve, reject) => {
         web3.currentProvider.send(
@@ -77,4 +96,4 @@ async function revertToSnapshot(snapShotId) {
     });
 }
 
-export { increaseTime, takeSnapshot, revertToSnapshot };
+export { increaseTime, takeSnapshot, revertToSnapshot, jumpToTime };

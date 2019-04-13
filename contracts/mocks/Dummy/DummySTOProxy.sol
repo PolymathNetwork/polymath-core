@@ -1,14 +1,16 @@
 pragma solidity ^0.5.0;
 
-import "./LockUpTransferManagerStorage.sol";
-import "../../../../proxy/OwnedUpgradeabilityProxy.sol";
-import "../../../../Pausable.sol";
-import "../../../../storage/modules/ModuleStorage.sol";
+import "../../proxy/OwnedUpgradeabilityProxy.sol";
+import "../../Pausable.sol";
+import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
+import "../../storage/modules/STO/STOStorage.sol";
+import "../../storage/modules/ModuleStorage.sol";
+import "./DummySTOStorage.sol";
 
 /**
- * @title CountTransferManager module Proxy
+ * @title DummySTO module Proxy
  */
-contract LockUpTransferManagerProxy is LockUpTransferManagerStorage, ModuleStorage, Pausable, OwnedUpgradeabilityProxy {
+contract DummySTOProxy is DummySTOStorage, STOStorage, ModuleStorage, Pausable, ReentrancyGuard, OwnedUpgradeabilityProxy {
 
     /**
     * @notice Constructor

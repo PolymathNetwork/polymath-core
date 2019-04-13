@@ -27,9 +27,11 @@ const DevPolyToken = artifacts.require("./helpers/PolyTokenFaucet.sol");
 const MockOracle = artifacts.require("./MockOracle.sol");
 const StableOracle = artifacts.require("./StableOracle.sol");
 const TokenLib = artifacts.require("./TokenLib.sol");
-const SecurityToken = artifacts.require("./tokens/SecurityToken.sol");
+const SecurityTokenLogic = artifacts.require("./tokens/SecurityToken.sol");
+const MockSecurityTokenLogic = artifacts.require("./tokens/MockSecurityTokenLogic.sol");
 const STRGetter = artifacts.require('./STRGetter.sol');
 const STGetter = artifacts.require('./STGetter.sol');
+const MockSTGetter = artifacts.require('./MockSTGetter.sol');
 const DataStoreLogic = artifacts.require('./DataStore.sol');
 const DataStoreFactory = artifacts.require('./DataStoreFactory.sol');
 const VolumeRestrictionTMFactory = artifacts.require('./VolumeRestrictionTMFactory.sol')
@@ -147,6 +149,17 @@ module.exports = function(deployer, network, accounts) {
         });
     }
 
+    const tokenInitBytes = {
+        name: "initialize",
+        type: "function",
+        inputs: [
+            {
+                type: "address",
+                name: "_getterDelegate"
+            }
+        ]
+    };
+
     const functionSignatureProxy = {
         name: "initialize",
         type: "function",
@@ -154,10 +167,6 @@ module.exports = function(deployer, network, accounts) {
             {
                 type: "address",
                 name: "_polymathRegistry"
-            },
-            {
-                type: "address",
-                name: "_STFactory"
             },
             {
                 type: "uint256",
@@ -214,9 +223,11 @@ module.exports = function(deployer, network, accounts) {
         .then(() => {
             // Link libraries
             deployer.link(VolumeRestrictionLib, VolumeRestrictionTMLogic);
-            deployer.link(TokenLib, SecurityToken);
+            deployer.link(TokenLib, SecurityTokenLogic);
+            deployer.link(TokenLib, MockSecurityTokenLogic);
             deployer.link(TokenLib, STFactory);
             deployer.link(TokenLib, STGetter);
+            deployer.link(TokenLib, MockSTGetter);
             // A) Deploy the ModuleRegistry Contract (It contains the list of verified ModuleFactory)
             return deployer.deploy(ModuleRegistry, { from: PolymathAccount });
         })
@@ -293,6 +304,10 @@ module.exports = function(deployer, network, accounts) {
             return deployer.deploy(DataStoreLogic, { from: PolymathAccount });
         })
         .then(() => {
+            // B) Deploy the SecurityTokenLogic Contract
+            return deployer.deploy(SecurityTokenLogic, "", "", 0, { from: PolymathAccount });
+        })
+        .then(() => {
             // B) Deploy the DataStoreFactory Contract
             return deployer.deploy(DataStoreFactory, DataStoreLogic.address, { from: PolymathAccount });
         })
@@ -356,7 +371,8 @@ module.exports = function(deployer, network, accounts) {
         })
         .then(() => {
             // H) Deploy the STVersionProxy001 Contract which contains the logic of deployment of securityToken.
-            return deployer.deploy(STFactory, GeneralTransferManagerFactory.address, DataStoreFactory.address, STGetter.address, { from: PolymathAccount });
+            let tokenInitBytesCall = web3.eth.abi.encodeFunctionCall(tokenInitBytes, [STGetter.address]);
+            return deployer.deploy(STFactory, polymathRegistry.address, GeneralTransferManagerFactory.address, DataStoreFactory.address, "3.0.0", SecurityTokenLogic.address, tokenInitBytesCall, { from: PolymathAccount });
         })
         .then(() => {
             // K) Deploy the FeatureRegistry contract to control feature switches
@@ -382,7 +398,6 @@ module.exports = function(deployer, network, accounts) {
         .then((securityTokenRegistryProxy) => {
             let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignatureProxy, [
                 PolymathRegistry.address,
-                STFactory.address,
                 initRegFee,
                 initRegFee,
                 PolymathAccount,
@@ -391,6 +406,18 @@ module.exports = function(deployer, network, accounts) {
             return securityTokenRegistryProxy.upgradeToAndCall("1.0.0", SecurityTokenRegistry.address, bytesProxy, {
                 from: PolymathAccount
             });
+        })
+        .then(() => {
+            return SecurityTokenRegistry.at(SecurityTokenRegistryProxy.address);
+        })
+        .then((securityTokenRegistry) => {
+            return securityTokenRegistry.setProtocolFactory(STFactory.address, 3, 0, 0);
+        })
+        .then(() => {
+            return SecurityTokenRegistry.at(SecurityTokenRegistryProxy.address);
+        })
+        .then((securityTokenRegistry) => {
+            return securityTokenRegistry.setLatestVersion(3, 0, 0);
         })
         .then(() => {
             // Assign the address into the SecurityTokenRegistry key
@@ -444,49 +471,49 @@ module.exports = function(deployer, network, accounts) {
             // F) Once the GeneralTransferManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
             // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
             // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
-            return moduleRegistry.verifyModule(GeneralTransferManagerFactory.address, true, { from: PolymathAccount });
+            return moduleRegistry.verifyModule(GeneralTransferManagerFactory.address, { from: PolymathAccount });
         })
         .then(() => {
             // G) Once the CountTransferManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
             // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
             // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
-            return moduleRegistry.verifyModule(CountTransferManagerFactory.address, true, { from: PolymathAccount });
+            return moduleRegistry.verifyModule(CountTransferManagerFactory.address, { from: PolymathAccount });
         })
         .then(() => {
             // G) Once the PercentageTransferManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
             // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
             // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
-            return moduleRegistry.verifyModule(PercentageTransferManagerFactory.address, true, { from: PolymathAccount });
+            return moduleRegistry.verifyModule(PercentageTransferManagerFactory.address, { from: PolymathAccount });
         })
         .then(() => {
             // G) Once the GeneralPermissionManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
             // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
             // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
-            return moduleRegistry.verifyModule(GeneralPermissionManagerFactory.address, true, { from: PolymathAccount });
+            return moduleRegistry.verifyModule(GeneralPermissionManagerFactory.address, { from: PolymathAccount });
         })
         .then(() => {
             // G) Once the EtherDividendCheckpointFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
             // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
             // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
-            return moduleRegistry.verifyModule(EtherDividendCheckpointFactory.address, true, { from: PolymathAccount });
+            return moduleRegistry.verifyModule(EtherDividendCheckpointFactory.address, { from: PolymathAccount });
         })
         .then(() => {
             // G) Once the ERC20DividendCheckpointFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
             // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
             // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
-            return moduleRegistry.verifyModule(ERC20DividendCheckpointFactory.address, true, { from: PolymathAccount });
+            return moduleRegistry.verifyModule(ERC20DividendCheckpointFactory.address, { from: PolymathAccount });
         })
         .then(() => {
             // G) Once the VolumeRestrictionTMFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
             // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
             // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
-            return moduleRegistry.verifyModule(VolumeRestrictionTMFactory.address, true, { from: PolymathAccount });
+            return moduleRegistry.verifyModule(VolumeRestrictionTMFactory.address, { from: PolymathAccount });
         })
         .then(() => {
             // G) Once the ManualApprovalTransferManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
             // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
             // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
-            return moduleRegistry.verifyModule(ManualApprovalTransferManagerFactory.address, true, { from: PolymathAccount });
+            return moduleRegistry.verifyModule(ManualApprovalTransferManagerFactory.address, { from: PolymathAccount });
         })
         .then(() => {
             // M) Deploy the CappedSTOFactory (Use to generate the CappedSTO contract which will used to collect the funds ).
@@ -501,7 +528,7 @@ module.exports = function(deployer, network, accounts) {
             // G) Once the CappedSTOFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
             // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
             // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
-            return moduleRegistry.verifyModule(CappedSTOFactory.address, true, { from: PolymathAccount });
+            return moduleRegistry.verifyModule(CappedSTOFactory.address, { from: PolymathAccount });
         })
         .then(() => {
             // H) Deploy the USDTieredSTOFactory (Use to generate the USDTieredSTOFactory contract which will used to collect the funds ).
@@ -516,7 +543,7 @@ module.exports = function(deployer, network, accounts) {
             // J) Once the USDTieredSTOFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
             // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
             // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
-            return moduleRegistry.verifyModule(USDTieredSTOFactory.address, true, { from: PolymathAccount });
+            return moduleRegistry.verifyModule(USDTieredSTOFactory.address, { from: PolymathAccount });
         })
         .then(() => {
             return polymathRegistry.changeAddress("PolyUsdOracle", POLYOracle, { from: PolymathAccount });
@@ -525,7 +552,7 @@ module.exports = function(deployer, network, accounts) {
             return polymathRegistry.changeAddress("EthUsdOracle", ETHOracle, { from: PolymathAccount });
         })
         .then(() => {
-            return deployer.deploy(SecurityToken, "a", "a", 18, 1, "a", polymathRegistry.address, STGetter.address, { from: PolymathAccount });
+            // return deployer.deploy(SecurityToken, "a", "a", 18, 1, "a", polymathRegistry.address, STGetter.address, { from: PolymathAccount });
             return polymathRegistry.changeAddress("StablePolyUsdOracle", StablePOLYOracle, { from: PolymathAccount });
         })
         .then(() => {

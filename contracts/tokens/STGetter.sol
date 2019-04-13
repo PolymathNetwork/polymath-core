@@ -11,29 +11,6 @@ contract STGetter is OZStorage, SecurityTokenStorage {
 
     using SafeMath for uint256;
 
-     /**
-     * @notice Used to return the details of a document with a known name (`bytes32`).
-     * @param _name Name of the document
-     * @return string The URI associated with the document.
-     * @return bytes32 The hash (of the contents) of the document.
-     * @return uint256 the timestamp at which the document was last modified.
-     */
-    function getDocument(bytes32 _name) external view returns (string memory, bytes32, uint256) {
-        return (
-            _documents[_name].uri,
-            _documents[_name].docHash,
-            _documents[_name].lastModified
-        );
-    }
-
-    /**
-     * @notice Used to retrieve a full list of documents attached to the smart contract.
-     * @return bytes32 List of all documents names present in the contract.
-     */
-    function getAllDocuments() external view returns (bytes32[] memory) {
-        return _docNames;
-    }
-
     /**
      * @notice Gets list of times that checkpoints were created
      * @return List of checkpoint times
@@ -74,12 +51,44 @@ contract STGetter is OZStorage, SecurityTokenStorage {
         for (i = 0; i < investors.length; i++) {
             if (balanceOfAt(investors[i], _checkpointId) > 0) {
                 count++;
+            } else {
+                investors[i] = address(0);
             }
         }
         address[] memory holders = new address[](count);
         count = 0;
         for (i = 0; i < investors.length; i++) {
+            if (investors[i] != address(0)) {
+                holders[count] = investors[i];
+                count++;
+            }
+        }
+        return holders;
+    }
+
+    /**
+     * @notice returns an array of investors with non zero balance at a given checkpoint
+     * @param _checkpointId Checkpoint id at which investor list is to be populated
+     * @param _start Position of investor to start iteration from
+     * @param _end Position of investor to stop iteration at
+     * @return list of investors
+     */
+    function getInvestorsSubsetAt(uint256 _checkpointId, uint256 _start, uint256 _end) external view returns(address[] memory) {
+        uint256 count;
+        uint256 i;
+        IDataStore dataStoreInstance = IDataStore(dataStore);
+        address[] memory investors = dataStoreInstance.getAddressArrayElements(INVESTORSKEY, _start, _end);
+        for (i = 0; i < investors.length; i++) {
             if (balanceOfAt(investors[i], _checkpointId) > 0) {
+                count++;
+            } else {
+                investors[i] = address(0);
+            }
+        }
+        address[] memory holders = new address[](count);
+        count = 0;
+        for (i = 0; i < investors.length; i++) {
+            if (investors[i] != address(0)) {
                 holders[count] = investors[i];
                 count++;
             }
@@ -127,7 +136,7 @@ contract STGetter is OZStorage, SecurityTokenStorage {
     }
 
     /**
-     * @notice use to return the global treasury wallet 
+     * @notice use to return the global treasury wallet
      */
     function getTreasuryWallet() external view returns(address) {
         return IDataStore(dataStore).getAddress(TREASURY);
@@ -207,11 +216,33 @@ contract STGetter is OZStorage, SecurityTokenStorage {
      * @notice Returns the version of the SecurityToken
      */
     function getVersion() external view returns(uint8[] memory) {
-        uint8[] memory _version = new uint8[](3);
-        _version[0] = securityTokenVersion.major;
-        _version[1] = securityTokenVersion.minor;
-        _version[2] = securityTokenVersion.patch;
-        return _version;
+        uint8[] memory version = new uint8[](3);
+        version[0] = securityTokenVersion.major;
+        version[1] = securityTokenVersion.minor;
+        version[2] = securityTokenVersion.patch;
+        return version;
     }
 
+    /**
+     * @notice Used to return the details of a document with a known name (`bytes32`).
+     * @param _name Name of the document
+     * @return string The URI associated with the document.
+     * @return bytes32 The hash (of the contents) of the document.
+     * @return uint256 the timestamp at which the document was last modified.
+     */
+    function getDocument(bytes32 _name) external view returns (string memory, bytes32, uint256) {
+        return (
+           _documents[_name].uri,
+           _documents[_name].docHash,
+           _documents[_name].lastModified
+        );
+    }
+
+    /**
+     * @notice Used to retrieve a full list of documents attached to the smart contract.
+     * @return bytes32 List of all documents names present in the contract.
+     */
+    function getAllDocuments() external view returns (bytes32[] memory) {
+        return _docNames;
+    }
 }

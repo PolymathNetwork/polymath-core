@@ -57,7 +57,7 @@ start_testrpc() {
   )
 
   if [ "$COVERAGE" = true ]; then
-    node_modules/.bin/testrpc-sc --gasLimit 0xfffffffff --port "$testrpc_port" "${accounts[@]}" > /dev/null &
+    node --max-old-space-size=3500 node_modules/.bin/testrpc-sc --gasLimit 0xfffffffff --port "$testrpc_port" "${accounts[@]}" > /dev/null &
   else
     node_modules/.bin/ganache-cli --gasLimit 8000000 "${accounts[@]}" > /dev/null &
   fi
@@ -91,7 +91,7 @@ fi
 if [ "$COVERAGE" = true ]; then
   curl -o node_modules/solidity-coverage/lib/app.js https://raw.githubusercontent.com/maxsam4/solidity-coverage/relative-path/lib/app.js
   curl -o node_modules/solidity-parser-sc/build/parser.js https://raw.githubusercontent.com/maxsam4/solidity-parser/solidity-0.5/build/parser.js
-  node_modules/.bin/solidity-coverage
+  node --max_old_space_size=3500 node_modules/.bin/solidity-coverage
   if [ "$CIRCLECI" = true ]; then
     cat coverage/lcov.info | node_modules/.bin/coveralls || echo 'Failed to report coverage to Coveralls'
   fi

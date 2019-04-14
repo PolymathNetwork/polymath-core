@@ -196,7 +196,6 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         address _getterContract
     )
         public
-        payable
     {
         require(!getBoolValue(INITIALIZE),"Initialized");
         require(

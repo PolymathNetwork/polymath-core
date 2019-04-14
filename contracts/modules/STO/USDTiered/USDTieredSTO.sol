@@ -1,8 +1,8 @@
 pragma solidity ^0.5.0;
 
 import "../STO.sol";
+import "../../../interfaces/IPolymathRegistry.sol";
 import "../../../interfaces/IOracle.sol";
-import "../../../RegistryUpdater.sol";
 import "../../../libraries/DecimalMath.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./USDTieredSTOStorage.sol";
@@ -758,7 +758,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
     }
 
     function _getOracle(bytes32 _currency, bytes32 _denominatedCurrency) internal view returns(address) {
-        return PolymathRegistry(RegistryUpdater(securityToken).polymathRegistry()).getAddress(oracleKeys[_currency][_denominatedCurrency]);
+        return IPolymathRegistry(ISecurityToken(securityToken).polymathRegistry()).getAddress(oracleKeys[_currency][_denominatedCurrency]);
     }
 
 }

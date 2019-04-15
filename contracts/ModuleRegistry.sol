@@ -35,6 +35,14 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
 
     */
 
+    bytes32 constant INITIALIZE = 0x9ef7257c3339b099aacf96e55122ee78fb65a36bd2a6c19249882be9c98633bf; //keccak256("initialised")
+    bytes32 constant POLYTOKEN = 0xacf8fbd51bb4b83ba426cdb12f63be74db97c412515797993d2a385542e311d7; //keccak256("polyToken")
+    bytes32 constant PAUSED = 0xee35723ac350a69d2a92d3703f17439cbaadf2f093a21ba5bf5f1a53eb2a14d9; //keccak256("paused")
+    bytes32 constant OWNER = 0x02016836a56b71f0d02689e69e326f4f4c1b9057164ef592671cf0d37c8040c0; //keccak256("owner")
+    bytes32 constant POLYMATHREGISTRY = 0x90eeab7c36075577c7cc5ff366e389fefa8a18289b949bab3529ab4471139d4d; //keccak256("polymathRegistry")
+    bytes32 constant FEATURE_REGISTRY = 0xed9ca06607835ad25ecacbcb97f2bc414d4a51ecf391b5ae42f15991227ab146; //keccak256("featureRegistry")
+    bytes32 constant SECURITY_TOKEN_REGISTRY = 0x12ada4f7ee6c2b7b933330be61fefa007a1f497dc8df1b349b48071a958d7a81; //keccak256("securityTokenRegistry")
+
     ///////////
     // Events
     //////////
@@ -105,12 +113,12 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     }
 
     function initialize(address _polymathRegistry, address _owner) external payable {
-        require(!getBoolValue(Encoder.getKey("initialised")), "already initialized");
+        require(!getBoolValue(INITIALIZE), "already initialized");
         require(_owner != address(0) && _polymathRegistry != address(0), "0x address is invalid");
-        set(Encoder.getKey("polymathRegistry"), _polymathRegistry);
-        set(Encoder.getKey("owner"), _owner);
-        set(Encoder.getKey("paused"), false);
-        set(Encoder.getKey("initialised"), true);
+        set(POLYMATHREGISTRY, _polymathRegistry);
+        set(OWNER, _owner);
+        set(PAUSED, false);
+        set(INITIALIZE, true);
     }
 
     /**
@@ -122,7 +130,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @param _isUpgrade whether or not the function is being called as a result of an upgrade
      */
     function useModule(address _moduleFactory, bool _isUpgrade) external {
-        if (IFeatureRegistry(getAddressValue(Encoder.getKey("featureRegistry"))).getFeatureStatus("customModulesAllowed")) {
+        if (IFeatureRegistry(getAddressValue(FEATURE_REGISTRY)).getFeatureStatus("customModulesAllowed")) {
             require(
                 getBoolValue(Encoder.getKey("verified", _moduleFactory)) || IOwnable(_moduleFactory).owner() == IOwnable(msg.sender).owner(),
                 "ModuleFactory must be verified or SecurityToken owner must be ModuleFactory owner"
@@ -132,7 +140,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         }
         // This if statement is required to be able to add modules from the STFactory contract during deployment
         // before the token has been registered to the STR.
-        if (ISecurityTokenRegistry(getAddressValue(Encoder.getKey("securityTokenRegistry"))).isSecurityToken(msg.sender)) {
+        if (ISecurityTokenRegistry(getAddressValue(SECURITY_TOKEN_REGISTRY)).isSecurityToken(msg.sender)) {
             require(isCompatibleModule(_moduleFactory, msg.sender), "Incompatible versions");
             if (!_isUpgrade) {
                 pushArray(Encoder.getKey("reputation", _moduleFactory), msg.sender);
@@ -161,7 +169,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @param _moduleFactory is the address of the module factory to be registered
      */
     function registerModule(address _moduleFactory) external whenNotPausedOrOwner {
-        if (IFeatureRegistry(getAddressValue(Encoder.getKey("featureRegistry"))).getFeatureStatus("customModulesAllowed")) {
+        if (IFeatureRegistry(getAddressValue(FEATURE_REGISTRY)).getFeatureStatus("customModulesAllowed")) {
             require(
                 msg.sender == IOwnable(_moduleFactory).owner() || msg.sender == owner(),
                 "msg.sender must be the Module Factory owner or registry curator"
@@ -337,7 +345,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     function getModulesByTypeAndToken(uint8 _moduleType, address _securityToken) public view returns(address[] memory) {
         address[] memory _addressList = getArrayAddress(Encoder.getKey("moduleList", uint256(_moduleType)));
         uint256 _len = _addressList.length;
-        bool _isCustomModuleAllowed = IFeatureRegistry(getAddressValue(Encoder.getKey("featureRegistry"))).getFeatureStatus(
+        bool _isCustomModuleAllowed = IFeatureRegistry(getAddressValue(FEATURE_REGISTRY)).getFeatureStatus(
             "customModulesAllowed"
         );
         uint256 counter = 0;
@@ -387,7 +395,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @notice Called by the owner to pause, triggers stopped state
      */
     function pause() external whenNotPaused onlyOwner {
-        set(Encoder.getKey("paused"), true);
+        set(PAUSED, true);
         /*solium-disable-next-line security/no-block-members*/
         emit Pause(msg.sender);
     }
@@ -396,7 +404,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @notice Called by the owner to unpause, returns to normal state
      */
     function unpause() external whenPaused onlyOwner {
-        set(Encoder.getKey("paused"), false);
+        set(PAUSED, false);
         /*solium-disable-next-line security/no-block-members*/
         emit Unpause(msg.sender);
     }
@@ -405,10 +413,10 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @notice Stores the contract addresses of other key contracts from the PolymathRegistry
      */
     function updateFromRegistry() external onlyOwner {
-        address _polymathRegistry = getAddressValue(Encoder.getKey("polymathRegistry"));
-        set(Encoder.getKey("securityTokenRegistry"), IPolymathRegistry(_polymathRegistry).getAddress("SecurityTokenRegistry"));
-        set(Encoder.getKey("featureRegistry"), IPolymathRegistry(_polymathRegistry).getAddress("FeatureRegistry"));
-        set(Encoder.getKey("polyToken"), IPolymathRegistry(_polymathRegistry).getAddress("PolyToken"));
+        address _polymathRegistry = getAddressValue(POLYMATHREGISTRY);
+        set(SECURITY_TOKEN_REGISTRY, IPolymathRegistry(_polymathRegistry).getAddress("SecurityTokenRegistry"));
+        set(FEATURE_REGISTRY, IPolymathRegistry(_polymathRegistry).getAddress("FeatureRegistry"));
+        set(POLYTOKEN, IPolymathRegistry(_polymathRegistry).getAddress("PolyToken"));
     }
 
     /**
@@ -418,7 +426,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     function transferOwnership(address _newOwner) external onlyOwner {
         require(_newOwner != address(0), "Invalid address");
         emit OwnershipTransferred(owner(), _newOwner);
-        set(Encoder.getKey("owner"), _newOwner);
+        set(OWNER, _newOwner);
     }
 
     /**
@@ -426,7 +434,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @return address owner
      */
     function owner() public view returns(address) {
-        return getAddressValue(Encoder.getKey("owner"));
+        return getAddressValue(OWNER);
     }
 
     /**
@@ -434,6 +442,6 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @return bool
      */
     function isPaused() public view returns(bool) {
-        return getBoolValue(Encoder.getKey("paused"));
+        return getBoolValue(PAUSED);
     }
 }

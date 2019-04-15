@@ -75,6 +75,9 @@ contract SecurityTokenStorage {
     // Value of current checkpoint
     uint256 public currentCheckpointId;
 
+    // Set to true if you want restriction outputs to be logged via an event
+    bool logRestrictions;
+
     // off-chain data
     string public tokenDetails;
 

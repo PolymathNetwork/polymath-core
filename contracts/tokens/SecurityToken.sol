@@ -47,6 +47,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     event UpdateTokenDetails(string _oldDetails, string _newDetails);
     // Emit when the token name get updated
     event UpdateTokenName(string _oldName, string _newName);
+    // Emit when logRestrictions is modified
+    event UpdateLogRestrictions(bool _oldLogRestrictions, bool _newLogRestrictions);
     // Emit when the granularity get changed
     event GranularityChanged(uint256 _oldGranularity, uint256 _newGranularity);
     // Emit when is permanently frozen by the issuer
@@ -71,7 +73,6 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event TokenUpgraded(uint8 _major, uint8 _minor, uint8 _patch);
     event Restrictions(address[] modules, bytes32[] names, bool[] isArchived, ITransferManager.Result[] valids);
-
     /**
      * @notice Initialization function
      * @dev Expected to be called atomically with the proxy being created, by the owner of the token
@@ -79,7 +80,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      */
     function initialize(address _getterDelegate) external {
         //Expected to be called atomically with the proxy being created
-        require(!initialized, "Already initialized");
+        require(!initialized, "Initialized");
         getterDelegate = _getterDelegate;
         securityTokenVersion = SemanticVersion(3, 0, 0);
         updateFromRegistry();
@@ -109,7 +110,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     }
 
     function _isValidTransfer(bool _isTransfer) internal pure {
-        require(_isTransfer, "Transfer Invalid");
+        require(_isTransfer, "Transfer invalid");
     }
 
     /**
@@ -316,6 +317,15 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     }
 
     /**
+    * @notice Allows owner to change whether restrictions are logged
+    * @param _logRestriction new value for logRestrictions
+    */
+    function changeLogRestrictions(bool _logRestriction) external onlyOwner {
+        emit UpdateLogRestrictions(logRestrictions, _logRestriction);
+        logRestrictions = _logRestriction;
+    }
+
+    /**
      * @notice Allows to change the treasury wallet address
      * @param _wallet Ethereum address of the treasury wallet
      */
@@ -472,9 +482,9 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
             bool[] memory logArchive = new bool[](modules[TRANSFER_KEY].length);
             ITransferManager.Result[] memory logValid = new ITransferManager.Result[](modules[TRANSFER_KEY].length);
             (unarchived, isForceValid, isInvalid, isValid) = _execute(modules[TRANSFER_KEY], _from, _to, _value, _data, logName, logArchive, logValid);
-
-            emit Restrictions(modules[TRANSFER_KEY], logName, logArchive, logValid);
-
+            if (logRestrictions) {
+                emit Restrictions(modules[TRANSFER_KEY], logName, logArchive, logValid);
+            }
             // If no unarchived modules, return true by default
             return unarchived ? (isForceValid ? true : (isInvalid ? false : isValid)) : true;
         }
@@ -483,17 +493,18 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
 
     function _execute(address[] memory _modules, address _from, address _to, uint256 _value, bytes memory _data, bytes32[] memory _logName, bool[] memory _logArchive, ITransferManager.Result[] memory _logValid) internal returns (bool unarchived, bool isForceValid, bool isInvalid, bool isValid) {
         for (uint256 i = 0; i < _modules.length; i++) {
-            _logName[i] = modulesToData[_modules[i]].name;
+            if (logRestrictions) {
+                _logName[i] = modulesToData[_modules[i]].name;
+            }
             _logArchive[i] = modulesToData[_modules[i]].isArchived;
             if (!_logArchive[i]) {
                 unarchived = true;
-                ITransferManager.Result valid = ITransferManager(_modules[i]).executeTransfer(_from, _to, _value, _data);
-                _logValid[i] = valid;
-                if (valid == ITransferManager.Result.INVALID) {
+                _logValid[i] = ITransferManager(_modules[i]).executeTransfer(_from, _to, _value, _data);
+                if (_logValid[i] == ITransferManager.Result.INVALID) {
                     isInvalid = true;
-                } else if (valid == ITransferManager.Result.VALID) {
+                } else if (_logValid[i] == ITransferManager.Result.VALID) {
                     isValid = true;
-                } else if (valid == ITransferManager.Result.FORCE_VALID) {
+                } else if (_logValid[i] == ITransferManager.Result.FORCE_VALID) {
                     isForceValid = true;
                 }
             }
@@ -517,7 +528,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @dev It MUST NOT be possible to increase `totalSuppy` after this function is called.
      */
     function freezeIssuance(bytes calldata _signature) external isIssuanceAllowed onlyOwner {
-        require(owner() == TokenLib.recoverFreezeIssuanceAckSigner(_signature), "Owner did not sign");
+        require(owner() == TokenLib.recoverFreezeIssuanceAckSigner(_signature), "Incorrect sign");
         issuance = false;
         /*solium-disable-next-line security/no-block-members*/
         emit FreezeIssuance();
@@ -651,7 +662,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @dev enabled via feature switch "disableControllerAllowed"
      */
     function disableController(bytes calldata _signature) external onlyOwner {
-        require(owner() == TokenLib.recoverDisableControllerAckSigner(_signature), "Owner did not sign");
+        require(owner() == TokenLib.recoverDisableControllerAckSigner(_signature), "Invalid sign");
         require(isControllable());
         controllerDisabled = true;
         delete controller;
@@ -738,7 +749,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @param _name Name of the document. It should be unique always
      */
     function removeDocument(bytes32 _name) external onlyOwner {
-        require(_documents[_name].lastModified != uint256(0), "Not existed");
+        require(_documents[_name].lastModified != uint256(0), "Invalid name");
         uint256 index = _docIndexes[_name] - 1;
         if (index != _docNames.length - 1) {
             _docNames[index] = _docNames[_docNames.length - 1];

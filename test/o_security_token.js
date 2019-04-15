@@ -222,6 +222,10 @@ contract("SecurityToken", async (accounts) => {
             await revertToSnapshot(snapId);
         });
 
+        it("Should not allow unauthorized address to change log restrictions", async() => {
+            await catchRevert(I_SecurityToken.changeLogRestrictions(true));
+        });
+
         it("Should intialize the auto attached modules", async () => {
             let moduleData = (await stGetter.getModulesByType(transferManagerKey))[0];
             I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
@@ -721,8 +725,13 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should adjust granularity", async () => {
             await I_SecurityToken.changeGranularity(new BN(10).pow(new BN(17)), { from: token_owner });
-            await I_SecurityToken.transfer(accounts[7], new BN(10).pow(new BN(17)), { from: account_investor1, gas: 2500000 });
-            await I_SecurityToken.transfer(account_investor1, new BN(10).pow(new BN(17)), { from: accounts[7], gas: 2500000 });
+            let noRestrictionsLog = await I_SecurityToken.transfer(accounts[7], new BN(10).pow(new BN(17)), { from: account_investor1, gas: 2500000 });
+            console.log(noRestrictionsLog.log);
+            await I_SecurityToken.changeLogRestrictions(true, { from: token_owner });
+            // transfer - log restrictions
+            let restrictionsLog = await I_SecurityToken.transfer(account_investor1, new BN(10).pow(new BN(17)), { from: accounts[7], gas: 2500000 });
+            console.log(restrictionsLog.log);
+            await I_SecurityToken.changeLogRestrictions(false, { from: token_owner });
         });
 
         it("Should not allow unauthorized address to change data store", async () => {

@@ -2,34 +2,15 @@ pragma solidity ^0.5.0;
 
 import "../tokens/SecurityToken.sol";
 
-/**
- * @title Security Token contract
- * @notice SecurityToken is an ERC1400 token with added capabilities:
- * @notice - Implements the ERC1400 Interface
- * @notice - Transfers are restricted
- * @notice - Modules can be attached to it to control its behaviour
- * @notice - ST should not be deployed directly, but rather the SecurityTokenRegistry should be used
- * @notice - ST does not inherit from ISecurityToken due to:
- * @notice - https://github.com/ethereum/solidity/issues/4847
- */
 contract SecurityTokenMock is SecurityToken {
 
     /**
-     * @notice constructor
+     * @notice Initialization function
+     * @dev Expected to be called atomically with the proxy being created, by the owner of the token
+     * @dev Can only be called once
      */
-    constructor(
-        address _polymathRegistry,
-        address _delegate
-    )
-        public
-    {
-        _owner = msg.sender;
-        polymathRegistry = _polymathRegistry;
-        //When it is created, the owner is the STR
-        updateFromRegistry();
-        getterDelegate = _delegate;
+    function initialize(address _getterDelegate) public {
+        super.initialize(_getterDelegate);
         securityTokenVersion = SemanticVersion(2, 2, 0);
     }
-
-
 }

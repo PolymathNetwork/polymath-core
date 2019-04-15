@@ -12,6 +12,17 @@ contract STGetter is OZStorage, SecurityTokenStorage {
     using SafeMath for uint256;
 
     /**
+     * @notice A security token issuer can specify that issuance has finished for the token
+     * (i.e. no new tokens can be minted or issued).
+     * @dev If a token returns FALSE for `isIssuable()` then it MUST always return FALSE in the future.
+     * If a token returns FALSE for `isIssuable()` then it MUST never allow additional tokens to be issued.
+     * @return bool `true` signifies the minting is allowed. While `false` denotes the end of minting
+     */
+    function isIssuable() external view returns (bool) {
+        return issuance;
+    }
+
+    /**
      * @notice Gets list of times that checkpoints were created
      * @return List of checkpoint times
      */
@@ -195,21 +206,85 @@ contract STGetter is OZStorage, SecurityTokenStorage {
     }
 
     /**
-     * @notice Get the balance according to the provided partitions
-     * @param _owner Whom balance need to queried
-     * @param _partition Partition which differentiate the tokens.
-     * @return Amount of tokens as per the given partitions
+     * @notice Determines whether `_operator` is an operator for all partitions of `_tokenHolder`
+     * @param _operator The operator to check
+     * @param _tokenHolder The token holder to check
+     * @return Whether the `_operator` is an operator for all partitions of `_tokenHolder`
      */
-    function balanceOfByPartition(address _owner, bytes32 _partition) external view returns(uint256) {
+    function isOperator(address _operator, address _tokenHolder) external view returns (bool) {
+        return (_allowed[_tokenHolder][_operator] == uint(-1));
+    }
+
+    /**
+     * @notice Determines whether `_operator` is an operator for a specified partition of `_tokenHolder`
+     * @param _partition The partition to check
+     * @param _operator The operator to check
+     * @param _tokenHolder The token holder to check
+     * @return Whether the `_operator` is an operator for a specified partition of `_tokenHolder`
+     */
+    function isOperatorForPartition(bytes32 _partition, address _operator, address _tokenHolder) external view returns (bool) {
+        return partitionApprovals[_tokenHolder][_partition][_operator];
+    }
+
+    /**
+     * @notice Return all partitions
+     * @param _tokenHolder Whom balance need to queried
+     * @return List of partitions
+     */
+    function partitionsOf(address _tokenHolder) external view returns (bytes32[] memory) {
         address[] memory tms = modules[TRANSFER_KEY];
-        uint256 _amount = 0;
+        /* uint256 count; */
+        bytes32[] memory partitions;
+        bytes32[] memory tmPartitions;
+        // First determine the total number of non-distinct partitions
         for (uint256 i = 0; i < tms.length; i++) {
-            _amount += ITransferManager(tms[i]).getTokensByPartition(_owner, _partition);
+            tmPartitions = ITransferManager(tms[i]).getPartitions(_tokenHolder);
+            for (uint256 j = 0 ; j < tmPartitions.length; j++) {
+                partitions = _appendPartition(partitions, tmPartitions[j]);
+            }
         }
-        if (_amount == 0 && _partition == "UNLOCKED") {
-            return balanceOf(_owner);
+        partitions = _appendPartition(partitions, "DEFAULT");
+        /* bytes32[] memory partitions = new bytes32[](count + 1);
+        count = 0;
+        for (uint256 i = 0; i < tms.length; i++) {
+            tmPartitions = ITransferManager(tms[i]).getPartitions(_tokenHolder);
+            for (uint256 j = 0; j < tmPartitions.length; j++) {
+                partitions[count + j] = tmPartitions[j];
+            }
+            count += tmPartitions.length;
         }
-        return _amount;
+        partitions[count] = "DEFAULT";
+        uint256[] memory index = new uint256[](count);
+        count = 0;
+        for (uint256 i = 0; i < partitions.length; i++) {
+            for (uint256 j = 0; j < partitions.length; j++) {
+                if (partitions[i] == partitions[j]) {
+                    index[i] = j;
+                }
+            }
+        }
+        // Create distinct list
+        bytes32[] memory result */
+        return partitions;
+    }
+
+    function _appendPartition(bytes32[] memory partitions, bytes32 partition) internal pure returns (bytes32[] memory) {
+        bool duplicate = false;
+        for (uint256 i = 0; i < partitions.length; i++) {
+            if (partition == partitions[i]) {
+                duplicate = true;
+                break;
+            }
+        }
+        if (duplicate) {
+            bytes32[] memory result = new bytes32[](1 + partitions.length);
+            for (uint256 i = 0; i < partitions.length; i++) {
+                result[i] = partitions[i];
+            }
+            result[partitions.length] = partition;
+            return result;
+        }
+        return partitions;
     }
 
     /**

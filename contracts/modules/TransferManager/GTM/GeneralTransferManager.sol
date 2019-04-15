@@ -663,19 +663,30 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     }
 
     /**
-     * @notice return the amount of tokens for a given user as per the partition
-     */
-    function getTokensByPartition(address /*_owner*/, bytes32 /*_partition*/) external view returns(uint256){
-        return 0;
-    }
-
-    /**
      * @notice Return the permissions flag that are associated with general trnasfer manager
      */
     function getPermissions() public view returns(bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](1);
         allPermissions[0] = ADMIN;
         return allPermissions;
+    }
+
+    /**
+     * @notice return the amount of tokens for a given user as per the partition
+     * @param _partition Identifier
+     * @param _tokenHolder Whom token amount need to query
+     * @param _additionalBalance It is the `_value` that transfer during transfer/transferFrom function call
+     */
+    function getTokensByPartition(bytes32 _partition, address _tokenHolder, uint256 _additionalBalance) external view returns(uint256) {
+        uint256 currentBalance = (msg.sender == securityToken) ? (IERC20(securityToken).balanceOf(_tokenHolder)).add(_additionalBalance) : IERC20(securityToken).balanceOf(_tokenHolder);
+        uint256 canSendAfter;
+        (canSendAfter,,,) = _getKYCValues(_tokenHolder, getDataStore());
+        canSendAfter = (canSendAfter == 0 ? defaults.canSendAfter:  canSendAfter);
+        bool unlockedCheck = paused ? _partition == UNLOCKED : (_partition == UNLOCKED && now >= canSendAfter);
+        if (((_partition == LOCKED && now < canSendAfter) && !paused) || unlockedCheck)
+            return currentBalance;
+        else
+            return 0;
     }
 
     function getAddressBytes32() public view returns(bytes32) {

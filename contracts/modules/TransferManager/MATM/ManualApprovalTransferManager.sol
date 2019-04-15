@@ -428,13 +428,6 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
     }
 
     /**
-     * @notice return the amount of tokens for a given user as per the partition
-     */
-    function getTokensByPartition(address /*_owner*/, bytes32 /*_partition*/) external view returns(uint256){
-        return 0;
-    }
-
-    /**
      * @notice Returns the permissions flag that are associated with ManualApproval transfer manager
      */
     function getPermissions() public view returns(bytes32[] memory) {

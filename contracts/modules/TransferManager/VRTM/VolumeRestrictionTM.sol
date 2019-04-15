@@ -1,6 +1,7 @@
 pragma solidity ^0.5.0;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "openzeppelin-solidity/contracts/math/Math.sol";
 import "../../../libraries/BokkyPooBahsDateTimeLibrary.sol";
 import "../../../libraries/VolumeRestrictionLib.sol";
 import "../TransferManager.sol";
@@ -112,7 +113,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         uint256 dailyTime;
         uint256 endTime;
         bool isGlobal;
-        (success, fromTimestamp, sumOfLastPeriod, daysCovered, dailyTime, endTime, isGlobal) = _verifyTransfer(_from, _amount);
+        (success, fromTimestamp, sumOfLastPeriod, daysCovered, dailyTime, endTime, ,isGlobal) = _verifyTransfer(_from, _amount);
         if (fromTimestamp != 0 || dailyTime != 0) {
             _updateStorage(
                 _from,
@@ -145,7 +146,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         returns (Result, bytes32)
     {
 
-        (Result success,,,,,,) = _verifyTransfer(_from, _amount);
+        (Result success,,,,,,,) = _verifyTransfer(_from, _amount);
         if (success == Result.INVALID)
             return (success, bytes32(uint256(address(this)) << 96));
         return (Result.NA, bytes32(0));
@@ -163,7 +164,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
     )
         internal
         view
-        returns (Result, uint256, uint256, uint256, uint256, uint256, bool)
+        returns (Result, uint256, uint256, uint256, uint256, uint256, uint256, bool)
     {
         // If `_from` is present in the exemptionList or it is `0x0` address then it will not follow the vol restriction
         if (!paused && _from != address(0) && exemptions.exemptIndex[_from] == 0) {
@@ -179,7 +180,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
                 return _restrictionCheck(_amount, _from, true, globalRestrictions.defaultRestriction);
             }
         }
-        return (Result.NA, 0, 0, 0, 0, 0, false);
+        return (Result.NA, 0, 0, 0, 0, 0, 0, false);
     }
 
     /**
@@ -763,6 +764,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         uint256 daysCovered,
         uint256 dailyTime,
         uint256 endTime,
+        uint256 allowedAmountToTransact,
         bool allowedDaily
     ) {
         // using the variable to avoid stack too deep error
@@ -783,28 +785,48 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
             // Check with the bucket and parse all the new timestamps to calculate the sumOfLastPeriod
             // re-using the local variables to avoid the stack too deep error.
             (sumOfLastPeriod, fromTimestamp, daysCovered) = _bucketCheck(
-                fromTimestamp,
-                BokkyPooBahsDateTimeLibrary.diffDays(fromTimestamp, now),
                 _from,
                 _isDefault,
+                fromTimestamp,
+                BokkyPooBahsDateTimeLibrary.diffDays(fromTimestamp, now),
+
                 daysCovered,
                 _bucketDetails
             );
             // validation of the transaction amount
-            if (
-                !_checkValidAmountToTransact(
-                    _isDefault, _amount, _from, sumOfLastPeriod, _restriction
-                )
-            ) {
+            // reusing the local variable to avoid stack too deep error
+            // here variable allowedAmountToTransact is representing the allowedAmount
+            (allowedDefault, allowedAmountToTransact) = _checkValidAmountToTransact(_amount, _from, _isDefault, _restriction, sumOfLastPeriod);
+            if (!allowedDefault) {
                 allowedDefault = false;
             }
         }
 
-        (allowedDaily, dailyTime) = _dailyTxCheck(_isDefault, _amount, _from, _bucketDetails.dailyLastTradedDayTime, dailyRestriction);
-
+        // reusing the local variable to avoid stack too deep error
+        // here variable endTime is representing the allowedDailyAmount
+        (allowedDaily, dailyTime, endTime) = _dailyTxCheck(_amount, _from, _isDefault, _bucketDetails.dailyLastTradedDayTime, dailyRestriction);
         success = ((allowedDaily && allowedDefault) == true ? Result.NA : Result.INVALID);
+        allowedAmountToTransact = _validAllowedAmount(dailyRestriction, _restriction, allowedAmountToTransact, endTime);
         endTime = dailyRestriction.endTime;
         allowedDaily = _isDefault;
+    }
+
+    function _validAllowedAmount(
+        VolumeRestriction memory dailyRestriction,
+        VolumeRestriction memory restriction,
+        uint256 allowedAmount,
+        uint256 allowedDailyAmount
+    )
+        internal
+        view
+        returns (uint256)
+    {
+        if (now > dailyRestriction.endTime || now < dailyRestriction.startTime)
+            return allowedAmount;
+        else if (now > restriction.endTime || now < restriction.startTime)
+            return allowedDailyAmount;
+        else
+            return Math.min(allowedDailyAmount, allowedAmount);
     }
 
     /**
@@ -839,15 +861,15 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
     }
 
     function _dailyTxCheck(
-        bool _isDefault,
         uint256 _amount,
         address _from,
+        bool _isDefault,
         uint256 _dailyLastTradedDayTime,
         VolumeRestriction memory _restriction
     )
         internal
         view
-        returns(bool, uint256)
+        returns(bool, uint256, uint256)
     {
         // Checking whether the daily restriction is added or not if yes then calculate
         // the total amount get traded on a particular day (~ _fromTime)
@@ -863,26 +885,18 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
                 txSumOfDay = bucketData.defaultBucket[_from][_dailyLastTradedDayTime];
             else
                 txSumOfDay = bucketData.bucket[_from][_dailyLastTradedDayTime];
-            return (
-                _checkValidAmountToTransact(
-                _isDefault,
-                _amount,
-                _from,
-                txSumOfDay,
-                _restriction
-                ),
-                _dailyLastTradedDayTime
-            );
+            (bool isAllowed, uint256 allowedAmount) = _checkValidAmountToTransact(_amount, _from, _isDefault, _restriction, txSumOfDay);
+            return (isAllowed, _dailyLastTradedDayTime, allowedAmount);
         }
-        return (true, _dailyLastTradedDayTime);
+        return (true, _dailyLastTradedDayTime, _amount);
     }
 
     /// Internal function for the bucket check
     function _bucketCheck(
-        uint256 _fromTime,
-        uint256 _diffDays,
         address _from,
         bool isDefault,
+        uint256 _fromTime,
+        uint256 _diffDays,
         uint256 _rollingPeriodInDays,
         BucketDetails memory _bucketDetails
     )
@@ -928,25 +942,37 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
     }
 
     function _checkValidAmountToTransact(
-        bool _isDefault,
         uint256 _amountToTransact,
         address _from,
+        bool _isDefault,
+        VolumeRestriction memory _restriction,
+        uint256 _sumOfLastPeriod
+    )
+        internal
+        view
+        returns (bool, uint256)
+    {
+        uint256 allowedAmount = _allowedAmountToTransact(_sumOfLastPeriod, _restriction);
+        // Validation on the amount to transact
+        bool allowed = allowedAmount >= _amountToTransact;
+        return ((allowed && _isValidAmountAfterRestrictionChanges(_isDefault, _from, _amountToTransact, _sumOfLastPeriod, allowedAmount)), allowedAmount);
+    }
+
+    function _allowedAmountToTransact(
         uint256 _sumOfLastPeriod,
         VolumeRestriction memory _restriction
     )
         internal
         view
-        returns (bool)
+        returns (uint256)
     {
-        uint256 allowedAmount;
+        uint256 _allowedAmount = 0;
         if (_restriction.typeOfRestriction == RestrictionType.Percentage) {
-            allowedAmount = (_restriction.allowedTokens.mul(ISecurityToken(securityToken).totalSupply())) / uint256(10) ** 18;
+            _allowedAmount = (_restriction.allowedTokens.mul(IERC20(securityToken).totalSupply())) / uint256(10) ** 18;
         } else {
-            allowedAmount = _restriction.allowedTokens;
+            _allowedAmount = _restriction.allowedTokens;
         }
-        // Validation on the amount to transact
-        bool allowed = allowedAmount >= _sumOfLastPeriod.add(_amountToTransact);
-        return (allowed && _isValidAmountAfterRestrictionChanges(_isDefault, _from, _amountToTransact, _sumOfLastPeriod, allowedAmount));
+        return _allowedAmount.sub(_sumOfLastPeriod);
     }
 
     function _updateStorage(
@@ -1055,6 +1081,39 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         if (_startTime == 0)
             _startTime = now + 1;
         return _startTime;
+    }
+
+    /**
+     * @notice return the amount of tokens for a given user as per the partition
+     * @param _partition Identifier
+     * @param _tokenHolder Whom token amount need to query
+     * @param _additionalBalance It is the `_value` that transfer during transfer/transferFrom function call
+     */
+    function getTokensByPartition(bytes32 _partition, address _tokenHolder, uint256 _additionalBalance) external view returns(uint256) {
+        uint256 allowedAmountToTransact;
+        uint256 fromTimestamp;
+        uint256 dailyTime;
+        uint256 currentBalance = (msg.sender == securityToken) ? (IERC20(securityToken).balanceOf(_tokenHolder)).add(_additionalBalance) : IERC20(securityToken).balanceOf(_tokenHolder);
+        if (paused)
+            return (_partition == UNLOCKED ? currentBalance: 0);
+
+        (,fromTimestamp,,,dailyTime,,allowedAmountToTransact,) = _verifyTransfer(_tokenHolder, 0);
+        if (_partition == LOCKED) {
+            if (allowedAmountToTransact == 0 && fromTimestamp == 0 && dailyTime == 0)
+                return 0;
+            else if (allowedAmountToTransact == 0)
+                return currentBalance;
+            else
+                return (currentBalance.sub(allowedAmountToTransact));
+        }
+        else if (_partition == UNLOCKED) {
+            if (allowedAmountToTransact == 0 && fromTimestamp == 0 && dailyTime == 0)
+                return currentBalance;
+            else if (allowedAmountToTransact == 0)
+                return 0;
+            else
+                return allowedAmountToTransact;
+        }
     }
 
     /**
@@ -1188,13 +1247,6 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
             _endTimes.length == _restrictionTypes.length,
             "Length mismatch"
         );
-    }
-
-    /**
-     * @notice return the amount of tokens for a given user as per the partition
-     */
-    function getTokensByPartition(address /*_owner*/, bytes32 /*_partition*/) external view returns(uint256){
-        return 0;
     }
 
     /**

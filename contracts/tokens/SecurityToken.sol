@@ -53,14 +53,6 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     event FreezeIssuance();
     // Emit when transfers are frozen or unfrozen
     event FreezeTransfers(bool _status);
-    // Emit when Module get archived from the securityToken
-    event ModuleArchived(uint8[] _types, address _module);
-    // Emit when Module get unarchived from the securityToken
-    event ModuleUnarchived(uint8[] _types, address _module);
-    // Emit when Module get removed from the securityToken
-    event ModuleRemoved(uint8[] _types, address _module);
-    // Emit when the budget allocated to a module is changed
-    event ModuleBudgetChanged(uint8[] _moduleTypes, address _module, uint256 _oldBudget, uint256 _budget);
     // Emit when new checkpoint created
     event CheckpointCreated(uint256 indexed _checkpointId, uint256 _investorLength);
     // Events to log controller actions
@@ -70,6 +62,15 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     event DisableController();
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event TokenUpgraded(uint8 _major, uint8 _minor, uint8 _patch);
+
+    // Emit when Module get archived from the securityToken
+    // event ModuleArchived(uint8[] _types, address _module); Event emitted by the tokenLib.
+    // Emit when Module get unarchived from the securityToken
+    // event ModuleUnarchived(uint8[] _types, address _module); Event emitted by the tokenLib.
+    // Emit when Module get removed from the securityToken
+    // event ModuleRemoved(uint8[] _types, address _module); Event emitted by the tokenLib.
+    // Emit when the budget allocated to a module is changed
+    // event ModuleBudgetChanged(uint8[] _moduleTypes, address _module, uint256 _oldBudget, uint256 _budget); Event emitted by the tokenLib.
 
     /**
      * @notice Initialization function
@@ -187,7 +188,15 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
         _addModuleData(moduleTypes, _moduleFactory, module, moduleCost, _budget, _label, _archived);
     }
 
-    function _addModuleData(uint8[] memory _moduleTypes, address _moduleFactory, address _module, uint256 _moduleCost, uint256 _budget, bytes32 _label, bool _archived) internal {
+    function _addModuleData(
+        uint8[] memory _moduleTypes,
+        address _moduleFactory,
+        address _module,
+        uint256 _moduleCost,
+        uint256 _budget,
+        bytes32 _label,
+        bool _archived
+    ) internal {
         bytes32 moduleName = IModuleFactory(_moduleFactory).name();
         uint256[] memory moduleIndexes = new uint256[](_moduleTypes.length);
         uint256 i;
@@ -236,6 +245,10 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     * @notice Upgrades security token
     */
     function upgradeToken() external onlyOwner {
+        // 10 is the number of module types to check for incompatibilities before upgrading.
+        // The number is hard coded and kept low to keep usage low.
+        // We currently have 7 module types. If we ever create more than 3 new module types,
+        // We will upgrade the implementation accordinly. We understand the limitations of this approach.
         IUpgradableTokenFactory(tokenFactory).upgradeToken(10);
         emit TokenUpgraded(securityTokenVersion.major, securityTokenVersion.minor, securityTokenVersion.patch);
     }
@@ -434,7 +447,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
         //  - checkpoints are updated after the transfer managers are called. This allows TMs to create
         //checkpoints as though they have been created before the current transactions,
         //  - to avoid the situation where a transfer manager transfers tokens, and this function is called recursively,
-        //the function is marked as nonReentrant. This means that no TM can transfer (or mint / burn) tokens.
+        //the function is marked as nonReentrant. This means that no TM can transfer (or mint / burn) tokens in the execute transfer function.
         _adjustInvestorCount(_from, _to, _value);
         bool verified = _executeTransfer(_from, _to, _value, _data);
         _adjustBalanceCheckpoints(_from);
@@ -554,10 +567,19 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      */
     function issueMulti(address[] memory _tokenHolders, uint256[] memory _values) public isIssuanceAllowed {
         _onlyModuleOrOwner(MINT_KEY);
-        require(_tokenHolders.length == _values.length, "Incorrect inputs");
+        require(_tokenHolders.length == _values.length, "Invalid input");
         for (uint256 i = 0; i < _tokenHolders.length; i++) {
             _issue(_tokenHolders[i], _values[i], "");
         }
+    }
+
+    /**
+     * @notice Checks if an address is a module of certain type
+     * @param _module Address to check
+     * @param _type type to check against
+     */
+    function isModule(address _module, uint8 _type) public view returns(bool) {
+        return _isModule(_module, _type);
     }
 
     /**
@@ -570,15 +592,6 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     function redeem(uint256 _value, bytes calldata _data) external onlyModule(BURN_KEY) {
         // Add a function to validate the `_data` parameter
         _validateRedeem(_checkAndBurn(msg.sender, _value, _data));
-    }
-
-    /**
-     * @notice Checks if an address is a module of certain type
-     * @param _module Address to check
-     * @param _type type to check against
-     */
-    function isModule(address _module, uint8 _type) public view returns(bool) {
-        return _isModule(_module, _type);
     }
 
     function _checkAndBurn(address _from, uint256 _value, bytes memory _data) internal returns(bool) {
@@ -696,9 +709,9 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
 
         else if (_to == address(0))
             return (false, 0x57, bytes32(0));
-
-        else if (!KindMath.checkAdd(balanceOf(_to), _value))
-            return (false, 0x50, bytes32(0));
+        // Balance overflow can never happen due to totalsupply being a uint256 as well
+        // else if (!KindMath.checkAdd(balanceOf(_to), _value))
+        //     return (false, 0x50, bytes32(0));
         return (true, 0x51, bytes32(0));
     }
 

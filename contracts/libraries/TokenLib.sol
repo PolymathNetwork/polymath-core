@@ -7,6 +7,7 @@ import "../tokens/SecurityTokenStorage.sol";
 import "../interfaces/ITransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "../modules/PermissionManager/IPermissionManager.sol";
+import "./KindMath.sol";
 
 library TokenLib {
 
@@ -43,6 +44,9 @@ library TokenLib {
     event ModuleRemoved(uint8[] _types, address _module);
     // Emit when the budget allocated to a module is changed
     event ModuleBudgetChanged(uint8[] _moduleTypes, address _module, uint256 _oldBudget, uint256 _budget);
+    // Emit when document is added/removed
+    event DocumentUpdated(bytes32 indexed _name, string _uri, bytes32 _documentHash);
+    event DocumentRemoved(bytes32 indexed _name, string _uri, bytes32 _documentHash);
 
     function hash(EIP712Domain memory _eip712Domain) internal pure returns (bytes32) {
         return keccak256(
@@ -348,14 +352,64 @@ library TokenLib {
     }
 
     /**
+     * @notice Used to attach a new document to the contract, or update the URI or hash of an existing attached document
+     * @param name Name of the document. It should be unique always
+     * @param uri Off-chain uri of the document from where it is accessible to investors/advisors to read.
+     * @param documentHash hash (of the contents) of the document.
+     */
+    function setDocument(
+        mapping(bytes32 => SecurityTokenStorage.Document) storage document,
+        bytes32[] storage docNames,
+        mapping(bytes32 => uint256) storage docIndexes,
+        bytes32 name,
+        string memory uri,
+        bytes32 documentHash
+    )   
+        public
+    {
+        require(name != bytes32(0), "Bad name");
+        require(bytes(uri).length > 0, "Bad uri");
+        if (document[name].lastModified == uint256(0)) {
+            docNames.push(name);
+            docIndexes[name] = docNames.length;
+        }
+        document[name] = SecurityTokenStorage.Document(documentHash, now, uri);
+        emit DocumentUpdated(name, uri, documentHash);
+    }
+
+    /**
+     * @notice Used to remove an existing document from the contract by giving the name of the document.
+     * @dev Can only be executed by the owner of the contract.
+     * @param name Name of the document. It should be unique always
+     */
+    function removeDocument(
+        mapping(bytes32 => SecurityTokenStorage.Document) storage document,
+        bytes32[] storage docNames,
+        mapping(bytes32 => uint256) storage docIndexes,
+        bytes32 name
+    )
+        public 
+    {
+        require(document[name].lastModified != uint256(0), "Not existed");
+        uint256 index = docIndexes[name] - 1;
+        if (index != docNames.length - 1) {
+            docNames[index] = docNames[docNames.length - 1];
+            docIndexes[docNames[index]] = index + 1;
+        }
+        docNames.length--;
+        emit DocumentRemoved(name, document[name].uri, document[name].docHash);
+        delete document[name];
+    }
+
+    /**
      * @notice Validate transfer with TransferManager module if it exists
      * @dev TransferManager module has a key of 2
+     * @param modules Array of addresses for transfer managers
+     * @param modulesToData Mapping of the modules details
      * @param from sender of transfer
      * @param to receiver of transfer
      * @param value value of transfer
      * @param data data to indicate validation
-     * @param modules Array of addresses for transfer managers
-     * @param modulesToData Mapping of the modules details
      * @param transfersFrozen whether the transfer are frozen or not.
      * @return bool
      */
@@ -401,6 +455,32 @@ library TokenLib {
         return (false, bytes32(hex"54"));
     }
 
+    function canTransfer(
+        bool success,
+        bytes32 appCode,
+        address to,
+        uint256 value,
+        uint256 balanceOfFrom,
+        uint256 balanceOfTo
+    )   
+        public
+        pure 
+        returns (bool, byte, bytes32) 
+    {
+        if (!success)
+            return (false, 0x50, appCode);
+
+        else if (balanceOfFrom < value)
+            return (false, 0x52, bytes32(0));
+
+        else if (to == address(0))
+            return (false, 0x57, bytes32(0));
+
+        else if (!KindMath.checkAdd(balanceOfTo, value))
+            return (false, 0x50, bytes32(0));
+        return (true, 0x51, bytes32(0));
+    }
+
     function _getKey(bytes32 _key1, address _key2) internal pure returns(bytes32) {
         return bytes32(keccak256(abi.encodePacked(_key1, _key2)));
     }
@@ -410,4 +490,5 @@ library TokenLib {
         //extracts `added` from packed `whitelistData`
         return uint8(data) == 0 ? false : true;
     }
+
 }

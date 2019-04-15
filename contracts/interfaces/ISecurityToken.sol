@@ -52,6 +52,20 @@ interface ISecurityToken {
     function canTransferFrom(address _from, address _to, uint256 _value, bytes calldata _data) external view returns (bool, byte, bytes32);
 
     /**
+     * @notice The standard provides an on-chain function to determine whether a transfer will succeed,
+     * and return details indicating the reason if the transfer is not valid.
+     * @param _from The address from whom the tokens get transferred.
+     * @param _to The address to which to transfer tokens to.
+     * @param _partition The partition from which to transfer tokens
+     * @param _value The amount of tokens to transfer from `_partition`
+     * @param _data Additional data attached to the transfer of tokens
+     * @return ESC (Ethereum Status Code) following the EIP-1066 standard
+     * @return Application specific reason codes with additional details
+     * @return The partition to which the transferred tokens were allocated for the _to address
+     */
+    function canTransferByPartition(address _from, address _to, bytes32 _partition, uint256 _value, bytes calldata _data) external view returns (byte, bytes32, bytes32);
+
+    /**
      * @notice Used to attach a new document to the contract, or update the URI or hash of an existing attached document
      * @dev Can only be executed by the owner of the contract.
      * @param _name Name of the document. It should be unique always
@@ -110,13 +124,30 @@ interface ISecurityToken {
     function issue(address _tokenHolder, uint256 _value, bytes calldata _data) external;
 
     /**
-     * @notice Mints new tokens and assigns them to the target _investor.
-     * Can only be called by the STO attached to the token (Or by the ST owner if there's no STO attached yet)
-     * @param _investor Address the tokens will be minted to
-     * @param _value is The amount of tokens that will be minted to the investor
-     * @param _data Data to indicate validation
+     * @notice issue new tokens and assigns them to the target _tokenHolder.
+     * @dev Can only be called by the issuer or STO attached to the token.
+     * @param _tokenHolders A list of addresses to whom the minted tokens will be dilivered
+     * @param _values A list of number of tokens get minted and transfer to corresponding address of the investor from _tokenHolders[] list
+     * @return success
      */
-    function mintWithData(address _investor, uint256 _value, bytes calldata _data) external returns(bool success);
+    function issueMulti(address[] calldata _tokenHolders, uint256[] calldata _values) external;
+
+    /**
+     * @notice Increases totalSupply and the corresponding amount of the specified owners partition
+     * @param _partition The partition to allocate the increase in balance
+     * @param _tokenHolder The token holder whose balance should be increased
+     * @param _value The amount by which to increase the balance
+     * @param _data Additional data attached to the minting of tokens
+     */
+    function issueByPartition(bytes32 _partition, address _tokenHolder, uint256 _value, bytes calldata _data) external;
+
+    /**
+     * @notice Decreases totalSupply and the corresponding amount of the specified partition of msg.sender
+     * @param _partition The partition to allocate the decrease in balance
+     * @param _value The amount by which to decrease the balance
+     * @param _data Additional data attached to the burning of tokens
+     */
+    function redeemByPartition(bytes32 _partition, uint256 _value, bytes calldata _data) external;
 
     /**
      * @notice This function redeem an amount of the token of a msg.sender. For doing so msg.sender may incentivize
@@ -137,6 +168,23 @@ interface ISecurityToken {
      * @param _data The `bytes _data` it can be used in the token contract to authenticate the redemption.
      */
     function redeemFrom(address _tokenHolder, uint256 _value, bytes calldata _data) external;
+
+    /**
+     * @notice Decreases totalSupply and the corresponding amount of the specified partition of tokenHolder
+     * @dev This function can only be called by the authorised operator.
+     * @param _partition The partition to allocate the decrease in balance.
+     * @param _tokenHolder The token holder whose balance should be decreased
+     * @param _value The amount by which to decrease the balance
+     * @param _data Additional data attached to the burning of tokens
+     * @param _operatorData Additional data attached to the transfer of tokens by the operator
+     */
+    function operatorRedeemByPartition(
+        bytes32 _partition,
+        address _tokenHolder,
+        uint256 _value,
+        bytes calldata _data,
+        bytes calldata _operatorData
+    ) external;
 
     // Issuance / Redemption Events
     event Issued(address indexed _operator, address indexed _to, uint256 _value, bytes _data);
@@ -178,6 +226,11 @@ interface ISecurityToken {
      * @return address[] List of modules with this type
      */
     function getModulesByType(uint8 _type) external view returns(address[] memory);
+
+    /**
+     * @notice use to return the global treasury wallet
+     */
+    function getTreasuryWallet() external view returns(address);
 
     /**
      * @notice Queries totalSupply at a specified checkpoint
@@ -241,6 +294,30 @@ interface ISecurityToken {
      * @return Id
      */
     function currentCheckpointId() external view returns(uint256);
+
+    /**
+     * @notice Determines whether `_operator` is an operator for all partitions of `_tokenHolder`
+     * @param _operator The operator to check
+     * @param _tokenHolder The token holder to check
+     * @return Whether the `_operator` is an operator for all partitions of `_tokenHolder`
+     */
+    function isOperator(address _operator, address _tokenHolder) external view returns (bool);
+
+    /**
+     * @notice Determines whether `_operator` is an operator for a specified partition of `_tokenHolder`
+     * @param _partition The partition to check
+     * @param _operator The operator to check
+     * @param _tokenHolder The token holder to check
+     * @return Whether the `_operator` is an operator for a specified partition of `_tokenHolder`
+     */
+    function isOperatorForPartition(bytes32 _partition, address _operator, address _tokenHolder) external view returns (bool);
+
+    /**
+     * @notice Return all partitions
+     * @param _tokenHolder Whom balance need to queried
+     * @return List of partitions
+     */
+    function partitionsOf(address _tokenHolder) external view returns (bytes32[] memory);
 
     /**
      * @notice Gets data store address
@@ -439,6 +516,24 @@ interface ISecurityToken {
     function transferFromWithData(address _from, address _to, uint256 _value, bytes calldata _data) external;
 
     /**
+     * @notice Transfers the ownership of tokens from a specified partition from one address to another address
+     * @param _partition The partition from which to transfer tokens
+     * @param _to The address to which to transfer tokens to
+     * @param _value The amount of tokens to transfer from `_partition`
+     * @param _data Additional data attached to the transfer of tokens
+     * @return The partition to which the transferred tokens were allocated for the _to address
+     */
+    function transferByPartition(bytes32 _partition, address _to, uint256 _value, bytes calldata _data) external returns (bytes32);
+
+    /**
+     * @notice Get the balance according to the provided partitions
+     * @param _partition Partition which differentiate the tokens.
+     * @param _tokenHolder Whom balance need to queried
+     * @return Amount of tokens as per the given partitions
+     */
+    function balanceOfByPartition(bytes32 _partition, address _tokenHolder) external view returns(uint256);
+
+    /**
       * @notice Provides the granularity of the token
       * @return uint256
       */
@@ -465,6 +560,59 @@ interface ISecurityToken {
     function isIssuable() external view returns (bool);
 
     /**
+     * @notice Authorises an operator for all partitions of `msg.sender`.
+     * NB - Allowing investors to authorize an investor to be an operator of all partitions
+     * but it doesn't mean we operator is allowed to transfer the LOCKED partition values.
+     * Logic for this restriction is written in `operatorTransferByPartition()` function.
+     * @param _operator An address which is being authorised.
+     */ 
+    function authorizeOperator(address _operator) external;
+
+    /**
+     * @notice Revokes authorisation of an operator previously given for all partitions of `msg.sender`.
+     * NB - Allowing investors to authorize an investor to be an operator of all partitions
+     * but it doesn't mean we operator is allowed to transfer the LOCKED partition values.
+     * Logic for this restriction is written in `operatorTransferByPartition()` function.
+     * @param _operator An address which is being de-authorised
+     */
+    function revokeOperator(address _operator) external;
+
+    /**
+     * @notice Authorises an operator for a given partition of `msg.sender`
+     * @param _partition The partition to which the operator is authorised
+     * @param _operator An address which is being authorised
+     */
+    function authorizeOperatorByPartition(bytes32 _partition, address _operator) external;
+
+    /**
+     * @notice Revokes authorisation of an operator previously given for a specified partition of `msg.sender`
+     * @param _partition The partition to which the operator is de-authorised
+     * @param _operator An address which is being de-authorised
+     */
+    function revokeOperatorByPartition(bytes32 _partition, address _operator) external;
+
+    /**
+     * @notice Transfers the ownership of tokens from a specified partition from one address to another address
+     * @param _partition The partition from which to transfer tokens.
+     * @param _from The address from which to transfer tokens from
+     * @param _to The address to which to transfer tokens to
+     * @param _value The amount of tokens to transfer from `_partition`
+     * @param _data Additional data attached to the transfer of tokens
+     * @param _operatorData Additional data attached to the transfer of tokens by the operator
+     * @return The partition to which the transferred tokens were allocated for the _to address
+     */
+    function operatorTransferByPartition(
+        bytes32 _partition,
+        address _from,
+        address _to,
+        uint256 _value,
+        bytes calldata _data,
+        bytes calldata _operatorData
+    ) 
+        external
+        returns (bytes32);
+
+    /*
     * @notice Returns if transfers are currently frozen or not
     */
     function transfersFrozen() external view returns (bool);

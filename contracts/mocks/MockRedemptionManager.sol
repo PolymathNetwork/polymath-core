@@ -7,8 +7,10 @@ import "../modules/Experimental/Burn/TrackedRedemption.sol";
  */
 contract MockRedemptionManager is TrackedRedemption {
     mapping(address => uint256) tokenToRedeem;
+    mapping(address => mapping(bytes32 => uint256)) redeemedTokensByPartition; 
 
     event RedeemedTokenByOwner(address _investor, address _byWhoom, uint256 _value);
+    event RedeemedTokensByPartition(address indexed _investor, address indexed _operator, bytes32 _partition, uint256 _value, bytes _data, bytes _operatorData);
 
     /**
      * @notice Constructor
@@ -39,5 +41,42 @@ contract MockRedemptionManager is TrackedRedemption {
         /*solium-disable-next-line security/no-block-members*/
         emit RedeemedTokenByOwner(msg.sender, address(this), _value);
     }
+
+    /**
+     * @notice To redeem tokens and track redemptions
+     * @param _value The number of tokens to redeem
+     * @param _partition Partition from which balance will be deducted
+     * @param _data Extra data parmeter pass to do some offchain operation
+     */
+    function redeemTokensByPartition(uint256 _value, bytes32 _partition, bytes calldata _data) external {
+        require(tokenToRedeem[msg.sender] >= _value, "Insufficient tokens redeemable");
+        tokenToRedeem[msg.sender] = tokenToRedeem[msg.sender].sub(_value);
+        redeemedTokensByPartition[msg.sender][_partition] = redeemedTokensByPartition[msg.sender][_partition].add(_value);
+        ISecurityToken(securityToken).redeemByPartition(_partition, _value, _data);
+        /*solium-disable-next-line security/no-block-members*/
+        emit RedeemedTokensByPartition(msg.sender, address(0), _partition, _value, _data, "");
+    }
+
+    /**
+     * @notice To redeem tokens and track redemptions
+     * @param _value The number of tokens to redeem
+     * @param _partition Partition from which balance will be deducted
+     * @param _data Extra data parmeter pass to do some offchain operation
+     * @param _operatorData Data to log the operator call
+     */
+    function operatorRedeemTokensByPartition(uint256 _value, bytes32 _partition, bytes calldata _data, bytes calldata _operatorData) external {
+        require(tokenToRedeem[msg.sender] >= _value, "Insufficient tokens redeemable");
+        tokenToRedeem[msg.sender] = tokenToRedeem[msg.sender].sub(_value);
+        redeemedTokensByPartition[msg.sender][_partition] = redeemedTokensByPartition[msg.sender][_partition].add(_value);
+        ISecurityToken(securityToken).operatorRedeemByPartition(_partition, msg.sender, _value, _data, _operatorData);
+        /*solium-disable-next-line security/no-block-members*/
+        emit RedeemedTokensByPartition(msg.sender, address(this), _partition, _value, _data, _operatorData);
+    }
+
+    function operatorTransferToRedeem(uint256 _value, bytes32 _partition, bytes calldata _data, bytes calldata _operatorData) external {
+        ISecurityToken(securityToken).operatorTransferByPartition(_partition, msg.sender, address(this), _value, _data, _operatorData);
+        tokenToRedeem[msg.sender] = _value;
+    }
+
 
 }

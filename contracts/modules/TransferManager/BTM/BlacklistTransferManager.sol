@@ -435,9 +435,20 @@ contract BlacklistTransferManager is BlacklistTransferManagerStorage, TransferMa
 
     /**
      * @notice return the amount of tokens for a given user as per the partition
+     * @param _partition Identifier
+     * @param _tokenHolder Whom token amount need to query
+     * @param _additionalBalance It is the `_value` that transfer during transfer/transferFrom function call
      */
-    function getTokensByPartition(address /*_owner*/, bytes32 /*_partition*/) external view returns(uint256) {
-        return 0;
+    function getTokensByPartition(bytes32 _partition, address _tokenHolder, uint256 _additionalBalance) external view returns(uint256) {
+        uint256 currentBalance = (msg.sender == securityToken) ? (IERC20(securityToken).balanceOf(_tokenHolder)).add(_additionalBalance) : IERC20(securityToken).balanceOf(_tokenHolder);
+        if (paused && _partition == UNLOCKED)
+            return currentBalance;
+            
+        (Result success, ) = verifyTransfer(_tokenHolder, address(0), 0, "0x0");
+        if ((_partition == LOCKED && success == Result.INVALID) || (_partition == UNLOCKED && success != Result.INVALID))
+            return currentBalance;
+        else 
+            return 0;
     }
 
     /**

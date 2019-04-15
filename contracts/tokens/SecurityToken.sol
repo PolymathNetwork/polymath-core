@@ -53,14 +53,6 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     event FreezeIssuance();
     // Emit when transfers are frozen or unfrozen
     event FreezeTransfers(bool _status);
-    // Emit when Module get archived from the securityToken
-    event ModuleArchived(uint8[] _types, address _module);
-    // Emit when Module get unarchived from the securityToken
-    event ModuleUnarchived(uint8[] _types, address _module);
-    // Emit when Module get removed from the securityToken
-    event ModuleRemoved(uint8[] _types, address _module);
-    // Emit when the budget allocated to a module is changed
-    event ModuleBudgetChanged(uint8[] _moduleTypes, address _module, uint256 _oldBudget, uint256 _budget);
     // Emit when new checkpoint created
     event CheckpointCreated(uint256 indexed _checkpointId, uint256 _investorLength);
     // Events to log controller actions
@@ -70,6 +62,15 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     event DisableController();
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event TokenUpgraded(uint8 _major, uint8 _minor, uint8 _patch);
+
+    // Emit when Module get archived from the securityToken
+    event ModuleArchived(uint8[] _types, address _module); //Event emitted by the tokenLib.
+    // Emit when Module get unarchived from the securityToken
+    event ModuleUnarchived(uint8[] _types, address _module); //Event emitted by the tokenLib.
+    // Emit when Module get removed from the securityToken
+    event ModuleRemoved(uint8[] _types, address _module); //Event emitted by the tokenLib.
+    // Emit when the budget allocated to a module is changed
+    event ModuleBudgetChanged(uint8[] _moduleTypes, address _module, uint256 _oldBudget, uint256 _budget); //Event emitted by the tokenLib.
 
     /**
      * @notice Initialization function
@@ -213,7 +214,15 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
         _addModuleData(moduleTypes, _moduleFactory, module, moduleCost, _budget, _label, _archived);
     }
 
-    function _addModuleData(uint8[] memory _moduleTypes, address _moduleFactory, address _module, uint256 _moduleCost, uint256 _budget, bytes32 _label, bool _archived) internal {
+    function _addModuleData(
+        uint8[] memory _moduleTypes,
+        address _moduleFactory,
+        address _module,
+        uint256 _moduleCost,
+        uint256 _budget,
+        bytes32 _label,
+        bool _archived
+    ) internal {
         bytes32 moduleName = IModuleFactory(_moduleFactory).name();
         uint256[] memory moduleIndexes = new uint256[](_moduleTypes.length);
         uint256 i;
@@ -265,6 +274,10 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     */
     function upgradeToken() external {
         _onlyOwner();
+        // 10 is the number of module types to check for incompatibilities before upgrading.
+        // The number is hard coded and kept low to keep usage low.
+        // We currently have 7 module types. If we ever create more than 3 new module types,
+        // We will upgrade the implementation accordinly. We understand the limitations of this approach.
         IUpgradableTokenFactory(tokenFactory).upgradeToken(10);
         emit TokenUpgraded(securityTokenVersion.major, securityTokenVersion.minor, securityTokenVersion.patch);
     }
@@ -430,7 +443,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
 
     function _transferWithData(address _from, address _to, uint256 _value, bytes memory _data) internal {
         _isValidTransfer(_updateTransfer(_from, _to, _value, _data));
-        // Using the internal function instead of super.transfer() in the favour of reducing the code size 
+        // Using the internal function instead of super.transfer() in the favour of reducing the code size
         _transfer(_from, _to, _value);
     }
 
@@ -505,12 +518,12 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
         bytes memory _data,
         address _operator,
         bytes memory _operatorData
-    ) 
+    )
         internal
-        returns(bytes32 toPartition) 
+        returns(bytes32 toPartition)
     {
         _isValidPartition(_partition);
-        // Avoiding to add this check 
+        // Avoiding to add this check
         // require(balanceOfByPartition(_partition, msg.sender) >= _value);
         // NB - Above condition will be automatically checked using the executeTransfer() function execution.
         // NB - passing `_additionalBalance` value is 0 because accessing the balance before transfer
@@ -527,21 +540,21 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
         // balance otherwise return UNLOCKED
         if (_afterBalance.sub(_beforeBalance) == _value)
             toPartition = LOCKED;
-        // Returning the same partition UNLOCKED 
+        // Returning the same partition UNLOCKED
         toPartition = UNLOCKED;
     }
 
     ///////////////////////
     /// Operator Management
     ///////////////////////
-    
+
     /**
      * @notice Authorises an operator for all partitions of `msg.sender`.
      * NB - Allowing investors to authorize an investor to be an operator of all partitions
      * but it doesn't mean we operator is allowed to transfer the LOCKED partition values.
      * Logic for this restriction is written in `operatorTransferByPartition()` function.
      * @param _operator An address which is being authorised.
-     */ 
+     */
     function authorizeOperator(address _operator) public {
         _approve(msg.sender, _operator, uint(-1));
         emit AuthorizedOperator(_operator, msg.sender);
@@ -598,9 +611,9 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
         uint256 _value,
         bytes calldata _data,
         bytes calldata _operatorData
-    ) 
+    )
         external
-        returns (bytes32) 
+        returns (bytes32)
     {
         // For the current release we are only allowing UNLOCKED partition tokens to transact
         _validateOperatorAndPartition(_partition, _from, msg.sender);
@@ -628,7 +641,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
         //  - checkpoints are updated after the transfer managers are called. This allows TMs to create
         //checkpoints as though they have been created before the current transactions,
         //  - to avoid the situation where a transfer manager transfers tokens, and this function is called recursively,
-        //the function is marked as nonReentrant. This means that no TM can transfer (or mint / burn) tokens.
+        //the function is marked as nonReentrant. This means that no TM can transfer (or mint / burn) tokens in the execute transfer function.
         _adjustInvestorCount(_from, _to, _value);
         verified = _executeTransfer(_from, _to, _value, _data);
         _adjustBalanceCheckpoints(_from);
@@ -709,7 +722,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
         uint256 _value,
         bytes memory _data
     )
-        public // changed to public to save the code size and reuse the function 
+        public // changed to public to save the code size and reuse the function
     {
         _isIssuanceAllowed();
         _onlyModuleOrOwner(MINT_KEY);
@@ -736,10 +749,10 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @param _values A list of number of tokens get minted and transfer to corresponding address of the investor from _tokenHolders[] list
      * @return success
      */
-    function issueMulti(address[] calldata _tokenHolders, uint256[] calldata _values) external {
+    function issueMulti(address[] memory _tokenHolders, uint256[] memory _values) public {
         _isIssuanceAllowed();
         _onlyModuleOrOwner(MINT_KEY);
-        // Remove reason string to reduce the code size 
+        // Remove reason string to reduce the code size
         require(_tokenHolders.length == _values.length);
         for (uint256 i = 0; i < _tokenHolders.length; i++) {
             _issue(_tokenHolders[i], _values[i], "");
@@ -796,8 +809,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
         address _operator,
         bytes memory _data,
         bytes memory _operatorData
-    )   
-        internal 
+    )
+        internal
     {
         _redeem(_from, _value, _data);
         emit RedeemedByPartition(_partition, _operator, _from, _value, _data, _operatorData);
@@ -818,10 +831,10 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
         uint256 _value,
         bytes calldata _data,
         bytes calldata _operatorData
-    ) 
+    )
         external
     {
-        _onlyModule(BURN_KEY); 
+        _onlyModule(BURN_KEY);
         require(_operatorData[0] != 0);
         _zeroAddressCheck(_tokenHolder);
         _validateOperatorAndPartition(_partition, _tokenHolder, msg.sender);
@@ -932,7 +945,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
             return (false, 0x50, bytes32(0));
         }
         (success, appCode) = TokenLib.verifyTransfer(modules[TRANSFER_KEY], modulesToData, _from, _to, _value, _data, transfersFrozen);
-        return TokenLib.canTransfer(success, appCode, _to, _value, balanceOf(_from), balanceOf(_to));
+        return TokenLib.canTransfer(success, appCode, _to, _value, balanceOf(_from));
     }
 
     /**
@@ -957,7 +970,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
         external
         view
         returns (byte esc, bytes32 appStatusCode, bytes32 toPartition)
-    {   
+    {
         if (_partition == UNLOCKED) {
             bool success;
             (success, esc, appStatusCode) = _canTransfer(_from, _to, _value, _data);
@@ -968,7 +981,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
             }
             return (esc, appStatusCode, toPartition);
         }
-        return (0x50, bytes32(0), bytes32(0));   
+        return (0x50, bytes32(0), bytes32(0));
     }
 
     /**

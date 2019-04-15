@@ -62,10 +62,11 @@ contract GeneralPermissionManager is GeneralPermissionManagerStorage, IPermissio
      */
     function deleteDelegate(address _delegate) external withPerm(ADMIN) {
         require(delegateDetails[_delegate] != bytes32(0), "delegate does not exist");
-        for (uint256 i = 0; i < allDelegates.length; i++) {
+        uint256 delegateLen = allDelegates.length;
+        for (uint256 i = 0; i < delegateLen; i++) {
             if (allDelegates[i] == _delegate) {
-                allDelegates[i] = allDelegates[allDelegates.length - 1];
-                allDelegates.length = allDelegates.length - 1;
+                allDelegates[i] = allDelegates[delegateLen - 1];
+                allDelegates.length--;
             }
         }
         delete delegateDetails[_delegate];
@@ -107,17 +108,16 @@ contract GeneralPermissionManager is GeneralPermissionManagerStorage, IPermissio
      */
     function changePermissionMulti(
         address _delegate,
-        address[] calldata _modules,
-        bytes32[] calldata _perms,
-        bool[] calldata _valids
+        address[] memory _modules,
+        bytes32[] memory _perms,
+        bool[] memory _valids
     )
-        external
+        public
         withPerm(ADMIN)
     {
         require(_delegate != address(0), "invalid address");
         require(_modules.length > 0, "0 length is not allowed");
-        require(_modules.length == _perms.length, "Array length mismatch");
-        require(_valids.length == _perms.length, "Array length mismatch");
+        require(_modules.length == _perms.length && _valids.length == _perms.length, "Array length mismatch");
         for (uint256 i = 0; i < _perms.length; i++) {
             _changePermission(_delegate, _modules[i], _perms[i], _valids[i]);
         }

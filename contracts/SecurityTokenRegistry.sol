@@ -67,16 +67,18 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
 
     using SafeMath for uint256;
 
-    bytes32 constant INITIALIZE = 0x9ef7257c3339b099aacf96e55122ee78fb65a36bd2a6c19249882be9c98633bf;
-    bytes32 constant POLYTOKEN = 0xacf8fbd51bb4b83ba426cdb12f63be74db97c412515797993d2a385542e311d7;
-    bytes32 constant STLAUNCHFEE = 0xd677304bb45536bb7fdfa6b9e47a3c58fe413f9e8f01474b0a4b9c6e0275baf2;
-    bytes32 constant TICKERREGFEE = 0x2fcc69711628630fb5a42566c68bd1092bc4aa26826736293969fddcd11cb2d2;
-    bytes32 constant EXPIRYLIMIT = 0x604268e9a73dfd777dcecb8a614493dd65c638bad2f5e7d709d378bd2fb0baee;
-    bytes32 constant PAUSED = 0xee35723ac350a69d2a92d3703f17439cbaadf2f093a21ba5bf5f1a53eb2a14d9;
-    bytes32 constant OWNER = 0x02016836a56b71f0d02689e69e326f4f4c1b9057164ef592671cf0d37c8040c0;
-    bytes32 constant POLYMATHREGISTRY = 0x90eeab7c36075577c7cc5ff366e389fefa8a18289b949bab3529ab4471139d4d;
-    bytes32 constant STRGETTER = 0x982f24b3bd80807ec3cb227ba152e15c07d66855fa8ae6ca536e689205c0e2e9;
+    bytes32 constant INITIALIZE = 0x9ef7257c3339b099aacf96e55122ee78fb65a36bd2a6c19249882be9c98633bf; //keccak256("initialised")
+    bytes32 constant POLYTOKEN = 0xacf8fbd51bb4b83ba426cdb12f63be74db97c412515797993d2a385542e311d7; //keccak256("polyToken")
+    bytes32 constant STLAUNCHFEE = 0xd677304bb45536bb7fdfa6b9e47a3c58fe413f9e8f01474b0a4b9c6e0275baf2; //keccak256("stLaunchFee")
+    bytes32 constant TICKERREGFEE = 0x2fcc69711628630fb5a42566c68bd1092bc4aa26826736293969fddcd11cb2d2; //keccak256("tickerRegFee")
+    bytes32 constant EXPIRYLIMIT = 0x604268e9a73dfd777dcecb8a614493dd65c638bad2f5e7d709d378bd2fb0baee; //keccak256("expiryLimit")
+    bytes32 constant PAUSED = 0xee35723ac350a69d2a92d3703f17439cbaadf2f093a21ba5bf5f1a53eb2a14d9; //keccak256("paused")
+    bytes32 constant OWNER = 0x02016836a56b71f0d02689e69e326f4f4c1b9057164ef592671cf0d37c8040c0; //keccak256("owner")
+    bytes32 constant POLYMATHREGISTRY = 0x90eeab7c36075577c7cc5ff366e389fefa8a18289b949bab3529ab4471139d4d; //keccak256("polymathRegistry")
+    bytes32 constant STRGETTER = 0x982f24b3bd80807ec3cb227ba152e15c07d66855fa8ae6ca536e689205c0e2e9; //keccak256("STRGetter")
     bytes32 constant IS_FEE_IN_POLY = 0x7152e5426955da44af11ecd67fec5e2a3ba747be974678842afa9394b9a075b6; //keccak256("IS_FEE_IN_POLY")
+    bytes32 constant ACTIVE_USERS = 0x425619ce6ba8e9f80f17c0ef298b6557e321d70d7aeff2e74dd157bd87177a9e; //keccak256("activeUsers")
+    bytes32 constant LATEST_VERSION = 0x4c63b69b9117452b9f11af62077d0cda875fb4e2dbe07ad6f31f728de6926230; //keccak256("latestVersion")
 
     string constant POLY_ORACLE = "StablePolyUsdOracle";
 
@@ -196,7 +198,6 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         address _getterContract
     )
         public
-        payable
     {
         require(!getBoolValue(INITIALIZE),"Initialized");
         require(
@@ -264,7 +265,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     }
 
     function _implementation() internal view returns(address) {
-        return getAddressValue(Encoder.getKey("STRGetter"));
+        return getAddressValue(STRGETTER);
     }
 
     /////////////////////////////
@@ -422,7 +423,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         set(Encoder.getKey("tickerIndex", _ticker), length);
         bytes32 seenKey = Encoder.getKey("seenUsers", _owner);
         if (!getBoolValue(seenKey)) {
-            pushArray(Encoder.getKey("activeUsers"), _owner);
+            pushArray(ACTIVE_USERS, _owner);
             set(seenKey, true);
         }
     }
@@ -528,7 +529,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         require(bytes(_name).length > 0 && bytes(_ticker).length > 0, "Bad ticker");
         require(_treasuryWallet != address(0), "0x0 not allowed");
         if (_protocolVersion == 0) {
-            protocolVersion = getUintValue(Encoder.getKey("latestVersion"));
+            protocolVersion = getUintValue(LATEST_VERSION);
         }
         require(protocolVersion != uint256(0), "Invalid version");
         string memory ticker = Util.upper(_ticker);
@@ -572,7 +573,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         address stOwner = IOwnable(st).owner();
         require(msg.sender == stOwner, "Unauthroized");
         require(ISecurityToken(st).transfersFrozen(), "Transfers not frozen");
-        uint256 protocolVersion = getUintValue(Encoder.getKey("latestVersion"));
+        uint256 protocolVersion = getUintValue(LATEST_VERSION);
         address newSecurityTokenAddress =
             _deployToken(_name, ticker, _tokenDetails, stOwner, _divisible, _treasuryWallet, protocolVersion);
         emit SecurityTokenRefreshed(
@@ -777,7 +778,6 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     function _setProtocolFactory(address _STFactoryAddress, uint8 _major, uint8 _minor, uint8 _patch) internal {
         require(_STFactoryAddress != address(0), "Bad address");
         uint24 _packedVersion = VersionUtils.pack(_major, _minor, _patch);
-        //set(Encoder.getKey("latestVersion"), uint256(_packedVersion));
         set(Encoder.getKey("protocolVersionST", uint256(_packedVersion)), _STFactoryAddress);
         emit ProtocolFactorySet(_STFactoryAddress, _major, _minor, _patch);
     }
@@ -790,7 +790,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     */
     function removeProtocolFactory(uint8 _major, uint8 _minor, uint8 _patch) public onlyOwner {
         uint24 _packedVersion = VersionUtils.pack(_major, _minor, _patch);
-        require(getUintValue(Encoder.getKey("latestVersion")) != _packedVersion, "Cannot remove latestVersion");
+        require(getUintValue(LATEST_VERSION) != _packedVersion, "Cannot remove latestVersion");
         emit ProtocolFactoryRemoved(getAddressValue(Encoder.getKey("protocolVersionST", _packedVersion)), _major, _minor, _patch);
         set(Encoder.getKey("protocolVersionST", uint256(_packedVersion)), address(0));
     }
@@ -810,7 +810,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     function _setLatestVersion(uint8 _major, uint8 _minor, uint8 _patch) internal {
         uint24 _packedVersion = VersionUtils.pack(_major, _minor, _patch);
         require(getAddressValue(Encoder.getKey("protocolVersionST", _packedVersion)) != address(0), "No factory");
-        set(Encoder.getKey("latestVersion"), uint256(_packedVersion));
+        set(LATEST_VERSION, uint256(_packedVersion));
         emit LatestVersionSet(_major, _minor, _patch);
     }
 

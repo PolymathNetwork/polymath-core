@@ -22,8 +22,6 @@ contract MockSecurityTokenLogic is SecurityToken {
      * @dev Can only be called once
      */
     function upgrade(address _getterDelegate, uint256 _upgrade) external {
-        require(msg.sender == address(this));
-        //Expected to be called atomically with the proxy being created
         getterDelegate = _getterDelegate;
         //securityTokenVersion = SemanticVersion(3, 1, 0);
         emit UpgradeEvent(_upgrade);
@@ -31,6 +29,20 @@ contract MockSecurityTokenLogic is SecurityToken {
 
     function newFunction(uint256 _upgrade) external {
         emit UpgradeEvent(_upgrade);
+    }
+
+    //To reduce bytecode size
+    function addModuleWithLabel(
+        address /* _moduleFactory */,
+        bytes memory /* _data */,
+        uint256 /* _maxCost */,
+        uint256 /* _budget */,
+        bytes32 /* _label */,
+        bool /* _archived */
+    )
+        public
+    {
+        emit UpgradeEvent(0);
     }
 
 }

@@ -164,28 +164,28 @@ contract DataStore is DataStoreStorage, IDataStore {
      * @param _keys Array of keys to identify the data
      * @param _data Array of data to be stored against the respective keys
      */
-    function setUint256Multi(bytes32[] calldata _keys, uint256[] calldata _data) external validArrayLength(_keys.length, _data.length) {
+    function setUint256Multi(bytes32[] memory _keys, uint256[] memory _data) public validArrayLength(_keys.length, _data.length) {
         _isAuthorized();
         for (uint256 i = 0; i < _keys.length; i++) {
             _setData(_keys[i], _data[i], false);
         }
     }
 
-    function setBytes32Multi(bytes32[] calldata _keys, bytes32[] calldata _data) external validArrayLength(_keys.length, _data.length) {
+    function setBytes32Multi(bytes32[] memory _keys, bytes32[] memory _data) public validArrayLength(_keys.length, _data.length) {
         _isAuthorized();
         for (uint256 i = 0; i < _keys.length; i++) {
             _setData(_keys[i], _data[i], false);
         }
     }
 
-    function setAddressMulti(bytes32[] calldata _keys, address[] calldata _data) external validArrayLength(_keys.length, _data.length) {
+    function setAddressMulti(bytes32[] memory _keys, address[] memory _data) public validArrayLength(_keys.length, _data.length) {
         _isAuthorized();
         for (uint256 i = 0; i < _keys.length; i++) {
             _setData(_keys[i], _data[i], false);
         }
     }
 
-    function setBoolMulti(bytes32[] calldata _keys, bool[] calldata _data) external validArrayLength(_keys.length, _data.length) {
+    function setBoolMulti(bytes32[] memory _keys, bool[] memory _data) public validArrayLength(_keys.length, _data.length) {
         _isAuthorized();
         for (uint256 i = 0; i < _keys.length; i++) {
             _setData(_keys[i], _data[i], false);
@@ -197,28 +197,28 @@ contract DataStore is DataStoreStorage, IDataStore {
      * @param _keys Array of keys to identify the data
      * @param _data Array of data to be inserted in arrays of the respective keys
      */
-    function insertUint256Multi(bytes32[] calldata _keys, uint256[] calldata _data) external validArrayLength(_keys.length, _data.length) {
+    function insertUint256Multi(bytes32[] memory _keys, uint256[] memory _data) public validArrayLength(_keys.length, _data.length) {
         _isAuthorized();
         for (uint256 i = 0; i < _keys.length; i++) {
             _setData(_keys[i], _data[i], true);
         }
     }
 
-    function insertBytes32Multi(bytes32[] calldata _keys, bytes32[] calldata _data) external validArrayLength(_keys.length, _data.length) {
+    function insertBytes32Multi(bytes32[] memory _keys, bytes32[] memory _data) public validArrayLength(_keys.length, _data.length) {
         _isAuthorized();
         for (uint256 i = 0; i < _keys.length; i++) {
             _setData(_keys[i], _data[i], true);
         }
     }
 
-    function insertAddressMulti(bytes32[] calldata _keys, address[] calldata _data) external validArrayLength(_keys.length, _data.length) {
+    function insertAddressMulti(bytes32[] memory _keys, address[] memory _data) public validArrayLength(_keys.length, _data.length) {
         _isAuthorized();
         for (uint256 i = 0; i < _keys.length; i++) {
             _setData(_keys[i], _data[i], true);
         }
     }
 
-    function insertBoolMulti(bytes32[] calldata _keys, bool[] calldata _data) external validArrayLength(_keys.length, _data.length) {
+    function insertBoolMulti(bytes32[] memory _keys, bool[] memory _data) public validArrayLength(_keys.length, _data.length) {
         _isAuthorized();
         for (uint256 i = 0; i < _keys.length; i++) {
             _setData(_keys[i], _data[i], true);
@@ -297,7 +297,7 @@ contract DataStore is DataStoreStorage, IDataStore {
         return boolArrayData[_key][_index];
     }
 
-    function getUint256ArrayElements(bytes32 _key, uint256 _startIndex, uint256 _endIndex) external view returns(uint256[] memory array) {
+    function getUint256ArrayElements(bytes32 _key, uint256 _startIndex, uint256 _endIndex) public view returns(uint256[] memory array) {
         uint256 size = uintArrayData[_key].length;
         if (_endIndex >= size) {
             size = size - _startIndex;
@@ -309,7 +309,7 @@ contract DataStore is DataStoreStorage, IDataStore {
             array[i] = uintArrayData[_key][i + _startIndex];
     }
 
-    function getBytes32ArrayElements(bytes32 _key, uint256 _startIndex, uint256 _endIndex) external view returns(bytes32[] memory array) {
+    function getBytes32ArrayElements(bytes32 _key, uint256 _startIndex, uint256 _endIndex) public view returns(bytes32[] memory array) {
         uint256 size = bytes32ArrayData[_key].length;
         if (_endIndex >= size) {
             size = size - _startIndex;
@@ -321,7 +321,7 @@ contract DataStore is DataStoreStorage, IDataStore {
             array[i] = bytes32ArrayData[_key][i + _startIndex];
     }
 
-    function getAddressArrayElements(bytes32 _key, uint256 _startIndex, uint256 _endIndex) external view returns(address[] memory array) {
+    function getAddressArrayElements(bytes32 _key, uint256 _startIndex, uint256 _endIndex) public view returns(address[] memory array) {
         uint256 size = addressArrayData[_key].length;
         if (_endIndex >= size) {
             size = size - _startIndex;
@@ -333,7 +333,7 @@ contract DataStore is DataStoreStorage, IDataStore {
             array[i] = addressArrayData[_key][i + _startIndex];
     }
 
-    function getBoolArrayElements(bytes32 _key, uint256 _startIndex, uint256 _endIndex) external view returns(bool[] memory array) {
+    function getBoolArrayElements(bytes32 _key, uint256 _startIndex, uint256 _endIndex) public view returns(bool[] memory array) {
         uint256 size = boolArrayData[_key].length;
         if (_endIndex >= size) {
             size = size - _startIndex;

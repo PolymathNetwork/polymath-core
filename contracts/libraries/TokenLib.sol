@@ -364,7 +364,7 @@ library TokenLib {
         bytes32 name,
         string memory uri,
         bytes32 documentHash
-    )   
+    )
         public
     {
         require(name != bytes32(0), "Bad name");
@@ -388,7 +388,7 @@ library TokenLib {
         mapping(bytes32 => uint256) storage docIndexes,
         bytes32 name
     )
-        public 
+        public
     {
         require(document[name].lastModified != uint256(0), "Not existed");
         uint256 index = docIndexes[name] - 1;
@@ -460,24 +460,25 @@ library TokenLib {
         bytes32 appCode,
         address to,
         uint256 value,
-        uint256 balanceOfFrom,
-        uint256 balanceOfTo
-    )   
+        uint256 balanceOfFrom
+    )
         public
-        pure 
-        returns (bool, byte, bytes32) 
+        pure
+        returns (bool, byte, bytes32)
     {
         if (!success)
             return (false, 0x50, appCode);
 
-        else if (balanceOfFrom < value)
+        if (balanceOfFrom < value)
             return (false, 0x52, bytes32(0));
 
-        else if (to == address(0))
+        if (to == address(0))
             return (false, 0x57, bytes32(0));
 
-        else if (!KindMath.checkAdd(balanceOfTo, value))
-            return (false, 0x50, bytes32(0));
+        // Balance overflow can never happen due to totalsupply being a uint256 as well
+        // else if (!KindMath.checkAdd(balanceOf(_to), _value))
+        //     return (false, 0x50, bytes32(0));
+
         return (true, 0x51, bytes32(0));
     }
 

@@ -700,6 +700,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         })
 
         it("Should generate the new security token with version 2", async () => {
+            let snapId = await takeSnapshot();
             // Version bounds not checked here as MR is called as non-token
             let tx = await I_STRProxied.generateNewSecurityToken(name2, symbol2, tokenDetails, false, token_owner, _pack(2,2,0), { from: token_owner });
             console.log(`Protocol version: ${_pack(2,2,0)}`);
@@ -717,6 +718,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
             // Verify that GeneralTransferManager module get added successfully or not
             assert.equal(log.args._types[0].toNumber(), transferManagerKey);
             assert.equal(web3.utils.toAscii(log.args._name).replace(/\u0000/g, ""), "GeneralTransferManager");
+            await revertToSnapshot(snapId);
         });
     });
 

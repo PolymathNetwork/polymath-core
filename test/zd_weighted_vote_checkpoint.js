@@ -246,10 +246,28 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
                 );
             });
 
+            it("\t\t Should fail to create ballot -- Invalid startTime \n", async() => {
+                let startTime = new BN(await latestTime());
+                let endTime = new BN(await latestTime() + duration.days(4));
+                await I_SecurityToken.createCheckpoint({from: token_owner});
+                let checkpointId = await I_SecurityToken.currentCheckpointId.call();
+                await catchRevert(
+                    I_WeightedVoteCheckpoint.createCustomBallot(checkpointId, new BN(51).mul(new BN(10).pow(new BN(16))), 0, endTime, new BN(3), {from: token_owner})
+                );
+            });
+
+            it("\t\t Should fail to create ballot -- Invalid endTimes \n", async() => {
+                let startTime = new BN(await latestTime() + duration.days(10));
+                let endTime = new BN(await latestTime() + duration.days(4));
+                await catchRevert(
+                    I_WeightedVoteCheckpoint.createCustomBallot(new BN(1), new BN(51).mul(new BN(10).pow(new BN(16))), startTime, endTime, new BN(3), {from: token_owner})
+                );
+            });
+
             it("\t\t Should create the ballot successfully \n", async() => {
                 let tx = await I_WeightedVoteCheckpoint.createBallot(new BN(duration.days(5)), new BN(3), new BN(51).mul(new BN(10).pow(new BN(16))), {from: token_owner});
                 assert.equal((tx.logs[0].args._noOfProposals).toString(), 3);
-                assert.equal((tx.logs[0].args._checkpointId).toString(), 1);
+                assert.equal((tx.logs[0].args._checkpointId).toString(), 2);
                 assert.equal((tx.logs[0].args._ballotId).toString(), 0);
             });
         });
@@ -442,9 +460,21 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
             });
 
             it("\t\t Should check who votes whom \n", async() => {
+                // If we give Invalid ballot id, This function will always return 0
+                assert.equal((await I_WeightedVoteCheckpoint.getSelectedProposal.call(new BN(13), account_investor1)).toString(), 0);
+
                 assert.equal((await I_WeightedVoteCheckpoint.getSelectedProposal.call(new BN(0), account_investor1)).toString(), 1);
                 assert.equal((await I_WeightedVoteCheckpoint.getSelectedProposal.call(new BN(0), account_investor2)).toString(), 2);
                 assert.equal((await I_WeightedVoteCheckpoint.getSelectedProposal.call(new BN(0), account_investor3)).toString(), 1);
+            });
+
+            it("\t\t Should get the result of the ballot \n", async() => {
+                let data = await I_WeightedVoteCheckpoint.getBallotResults.call(new BN(5));
+                assert.equal(data[4], 0);
+                assert.equal(data[0].length, 0);
+                assert.equal(data[0].length, 0);
+                assert.equal(data[2], 0);
+                assert.isFalse(data[3]);
             });
 
             it("\t\t Should get the result of the ballot \n", async() => {

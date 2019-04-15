@@ -10,7 +10,8 @@ interface IERC1594 {
     function transferFromWithData(address _from, address _to, uint256 _value, bytes calldata _data) external;
 
     // Token Issuance
-    function isIssuable() external view returns (bool);
+    // Present in the STGetter.sol
+    //function isIssuable() external view returns (bool);
     function issue(address _tokenHolder, uint256 _value, bytes calldata _data) external;
 
     // Token Redemption

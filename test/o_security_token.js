@@ -280,19 +280,19 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should check the balance of the locked tokens", async() => {
             console.log(`\t Total balance: ${web3.utils.fromWei((await I_SecurityToken.balanceOf.call(account_affiliate1)).toString())}`);
-            console.log(`\t Locked balance: ${web3.utils.fromWei((await stGetter.balanceOfByPartition.call(account_affiliate1, web3.utils.utf8ToHex(`LOCKED`))).toString())}`);
-            console.log(`\t Unlocked balance: ${web3.utils.fromWei((await stGetter.balanceOfByPartition.call(account_affiliate1, web3.utils.utf8ToHex(`UNLOCKED`))).toString())}`);
+            console.log(`\t Locked balance: ${web3.utils.fromWei((await I_SecurityToken.balanceOfByPartition.call(web3.utils.utf8ToHex(`LOCKED`), account_affiliate1)).toString())}`);
+            console.log(`\t Unlocked balance: ${web3.utils.fromWei((await I_SecurityToken.balanceOfByPartition.call(web3.utils.utf8ToHex(`UNLOCKED`), account_affiliate1)).toString())}`);
             assert.equal(
-                web3.utils.fromWei((await stGetter.balanceOfByPartition.call(account_affiliate1, web3.utils.utf8ToHex(`LOCKED`))).toString()),
+                web3.utils.fromWei((await I_SecurityToken.balanceOfByPartition.call(web3.utils.utf8ToHex(`LOCKED`), account_affiliate1)).toString()),
                 0
             );
             assert.equal(
-                web3.utils.fromWei((await stGetter.balanceOfByPartition.call(account_affiliate1, web3.utils.utf8ToHex(`UNLOCKED`))).toString()),
+                web3.utils.fromWei((await I_SecurityToken.balanceOfByPartition.call(web3.utils.utf8ToHex(`UNLOCKED`), account_affiliate1)).toString()),
                 web3.utils.fromWei((await I_SecurityToken.balanceOf.call(account_affiliate1)).toString())
             );
-            console.log(`\t Wrong partition: ${web3.utils.fromWei((await stGetter.balanceOfByPartition.call(account_affiliate1, web3.utils.toHex(`OCKED`))).toString())}`);
+            console.log(`\t Wrong partition: ${web3.utils.fromWei((await I_SecurityToken.balanceOfByPartition.call(web3.utils.toHex(`OCKED`), account_affiliate1)).toString())}`);
             assert.equal(
-                web3.utils.fromWei((await stGetter.balanceOfByPartition.call(account_affiliate1, web3.utils.toHex(`OCKED`))).toString()),
+                web3.utils.fromWei((await I_SecurityToken.balanceOfByPartition.call(web3.utils.toHex(`OCKED`), account_affiliate1)).toString()),
                 0
             );
         });
@@ -354,7 +354,7 @@ contract("SecurityToken", async (accounts) => {
         });
 
         it("Should ST be issuable", async() => {
-            assert.isTrue(await I_SecurityToken.isIssuable.call());
+            assert.isTrue(await stGetter.isIssuable.call());
         })
 
 
@@ -375,7 +375,7 @@ contract("SecurityToken", async (accounts) => {
         process.env.COVERAGE ? it.skip : it("Should finish minting & restrict the further minting", async () => {
             let id = await takeSnapshot();
             await I_SecurityToken.freezeIssuance(freezeIssuanceAckHash, { from: token_owner });
-            assert.isFalse(await I_SecurityToken.isIssuable.call());
+            assert.isFalse(await stGetter.isIssuable.call());
             await catchRevert(I_SecurityToken.issue(account_affiliate1, new BN(100).mul(new BN(10).pow(new BN(18))), "0x0", { from: token_owner, gas: 500000 }));
             await revertToSnapshot(id);
         });
@@ -796,7 +796,7 @@ contract("SecurityToken", async (accounts) => {
             let tokenInitBytesCall = web3.eth.abi.encodeFunctionCall(tokenInitBytes, [mockSTGetter.address, 10]);
             await I_STFactory.setLogicContract("3.0.1", mockSecurityTokenLogic.address, tokenInitBytesCall, {from: account_polymath});
             // NB - the mockSecurityTokenLogic sets its internal version to 3.0.0 not 3.0.1
-            let tx = await I_SecurityToken.upgradeToken({from: token_owner});
+            let tx = await I_SecurityToken.upgradeToken({from: token_owner, gas: 7000000});
             assert.equal(tx.logs[0].args._major, 3);
             assert.equal(tx.logs[0].args._minor, 0);
             assert.equal(tx.logs[0].args._patch, 0);
@@ -1172,12 +1172,12 @@ contract("SecurityToken", async (accounts) => {
         it("Should successfully fail in calling the burn functions", async () => {
             [I_MockRedemptionManagerFactory] = await deployMockWrongTypeRedemptionAndVerifyed(account_polymath, I_MRProxied, 0);
             let tx = await I_SecurityToken.addModule(I_MockRedemptionManagerFactory.address, "0x0", new BN(0), new BN(0), false, { from: token_owner });
-            I_MockRedemptionManager = await MockRedemptionManager.at(tx.logs[2].args._module);
+            let I_MockRedemptionManagerWrong = await MockRedemptionManager.at(tx.logs[2].args._module);
 
             // adding the burn module into the GTM
             currentTime = new BN(await latestTime());
             tx = await I_GeneralTransferManager.modifyKYCData(
-                I_MockRedemptionManager.address,
+                I_MockRedemptionManagerWrong.address,
                 1,
                 1,
                 currentTime.add(new BN(duration.days(50))),
@@ -1186,15 +1186,15 @@ contract("SecurityToken", async (accounts) => {
                     gas: 6000000
                 }
             );
-            assert.equal(tx.logs[0].args._investor, I_MockRedemptionManager.address, "Failed in adding the investor in whitelist");
+            assert.equal(tx.logs[0].args._investor, I_MockRedemptionManagerWrong.address, "Failed in adding the investor in whitelist");
             // Provide approval to trnafer the tokens to Module
-            await I_SecurityToken.approve(I_MockRedemptionManager.address, new BN(web3.utils.toWei("500")), { from: account_investor1 });
+            await I_SecurityToken.approve(I_MockRedemptionManagerWrong.address, new BN(web3.utils.toWei("500")), { from: account_investor1 });
             // Transfer the tokens to module (Burn)
-            await I_MockRedemptionManager.transferToRedeem(new BN(web3.utils.toWei("500")), { from: account_investor1 });
+            await I_MockRedemptionManagerWrong.transferToRedeem(new BN(web3.utils.toWei("500")), { from: account_investor1 });
 
             await catchRevert(
                 // Redeem tokens
-                I_MockRedemptionManager.redeemTokenByOwner(new BN(web3.utils.toWei("250")), { from: account_investor1 })
+                I_MockRedemptionManagerWrong.redeemTokenByOwner(new BN(web3.utils.toWei("250")), { from: account_investor1 })
             );
         });
     });
@@ -1342,6 +1342,400 @@ contract("SecurityToken", async (accounts) => {
             );
         });
 
+    });
+
+    async function balanceOf(account) {
+        console.log(`
+            ${account} total balance: ${web3.utils.fromWei(await I_SecurityToken.balanceOf(account))}
+            ${account} Locked balance: ${web3.utils.fromWei(await I_SecurityToken.balanceOfByPartition(web3.utils.toHex("LOCKED"), account))}
+            ${account} Unlocked balance: ${web3.utils.fromWei(await I_SecurityToken.balanceOfByPartition(web3.utils.toHex("UNLOCKED"), account))}
+            `);
+    }
+
+    describe("Test cases for the partition functions -- ERC1410", async() => {
+
+        it("Set the transfer requirements", async() => {
+            await I_GeneralTransferManager.modifyTransferRequirementsMulti(
+                [0, 1, 2],
+                [true, false, true],
+                [true, true, false],
+                [true, false, false],
+                [true, false, false],
+                { from: account_delegate }
+            );
+        });
+
+        it("Should Successfully transfer tokens by the partition", async() => {
+            await balanceOf(account_investor1);
+            await balanceOf(account_investor2);
+            await balanceOf(account_investor3);
+            await balanceOf(account_affiliate1);
+            await balanceOf(account_affiliate2);
+
+            fromTime = await latestTime();
+            toTime = fromTime;
+            expiryTime = toTime + duration.days(100);
+
+            let tx = await I_GeneralTransferManager.modifyKYCData(account_investor1, fromTime, toTime, expiryTime, {
+                from: token_owner,
+                gas: 6000000
+            });
+            assert.equal(tx.logs[0].args._investor, account_investor1, "Failed in adding the investor in whitelist");
+
+            tx = await I_GeneralTransferManager.modifyKYCData(account_investor2, fromTime, toTime, expiryTime, {
+                from: token_owner,
+                gas: 6000000
+            });
+            assert.equal(tx.logs[0].args._investor, account_investor2, "Failed in adding the investor in whitelist");
+
+            await increaseTime(5);
+
+            let data = await I_SecurityToken.canTransferByPartition.call(
+                account_investor1,
+                account_investor2,
+                web3.utils.toHex("LOCKED"),
+                new BN(web3.utils.toWei("15")),
+                "0x0"
+            );
+
+            assert.equal(data[0], 0x50);
+            assert.equal(web3.utils.hexToUtf8(data[1]), "");
+            assert.equal(web3.utils.hexToUtf8(data[2]), "");
+
+            await catchRevert(
+                I_SecurityToken.transferByPartition(
+                    web3.utils.toHex("LOCKED"),
+                    account_investor2,
+                    new BN(web3.utils.toWei("15")),
+                    "0x0",
+                    {
+                        from: account_investor1
+                    }
+                )
+            )
+
+            assert.equal(
+                web3.utils.hexToUtf8(
+                await I_SecurityToken.transferByPartition.call(
+                    web3.utils.toHex("UNLOCKED"),
+                    account_investor2,
+                    new BN(web3.utils.toWei("15")),
+                    "0x0",
+                    {
+                        from: account_investor1
+                    }
+                    )
+                ),
+                "UNLOCKED"
+            );
+
+            data = await I_SecurityToken.canTransferByPartition.call(
+                account_investor1,
+                account_investor2,
+                web3.utils.toHex("UNLOCKED"),
+                new BN(web3.utils.toWei("15")),
+                "0x0"
+            );
+
+            assert.equal(data[0], 0x51);
+            assert.equal(web3.utils.hexToUtf8(data[1]), "");
+            assert.equal(web3.utils.hexToUtf8(data[2]), "UNLOCKED");
+
+            tx = await I_SecurityToken.transferByPartition(
+                        web3.utils.toHex("UNLOCKED"),
+                        account_investor2,
+                        new BN(web3.utils.toWei("15")),
+                        "0x0",
+                        {
+                            from: account_investor1
+                        }
+                    );
+            assert.equal(web3.utils.hexToUtf8(tx.logs[1].args._fromPartition), "UNLOCKED");
+            assert.equal(tx.logs[1].args._operator, "0x0000000000000000000000000000000000000000");
+        });
+
+        it("Should authorize the operator", async() => {
+            await I_SecurityToken.authorizeOperator(account_delegate, {from: account_investor1});
+            assert.isTrue(await stGetter.isOperator.call(account_delegate, account_investor1));
+        });
+
+        it("Should fail to call operatorTransferByPartition-- not a valid partition", async() => {
+            await catchRevert(
+                I_SecurityToken.operatorTransferByPartition(
+                    web3.utils.toHex("LOCKED"),
+                    account_investor1,
+                    account_investor2,
+                    new BN(web3.utils.toWei('14')),
+                    "0x0",
+                    web3.utils.toHex("Valid transfer from the operator"),
+                    {
+                        from: account_delegate
+                    }
+                )
+            );
+        });
+
+        it("Should fail to call operatorTransferByPartition-- not a valid operator", async() => {
+            await catchRevert(
+                I_SecurityToken.operatorTransferByPartition(
+                    web3.utils.toHex("UNLOCKED"),
+                    account_investor1,
+                    account_investor2,
+                    new BN(web3.utils.toWei('14')),
+                    "0x0",
+                    web3.utils.toHex("Valid transfer from the operator"),
+                    {
+                        from: account_affiliate1
+                    }
+                )
+            );
+        });
+
+        it("Should fail to call operatorTransferByPartition-- not a valid operatorData", async() => {
+            await catchRevert(
+                I_SecurityToken.operatorTransferByPartition(
+                    web3.utils.toHex("UNLOCKED"),
+                    account_investor1,
+                    account_investor2,
+                    new BN(web3.utils.toWei('14')),
+                    "0x0",
+                    web3.utils.toHex(""),
+                    {
+                        from: account_delegate
+                    }
+                )
+            );
+        });
+
+        it("Should successfully execute operatorTransferByPartition", async() => {
+            let unlockedBalanceOf2InvestorBefore = web3.utils.fromWei(await I_SecurityToken.balanceOfByPartition(web3.utils.toHex("UNLOCKED"), account_investor2));
+            let tx = await I_SecurityToken.operatorTransferByPartition(
+                    web3.utils.toHex("UNLOCKED"),
+                    account_investor1,
+                    account_investor2,
+                    new BN(web3.utils.toWei('14')),
+                    "0x0",
+                    web3.utils.toHex("Valid transfer from the operator"),
+                    {
+                        from: account_delegate
+                    }
+                );
+            assert.equal(web3.utils.hexToUtf8(tx.logs[1].args._fromPartition), "UNLOCKED");
+            assert.equal(tx.logs[1].args._operator, account_delegate);
+            let unlockedBalanceOf2InvestorAfter = web3.utils.fromWei(await I_SecurityToken.balanceOfByPartition(web3.utils.toHex("UNLOCKED"), account_investor2));
+            assert.equal(unlockedBalanceOf2InvestorAfter - unlockedBalanceOf2InvestorBefore, 14);
+        });
+
+        it("Should revoke operator", async() => {
+            await I_SecurityToken.revokeOperator(account_delegate, {from: account_investor1});
+            assert.isFalse(await stGetter.isOperator.call(account_delegate, account_investor1));
+        });
+
+        it("Should fail to transfer by operator -- not a valid operator", async() => {
+            await catchRevert(
+                I_SecurityToken.operatorTransferByPartition(
+                    web3.utils.toHex("UNLOCKED"),
+                    account_investor1,
+                    account_investor2,
+                    new BN(web3.utils.toWei('20')),
+                    "0x0",
+                    web3.utils.toHex("Valid transfer from the operator"),
+                    {
+                        from: account_delegate
+                    }
+                )
+            );
+        });
+
+        it("Should fail to execute authorizeOperatorByPartition successfully for invalid partition", async() => {
+            await catchRevert(
+                I_SecurityToken.authorizeOperatorByPartition(web3.utils.toHex("LOCKED"), account_delegate, {from: account_investor1})
+            );
+        });
+
+        it("Should execute authorizeOperatorByPartition successfully", async() => {
+            await I_SecurityToken.authorizeOperatorByPartition(web3.utils.toHex("UNLOCKED"), account_delegate, {from: account_investor1});
+            assert.isTrue(await stGetter.isOperatorForPartition(web3.utils.toHex("UNLOCKED"), account_delegate, account_investor1));
+        });
+
+        it("Should successfully transfer the tokens by operator", async() => {
+            let unlockedBalanceOf2InvestorBefore = web3.utils.fromWei(await I_SecurityToken.balanceOfByPartition(web3.utils.toHex("UNLOCKED"), account_investor2));
+            let tx = await I_SecurityToken.operatorTransferByPartition(
+                    web3.utils.toHex("UNLOCKED"),
+                    account_investor1,
+                    account_investor2,
+                    new BN(web3.utils.toWei('5')),
+                    "0x0",
+                    web3.utils.toHex("Valid transfer from the operator"),
+                    {
+                        from: account_delegate
+                    }
+                )
+            assert.equal(web3.utils.hexToUtf8(tx.logs[1].args._fromPartition), "UNLOCKED");
+            assert.equal(tx.logs[1].args._operator, account_delegate);
+            let unlockedBalanceOf2InvestorAfter = web3.utils.fromWei(await I_SecurityToken.balanceOfByPartition(web3.utils.toHex("UNLOCKED"), account_investor2));
+            assert.equal(unlockedBalanceOf2InvestorAfter - unlockedBalanceOf2InvestorBefore, 5);
+        });
+
+        it("Should successfully execute revokeOperatorByPartition successfully", async() => {
+            await I_SecurityToken.revokeOperatorByPartition(web3.utils.toHex("UNLOCKED"), account_delegate, {from: account_investor1});
+            assert.isFalse(await stGetter.isOperatorForPartition(web3.utils.toHex("UNLOCKED"), account_delegate, account_investor1));
+        });
+
+        it("Should fail to issue to tokens according to partition -- invalid partition", async() => {
+            await catchRevert (
+                    I_SecurityToken.issueByPartition(
+                    web3.utils.toHex("LOCKED"),
+                    account_investor1,
+                    new BN(web3.utils.toWei('100')),
+                    "0x0",
+                    {
+                        from: token_owner
+                    }
+                )
+            );
+        });
+
+        it("Should fail to issue to tokens according to partition -- invalid token owner", async() => {
+            await catchRevert (
+                    I_SecurityToken.issueByPartition(
+                    web3.utils.toHex("UNLOCKED"),
+                    account_investor1,
+                    new BN(web3.utils.toWei('100')),
+                    "0x0",
+                    {
+                        from: account_affiliate1
+                    }
+                )
+            );
+        });
+
+        it("Should successfullly issue the tokens according to partition", async() => {
+            let beforeTotalSupply = await I_SecurityToken.totalSupply.call();
+            let beforeUnlockedBalance = await I_SecurityToken.balanceOfByPartition.call(web3.utils.toHex("UNLOCKED"), account_investor1);
+            let beforeBalance = await I_SecurityToken.balanceOf.call(account_investor1);
+            await I_SecurityToken.issueByPartition(
+                web3.utils.toHex("UNLOCKED"),
+                account_investor1,
+                new BN(web3.utils.toWei('100')),
+                "0x0",
+                {
+                    from: token_owner
+                }
+            );
+            let afterTotalSupply = await I_SecurityToken.totalSupply.call();
+            let afterUnlockedBalance = await I_SecurityToken.balanceOfByPartition.call(web3.utils.toHex("UNLOCKED"), account_investor1);
+            let afterBalance = await I_SecurityToken.balanceOf.call(account_investor1);
+            assert.equal(web3.utils.fromWei(afterTotalSupply.sub(beforeTotalSupply)), 100);
+            assert.equal(web3.utils.fromWei(afterUnlockedBalance.sub(beforeUnlockedBalance)), 100);
+            assert.equal(web3.utils.fromWei(afterBalance.sub(beforeBalance)), 100);
+        });
+
+        it("Should execute authorizeOperatorByPartition successfully", async() => {
+            await I_SecurityToken.authorizeOperatorByPartition(web3.utils.toHex("UNLOCKED"), account_delegate, {from: account_investor1});
+            assert.isTrue(await stGetter.isOperatorForPartition(web3.utils.toHex("UNLOCKED"), account_delegate, account_investor1));
+        });
+
+        it("Should fail to redeem tokens as per partition -- incorrect msg.sender", async() => {
+            await catchRevert(
+                I_SecurityToken.redeemByPartition(
+                    web3.utils.toHex("UNLOCKED"),
+                    web3.utils.toWei("10"),
+                    "0x0",
+                    {
+                        from: account_investor1
+                    }
+                )
+            );
+        });
+
+        it("Should failed to redeem tokens by partition -- because not sufficient allowance", async() => {
+            await I_SecurityToken.unarchiveModule(I_MockRedemptionManager.address, {from: token_owner});
+            await catchRevert(
+                I_MockRedemptionManager.redeemTokensByPartition(new BN(web3.utils.toWei("10")), web3.utils.toHex("LOCKED"), "0x0", {from: account_investor1})
+            );
+        })
+
+        it("should failed to redeem tokens by partition -- because invalid partition", async() => {
+            await I_SecurityToken.approve(I_MockRedemptionManager.address, new BN(web3.utils.toWei("50")), {from: account_investor1});
+            await I_MockRedemptionManager.transferToRedeem(new BN(web3.utils.toWei("50")), {from: account_investor1});
+
+            // failed because of invalid partition
+            await catchRevert(
+                I_MockRedemptionManager.redeemTokensByPartition(new BN(web3.utils.toWei("10")), web3.utils.toHex("LOCKED"), "0x0", {from: account_investor1})
+            );
+        });
+
+        it("Should successfully redeem tokens by partition", async() => {
+            let beforeTotalSupply = await I_SecurityToken.totalSupply.call();
+
+            let tx = await I_MockRedemptionManager.redeemTokensByPartition(new BN(web3.utils.toWei("10")), web3.utils.toHex("UNLOCKED"), "0x0", {from: account_investor1});
+            assert.equal(web3.utils.hexToUtf8(tx.logs[0].args._partition), "UNLOCKED");
+            assert.equal(tx.logs[0].args._operator, "0x0000000000000000000000000000000000000000");
+            assert.equal(tx.logs[0].args._investor, account_investor1);
+
+            let afterTotalSupply = await I_SecurityToken.totalSupply.call();
+            assert.equal(web3.utils.fromWei(beforeTotalSupply.sub(afterTotalSupply)), 10);
+        });
+
+        it("Should failed to call operatorRedeemByPartition -- msg.sender is not authorised", async() => {
+            await catchRevert(
+                I_SecurityToken.operatorRedeemByPartition(
+                    web3.utils.toHex("UNLOCKED"),
+                    account_investor1,
+                    web3.utils.toWei("10"),
+                    "0x0",
+                    web3.utils.toHex("Valid call from the operator"),
+                    {
+                        from: account_delegate
+                    }
+                )
+            );
+        });
+
+        it("Should fail when partition is not valid", async() => {
+            await I_SecurityToken.authorizeOperator(I_MockRedemptionManager.address, {from: account_investor1});
+            await I_MockRedemptionManager.operatorTransferToRedeem(
+                web3.utils.toWei("20"),
+                web3.utils.toHex("UNLOCKED"),
+                "0x0",
+                web3.utils.toHex("Valid call from the operator"),
+                {
+                    from: account_investor1
+                }
+            );
+
+            await catchRevert(
+                I_MockRedemptionManager.operatorRedeemTokensByPartition(
+                    web3.utils.toWei("20"),
+                    web3.utils.toHex("LOCKED"),
+                    "0x0",
+                    web3.utils.toHex("Valid call from the operator"),
+                    {
+                        from: account_investor1
+                    }
+                )
+            );
+        });
+
+        it("Should successfully redeem tokens by operator", async() => {
+            let beforeTotalSupply = await I_SecurityToken.totalSupply.call();
+            let tx = await I_MockRedemptionManager.operatorRedeemTokensByPartition(
+                    web3.utils.toWei("10"),
+                    web3.utils.toHex("UNLOCKED"),
+                    "0x0",
+                    web3.utils.toHex("Valid call from the operator"),
+                    {
+                        from: account_investor1
+                    }
+            );
+            assert.equal(web3.utils.hexToUtf8(tx.logs[0].args._partition), "UNLOCKED");
+            assert.equal(tx.logs[0].args._operator, I_MockRedemptionManager.address);
+            assert.equal(tx.logs[0].args._investor, account_investor1);
+
+            let afterTotalSupply = await I_SecurityToken.totalSupply.call();
+            assert.equal(web3.utils.fromWei(beforeTotalSupply.sub(afterTotalSupply)), 10);
+        })
     });
 
     describe("Test cases for the storage", async() => {

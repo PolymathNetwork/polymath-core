@@ -945,7 +945,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
             return (false, 0x50, bytes32(0));
         }
         (success, appCode) = TokenLib.verifyTransfer(modules[TRANSFER_KEY], modulesToData, _from, _to, _value, _data, transfersFrozen);
-        return TokenLib.canTransfer(success, appCode, _to, _value, balanceOf(_from), balanceOf(_to));
+        return TokenLib.canTransfer(success, appCode, _to, _value, balanceOf(_from));
     }
 
     /**

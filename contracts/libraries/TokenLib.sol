@@ -460,8 +460,7 @@ library TokenLib {
         bytes32 appCode,
         address to,
         uint256 value,
-        uint256 balanceOfFrom,
-        uint256 balanceOfTo
+        uint256 balanceOfFrom
     )
         public
         pure

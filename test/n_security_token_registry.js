@@ -650,7 +650,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
                 "3",
                 SecurityTokenV2Logic.address,
                 intializeData,
-                { 
+                {
                     from: account_polymath
                 }
             );
@@ -699,25 +699,25 @@ contract("SecurityTokenRegistry", async (accounts) => {
             );
         })
 
-        // it("Should generate the new security token with version 2", async () => {
-        //     // Version bounds not checked here as MR is called as non-token
-        //     let tx = await I_STRProxied.generateSecurityToken(name2, symbol2, tokenDetails, false, token_owner, _pack(2,2,0), { from: token_owner });
-        //     console.log(`Protocol version: ${_pack(2,2,0)}`);
-        //     // Verify the successful generation of the security token
-        //     assert.equal(tx.logs[1].args._ticker, symbol2, "SecurityToken doesn't get deployed");
+        it("Should generate the new security token with version 2", async () => {
+            // Version bounds not checked here as MR is called as non-token
+            let tx = await I_STRProxied.generateNewSecurityToken(name2, symbol2, tokenDetails, false, token_owner, _pack(2,2,0), { from: token_owner });
+            console.log(`Protocol version: ${_pack(2,2,0)}`);
+            // Verify the successful generation of the security token
+            assert.equal(tx.logs[1].args._ticker, symbol2, "SecurityToken doesn't get deployed");
 
-        //     I_SecurityToken002 = await SecurityTokenMock.at(tx.logs[1].args._securityTokenAddress);
-        //     let stGetterV2 = await STGetter.at(I_SecurityToken002.address);
-        //     let stVersion = await stGetterV2.getVersion.call();
-        //     console.log(stVersion);
-        //     assert.equal(stVersion[0], 2);
-        //     assert.equal(stVersion[1], 2);
-        //     assert.equal(stVersion[2], 0);
-        //     const log = (await I_SecurityToken002.getPastEvents('ModuleAdded'))[0];
-        //     // Verify that GeneralTransferManager module get added successfully or not
-        //     assert.equal(log.args._types[0].toNumber(), transferManagerKey);
-        //     assert.equal(web3.utils.toAscii(log.args._name).replace(/\u0000/g, ""), "GeneralTransferManager");
-        // });
+            I_SecurityToken002 = await SecurityTokenMock.at(tx.logs[1].args._securityTokenAddress);
+            let stGetterV2 = await STGetter.at(I_SecurityToken002.address);
+            let stVersion = await stGetterV2.getVersion.call();
+            console.log(stVersion);
+            assert.equal(stVersion[0], 2);
+            assert.equal(stVersion[1], 2);
+            assert.equal(stVersion[2], 0);
+            const log = (await I_SecurityToken002.getPastEvents('ModuleAdded'))[0];
+            // Verify that GeneralTransferManager module get added successfully or not
+            assert.equal(log.args._types[0].toNumber(), transferManagerKey);
+            assert.equal(web3.utils.toAscii(log.args._name).replace(/\u0000/g, ""), "GeneralTransferManager");
+        });
     });
 
     describe("Deploy the new SecurityTokenRegistry", async () => {
@@ -1064,7 +1064,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
             let stFeePoly = (await I_STRProxied.getFees.call("0xd677304bb45536bb7fdfa6b9e47a3c58fe413f9e8f01474b0a4b9c6e0275baf2"))[1];
             assert.equal(stFeePoly.toString(), stFee.toString());
             await revertToSnapshot(snapId);
-        });    
+        });
     });
 
     describe("Test cases for the changeTickerRegistrationFee()", async () => {

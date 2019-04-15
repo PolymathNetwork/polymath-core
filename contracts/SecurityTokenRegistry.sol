@@ -586,7 +586,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         require(getUintValue(Encoder.getKey("registeredTickers_expiryDate", _ticker)) >= now, "Ticker expired");
         (uint256 _usdFee, uint256 _polyFee) = _takeFee(STLAUNCHFEE);
         address newSecurityTokenAddress =
-            _deployToken(_name, ticker, _tokenDetails, msg.sender, _divisible, _treasuryWallet, protocolVersion);
+            _deployToken(_name, _ticker, _tokenDetails, issuer, _divisible, _treasuryWallet, _protocolVersion);
         if (_protocolVersion == VersionUtils.pack(2, 0, 0)) {
             // For backwards compatibilty. Should be removed with an update when we disable st 2.0 generation.
             emit NewSecurityToken(

@@ -173,7 +173,7 @@ contract("GeneralTransferManager", async (accounts) => {
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
 
-            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, token_owner, 0, { from: token_owner });
+            let tx = await I_STRProxied.generateNewSecurityToken(name, symbol, tokenDetails, false, token_owner, 0, { from: token_owner });
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
@@ -186,7 +186,7 @@ contract("GeneralTransferManager", async (accounts) => {
             assert.equal(web3.utils.toAscii(log.args._name).replace(/\u0000/g, ""), "GeneralTransferManager");
         });
 
-        it("Should intialize the auto attached modules", async () => {
+        it("Should initialize the auto attached modules", async () => {
             let moduleData = (await stGetter.getModulesByType(2))[0];
             I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
@@ -1178,7 +1178,7 @@ contract("GeneralTransferManager", async (accounts) => {
 
         it("Should change the transfer requirements", async() => {
             await I_GeneralTransferManager.modifyTransferRequirementsMulti(
-                [0, 1, 2], 
+                [0, 1, 2],
                 [true, false, true],
                 [true, true, false],
                 [true, false, false],
@@ -1195,7 +1195,7 @@ contract("GeneralTransferManager", async (accounts) => {
                 ).toString()
                 ),
                 1
-            );            
+            );
             assert.equal(
                 web3.utils.fromWei(
                 (
@@ -1203,7 +1203,7 @@ contract("GeneralTransferManager", async (accounts) => {
                 ).toString()
                 ),
                 0
-            );           
+            );
             assert.equal(
                 web3.utils.fromWei(
                 (
@@ -1218,7 +1218,7 @@ contract("GeneralTransferManager", async (accounts) => {
             let canSendAfter = await latestTime() + duration.days(10);
             let canRecieveAfter = await latestTime() + duration.days(10);
             let expiryTime = await latestTime() + duration.days(100);
-        
+
             let tx = await I_GeneralTransferManager.modifyKYCData(
                 account_investor2,
                 canSendAfter,

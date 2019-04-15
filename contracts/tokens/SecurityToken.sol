@@ -64,13 +64,13 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     event TokenUpgraded(uint8 _major, uint8 _minor, uint8 _patch);
 
     // Emit when Module get archived from the securityToken
-    // event ModuleArchived(uint8[] _types, address _module); Event emitted by the tokenLib.
+    event ModuleArchived(uint8[] _types, address _module); //Event emitted by the tokenLib.
     // Emit when Module get unarchived from the securityToken
-    // event ModuleUnarchived(uint8[] _types, address _module); Event emitted by the tokenLib.
+    event ModuleUnarchived(uint8[] _types, address _module); //Event emitted by the tokenLib.
     // Emit when Module get removed from the securityToken
-    // event ModuleRemoved(uint8[] _types, address _module); Event emitted by the tokenLib.
+    event ModuleRemoved(uint8[] _types, address _module); //Event emitted by the tokenLib.
     // Emit when the budget allocated to a module is changed
-    // event ModuleBudgetChanged(uint8[] _moduleTypes, address _module, uint256 _oldBudget, uint256 _budget); Event emitted by the tokenLib.
+    event ModuleBudgetChanged(uint8[] _moduleTypes, address _module, uint256 _oldBudget, uint256 _budget); //Event emitted by the tokenLib.
 
     /**
      * @notice Initialization function

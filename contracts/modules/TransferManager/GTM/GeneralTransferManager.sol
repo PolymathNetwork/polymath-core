@@ -253,7 +253,6 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         bool _fromRestricted,
         bool _toRestricted
     ) internal {
-        require(uint8(_transferType) < 3, "Invalid TransferType");
         transferRequirements[uint8(_transferType)] =
             TransferRequirements(
                 _fromValidKYC,

@@ -552,7 +552,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @param _values A list of number of tokens get minted and transfer to corresponding address of the investor from _tokenHolders[] list
      * @return success
      */
-    function issueMulti(address[] calldata _tokenHolders, uint256[] calldata _values) external isIssuanceAllowed {
+    function issueMulti(address[] memory _tokenHolders, uint256[] memory _values) public isIssuanceAllowed {
         _onlyModuleOrOwner(MINT_KEY);
         require(_tokenHolders.length == _values.length, "Incorrect inputs");
         for (uint256 i = 0; i < _tokenHolders.length; i++) {

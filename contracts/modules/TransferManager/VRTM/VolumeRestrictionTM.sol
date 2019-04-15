@@ -449,6 +449,10 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
      * @param _holder Address of the user
      */
     function removeIndividualRestriction(address _holder) public withPerm(ADMIN) {
+        _removeIndividualRestriction(_holder);
+    }
+
+    function _removeIndividualRestriction(address _holder) internal {
         require(_holder != address(0));
         require(individualRestrictions.individualRestriction[_holder].endTime != 0);
         individualRestrictions.individualRestriction[_holder] = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
@@ -463,9 +467,9 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
      * @notice use to remove the individual restriction for a given address
      * @param _holders Array of address of the user
      */
-    function removeIndividualRestrictionMulti(address[] calldata _holders) external {
+    function removeIndividualRestrictionMulti(address[] memory _holders) public withPerm(ADMIN) {
         for (uint256 i = 0; i < _holders.length; i++) {
-            removeIndividualRestriction(_holders[i]);
+            _removeIndividualRestriction(_holders[i]);
         }
     }
 
@@ -474,6 +478,10 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
      * @param _holder Address of the user
      */
     function removeIndividualDailyRestriction(address _holder) public withPerm(ADMIN) {
+        _removeIndividualDailyRestriction(_holder);
+    }
+
+    function _removeIndividualDailyRestriction(address _holder) internal {
         require(_holder != address(0));
         require(individualRestrictions.individualDailyRestriction[_holder].endTime != 0);
         individualRestrictions.individualDailyRestriction[_holder] = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
@@ -486,9 +494,9 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
      * @notice use to remove the individual daily restriction for a given address
      * @param _holders Array of address of the user
      */
-    function removeIndividualDailyRestrictionMulti(address[] calldata _holders) external {
+    function removeIndividualDailyRestrictionMulti(address[] memory _holders) public withPerm(ADMIN) {
         for (uint256 i = 0; i < _holders.length; i++) {
-            removeIndividualDailyRestriction(_holders[i]);
+            _removeIndividualDailyRestriction(_holders[i]);
         }
     }
 
@@ -663,7 +671,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
      * @param _rollingPeriodInDays Rolling period in days (Minimum value should be 1 day)
      * @param _endTime Unix timestamp at which restriction effects will gets end.
      * @param _restrictionType Whether it will be `Fixed` (fixed no. of tokens allowed to transact)
-     * or `Percentage` (tokens are calculated as per the totalSupply in the fly). 
+     * or `Percentage` (tokens are calculated as per the totalSupply in the fly).
      */
     function modifyDefaultRestriction(
         uint256 _allowedTokens,
@@ -702,7 +710,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
      * @param _startTime Unix timestamp at which restriction get into effect
      * @param _endTime Unix timestamp at which restriction effects will gets end.
      * @param _restrictionType Whether it will be `Fixed` (fixed no. of tokens allowed to transact)
-     * or `Percentage` (tokens are calculated as per the totalSupply in the fly). 
+     * or `Percentage` (tokens are calculated as per the totalSupply in the fly).
      */
     function modifyDefaultDailyRestriction(
         uint256 _allowedTokens,
@@ -747,7 +755,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         VolumeRestriction memory _restriction
     )
         internal
-        view 
+        view
         returns (
         Result success,
         uint256 fromTimestamp,
@@ -804,7 +812,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
      * default to individual or vice versa. It will return true when last transaction traded by the user
      * and the current txn timestamp lies in the same day.
      * NB - Instead of comparing the current day transaction amount, we are comparing the total amount traded
-     * on the lastTradedDayTime that makes the restriction strict. The reason is not availability of amount 
+     * on the lastTradedDayTime that makes the restriction strict. The reason is not availability of amount
      * that transacted on the current day (because of bucket desgin).
      */
     function _isValidAmountAfterRestrictionChanges(
@@ -862,7 +870,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
                 _from,
                 txSumOfDay,
                 _restriction
-                ), 
+                ),
                 _dailyLastTradedDayTime
             );
         }

@@ -159,13 +159,13 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
     * @param _descriptions is the description array for these manual approvals
     */
     function addManualApprovalMulti(
-        address[] calldata _from,
-        address[] calldata _to,
-        uint256[] calldata _allowances,
-        uint256[] calldata _expiryTimes,
-        bytes32[] calldata _descriptions
+        address[] memory _from,
+        address[] memory _to,
+        uint256[] memory _allowances,
+        uint256[] memory _expiryTimes,
+        bytes32[] memory _descriptions
     )
-        external
+        public
         withPerm(ADMIN)
     {
         _checkInputLengthArray(_from, _to, _allowances, _expiryTimes, _descriptions);

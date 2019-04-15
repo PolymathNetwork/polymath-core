@@ -147,13 +147,6 @@ contract SignedTransferManager is TransferManager {
         return allPermissions;
     }
 
-    /**
-     * @notice return the amount of tokens for a given user as per the partition
-     */
-    function getTokensByPartition(address /*_owner*/, bytes32 /*_partition*/) external view returns(uint256) {
-        return 0;
-    }
-
     function _checkSignatureIsInvalid(bytes memory _data) internal view returns(bool) {
         IDataStore dataStore = getDataStore();
         return dataStore.getBool(keccak256(abi.encodePacked(INVALID_SIG, _data)));

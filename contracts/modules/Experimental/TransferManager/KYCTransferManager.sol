@@ -99,11 +99,4 @@ contract KYCTransferManager is TransferManager {
         return allPermissions;
     }
 
-    /**
-     * @notice return the amount of tokens for a given user as per the partition
-     */
-    function getTokensByPartition(address /*_owner*/, bytes32 /*_partition*/) external view returns(uint256){
-        return 0;
-    }
-
 }

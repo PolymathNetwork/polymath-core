@@ -385,6 +385,13 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
                 );
             });
 
+            it("\t\t Should add the multiple voter in to the ballot exemption list --failed because of bad msg.sender", async() => {
+                await catchRevert(
+                    I_PLCRVotingCheckpoint.changeBallotExemptedVotersListMulti(new BN(0), [account_investor1], [false], {from: account_polymath})
+                );
+            });
+
+
             it("\t\t Should add the multiple voter in to the ballot exemption list", async() => {
                 await I_PLCRVotingCheckpoint.changeBallotExemptedVotersListMulti(new BN(0), [account_investor1], [false], {from: token_owner});
                 assert.isTrue(await I_PLCRVotingCheckpoint.isVoterAllowed.call(new BN(0), account_investor1));
@@ -435,9 +442,34 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
                 );
             });
 
+            it("\t\t Should change the deafult exemption list using Multi function -- failed because of mismatch array length", async() => {
+                await catchRevert(
+                    I_PLCRVotingCheckpoint.changeDefaultExemptedVotersListMulti([account_investor3, account_investor1], [false], {from: token_owner})
+                );
+            });
+
             it("\t\t Should change the default exemption list by allowing investor 1 to vote", async() => {
+                await I_PLCRVotingCheckpoint.changeDefaultExemptedVotersListMulti([account_investor3], [false], {from: token_owner});
+                assert.isTrue(await I_PLCRVotingCheckpoint.isVoterAllowed.call(new BN(0), account_investor3));
+            });
+
+            it("\t\t Should change the default exemption list using Multi function", async() => {
+                await I_PLCRVotingCheckpoint.changeDefaultExemptedVotersListMulti([account_investor3, account_investor1, account_investor2], [true, true, true], {from: token_owner});
+                assert.isFalse(await I_PLCRVotingCheckpoint.isVoterAllowed.call(new BN(0), account_investor3));
+                assert.isFalse(await I_PLCRVotingCheckpoint.isVoterAllowed.call(new BN(0), account_investor1));
+                assert.isFalse(await I_PLCRVotingCheckpoint.isVoterAllowed.call(new BN(0), account_investor2));
+                assert.equal((await I_PLCRVotingCheckpoint.getDefaultExemptionVotersList.call()).length, 3);
+            });
+
+            it("\t\t Should change the default exemption list by allowing investor 1 to vote again", async() => {
                 await I_PLCRVotingCheckpoint.changeDefaultExemptedVotersList(account_investor3, false, {from: token_owner});
                 assert.isTrue(await I_PLCRVotingCheckpoint.isVoterAllowed.call(new BN(0), account_investor3));
+            });
+
+            it("\t\t Should change the default exemption list using Multi function", async() => {
+                await I_PLCRVotingCheckpoint.changeDefaultExemptedVotersListMulti([account_investor2, account_investor1], [false, false], {from: token_owner});
+                assert.isTrue(await I_PLCRVotingCheckpoint.isVoterAllowed.call(new BN(0), account_investor1));
+                assert.isTrue(await I_PLCRVotingCheckpoint.isVoterAllowed.call(new BN(0), account_investor2));
             });
 
             it("\t\t Should successfully vote by account investor3 \n", async() => {

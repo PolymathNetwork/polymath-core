@@ -222,7 +222,7 @@ contract("SecurityToken", async (accounts) => {
             await revertToSnapshot(snapId);
         });
 
-        it("Should intialize the auto attached modules", async () => {
+        it("Should initialize the auto attached modules", async () => {
             let moduleData = (await stGetter.getModulesByType(transferManagerKey))[0];
             I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
 

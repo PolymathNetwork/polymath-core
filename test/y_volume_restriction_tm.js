@@ -239,7 +239,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal(web3.utils.toAscii(log.args._name).replace(/\u0000/g, ""), "GeneralTransferManager");
         });
 
-        it("Should intialize the auto attached modules", async () => {
+        it("Should initialize the auto attached modules", async () => {
             let moduleData = (await stGetter.getModulesByType(2))[0];
             I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
@@ -729,7 +729,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await verifyPartitionBalance(account_investor1, 0, 35);
             await I_VolumeRestrictionTM.unpause({from: token_owner});
             await verifyPartitionBalance(account_investor1, 23, 12);
-            
+
             await I_SecurityToken.transfer(account_investor3, new BN(web3.utils.toWei('.3')), {from: account_investor1});
             // Check the balance of the investors
             let bal1 = await I_SecurityToken.balanceOf.call(account_investor1);
@@ -1758,7 +1758,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
     });
 
     describe("Test the major issue from the audit ( Possible accounting corruption between individualRestriction​ and ​defaultRestriction)", async() => {
-        
+
         it("Should add the individual restriction for the delegate 2 address", async() => {
             let currentTime = await getLatestTime();
             await I_GeneralTransferManager.modifyKYCData(
@@ -1790,7 +1790,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
             let data = await I_VolumeRestrictionTM.getRestrictionData.call();
             await printRestrictedData(data);
-            
+
             // Add default restriction as well
             currentTime = await getLatestTime();
             await I_VolumeRestrictionTM.removeDefaultRestriction({from: token_owner});
@@ -1860,7 +1860,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             console.log(`Print the individual bucket details`);
             let dataIndividual = await I_VolumeRestrictionTM.getIndividualBucketDetailsToUser.call(account_delegate2);
             await print(dataIndividual, account_delegate2);
-            
+
             // get the trade amount using the timestamp
             let amtTraded = web3.utils.fromWei(await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_delegate2, dataIndividual[0].toString()));
             // Verify the storage changes
@@ -1930,7 +1930,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
             // sell tokens when user restriction changes from the default restriction to individual restriction
             await catchRevert (I_SecurityToken.transfer(account_investor1, web3.utils.toWei("5")), {from: account_delegate2});
-            
+
             // allow to transact when the day limit is with in the restriction. default allow to transact maximum 5 tokens within
             // a given rolling period. 4 tokens are already sold here user trying to sell 1 more token on the same day
             await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1"), {from: account_delegate2});

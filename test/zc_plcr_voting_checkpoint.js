@@ -160,7 +160,7 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
                 assert.equal(web3.utils.hexToString(log.args._name), "GeneralTransferManager");
             });
 
-            it("\t\t Should intialize the auto attached modules \n", async () => {
+            it("\t\t Should initialize the auto attached modules \n", async () => {
                 let moduleData = (await stGetter.getModulesByType(transferManagerKey))[0];
                 I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
             });

@@ -80,7 +80,7 @@ process.env.COVERAGE ? contract.skip : contract("ScheduledCheckpoint", async (ac
 
         account_investor1 = accounts[7];
         account_investor2 = accounts[8];
-        account_investor3 = accounts[9]; 
+        account_investor3 = accounts[9];
         //await jumpToTime(Math.floor((new Date().getTime())/1000));
         await jumpToTime(1553040000); // 03/20/2019 @ 12:00am (UTC)
         currentTime = new BN(await latestTime());
@@ -151,7 +151,7 @@ process.env.COVERAGE ? contract.skip : contract("ScheduledCheckpoint", async (ac
             assert.equal(web3.utils.toAscii(log.args._name).replace(/\u0000/g, ""), "GeneralTransferManager");
         });
 
-        it("Should intialize the auto attached modules", async () => {
+        it("Should initialize the auto attached modules", async () => {
             let moduleData = (await stGetter.getModulesByType(2))[0];
             I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });

@@ -160,7 +160,7 @@ contract('LockUpTransferManager', accounts => {
             );
         });
 
-        it("Should intialize the auto attached modules", async () => {
+        it("Should initialize the auto attached modules", async () => {
           let moduleData = (await stGetter.getModulesByType(2))[0];
           I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
@@ -193,7 +193,7 @@ contract('LockUpTransferManager', accounts => {
             );
         });
 
-        it("Should intialize the auto attached modules", async () => {
+        it("Should initialize the auto attached modules", async () => {
           let moduleData = (await stGetter_div.getModulesByType(2))[0];
           I_GeneralTransferManager_div = GeneralTransferManager.at(moduleData);
         });
@@ -703,7 +703,7 @@ contract('LockUpTransferManager', accounts => {
             let lockedBalance = web3.utils.fromWei((await I_LockUpTransferManager.getTokensByPartition.call(web3.utils.utf8ToHex(`LOCKED`), account_investor3, new BN(0))).toString());
             let unlockedBalance = web3.utils.fromWei((await I_LockUpTransferManager.getTokensByPartition.call(web3.utils.utf8ToHex(`UNLOCKED`), account_investor3, new BN(0))).toString());
             console.log(`\t Total balance: ${web3.utils.fromWei((await I_SecurityToken.balanceOf.call(account_investor3)).toString())}`);
-            console.log(`\t Locked balance of the investor by the lockup: ${web3.utils.fromWei((await I_LockUpTransferManager.getLockedTokenToUser.call(account_investor3)).toString())}`);            
+            console.log(`\t Locked balance of the investor by the lockup: ${web3.utils.fromWei((await I_LockUpTransferManager.getLockedTokenToUser.call(account_investor3)).toString())}`);
             console.log(`Paused status: ${await I_LockUpTransferManager.paused.call()}`);
             console.log(`\t Locked balance: ${lockedBalance}`);
             console.log(`\t Unlocked Balance: ${unlockedBalance}`);

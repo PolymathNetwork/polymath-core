@@ -144,7 +144,7 @@ contract("Checkpoints", async function(accounts) {
             await I_SecurityToken.setController(account_controller, {from: token_owner});
         })
 
-        it("Should intialize the auto attached modules", async () => {
+        it("Should initialize the auto attached modules", async () => {
             let moduleData = (await stGetter.getModulesByType(2))[0];
             I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });

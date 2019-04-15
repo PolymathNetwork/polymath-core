@@ -197,7 +197,7 @@ contract("CappedSTO", async (accounts) => {
             assert.equal(web3.utils.hexToString(log.args._name), "GeneralTransferManager");
         });
 
-        it("Should intialize the auto attached modules", async () => {
+        it("Should initialize the auto attached modules", async () => {
             let moduleData = (await stGetter_eth.getModulesByType(transferManagerKey))[0];
             I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
@@ -656,7 +656,7 @@ contract("CappedSTO", async (accounts) => {
                 assert.equal(web3.utils.hexToString(log.args._name), "GeneralTransferManager");
             });
 
-            it("POLY: Should intialize the auto attached modules", async () => {
+            it("POLY: Should initialize the auto attached modules", async () => {
                 let moduleData = (await stGetter_poly.getModulesByType(transferManagerKey))[0];
                 I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
             });
@@ -847,11 +847,11 @@ contract("CappedSTO", async (accounts) => {
         describe("Pricing Test cases for Module Factory", async () => {
             it("Should return correct price when price is in poly", async () => {
                 let newFactory = await CappedSTOFactory.new(
-                    new BN(1000), 
-                    new BN(1000), 
-                    I_CappedSTO_Array_POLY[0].address, 
-                    I_PolymathRegistry.address, 
-                    true, 
+                    new BN(1000),
+                    new BN(1000),
+                    I_CappedSTO_Array_POLY[0].address,
+                    I_PolymathRegistry.address,
+                    true,
                     { from: account_polymath }
                 );
                 assert.equal((await newFactory.setupCostInPoly.call()).toString(), (new BN(1000)).toString());
@@ -860,7 +860,7 @@ contract("CappedSTO", async (accounts) => {
                 assert.equal((await newFactory.usageCost()).toString(), (new BN(1000)).toString());
             });
         });
-        
+
         describe("Check that we can reclaim ETH and ERC20 tokens from an STO", async () => {
             //xxx
             it("should attach a dummy STO", async () => {

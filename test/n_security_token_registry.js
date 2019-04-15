@@ -279,7 +279,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
             assert.equal(owner, account_polymath, "Should be the address of the registry owner");
         });
 
-        it("Can't call the intialize function again", async () => {
+        it("Can't call the initialize function again", async () => {
             await catchRevert(
                 I_STRProxied.initialize(
                     I_PolymathRegistry.address,
@@ -288,7 +288,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
                     account_polymath,
                     I_STRGetter.address
                 ),
-                "tx revert -> Can't call the intialize function again"
+                "tx revert -> Can't call the initialize function again"
             );
         });
 
@@ -625,7 +625,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
     describe("Generate SecurityToken v2", async () => {
         it("Should deploy the new ST factory version 2", async () => {
             const encodeParams = {
-                name: "intialize",
+                name: "initialize",
                 type: "function",
                 inputs: [
                     {
@@ -636,7 +636,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
             }
             // Step 7: Deploy the STFactory contract
             I_STGetter = await STGetter.new({from: account_polymath});
-            let intializeData = await web3.eth.abi.encodeFunctionCall(encodeParams, [I_STGetter.address]);
+            let initializeData = await web3.eth.abi.encodeFunctionCall(encodeParams, [I_STGetter.address]);
             let I_DataStoreLogic = await DataStoreLogic.new({ from: account_polymath });
             let I_DataStoreFactory = await DataStoreFactory.new(I_DataStoreLogic.address, { from: account_polymath });
             I_TokenLib = await TokenLib.new();
@@ -649,7 +649,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
                 I_DataStoreFactory.address,
                 "3",
                 SecurityTokenV2Logic.address,
-                intializeData,
+                initializeData,
                 {
                     from: account_polymath
                 }

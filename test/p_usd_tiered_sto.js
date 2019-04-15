@@ -299,7 +299,7 @@ contract("USDTieredSTO", async (accounts) => {
             assert.equal(web3.utils.hexToString(log.args._name), "GeneralTransferManager");
         });
 
-        it("Should intialize the auto attached modules", async () => {
+        it("Should initialize the auto attached modules", async () => {
             let moduleData = (await stGetter.getModulesByType(TMKEY))[0];
             I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });

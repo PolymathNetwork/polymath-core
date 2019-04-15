@@ -43,7 +43,16 @@ contract STFactory is ISTFactory, Ownable {
     event DefaultTransferManagerUpdated(address indexed _oldTransferManagerFactory, address indexed _newTransferManagerFactory);
     event DefaultDataStoreUpdated(address indexed _oldDataStoreFactory, address indexed _newDataStoreFactory);
 
-    constructor(address _polymathRegistry, address _transferManagerFactory, address _dataStoreFactory, string memory _version, address _logicContract, bytes memory _initializationData) public {
+    constructor(
+        address _polymathRegistry,
+        address _transferManagerFactory,
+        address _dataStoreFactory,
+        string memory _version,
+        address _logicContract,
+        bytes memory _initializationData
+    )   
+        public 
+    {
         require(_logicContract != address(0), "Invalid Address");
         require(_transferManagerFactory != address(0), "Invalid Address");
         require(_dataStoreFactory != address(0), "Invalid Address");

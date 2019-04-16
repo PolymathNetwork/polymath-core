@@ -12,12 +12,12 @@ CORE_ROUTE=$PWD
 # functions that used to create the documentation
 create_docs() {
 
-    # getting the all available branches 
+    # getting the all available branches
     if [ "$(git branch | grep -w $latestTag)" == "" ];
     then
     # Check whether the branch is already present or not
     if [ "$(git branch -r | grep "origin/$latestTag" | wc -l)" -ge 1 ];
-    then 
+    then
     echo "$latestTag Branch is already present on remote"
     exit 0
     fi
@@ -32,28 +32,22 @@ create_docs() {
     cd $WEBSITE_DIRECTORY
     fi
 
-    echo "Fetching solc binary"
-    curl -L -o solidity-ubuntu-trusty.zip https://github.com/ethereum/solidity/releases/download/v0.4.24/solidity-ubuntu-trusty.zip
-    unzip solidity-ubuntu-trusty.zip
-    CWD=$(pwd)
-    OLD_SOLC_PATH=$SOLC_PATH
-    export SOLC_PATH=$CWD/solc
-
     echo "Generating the API documentation in branch $latestTag"
     # Command to generate the documentation using the solidity-docgen
 
     migrate=$(SOLC_ARGS="openzeppelin-solidity="$CORE_ROUTE"/node_modules/openzeppelin-solidity" \
 solidity-docgen -x external/oraclizeAPI.sol,mocks/MockPolyOracle.sol,oracles/PolyOracle.sol $CORE_ROUTE $CORE_ROUTE/contracts $CORE_ROUTE/polymath-developer-portal/)
-    
-    export SOLC_PATH=$OLD_SOLC_PATH
 
     echo "Successfully docs are generated..."
-    
+
     echo "Installing npm dependencies..."
     yarn install > /dev/null 2>&1
-    
+
     echo "Gererate versioning docs..."
     yarn run version $versionNo
+
+    git config --global user.email "contact@mudit.blog"
+    git config --global user.name "polydocs"
 
     # Commit the changes
     echo "Commiting the new changes..."
@@ -67,7 +61,7 @@ solidity-docgen -x external/oraclizeAPI.sol,mocks/MockPolyOracle.sol,oracles/Pol
     echo "Removing the repository from the system...."
     cd ../../../
     rm -rf polymath-developer-portal
-    exit 0 
+    exit 0
 }
 
 reject_docs() {
@@ -87,10 +81,13 @@ versionNo=$(echo "$latestTag" | cut -b 2-6)
 #print the tag
 echo "Latest tag is: $latestTag"
 
+# Fetch patched solidity docgen
+curl -o node_modules/solidity-docgen/lib/index.js https://raw.githubusercontent.com/maxsam4/solidity-docgen/build/lib/index.js
+
 # clone the polymath-developer-portal
 
 if [ ! -d $DIRECTORY ]; then
-git clone https://${GH_USR}:${GH_PWD}@github.com/PolymathNetwork/polymath-developer-portal.git  > /dev/null 2>&1 
+git clone https://${GH_USR}:${GH_PWD}@github.com/PolymathNetwork/polymath-developer-portal.git  > /dev/null 2>&1
 cd $DIRECTORY
 else
 cd $DIRECTORY
@@ -102,9 +99,9 @@ cd website
 
 if [ ! -d $WEBSITE_DIRECTORY ]; then
 echo "Created: versioned_docs directory"
-create_docs 
-else 
-    for dir in $WEBSITE_DIRECTORY/*; 
+create_docs
+else
+    for dir in $WEBSITE_DIRECTORY/*;
     do
         if [ "$(basename "$dir")" == "*" ]; then
         echo "There is no version specific folders"
@@ -113,9 +110,9 @@ else
             reponame=$(echo $(basename "$dir") | cut -d '-' -f2)
             echo $reponame
             if [ "$reponame" == "$versionNo" ]; then
-                reject_docs 
+                reject_docs
             fi
-        fi 
+        fi
     done
     create_docs
 fi

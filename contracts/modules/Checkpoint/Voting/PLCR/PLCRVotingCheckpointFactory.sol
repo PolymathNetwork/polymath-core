@@ -1,28 +1,32 @@
 pragma solidity ^0.5.0;
 
-import "./PLCRVotingCheckpoint.sol";
-import "../../ModuleFactory.sol";
+import "./PLCRVotingCheckpointProxy.sol";
+import "../../../../libraries/Util.sol";
+import "../../../../interfaces/IBoot.sol";
+import "../../../UpgradableModuleFactory.sol";
 
 /**
  * @title Factory for deploying PLCRVotingCheckpoint module
  */
-contract PLCRVotingCheckpointFactory is ModuleFactory {
+contract PLCRVotingCheckpointFactory is UpgradableModuleFactory {
 
     /**
      * @notice Constructor
      * @param _setupCost Setup cost of the module
      * @param _usageCost Usage cost of the module
+     * @param _logicContract Contract address that contains the logic related to `description`
      * @param _polymathRegistry Address of the Polymath registry
      * @param _isCostInPoly true = cost in Poly, false = USD
      */
     constructor (
         uint256 _setupCost,
         uint256 _usageCost,
+        address _logicContract,
         address _polymathRegistry,
         bool _isCostInPoly
-    ) 
+    )
         public
-        ModuleFactory(_setupCost, _usageCost, _polymathRegistry, _isCostInPoly)
+        UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry, _isCostInPoly)
     {
         initialVersion = "3.0.0";
         name = "PLCRVotingCheckpoint";
@@ -42,7 +46,7 @@ contract PLCRVotingCheckpointFactory is ModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes calldata _data) external returns(address) {
-        address plcrVotingCheckpoint = address(new PLCRVotingCheckpoint(msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken")));
+        address plcrVotingCheckpoint = address(new PLCRVotingCheckpointProxy(logicContracts[latestUpgrade].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestUpgrade].logicContract));
         _initializeModule(plcrVotingCheckpoint, _data);
         return plcrVotingCheckpoint;
     }

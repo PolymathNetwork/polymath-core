@@ -86,23 +86,23 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
         // ----------- POLYMATH NETWORK Configuration ------------
 
        // Step 1: Deploy the genral PM ecosystem
-       let instances = await setUpPolymathNetwork(account_polymath, token_owner);
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
 
-       [
-           I_PolymathRegistry,
-           I_PolyToken,
-           I_FeatureRegistry,
-           I_ModuleRegistry,
-           I_ModuleRegistryProxy,
-           I_MRProxied,
-           I_GeneralTransferManagerFactory,
-           I_STFactory,
-           I_SecurityTokenRegistry,
-           I_SecurityTokenRegistryProxy,
-           I_STRProxied,
-           I_STRGetter,
-           I_STGetter
-       ] = instances;
+        [
+            I_PolymathRegistry,
+            I_PolyToken,
+            I_FeatureRegistry,
+            I_ModuleRegistry,
+            I_ModuleRegistryProxy,
+            I_MRProxied,
+            I_GeneralTransferManagerFactory,
+            I_STFactory,
+            I_SecurityTokenRegistry,
+            I_SecurityTokenRegistryProxy,
+            I_STRProxied,
+            I_STRGetter,
+            I_STGetter
+        ] = instances;
 
 
         // STEP 4: Deploy the WeightedVoteCheckpoint
@@ -205,26 +205,38 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
 
             it("\t\t Should fail to create ballot -- bad commit duration \n", async() => {
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.createBallot(new BN(0), new BN(duration.days(10)), new BN(3), new BN(46.57).mul(new BN(10).pow(new BN(16))), {from: account_polymath})
-                );
+                    I_PLCRVotingCheckpoint.createBallot(new BN(0), new BN(duration.days(10)), new BN(3), new BN(46.57).mul(new BN(10).pow(new BN(16))), {from: token_owner})
+                ); 
             });
 
             it("\t\t Should fail to create ballot -- bad reveal duration \n", async() => {
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.createBallot(new BN(duration.days(10)), new BN(0), new BN(3), new BN(46.57).mul(new BN(10).pow(new BN(16))), {from: account_polymath})
-                );
+                    I_PLCRVotingCheckpoint.createBallot(new BN(duration.days(10)), new BN(0), new BN(3), new BN(46.57).mul(new BN(10).pow(new BN(16))), {from: token_owner})
+                ); 
             });
 
             it("\t\t Should fail to create ballot -- bad proposed quorum \n", async() => {
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.createBallot(new BN(duration.days(10)), new BN(duration.days(10)), new BN(3), new BN(46.57).mul(new BN(10).pow(new BN(16))), {from: account_polymath})
-                );
+                    I_PLCRVotingCheckpoint.createBallot(new BN(duration.days(10)), new BN(duration.days(10)), new BN(3), new BN(0).mul(new BN(10).pow(new BN(16))), {from: token_owner})
+                ); 
+            });
+
+            it("\t\t Should fail to create ballot -- bad proposed quorum more than 100 % \n", async() => {
+                await catchRevert(
+                    I_PLCRVotingCheckpoint.createBallot(new BN(duration.days(10)), new BN(duration.days(10)), new BN(3), new BN(46.57).mul(new BN(10).pow(new BN(18))), {from: token_owner})
+                ); 
             });
 
             it("\t\t Should fail to create ballot -- bad no of proposals \n", async() => {
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.createBallot(new BN(duration.days(5)), new BN(duration.days(10)), new BN(0), new BN(46.57).mul(new BN(10).pow(new BN(16))), {from: account_polymath})
-                );
+                    I_PLCRVotingCheckpoint.createBallot(new BN(duration.days(5)), new BN(duration.days(10)), new BN(0), new BN(46.57).mul(new BN(10).pow(new BN(16))), {from: token_owner})
+                ); 
+            });
+
+            it("\t\t Should fail to create ballot -- bad no of proposals \n", async() => {
+                await catchRevert(
+                    I_PLCRVotingCheckpoint.createBallot(new BN(duration.days(5)), new BN(duration.days(10)), new BN(1), new BN(46.57).mul(new BN(10).pow(new BN(16))), {from: token_owner})
+                ); 
             });
 
             it("\t\t Mint some tokens and transfer to whitelisted investors \n", async() => {
@@ -285,6 +297,9 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
                 await I_SecurityToken.createCheckpoint({from: token_owner});
                 let checkpointId = await I_SecurityToken.currentCheckpointId.call();
                 let tx = await I_PLCRVotingCheckpoint.createCustomBallot(commitTime, revealTime, new BN(3), new BN(47.8).mul(new BN(10).pow(new BN(16))), checkpointId, startTime, {from: account_delegate});
+                let timeData = await I_PLCRVotingCheckpoint.getBallotCommitRevealDuration.call(new BN(0));
+                assert.equal(timeData[0].toString(), commitTime);
+                assert.equal(timeData[1].toString(), revealTime);
                 assert.equal((tx.logs[0].args._noOfProposals).toString(), 3);
                 assert.equal((tx.logs[0].args._checkpointId).toString(), 1);
                 assert.equal((tx.logs[0].args._ballotId).toString(), 0);
@@ -315,8 +330,8 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
 
             it("\t\t Should change some ballot status \n", async() => {
                 await I_PLCRVotingCheckpoint.changeBallotStatus(new BN(0), false, {from: token_owner});
-                let data = await I_PLCRVotingCheckpoint.getBallotStats.call(new BN(0));
-                assert.isFalse(data[8]);
+                let data = await I_PLCRVotingCheckpoint.getBallotDetails.call(new BN(0));
+                assert.isFalse(data[7]);
             });
 
             it("\t\t Should fail to commitVote because ballot is not active \n", async() => {
@@ -328,8 +343,58 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
 
             it("\t\t Should change some ballot status \n", async() => {
                 await I_PLCRVotingCheckpoint.changeBallotStatus(new BN(0), true, {from: token_owner});
-                let data = await I_PLCRVotingCheckpoint.getBallotStats.call(new BN(0));
-                assert.isTrue(data[8]);
+                let data = await I_PLCRVotingCheckpoint.getBallotDetails.call(new BN(0));
+                assert.isTrue(data[7]);
+            });
+
+            it("\t\t Should fail to add voter in ballot exemption list -- address is zero", async() => {
+                await catchRevert(
+                    I_PLCRVotingCheckpoint.changeBallotExemptedVotersList(new BN(0), "0x0000000000000000000000000000000000000000", true, {from: token_owner})
+                );
+            });
+
+            it("\t\t Should fail to add voter in ballot exemption list -- invalid ballot id", async() => {
+                await catchRevert(
+                    I_PLCRVotingCheckpoint.changeBallotExemptedVotersList(new BN(5), account_investor1, true, {from: token_owner})
+                );
+            });
+
+            it("\t\t Should add the voter in to the ballot exemption list", async() => {
+                let tx = await I_PLCRVotingCheckpoint.changeBallotExemptedVotersList(new BN(0), account_investor1, true, {from: token_owner});
+                assert.equal((tx.logs[0].args._ballotId).toString(), 0);
+                assert.equal(tx.logs[0].args._voter, account_investor1);
+                assert.equal(tx.logs[0].args._change, true);
+            });
+
+            it("\t\t Should fail to add voter in ballot exemption list -- doing the same change again", async() => {
+                await catchRevert(
+                    I_PLCRVotingCheckpoint.changeBallotExemptedVotersList(new BN(0), account_investor1, true, {from: token_owner})
+                );
+            });
+
+            it("\t\t Should fail to vote -- voter is present in the exemption list", async() => {
+                let salt = getRandom();
+                await catchRevert(
+                    I_PLCRVotingCheckpoint.commitVote(new BN(0), web3.utils.soliditySha3(2, salt), {from: account_investor1})
+                );
+            });
+
+            it("\t\t Should add the multiple voter in to the ballot exemption list -- failed ", async() => {
+                await catchRevert(
+                    I_PLCRVotingCheckpoint.changeBallotExemptedVotersListMulti(new BN(0), [account_investor1, account_investor2], [false], {from: token_owner})
+                );
+            });
+
+            it("\t\t Should add the multiple voter in to the ballot exemption list --failed because of bad msg.sender", async() => {
+                await catchRevert(
+                    I_PLCRVotingCheckpoint.changeBallotExemptedVotersListMulti(new BN(0), [account_investor1], [false], {from: account_polymath})
+                );
+            });
+
+
+            it("\t\t Should add the multiple voter in to the ballot exemption list", async() => {
+                await I_PLCRVotingCheckpoint.changeBallotExemptedVotersListMulti(new BN(0), [account_investor1], [false], {from: token_owner});
+                assert.isTrue(await I_PLCRVotingCheckpoint.isVoterAllowed.call(new BN(0), account_investor1));
             });
 
             it("\t\t Should successfully vote by account investor1 \n", async() => {
@@ -338,11 +403,11 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
                 let tx = await I_PLCRVotingCheckpoint.commitVote(new BN(0), web3.utils.soliditySha3(2, salt), {from: account_investor1});
                 assert.equal(tx.logs[0].args._ballotId, 0);
                 assert.equal(tx.logs[0].args._secretVote, web3.utils.soliditySha3(2, salt));
-                assert.equal(tx.logs[0].args._voter, account_investor1);
-
-                let data = await I_PLCRVotingCheckpoint.getBallotStats.call(new BN(0));
-                assert.equal(data[6], 3);
-                assert.equal(data[8], true);
+                assert.equal(tx.logs[0].args._voter, account_investor1);  
+                
+                let data = await I_PLCRVotingCheckpoint.getBallotDetails.call(new BN(0));
+                assert.equal(data[5], 3);
+                assert.equal(data[7], true);
             });
 
             it("\t\t Should failed to vote again \n", async() => {
@@ -352,17 +417,72 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
                 )
             });
 
+            it("\t\t Should fail to add voter in default exemption list -- address is zero", async() => {
+                await catchRevert(
+                    I_PLCRVotingCheckpoint.changeDefaultExemptedVotersList("0x0000000000000000000000000000000000000000", true, {from: token_owner})
+                );
+            });
+
+            it("\t\t Should add the voter in to the default exemption list", async() => {
+                let tx = await I_PLCRVotingCheckpoint.changeDefaultExemptedVotersList(account_investor3, true, {from: token_owner});
+                assert.equal(tx.logs[0].args._voter, account_investor3);
+                assert.equal(tx.logs[0].args._change, true);
+            });
+
+            it("\t\t Should fail to add voter in default exemption list -- doing the same change again", async() => {
+                await catchRevert(
+                    I_PLCRVotingCheckpoint.changeDefaultExemptedVotersList(account_investor3, true, {from: token_owner})
+                );
+            });
+
+            it("\t\t Should fail to vote -- voter is present in the exemption list", async() => {
+                let salt = getRandom();
+                await catchRevert(
+                    I_PLCRVotingCheckpoint.commitVote(new BN(0), web3.utils.soliditySha3(1, salt), {from: account_investor3})
+                );
+            });
+
+            it("\t\t Should change the deafult exemption list using Multi function -- failed because of mismatch array length", async() => {
+                await catchRevert(
+                    I_PLCRVotingCheckpoint.changeDefaultExemptedVotersListMulti([account_investor3, account_investor1], [false], {from: token_owner})
+                );
+            });
+
+            it("\t\t Should change the default exemption list by allowing investor 1 to vote", async() => {
+                await I_PLCRVotingCheckpoint.changeDefaultExemptedVotersListMulti([account_investor3], [false], {from: token_owner});
+                assert.isTrue(await I_PLCRVotingCheckpoint.isVoterAllowed.call(new BN(0), account_investor3));
+            });
+
+            it("\t\t Should change the default exemption list using Multi function", async() => {
+                await I_PLCRVotingCheckpoint.changeDefaultExemptedVotersListMulti([account_investor3, account_investor1, account_investor2], [true, true, true], {from: token_owner});
+                assert.isFalse(await I_PLCRVotingCheckpoint.isVoterAllowed.call(new BN(0), account_investor3));
+                assert.isFalse(await I_PLCRVotingCheckpoint.isVoterAllowed.call(new BN(0), account_investor1));
+                assert.isFalse(await I_PLCRVotingCheckpoint.isVoterAllowed.call(new BN(0), account_investor2));
+                assert.equal((await I_PLCRVotingCheckpoint.getDefaultExemptionVotersList.call()).length, 3);
+            });
+
+            it("\t\t Should change the default exemption list by allowing investor 1 to vote again", async() => {
+                await I_PLCRVotingCheckpoint.changeDefaultExemptedVotersList(account_investor3, false, {from: token_owner});
+                assert.isTrue(await I_PLCRVotingCheckpoint.isVoterAllowed.call(new BN(0), account_investor3));
+            });
+
+            it("\t\t Should change the default exemption list using Multi function", async() => {
+                await I_PLCRVotingCheckpoint.changeDefaultExemptedVotersListMulti([account_investor2, account_investor1], [false, false], {from: token_owner});
+                assert.isTrue(await I_PLCRVotingCheckpoint.isVoterAllowed.call(new BN(0), account_investor1));
+                assert.isTrue(await I_PLCRVotingCheckpoint.isVoterAllowed.call(new BN(0), account_investor2));
+            });
+
             it("\t\t Should successfully vote by account investor3 \n", async() => {
                 let salt = getRandom();
                 saltArray.push(salt);
                 let tx = await I_PLCRVotingCheckpoint.commitVote(new BN(0),  web3.utils.soliditySha3(1, salt), {from: account_investor3});
                 assert.equal(tx.logs[0].args._ballotId, 0);
                 assert.equal(tx.logs[0].args._secretVote, web3.utils.soliditySha3(1, salt));
-                assert.equal(tx.logs[0].args._voter, account_investor3);
-
-                let data = await I_PLCRVotingCheckpoint.getBallotStats.call(new BN(0));
-                assert.equal(data[6], 3);
-                assert.equal(data[8], true);
+                assert.equal(tx.logs[0].args._voter, account_investor3);  
+                
+                let data = await I_PLCRVotingCheckpoint.getBallotDetails.call(new BN(0));
+                assert.equal(data[5], 3);
+                assert.equal(data[7], true);
             });
 
             it("\t\t Should successfully vote by account investor2 \n", async() => {
@@ -371,11 +491,11 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
                 let tx = await I_PLCRVotingCheckpoint.commitVote(new BN(0),  web3.utils.soliditySha3(2, salt), {from: account_investor2});
                 assert.equal(tx.logs[0].args._ballotId, 0);
                 assert.equal(tx.logs[0].args._secretVote, web3.utils.soliditySha3(2, salt));
-                assert.equal(tx.logs[0].args._voter, account_investor2);
-
-                let data = await I_PLCRVotingCheckpoint.getBallotStats.call(new BN(0));
-                assert.equal(data[6], 3);
-                assert.equal(data[8], true);
+                assert.equal(tx.logs[0].args._voter, account_investor2);  
+                
+                let data = await I_PLCRVotingCheckpoint.getBallotDetails.call(new BN(0));
+                assert.equal(data[5], 3);
+                assert.equal(data[7], true);
             });
 
             it("\t\t Mint some more tokens and transferred to the tokens holders \n", async() => {
@@ -446,16 +566,22 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
                 );
             });
 
+            it("\t\t Should fail to reveal vote -- Invalid salt \n", async() => {
+                await catchRevert(
+                    I_PLCRVotingCheckpoint.revealVote(new BN(0), new BN(1), getRandom(), {from: account_investor3})
+                );
+            });
+
             it("\t\t Should successfully reveal the vote by investor 3 \n", async() => {
                 let tx = await I_PLCRVotingCheckpoint.revealVote(new BN(0), new BN(1), saltArray[1], {from: account_investor3});
                 assert.equal(tx.logs[0].args._voter, account_investor3);
                 assert.equal(tx.logs[0].args._ballotId, 0);
                 assert.equal(tx.logs[0].args._choiceOfProposal, 1);
                 assert.equal(tx.logs[0].args._salt, saltArray[1]);
-                let data = await I_PLCRVotingCheckpoint.getBallotStats.call(new BN(0));
-                assert.equal(data[6], 3);
-                assert.equal(data[7], 1);
-                assert.equal(data[8], true);
+                let data = await I_PLCRVotingCheckpoint.getBallotDetails.call(new BN(0));
+                assert.equal(data[5], 3);
+                assert.equal(data[6], 1);
+                assert.equal(data[7], true);
             });
 
             it("\t\t Should fail to change the ballot status-- bad owner \n", async() => {
@@ -492,10 +618,10 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
                 assert.equal(txData.logs[0].args._ballotId, 0);
                 assert.equal(txData.logs[0].args._choiceOfProposal, 2);
                 assert.equal(txData.logs[0].args._salt, saltArray[0]);
-                let data = await I_PLCRVotingCheckpoint.getBallotStats.call(new BN(0));
-                assert.equal(data[6], 3);
-                assert.equal(data[7], 2);
-                assert.equal(data[8], true);
+                let data = await I_PLCRVotingCheckpoint.getBallotDetails.call(new BN(0));
+                assert.equal(data[5], 3);
+                assert.equal(data[6], 2);
+                assert.equal(data[7], true);
             });
 
             it("\t\t Should fail to reveal vote again \n", async() => {
@@ -519,6 +645,9 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
             });
 
             it("\t\t Should check who votes whom \n", async() => {
+                // If we give Invalid ballot id, This function will always return 0
+                assert.equal(((await I_PLCRVotingCheckpoint.getSelectedProposal.call(new BN(5), account_investor1))).toString(), 0);
+
                 assert.equal(((await I_PLCRVotingCheckpoint.getSelectedProposal.call(new BN(0), account_investor1))).toString(), 2);
                 assert.equal(((await I_PLCRVotingCheckpoint.getSelectedProposal.call(new BN(0), account_investor2))).toString(), 0);
                 assert.equal(((await I_PLCRVotingCheckpoint.getSelectedProposal.call(new BN(0), account_investor3))).toString(), 1);
@@ -541,6 +670,13 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
                 assert.equal(data[2].toString(), 1);
                 assert.isTrue(data[3]);
                 assert.equal(data[4].toString(), 2);
+            });
+
+            it("\t\t Should fail to change the ballot status after the ballot ends", async() => {
+                await increaseTime(duration.days(20));
+                await catchRevert(
+                    I_PLCRVotingCheckpoint.changeBallotStatus(new BN(1), false, {from: token_owner})
+                );
             });
         });
 

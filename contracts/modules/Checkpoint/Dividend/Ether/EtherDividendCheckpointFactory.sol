@@ -1,9 +1,9 @@
 pragma solidity ^0.5.0;
 
 import "./EtherDividendCheckpointProxy.sol";
-import "../../../libraries/Util.sol";
-import "../../../interfaces/IBoot.sol";
-import "../../UpgradableModuleFactory.sol";
+import "../../../../libraries/Util.sol";
+import "../../../../interfaces/IBoot.sol";
+import "../../../UpgradableModuleFactory.sol";
 
 /**
  * @title Factory for deploying EtherDividendCheckpoint module

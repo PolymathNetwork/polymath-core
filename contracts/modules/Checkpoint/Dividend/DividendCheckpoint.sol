@@ -7,9 +7,9 @@
  */
 pragma solidity ^0.5.0;
 
-import "./ICheckpoint.sol";
-import "../../storage/modules/Checkpoint/DividendCheckpointStorage.sol";
-import "../Module.sol";
+import ".././ICheckpoint.sol";
+import "../../../storage/modules/Checkpoint/Dividend/DividendCheckpointStorage.sol";
+import "../../Module.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/math/Math.sol";
 

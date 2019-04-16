@@ -55,6 +55,8 @@ const VestingEscrowWalletFactory = artifacts.require("./VestingEscrowWalletFacto
 const VestingEscrowWallet = artifacts.require("./VestingEscrowWallet.sol");
 const PLCRVotingCheckpointFactory = artifacts.require("./PLCRVotingCheckpointFactory.sol");
 const WeightedVoteCheckpointFactory = artifacts.require("./WeightedVoteCheckpointFactory.sol");
+const PLCRVotingCheckpoint = artifacts.require("./PLCRVotingCheckpoint.sol");
+const WeightedVoteCheckpoint = artifacts.require("./WeightedVoteCheckpoint.sol");
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -118,6 +120,8 @@ let I_USDOracle;
 let I_POLYOracle;
 let I_StablePOLYOracle;
 let I_PLCRVotingCheckpointFactory;
+let I_WeightedVoteCheckpointLogic;
+let I_PLCRVotingCheckpointLogic;
 
 // Initial fee for ticker registry and security token registry
 const initRegFee = new BN(web3.utils.toWei("250"));
@@ -637,21 +641,23 @@ export async function deploySignedTMAndVerifyed(accountPolymath, MRProxyInstance
 
 // Deploy voting modules
 
-export async function deployPLCRVoteCheckpoint(accountPolymath, MRProxyInstance, setupCost) {
-    I_PLCRVotingCheckpointFactory = await PLCRVotingCheckpointFactory.new(setupCost, new BN(0), I_PolymathRegistry.address, { from: accountPolymath });
+export async function deployPLCRVoteCheckpoint(accountPolymath, MRProxyInstance, setupCost, feeInPoly = false) {
+    I_PLCRVotingCheckpointLogic = await PLCRVotingCheckpoint.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
+    I_PLCRVotingCheckpointFactory = await PLCRVotingCheckpointFactory.new(setupCost, new BN(0), I_PLCRVotingCheckpointLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
     assert.notEqual(
         I_PLCRVotingCheckpointFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",
         "PLCRVotingCheckpointFactory contract was not deployed"
     );
 
-     await registerAndVerifyByMR(I_PLCRVotingCheckpointFactory.address, accountPolymath, MRProxyInstance);
+    await registerAndVerifyByMR(I_PLCRVotingCheckpointFactory.address, accountPolymath, MRProxyInstance);
     return new Array(I_PLCRVotingCheckpointFactory);
 }
 // Deploy the voting modules
 
-export async function deployWeightedVoteCheckpoint(accountPolymath, MRProxyInstance, setupCost) {
-    I_WeightedVoteCheckpointFactory = await WeightedVoteCheckpointFactory.new(setupCost, new BN(0), I_PolymathRegistry.address, { from: accountPolymath });
+export async function deployWeightedVoteCheckpoint(accountPolymath, MRProxyInstance, setupCost, feeInPoly = false) {
+    I_WeightedVoteCheckpointLogic = await WeightedVoteCheckpoint.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
+    I_WeightedVoteCheckpointFactory = await WeightedVoteCheckpointFactory.new(setupCost, new BN(0), I_WeightedVoteCheckpointLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
     assert.notEqual(
         I_WeightedVoteCheckpointFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",

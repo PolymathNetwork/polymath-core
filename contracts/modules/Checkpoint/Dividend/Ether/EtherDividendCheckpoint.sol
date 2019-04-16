@@ -1,7 +1,7 @@
 pragma solidity ^0.5.0;
 
 import "../DividendCheckpoint.sol";
-import "../../../interfaces/IOwnable.sol";
+import "../../../../interfaces/IOwnable.sol";
 
 /**
  * @title Checkpoint module for issuing ether dividends

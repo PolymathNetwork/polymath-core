@@ -1,8 +1,8 @@
 pragma solidity ^0.5.0;
 
 import "../../STO/STO.sol";
+import "../../../interfaces/IPolymathRegistry.sol";
 import "../../../interfaces/IOracle.sol";
-import "../../../RegistryUpdater.sol";
 import "../../../libraries/DecimalMath.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
@@ -420,7 +420,7 @@ contract POLYPeggedSTO is POLYPeggedSTOStorage, STO, ReentrancyGuard {
      * @dev returns current POLY to USD conversion rate of funds
      */
     function getPolyUsdRate() public returns (uint256) {
-        address polyOracle = PolymathRegistry(RegistryUpdater(securityToken).polymathRegistry()).getAddress(POLY_ORACLE);
+        address polyOracle = IPolymathRegistry(ISecurityToken(securityToken).polymathRegistry()).getAddress(POLY_ORACLE);
         require(polyOracle != address(0), "Invalid oracle");
         return IOracle(polyOracle).getPrice();
     }

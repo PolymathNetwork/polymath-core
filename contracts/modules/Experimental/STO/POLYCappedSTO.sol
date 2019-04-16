@@ -1,8 +1,8 @@
 pragma solidity ^0.5.0;
 
 import "../../STO/STO.sol";
+import "../../../interfaces/IPolymathRegistry.sol";
 import "../../../interfaces/IOracle.sol";
-import "../../../RegistryUpdater.sol";
 import "../../../libraries/DecimalMath.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
@@ -324,7 +324,7 @@ contract POLYCappedSTO is POLYCappedSTOStorage, STO, ReentrancyGuard {
         bool accredited;
         (tokens, spentValue, accredited) = prePurchaseChecks (_beneficiary, _investedTokens);
         _processPurchase(_beneficiary, tokens, accredited);
-        uint256 polyUsdRate = IOracle(PolymathRegistry(RegistryUpdater(securityToken).polymathRegistry()).getAddress(POLY_ORACLE)).getPrice();
+        uint256 polyUsdRate = IOracle(IPolymathRegistry(ISecurityToken(securityToken).polymathRegistry()).getAddress(POLY_ORACLE)).getPrice();
         uint256 spentUSD = DecimalMath.mul(spentValue, polyUsdRate);
         emit TokenPurchase(msg.sender, _beneficiary, spentValue, spentUSD, tokens);
         // Modify storage

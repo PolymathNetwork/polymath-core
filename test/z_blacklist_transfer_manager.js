@@ -171,7 +171,7 @@ contract('BlacklistTransferManager', accounts => {
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner});
             let _blockNo = latestBlock();
-            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, token_owner, 0, { from: token_owner });
+            let tx = await I_STRProxied.generateNewSecurityToken(name, symbol, tokenDetails, false, token_owner, 0, { from: token_owner });
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
@@ -189,7 +189,7 @@ contract('BlacklistTransferManager', accounts => {
             );
         });
 
-        it("Should intialize the auto attached modules", async () => {
+        it("Should initialize the auto attached modules", async () => {
            let moduleData = (await stGetter.getModulesByType(2))[0];
            I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
 
@@ -989,16 +989,16 @@ contract('BlacklistTransferManager', accounts => {
         });
     });
 
-    describe("Test cases for blacklist with repeat period 0 (Never repeat)", async() => { 
+    describe("Test cases for blacklist with repeat period 0 (Never repeat)", async() => {
         it("Should add a new blacklist with no repeat time", async() => {
             let curTime = await latestTime();
             await I_BlacklistTransferManager.deleteInvestorFromAllBlacklist(account_investor3, { from: token_owner });
             await I_BlacklistTransferManager.addInvestorToNewBlacklist(
-                new BN(curTime).add(new BN(100)), 
-                new BN(curTime).add(new BN(1000)), 
-                web3.utils.fromAscii("anewbl"), 
-                0, 
-                account_investor3, 
+                new BN(curTime).add(new BN(100)),
+                new BN(curTime).add(new BN(1000)),
+                web3.utils.fromAscii("anewbl"),
+                0,
+                account_investor3,
                 { from: token_owner}
             );
             await increaseTime(200);

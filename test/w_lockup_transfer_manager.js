@@ -141,7 +141,7 @@ contract('LockUpTransferManager', accounts => {
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
             let _blockNo = latestBlock();
-            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, token_owner, 0, { from: token_owner });
+            let tx = await I_STRProxied.generateNewSecurityToken(name, symbol, tokenDetails, false, token_owner, 0, { from: token_owner });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
@@ -160,7 +160,7 @@ contract('LockUpTransferManager', accounts => {
             );
         });
 
-        it("Should intialize the auto attached modules", async () => {
+        it("Should initialize the auto attached modules", async () => {
           let moduleData = (await stGetter.getModulesByType(2))[0];
           I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
@@ -174,7 +174,7 @@ contract('LockUpTransferManager', accounts => {
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
             let _blockNo = latestBlock();
-            let tx = await I_STRProxied.generateSecurityToken(name2, symbol2, tokenDetails, true, token_owner, 0, { from: token_owner });
+            let tx = await I_STRProxied.generateNewSecurityToken(name2, symbol2, tokenDetails, true, token_owner, 0, { from: token_owner });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol2.toUpperCase(), "SecurityToken doesn't get deployed");
@@ -193,7 +193,7 @@ contract('LockUpTransferManager', accounts => {
             );
         });
 
-        it("Should intialize the auto attached modules", async () => {
+        it("Should initialize the auto attached modules", async () => {
           let moduleData = (await stGetter_div.getModulesByType(2))[0];
           I_GeneralTransferManager_div = GeneralTransferManager.at(moduleData);
         });
@@ -703,7 +703,7 @@ contract('LockUpTransferManager', accounts => {
             let lockedBalance = web3.utils.fromWei((await I_LockUpTransferManager.getTokensByPartition.call(web3.utils.utf8ToHex(`LOCKED`), account_investor3, new BN(0))).toString());
             let unlockedBalance = web3.utils.fromWei((await I_LockUpTransferManager.getTokensByPartition.call(web3.utils.utf8ToHex(`UNLOCKED`), account_investor3, new BN(0))).toString());
             console.log(`\t Total balance: ${web3.utils.fromWei((await I_SecurityToken.balanceOf.call(account_investor3)).toString())}`);
-            console.log(`\t Locked balance of the investor by the lockup: ${web3.utils.fromWei((await I_LockUpTransferManager.getLockedTokenToUser.call(account_investor3)).toString())}`);            
+            console.log(`\t Locked balance of the investor by the lockup: ${web3.utils.fromWei((await I_LockUpTransferManager.getLockedTokenToUser.call(account_investor3)).toString())}`);
             console.log(`Paused status: ${await I_LockUpTransferManager.paused.call()}`);
             console.log(`\t Locked balance: ${lockedBalance}`);
             console.log(`\t Unlocked Balance: ${unlockedBalance}`);

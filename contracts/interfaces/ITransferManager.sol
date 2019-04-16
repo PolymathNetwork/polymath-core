@@ -20,8 +20,16 @@ interface ITransferManager {
 
     /**
      * @notice return the amount of tokens for a given user as per the partition
-     * @param _owner Whom token amount need to query
      * @param _partition Identifier
+     * @param _tokenHolder Whom token amount need to query
+     * @param _additionalBalance It is the `_value` that transfer during transfer/transferFrom function call
      */
-    function getTokensByPartition(address _owner, bytes32 _partition) external view returns(uint256);
+    function getTokensByPartition(bytes32 _partition, address _tokenHolder, uint256 _additionalBalance) external view returns(uint256);
+
+    /**
+     * @notice return the list of partitions for a tokenHolder
+     * @param _tokenHolder Whom token amount need to query
+     */
+    function getPartitions(address _tokenHolder) external view returns(bytes32[] memory);
+
 }

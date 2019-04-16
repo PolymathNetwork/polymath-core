@@ -33,12 +33,12 @@ contract CountTransferManager is CountTransferManagerStorage, TransferManager {
         address _from,
         address _to,
         uint256 _amount,
-        bytes calldata _data
+        bytes calldata /*_data*/
     )
         external
         returns(Result)
     {
-        (Result success,) = verifyTransfer(_from, _to, _amount, _data);
+        (Result success, ) = _verifyTransfer(_from, _to, _amount);
         return success;
     }
 
@@ -55,6 +55,18 @@ contract CountTransferManager is CountTransferManagerStorage, TransferManager {
         bytes memory /* _data */
     )
         public
+        view
+        returns(Result, bytes32)
+    {
+        return _verifyTransfer(_from, _to, _amount);
+    }
+
+    function _verifyTransfer(
+        address _from,
+        address _to,
+        uint256 _amount
+    )
+        internal
         view
         returns(Result, bytes32)
     {
@@ -108,13 +120,6 @@ contract CountTransferManager is CountTransferManagerStorage, TransferManager {
      */
     function getInitFunction() public pure returns(bytes4) {
         return this.configure.selector;
-    }
-
-    /**
-     * @notice return the amount of tokens for a given user as per the partition
-     */
-    function getTokensByPartition(address /*_owner*/, bytes32 /*_partition*/) external view returns(uint256){
-        return 0;
     }
 
     /**

@@ -51,7 +51,7 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
     const symbol = "SAP";
     const tokenDetails = "This is equity type of issuance";
     const decimals = 18;
-    
+
     // Module key
     const delegateManagerKey = 1;
     const transferManagerKey = 2;
@@ -133,15 +133,15 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
                 assert.equal(tx.logs[0].args._owner, token_owner);
                 assert.equal(tx.logs[0].args._ticker, symbol);
             });
-    
+
             it("\t\t Should generate the new security token with the same symbol as registered above \n", async () => {
                 await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-    
-                let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, token_owner, 0, { from: token_owner });
-    
+
+                let tx = await I_STRProxied.generateNewSecurityToken(name, symbol, tokenDetails, false, token_owner, 0, { from: token_owner });
+
                 // Verify the successful generation of the security token
                 assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
-    
+
                 I_SecurityToken = await SecurityToken.at(tx.logs[1].args._securityTokenAddress);
                 stGetter = await STGetter.at(I_SecurityToken.address);
                 const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
@@ -149,8 +149,8 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
                 assert.equal(log.args._types[0].toNumber(), transferManagerKey);
                 assert.equal(web3.utils.hexToString(log.args._name), "GeneralTransferManager");
             });
-    
-            it("\t\t Should intialize the auto attached modules \n", async () => {
+
+            it("\t\t Should initialize the auto attached modules \n", async () => {
                 let moduleData = (await stGetter.getModulesByType(transferManagerKey))[0];
                 I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
             });
@@ -182,19 +182,31 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
 
             it("\t\t Should fail to create ballot -- bad owner \n", async() => {
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.createBallot(new BN(duration.days(5)), new BN(5), {from: account_polymath})
+                    I_WeightedVoteCheckpoint.createBallot(new BN(duration.days(5)), new BN(5), new BN(51).mul(new BN(10).pow(new BN(16))), {from: account_polymath})
                 ); 
             });
 
             it("\t\t Should fail to create ballot -- bad duration \n", async() => {
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.createBallot(new BN(0), new BN(5), {from: token_owner})
+                    I_WeightedVoteCheckpoint.createBallot(new BN(0), new BN(5), new BN(51).mul(new BN(10).pow(new BN(16))), {from: token_owner})
                 ); 
             });
 
             it("\t\t Should fail to create ballot -- bad no of proposals \n", async() => {
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.createBallot(new BN(duration.days(5)), new BN(1), {from: token_owner})
+                    I_WeightedVoteCheckpoint.createBallot(new BN(duration.days(5)), new BN(1), new BN(51).mul(new BN(10).pow(new BN(16))), {from: token_owner})
+                ); 
+            });
+
+            it("\t\t Should fail to create ballot -- zero value of quorum \n", async() => {
+                await catchRevert(
+                    I_WeightedVoteCheckpoint.createBallot(new BN(duration.days(5)), new BN(1), new BN(0), {from: token_owner})
+                ); 
+            });
+
+            it("\t\t Should fail to create ballot -- value of quorum is more than the limit\n", async() => {
+                await catchRevert(
+                    I_WeightedVoteCheckpoint.createBallot(new BN(duration.days(5)), new BN(1), new BN(51).mul(new BN(10).pow(new BN(17))), {from: token_owner})
                 ); 
             });
 
@@ -230,20 +242,38 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
                 let startTime = new BN(await latestTime());
                 let endTime = new BN(await latestTime() + duration.days(4));
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.createCustomBallot(startTime, endTime, new BN(100), new BN(5), {from: token_owner})
+                    I_WeightedVoteCheckpoint.createCustomBallot(new BN(5), new BN(51).mul(new BN(10).pow(new BN(17))), startTime, endTime, new BN(100), {from: token_owner})
+                );
+            });
+
+            it("\t\t Should fail to create ballot -- Invalid startTime \n", async() => {
+                let startTime = new BN(await latestTime());
+                let endTime = new BN(await latestTime() + duration.days(4));
+                await I_SecurityToken.createCheckpoint({from: token_owner});
+                let checkpointId = await I_SecurityToken.currentCheckpointId.call();
+                await catchRevert(
+                    I_WeightedVoteCheckpoint.createCustomBallot(checkpointId, new BN(51).mul(new BN(10).pow(new BN(16))), 0, endTime, new BN(3), {from: token_owner})
+                );
+            });
+
+            it("\t\t Should fail to create ballot -- Invalid endTimes \n", async() => {
+                let startTime = new BN(await latestTime() + duration.days(10));
+                let endTime = new BN(await latestTime() + duration.days(4));
+                await catchRevert(
+                    I_WeightedVoteCheckpoint.createCustomBallot(new BN(1), new BN(51).mul(new BN(10).pow(new BN(16))), startTime, endTime, new BN(3), {from: token_owner})
                 );
             });
 
             it("\t\t Should create the ballot successfully \n", async() => {
-                let tx = await I_WeightedVoteCheckpoint.createBallot(new BN(duration.days(5)), new BN(3), {from: token_owner});
+                let tx = await I_WeightedVoteCheckpoint.createBallot(new BN(duration.days(5)), new BN(3), new BN(51).mul(new BN(10).pow(new BN(16))), {from: token_owner});
                 assert.equal((tx.logs[0].args._noOfProposals).toString(), 3);
-                assert.equal((tx.logs[0].args._checkpointId).toString(), 1);
+                assert.equal((tx.logs[0].args._checkpointId).toString(), 2);
                 assert.equal((tx.logs[0].args._ballotId).toString(), 0);
             });
         });
 
         describe("\t\t Test case for castVote \n", async() => {
-            
+
             it("\t\t Should fail to caste vote -- bad ballot id \n", async() => {
                 await catchRevert(
                     I_WeightedVoteCheckpoint.castVote(new BN(2), new BN(1), {from: account_investor1})
@@ -262,35 +292,106 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
                 );
             });
 
-            it("\t\t Should successfully vote by account investor1 \n", async() => {
-                let tx = await I_WeightedVoteCheckpoint.castVote(new BN(0), new BN(1), {from: account_investor1});
-                assert.equal(tx.logs[0].args._ballotId, 0);
-                assert.equal(tx.logs[0].args._proposalId, 1);
-                assert.equal(tx.logs[0].args._investor, account_investor1);  
-                
-                let data = await I_WeightedVoteCheckpoint.getBallotStats.call(new BN(0));
-                assert.equal(data[4], 1);
-                assert.equal(data[5], 3);
-                assert.equal(data[6], true);
+            it("\t\t Should fail to add voter in ballot exemption list -- address is zero", async() => {
+                await catchRevert(
+                    I_WeightedVoteCheckpoint.changeBallotExemptedVotersList(new BN(0), "0x0000000000000000000000000000000000000000", true, {from: token_owner})
+                );
+            });
+
+            it("\t\t Should fail to add voter in ballot exemption list -- invalid ballot id", async() => {
+                await catchRevert(
+                    I_WeightedVoteCheckpoint.changeBallotExemptedVotersList(new BN(5), account_investor2, true, {from: token_owner})
+                );
+            });
+
+            it("\t\t Should add the voter in to the ballot exemption list", async() => {
+                let tx = await I_WeightedVoteCheckpoint.changeBallotExemptedVotersList(new BN(0), account_investor2, true, {from: token_owner});
+                assert.equal((tx.logs[0].args._ballotId).toString(), 0);
+                assert.equal(tx.logs[0].args._voter, account_investor2);
+                assert.equal(tx.logs[0].args._change, true);
+            });
+
+            it("\t\t Should fail to add voter in ballot exemption list -- doing the same change again", async() => {
+                await catchRevert(
+                    I_WeightedVoteCheckpoint.changeBallotExemptedVotersList(new BN(0), account_investor2, true, {from: token_owner})
+                );
+            });
+
+            it("\t\t Should fail to vote -- voter is present in the exemption list", async() => {
+                await catchRevert(
+                    I_WeightedVoteCheckpoint.castVote(new BN(0), new BN(2), {from: account_investor2})
+                );
+            });
+
+            it("\t\t Should add the multiple voter in to the ballot exemption list -- failed ", async() => {
+                await catchRevert(
+                    I_WeightedVoteCheckpoint.changeBallotExemptedVotersListMulti(new BN(0), [account_investor2, account_investor1], [false], {from: token_owner})
+                );
+            });
+
+            it("\t\t Should add the multiple voter in to the ballot exemption list", async() => {
+                await I_WeightedVoteCheckpoint.changeBallotExemptedVotersListMulti(new BN(0), [account_investor2], [false], {from: token_owner});
+                assert.isTrue(await I_WeightedVoteCheckpoint.isVoterAllowed.call(new BN(0), account_investor2));
             });
 
             it("\t\t Should successfully vote by account investor2 \n", async() => {
                 let tx = await I_WeightedVoteCheckpoint.castVote(new BN(0), new BN(2), {from: account_investor2});
                 assert.equal(tx.logs[0].args._ballotId, 0);
                 assert.equal(tx.logs[0].args._proposalId, 2);
-                assert.equal(tx.logs[0].args._investor, account_investor2);  
+                assert.equal(tx.logs[0].args._voter, account_investor2);  
                 
-                let data = await I_WeightedVoteCheckpoint.getBallotStats.call(new BN(0));
-                assert.equal(data[4], 2);
+                let data = await I_WeightedVoteCheckpoint.getBallotDetails.call(new BN(0));
+                assert.equal(data[6], 1);
                 assert.equal(data[5], 3);
-                assert.equal(data[6], true);
+                assert.equal(data[7], true);
+            });
+
+            it("\t\t Should fail to add voter in default exemption list -- address is zero", async() => {
+                await catchRevert(
+                    I_WeightedVoteCheckpoint.changeDefaultExemptedVotersList("0x0000000000000000000000000000000000000000", true, {from: token_owner})
+                );
+            });
+
+            it("\t\t Should add the voter in to the default exemption list", async() => {
+                let tx = await I_WeightedVoteCheckpoint.changeDefaultExemptedVotersList(account_investor1, true, {from: token_owner});
+                assert.equal(tx.logs[0].args._voter, account_investor1);
+                assert.equal(tx.logs[0].args._change, true);
+            });
+
+            it("\t\t Should fail to add voter in default exemption list -- doing the same change again", async() => {
+                await catchRevert(
+                    I_WeightedVoteCheckpoint.changeDefaultExemptedVotersList(account_investor1, true, {from: token_owner})
+                );
+            });
+
+            it("\t\t Should fail to vote -- voter is present in the exemption list", async() => {
+                await catchRevert(
+                    I_WeightedVoteCheckpoint.castVote(new BN(0), new BN(1), {from: account_investor1})
+                );
+            });
+
+            it("\t\t Should change the default exemption list by allowing investor 1 to vote", async() => {
+                await I_WeightedVoteCheckpoint.changeDefaultExemptedVotersList(account_investor1, false, {from: token_owner});
+                assert.isTrue(await I_WeightedVoteCheckpoint.isVoterAllowed.call(new BN(0), account_investor1));
+            });
+
+            it("\t\t Should successfully vote by account investor1 \n", async() => {
+                let tx = await I_WeightedVoteCheckpoint.castVote(new BN(0), new BN(1), {from: account_investor1});
+                assert.equal(tx.logs[0].args._ballotId, 0);
+                assert.equal(tx.logs[0].args._proposalId, 1);
+                assert.equal(tx.logs[0].args._voter, account_investor1);  
+                
+                let data = await I_WeightedVoteCheckpoint.getBallotDetails.call(new BN(0));
+                assert.equal(data[6], 2);
+                assert.equal(data[5], 3);
+                assert.equal(data[7], true);
             });
 
             it("\t\t Should fail to vote again \n", async() => {
                 await catchRevert(
                     I_WeightedVoteCheckpoint.castVote(new BN(0), new BN(2), {from: account_investor2})
                 );
-            })
+            });
 
             it("\t\t Should fail to change the ballot status-- bad owner \n", async() => {
                 await catchRevert(
@@ -326,12 +427,13 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
                 let tx = await I_WeightedVoteCheckpoint.castVote(new BN(0), new BN(1), {from: account_investor3});
                 assert.equal(tx.logs[0].args._ballotId, 0);
                 assert.equal(tx.logs[0].args._proposalId, 1);
-                assert.equal(tx.logs[0].args._investor, account_investor3);  
+                assert.equal(tx.logs[0].args._voter, account_investor3);  
                 
-                let data = await I_WeightedVoteCheckpoint.getBallotStats.call(new BN(0));
-                assert.equal(data[4], 3);
+                let data = await I_WeightedVoteCheckpoint.getBallotDetails.call(new BN(0));
+                console.log(data);
+                assert.equal(data[6], 3);
                 assert.equal(data[5], 3);
-                assert.equal(data[6], true);
+                assert.equal(data[7], true);
             });
 
             it("\t\t Should fail to vote when the duration of vote is complete \n", async() => {
@@ -358,18 +460,31 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
             });
 
             it("\t\t Should check who votes whom \n", async() => {
+                // If we give Invalid ballot id, This function will always return 0
+                assert.equal((await I_WeightedVoteCheckpoint.getSelectedProposal.call(new BN(13), account_investor1)).toString(), 0);
+
                 assert.equal((await I_WeightedVoteCheckpoint.getSelectedProposal.call(new BN(0), account_investor1)).toString(), 1);
                 assert.equal((await I_WeightedVoteCheckpoint.getSelectedProposal.call(new BN(0), account_investor2)).toString(), 2);
                 assert.equal((await I_WeightedVoteCheckpoint.getSelectedProposal.call(new BN(0), account_investor3)).toString(), 1);
             });
 
             it("\t\t Should get the result of the ballot \n", async() => {
+                let data = await I_WeightedVoteCheckpoint.getBallotResults.call(new BN(5));
+                assert.equal(data[4], 0);
+                assert.equal(data[0].length, 0);
+                assert.equal(data[0].length, 0);
+                assert.equal(data[2], 0);
+                assert.isFalse(data[3]);
+            });
+
+            it("\t\t Should get the result of the ballot \n", async() => {
                 let data = await I_WeightedVoteCheckpoint.getBallotResults.call(new BN(0));
+                console.log(data);
                 assert.equal(data[4], 3);
                 assert.equal(web3.utils.fromWei((data[0][0]).toString()), 5500);
                 assert.equal(web3.utils.fromWei((data[0][1]).toString()), 1000);
                 assert.equal(data[2], 1);
-                assert.equal(data[3], 0);
+                assert.isTrue(data[3]);
             });
         });
 

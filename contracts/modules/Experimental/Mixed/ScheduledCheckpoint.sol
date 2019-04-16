@@ -194,14 +194,7 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
             _update(names[i]);
         }
     }
-
-    /**
-     * @notice return the amount of tokens for a given user as per the partition
-     */
-    function getTokensByPartition(address /*_owner*/, bytes32 /*_partition*/) external view returns(uint256){
-        return 0;
-    }
-
+    
     /**
      * @notice Return the permissions flag that are associated with CountTransferManager
      */

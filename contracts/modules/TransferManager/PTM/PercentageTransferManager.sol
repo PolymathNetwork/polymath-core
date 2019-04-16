@@ -41,16 +41,16 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
         address _from,
         address _to,
         uint256 _amount,
-        bytes calldata _data
+        bytes calldata /* _data */
     )
         external
         returns(Result)
     {
-        (Result success,) = verifyTransfer(_from, _to, _amount, _data);
+        (Result success,) = _verifyTransfer(_from, _to, _amount);
         return success;
     }
 
-    /** 
+    /**
      * @notice Used to verify the transfer transaction and prevent a given account to end up with more tokens than allowed
      * @param _from Address of the sender
      * @param _to Address of the receiver
@@ -61,10 +61,22 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
         address _to,
         uint256 _amount,
         bytes memory /*_data*/
-    ) 
+    )
         public
-        view 
-        returns(Result, bytes32) 
+        view
+        returns(Result, bytes32)
+    {
+        return _verifyTransfer(_from, _to, _amount);
+    }
+
+    function _verifyTransfer(
+        address _from,
+        address _to,
+        uint256 _amount
+    )
+        internal
+        view
+        returns(Result, bytes32)
     {
         if (!paused) {
             if (_from == address(0) && allowPrimaryIssuance) {
@@ -76,7 +88,7 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
             }
             uint256 newBalance = IERC20(securityToken).balanceOf(_to).add(_amount);
             if (newBalance.mul(uint256(10) ** 18).div(IERC20(securityToken).totalSupply()) > maxHolderPercentage) {
-                return (Result.INVALID, bytes32(uint256(address(this)) << 96)); 
+                return (Result.INVALID, bytes32(uint256(address(this)) << 96));
             }
             return (Result.NA, bytes32(0));
         }
@@ -141,13 +153,6 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
         /*solium-disable-next-line security/no-block-members*/
         emit SetAllowPrimaryIssuance(_allowPrimaryIssuance);
     }
-
-    /**
-     * @notice return the amount of tokens for a given user as per the partition
-     */
-    function getTokensByPartition(address /*_owner*/, bytes32 /*_partition*/) external view returns(uint256){
-        return 0;
-    } 
 
     /**
      * @notice Return the permissions flag that are associated with Percentage transfer Manager

@@ -80,7 +80,7 @@ process.env.COVERAGE ? contract.skip : contract("ScheduledCheckpoint", async (ac
 
         account_investor1 = accounts[7];
         account_investor2 = accounts[8];
-        account_investor3 = accounts[9]; 
+        account_investor3 = accounts[9];
         //await jumpToTime(Math.floor((new Date().getTime())/1000));
         await jumpToTime(1553040000); // 03/20/2019 @ 12:00am (UTC)
         currentTime = new BN(await latestTime());
@@ -136,7 +136,7 @@ process.env.COVERAGE ? contract.skip : contract("ScheduledCheckpoint", async (ac
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
 
-            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, token_owner, 0, { from: token_owner });
+            let tx = await I_STRProxied.generateNewSecurityToken(name, symbol, tokenDetails, false, token_owner, 0, { from: token_owner });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
@@ -151,7 +151,7 @@ process.env.COVERAGE ? contract.skip : contract("ScheduledCheckpoint", async (ac
             assert.equal(web3.utils.toAscii(log.args._name).replace(/\u0000/g, ""), "GeneralTransferManager");
         });
 
-        it("Should intialize the auto attached modules", async () => {
+        it("Should initialize the auto attached modules", async () => {
             let moduleData = (await stGetter.getModulesByType(2))[0];
             I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });

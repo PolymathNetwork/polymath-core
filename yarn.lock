@@ -5562,9 +5562,10 @@ solidity-coverage@^0.5.11:
     tree-kill "^1.2.0"
     web3 "^0.18.4"
 
-solidity-docgen@^0.1.0:
-  version "0.1.0"
-  resolved "https://registry.yarnpkg.com/solidity-docgen/-/solidity-docgen-0.1.0.tgz#f3a56ff074e8c7d832af3a3d462c3b5abf0f64cb"
+solidity-docgen@^0.1.1:
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/solidity-docgen/-/solidity-docgen-0.1.1.tgz#b9cd4cc414aab371094b7db8a0a45c535bd6e875"
+  integrity sha512-BJiE5yqpXjpmmEKPZ/RU98i48xa4/0JRk8AJheKK6+LSckv/MduGeC2sO4MD/btBi03+NicFze3lvlPUjj2jHg==
   dependencies:
     commander "^2.14.1"
     lodash "^4.17.5"

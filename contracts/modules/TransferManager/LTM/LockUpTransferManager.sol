@@ -679,20 +679,22 @@ contract LockUpTransferManager is LockUpTransferManagerStorage, TransferManager 
 
     /**
      * @notice return the amount of tokens for a given user as per the partition
-     * @param _owner Whom token amount need to query
      * @param _partition Identifier
+     * @param _tokenHolder Whom token amount need to query
+     * @param _additionalBalance It is the `_value` that transfer during transfer/transferFrom function call
      */
-    function getTokensByPartition(address _owner, bytes32 _partition) external view returns(uint256){
-        uint256 _currentBalance = IERC20(securityToken).balanceOf(_owner);
-        if (_partition == LOCKED) {
-            return Math.min(getLockedTokenToUser(_owner), _currentBalance);
-        } else if (_partition == UNLOCKED) {
-            if (_currentBalance < getLockedTokenToUser(_owner)) {
-                return 0;
-            }
-            return _currentBalance.sub(getLockedTokenToUser(_owner));
+    function getTokensByPartition(bytes32 _partition, address _tokenHolder, uint256 _additionalBalance) external view returns(uint256){
+        uint256 currentBalance = (msg.sender == securityToken) ? (IERC20(securityToken).balanceOf(_tokenHolder)).add(_additionalBalance) : IERC20(securityToken).balanceOf(_tokenHolder);
+        uint256 lockedBalance = Math.min(getLockedTokenToUser(_tokenHolder), currentBalance);
+        if (paused) {
+            return (_partition == UNLOCKED ? currentBalance : uint256(0));
+        } else {
+            if (_partition == LOCKED)
+                return lockedBalance;
+            else if (_partition == UNLOCKED)
+                return currentBalance.sub(lockedBalance);
         }
-        return 0;
+        return uint256(0);
     }
 
     /**

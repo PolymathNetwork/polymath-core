@@ -40,7 +40,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     );
 
     event ModifyTransferRequirements(
-        uint256 indexed _transferType,
+        TransferType indexed _transferType,
         bool _fromValidKYC,
         bool _toValidKYC,
         bool _fromRestricted,
@@ -102,7 +102,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     function executeTransfer(
         address _from,
         address _to,
-        uint256 _amount,
+        uint256 /*_amount*/,
         bytes calldata _data
     ) external returns(Result) {
         if (_data.length > 32) {
@@ -115,7 +115,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
             if (target == address(this))
                 _processTransferSignature(nonce, validFrom, validTo, data);
         }
-        (Result success,) = verifyTransfer(_from, _to, _amount, _data);
+        (Result success,) = _verifyTransfer(_from, _to);
         return success;
     }
 
@@ -145,6 +145,17 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         view
         returns(Result, bytes32)
     {
+        return _verifyTransfer(_from, _to);
+    }
+
+    function _verifyTransfer(
+        address _from,
+        address _to
+    )
+        internal
+        view
+        returns(Result, bytes32)
+    {
         if (!paused) {
             TransferRequirements memory txReq;
             uint64 canSendAfter;
@@ -153,11 +164,11 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
             uint64 canReceiveAfter;
 
             if (_from == issuanceAddress) {
-                txReq = transferRequirements[1]; //Issuance
+                txReq = transferRequirements[uint8(TransferType.ISSUANCE)];
             } else if (_to == address(0)) {
-                txReq = transferRequirements[2]; //Redemption
+                txReq = transferRequirements[uint8(TransferType.REDEMPTION)];
             } else {
-                txReq = transferRequirements[0]; //General Transfer
+                txReq = transferRequirements[uint8(TransferType.GENERAL)];
             }
 
             (canSendAfter, fromExpiry, canReceiveAfter, toExpiry) = _getValuesForTransfer(_from, _to);
@@ -186,7 +197,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     * @param _toRestricted Defines if transfer time restriction is checked for the receiver
     */
     function modifyTransferRequirements(
-        uint256 _transferType,
+        TransferType _transferType,
         bool _fromValidKYC,
         bool _toValidKYC,
         bool _fromRestricted,
@@ -210,7 +221,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     * @param _toRestricted Defines if transfer time restriction is checked for the receiver
     */
     function modifyTransferRequirementsMulti(
-        uint256[] memory _transferTypes,
+        TransferType[] memory _transferTypes,
         bool[] memory _fromValidKYC,
         bool[] memory _toValidKYC,
         bool[] memory _fromRestricted,
@@ -236,14 +247,13 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     }
 
     function _modifyTransferRequirements(
-        uint256 _transferType,
+        TransferType _transferType,
         bool _fromValidKYC,
         bool _toValidKYC,
         bool _fromRestricted,
         bool _toRestricted
     ) internal {
-        require(_transferType < 3, "Invalid TransferType");
-        transferRequirements[_transferType] =
+        transferRequirements[uint8(_transferType)] =
             TransferRequirements(
                 _fromValidKYC,
                 _toValidKYC,
@@ -342,7 +352,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         IDataStore dataStore = getDataStore();
         if (!_isExistingInvestor(_investor, dataStore)) {
            dataStore.insertAddress(INVESTORSKEY, _investor);
-           //KYC data can not be present if added is false and hence we can set packed KYC as uint256(1) to set added as true
+           //KYC data can not be present if _isExistingInvestor is false and hence we can set packed KYC as uint256(1) to set `added` as true
            dataStore.setUint256(_getKey(WHITELIST, _investor), uint256(1));
         }
         // Update non accredited investor count in the event accredited status is changed and investor balance is not 0
@@ -510,13 +520,11 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
 
         if (_checkSig(hash, _signature, _nonce)) {
             for (uint256 i = 0; i < _investor.length; i++) {
-                require(
-                    uint64(_canSendAfter[i]) == _canSendAfter[i] &&
+                if (uint64(_canSendAfter[i]) == _canSendAfter[i] &&
                     uint64(_canReceiveAfter[i]) == _canReceiveAfter[i] &&
-                    uint64(_expiryTime[i]) == _expiryTime[i],
-                    "uint64 overflow"
-                );
-                _modifyKYCData(_investor[i], uint64(_canSendAfter[i]), uint64(_canReceiveAfter[i]), uint64(_expiryTime[i]));
+                    uint64(_expiryTime[i]) == _expiryTime[i]
+                )
+                    _modifyKYCData(_investor[i], uint64(_canSendAfter[i]), uint64(_canReceiveAfter[i]), uint64(_expiryTime[i]));
             }
             return true;
         }
@@ -673,19 +681,30 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     }
 
     /**
-     * @notice return the amount of tokens for a given user as per the partition
-     */
-    function getTokensByPartition(address /*_owner*/, bytes32 /*_partition*/) external view returns(uint256){
-        return 0;
-    }
-
-    /**
      * @notice Return the permissions flag that are associated with general trnasfer manager
      */
     function getPermissions() public view returns(bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](1);
         allPermissions[0] = ADMIN;
         return allPermissions;
+    }
+
+    /**
+     * @notice return the amount of tokens for a given user as per the partition
+     * @param _partition Identifier
+     * @param _tokenHolder Whom token amount need to query
+     * @param _additionalBalance It is the `_value` that transfer during transfer/transferFrom function call
+     */
+    function getTokensByPartition(bytes32 _partition, address _tokenHolder, uint256 _additionalBalance) external view returns(uint256) {
+        uint256 currentBalance = (msg.sender == securityToken) ? (IERC20(securityToken).balanceOf(_tokenHolder)).add(_additionalBalance) : IERC20(securityToken).balanceOf(_tokenHolder);
+        uint256 canSendAfter;
+        (canSendAfter,,,) = _getKYCValues(_tokenHolder, getDataStore());
+        canSendAfter = (canSendAfter == 0 ? defaults.canSendAfter:  canSendAfter);
+        bool unlockedCheck = paused ? _partition == UNLOCKED : (_partition == UNLOCKED && now >= canSendAfter);
+        if (((_partition == LOCKED && now < canSendAfter) && !paused) || unlockedCheck)
+            return currentBalance;
+        else
+            return 0;
     }
 
     function getAddressBytes32() public view returns(bytes32) {

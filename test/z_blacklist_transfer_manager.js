@@ -79,6 +79,26 @@ contract('BlacklistTransferManager', accounts => {
     let bytesSTO = encodeModuleCall(['uint256'], [holderCount]);
     let currentTime;
 
+    async function verifyPartitionBalance(investorAddress, lockedValue, unlockedValue) {
+        assert.equal(
+            web3.utils.fromWei(
+                (
+                    await I_BlacklistTransferManager.getTokensByPartition.call(web3.utils.toHex("LOCKED"), investorAddress, new BN(0))
+                ).toString()
+            ),
+            lockedValue
+        );
+
+        assert.equal(
+            web3.utils.fromWei(
+                (
+                    await I_BlacklistTransferManager.getTokensByPartition.call(web3.utils.toHex("UNLOCKED"), investorAddress, new BN(0))
+                ).toString()
+            ),
+            unlockedValue
+        );
+    }
+
     before(async() => {
         currentTime = new BN(await latestTime());
         // Accounts setup
@@ -151,7 +171,7 @@ contract('BlacklistTransferManager', accounts => {
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner});
             let _blockNo = latestBlock();
-            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, token_owner, 0, { from: token_owner });
+            let tx = await I_STRProxied.generateNewSecurityToken(name, symbol, tokenDetails, false, token_owner, 0, { from: token_owner });
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
@@ -169,7 +189,7 @@ contract('BlacklistTransferManager', accounts => {
             );
         });
 
-        it("Should intialize the auto attached modules", async () => {
+        it("Should initialize the auto attached modules", async () => {
            let moduleData = (await stGetter.getModulesByType(2))[0];
            I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
 
@@ -565,6 +585,7 @@ contract('BlacklistTransferManager', accounts => {
 
         it("Should investor be able to transfer token because current time is less than the blacklist start time", async() => {
             //Trasfer tokens
+            await verifyPartitionBalance(account_investor1, 0, 5);
             await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), { from: account_investor1 });
             assert.equal(
                 (await I_SecurityToken.balanceOf(account_investor2)).toString(),
@@ -575,7 +596,7 @@ contract('BlacklistTransferManager', accounts => {
         it("Should investor be able to transfer token as it is not in blacklist time period", async() => {
             // Jump time
             await increaseTime(duration.seconds(4000));
-
+            await verifyPartitionBalance(account_investor1, 0, 4);
             //Trasfer tokens
             await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), { from: account_investor1 });
             assert.equal(
@@ -587,6 +608,7 @@ contract('BlacklistTransferManager', accounts => {
         it("Should fail in transfer the tokens as the investor in blacklist", async() => {
             // Jump time
             await increaseTime(duration.days(20) - 1500);
+            await verifyPartitionBalance(account_investor1, 3, 0);
             await catchRevert(
                 I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), {
                     from: account_investor1
@@ -596,17 +618,20 @@ contract('BlacklistTransferManager', accounts => {
 
         it("Should investor is able transfer the tokens- because BlacklistTransferManager is paused", async() => {
             await I_BlacklistTransferManager.pause({from:token_owner});
+            await verifyPartitionBalance(account_investor1, 0, 3);
             //Trasfer tokens
             await I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), { from: account_investor1 });
             assert.equal(
                 (await I_SecurityToken.balanceOf(account_investor2)).toString(),
                 web3.utils.toWei('5', 'ether')
             );
+            await verifyPartitionBalance(account_investor1, 0, 2);
         });
 
         it("Should investor fail in transfer token as it is in blacklist time period", async() => {
 
             await I_BlacklistTransferManager.unpause({from:token_owner});
+            await verifyPartitionBalance(account_investor1, 2, 0);
             currentTime = new BN(await latestTime());
             await I_BlacklistTransferManager.addBlacklistType(currentTime.add(new BN(500)), currentTime.add(new BN(4000)), web3.utils.fromAscii("k_blacklist"), 8, { from: token_owner });
 
@@ -964,16 +989,16 @@ contract('BlacklistTransferManager', accounts => {
         });
     });
 
-    describe("Test cases for blacklist with repeat period 0 (Never repeat)", async() => { 
+    describe("Test cases for blacklist with repeat period 0 (Never repeat)", async() => {
         it("Should add a new blacklist with no repeat time", async() => {
             let curTime = await latestTime();
             await I_BlacklistTransferManager.deleteInvestorFromAllBlacklist(account_investor3, { from: token_owner });
             await I_BlacklistTransferManager.addInvestorToNewBlacklist(
-                new BN(curTime).add(new BN(100)), 
-                new BN(curTime).add(new BN(1000)), 
-                web3.utils.fromAscii("anewbl"), 
-                0, 
-                account_investor3, 
+                new BN(curTime).add(new BN(100)),
+                new BN(curTime).add(new BN(1000)),
+                web3.utils.fromAscii("anewbl"),
+                0,
+                account_investor3,
                 { from: token_owner}
             );
             await increaseTime(200);

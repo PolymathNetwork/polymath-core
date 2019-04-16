@@ -1,7 +1,7 @@
 pragma solidity ^0.5.0;
 
 import "../DividendCheckpoint.sol";
-import "../../../interfaces/IOwnable.sol";
+import "../../../../interfaces/IOwnable.sol";
 
 /**
  * @title Checkpoint module for issuing ether dividends
@@ -128,7 +128,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         require(_expiry > now, "Expiry is in the past");
         require(msg.value > 0, "No dividend sent");
         require(_checkpointId <= ISecurityToken(securityToken).currentCheckpointId());
-        require(_name[0] != 0);
+        require(_name[0] != bytes32(0));
         uint256 dividendIndex = dividends.length;
         uint256 currentSupply = ISecurityToken(securityToken).totalSupplyAt(_checkpointId);
         require(currentSupply > 0, "Invalid supply");

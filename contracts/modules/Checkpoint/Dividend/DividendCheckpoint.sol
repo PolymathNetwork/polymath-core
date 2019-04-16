@@ -7,9 +7,9 @@
  */
 pragma solidity ^0.5.0;
 
-import "./ICheckpoint.sol";
-import "../../storage/modules/Checkpoint/DividendCheckpointStorage.sol";
-import "../Module.sol";
+import ".././ICheckpoint.sol";
+import "../../../storage/modules/Checkpoint/Dividend/DividendCheckpointStorage.sol";
+import "../../Module.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/math/Math.sol";
 
@@ -19,6 +19,7 @@ import "openzeppelin-solidity/contracts/math/Math.sol";
  */
 contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
     using SafeMath for uint256;
+    uint256 internal constant e18 = uint256(10) ** uint256(18);
 
     event SetDefaultExcludedAddresses(address[] _excluded);
     event SetWithholding(address[] _investors, uint256[] _withholding);
@@ -123,7 +124,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
         /*solium-disable-next-line security/no-block-members*/
         emit SetWithholding(_investors, _withholding);
         for (uint256 i = 0; i < _investors.length; i++) {
-            require(_withholding[i] <= 10 ** 18, "Incorrect withholding tax");
+            require(_withholding[i] <= e18, "Incorrect withholding tax");
             withholdingTax[_investors[i]] = _withholding[i];
         }
     }
@@ -134,7 +135,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @param _withholding Withholding tax for all investors (multiplied by 10**16)
      */
     function setWithholdingFixed(address[] memory _investors, uint256 _withholding) public withPerm(ADMIN) {
-        require(_withholding <= 10 ** 18, "Incorrect withholding tax");
+        require(_withholding <= e18, "Incorrect withholding tax");
         /*solium-disable-next-line security/no-block-members*/
         emit SetWithholdingFixed(_investors, _withholding);
         for (uint256 i = 0; i < _investors.length; i++) {
@@ -232,7 +233,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
         }
         uint256 balance = ISecurityToken(securityToken).balanceOfAt(_payee, dividend.checkpointId);
         uint256 claim = balance.mul(dividend.amount).div(dividend.totalSupply);
-        uint256 withheld = claim.mul(withholdingTax[_payee]).div(uint256(10 ** 18));
+        uint256 withheld = claim.mul(withholdingTax[_payee]).div(e18);
         return (claim, withheld);
     }
 

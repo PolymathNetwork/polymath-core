@@ -2,7 +2,7 @@ pragma solidity ^0.5.0;
 
 import "../DividendCheckpoint.sol";
 import "./ERC20DividendCheckpointStorage.sol";
-import "../../../interfaces/IOwnable.sol";
+import "../../../../interfaces/IOwnable.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
 /**
@@ -162,7 +162,7 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
         require(_token != address(0), "Invalid token");
         require(_checkpointId <= securityTokenInstance.currentCheckpointId(), "Invalid checkpoint");
         require(IERC20(_token).transferFrom(msg.sender, address(this), _amount), "insufficent allowance");
-        require(_name[0] != 0);
+        require(_name != bytes32(0));
         uint256 dividendIndex = dividends.length;
         uint256 currentSupply = securityTokenInstance.totalSupplyAt(_checkpointId);
         require(currentSupply > 0, "Invalid supply");

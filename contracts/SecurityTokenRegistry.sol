@@ -67,16 +67,18 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
 
     using SafeMath for uint256;
 
-    bytes32 constant INITIALIZE = 0x9ef7257c3339b099aacf96e55122ee78fb65a36bd2a6c19249882be9c98633bf;
-    bytes32 constant POLYTOKEN = 0xacf8fbd51bb4b83ba426cdb12f63be74db97c412515797993d2a385542e311d7;
-    bytes32 constant STLAUNCHFEE = 0xd677304bb45536bb7fdfa6b9e47a3c58fe413f9e8f01474b0a4b9c6e0275baf2;
-    bytes32 constant TICKERREGFEE = 0x2fcc69711628630fb5a42566c68bd1092bc4aa26826736293969fddcd11cb2d2;
-    bytes32 constant EXPIRYLIMIT = 0x604268e9a73dfd777dcecb8a614493dd65c638bad2f5e7d709d378bd2fb0baee;
-    bytes32 constant PAUSED = 0xee35723ac350a69d2a92d3703f17439cbaadf2f093a21ba5bf5f1a53eb2a14d9;
-    bytes32 constant OWNER = 0x02016836a56b71f0d02689e69e326f4f4c1b9057164ef592671cf0d37c8040c0;
-    bytes32 constant POLYMATHREGISTRY = 0x90eeab7c36075577c7cc5ff366e389fefa8a18289b949bab3529ab4471139d4d;
-    bytes32 constant STRGETTER = 0x982f24b3bd80807ec3cb227ba152e15c07d66855fa8ae6ca536e689205c0e2e9;
+    bytes32 constant INITIALIZE = 0x9ef7257c3339b099aacf96e55122ee78fb65a36bd2a6c19249882be9c98633bf; //keccak256("initialised")
+    bytes32 constant POLYTOKEN = 0xacf8fbd51bb4b83ba426cdb12f63be74db97c412515797993d2a385542e311d7; //keccak256("polyToken")
+    bytes32 constant STLAUNCHFEE = 0xd677304bb45536bb7fdfa6b9e47a3c58fe413f9e8f01474b0a4b9c6e0275baf2; //keccak256("stLaunchFee")
+    bytes32 constant TICKERREGFEE = 0x2fcc69711628630fb5a42566c68bd1092bc4aa26826736293969fddcd11cb2d2; //keccak256("tickerRegFee")
+    bytes32 constant EXPIRYLIMIT = 0x604268e9a73dfd777dcecb8a614493dd65c638bad2f5e7d709d378bd2fb0baee; //keccak256("expiryLimit")
+    bytes32 constant PAUSED = 0xee35723ac350a69d2a92d3703f17439cbaadf2f093a21ba5bf5f1a53eb2a14d9; //keccak256("paused")
+    bytes32 constant OWNER = 0x02016836a56b71f0d02689e69e326f4f4c1b9057164ef592671cf0d37c8040c0; //keccak256("owner")
+    bytes32 constant POLYMATHREGISTRY = 0x90eeab7c36075577c7cc5ff366e389fefa8a18289b949bab3529ab4471139d4d; //keccak256("polymathRegistry")
+    bytes32 constant STRGETTER = 0x982f24b3bd80807ec3cb227ba152e15c07d66855fa8ae6ca536e689205c0e2e9; //keccak256("STRGetter")
     bytes32 constant IS_FEE_IN_POLY = 0x7152e5426955da44af11ecd67fec5e2a3ba747be974678842afa9394b9a075b6; //keccak256("IS_FEE_IN_POLY")
+    bytes32 constant ACTIVE_USERS = 0x425619ce6ba8e9f80f17c0ef298b6557e321d70d7aeff2e74dd157bd87177a9e; //keccak256("activeUsers")
+    bytes32 constant LATEST_VERSION = 0x4c63b69b9117452b9f11af62077d0cda875fb4e2dbe07ad6f31f728de6926230; //keccak256("latestVersion")
 
     string constant POLY_ORACLE = "StablePolyUsdOracle";
 
@@ -98,8 +100,8 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     // Emit when ownership of the ticker gets changed
     event ChangeTickerOwnership(string _ticker, address indexed _oldOwner, address indexed _newOwner);
-    // Emit at the time of launching a new security token
-    event NewSecurityToken(
+    // Emit at the time of launching a new security token of version 3.0+
+    event NewSecurityTokenCreated(
         string _ticker,
         string _name,
         address indexed _securityTokenAddress,
@@ -111,7 +113,21 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         uint256 _polyFee,
         uint256 _protocolVersion
     );
+    // Emit at the time of launching a new security token v2.0.
+    // _registrationFee is in poly
+    event NewSecurityToken(
+        string _ticker,
+        string _name,
+        address indexed _securityTokenAddress,
+        address indexed _owner,
+        uint256 _addedAt,
+        address _registrant,
+        bool _fromAdmin,
+        uint256 _registrationFee
+    );
     // Emit after ticker registration
+    // _registrationFee is in poly
+    // fee in usd is not being emitted to maintain backwards compatibility
     event RegisterTicker(
         address indexed _owner,
         string _ticker,
@@ -119,8 +135,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         uint256 indexed _registrationDate,
         uint256 indexed _expiryDate,
         bool _fromAdmin,
-        uint256 _usdFee,
-        uint256 _polyFee
+        uint256 _registrationFee
     );
     // Emit at when issuer refreshes exisiting token
     event SecurityTokenRefreshed(
@@ -196,7 +211,6 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         address _getterContract
     )
         public
-        payable
     {
         require(!getBoolValue(INITIALIZE),"Initialized");
         require(
@@ -255,6 +269,22 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     }
 
     /**
+     * @notice Gets the security token launch fee
+     * @return Fee amount
+     */
+    function getSecurityTokenLaunchFee() public returns(uint256 polyFee) {
+        (, polyFee) = getFees(STLAUNCHFEE);
+    }
+
+    /**
+     * @notice Gets the ticker registration fee
+     * @return Fee amount
+     */
+    function getTickerRegistrationFee() public returns(uint256 polyFee) {
+        (, polyFee) = getFees(TICKERREGFEE);
+    }
+
+    /**
      * @notice Set the getter contract address
      * @param _getterContract Address of the contract
      */
@@ -264,7 +294,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     }
 
     function _implementation() internal view returns(address) {
-        return getAddressValue(Encoder.getKey("STRGetter"));
+        return getAddressValue(STRGETTER);
     }
 
     /////////////////////////////
@@ -283,7 +313,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         require(_owner != address(0), "Bad address");
         require(bytes(_ticker).length > 0 && bytes(_ticker).length <= 10, "Bad ticker");
         // Attempt to charge the reg fee if it is > 0 USD
-        (uint256 _usdFee, uint256 _polyFee) = _takeFee(TICKERREGFEE);
+        (, uint256 _polyFee) = _takeFee(TICKERREGFEE);
         string memory ticker = Util.upper(_ticker);
         require(_tickerAvailable(ticker), "Ticker reserved");
         // Check whether ticker was previously registered (and expired)
@@ -292,7 +322,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
             _deleteTickerOwnership(previousOwner, ticker);
         }
         /*solium-disable-next-line security/no-block-members*/
-        _addTicker(_owner, ticker, _tokenName, now, now.add(getUintValue(EXPIRYLIMIT)), false, false, _usdFee, _polyFee);
+        _addTicker(_owner, ticker, _tokenName, now, now.add(getUintValue(EXPIRYLIMIT)), false, false, _polyFee);
     }
 
     /**
@@ -306,14 +336,13 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         uint256 _expiryDate,
         bool _status,
         bool _fromAdmin,
-        uint256 _usdFee,
         uint256 _polyFee
     )
         internal
     {
         _setTickerOwnership(_owner, _ticker);
         _storeTickerDetails(_ticker, _owner, _registrationDate, _expiryDate, _tokenName, _status);
-        emit RegisterTicker(_owner, _ticker, _tokenName, _registrationDate, _expiryDate, _fromAdmin, _usdFee, _polyFee);
+        emit RegisterTicker(_owner, _ticker, _tokenName, _registrationDate, _expiryDate, _fromAdmin, _polyFee);
     }
 
     /**
@@ -369,7 +398,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         if (_status) {
             require(getAddressValue(Encoder.getKey("tickerToSecurityToken", _ticker)) != address(0), "Not registered");
         }
-        _addTicker(_owner, _ticker, _tokenName, _registrationDate, _expiryDate, _status, true, uint256(0), uint256(0));
+        _addTicker(_owner, _ticker, _tokenName, _registrationDate, _expiryDate, _status, true, uint256(0));
     }
 
     function _tickerOwner(string memory _ticker) internal view returns(address) {
@@ -422,7 +451,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         set(Encoder.getKey("tickerIndex", _ticker), length);
         bytes32 seenKey = Encoder.getKey("seenUsers", _owner);
         if (!getBoolValue(seenKey)) {
-            pushArray(Encoder.getKey("activeUsers"), _owner);
+            pushArray(ACTIVE_USERS, _owner);
             set(seenKey, true);
         }
     }
@@ -503,6 +532,25 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     /////////////////////////////
 
     /**
+     * @notice Deploys an instance of a new Security Token of version 2.0 and records it to the registry
+     * @dev this function is for backwards compatibilty with 2.0 dApp.
+     * @param _name is the name of the token
+     * @param _ticker is the ticker symbol of the security token
+     * @param _tokenDetails is the off-chain details of the token
+     * @param _divisible is whether or not the token is divisible
+     */
+    function generateSecurityToken(
+        string calldata _name,
+        string calldata _ticker,
+        string calldata _tokenDetails,
+        bool _divisible
+    )
+        external
+    {
+        generateNewSecurityToken(_name, _ticker, _tokenDetails, _divisible, msg.sender, VersionUtils.pack(2, 0, 0));
+    }
+
+    /**
      * @notice Deploys an instance of a new Security Token and records it to the registry
      * @param _name is the name of the token
      * @param _ticker is the ticker symbol of the security token
@@ -513,7 +561,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * - `_protocolVersion` is the packed value of uin8[3] array (it will be calculated offchain)
      * - if _protocolVersion == 0 then latest version of securityToken will be generated
      */
-    function generateSecurityToken(
+    function generateNewSecurityToken(
         string memory _name,
         string memory _ticker,
         string memory _tokenDetails,
@@ -524,26 +572,32 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         public
         whenNotPausedOrOwner
     {
-        uint256 protocolVersion = _protocolVersion;
         require(bytes(_name).length > 0 && bytes(_ticker).length > 0, "Bad ticker");
         require(_treasuryWallet != address(0), "0x0 not allowed");
         if (_protocolVersion == 0) {
-            protocolVersion = getUintValue(Encoder.getKey("latestVersion"));
+            _protocolVersion = getUintValue(LATEST_VERSION);
         }
-        require(protocolVersion != uint256(0), "Invalid version");
-        string memory ticker = Util.upper(_ticker);
-        bytes32 statusKey = Encoder.getKey("registeredTickers_status", ticker);
+        _ticker = Util.upper(_ticker);
+        bytes32 statusKey = Encoder.getKey("registeredTickers_status", _ticker);
         require(!getBoolValue(statusKey), "Already deployed");
         set(statusKey, true);
-        require(_tickerOwner(ticker) == msg.sender, "Not authorised");
+        address issuer = msg.sender;
+        require(_tickerOwner(_ticker) == issuer, "Not authorised");
         /*solium-disable-next-line security/no-block-members*/
-        require(getUintValue(Encoder.getKey("registeredTickers_expiryDate", ticker)) >= now, "Ticker expired");
+        require(getUintValue(Encoder.getKey("registeredTickers_expiryDate", _ticker)) >= now, "Ticker expired");
         (uint256 _usdFee, uint256 _polyFee) = _takeFee(STLAUNCHFEE);
         address newSecurityTokenAddress =
-            _deployToken(_name, ticker, _tokenDetails, msg.sender, _divisible, _treasuryWallet, protocolVersion);
-        emit NewSecurityToken(
-            _ticker, _name, newSecurityTokenAddress, msg.sender, now, msg.sender, false, _usdFee, _polyFee, protocolVersion
-        );
+            _deployToken(_name, _ticker, _tokenDetails, issuer, _divisible, _treasuryWallet, _protocolVersion);
+        if (_protocolVersion == VersionUtils.pack(2, 0, 0)) {
+            // For backwards compatibilty. Should be removed with an update when we disable st 2.0 generation.
+            emit NewSecurityToken(
+                _ticker, _name, newSecurityTokenAddress, issuer, now, issuer, false, _polyFee
+            );
+        } else {
+            emit NewSecurityTokenCreated(
+                _ticker, _name, newSecurityTokenAddress, issuer, now, issuer, false, _usdFee, _polyFee, _protocolVersion
+            );
+        }
     }
 
     /**
@@ -572,7 +626,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         address stOwner = IOwnable(st).owner();
         require(msg.sender == stOwner, "Unauthroized");
         require(ISecurityToken(st).transfersFrozen(), "Transfers not frozen");
-        uint256 protocolVersion = getUintValue(Encoder.getKey("latestVersion"));
+        uint256 protocolVersion = getUintValue(LATEST_VERSION);
         address newSecurityTokenAddress =
             _deployToken(_name, ticker, _tokenDetails, stOwner, _divisible, _treasuryWallet, protocolVersion);
         emit SecurityTokenRefreshed(
@@ -643,7 +697,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         set(Encoder.getKey("tickerToSecurityToken", ticker), _securityToken);
         _modifyTicker(_owner, ticker, _name, registrationTime, expiryTime, true);
         _storeSecurityTokenData(_securityToken, ticker, _tokenDetails, _deployedAt);
-        emit NewSecurityToken(
+        emit NewSecurityTokenCreated(
             ticker, _name, _securityToken, _owner, _deployedAt, msg.sender, true, uint256(0), uint256(0), 0
         );
     }
@@ -777,7 +831,6 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     function _setProtocolFactory(address _STFactoryAddress, uint8 _major, uint8 _minor, uint8 _patch) internal {
         require(_STFactoryAddress != address(0), "Bad address");
         uint24 _packedVersion = VersionUtils.pack(_major, _minor, _patch);
-        //set(Encoder.getKey("latestVersion"), uint256(_packedVersion));
         set(Encoder.getKey("protocolVersionST", uint256(_packedVersion)), _STFactoryAddress);
         emit ProtocolFactorySet(_STFactoryAddress, _major, _minor, _patch);
     }
@@ -790,7 +843,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     */
     function removeProtocolFactory(uint8 _major, uint8 _minor, uint8 _patch) public onlyOwner {
         uint24 _packedVersion = VersionUtils.pack(_major, _minor, _patch);
-        require(getUintValue(Encoder.getKey("latestVersion")) != _packedVersion, "Cannot remove latestVersion");
+        require(getUintValue(LATEST_VERSION) != _packedVersion, "Cannot remove latestVersion");
         emit ProtocolFactoryRemoved(getAddressValue(Encoder.getKey("protocolVersionST", _packedVersion)), _major, _minor, _patch);
         set(Encoder.getKey("protocolVersionST", uint256(_packedVersion)), address(0));
     }
@@ -810,7 +863,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     function _setLatestVersion(uint8 _major, uint8 _minor, uint8 _patch) internal {
         uint24 _packedVersion = VersionUtils.pack(_major, _minor, _patch);
         require(getAddressValue(Encoder.getKey("protocolVersionST", _packedVersion)) != address(0), "No factory");
-        set(Encoder.getKey("latestVersion"), uint256(_packedVersion));
+        set(LATEST_VERSION, uint256(_packedVersion));
         emit LatestVersionSet(_major, _minor, _patch);
     }
 

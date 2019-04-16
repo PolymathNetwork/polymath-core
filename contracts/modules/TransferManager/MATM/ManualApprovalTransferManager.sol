@@ -59,14 +59,14 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
         address _from,
         address _to,
         uint256 _amount,
-        bytes calldata _data
+        bytes calldata /* _data */
     )
         external
         onlySecurityToken
         returns(Result)
     {
 
-       (Result success, bytes32 esc) = verifyTransfer(_from, _to, _amount, _data);
+        (Result success, bytes32 esc) = _verifyTransfer(_from, _to, _amount);
         if (esc != bytes32(0)) {
             uint256 index = approvalIndex[_from][_to] - 1;
             ManualApproval storage approval = approvals[index];
@@ -89,6 +89,18 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
         bytes memory /* _data */
     )
         public
+        view
+        returns(Result, bytes32)
+    {
+        return _verifyTransfer(_from, _to, _amount);
+    }
+
+    function _verifyTransfer(
+        address _from,
+        address _to,
+        uint256 _amount
+    )
+        internal
         view
         returns(Result, bytes32)
     {
@@ -147,13 +159,13 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
     * @param _descriptions is the description array for these manual approvals
     */
     function addManualApprovalMulti(
-        address[] calldata _from,
-        address[] calldata _to,
-        uint256[] calldata _allowances,
-        uint256[] calldata _expiryTimes,
-        bytes32[] calldata _descriptions
+        address[] memory _from,
+        address[] memory _to,
+        uint256[] memory _allowances,
+        uint256[] memory _expiryTimes,
+        bytes32[] memory _descriptions
     )
-        external
+        public
         withPerm(ADMIN)
     {
         _checkInputLengthArray(_from, _to, _allowances, _expiryTimes, _descriptions);

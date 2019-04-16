@@ -389,7 +389,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     * @notice Increases non-accredited investor count by 1
     * @dev Used when modifying accredited flag of an existing holder
     */
-    function increaseNonAccreditedCount() external onlyOwner {
+    function increaseNonAccreditedCount() external {
+        _onlyModuleOrOwner(TRANSFER_KEY);
         nonAccreditedHolderCount = nonAccreditedHolderCount.add(1);
     }
 
@@ -397,7 +398,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     * @notice decreases non-accredited investor count by 1
     * @dev Used when modifying accredited flag of an existing holder
     */
-    function decreaseNonAccreditedCount() external onlyOwner {
+    function decreaseNonAccreditedCount() external {
+        _onlyModuleOrOwner(TRANSFER_KEY);
         nonAccreditedHolderCount = nonAccreditedHolderCount.sub(1);
     }
 

@@ -540,6 +540,12 @@ interface ISecurityToken {
     function granularity() external view returns(uint256);
 
     /**
+      * @notice Provides the address of the polymathRegistry
+      * @return address
+      */
+    function polymathRegistry() external view returns(address);
+
+    /**
     * @notice Upgrades a module attached to the SecurityToken
     * @param _module address of module to archive
     */

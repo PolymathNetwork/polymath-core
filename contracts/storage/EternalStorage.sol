@@ -56,6 +56,10 @@ contract EternalStorage {
         stringStorage[_key] = _value;
     }
 
+    function set(bytes32 _key, bytes memory _value) internal {
+        bytesStorage[_key] = _value;
+    }
+
     ////////////////////////////
     // deleteArray functions
     ////////////////////////////

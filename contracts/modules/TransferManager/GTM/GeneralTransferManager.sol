@@ -40,7 +40,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     );
 
     event ModifyTransferRequirements(
-        uint256 indexed _transferType,
+        TransferType indexed _transferType,
         bool _fromValidKYC,
         bool _toValidKYC,
         bool _fromRestricted,
@@ -102,7 +102,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     function executeTransfer(
         address _from,
         address _to,
-        uint256 _amount,
+        uint256 /*_amount*/,
         bytes calldata _data
     ) external returns(Result) {
         if (_data.length > 32) {
@@ -115,7 +115,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
             if (target == address(this))
                 _processTransferSignature(nonce, validFrom, validTo, data);
         }
-        (Result success,) = verifyTransfer(_from, _to, _amount, _data);
+        (Result success,) = _verifyTransfer(_from, _to);
         return success;
     }
 
@@ -145,6 +145,17 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         view
         returns(Result, bytes32)
     {
+        return _verifyTransfer(_from, _to);
+    }
+
+    function _verifyTransfer(
+        address _from,
+        address _to
+    )
+        internal
+        view
+        returns(Result, bytes32)
+    {
         if (!paused) {
             TransferRequirements memory txReq;
             uint64 canSendAfter;
@@ -153,11 +164,11 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
             uint64 canReceiveAfter;
 
             if (_from == issuanceAddress) {
-                txReq = transferRequirements[1]; //Issuance
+                txReq = transferRequirements[uint8(TransferType.ISSUANCE)];
             } else if (_to == address(0)) {
-                txReq = transferRequirements[2]; //Redemption
+                txReq = transferRequirements[uint8(TransferType.REDEMPTION)];
             } else {
-                txReq = transferRequirements[0]; //General Transfer
+                txReq = transferRequirements[uint8(TransferType.GENERAL)];
             }
 
             (canSendAfter, fromExpiry, canReceiveAfter, toExpiry) = _getValuesForTransfer(_from, _to);
@@ -186,7 +197,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     * @param _toRestricted Defines if transfer time restriction is checked for the receiver
     */
     function modifyTransferRequirements(
-        uint256 _transferType,
+        TransferType _transferType,
         bool _fromValidKYC,
         bool _toValidKYC,
         bool _fromRestricted,
@@ -210,7 +221,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     * @param _toRestricted Defines if transfer time restriction is checked for the receiver
     */
     function modifyTransferRequirementsMulti(
-        uint256[] memory _transferTypes,
+        TransferType[] memory _transferTypes,
         bool[] memory _fromValidKYC,
         bool[] memory _toValidKYC,
         bool[] memory _fromRestricted,
@@ -236,14 +247,13 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     }
 
     function _modifyTransferRequirements(
-        uint256 _transferType,
+        TransferType _transferType,
         bool _fromValidKYC,
         bool _toValidKYC,
         bool _fromRestricted,
         bool _toRestricted
     ) internal {
-        require(_transferType < 3, "Invalid TransferType");
-        transferRequirements[_transferType] =
+        transferRequirements[uint8(_transferType)] =
             TransferRequirements(
                 _fromValidKYC,
                 _toValidKYC,
@@ -342,7 +352,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         IDataStore dataStore = getDataStore();
         if (!_isExistingInvestor(_investor, dataStore)) {
            dataStore.insertAddress(INVESTORSKEY, _investor);
-           //KYC data can not be present if added is false and hence we can set packed KYC as uint256(1) to set added as true
+           //KYC data can not be present if _isExistingInvestor is false and hence we can set packed KYC as uint256(1) to set `added` as true
            dataStore.setUint256(_getKey(WHITELIST, _investor), uint256(1));
         }
         //NB Flags are packed together in a uint256 to save gas. We can have a maximum of 256 flags.
@@ -500,13 +510,11 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
 
         if (_checkSig(hash, _signature, _nonce)) {
             for (uint256 i = 0; i < _investor.length; i++) {
-                require(
-                    uint64(_canSendAfter[i]) == _canSendAfter[i] &&
+                if (uint64(_canSendAfter[i]) == _canSendAfter[i] &&
                     uint64(_canReceiveAfter[i]) == _canReceiveAfter[i] &&
-                    uint64(_expiryTime[i]) == _expiryTime[i],
-                    "uint64 overflow"
-                );
-                _modifyKYCData(_investor[i], uint64(_canSendAfter[i]), uint64(_canReceiveAfter[i]), uint64(_expiryTime[i]));
+                    uint64(_expiryTime[i]) == _expiryTime[i]
+                )
+                    _modifyKYCData(_investor[i], uint64(_canSendAfter[i]), uint64(_canReceiveAfter[i]), uint64(_expiryTime[i]));
             }
             return true;
         }

@@ -53,7 +53,7 @@ try {
     iSTOABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/ISTO.json`).toString()).abi
     iTransferManagerABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/ITransferManager.json`).toString()).abi
     moduleFactoryABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/ModuleFactory.json`).toString()).abi;
-    erc20ABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/DetailedERC20.json`).toString()).abi;
+    erc20ABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/ERC20.json`).toString()).abi;
 } catch (err) {
     console.log('\x1b[31m%s\x1b[0m', "Couldn't find contracts' artifacts. Make sure you ran truffle compile first");
     throw err;

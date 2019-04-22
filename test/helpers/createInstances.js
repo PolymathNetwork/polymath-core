@@ -55,6 +55,8 @@ const PLCRVotingCheckpointFactory = artifacts.require("./PLCRVotingCheckpointFac
 const WeightedVoteCheckpointFactory = artifacts.require("./WeightedVoteCheckpointFactory.sol");
 const PLCRVotingCheckpoint = artifacts.require("./PLCRVotingCheckpoint.sol");
 const WeightedVoteCheckpoint = artifacts.require("./WeightedVoteCheckpoint.sol");
+const SharedWhitelistTransferManager = artifacts.require("./SharedWhitelistTransferManager.sol");
+const SharedWhitelistTransferManagerFactory = artifacts.require("./SharedWhitelistTransferManagerFactory.sol");
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -118,6 +120,9 @@ let I_StablePOLYOracle;
 let I_PLCRVotingCheckpointFactory;
 let I_WeightedVoteCheckpointLogic;
 let I_PLCRVotingCheckpointLogic;
+let I_SharedWhitelistTransferManagerLogic;
+let I_SharedWhitelistTransferManagerFactory;
+let I_SharedWhitelistTransferManager;
 
 // Initial fee for ticker registry and security token registry
 const initRegFee = new BN(web3.utils.toWei("250"));
@@ -643,4 +648,29 @@ export async function deployWeightedVoteCheckpoint(accountPolymath, MRProxyInsta
 
     await registerAndVerifyByMR(I_WeightedVoteCheckpointFactory.address, accountPolymath, MRProxyInstance);
     return new Array(I_WeightedVoteCheckpointFactory);
+}
+
+export async function deploySWTMAndVerify(accountPolymath, MRProxyInstance, setupCost, feeInPoly = true) {
+    I_SharedWhitelistTransferManagerLogic = await SharedWhitelistTransferManager.new(
+        "0x0000000000000000000000000000000000000000",
+        "0x0000000000000000000000000000000000000000",
+        { from: accountPolymath }
+    );
+    I_SharedWhitelistTransferManagerFactory = await SharedWhitelistTransferManagerFactory.new(
+        setupCost,
+        new BN(0),
+        I_SharedWhitelistTransferManagerLogic.address,
+        I_PolymathRegistry.address,
+        feeInPoly,
+        { from: accountPolymath }
+    );
+
+    assert.notEqual(
+        I_SharedWhitelistTransferManagerFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "SharedWhitelistTransferManagerFactory contract was not deployed"
+    );
+
+    await registerAndVerifyByMR(I_SharedWhitelistTransferManagerFactory.address, accountPolymath, MRProxyInstance);
+    return new Array(I_SharedWhitelistTransferManagerFactory);
 }

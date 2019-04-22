@@ -301,12 +301,6 @@ contract SharedWhitelistTransferManager is SharedWhitelistTransferManagerStorage
         (canSendAfter, canReceiveAfter, expiryTime, added)  = VersionUtils.unpackKYC(data);
     }
 
-    function _isExistingInvestor(address _investor) internal view returns(bool) {
-        uint256 data = whitelistDataStore.getUint256(_getKey(WHITELIST, _investor));
-        //extracts `added` from packed `_whitelistData`
-        return uint8(data) == 0 ? false : true;
-    }
-
     function _getValuesForTransfer(address _from, address _to) internal view returns(uint64 canSendAfter, uint64 fromExpiry, uint64 canReceiveAfter, uint64 toExpiry) {
         (canSendAfter, , fromExpiry, ) = _getKYCValues(_from);
         (, canReceiveAfter, toExpiry, ) = _getKYCValues(_to);

@@ -1,6 +1,7 @@
 pragma solidity ^0.4.24;
 
 import "./RestrictedPartialSaleTM.sol";
+import "../../../libraries/Util.sol";
 import "../../ModuleFactory.sol";
 
 /**
@@ -30,10 +31,13 @@ contract RestrictedPartialSaleTMFactory is ModuleFactory {
      * @notice used to launch the Module with the help of factory
      * @return address Contract address of the Module
      */
-    function deploy(bytes /* _data */) external returns(address) {
+    function deploy(bytes _data) external returns(address) {
         if (setupCost > 0)
             require(polyToken.transferFrom(msg.sender, owner, setupCost), "Failed transferFrom because of sufficent Allowance is not provided");
-        address restrictedPartialSaleTM = new RestrictedPartialSaleTM(msg.sender, address(polyToken));
+        RestrictedPartialSaleTM restrictedPartialSaleTM = new RestrictedPartialSaleTM(msg.sender, address(polyToken));
+        require(Util.getSig(_data) == restrictedPartialSaleTM.getInitFunction(), "Provided data is not valid");
+        /*solium-disable-next-line security/no-low-level-calls*/
+        require(address(restrictedPartialSaleTM).call(_data), "Unsuccessful call");
         /*solium-disable-next-line security/no-block-members*/
         emit GenerateModuleFromFactory(address(restrictedPartialSaleTM), getName(), address(this), msg.sender, setupCost, now);
         return address(restrictedPartialSaleTM);

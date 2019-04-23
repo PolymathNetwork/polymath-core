@@ -35,7 +35,7 @@ contract RestrictedPartialSaleTM is ITransferManager {
     * @notice This function returns the signature of configure function
     */
     function getInitFunction() public pure returns (bytes4) {
-        return bytes4(0);
+        return this.configure.selector;
     }
 
     /**
@@ -49,7 +49,6 @@ contract RestrictedPartialSaleTM is ITransferManager {
     /** 
      * @notice Used to verify the transfer transaction and prevent a transfer if it passes the allowed amount of token holders
      * @param _from Address of the sender
-     * @param _to Address of the receiver
      * @param _amount Amount to send
      */
     function verifyTransfer(
@@ -82,7 +81,7 @@ contract RestrictedPartialSaleTM is ITransferManager {
      * @param _wallet Ethereum wallet/contract addresses that need to be exempted
      * @param _change Boolean value used to add (i.e true) or remove (i.e false) from the list
      */
-    function changeExemptionWalletListMulti(address[] _wallet, bool[] _change) public withPerm(ADMIN) {
+    function changeExemptWalletListMulti(address[] _wallet, bool[] _change) public withPerm(ADMIN) {
         require(_wallet.length == _change.length, "Length mismatch");
         for (uint256 i = 0; i < _wallet.length; i++) {
             _changeExemptionWalletList(_wallet[i], _change[i]);
@@ -90,7 +89,7 @@ contract RestrictedPartialSaleTM is ITransferManager {
     }
 
     function _changeExemptionWalletList(address _wallet, bool _change) internal {
-        require(_wallet != address(0));
+        require(_wallet != address(0), "Invalid address");
         uint256 exemptIndexWallet = exemptIndex[_wallet];
         require((exemptIndexWallet == 0) == _change);
         if (_change) {
@@ -103,6 +102,13 @@ contract RestrictedPartialSaleTM is ITransferManager {
             exemptAddresses.length --;
         }
         emit ChangedExemptWalletList(_wallet, _change);
+    }
+
+    /**
+     * @notice return the exempted addresses list
+     */
+    function getExemptAddresses() external view returns(address[]) {
+        return exemptAddresses;
     }
 
     /**

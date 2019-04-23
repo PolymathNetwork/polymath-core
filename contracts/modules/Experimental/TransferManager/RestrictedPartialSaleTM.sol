@@ -18,7 +18,7 @@ contract RestrictedPartialSaleTM is ITransferManager {
 
 
     // Emit when the token holder is added/removed from the exemption list
-    event ChangedExemptWalletList(address indexed _wallet, bool _change);
+    event ChangedExemptWalletList(address indexed _wallet, bool _exempted);
 
     /**
      * @notice Constructor
@@ -70,29 +70,29 @@ contract RestrictedPartialSaleTM is ITransferManager {
     /**
      * @notice Add/Remove wallet address from the exempt list
      * @param _wallet Ethereum wallet/contract address that need to be exempted
-     * @param _change Boolean value used to add (i.e true) or remove (i.e false) from the list
+     * @param _exempted Boolean value used to add (i.e true) or remove (i.e false) from the list
      */
-    function changeExemptWalletList(address _wallet, bool _change) external withPerm(ADMIN) {
-        _changeExemptionWalletList(_wallet, _change);
+    function changeExemptWalletList(address _wallet, bool _exempted) external withPerm(ADMIN) {
+        _changeExemptionWalletList(_wallet, _exempted);
     }
 
     /**
      * @notice Add/Remove multiple wallet addresses from the exempt list
      * @param _wallet Ethereum wallet/contract addresses that need to be exempted
-     * @param _change Boolean value used to add (i.e true) or remove (i.e false) from the list
+     * @param _exempted Boolean value used to add (i.e true) or remove (i.e false) from the list
      */
-    function changeExemptWalletListMulti(address[] _wallet, bool[] _change) public withPerm(ADMIN) {
-        require(_wallet.length == _change.length, "Length mismatch");
+    function changeExemptWalletListMulti(address[] _wallet, bool[] _exempted) public withPerm(ADMIN) {
+        require(_wallet.length == _exempted.length, "Length mismatch");
         for (uint256 i = 0; i < _wallet.length; i++) {
-            _changeExemptionWalletList(_wallet[i], _change[i]);
+            _changeExemptionWalletList(_wallet[i], _exempted[i]);
         }
     }
 
-    function _changeExemptionWalletList(address _wallet, bool _change) internal {
+    function _changeExemptionWalletList(address _wallet, bool _exempted) internal {
         require(_wallet != address(0), "Invalid address");
         uint256 exemptIndexWallet = exemptIndex[_wallet];
-        require((exemptIndexWallet == 0) == _change);
-        if (_change) {
+        require((exemptIndexWallet == 0) == _exempted);
+        if (_exempted) {
             exemptAddresses.push(_wallet);
             exemptIndex[_wallet] = exemptAddresses.length;
         } else {
@@ -101,7 +101,7 @@ contract RestrictedPartialSaleTM is ITransferManager {
             delete exemptIndex[_wallet];
             exemptAddresses.length --;
         }
-        emit ChangedExemptWalletList(_wallet, _change);
+        emit ChangedExemptWalletList(_wallet, _exempted);
     }
 
     /**

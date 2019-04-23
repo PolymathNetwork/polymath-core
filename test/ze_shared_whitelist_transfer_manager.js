@@ -11,6 +11,8 @@ const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager");
 const STGetter = artifacts.require("./STGetter.sol");
 const SharedWhitelistTransferManager = artifacts.require("./SharedWhitelistTransferManager");
+const SharedWhitelistTransferManagerFactory = artifacts.require("./SharedWhitelistTransferManagerFactory");
+const SharedWhitelistTransferManagerProxy = artifacts.require("./SharedWhitelistTransferManagerProxy");
 
 
 const Web3 = require("web3");
@@ -185,6 +187,7 @@ contract("SharedWhitelistTransferManager", async (accounts) => {
     });
 
     describe("Generate the Security Tokens", async () => {
+
         it("Should register the first ticker before the generation of the first security token", async () => {
             await I_PolyToken.getTokens(REGFEE, ISSUER1);
             await I_PolyToken.approve(I_STRProxied.address, REGFEE, { from: ISSUER1 });
@@ -333,7 +336,52 @@ contract("SharedWhitelistTransferManager", async (accounts) => {
             });
             let moduleData = (await stGetter[1].getModulesByType(transferManagerKey))[1];
             I_SharedWhitelistTransferManager = await SharedWhitelistTransferManager.at(moduleData);
+        });
 
+        it("Should verify access to first token whitelist and flags from the SWTM", async () => {
+            let dataGTM = await I_GeneralTransferManager[0].getKYCData.call([AFFILIATE1, AFFILIATE2]);
+
+            let fromTime1 = dataGTM[0][0];
+            let fromTime2 = dataGTM[0][1];
+            let toTime1 =  dataGTM[1][0];
+            let toTime2 = dataGTM[1][1];
+            let expiryTime1 = dataGTM[2][0];
+            let expiryTime2 = dataGTM[2][1];
+
+            assert.deepEqual(await I_SharedWhitelistTransferManager.getAllInvestors.call(), [AFFILIATE1, AFFILIATE2]);
+            console.log(await I_SharedWhitelistTransferManager.getAllKYCData.call());
+            let dataSWTM = await I_SharedWhitelistTransferManager.getKYCData.call([AFFILIATE1, AFFILIATE2]);
+            assert.equal(dataSWTM[0][0].toString(), fromTime1);
+            assert.equal(dataSWTM[0][1].toString(), fromTime2);
+            assert.equal(dataSWTM[1][0].toString(), toTime1);
+            assert.equal(dataSWTM[1][1].toString(), toTime2);
+            assert.equal(dataSWTM[2][0].toString(), expiryTime1);
+            assert.equal(dataSWTM[2][1].toString(), expiryTime2);
+            assert.equal(await I_SharedWhitelistTransferManager.getInvestorFlag.call(AFFILIATE1, 1), true);
+            assert.equal(await I_SharedWhitelistTransferManager.getInvestorFlag.call(AFFILIATE2, 1), true);
+        });
+
+        it("Should test getter functions", async () => {
+            await I_GeneralTransferManager[0].modifyInvestorFlagMulti([INVESTOR1, INVESTOR1, INVESTOR2], [0, 1, 1], [true, true, true], { from: ISSUER1 });
+            let investors = await I_SharedWhitelistTransferManager.getInvestors.call(0, 3);
+            assert.equal(investors[0], AFFILIATE1, "account mismatch");
+            assert.equal(investors[1], AFFILIATE2, "account mismatch");
+            assert.equal(investors[2], INVESTOR1, "account mismatch");
+            assert.equal(investors[3], INVESTOR2, "account mismatch");
+            let investorCount1 = await stGetter[0].getInvestorCount(); //count from first Token
+            let investorCount2 = await stGetter[1].getInvestorCount(); //count from second token
+            let investorCountSWTM = await I_SharedWhitelistTransferManager.getShareWhitelistInvestorCount.call();
+            assert.equal(investorCount1.toNumber(), 4, "Token 1 count incorrect");
+            assert.equal(investorCount2.toNumber(), 0, "Token 2 count incorrect");
+            assert.equal(investorCountSWTM.toNumber(), 4, "Token 2 SWTM Investor count incorrect");
+            let allInvestorFlags = await I_SharedWhitelistTransferManager.getAllInvestorFlags.call();
+            assert.deepEqual(investors, allInvestorFlags[0]);
+            assert.equal(allInvestorFlags[1][0].toNumber(), 2, "Investor 1 flags not as expected")//0x000....00010
+            assert.equal(allInvestorFlags[1][1].toNumber(), 2, "Investor 2 flage not as expected")//0x000....00010
+            assert.equal(allInvestorFlags[1][2].toNumber(), 3, "Investor 3 flags not as expected")//0x000....00011
+            assert.equal(allInvestorFlags[1][3].toNumber(), 2, "Investor 4 flags not as expected")//0x000....00010
+            let investorFlags = await I_SharedWhitelistTransferManager.getInvestorFlags.call(allInvestorFlags[0][0]);
+            assert.equal(investorFlags, 2)//0x000....00010
         });
 
         it("Should mint the second token to the affiliates", async () => {
@@ -349,6 +397,19 @@ contract("SharedWhitelistTransferManager", async (accounts) => {
             });
             assert.equal((await I_SecurityToken[1].balanceOf.call(AFFILIATE1)).div(new BN(10).pow(new BN(18))).toNumber(), 100);
             assert.equal((await I_SecurityToken[1].balanceOf.call(AFFILIATE2)).div(new BN(10).pow(new BN(18))).toNumber(), 100);
+        });
+
+        it("Should increase investor count for second token", async () => {
+            await I_GeneralTransferManager[0].modifyInvestorFlagMulti([INVESTOR1, INVESTOR1, INVESTOR2], [0, 1, 1], [true, true, true], { from: ISSUER1 });
+            let investors = await stGetter[1].getInvestors.call();
+            assert.equal(investors[0], AFFILIATE1, "account mismatch");
+            assert.equal(investors[1], AFFILIATE2, "account mismatch");
+            let investorCount1 = await stGetter[0].getInvestorCount(); //count from first Token
+            let investorCount2 = await stGetter[1].getInvestorCount(); //count from second token
+            let investorCountSWTM = await I_SharedWhitelistTransferManager.getShareWhitelistInvestorCount.call();
+            assert.equal(investorCount1.toNumber(), 4, "Token 1 count incorrect");
+            assert.equal(investorCount2.toNumber(), 2, "Token 2 count incorrect");
+            assert.equal(investorCountSWTM.toNumber(), 4, "Token 2 SWTM Investor count incorrect");
         });
 
         it("Should successfully attach the STO factory to the second security token", async () => {
@@ -391,39 +452,8 @@ contract("SharedWhitelistTransferManager", async (accounts) => {
         });
 
         it("should have transfer requirements initialized", async () => {
-            let transferRestrions = await I_GeneralTransferManager[0].transferRequirements(0);
-            assert.equal(transferRestrions[0], true);
-            assert.equal(transferRestrions[1], true);
-            assert.equal(transferRestrions[2], true);
-            assert.equal(transferRestrions[3], true);
-            transferRestrions = await I_GeneralTransferManager[0].transferRequirements(1);
-            assert.equal(transferRestrions[0], false);
-            assert.equal(transferRestrions[1], true);
-            assert.equal(transferRestrions[2], false);
-            assert.equal(transferRestrions[3], false);
-            transferRestrions = await I_GeneralTransferManager[0].transferRequirements(2);
-            assert.equal(transferRestrions[0], true);
-            assert.equal(transferRestrions[1], false);
-            assert.equal(transferRestrions[2], false);
-            assert.equal(transferRestrions[3], false);
 
-            transferRestrions = await I_GeneralTransferManager[1].transferRequirements(0);
-            assert.equal(transferRestrions[0], true);
-            assert.equal(transferRestrions[1], true);
-            assert.equal(transferRestrions[2], true);
-            assert.equal(transferRestrions[3], true);
-            transferRestrions = await I_GeneralTransferManager[1].transferRequirements(1);
-            assert.equal(transferRestrions[0], false);
-            assert.equal(transferRestrions[1], true);
-            assert.equal(transferRestrions[2], false);
-            assert.equal(transferRestrions[3], false);
-            transferRestrions = await I_GeneralTransferManager[1].transferRequirements(2);
-            assert.equal(transferRestrions[0], true);
-            assert.equal(transferRestrions[1], false);
-            assert.equal(transferRestrions[2], false);
-            assert.equal(transferRestrions[3], false);
-
-            transferRestrions = await I_SharedWhitelistTransferManager.transferRequirements(0);
+            let transferRestrions = await I_SharedWhitelistTransferManager.transferRequirements(0);
             assert.equal(transferRestrions[0], true);
             assert.equal(transferRestrions[1], true);
             assert.equal(transferRestrions[2], true);
@@ -440,7 +470,7 @@ contract("SharedWhitelistTransferManager", async (accounts) => {
             assert.equal(transferRestrions[3], false);
         });
 
-        it("should not allow unauthorized people to change transfer requirements", async () => {
+        it("Should not allow unauthorized people to change transfer requirements", async () => {
             await catchRevert(
                 I_SharedWhitelistTransferManager.modifyTransferRequirementsMulti(
                     [0, 1, 2],
@@ -453,9 +483,64 @@ contract("SharedWhitelistTransferManager", async (accounts) => {
             );
             await catchRevert(I_SharedWhitelistTransferManager.modifyTransferRequirements(0, false, false, false, false, { from: INVESTOR1 }));
         });
+
+        it("Should change multiple transfer requirements -- Failed arra length mismatch", async () => {
+            await catchRevert(
+                I_SharedWhitelistTransferManager.modifyTransferRequirementsMulti(
+                    [0, 1],
+                    [true, false, true],
+                    [true, true, false],
+                    [false, false, false],
+                    [false, false, false],
+                    { from: ISSUER2 }
+                )
+            );
+            await catchRevert(
+                I_SharedWhitelistTransferManager.modifyTransferRequirementsMulti(
+                    [0, 1, 2],
+                    [true, false],
+                    [true, true, false],
+                    [false, false, false],
+                    [false, false, false],
+                    { from: ISSUER2 }
+                )
+            );
+            await catchRevert(
+                I_SharedWhitelistTransferManager.modifyTransferRequirementsMulti(
+                    [0, 1, 2],
+                    [true, false, true],
+                    [true, true],
+                    [false, false, false],
+                    [false, false, false],
+                    { from: ISSUER2 }
+                )
+            );
+            await catchRevert(
+                I_SharedWhitelistTransferManager.modifyTransferRequirementsMulti(
+                    [0, 1, 2],
+                    [true, false, true],
+                    [true, true, false],
+                    [false, false],
+                    [false, false, false],
+                    { from: ISSUER2 }
+                )
+            );
+            await catchRevert(
+                I_SharedWhitelistTransferManager.modifyTransferRequirementsMulti(
+                    [0, 1],
+                    [true, false, true],
+                    [true, true, false],
+                    [false, false, false],
+                    [false, false],
+                    { from: ISSUER2 }
+                )
+            );
+        });
+
     });
 
     describe("Buy tokens using on-chain whitelist", async () => {
+
         it("Should buy the tokens -- Failed due to investor is not in the whitelist", async () => {
             await catchRevert(I_DummySTO.generateTokens(INVESTOR1, new BN(web3.utils.toWei("1", "ether")), { from: ISSUER2 }));
         });
@@ -493,7 +578,10 @@ contract("SharedWhitelistTransferManager", async (accounts) => {
         });
 
         it("Should Buy second tokens for AFFILIATE1 from the STO", async () => {
+            let initialBalance = await I_SecurityToken[1].balanceOf(AFFILIATE1);
             await I_DummySTO.generateTokens(AFFILIATE1, new BN(web3.utils.toWei("1", "ether")), { from: ISSUER2 });
+            let finalBalance = await I_SecurityToken[1].balanceOf(AFFILIATE1);
+            assert.equal(finalBalance.toString(), initialBalance.add(new BN(web3.utils.toWei("1", "ether"))).toString());
         });
 
         it("Should Set canNotBuyFromSto flag for the affiliates through the second token GTM", async () => {
@@ -528,6 +616,7 @@ contract("SharedWhitelistTransferManager", async (accounts) => {
 
             await catchRevert(I_DummySTO.generateTokens(INVESTOR1, new BN(web3.utils.toWei("1", "ether")), { from: ISSUER2 }));
         });
+
     });
 
     describe("Transfer tokens using on-chain shared whitelist from the first token", async () => {
@@ -567,6 +656,10 @@ contract("SharedWhitelistTransferManager", async (accounts) => {
             await increaseTime(5000);
 
             // Can transfer tokens
+            let resultSWTM = await I_SharedWhitelistTransferManager.verifyTransfer.call(INVESTOR1, INVESTOR2, new BN(web3.utils.toWei("1", "ether")), "0x0");
+            let resultGTM = await I_GeneralTransferManager[1].verifyTransfer.call(INVESTOR1, INVESTOR2, new BN(web3.utils.toWei("1", "ether")), "0x0");
+            assert.equal(resultSWTM[0].toString(), 2, "Result not Valid");
+            assert.equal(resultGTM[0].toString(), 1, "Result not NA");
             await I_SecurityToken[1].transfer(INVESTOR2, new BN(web3.utils.toWei("1", "ether")), { from: INVESTOR1 });
             assert.equal((await I_SecurityToken[1].balanceOf(INVESTOR1)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
             assert.equal((await I_SecurityToken[1].balanceOf(INVESTOR2)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
@@ -613,6 +706,32 @@ contract("SharedWhitelistTransferManager", async (accounts) => {
             });
             await I_GeneralTransferManager[0].changeDefaults(0, new BN(0), { from: ISSUER1 });
             await I_SharedWhitelistTransferManager.changeDefaults(0, new BN(0), { from: ISSUER2 });
+        });
+
+        it("Should test verifyTransfer for Redemptions", async () => {
+            // Remove AFFILIATE1 from the Shared whitelist
+            await I_GeneralTransferManager[0].modifyKYCData(AFFILIATE1, new BN(0), new BN(0), new BN(0), {
+                from: ISSUER1,
+                gas: 6000000
+            });
+
+            // verifyTransfer results
+            let resultSWTM = await I_SharedWhitelistTransferManager.verifyTransfer.call(AFFILIATE1, address_zero, new BN(web3.utils.toWei("1", "ether")), "0x0");
+            let resultGTM = await I_GeneralTransferManager[1].verifyTransfer.call(AFFILIATE1, address_zero, new BN(web3.utils.toWei("1", "ether")), "0x0");
+            assert.equal(resultSWTM[0].toString(), 1, "Result not NA");
+            assert.equal(resultGTM[0].toString(), 1, "Result not NA");
+
+            // Add AFFILIATE1 from the Shared whitelist
+            await I_GeneralTransferManager[0].modifyKYCData(AFFILIATE1, currentTime, currentTime, currentTime.add(new BN(duration.days(365))), {
+                from: ISSUER1,
+                gas: 6000000
+            });
+
+            // verifyTransfer results
+            resultSWTM = await I_SharedWhitelistTransferManager.verifyTransfer.call(AFFILIATE1, address_zero, new BN(web3.utils.toWei("1", "ether")), "0x0");
+            resultGTM = await I_GeneralTransferManager[1].verifyTransfer.call(AFFILIATE1, address_zero, new BN(web3.utils.toWei("1", "ether")), "0x0");
+            assert.equal(resultSWTM[0].toString(), 2, "Result not VALID");
+            assert.equal(resultGTM[0].toString(), 1, "Result not NA");
         });
 
     });
@@ -709,6 +828,19 @@ contract("SharedWhitelistTransferManager", async (accounts) => {
 
             assert.isFalse(await I_SharedWhitelistTransferManager.paused.call());
         });
+
+    });
+
+    describe("Contract deployment failure cases", async() => {
+
+        it("Should fail to deploy a new SharedWhitelistTransferManagerFactory -- logic contract is address zero", async () => {
+        await catchRevert(SharedWhitelistTransferManagerFactory.new(STOSetupCost, new BN(0), address_zero, I_PolymathRegistry.address, { from: POLYMATH }));
+        });
+
+        it("Should fail to deploy a new SharedWhitelistTransferManagerProxy -- logic contract is address zero", async () => {
+        await catchRevert(SharedWhitelistTransferManagerProxy.new("3.0.0", I_SecurityToken[1].address, I_PolyToken.address, address_zero, { from: POLYMATH }));
+        });
+
     });
 
     describe("Test cases for the getTokensByPartition", async() => {

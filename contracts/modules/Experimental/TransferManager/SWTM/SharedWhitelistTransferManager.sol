@@ -112,6 +112,13 @@ contract SharedWhitelistTransferManager is SharedWhitelistTransferManagerStorage
         bytes calldata /*_data*/
     ) external returns(Result) {
         (Result success,) = _verifyTransfer(_from, _to);
+        // add _to address to token list of potential investors (required for checkpoints)
+        if (success == Result.VALID) {
+            IDataStore dataStore = getDataStore();
+            if (!_isExistingInvestor(_to, dataStore) && _to != address(0)) {
+               dataStore.insertAddress(INVESTORSKEY, _to);
+            }
+        }
         return success;
     }
 
@@ -286,6 +293,12 @@ contract SharedWhitelistTransferManager is SharedWhitelistTransferManagerStorage
         return (_canSendAfter, _canReceiveAfter);
     }
 
+    function _isExistingInvestor(address _investor, IDataStore dataStore) internal view returns(bool) {
+        uint256 data = dataStore.getUint256(_getKey(WHITELIST, _investor));
+        //extracts `added` from packed `_whitelistData`
+        return uint8(data) == 0 ? false : true;
+    }
+
     function _getKey(bytes32 _key1, address _key2) internal pure returns(bytes32) {
         return bytes32(keccak256(abi.encodePacked(_key1, _key2)));
     }
@@ -305,6 +318,15 @@ contract SharedWhitelistTransferManager is SharedWhitelistTransferManagerStorage
         (canSendAfter, , fromExpiry, ) = _getKYCValues(_from);
         (, canReceiveAfter, toExpiry, ) = _getKYCValues(_to);
     }
+
+    /**
+     * @notice Returns the count of address that were added as (potential) investors
+     * @return Investor count
+     */
+    function getShareWhitelistInvestorCount() external view returns(uint256) {
+        return whitelistDataStore.getAddressArrayLength(INVESTORSKEY);
+    }
+
 
     /**
      * @dev Returns list of all investors

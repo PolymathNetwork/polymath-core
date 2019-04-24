@@ -55,12 +55,14 @@ const PLCRVotingCheckpointFactory = artifacts.require("./PLCRVotingCheckpointFac
 const WeightedVoteCheckpointFactory = artifacts.require("./WeightedVoteCheckpointFactory.sol");
 const PLCRVotingCheckpoint = artifacts.require("./PLCRVotingCheckpoint.sol");
 const WeightedVoteCheckpoint = artifacts.require("./WeightedVoteCheckpoint.sol");
+const RestrictedPartialSaleTMFactory = artifacts.require("./RestrictedPartialSaleTMFactory.sol");
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
 // Contract Instance Declaration
+let I_RestrictedPartialSaleTMFactory;
 let I_USDTieredSTOProxyFactory;
 let I_USDTieredSTOFactory;
 let I_TrackedRedemptionFactory;
@@ -417,6 +419,19 @@ export async function deployLockUpTMAndVerified(accountPolymath, MRProxyInstance
     await registerAndVerifyByMR(I_LockUpTransferManagerFactory.address, accountPolymath, MRProxyInstance);
     return Promise.all(new Array(I_LockUpTransferManagerFactory));
 }
+
+export async function deployRestrictedPartialSaleTMAndVerifyed(accountPolymath, MRProxyInstance, setupCost, feeInPoly = false) {
+    I_RestrictedPartialSaleTMFactory = await RestrictedPartialSaleTMFactory.new(setupCost, new BN(0), I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
+    assert.notEqual(
+        I_RestrictedPartialSaleTMFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "RestrictedPartialSaleTMFactory contract was not deployed"
+    );
+
+     await registerAndVerifyByMR(I_RestrictedPartialSaleTMFactory.address, accountPolymath, MRProxyInstance);
+    return Promise.all(new Array(I_RestrictedPartialSaleTMFactory));
+}
+
 
 export async function deployScheduleCheckpointAndVerified(accountPolymath, MRProxyInstance, setupCost, feeInPoly = false) {
     I_ScheduledCheckpointFactory = await ScheduledCheckpointFactory.new(setupCost, new BN(0), I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });

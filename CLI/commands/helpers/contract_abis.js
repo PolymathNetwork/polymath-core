@@ -21,7 +21,7 @@ let erc20DividendCheckpointABI;
 let etherDividendCheckpointABI;
 let moduleInterfaceABI;
 let ownableABI;
-let iSTOABI;
+let stoABI;
 let iTransferManagerABI;
 let moduleFactoryABI;
 let erc20ABI;
@@ -50,7 +50,7 @@ try {
     etherDividendCheckpointABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/EtherDividendCheckpoint.json`).toString()).abi;
     moduleInterfaceABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/IModule.json`).toString()).abi;
     ownableABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/Ownable.json`).toString()).abi;
-    iSTOABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/ISTO.json`).toString()).abi
+    stoABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/STO.json`).toString()).abi
     iTransferManagerABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/ITransferManager.json`).toString()).abi
     moduleFactoryABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/ModuleFactory.json`).toString()).abi;
     erc20ABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/DetailedERC20.json`).toString()).abi;
@@ -129,8 +129,8 @@ module.exports = {
     ownable: function () {
         return ownableABI;
     },
-    ISTO: function () {
-        return iSTOABI;
+    sto: function () {
+        return stoABI;
     },
     ITransferManager: function () {
         return iTransferManagerABI;
@@ -140,5 +140,17 @@ module.exports = {
     },
     erc20: function () {
         return erc20ABI;
+    },
+    alternativeErc20: function () {
+        let alternativeErc20 = [{
+            "constant": true,
+            "inputs": [],
+            "name": "symbol",
+            "outputs": [{ "name": "", "type": "bytes32" }],
+            "payable": false,
+            "stateMutability": "view",
+            "type": "function"
+        }];
+        return alternativeErc20;
     }
 }

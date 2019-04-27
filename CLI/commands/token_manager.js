@@ -8,7 +8,7 @@ const gbl = require('./common/global');
 const csvParse = require('./helpers/csv');
 
 // Constants
-const MULTIMINT_DATA_CSV = './CLI/data/ST/multi_mint_data.csv';
+const MULTIMINT_DATA_CSV = `${__dirname}/../data/ST/multi_mint_data.csv`;
 
 // Load contract artifacts
 const contracts = require('./helpers/contract_addresses');
@@ -107,27 +107,27 @@ async function displayModules() {
 
   if (numPM) {
     console.log(`Permission Manager Modules:`);
-    pmModules.map(m => console.log(`- ${m.name} is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
+    pmModules.map(m => console.log(`- ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
   }
 
   if (numTM) {
     console.log(`Transfer Manager Modules:`);
-    tmModules.map(m => console.log(`- ${m.name} is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
+    tmModules.map(m => console.log(`- ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
   }
 
   if (numSTO) {
     console.log(`STO Modules:`);
-    stoModules.map(m => console.log(`- ${m.name} is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
+    stoModules.map(m => console.log(`- ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
   }
 
   if (numCP) {
     console.log(`Checkpoint Modules:`);
-    cpModules.map(m => console.log(`- ${m.name} is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
+    cpModules.map(m => console.log(`- ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
   }
 
   if (numBURN) {
     console.log(` Burn Modules:`);
-    burnModules.map(m => console.log(`- ${m.name} is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
+    burnModules.map(m => console.log(`- ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
   }
 }
 
@@ -297,7 +297,7 @@ async function mintTokens() {
       let fromTime = readlineSync.questionInt('Enter the time (Unix Epoch time) when the sale lockup period ends and the investor can freely sell his tokens: ');
       let toTime = readlineSync.questionInt('Enter the time (Unix Epoch time) when the purchase lockup period ends and the investor can freely purchase tokens from others: ');
       let expiryTime = readlineSync.questionInt('Enter the time till investors KYC will be validated (after that investor need to do re-KYC): ');
-      let canBuyFromSTO = readlineSync.keyInYNStrict('Is the investor a restricted investor?');
+      let canBuyFromSTO = readlineSync.keyInYNStrict('Can the investor buy from security token offerings?');
       await modifyWhitelist(investor, fromTime, toTime, expiryTime, canBuyFromSTO);
       break;
     case 'Mint tokens to a single address':
@@ -467,7 +467,7 @@ async function listModuleOptions() {
 // Modules a actions
 async function addModule() {
   let options = ['Permission Manager', 'Transfer Manager', 'Security Token Offering', 'Dividends', 'Burn'];
-  let index = readlineSync.keyInSelect(options, 'What type of module whould you like to add?', { cancel: 'Return' });
+  let index = readlineSync.keyInSelect(options, 'What type of module would you like to add?', { cancel: 'Return' });
   switch (options[index]) {
     case 'Permission Manager':
       console.log(chalk.red(`
@@ -497,17 +497,19 @@ async function addModule() {
 }
 
 async function pauseModule(modules) {
-  let options = modules.map(m => `${m.name} (${m.address})`);
-  let index = readlineSync.keyInSelect(options, 'Which module whould you like to pause?');
+  let options = modules.map(m => `${m.name} (${m.version}) at ${m.address}`);
+  let index = readlineSync.keyInSelect(options, 'Which module would you like to pause?');
   if (index != -1) {
     console.log("\nSelected:", options[index]);
     let moduleABI;
     if (modules[index].type == gbl.constants.MODULES_TYPES.STO) {
-      moduleABI = abis.ISTO();
-    } else if (modules[index].type == gbl.constants.MODULES_TYPES.STO) {
+      moduleABI = abis.sto();
+    } else if (modules[index].type == gbl.constants.MODULES_TYPES.TRANSFER) {
       moduleABI = abis.ITransferManager();
+    } else if (modules[index].type == gbl.constants.MODULES_TYPES.DIVIDENDS) {
+      moduleABI = abis.erc20DividendCheckpoint();
     } else {
-      console.log(chalk.red(`Only STO and TM modules can be paused/unpaused`));
+      console.log(chalk.red(`Only STO, TM and DIVIDEND modules can be paused/unpaused`));
       process.exit(0);
     }
     let pausableModule = new web3.eth.Contract(moduleABI, modules[index].address);
@@ -518,17 +520,19 @@ async function pauseModule(modules) {
 }
 
 async function unpauseModule(modules) {
-  let options = modules.map(m => `${m.name} (${m.address})`);
-  let index = readlineSync.keyInSelect(options, 'Which module whould you like to pause?');
+  let options = modules.map(m => `${m.name} (${m.version}) at ${m.address}`);
+  let index = readlineSync.keyInSelect(options, 'Which module would you like to pause?');
   if (index != -1) {
     console.log("\nSelected: ", options[index]);
     let moduleABI;
     if (modules[index].type == gbl.constants.MODULES_TYPES.STO) {
-      moduleABI = abis.ISTO();
-    } else if (modules[index].type == gbl.constants.MODULES_TYPES.STO) {
+      moduleABI = abis.sto();
+    } else if (modules[index].type == gbl.constants.MODULES_TYPES.TRANSFER) {
       moduleABI = abis.ITransferManager();
+    } else if (modules[index].type == gbl.constants.MODULES_TYPES.DIVIDENDS) {
+      moduleABI = abis.erc20DividendCheckpoint();
     } else {
-      console.log(chalk.red(`Only STO and TM modules can be paused/unpaused`));
+      console.log(chalk.red(`Only STO, TM and DIVIDEND modules can be paused/unpaused`));
       process.exit(0);
     }
     let pausableModule = new web3.eth.Contract(moduleABI, modules[index].address);
@@ -539,7 +543,7 @@ async function unpauseModule(modules) {
 }
 
 async function archiveModule(modules) {
-  let options = modules.map(m => `${m.name} (${m.address})`);
+  let options = modules.map(m => `${m.name} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module would you like to archive?');
   if (index != -1) {
     console.log("\nSelected: ", options[index]);
@@ -550,8 +554,8 @@ async function archiveModule(modules) {
 }
 
 async function unarchiveModule(modules) {
-  let options = modules.map(m => `${m.name} (${m.address})`);
-  let index = readlineSync.keyInSelect(options, 'Which module whould you like to unarchive?');
+  let options = modules.map(m => `${m.name} (${m.version}) at ${m.address}`);
+  let index = readlineSync.keyInSelect(options, 'Which module would you like to unarchive?');
   if (index != -1) {
     console.log("\nSelected: ", options[index]);
     let unarchiveModuleAction = securityToken.methods.unarchiveModule(modules[index].address);
@@ -561,8 +565,8 @@ async function unarchiveModule(modules) {
 }
 
 async function removeModule(modules) {
-  let options = modules.map(m => `${m.name} (${m.address})`);
-  let index = readlineSync.keyInSelect(options, 'Which module whould you like to remove?');
+  let options = modules.map(m => `${m.name} (${m.version}) at ${m.address}`);
+  let index = readlineSync.keyInSelect(options, 'Which module would you like to remove?');
   if (index != -1) {
     console.log("\nSelected: ", options[index]);
     let removeModuleAction = securityToken.methods.removeModule(modules[index].address);
@@ -571,9 +575,9 @@ async function removeModule(modules) {
   }
 }
 
-async function changeBudget() {
-  let options = modules.map(m => `${m.name} (${m.address})`);
-  let index = readlineSync.keyInSelect(options, 'Which module whould you like to remove?');
+async function changeBudget(modules) {
+  let options = modules.map(m => `${m.name} (${m.version}) at ${m.address}`);
+  let index = readlineSync.keyInSelect(options, 'Which module would you like to change budget for?');
   if (index != -1) {
     console.log("\nSelected: ", options[index]);
     let increase = 0 == readlineSync.keyInSelect(['Increase', 'Decrease'], `Do you want to increase or decrease budget?`, { cancel: false });
@@ -595,13 +599,14 @@ async function showUserInfo(_user) {
 }
 
 async function getAllModules() {
-  function ModuleInfo(_moduleType, _name, _address, _factoryAddress, _archived, _paused) {
+  function ModuleInfo(_moduleType, _name, _address, _factoryAddress, _archived, _paused, _version) {
     this.name = _name;
     this.type = _moduleType;
     this.address = _address;
     this.factoryAddress = _factoryAddress;
     this.archived = _archived;
     this.paused = _paused;
+    this.version = _version;
   }
 
   let modules = [];
@@ -616,12 +621,16 @@ async function getAllModules() {
         let details = await securityToken.methods.getModule(allModules[i]).call();
         let nameTemp = web3.utils.hexToUtf8(details[0]);
         let pausedTemp = null;
-        if (type == gbl.constants.MODULES_TYPES.STO || type == gbl.constants.MODULES_TYPES.TRANSFER) {
-          let abiTemp = JSON.parse(require('fs').readFileSync(`./build/contracts/${nameTemp}.json`).toString()).abi;
+        let factoryAbi = abis.moduleFactory();
+        let factory = new web3.eth.Contract(factoryAbi, details[2]);
+        let versionTemp = await factory.methods.version().call();
+        if (type == gbl.constants.MODULES_TYPES.STO || type == gbl.constants.MODULES_TYPES.TRANSFER || (type == gbl.constants.MODULES_TYPES.DIVIDENDS && versionTemp === '2.1.1')) {
+          let abiTemp = JSON.parse(require('fs').readFileSync(`${__dirname}/../../build/contracts/${nameTemp}.json`).toString()).abi;
           let contractTemp = new web3.eth.Contract(abiTemp, details[1]);
           pausedTemp = await contractTemp.methods.paused().call();
         }
-        modules.push(new ModuleInfo(type, nameTemp, details[1], details[2], details[3], pausedTemp));
+
+        modules.push(new ModuleInfo(type, nameTemp, details[1], details[2], details[3], pausedTemp, versionTemp));
       } catch (error) {
         console.log(error);
         console.log(chalk.red(`

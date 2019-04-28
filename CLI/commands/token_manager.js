@@ -65,7 +65,7 @@ async function displayTokenData() {
   let displayInvestorsCount = await securityToken.methods.getInvestorCount().call();
   let displayCurrentCheckpointId = await securityToken.methods.currentCheckpointId().call();
   let displayTransferFrozen = await securityToken.methods.transfersFrozen().call();
-  let displayMintingFrozen = await securityToken.methods.isIssuable().call();
+  let displayIsIssuable = await securityToken.methods.isIssuable().call();
   let displayUserTokens = await securityToken.methods.balanceOf(Issuer.address).call();
 
   console.log(`
@@ -79,7 +79,7 @@ async function displayTokenData() {
 - Investors count:      ${displayInvestorsCount}
 - Current checkpoint:   ${displayCurrentCheckpointId}
 - Transfer frozen:      ${displayTransferFrozen ? 'YES' : 'NO'}
-- Minting frozen:       ${displayMintingFrozen ? 'YES' : 'NO'}
+- Issuance allowed:     ${displayIsIssuable ? 'YES' : 'NO'}
 - User balance:         ${web3.utils.fromWei(displayUserTokens)} ${displayTokenSymbol.toUpperCase()}`);
 }
 
@@ -147,7 +147,7 @@ async function selectAction() {
   if (isIssuable) {
     let isFreezeMintingAllowed = await featureRegistry.methods.getFeatureStatus('freezeMintingAllowed').call();
     if (isFreezeMintingAllowed) {
-      options.push('Freeze minting permanently');
+      options.push('Freeze Issuing permanently');
     }
   }
 
@@ -159,7 +159,7 @@ async function selectAction() {
   }
 
   if (isIssuable) {
-    options.push('Mint tokens');
+    options.push('Issue tokens');
   }
 
   options.push('Manage modules', 'Withdraw tokens from contract');
@@ -182,8 +182,8 @@ async function selectAction() {
     case 'Unfreeze transfers':
       await unfreezeTransfers();
       break;
-    case 'Freeze minting permanently':
-      await freezeMinting();
+    case 'Freeze Issuance permanently':
+      await freezeIssuance();
       break;
     case 'Create a checkpoint':
       await createCheckpoint();
@@ -200,8 +200,8 @@ async function selectAction() {
       });
       await listInvestorsAtCheckpoint(checkpointId);
       break;
-    case 'Mint tokens':
-      await mintTokens();
+    case 'Issue tokens':
+      await issueTokens();
       break;
     case 'Manage modules':
       await listModuleOptions();
@@ -247,10 +247,10 @@ async function unfreezeTransfers() {
   console.log(chalk.green(`Transfers have been unfrozen successfully!`));
 }
 
-async function freezeMinting() {
-  let freezeMintingAction = securityToken.methods.freezeMinting();
-  await common.sendTransaction(freezeMintingAction);
-  console.log(chalk.green(`Minting has been frozen successfully!.`));
+async function freezeIssuance() {
+  let freezeIssuanceAction = securityToken.methods.freezeIssuance();
+  await common.sendTransaction(freezeIssuanceAction);
+  console.log(chalk.green(`Issuance has been frozen successfully!.`));
 }
 
 async function createCheckpoint() {
@@ -283,8 +283,8 @@ async function listInvestorsAtCheckpoint(checkpointId) {
 
 }
 
-async function mintTokens() {
-  let options = ['Modify whitelist', 'Mint tokens to a single address', `Mint tokens to multiple addresses from CSV`];
+async function issueTokens() {
+  let options = ['Modify whitelist', 'Issue tokens to a single address', `Issue tokens to multiple addresses from CSV`];
   let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Return' });
   let selected = index == -1 ? 'Return' : options[index];
   console.log('Selected:', selected);
@@ -302,46 +302,46 @@ async function mintTokens() {
       let canBuyFromSTO = readlineSync.keyInYNStrict('Can the investor buy from security token offerings?');
       await modifyWhitelist(investor, fromTime, toTime, expiryTime, canBuyFromSTO);
       break;
-    case 'Mint tokens to a single address':
+    case 'Issue tokens to a single address':
       console.log(chalk.yellow(`Investor should be previously whitelisted.`));
       let receiver = readlineSync.question(`Enter the address to receive the tokens: `);
-      let amount = readlineSync.question(`Enter the amount of tokens to mint: `);
-      await mintToSingleAddress(receiver, amount);
+      let amount = readlineSync.question(`Enter the amount of tokens to issue: `);
+      await issueToSingleAddress(receiver, amount);
       break;
-    case `Mint tokens to multiple addresses from CSV`:
+    case `Issue tokens to multiple addresses from CSV`:
       console.log(chalk.yellow(`Investors should be previously whitelisted.`));
-      await multiMint();
+      await multiIssue();
       break;
   }
 }
 
-/// Mint actions
+/// Issue actions
 async function modifyWhitelist(investor, fromTime, toTime, expiryTime, canBuyFromSTO) {
   let gmtModules = await securityToken.methods.getModulesByName(web3.utils.toHex('GeneralTransferManager')).call();
   let generalTransferManagerAddress = gmtModules[0];
   let generalTransferManagerABI = abis.generalTransferManager();
   let generalTransferManager = new web3.eth.Contract(generalTransferManagerABI, generalTransferManagerAddress);
 
-  let modifyWhitelistAction = generalTransferManager.methods.modifyWhitelist(investor, fromTime, toTime, expiryTime, canBuyFromSTO);
+  let modifyWhitelistAction = generalTransferManager.methods.modifyKYCData(investor, fromTime, toTime, expiryTime);
   let modifyWhitelistReceipt = await common.sendTransaction(modifyWhitelistAction);
-  let modifyWhitelistEvent = common.getEventFromLogs(generalTransferManager._jsonInterface, modifyWhitelistReceipt.logs, 'ModifyWhitelist');
+  let modifyWhitelistEvent = common.getEventFromLogs(generalTransferManager._jsonInterface, modifyWhitelistReceipt.logs, 'ModifyKYCData');
   console.log(chalk.green(`${modifyWhitelistEvent._investor} has been whitelisted sucessfully!`));
 }
 
-async function mintToSingleAddress(_investor, _amount) {
+async function issueToSingleAddress(_investor, _amount) {
   try {
-    let mintAction = securityToken.methods.issue(_investor, web3.utils.toWei(_amount));
-    let receipt = await common.sendTransaction(mintAction);
-    let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'Minted');
-    console.log(chalk.green(`${web3.utils.fromWei(event._value)} tokens have been minted to ${event._to} successfully.`));
+    let issueAction = securityToken.methods.issue(_investor, web3.utils.toWei(_amount), web3.utils.fromAscii(''));
+    let receipt = await common.sendTransaction(issueAction);
+    let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'Issued');
+    console.log(chalk.green(`${web3.utils.fromWei(event._value)} tokens have been issued to ${event._to} successfully.`));
   }
   catch (e) {
     console.log(e);
-    console.log(chalk.red(`Minting was not successful - Please make sure beneficiary address has been whitelisted`));
+    console.log(chalk.red(`Issuing was not successful - Please make sure beneficiary address has been whitelisted`));
   }
 }
 
-async function multiMint(_csvFilePath, _batchSize) {
+async function multiIssue(_csvFilePath, _batchSize) {
   let csvFilePath;
   if (typeof _csvFilePath !== 'undefined') {
     csvFilePath = _csvFilePath;
@@ -377,7 +377,7 @@ async function multiMint(_csvFilePath, _batchSize) {
   for (const row of validData) {
     let investorAccount = row[0];
     let tokenAmount = web3.utils.toWei(row[1].toString());
-    let verifiedTransaction = await securityToken.methods.canTransfer(gbl.constants.ADDRESS_ZERO, investorAccount, tokenAmount, web3.utils.fromAscii('')).call();
+    let verifiedTransaction = await securityToken.methods.canTransfer(investorAccount, tokenAmount, web3.utils.fromAscii('')).call();
     if (verifiedTransaction) {
       verifiedData.push(row);
     } else {
@@ -388,11 +388,11 @@ async function multiMint(_csvFilePath, _batchSize) {
   let batches = common.splitIntoBatches(verifiedData, batchSize);
   let [investorArray, amountArray] = common.transposeBatches(batches);
   for (let batch = 0; batch < batches.length; batch++) {
-    console.log(`Batch ${batch + 1} - Attempting to mint tokens to accounts: \n\n`, investorArray[batch], '\n');
+    console.log(`Batch ${batch + 1} - Attempting to issue tokens to accounts: \n\n`, investorArray[batch], '\n');
     amountArray[batch] = amountArray[batch].map(a => web3.utils.toWei(a.toString()));
     let action = securityToken.methods.issueMulti(investorArray[batch], amountArray[batch]);
     let receipt = await common.sendTransaction(action);
-    console.log(chalk.green('Multi mint transaction was successful.'));
+    console.log(chalk.green('Multi issue transaction was successful.'));
     console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
   }
 
@@ -708,8 +708,8 @@ module.exports = {
     await initialize(_tokenSymbol);
     return executeApp();
   },
-  multiMint: async function (_tokenSymbol, _csvPath, _batchSize) {
+  multiIssue: async function (_tokenSymbol, _csvPath, _batchSize) {
     await initialize(_tokenSymbol);
-    return multiMint(_csvPath, _batchSize);
+    return multiIssue(_csvPath, _batchSize);
   }
 }

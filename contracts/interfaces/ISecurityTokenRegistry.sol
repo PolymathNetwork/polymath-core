@@ -5,6 +5,90 @@ pragma solidity ^0.5.0;
  */
 interface ISecurityTokenRegistry {
 
+    // Emit when network becomes paused
+    event Pause(address account);
+    // Emit when network becomes unpaused
+    event Unpause(address account);
+    // Emit when the ticker is removed from the registry
+    event TickerRemoved(string _ticker, address _removedBy);
+    // Emit when the token ticker expiry is changed
+    event ChangeExpiryLimit(uint256 _oldExpiry, uint256 _newExpiry);
+    // Emit when changeSecurityLaunchFee is called
+    event ChangeSecurityLaunchFee(uint256 _oldFee, uint256 _newFee);
+    // Emit when changeTickerRegistrationFee is called
+    event ChangeTickerRegistrationFee(uint256 _oldFee, uint256 _newFee);
+    // Emit when Fee currency is changed
+    event ChangeFeeCurrency(bool _isFeeInPoly);
+    // Emit when ownership gets transferred
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    // Emit when ownership of the ticker gets changed
+    event ChangeTickerOwnership(string _ticker, address indexed _oldOwner, address indexed _newOwner);
+    // Emit at the time of launching a new security token of version 3.0+
+    event NewSecurityTokenCreated(
+        string _ticker,
+        string _name,
+        address indexed _securityTokenAddress,
+        address indexed _owner,
+        uint256 _addedAt,
+        address _registrant,
+        bool _fromAdmin,
+        uint256 _usdFee,
+        uint256 _polyFee,
+        uint256 _protocolVersion
+    );
+    // Emit at the time of launching a new security token v2.0.
+    // _registrationFee is in poly
+    event NewSecurityToken(
+        string _ticker,
+        string _name,
+        address indexed _securityTokenAddress,
+        address indexed _owner,
+        uint256 _addedAt,
+        address _registrant,
+        bool _fromAdmin,
+        uint256 _registrationFee
+    );
+    // Emit after ticker registration
+    // _registrationFee is in poly
+    // fee in usd is not being emitted to maintain backwards compatibility
+    event RegisterTicker(
+        address indexed _owner,
+        string _ticker,
+        string _name,
+        uint256 indexed _registrationDate,
+        uint256 indexed _expiryDate,
+        bool _fromAdmin,
+        uint256 _registrationFee
+    );
+    // Emit at when issuer refreshes exisiting token
+    event SecurityTokenRefreshed(
+        string _ticker,
+        string _name,
+        address indexed _securityTokenAddress,
+        address indexed _owner,
+        uint256 _addedAt,
+        address _registrant,
+        uint256 _protocolVersion
+    );
+    event ProtocolFactorySet(address indexed _STFactory, uint8 _major, uint8 _minor, uint8 _patch);
+    event LatestVersionSet(uint8 _major, uint8 _minor, uint8 _patch);
+    event ProtocolFactoryRemoved(address indexed _STFactory, uint8 _major, uint8 _minor, uint8 _patch);
+
+    /**
+     * @notice Deploys an instance of a new Security Token of version 2.0 and records it to the registry
+     * @dev this function is for backwards compatibilty with 2.0 dApp.
+     * @param _name is the name of the token
+     * @param _ticker is the ticker symbol of the security token
+     * @param _tokenDetails is the off-chain details of the token
+     * @param _divisible is whether or not the token is divisible
+     */
+    function generateSecurityToken(
+        string calldata _name,
+        string calldata _ticker,
+        string calldata _tokenDetails,
+        bool _divisible
+    ) external;
+
     /**
      * @notice Deploys an instance of a new Security Token and records it to the registry
      * @param _name is the name of the token
@@ -16,13 +100,31 @@ interface ISecurityTokenRegistry {
      * - `_protocolVersion` is the packed value of uin8[3] array (it will be calculated offchain)
      * - if _protocolVersion == 0 then latest version of securityToken will be generated
      */
-    function generateSecurityToken(
+
+    function generateNewSecurityToken(
         string calldata _name,
         string calldata _ticker,
         string calldata _tokenDetails,
         bool _divisible,
         address _treasuryWallet,
         uint256 _protocolVersion
+    ) external;
+
+    /**
+     * @notice Deploys an instance of a new Security Token and replaces the old one in the registry
+     * This can be used to upgrade from version 2.0 of ST to 3.0 or in case something goes wrong with earlier ST
+     * @dev This function needs to be in STR 3.0. Defined public to avoid stack overflow
+     * @param _name is the name of the token
+     * @param _ticker is the ticker symbol of the security token
+     * @param _tokenDetails is the off-chain details of the token
+     * @param _divisible is whether or not the token is divisible
+     */
+    function refreshSecurityToken(
+        string calldata _name,
+        string calldata _ticker,
+        string calldata _tokenDetails,
+        bool _divisible,
+        address _treasuryWallet
     ) external;
 
     /**
@@ -55,17 +157,6 @@ interface ISecurityTokenRegistry {
     function registerTicker(address _owner, string calldata _ticker, string calldata _tokenName) external;
 
     /**
-    * @notice Changes the protocol version and the SecurityToken contract
-    * @notice Used only by Polymath to upgrade the SecurityToken contract and add more functionalities to future versions
-    * @notice Changing versions does not affect existing tokens.
-    * @param _STFactoryAddress Address of the proxy.
-    * @param _major Major version of the proxy.
-    * @param _minor Minor version of the proxy.
-    * @param _patch Patch version of the proxy
-    */
-    function setProtocolVersion(address _STFactoryAddress, uint8 _major, uint8 _minor, uint8 _patch) external;
-
-    /**
     * @notice Check that Security Token is registered
     * @param _securityToken Address of the Scurity token
     * @return bool
@@ -79,6 +170,16 @@ interface ISecurityTokenRegistry {
     function transferOwnership(address _newOwner) external;
 
     /**
+    * @notice Called by the owner to pause, triggers stopped state
+    */
+    function pause() external;
+
+    /**
+    * @notice Called by the owner to unpause, returns to normal state
+    */
+    function unpause() external;
+
+    /**
      * @notice Get security token address by ticker name
      * @param _ticker Symbol of the Scurity token
      * @return address
@@ -86,15 +187,14 @@ interface ISecurityTokenRegistry {
     function getSecurityTokenAddress(string calldata _ticker) external view returns(address);
 
     /**
-     * @notice Get security token data by its address
-     * @param _securityToken Address of the Scurity token.
-     * @return string Symbol of the Security Token.
-     * @return address Address of the issuer of Security Token.
-     * @return string Details of the Token.
-     * @return uint256 Timestamp at which Security Token get launched on Polymath platform
-     * @return version of the securityToken
-     */
-    function getSecurityTokenData(address _securityToken) external view returns(string memory, address, string memory, uint256, uint8[] memory);
+    * @notice Returns the security token data by address
+    * @param _securityToken is the address of the security token.
+    * @return string is the ticker of the security Token.
+    * @return address is the issuer of the security Token.
+    * @return string is the details of the security token.
+    * @return uint256 is the timestamp at which security Token was deployed.
+    */
+    function getSecurityTokenData(address _securityToken) external view returns (string memory, address, string memory, uint256);
 
     /**
      * @notice Get the current STFactory Address
@@ -102,9 +202,35 @@ interface ISecurityTokenRegistry {
     function getSTFactoryAddress() external view returns(address);
 
     /**
-     * @notice Get Protocol version
+     * @notice Returns the STFactory Address of a particular version
+     * @param _protocolVersion Packed protocol version
      */
-    function getProtocolVersion() external view returns(uint8[] memory);
+    function getSTFactoryAddressOfVersion(uint256 _protocolVersion) external view returns(address);
+
+    /**
+     * @notice Gets Protocol version
+     */
+    function getLatestProtocolVersion() external view returns(uint8[] memory);
+
+    /**
+     * @notice Gets the fee currency
+     * @return true = poly, false = usd
+     */
+    function getIsFeeInPoly() external view returns(bool);
+
+    /**
+     * @notice Gets the status of the ticker
+     * @param _ticker Ticker whose status need to determine
+     * @return bool
+     */
+    function getTickerStatus(string calldata _ticker) external view returns(bool);
+
+    /**
+     * @notice Gets the owner of the ticker
+     * @param _ticker Ticker whose owner need to determine
+     * @return address Address of the owner
+     */
+    function getTickerOwner(string calldata _ticker) external view returns(address);
 
     /**
      * @notice Used to get the ticker list as per the owner
@@ -196,6 +322,58 @@ interface ISecurityTokenRegistry {
     function changeFeesAmountAndCurrency(uint256 _tickerRegFee, uint256 _stLaunchFee, bool _isFeeInPoly) external;
 
     /**
+    * @notice Reclaims all ERC20Basic compatible tokens
+    * @param _tokenContract is the address of the token contract
+    */
+    function reclaimERC20(address _tokenContract) external;
+
+    /**
+    * @notice Changes the SecurityToken contract for a particular factory version
+    * @notice Used only by Polymath to upgrade the SecurityToken contract and add more functionalities to future versions
+    * @notice Changing versions does not affect existing tokens.
+    * @param _STFactoryAddress is the address of the proxy.
+    * @param _major Major version of the proxy.
+    * @param _minor Minor version of the proxy.
+    * @param _patch Patch version of the proxy
+    */
+    function setProtocolFactory(address _STFactoryAddress, uint8 _major, uint8 _minor, uint8 _patch) external;
+
+    /**
+    * @notice Removes a STFactory
+    * @param _major Major version of the proxy.
+    * @param _minor Minor version of the proxy.
+    * @param _patch Patch version of the proxy
+    */
+    function removeProtocolFactory(uint8 _major, uint8 _minor, uint8 _patch) external;
+
+    /**
+    * @notice Changes the default protocol version
+    * @notice Used only by Polymath to upgrade the SecurityToken contract and add more functionalities to future versions
+    * @notice Changing versions does not affect existing tokens.
+    * @param _major Major version of the proxy.
+    * @param _minor Minor version of the proxy.
+    * @param _patch Patch version of the proxy
+    */
+    function setLatestVersion(uint8 _major, uint8 _minor, uint8 _patch) external;
+
+    /**
+     * @notice Changes the PolyToken address. Only Polymath.
+     * @param _newAddress is the address of the polytoken.
+     */
+    function updatePolyTokenAddress(address _newAddress) external;
+
+    /**
+     * @notice Used to update the polyToken contract address
+     */
+    function updateFromRegistry() external;
+
+    /**
+     * @notice Returns the usd & poly fee for a particular feetype
+     * @param _feeType Key corresponding to fee type
+     */
+    function getFees(bytes32 _feeType) external returns (uint256 usdFee, uint256 polyFee);
+
+    /**
      * @notice Gets the security token launch fee
      * @return Fee amount
      */
@@ -206,6 +384,12 @@ interface ISecurityTokenRegistry {
      * @return Fee amount
      */
     function getTickerRegistrationFee() external view returns(uint256);
+
+    /**
+     * @notice Set the getter contract address
+     * @param _getterContract Address of the contract
+     */
+    function setGetterRegistry(address _getterContract) external;
 
     /**
      * @notice Returns the list of tokens to which the delegate has some access

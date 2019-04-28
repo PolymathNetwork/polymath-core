@@ -25,8 +25,8 @@ let tokenSymbol
 async function setup() {
   try {
     let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
-    let securityTokenRegistryABI = abis.securityTokenRegistry();
-    securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
+    let iSecurityTokenRegistryABI = abis.iSecurityTokenRegistry();
+    securityTokenRegistry = new web3.eth.Contract(iSecurityTokenRegistryABI, securityTokenRegistryAddress);
     securityTokenRegistry.setProvider(web3.currentProvider);
 
     let polytokenAddress = await contracts.polyToken();
@@ -58,19 +58,21 @@ async function executeApp() {
 
 async function displayTokenData() {
   let displayTokenSymbol = await securityToken.methods.symbol().call();
+  let displayTokenName = await securityToken.methods.name().call();
   let displayTokenDetails = await securityToken.methods.tokenDetails().call();
   let displayVersion = await securityToken.methods.getVersion().call();
   let displayTokenSupply = await securityToken.methods.totalSupply().call();
   let displayInvestorsCount = await securityToken.methods.getInvestorCount().call();
   let displayCurrentCheckpointId = await securityToken.methods.currentCheckpointId().call();
   let displayTransferFrozen = await securityToken.methods.transfersFrozen().call();
-  let displayMintingFrozen = await securityToken.methods.mintingFrozen().call();
+  let displayMintingFrozen = await securityToken.methods.isIssuable().call();
   let displayUserTokens = await securityToken.methods.balanceOf(Issuer.address).call();
 
   console.log(`
 ***************    Security Token Information    ****************
 - Address:              ${securityToken.options.address}
 - Token symbol:         ${displayTokenSymbol.toUpperCase()}
+- Token name:           ${displayTokenName.toUpperCase()}
 - Token details:        ${displayTokenDetails}
 - Token version:        ${displayVersion[0]}.${displayVersion[1]}.${displayVersion[2]}
 - Total supply:         ${web3.utils.fromWei(displayTokenSupply)} ${displayTokenSymbol.toUpperCase()}
@@ -141,8 +143,8 @@ async function selectAction() {
     options.push('Freeze transfers');
   }
 
-  let isMintingFrozen = await securityToken.methods.mintingFrozen().call();
-  if (!isMintingFrozen) {
+  let isIssuable = await securityToken.methods.isIssuable().call();
+  if (isIssuable) {
     let isFreezeMintingAllowed = await featureRegistry.methods.getFeatureStatus('freezeMintingAllowed').call();
     if (isFreezeMintingAllowed) {
       options.push('Freeze minting permanently');
@@ -156,7 +158,7 @@ async function selectAction() {
     options.push('List investors at checkpoint')
   }
 
-  if (!isMintingFrozen) {
+  if (isIssuable) {
     options.push('Mint tokens');
   }
 
@@ -328,7 +330,7 @@ async function modifyWhitelist(investor, fromTime, toTime, expiryTime, canBuyFro
 
 async function mintToSingleAddress(_investor, _amount) {
   try {
-    let mintAction = securityToken.methods.mint(_investor, web3.utils.toWei(_amount));
+    let mintAction = securityToken.methods.issue(_investor, web3.utils.toWei(_amount));
     let receipt = await common.sendTransaction(mintAction);
     let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'Minted');
     console.log(chalk.green(`${web3.utils.fromWei(event._value)} tokens have been minted to ${event._to} successfully.`));
@@ -375,7 +377,7 @@ async function multiMint(_csvFilePath, _batchSize) {
   for (const row of validData) {
     let investorAccount = row[0];
     let tokenAmount = web3.utils.toWei(row[1].toString());
-    let verifiedTransaction = await securityToken.methods.verifyTransfer(gbl.constants.ADDRESS_ZERO, investorAccount, tokenAmount, web3.utils.fromAscii('')).call();
+    let verifiedTransaction = await securityToken.methods.canTransfer(gbl.constants.ADDRESS_ZERO, investorAccount, tokenAmount, web3.utils.fromAscii('')).call();
     if (verifiedTransaction) {
       verifiedData.push(row);
     } else {
@@ -388,7 +390,7 @@ async function multiMint(_csvFilePath, _batchSize) {
   for (let batch = 0; batch < batches.length; batch++) {
     console.log(`Batch ${batch + 1} - Attempting to mint tokens to accounts: \n\n`, investorArray[batch], '\n');
     amountArray[batch] = amountArray[batch].map(a => web3.utils.toWei(a.toString()));
-    let action = securityToken.methods.mintMulti(investorArray[batch], amountArray[batch]);
+    let action = securityToken.methods.issueMulti(investorArray[batch], amountArray[batch]);
     let receipt = await common.sendTransaction(action);
     console.log(chalk.green('Multi mint transaction was successful.'));
     console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
@@ -657,8 +659,8 @@ async function initialize(_tokenSymbol) {
     console.log(chalk.red(`Selected Security Token ${tokenSymbol} does not exist.`));
     process.exit(0);
   }
-  let securityTokenABI = abis.securityToken();
-  securityToken = new web3.eth.Contract(securityTokenABI, securityTokenAddress);
+  let iSecurityTokenABI = abis.iSecurityToken();
+  securityToken = new web3.eth.Contract(iSecurityTokenABI, securityTokenAddress);
   securityToken.setProvider(web3.currentProvider);
 }
 

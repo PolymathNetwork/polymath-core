@@ -1,5 +1,6 @@
 let polymathRegistryABI;
 let securityTokenRegistryABI;
+let iSecurityTokenRegistryABI;
 let featureRegistryABI;
 let moduleRegistryABI;
 let securityTokenABI;
@@ -29,6 +30,7 @@ let erc20ABI;
 try {
     polymathRegistryABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/PolymathRegistry.json`).toString()).abi;
     securityTokenRegistryABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/SecurityTokenRegistry.json`).toString()).abi;
+    iSecurityTokenRegistryABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/ISecurityTokenRegistry.json`).toString()).abi;
     featureRegistryABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/FeatureRegistry.json`).toString()).abi;
     moduleRegistryABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/ModuleRegistry.json`).toString()).abi;
     securityTokenABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/SecurityToken.json`).toString()).abi;
@@ -53,7 +55,7 @@ try {
     stoABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/STO.json`).toString()).abi
     iTransferManagerABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/ITransferManager.json`).toString()).abi
     moduleFactoryABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/ModuleFactory.json`).toString()).abi;
-    erc20ABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/DetailedERC20.json`).toString()).abi;
+    erc20ABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/ERC20.json`).toString()).abi;
 } catch (err) {
     console.log('\x1b[31m%s\x1b[0m', "Couldn't find contracts' artifacts. Make sure you ran truffle compile first");
     throw err;
@@ -65,6 +67,9 @@ module.exports = {
     },
     securityTokenRegistry: function () {
         return securityTokenRegistryABI;
+    },
+    iSecurityTokenRegistry: function () {
+        return iSecurityTokenRegistryABI;
     },
     featureRegistry: function () {
         return featureRegistryABI;

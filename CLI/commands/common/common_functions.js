@@ -49,7 +49,7 @@ async function getGasLimit(options, action) {
 
 async function checkPermissions(action) {
   let contractRegistry = connect(action._parent.options.jsonInterface, action._parent._address);
-  //NOTE this is a condition to verify if the transaction comes from a module or not. 
+  //NOTE this is a condition to verify if the transaction comes from a module or not.
   if (contractRegistry.methods.hasOwnProperty('factory')) {
     let moduleAddress = await contractRegistry.methods.factory().call();
     let moduleRegistry = connect(abis.moduleFactory(), moduleAddress);
@@ -76,28 +76,28 @@ module.exports = {
     return (days + " days, " + hrs + " Hrs, " + mnts + " Minutes, " + seconds + " Seconds");
   },
   logAsciiBull: function () {
-    console.log(`                                                                          
-                                       /######%%,             /#(              
-                                     ##########%%%%%,      ,%%%.      %        
-                                  *#############%%%%%##%%%%%%#      ##         
-                                (################%%%%#####%%%%//###%,          
-                             .####################%%%%#########/               
-                           (#########%%############%%%%%%%%%#%%%               
-                       ,(%#%%%%%%%%%%%%############%%%%%%%###%%%.              
-                  (######%%###%%%%%%%%##############%%%%%####%%%*              
-                /#######%%%%######%%%%##########%###,.%######%%%(              
-          #%%%%%#######%%%%%%###########%%%%%*######    /####%%%#              
-         #.    ,%%####%%%%%%%(/#%%%%%%%%(    #%####        ,#%/                
-     *#%(      .%%%##%%%%%%                 .%%%#*                             
-               .%%%%#%%%%               .%%%###(                               
-               %%%#####%                (%%.                                   
-              #%###(,                                                          
-             *#%#                                                              
-             %%#                                                               
-            *                                                                
-            &%                                                                 
-           %%%.                                                                                                                                                
-`);
+    console.log(chalk.blue(`
+                                       /######%%,             /#(
+                                     ##########%%%%%,      ,%%%.      %
+                                  *#############%%%%%##%%%%%%#      ##
+                                (################%%%%#####%%%%//###%,
+                             .####################%%%%#########/
+                           (#########%%############%%%%%%%%%#%%%
+                       ,(%#%%%%%%%%%%%%############%%%%%%%###%%%.
+                  (######%%###%%%%%%%%##############%%%%%####%%%*
+                /#######%%%%######%%%%##########%###,.%######%%%(
+          #%%%%%#######%%%%%%###########%%%%%*######    /####%%%#
+         #.    ,%%####%%%%%%%(/#%%%%%%%%(    #%####        ,#%/
+     *#%(      .%%%##%%%%%%                 .%%%#*
+               .%%%%#%%%%               .%%%###(
+               %%%#####%                (%%.
+              #%###(,
+             *#%#
+             %%#
+            *
+            &%
+           %%%.
+`));
   },
   getNonce: async function (from) {
     return (await web3.eth.getTransactionCount(from.address, "pending"));

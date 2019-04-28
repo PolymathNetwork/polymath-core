@@ -4,6 +4,7 @@ let iSecurityTokenRegistryABI;
 let featureRegistryABI;
 let moduleRegistryABI;
 let securityTokenABI;
+let iSecurityTokenABI;
 let stoInterfaceABI;
 let cappedSTOABI;
 let usdTieredSTOABI;
@@ -34,6 +35,7 @@ try {
     featureRegistryABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/FeatureRegistry.json`).toString()).abi;
     moduleRegistryABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/ModuleRegistry.json`).toString()).abi;
     securityTokenABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/SecurityToken.json`).toString()).abi;
+    iSecurityTokenABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/ISecurityToken.json`).toString()).abi;
     stoInterfaceABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/ISTO.json`).toString()).abi;
     cappedSTOABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/CappedSTO.json`).toString()).abi;
     usdTieredSTOABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/USDTieredSTO.json`).toString()).abi;
@@ -79,6 +81,9 @@ module.exports = {
     },
     securityToken: function () {
         return securityTokenABI;
+    },
+    iSecurityToken: function () {
+        return iSecurityTokenABI;
     },
     stoInterface: function () {
         return stoInterfaceABI;

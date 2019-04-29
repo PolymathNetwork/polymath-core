@@ -125,7 +125,7 @@ contract LockUpTransferManager is ITransferManager {
         uint256[] _releaseFrequenciesSeconds,
         bytes32[] _lockupNames
     )  
-        external
+        public
         withPerm(ADMIN)
     {
         require(
@@ -170,7 +170,7 @@ contract LockUpTransferManager is ITransferManager {
         address[] _userAddresses,
         bytes32[] _lockupNames
     )
-        external
+        public
         withPerm(ADMIN)
     {
         require(_userAddresses.length == _lockupNames.length, "Length mismatch");
@@ -597,7 +597,12 @@ contract LockUpTransferManager is ITransferManager {
     {
         require(_userAddress != address(0), "Invalid address");
         require(lockups[_lockupName].startTime >= now, "Lockup expired");
-
+        if (userToLockups[_userAddress].length > 0) {
+            require(
+                userToLockups[_userAddress][userToLockupIndex[_userAddress][_lockupName]] != _lockupName,
+                "User already in lockup"
+            );
+        }
         userToLockupIndex[_userAddress][_lockupName] = userToLockups[_userAddress].length;
         lockupToUserIndex[_lockupName][_userAddress] = lockupToUsers[_lockupName].length;
         userToLockups[_userAddress].push(_lockupName);

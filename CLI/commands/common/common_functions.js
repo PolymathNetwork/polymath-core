@@ -53,7 +53,7 @@ async function checkPermissions(action) {
   if (contractRegistry.methods.hasOwnProperty('factory')) {
     let moduleAddress = await contractRegistry.methods.factory().call();
     let moduleRegistry = connect(abis.moduleFactory(), moduleAddress);
-    let parentModule = await moduleRegistry.methods.getName().call();
+    let parentModule = await moduleRegistry.methods.name().call();
     let result = await checkPermission(web3.utils.hexToUtf8(parentModule), action._method.name, contractRegistry);
     if (!result) {
       console.log("You haven't the right permissions to execute this method.");

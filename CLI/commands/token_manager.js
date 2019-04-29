@@ -145,9 +145,8 @@ async function selectAction() {
 
   let isIssuable = await securityToken.methods.isIssuable().call();
   if (isIssuable) {
-    let isFreezeMintingAllowed = await featureRegistry.methods.getFeatureStatus('freezeMintingAllowed').call();
-    if (isFreezeMintingAllowed) {
-      options.push('Freeze Issuing permanently');
+    if (Issuer.address == await securityToken.methods._owner().call()) {
+    options.push('Freeze Issuance permanently');
     }
   }
 
@@ -248,9 +247,16 @@ async function unfreezeTransfers() {
 }
 
 async function freezeIssuance() {
-  let freezeIssuanceAction = securityToken.methods.freezeIssuance();
-  await common.sendTransaction(freezeIssuanceAction);
-  console.log(chalk.green(`Issuance has been frozen successfully!.`));
+  console.log(chalk.yellow.bgRed.bold(`---- WARNING: THIS ACTION WILL PERMANENTLY DISABLE TOKEN ISSUANCE! ----`));
+  let confirmation = readlineSync.question(`To confirm type "I acknowledge that freezing Issuance is a permanent and irrevocable change": `);
+  if (confirmation == "I acknowledge that freezing Issuance is a permanent and irrevocable change") {
+      let signature = await getFreezeIssuanceAck(securityToken.options.address, Issuer.address);
+      let freezeIssuanceAction = securityToken.methods.freezeIssuance(signature);
+      await common.sendTransaction(freezeIssuanceAction);
+      console.log(chalk.green(`Issuance has been frozen successfully!.`));
+  } else {
+      console.log(chalk.yellow(`Invalid confirmation. Action Canceled`));
+  }
 }
 
 async function createCheckpoint() {
@@ -299,8 +305,7 @@ async function issueTokens() {
       let fromTime = readlineSync.questionInt('Enter the time (Unix Epoch time) when the sale lockup period ends and the investor can freely sell his tokens: ');
       let toTime = readlineSync.questionInt('Enter the time (Unix Epoch time) when the purchase lockup period ends and the investor can freely purchase tokens from others: ');
       let expiryTime = readlineSync.questionInt('Enter the time till investors KYC will be validated (after that investor need to do re-KYC): ');
-      let canBuyFromSTO = readlineSync.keyInYNStrict('Can the investor buy from security token offerings?');
-      await modifyWhitelist(investor, fromTime, toTime, expiryTime, canBuyFromSTO);
+      await modifyKYCData(investor, fromTime, toTime, expiryTime);
       break;
     case 'Issue tokens to a single address':
       console.log(chalk.yellow(`Investor should be previously whitelisted.`));
@@ -316,16 +321,17 @@ async function issueTokens() {
 }
 
 /// Issue actions
-async function modifyWhitelist(investor, fromTime, toTime, expiryTime, canBuyFromSTO) {
+async function modifyKYCData(investor, fromTime, toTime, expiryTime) {
   let gmtModules = await securityToken.methods.getModulesByName(web3.utils.toHex('GeneralTransferManager')).call();
   let generalTransferManagerAddress = gmtModules[0];
   let generalTransferManagerABI = abis.generalTransferManager();
   let generalTransferManager = new web3.eth.Contract(generalTransferManagerABI, generalTransferManagerAddress);
 
-  let modifyWhitelistAction = generalTransferManager.methods.modifyKYCData(investor, fromTime, toTime, expiryTime);
-  let modifyWhitelistReceipt = await common.sendTransaction(modifyWhitelistAction);
-  let modifyWhitelistEvent = common.getEventFromLogs(generalTransferManager._jsonInterface, modifyWhitelistReceipt.logs, 'ModifyKYCData');
-  console.log(chalk.green(`${modifyWhitelistEvent._investor} has been whitelisted sucessfully!`));
+  let modifyKYCDataAction = generalTransferManager.methods.modifyKYCData(investor, fromTime, toTime, expiryTime);
+  let modifyKYCDataReceipt = await common.sendTransaction(modifyKYCDataAction);
+  let modifyKYCDataEvent = common.getEventFromLogs(generalTransferManager._jsonInterface, modifyKYCDataReceipt.logs, 'ModifyKYCData');
+
+  console.log(chalk.green(`${modifyKYCDataEvent._investor} has been whitelisted sucessfully!`));
 }
 
 async function issueToSingleAddress(_investor, _amount) {
@@ -337,7 +343,7 @@ async function issueToSingleAddress(_investor, _amount) {
   }
   catch (e) {
     console.log(e);
-    console.log(chalk.red(`Issuing was not successful - Please make sure beneficiary address has been whitelisted`));
+    console.log(chalk.red(`Issuance was not successful - Please make sure beneficiary address has been whitelisted`));
   }
 }
 
@@ -712,4 +718,49 @@ module.exports = {
     await initialize(_tokenSymbol);
     return multiIssue(_csvPath, _batchSize);
   }
+}
+
+async function getFreezeIssuanceAck(stAddress, from) {
+    const typedData = {
+        types: {
+            EIP712Domain: [
+                { name: 'name', type: 'string' },
+                { name: 'chainId', type: 'uint256' },
+                { name: 'verifyingContract', type: 'address' }
+            ],
+            Acknowledgment: [
+                { name: 'text', type: 'string' }
+            ],
+        },
+        primaryType: 'Acknowledgment',
+        domain: {
+            name: 'Polymath',
+            chainId: 1,
+            verifyingContract: stAddress
+        },
+        message: {
+            text: 'I acknowledge that freezing Issuance is a permanent and irrevocable change',
+        },
+    };
+    const result = await new Promise((resolve, reject) => {
+        web3.currentProvider.send(
+            {
+                method: 'eth_signTypedData',
+                params: [from, typedData]
+            },
+            (err, result) => {
+                if (err) {
+                    return reject(err);
+                }
+                resolve(result.result);
+            }
+        );
+    });
+    // console.log('signed by', from);
+    // const recovered = sigUtil.recoverTypedSignature({
+    //     data: typedData,
+    //     sig: result
+    // })
+    // console.log('recovered address', recovered);
+    return result;
 }

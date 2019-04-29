@@ -98,7 +98,7 @@ async function executeApp() {
       });
       await logBalance(verifyTransferTo, verifyTotalSupply);
       let verifyTransferAmount = readlineSync.question('Enter amount of tokens to verify: ');
-      let isVerified = await securityToken.methods.verifyTransfer(verifyTransferFrom, verifyTransferTo, web3.utils.toWei(verifyTransferAmount), web3.utils.fromAscii("")).call();
+      let isVerified = await securityToken.methods.canTransferFrom(verifyTransferFrom, verifyTransferTo, web3.utils.toWei(verifyTransferAmount), web3.utils.fromAscii("")).call();
       if (isVerified) {
         console.log(chalk.green(`\n${verifyTransferAmount} ${tokenSymbol} can be transferred from ${verifyTransferFrom} to ${verifyTransferTo}!`));
       } else {
@@ -117,7 +117,7 @@ async function executeApp() {
       });
       await logBalance(transferTo, totalSupply);
       let transferAmount = readlineSync.question('Enter amount of tokens to transfer: ');
-      let isTranferVerified = await securityToken.methods.verifyTransfer(Issuer.address, transferTo, web3.utils.toWei(transferAmount), web3.utils.fromAscii("")).call();
+      let isTranferVerified = await securityToken.methods.canTransferFrom(Issuer.address, transferTo, web3.utils.toWei(transferAmount), web3.utils.fromAscii("")).call();
       if (isTranferVerified) {
         let transferAction = securityToken.methods.transfer(transferTo, web3.utils.toWei(transferAmount));
         let receipt = await common.sendTransaction(transferAction);
@@ -204,8 +204,8 @@ async function forcedTransfers() {
       let forceTransferAction = securityToken.methods.forceTransfer(from, to, web3.utils.toWei(amount), web3.utils.asciiToHex(data), web3.utils.asciiToHex(log));
       let forceTransferReceipt = await common.sendTransaction(forceTransferAction, { factor: 1.5 });
       let forceTransferEvent = common.getEventFromLogs(securityToken._jsonInterface, forceTransferReceipt.logs, 'ForceTransfer');
-      console.log(chalk.green(`  ${forceTransferEvent._controller} has successfully forced a transfer of ${web3.utils.fromWei(forceTransferEvent._value)} ${tokenSymbol} 
-  from ${forceTransferEvent._from} to ${forceTransferEvent._to} 
+      console.log(chalk.green(`  ${forceTransferEvent._controller} has successfully forced a transfer of ${web3.utils.fromWei(forceTransferEvent._value)} ${tokenSymbol}
+  from ${forceTransferEvent._from} to ${forceTransferEvent._to}
   Verified transfer: ${forceTransferEvent._verifyTransfer}
   Data: ${web3.utils.hexToAscii(forceTransferEvent._data)}
         `));
@@ -433,7 +433,7 @@ async function generalTransferManager() {
           return web3.utils.isAddress(input);
         },
         limitMessage: "Must be a valid address"
-      }); 
+      });
       let fromTimeSigned = readlineSync.questionInt('Enter the time (Unix Epoch time) when the sale lockup period ends and the investor can freely sell his tokens: ');
       let toTimeSigned = readlineSync.questionInt('Enter the time (Unix Epoch time) when the purchase lockup period ends and the investor can freely purchase tokens from others: ');
       let expiryTimeSigned = readlineSync.questionInt('Enter the time till investors KYC will be validated (after that investor need to do re-KYC): ');
@@ -2708,8 +2708,8 @@ async function initialize(_tokenSymbol) {
     console.log(chalk.red(`Selected Security Token ${tokenSymbol} does not exist.`));
     process.exit(0);
   }
-  let securityTokenABI = abis.securityToken();
-  securityToken = new web3.eth.Contract(securityTokenABI, securityTokenAddress);
+  let iSecurityTokenABI = abis.iSecurityToken();
+  securityToken = new web3.eth.Contract(iSecurityTokenABI, securityTokenAddress);
   securityToken.setProvider(web3.currentProvider);
 }
 
@@ -2724,8 +2724,8 @@ function welcome() {
 async function setup() {
   try {
     let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
-    let securityTokenRegistryABI = abis.securityTokenRegistry();
-    securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
+    let iSecurityTokenRegistryABI = abis.iSecurityTokenRegistry();
+    securityTokenRegistry = new web3.eth.Contract(iSecurityTokenRegistryABI, securityTokenRegistryAddress);
     securityTokenRegistry.setProvider(web3.currentProvider);
 
     let moduleRegistryAddress = await contracts.moduleRegistry();

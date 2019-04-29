@@ -425,9 +425,10 @@ interface ISecurityToken {
     function unfreezeTransfers() external;
 
     /**
-     * @notice Ends token minting period permanently
+     * @notice Permanently freeze issuance of this security token.
+     * @dev It MUST NOT be possible to increase `totalSuppy` after this function is called.
      */
-    function freezeIssuance() external;
+    function freezeIssuance(bytes calldata _signature) external;
 
      /**
       * @notice Attachs a module to the SecurityToken
@@ -580,6 +581,12 @@ interface ISecurityToken {
       * @return uint256
       */
     function granularity() external view returns(uint256);
+
+    /**
+      * @notice Gets the token owner
+      * @return address
+      */
+    function _owner() external view returns(address);
 
     /**
       * @notice Gets the token name

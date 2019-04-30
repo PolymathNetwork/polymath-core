@@ -954,6 +954,33 @@ contract('BlacklistTransferManager', accounts => {
         });
     });
 
+    describe("Test cases for blacklist with repeat period 0 (Never repeat)", async() => { 
+        it("Should add a new blacklist with no repeat time", async() => {
+            let curTime = latestTime();
+            await I_BlacklistTransferManager.deleteInvestorFromAllBlacklist(account_investor3, { from: token_owner });
+            await I_BlacklistTransferManager.addInvestorToNewBlacklist(
+                curTime + duration.seconds(100), 
+                curTime + duration.seconds(1000),
+                web3.utils.fromAscii("anewbl"), 
+                0, 
+                account_investor3, 
+                { from: token_owner}
+            );
+            await increaseTime(200);
+            await catchRevert(I_SecurityToken.transfer(account_investor4, web3.utils.toWei('1', 'ether'), { from: account_investor3 }));
+        });
+
+        it("Should allow transfer after blacklist end time", async() => {
+            await increaseTime(2000);
+            await I_SecurityToken.transfer(account_investor4, web3.utils.toWei('1', 'ether'), { from: account_investor3 });
+            assert.equal(
+                (await I_SecurityToken.balanceOf(account_investor4)).toString(),
+                web3.utils.toWei('4', 'ether')
+            );
+        });
+    });
+
+
     describe("Test cases for the factory", async() => {
         it("Should get the exact details of the factory", async() => {
             assert.equal(await I_BlacklistTransferManagerFactory.setupCost.call(),0);

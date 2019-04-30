@@ -933,6 +933,11 @@ contract('LockUpTransferManager', accounts => {
 
             await I_LockUpTransferManager.addLockUpByName(account_investor2, "l_lockup", {from: token_owner});
 
+            //Should not allow to add a user to a lockup multiple times
+            await catchRevert(
+                I_LockUpTransferManager.addLockUpByName(account_investor2, web3.utils.fromAscii("l_lockup"), {from: token_owner})
+            );
+
             // try to delete the lockup but fail
 
             await catchRevert(

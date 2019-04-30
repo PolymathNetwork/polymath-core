@@ -103,13 +103,12 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
      * @notice Sends unassigned tokens to the treasury wallet
      * @param _amount Amount of tokens that should be send to the treasury wallet
      */
-    function sendToTreasury(uint256 _amount) external withPerm(ADMIN) {
+    function sendToTreasury(uint256 _amount) public withPerm(ADMIN) {
         require(_amount > 0, "Amount cannot be zero");
         require(_amount <= unassignedTokens, "Amount is greater than unassigned tokens");
-        uint256 amount = unassignedTokens;
-        unassignedTokens = 0;
-        require(ISecurityToken(securityToken).transfer(treasuryWallet, amount), "Transfer failed");
-        emit SendToTreasury(amount, msg.sender);
+        unassignedTokens = unassignedTokens - _amount;
+        require(ISecurityToken(securityToken).transfer(treasuryWallet, _amount), "Transfer failed");
+        emit SendToTreasury(_amount, msg.sender);
     }
 
     /**
@@ -478,7 +477,7 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
      * @notice Used to bulk revoke vesting schedules for each of the beneficiaries
      * @param _beneficiaries Array of the beneficiary's addresses
      */
-    function revokeSchedulesMulti(address[] _beneficiaries) external withPerm(ADMIN) {
+    function revokeSchedulesMulti(address[] _beneficiaries) public withPerm(ADMIN) {
         for (uint256 i = 0; i < _beneficiaries.length; i++) {
             _revokeAllSchedules(_beneficiaries[i]);
         }

@@ -10,7 +10,7 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 contract RestrictedPartialSaleTM is TransferManager {
 
     // permission definition
-    bytes32 internal constant ADMIN = "ADMIN";
+    bytes32 internal constant OPERATOR = "OPERATOR";
 
     address[] exemptAddresses;
 
@@ -96,7 +96,7 @@ contract RestrictedPartialSaleTM is TransferManager {
      * @param _wallet Ethereum wallet/contract address that need to be exempted
      * @param _exempted Boolean value used to add (i.e true) or remove (i.e false) from the list
      */
-    function changeExemptWalletList(address _wallet, bool _exempted) external withPerm(ADMIN) {
+    function changeExemptWalletList(address _wallet, bool _exempted) external withPerm(OPERATOR) {
         _changeExemptionWalletList(_wallet, _exempted);
     }
 
@@ -105,7 +105,7 @@ contract RestrictedPartialSaleTM is TransferManager {
      * @param _wallet Ethereum wallet/contract addresses that need to be exempted
      * @param _exempted Boolean value used to add (i.e true) or remove (i.e false) from the list
      */
-    function changeExemptWalletListMulti(address[] memory _wallet, bool[] memory _exempted) public withPerm(ADMIN) {
+    function changeExemptWalletListMulti(address[] memory _wallet, bool[] memory _exempted) public withPerm(OPERATOR) {
         require(_wallet.length == _exempted.length, "Length mismatch");
         for (uint256 i = 0; i < _wallet.length; i++) {
             _changeExemptionWalletList(_wallet[i], _exempted[i]);
@@ -141,7 +141,7 @@ contract RestrictedPartialSaleTM is TransferManager {
      */
     function getPermissions() public view returns(bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](1);
-        allPermissions[0] = ADMIN;
+        allPermissions[0] = OPERATOR;
         return allPermissions;
     }
 }

@@ -13,6 +13,7 @@ let countTransferManagerABI;
 let percentageTransferManagerABI;
 let lockUpTransferManagerABI;
 let volumeRestrictionTMABI;
+let restrictedPartialSaleTMABI;
 let generalPermissionManagerABI;
 let polyTokenABI;
 let cappedSTOFactoryABI;
@@ -41,6 +42,7 @@ try {
     percentageTransferManagerABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/PercentageTransferManager.json`).toString()).abi;
     blacklistTransferManagerABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/BlacklistTransferManager.json`).toString()).abi;
     volumeRestrictionTMABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/VolumeRestrictionTM.json`).toString()).abi;
+    restrictedPartialSaleTMABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/RestrictedPartialSaleTM.json`).toString()).abi;
     lockUpTransferManagerABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/LockUpTransferManager.json`).toString()).abi;
     generalPermissionManagerABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/GeneralPermissionManager.json`).toString()).abi;
     polyTokenABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/PolyTokenFaucet.json`).toString()).abi;
@@ -104,6 +106,9 @@ module.exports = {
     },
     volumeRestrictionTM: function () {
         return volumeRestrictionTMABI;
+    },
+    restrictedPartialSaleTM: function () {
+        return restrictedPartialSaleTMABI;
     },
     generalPermissionManager: function () {
         return generalPermissionManagerABI;

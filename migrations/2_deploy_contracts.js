@@ -22,6 +22,8 @@ const SecurityTokenRegistry = artifacts.require('./SecurityTokenRegistry.sol')
 const SecurityTokenRegistryProxy = artifacts.require('./SecurityTokenRegistryProxy.sol')
 const VolumeRestrictionTMFactory = artifacts.require('./VolumeRestrictionTMFactory.sol')
 const VolumeRestrictionTMLogic = artifacts.require('./VolumeRestrictionTM.sol');
+const RestrictedPartialSaleTMFactory = artifacts.require('./RestrictedPartialSaleTMFactory.sol')
+const RestrictedPartialSaleTMLogic = artifacts.require('./RestrictedPartialSaleTM.sol');
 const FeatureRegistry = artifacts.require('./FeatureRegistry.sol')
 const STFactory = artifacts.require('./tokens/STFactory.sol')
 const DevPolyToken = artifacts.require('./helpers/PolyTokenFaucet.sol')
@@ -185,6 +187,10 @@ module.exports = function (deployer, network, accounts) {
     // manager attach with the securityToken contract at the time of deployment)
     return deployer.deploy(VolumeRestrictionTMLogic, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: PolymathAccount });
   }).then(() => {
+    // B) Deploy the RestrictedPartialSaleTMLogic Contract (Factory used to generate the RestrictedPartialSaleTM contract and this
+    // manager attach with the securityToken contract at the time of deployment)
+    return deployer.deploy(RestrictedPartialSaleTMLogic, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: PolymathAccount });
+  }).then(() => {
     // B) Deploy the VestingEscrowWalletFactory Contract (Factory used to generate the VestingEscrowWallet contract and this
     // manager attach with the securityToken contract at the time of deployment)
     return deployer.deploy(VestingEscrowWalletFactory, PolyToken, 0, 0, 0, VestingEscrowWalletLogic.address, { from: PolymathAccount });
@@ -224,6 +230,10 @@ module.exports = function (deployer, network, accounts) {
     // D) Deploy the VolumeRestrictionTMFactory Contract (Factory used to generate the VolumeRestrictionTM contract use
     // to provide the functionality of restricting the token volume)
     return deployer.deploy(VolumeRestrictionTMFactory, PolyToken, 0, 0, 0, VolumeRestrictionTMLogic.address, { from: PolymathAccount });
+  }).then(() => {
+    // D) Deploy the RestrictedPartialSaleTMFactory Contract (Factory used to generate the RestrictedPartialSaleTM contract use
+    // to provide the functionality of restricting partial sales)
+    return deployer.deploy(RestrictedPartialSaleTMFactory, PolyToken, 0, 0, 0, { from: PolymathAccount });
   }).then(() => {
     // D) Deploy the ManualApprovalTransferManagerFactory Contract (Factory used to generate the ManualApprovalTransferManager contract use
     // to manual approve the transfer that will overcome the other transfer restrictions)
@@ -288,6 +298,10 @@ module.exports = function (deployer, network, accounts) {
     // So any securityToken can use that factory to generate the VolumeRestrictionTM contract.
     return moduleRegistry.registerModule(VolumeRestrictionTMFactory.address, { from: PolymathAccount });
   }).then(() => {
+    // D) Register the RestrictedPartialSaleTMFactory in the ModuleRegistry to make the factory available at the protocol level.
+    // So any securityToken can use that factory to generate the RestrictedPartialSaleTM contract.
+    return moduleRegistry.registerModule(RestrictedPartialSaleTMFactory.address, { from: PolymathAccount });
+  }).then(() => {
     // D) Register the ManualApprovalTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
     // So any securityToken can use that factory to generate the ManualApprovalTransferManager contract.
     return moduleRegistry.registerModule(ManualApprovalTransferManagerFactory.address, { from: PolymathAccount });
@@ -340,6 +354,11 @@ module.exports = function (deployer, network, accounts) {
     // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
     // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
     return moduleRegistry.verifyModule(VolumeRestrictionTMFactory.address, true, { from: PolymathAccount });
+  }).then(() => {
+    // G) Once the RestrictedPartialSaleTMFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
+    // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
+    // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
+    return moduleRegistry.verifyModule(RestrictedPartialSaleTMFactory.address, true, { from: PolymathAccount });
   }).then(() => {
     // G) Once the ManualApprovalTransferManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
     // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
@@ -412,6 +431,8 @@ module.exports = function (deployer, network, accounts) {
     BlacklistTransferManagerFactory:      ${BlacklistTransferManagerFactory.address}
     VolumeRestrictionTMFactory:           ${VolumeRestrictionTMFactory.address}
     VolumeRestrictionTMLogic:             ${VolumeRestrictionTMLogic.address}
+    RestrictedPartialSaleTMFactory:       ${RestrictedPartialSaleTMFactory.address}
+    RestrictedPartialSaleTMLogic:         ${RestrictedPartialSaleTMLogic.address}
     VestingEscrowWalletFactory:           ${VestingEscrowWalletFactory.address}
     VestingEscrowWalletLogic:             ${VestingEscrowWalletLogic.address}
     ---------------------------------------------------------------------------------

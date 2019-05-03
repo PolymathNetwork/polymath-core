@@ -115,7 +115,7 @@ contract RestrictedPartialSaleTM is TransferManager {
     function _changeExemptionWalletList(address _wallet, bool _exempted) internal {
         require(_wallet != address(0), "Invalid address");
         uint256 exemptIndexWallet = exemptIndex[_wallet];
-        require((exemptIndexWallet == 0) == _exempted);
+        require((exemptIndexWallet == 0) == _exempted, "Exemption state doesn't change");
         if (_exempted) {
             exemptAddresses.push(_wallet);
             exemptIndex[_wallet] = exemptAddresses.length;

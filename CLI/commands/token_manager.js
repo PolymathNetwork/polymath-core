@@ -288,17 +288,8 @@ async function mintTokens() {
   console.log('Selected:', selected);
   switch (selected) {
     case 'Modify whitelist':
-      let investor = readlineSync.question('Enter the address to whitelist: ', {
-        limit: function (input) {
-          return web3.utils.isAddress(input);
-        },
-        limitMessage: "Must be a valid address"
-      });
-      let fromTime = readlineSync.questionInt('Enter the time (Unix Epoch time) when the sale lockup period ends and the investor can freely sell his tokens: ');
-      let toTime = readlineSync.questionInt('Enter the time (Unix Epoch time) when the purchase lockup period ends and the investor can freely purchase tokens from others: ');
-      let expiryTime = readlineSync.questionInt('Enter the time till investors KYC will be validated (after that investor need to do re-KYC): ');
-      let canBuyFromSTO = readlineSync.keyInYNStrict('Can the investor buy from security token offerings?');
-      await modifyWhitelist(investor, fromTime, toTime, expiryTime, canBuyFromSTO);
+      let generalTransferManager = await getGeneralTransferManager();
+      await common.queryModifyWhiteList(generalTransferManager);
       break;
     case 'Mint tokens to a single address':
       console.log(chalk.yellow(`Investor should be previously whitelisted.`));
@@ -314,16 +305,13 @@ async function mintTokens() {
 }
 
 /// Mint actions
-async function modifyWhitelist(investor, fromTime, toTime, expiryTime, canBuyFromSTO) {
+async function getGeneralTransferManager() {
   let gmtModules = await securityToken.methods.getModulesByName(web3.utils.toHex('GeneralTransferManager')).call();
   let generalTransferManagerAddress = gmtModules[0];
   let generalTransferManagerABI = abis.generalTransferManager();
   let generalTransferManager = new web3.eth.Contract(generalTransferManagerABI, generalTransferManagerAddress);
-
-  let modifyWhitelistAction = generalTransferManager.methods.modifyWhitelist(investor, fromTime, toTime, expiryTime, canBuyFromSTO);
-  let modifyWhitelistReceipt = await common.sendTransaction(modifyWhitelistAction);
-  let modifyWhitelistEvent = common.getEventFromLogs(generalTransferManager._jsonInterface, modifyWhitelistReceipt.logs, 'ModifyWhitelist');
-  console.log(chalk.green(`${modifyWhitelistEvent._investor} has been whitelisted sucessfully!`));
+  generalTransferManager.setProvider(web3.currentProvider);
+  return generalTransferManager;
 }
 
 async function mintToSingleAddress(_investor, _amount) {

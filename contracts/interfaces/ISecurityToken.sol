@@ -46,6 +46,23 @@ interface ISecurityToken {
     // Emit when the budget allocated to a module is changed
     event ModuleBudgetChanged(uint8[] _moduleTypes, address _module, uint256 _oldBudget, uint256 _budget); //Event emitted by the tokenLib.
 
+    // Standard ERC1644 Controller Events
+    event ControllerTransfer(
+        address _controller,
+        address indexed _from,
+        address indexed _to,
+        uint256 _value,
+        bytes _data,
+        bytes _operatorData
+    );
+    event ControllerRedemption(
+        address _controller,
+        address indexed _tokenHolder,
+        uint256 _value,
+        bytes _data,
+        bytes _operatorData
+    );
+
     // Standard ERC20 interface
     function decimals() external view returns(uint8);
     function totalSupply() external view returns(uint256);
@@ -228,7 +245,7 @@ interface ISecurityToken {
         bytes calldata _operatorData
     ) external;
 
-    // Issuance / Redemption Events
+    // ERC1594 Issuance / Redemption Events
     event Issued(address indexed _operator, address indexed _to, uint256 _value, bytes _data);
     event Redeemed(address indexed _operator, address indexed _from, uint256 _value, bytes _data);
 
@@ -522,7 +539,7 @@ interface ISecurityToken {
      * @notice Used by the issuer to permanently disable controller functionality
      * @dev enabled via feature switch "disableControllerAllowed"
      */
-    function disableController() external;
+    function disableController(bytes calldata _signature) external;
 
     /**
      * @notice Used to get the version of the securityToken
@@ -599,6 +616,12 @@ interface ISecurityToken {
       * @return string
       */
     function symbol() external view returns(string memory);
+
+    /**
+      * @notice Gets the token controller
+      * @return address
+      */
+    function controller() external view returns(address);
 
     /**
       * @notice Gets the token details

@@ -422,7 +422,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @return bool success
      */
     function transfer(address _to, uint256 _value) public returns(bool success) {
-        transferWithData(_to, _value, "");
+        _transferWithData(msg.sender, _to, _value, "");
         return true;
     }
 

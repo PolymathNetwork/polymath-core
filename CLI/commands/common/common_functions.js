@@ -2,12 +2,45 @@ const chalk = require('chalk');
 const Tx = require('ethereumjs-tx');
 const permissionsList = require('./permissions_list');
 const abis = require('../helpers/contract_abis');
+const readlineSync = require('readline-sync');
 
 function connect(abi, address) {
   contractRegistry = new web3.eth.Contract(abi, address);
   contractRegistry.setProvider(web3.currentProvider);
   return contractRegistry
 };
+
+async function queryModifyWhiteList(currentTransferManager) {
+      let investor = readlineSync.question('Enter the address to whitelist: ', {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address"
+      });
+      let now = Math.floor(Date.now() / 1000);
+      let fromTime = readlineSync.questionInt(`Enter the time (Unix Epoch time) when the sale lockup period ends and the investor can freely sell his tokens (now = ${now}): `, { defaultInput: now });
+      let toTime = readlineSync.questionInt(`Enter the time (Unix Epoch time) when the purchase lockup period ends and the investor can freely purchase tokens from others (now = ${now}): `, { defaultInput: now });
+      let oneYearFromNow = Math.floor(Date.now() / 1000 + (60 * 60 * 24 * 365));
+      let expiryTime = readlineSync.questionInt(`Enter the time until the investors KYC will be valid (after this time expires, the investor must re-do KYC) (1 year from now = ${oneYearFromNow}): `, { defaultInput: oneYearFromNow });
+      let canBuyFromSTO = readlineSync.keyInYNStrict('Can the investor buy from security token offerings?');
+      let modifyWhitelistAction = currentTransferManager.methods.modifyWhitelist(investor, fromTime, toTime, expiryTime, canBuyFromSTO);
+      let modifyWhitelistReceipt = await sendTransaction(modifyWhitelistAction);
+      let moduleVersion = await getModuleVersion(currentTransferManager);
+      if (moduleVersion != '1.0.0') {
+        let modifyWhitelistEvent = getEventFromLogs(currentTransferManager._jsonInterface, modifyWhitelistReceipt.logs, 'ModifyWhitelist');
+        console.log(chalk.green(`${modifyWhitelistEvent._investor} has been whitelisted sucessfully!`));
+      } else {
+        console.log(chalk.green(`${investor} has been whitelisted sucessfully!`));
+      }
+}
+
+async function getModuleVersion(currentTransferManager) {
+  let moduleFactoryABI = abis.moduleFactory();
+  let factoryAddress = await currentTransferManager.methods.factory().call();
+  let moduleFactory = new web3.eth.Contract(moduleFactoryABI, factoryAddress);
+  let moduleVersion = await moduleFactory.methods.version().call();
+    return moduleVersion
+}
 
 async function checkPermission(contractName, functionName, contractRegistry) {
   let permission = permissionsList.verifyPermission(contractName, functionName);
@@ -63,46 +96,7 @@ async function checkPermissions(action) {
   return
 }
 
-module.exports = {
-  convertToDaysRemaining: function (timeRemaining) {
-    var seconds = parseInt(timeRemaining, 10);
-
-    var days = Math.floor(seconds / (3600 * 24));
-    seconds -= days * 3600 * 24;
-    var hrs = Math.floor(seconds / 3600);
-    seconds -= hrs * 3600;
-    var mnts = Math.floor(seconds / 60);
-    seconds -= mnts * 60;
-    return (days + " days, " + hrs + " Hrs, " + mnts + " Minutes, " + seconds + " Seconds");
-  },
-  logAsciiBull: function () {
-    console.log(`                                                                          
-                                       /######%%,             /#(              
-                                     ##########%%%%%,      ,%%%.      %        
-                                  *#############%%%%%##%%%%%%#      ##         
-                                (################%%%%#####%%%%//###%,          
-                             .####################%%%%#########/               
-                           (#########%%############%%%%%%%%%#%%%               
-                       ,(%#%%%%%%%%%%%%############%%%%%%%###%%%.              
-                  (######%%###%%%%%%%%##############%%%%%####%%%*              
-                /#######%%%%######%%%%##########%###,.%######%%%(              
-          #%%%%%#######%%%%%%###########%%%%%*######    /####%%%#              
-         #.    ,%%####%%%%%%%(/#%%%%%%%%(    #%####        ,#%/                
-     *#%(      .%%%##%%%%%%                 .%%%#*                             
-               .%%%%#%%%%               .%%%###(                               
-               %%%#####%                (%%.                                   
-              #%###(,                                                          
-             *#%#                                                              
-             %%#                                                               
-            *                                                                
-            &%                                                                 
-           %%%.                                                                                                                                                
-`);
-  },
-  getNonce: async function (from) {
-    return (await web3.eth.getTransactionCount(from.address, "pending"));
-  },
-  sendTransaction: async function (action, options) {
+async function sendTransaction(action, options) {
     await checkPermissions(action);
 
     options = getFinalOptions(options);
@@ -142,11 +136,52 @@ module.exports = {
   TxHash: ${receipt.transactionHash}\n`
         );
       });
+  };
+
+function getEventFromLogs(jsonInterface, logs, eventName) {
+  let eventJsonInterface = jsonInterface.find(o => o.name === eventName && o.type === 'event');
+  let log = logs.find(l => l.topics.includes(eventJsonInterface.signature));
+  return web3.eth.abi.decodeLog(eventJsonInterface.inputs, log.data, log.topics.slice(1));
+}
+
+module.exports = {
+  convertToDaysRemaining: function (timeRemaining) {
+    var seconds = parseInt(timeRemaining, 10);
+
+    var days = Math.floor(seconds / (3600 * 24));
+    seconds -= days * 3600 * 24;
+    var hrs = Math.floor(seconds / 3600);
+    seconds -= hrs * 3600;
+    var mnts = Math.floor(seconds / 60);
+    seconds -= mnts * 60;
+    return (days + " days, " + hrs + " Hrs, " + mnts + " Minutes, " + seconds + " Seconds");
   },
-  getEventFromLogs: function (jsonInterface, logs, eventName) {
-    let eventJsonInterface = jsonInterface.find(o => o.name === eventName && o.type === 'event');
-    let log = logs.find(l => l.topics.includes(eventJsonInterface.signature));
-    return web3.eth.abi.decodeLog(eventJsonInterface.inputs, log.data, log.topics.slice(1));
+  logAsciiBull: function () {
+    console.log(`                                                                          
+                                       /######%%,             /#(              
+                                     ##########%%%%%,      ,%%%.      %        
+                                  *#############%%%%%##%%%%%%#      ##         
+                                (################%%%%#####%%%%//###%,          
+                             .####################%%%%#########/               
+                           (#########%%############%%%%%%%%%#%%%               
+                       ,(%#%%%%%%%%%%%%############%%%%%%%###%%%.              
+                  (######%%###%%%%%%%%##############%%%%%####%%%*              
+                /#######%%%%######%%%%##########%###,.%######%%%(              
+          #%%%%%#######%%%%%%###########%%%%%*######    /####%%%#              
+         #.    ,%%####%%%%%%%(/#%%%%%%%%(    #%####        ,#%/                
+     *#%(      .%%%##%%%%%%                 .%%%#*                             
+               .%%%%#%%%%               .%%%###(                               
+               %%%#####%                (%%.                                   
+              #%###(,                                                          
+             *#%#                                                              
+             %%#                                                               
+            *                                                                
+            &%                                                                 
+           %%%.                                                                                                                                                
+`);
+  },
+  getNonce: async function (from) {
+    return (await web3.eth.getTransactionCount(from.address, "pending"));
   },
   getMultipleEventsFromLogs: function (jsonInterface, logs, eventName) {
     let eventJsonInterface = jsonInterface.find(o => o.name === eventName && o.type === 'event');
@@ -172,5 +207,8 @@ module.exports = {
       }
     }
     return result;
-  }
+  },
+  sendTransaction,
+  getEventFromLogs,
+  queryModifyWhiteList
 };

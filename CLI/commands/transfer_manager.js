@@ -11,6 +11,7 @@ const { table } = require('table');
 ///////////////////
 // Constants
 const WHITELIST_DATA_CSV = `${__dirname}/../data/Transfer/GTM/whitelist_data.csv`;
+const FLAG_DATA_CSV = `${__dirname}/../data/Transfer/GTM/flag_data.csv`;
 const ADD_BLACKLIST_DATA_CSV = `${__dirname}/../data/Transfer/BlacklistTM/add_blacklist_data.csv`;
 const MODIFY_BLACKLIST_DATA_CSV = `${__dirname}/../data/Transfer/BlacklistTM/modify_blacklist_data.csv`;
 const DELETE_BLACKLIST_DATA_CSV = `${__dirname}/../data/Transfer/BlacklistTM/delete_blacklist_data.csv`;
@@ -434,16 +435,44 @@ async function generalTransferManager() {
         },
         limitMessage: "Must be a valid address"
       });
-      let flag;
-      let value;
-      // TO DO
-      console.log("NOT YET IMPLEMENTED")
-//    let modifyInvestorFlagAction = currentTransferManager.methods.modifyInvestorFlag(investorAddress, flag, value);
-//    let modifyInvestorFlagReceipt = await common.sendTransaction(modifyInvestorFlagAction);
+      let options = [];
+      options.push(
+        "Is Accredited",
+        "Cannot Buy From STO's",
+        "Is Volume Restricted",
+        "Custom Flag"
+      );
+      let index = readlineSync.keyInSelect(options, 'Select the flag you wish to set: ', { cancel: 'RETURN' });
+      let optionSelected = index !== -1 ? options[index] : 'RETURN';
+      console.log('Selected:', optionSelected, '\n');
+      let flag
+      switch (optionSelected) {
+        case "Is Accredited":
+          flag = 0;
+          break;
+        case "Cannot Buy From STO's":
+          flag = 1;
+          break;
+        case "Is Volume Restricted":
+          flag = 2;
+          break;
+        case "Custom Flag":
+          flag = readlineSync.questionInt("Enter the number of the flag you wish to change: ", {
+            limit: function (input) {
+              return (input >= 0 && input < 256);
+            },
+            limitMessage: "Invalid flag number"
+          });
+          break;
+        case "RETURN":
+          await generalTransferManager();
+      };
+      let value = readlineSync.keyInYNStrict("Should the flag be set (y) or cleared (n): ");
+      let modifyInvestorFlagAction = currentTransferManager.methods.modifyInvestorFlag(investorAddress, flag, value);
+      let modifyInvestorFlagReceipt = await common.sendTransaction(modifyInvestorFlagAction);
       break;
     case 'Modify investor flags from CSV':
-      // TO DO
-      console.log("NOT YET IMPLEMENTED")
+      await modifyFlagsInBatch();
       break;
     /*
     case 'Modify Whitelist Signed':
@@ -495,28 +524,20 @@ async function showInvestorFlags() {
     limitMessage: "Must be a valid address"
   });
   let investorFlags = new web3.utils.BN(await currentTransferManager.methods.getInvestorFlags(investor).call());
-//  let investorFlags1 = new web3.utils.BN(await currentTransferManager.methods.getInvestorFlags(investor).call());
-  console.log("Flags Deciaml " + investorFlags.toString());
+  console.log(chalk.green(`\nList of flags set for address ${investor}:`));
+  let flagNames =
+    [
+      "Is Accredited",
+      "Cannot Buy From STO's",
+      "Is Volume Restricted"
+    ];
   let flag;
-  let ONE = new web3.utils.BN(1);
-  let ZERO = new web3.utils.BN(0);
-  //TO DO - ADD ARRAY OF FLAG NAMES
   for (let i = 0; i < 256; i++) {
-    flag = investorFlags.shrn(i);
-    flag = flag.and(ONE);
-    let value = flag.gt(ZERO) ? true : false;
-    if (value) console.log("Flag " + i +" Flag name:  " + value);
+    // Test individual bits (flags) with BN utils
+    let value = investorFlags.testn(i);
+    let name = i < flagNames.length ? flagNames[i] : "Undefined";
+    if (value) console.log("  Flag " + i + " is set - " + name);
   }
-/*
-    //TO DO - ADD ARRAY OF FLAG NAMES
-    console.log("Flag 0 - Is accredited:          " + value);
-    console.log("Flag 1 - Can not buy from STO's: " + value);
-    console.log("Flag 2 - Is volume restricted:   " + value);
-    console.log("Flag 3 - unknown:                " + value);
-    console.log("Flag 4 - unknown:                " + value);
-    console.log("Flag 5 - unknown:                " + value);
-    console.log("Flag 6 - unknown:                " + value);
-*/
 }
 
 async function showAllInvestorFlags() {
@@ -524,15 +545,17 @@ async function showAllInvestorFlags() {
   let allInvestorFlagData = await currentTransferManager.methods.getAllInvestorFlags().call();
   let investorsArray = allInvestorFlagData.investors;
   let flagsArray = allInvestorFlagData.flags;
-  let flagDataTable = [['Investor Address', 'Flags Decimal', 'Flag Binary']];
-  let flagsArrayBinary;
+  let flagDataTable = [['Investor Address', 'Active Flags']];
   for (let i = 0; i < investorsArray.length; i++) {
-    // NOTE: Will only convert up to a 32bit number to binary
-    flagsArrayBinary = (flagsArray[i] >>> 0).toString(2);
+    let flags = new web3.utils.BN(flagsArray[i]);
+    let flagNumbers = [];
+    // Test flags and add set flags to array
+    for (let j = 0; j < 256; j++) {
+      if (flags.testn(j)) flagNumbers.push(j);
+    }
     flagDataTable.push([
       investorsArray[i],
-      flagsArray[i],
-      flagsArrayBinary
+      flagNumbers,
     ]);
   }
   console.log(table(flagDataTable));
@@ -543,7 +566,7 @@ async function transferRequirements() {
   let displayGeneralTransRequirements = await currentTransferManager.methods.transferRequirements(0).call();
   let displayIssuanceTransRequirements = await currentTransferManager.methods.transferRequirements(1).call();
   let displayRedemptionTransRequirements = await currentTransferManager.methods.transferRequirements(2).call();
-  let txReqTable = [['Transfer\nType', 'Valid\nSender KYC', 'Valid\nReceiver KYC', 'Transfer Date\nRestriction ', 'Receive Date\nRestriction ']];
+  let txReqTable = [['Transfer Type', 'Valid Sender KYC', 'Valid Receiver KYC', 'Transfer Date Restriction', 'Receive Date Restriction']];
   txReqTable.push([
     "General ",
     displayGeneralTransRequirements[0],
@@ -566,7 +589,8 @@ async function transferRequirements() {
     displayRedemptionTransRequirements[3]
   ]);
   console.log("Transfer Requirements:");
-  console.log(table(txReqTable));
+  let tableConfig = {columnDefault: {width: 13, wrapWord: true}};
+  console.log(table(txReqTable, tableConfig));
   let options = [];
   options.push(
     `Modify General Transfer Requirements`,
@@ -597,9 +621,9 @@ async function transferRequirements() {
       fromRestrictedArray[0] = readlineSync.keyInYNStrict('Should the sender be restricted by a can transfer date?');
       toRestrictedArray[0] = readlineSync.keyInYNStrict('Should the recipient be restricted by a can receive date?');
       console.log("\nSet Issuance Transfer Requirements:");
-      fromValidKYCArray[1] = readlineSync.keyInYNStrict('Should the Issuance address require valid KYC?');
+      fromValidKYCArray[1] = readlineSync.keyInYNStrict('Should the issuance address require valid KYC?');
       toValidKYCArray[1] = readlineSync.keyInYNStrict('Should the recipient require valid KYC?');
-      fromRestrictedArray[1] = readlineSync.keyInYNStrict('Should the Issuance address be restricted by a can transfer date?');
+      fromRestrictedArray[1] = readlineSync.keyInYNStrict('Should the issuance address be restricted by a can transfer date?');
       toRestrictedArray[1] = readlineSync.keyInYNStrict('Should the recipient be restricted by a can receive date?');
       console.log("\nSet Redemption Transfer Requirements:");
       fromValidKYCArray[2] = readlineSync.keyInYNStrict('Should the sender require valid KYC?');
@@ -709,6 +733,53 @@ async function modifyWhitelistInBatch(_csvFilePath, _batchSize) {
     let action = currentTransferManager.methods.modifyKYCDataMulti(investorArray[batch], canSendAfterArray[batch], canReceiveAfterArray[batch], expiryTimeArray[batch]);
     let receipt = await common.sendTransaction(action);
     console.log(chalk.green('Modify whitelist transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
+async function modifyFlagsInBatch(_csvFilePath, _batchSize) {
+  let csvFilePath;
+  if (typeof _csvFilePath === 'undefined') {
+    csvFilePath = readlineSync.question(`Enter the path for csv data file (${FLAG_DATA_CSV}): `, {
+      defaultInput: FLAG_DATA_CSV
+    });
+  } else {
+    csvFilePath = _csvFilePath;
+  }
+  let batchSize;
+  if (typeof _batchSize === 'undefined') {
+    batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+      limit: function (input) {
+        return parseInt(input) > 0;
+      },
+      limitMessage: 'Must be greater than 0',
+      defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+    });
+  } else {
+    batchSize = _batchSize;
+  }
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(row =>
+    web3.utils.isAddress(row[0]) &&
+    typeof row[1] === "number" &&
+    Number.isInteger(row[1]) &&
+    row[1] >= 0 &&
+    row[1] < 256 &&
+    typeof row[2] === "boolean"
+  );
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+    let processValid = readlineSync.keyInYNStrict(chalk.yellow("Do you want to process valid rows?"));
+    if (!processValid) return;
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [investorArray, flagArray, flagValueArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to modify flags to accounts: \n\n`, investorArray[batch], '\n');
+    let action = currentTransferManager.methods.modifyInvestorFlagMulti(investorArray[batch], flagArray[batch], flagValueArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Modify investor flags transaction was successful.'));
     console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
   }
 }

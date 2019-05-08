@@ -1096,6 +1096,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
      * @return uint256 sumOfLastPeriod
      * @return uint256 days covered
      * @return uint256 24h lastTradedDayTime
+     * @return uint256 Timestamp at which last transaction get executed
      */
     function getIndividualBucketDetailsToUser(address _user) external view returns(uint256, uint256, uint256, uint256, uint256) {
         return _getBucketDetails(userToBucket[_user]);
@@ -1108,6 +1109,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, ITransferManager {
      * @return uint256 sumOfLastPeriod
      * @return uint256 days covered
      * @return uint256 24h lastTradedDayTime
+     * @return uint256 Timestamp at which last transaction get executed
      */
     function getDefaultBucketDetailsToUser(address _user) external view returns(uint256, uint256, uint256, uint256, uint256) {
         return _getBucketDetails(defaultUserToBucket[_user]);

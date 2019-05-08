@@ -21,6 +21,7 @@ create_docs() {
     echo "$latestTag Branch is already present on remote"
     exit 0
     fi
+    
     # Checkout and create the $latestTag branch
     git checkout -b $latestTag
 
@@ -32,22 +33,12 @@ create_docs() {
     cd $WEBSITE_DIRECTORY
     fi
 
-    echo "Fetching solc binary"
-    rm -f solidity-ubuntu-trusty.zip
-    curl -L -o solidity-ubuntu-trusty.zip https://github.com/ethereum/solidity/releases/download/v0.4.24/solidity-ubuntu-trusty.zip
-    unzip -o solidity-ubuntu-trusty.zip
-    CWD=$(pwd)
-    OLD_SOLC_PATH=$SOLC_PATH
-    export SOLC_PATH=$CWD/solc
-
     echo "Generating the API documentation in branch $latestTag"
     # Command to generate the documentation using the solidity-docgen
 
     migrate=$(SOLC_ARGS="openzeppelin-solidity="$CORE_ROUTE"/node_modules/openzeppelin-solidity" \
 solidity-docgen -x external/oraclizeAPI.sol,mocks/MockPolyOracle.sol,oracles/PolyOracle.sol $CORE_ROUTE $CORE_ROUTE/contracts $CORE_ROUTE/polymath-developer-portal/)
     
-    export SOLC_PATH=$OLD_SOLC_PATH
-
     echo "Successfully docs are generated..."
     
     echo "Installing npm dependencies..."
@@ -55,6 +46,9 @@ solidity-docgen -x external/oraclizeAPI.sol,mocks/MockPolyOracle.sol,oracles/Pol
     
     echo "Gererate versioning docs..."
     yarn run version $versionNo
+
+    git config --global user.email "contact@mudit.blog"
+    git config --global user.name "polydocs"
 
     # Commit the changes
     echo "Commiting the new changes..."
@@ -88,8 +82,10 @@ versionNo=$(echo "$latestTag" | cut -b 2-6)
 #print the tag
 echo "Latest tag is: $latestTag"
 
-# clone the polymath-developer-portal
+# Fetch patched solidity docgen
+curl -o node_modules/solidity-docgen/lib/index.js https://raw.githubusercontent.com/maxsam4/solidity-docgen/build/lib/index.js
 
+# clone the polymath-developer-portal
 if [ ! -d $DIRECTORY ]; then
 git clone https://${GH_USR}:${GH_PWD}@github.com/PolymathNetwork/polymath-developer-portal.git  > /dev/null 2>&1 
 cd $DIRECTORY

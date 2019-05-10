@@ -4,11 +4,12 @@ import "../../../../proxy/OwnedUpgradeabilityProxy.sol";
 import "./SharedWhitelistTransferManagerStorage.sol";
 import "../../../../Pausable.sol";
 import "../../../../storage/modules/ModuleStorage.sol";
+import "../../../TransferManager/BaseWhitelistTransferManagerStorage.sol";
 
 /**
  * @title Transfer Manager module that uses a shared whitelist for core transfer validation functionality
  */
-contract SharedWhitelistTransferManagerProxy is SharedWhitelistTransferManagerStorage, ModuleStorage, Pausable, OwnedUpgradeabilityProxy {
+contract SharedWhitelistTransferManagerProxy is BaseWhitelistTransferManagerStorage, SharedWhitelistTransferManagerStorage, ModuleStorage, Pausable, OwnedUpgradeabilityProxy {
     /**
     * @notice Constructor
     * @param _securityToken Address of the security token

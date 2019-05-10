@@ -2,13 +2,14 @@ pragma solidity ^0.5.0;
 
 import "../../../proxy/OwnedUpgradeabilityProxy.sol";
 import "./GeneralTransferManagerStorage.sol";
+import "../BaseWhitelistTransferManagerStorage.sol";
 import "../../../Pausable.sol";
 import "../../../storage/modules/ModuleStorage.sol";
 
 /**
  * @title Transfer Manager module for core transfer validation functionality
  */
-contract GeneralTransferManagerProxy is GeneralTransferManagerStorage, ModuleStorage, Pausable, OwnedUpgradeabilityProxy {
+contract GeneralTransferManagerProxy is BaseWhitelistTransferManagerStorage, GeneralTransferManagerStorage, ModuleStorage, Pausable, OwnedUpgradeabilityProxy {
     /**
     * @notice Constructor
     * @param _securityToken Address of the security token

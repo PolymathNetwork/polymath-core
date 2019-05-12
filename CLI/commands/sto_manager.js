@@ -161,7 +161,7 @@ async function cappedSTO_launch(stoConfig, factoryAddress) {
   let cappedSTOFactoryABI = abis.cappedSTOFactory();
   let cappedSTOFactory = new web3.eth.Contract(cappedSTOFactoryABI, factoryAddress);
   cappedSTOFactory.setProvider(web3.currentProvider);
-  let stoFee = new web3.utils.BN(await cappedSTOFactory.methods.getSetupCost().call());
+  let stoFee = new web3.utils.BN(await cappedSTOFactory.methods.setupCostInPoly().call());
 
   let contractBalance = new web3.utils.BN(await polyToken.methods.balanceOf(securityToken._address).call());
   if (contractBalance.lt(stoFee)) {
@@ -223,7 +223,7 @@ async function cappedSTO_launch(stoConfig, factoryAddress) {
     cappedSTOconfig.wallet]
   );
 
-  let addModuleAction = securityToken.methods.addModule(cappedSTOFactory.options.address, bytesSTO, stoFee, 0);
+  let addModuleAction = securityToken.methods.addModule(cappedSTOFactory.options.address, bytesSTO, stoFee, 0, false);
   let receipt = await common.sendTransaction(addModuleAction);
   let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
   console.log(`STO deployed at address: ${event._module}`);
@@ -322,14 +322,14 @@ async function addressesConfigUSDTieredSTO(usdTokenRaise) {
     });
     if (addresses.wallet == "") addresses.wallet = Issuer.address;
 
-    addresses.reserveWallet = readlineSync.question('Enter the address that will receive remaining tokens in the case the cap is not met (' + Issuer.address + '): ', {
+    addresses.treasuryWallet = readlineSync.question('Enter the address that will receive remaining tokens in the case the cap is not met (' + Issuer.address + '): ', {
       limit: function (input) {
         return web3.utils.isAddress(input);
       },
       limitMessage: "Must be a valid address",
       defaultInput: Issuer.address
     });
-    if (addresses.reserveWallet == "") addresses.reserveWallet = Issuer.address;
+    if (addresses.treasuryWallet == "") addresses.treasuryWallet = Issuer.address;
 
     let listOfAddress;
 
@@ -520,7 +520,7 @@ async function usdTieredSTO_launch(stoConfig, factoryAddress) {
   let usdTieredSTOFactoryABI = abis.usdTieredSTOFactory();
   let usdTieredSTOFactory = new web3.eth.Contract(usdTieredSTOFactoryABI, factoryAddress);
   usdTieredSTOFactory.setProvider(web3.currentProvider);
-  let stoFee = new web3.utils.BN(await usdTieredSTOFactory.methods.getSetupCost().call());
+  let stoFee = new web3.utils.BN(await usdTieredSTOFactory.methods.setupCostInPoly().call());
 
   let contractBalance = new web3.utils.BN(await polyToken.methods.balanceOf(securityToken._address).call());
   if (contractBalance.lt(stoFee)) {
@@ -559,11 +559,11 @@ async function usdTieredSTO_launch(stoConfig, factoryAddress) {
     web3.utils.toWei(limits.minimumInvestmentUSD.toString()),
     funding.raiseType,
     addresses.wallet,
-    addresses.reserveWallet,
+    addresses.treasuryWallet,
     addresses.usdToken]
   );
 
-  let addModuleAction = securityToken.methods.addModule(usdTieredSTOFactory.options.address, bytesSTO, stoFee, 0);
+  let addModuleAction = securityToken.methods.addModule(usdTieredSTOFactory.options.address, bytesSTO, stoFee, 0, false);
   let receipt = await common.sendTransaction(addModuleAction);
   let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
   console.log(`STO deployed at address: ${event._module}`);
@@ -582,7 +582,7 @@ async function usdTieredSTO_status(currentSTO) {
   let displayNonAccreditedLimitUSD = web3.utils.fromWei(await currentSTO.methods.nonAccreditedLimitUSD().call());
   let displayMinimumInvestmentUSD = web3.utils.fromWei(await currentSTO.methods.minimumInvestmentUSD().call());
   let displayWallet = await currentSTO.methods.wallet().call();
-  let displayReserveWallet = await currentSTO.methods.reserveWallet().call();
+  let displayTreasuryWallet = await currentSTO.methods.treasuryWallet().call();
   let displayTokensSold = web3.utils.fromWei(await currentSTO.methods.getTokensSold().call());
   let displayInvestorCount = await currentSTO.methods.investorCount().call();
   let displayIsFinalized = await currentSTO.methods.isFinalized().call() ? "YES" : "NO";
@@ -649,7 +649,7 @@ async function usdTieredSTO_status(currentSTO) {
   let displayFundsRaisedUSD = web3.utils.fromWei(await currentSTO.methods.fundsRaisedUSD().call());
 
   let displayWalletBalancePerType = '';
-  let displayReserveWalletBalancePerType = '';
+  let displayTreasuryWalletBalancePerType = '';
   let displayFundsRaisedPerType = '';
   let displayTokensSoldPerType = '';
   for (const type of raiseTypes) {
@@ -667,18 +667,18 @@ async function usdTieredSTO_status(currentSTO) {
       Balance ${type}:\t\t ${walletBalance} ${type} (${walletBalanceUSD} USD)`;
     }
 
-    balance = await getBalance(displayReserveWallet, gbl.constants.FUND_RAISE_TYPES[type]);
-    let reserveWalletBalance = web3.utils.fromWei(balance);
-    let reserveWalletBalanceUSD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(gbl.constants.FUND_RAISE_TYPES[type], balance).call());
+    balance = await getBalance(displayTreasuryWallet, gbl.constants.FUND_RAISE_TYPES[type]);
+    let treasuryWalletBalance = web3.utils.fromWei(balance);
+    let treasuryWalletBalanceUSD = web3.utils.fromWei(await currentSTO.methods.convertToUSD(gbl.constants.FUND_RAISE_TYPES[type], balance).call());
     if ((type == STABLE) && (stableSymbols.length)) {
       stableSymbols.forEach(async (stable) => {
-        let raised = await checkStableBalance(displayReserveWallet, stable.address);
-        displayReserveWalletBalancePerType += `
+        let raised = await checkStableBalance(displayTreasuryWallet, stable.address);
+        displayTreasuryWalletBalancePerType += `
       Balance ${stable.symbol}:\t\t ${web3.utils.fromWei(raised)} ${stable.symbol}`;
       })
     } else {
-      displayReserveWalletBalancePerType += `
-      Balance ${type}:\t\t ${reserveWalletBalance} ${type} (${reserveWalletBalanceUSD} USD)`;
+      displayTreasuryWalletBalancePerType += `
+      Balance ${type}:\t\t ${treasuryWalletBalance} ${type} (${treasuryWalletBalanceUSD} USD)`;
     }
 
     let fundsRaised = web3.utils.fromWei(await currentSTO.methods.fundsRaised(gbl.constants.FUND_RAISE_TYPES[type]).call());
@@ -737,8 +737,8 @@ async function usdTieredSTO_status(currentSTO) {
   - Non Accredited Limit:        ${displayNonAccreditedLimitUSD} USD
   - Wallet:                      ${displayWallet}`
     + displayWalletBalancePerType + `
-  - Reserve Wallet:              ${displayReserveWallet}`
-    + displayReserveWalletBalancePerType + `
+  - Treasury Wallet:              ${displayTreasuryWallet}`
+    + displayTreasuryWalletBalancePerType + `
 
   ---------------------------------------------------------------
   - ${timeTitle}              ${timeRemaining}
@@ -793,23 +793,22 @@ async function usdTieredSTO_configure(currentSTO) {
     let selected = index != -1 ? options[index] : 'Exit';
     switch (selected) {
       case 'Finalize STO':
-        let reserveWallet = await currentSTO.methods.reserveWallet().call();
-        let isVerified = await securityToken.methods.verifyTransfer('0x0000000000000000000000000000000000000000', reserveWallet, 0, web3.utils.fromAscii("")).call();
+        let treasuryWallet = await currentSTO.methods.treasuryWallet().call();
+        let isVerified = await securityToken.methods.canTransferFrom('0x0000000000000000000000000000000000000000', treasuryWallet, 0, web3.utils.fromAscii("")).call();
         if (isVerified) {
           if (readlineSync.keyInYNStrict()) {
             let finalizeAction = currentSTO.methods.finalize();
             await common.sendTransaction(finalizeAction);
           }
         } else {
-          console.log(chalk.red(`Reserve wallet (${reserveWallet}) is not able to receive remaining tokens. Check if this address is whitelisted.`));
+          console.log(chalk.red(`Treasury wallet (${treasuryWallet}) is not able to receive remaining tokens. Check if this address is whitelisted.`));
         }
         break;
       case 'Change accredited account':
         let investor = readlineSync.question('Enter the address to change accreditation: ');
         let isAccredited = readlineSync.keyInYNStrict(`Is ${investor} accredited?`);
-        let investors = [investor];
-        let accredited = [isAccredited];
-        let changeAccreditedAction = currentSTO.methods.changeAccredited(investors, accredited);
+        let generalTransferManager = await getGeneralTransferManager();
+        let changeAccreditedAction = generalTransferManager.methods.modifyInvestorFlag(investor, 0, isAccredited);
         // 2 GAS?
         await common.sendTransaction(changeAccreditedAction);
         break;
@@ -853,6 +852,16 @@ async function usdTieredSTO_configure(currentSTO) {
     }
   }
 }
+
+async function getGeneralTransferManager() {
+  let gmtModules = await securityToken.methods.getModulesByName(web3.utils.toHex('GeneralTransferManager')).call();
+  let generalTransferManagerAddress = gmtModules[0];
+  let generalTransferManagerABI = abis.generalTransferManager();
+  let generalTransferManager = new web3.eth.Contract(generalTransferManagerABI, generalTransferManagerAddress);
+  generalTransferManager.setProvider(web3.currentProvider);
+  return generalTransferManager;
+}
+
 
 async function showAccreditedData(currentSTO) {
   let accreditedData = await currentSTO.methods.getAccreditedData().call();
@@ -899,10 +908,14 @@ async function changeAccreditedInBatch(currentSTO) {
     console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')}`));
   }
   let batches = common.splitIntoBatches(validData, batchSize);
+  let transposedData = common.transposeBatches(batches);
   let [investorArray, isAccreditedArray] = common.transposeBatches(batches);
+  let generalTransferManager = await getGeneralTransferManager();
   for (let batch = 0; batch < batches.length; batch++) {
     console.log(`Batch ${batch + 1} - Attempting to change accredited accounts:\n\n`, investorArray[batch], '\n');
-    let action = currentSTO.methods.changeAccredited(investorArray[batch], isAccreditedArray[batch]);
+    // create array with correct batch length of isAccredited flag = 0
+    let accreditedFlagArray = new Array(investorArray[batch].length).fill(0);
+    let action = generalTransferManager.methods.modifyInvestorFlagMulti(investorArray[batch], accreditedFlagArray, isAccreditedArray[batch]);
     let receipt = await common.sendTransaction(action);
     console.log(chalk.green('Change accredited transaction was successful.'));
     console.log(`${receipt.gasUsed} gas used. Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
@@ -946,7 +959,11 @@ async function modfifyTimes(currentSTO) {
 
 async function modfifyLimits(currentSTO) {
   let limits = limitsConfigUSDTieredSTO();
-  let modifyLimitsAction = currentSTO.methods.modifyLimits(limits.nonAccreditedLimitUSD, limits.minimumInvestmentUSD);
+
+  let modifyLimitsAction = currentSTO.methods.modifyLimits(
+    web3.utils.toWei(limits.nonAccreditedLimitUSD.toString()),
+    web3.utils.toWei(limits.minimumInvestmentUSD.toString())
+  );
   await common.sendTransaction(modifyLimitsAction);
 }
 
@@ -958,17 +975,17 @@ async function modfifyFunding(currentSTO) {
 
 async function modfifyAddresses(currentSTO) {
   let addresses = await addressesConfigUSDTieredSTO(await currentSTO.methods.fundRaiseTypes(gbl.constants.FUND_RAISE_TYPES.STABLE).call());
-  let modifyAddressesAction = currentSTO.methods.modifyAddresses(addresses.wallet, addresses.reserveWallet, addresses.usdToken);
+  let modifyAddressesAction = currentSTO.methods.modifyAddresses(addresses.wallet, addresses.treasuryWallet, addresses.usdToken);
   await common.sendTransaction(modifyAddressesAction);
 }
 
 async function modfifyTiers(currentSTO) {
   let tiers = tiersConfigUSDTieredSTO(await currentSTO.methods.fundRaiseTypes(gbl.constants.FUND_RAISE_TYPES.POLY).call());
   let modifyTiersAction = currentSTO.methods.modifyTiers(
-    tiers.ratePerTier,
-    tiers.ratePerTierDiscountPoly,
-    tiers.tokensPerTier,
-    tiers.tokensPerTierDiscountPoly,
+    tiers.ratePerTier.map(r => web3.utils.toWei(r.toString())),
+    tiers.ratePerTierDiscountPoly.map(rd => web3.utils.toWei(rd.toString())),
+    tiers.tokensPerTier.map(t => web3.utils.toWei(t.toString())),
+    tiers.tokensPerTierDiscountPoly.map(td => web3.utils.toWei(td.toString())),
   );
   await common.sendTransaction(modifyTiersAction);
 }
@@ -979,7 +996,7 @@ async function reclaimFromContract(currentSTO) {
   let selected = index != -1 ? options[index] : 'RETURN';
   switch (selected) {
     case 'ETH':
-      let ethBalance = await this.getBalance(currentSTO.options.address, gbl.constants.FUND_RAISE_TYPES.ETH);
+      let ethBalance = await getBalance(currentSTO.options.address, gbl.constants.FUND_RAISE_TYPES.ETH);
       console.log(chalk.yellow(`Current ETH balance: ${web3.utils.fromWei(ethBalance)} ETH`));
       let reclaimETHAction = currentSTO.methods.reclaimETH();
       await common.sendTransaction(reclaimETHAction);
@@ -1060,8 +1077,8 @@ async function initialize(_tokenSymbol) {
     console.log(chalk.red(`Selected Security Token ${tokenSymbol} does not exist.`));
     process.exit(0);
   }
-  let securityTokenABI = abis.securityToken();
-  securityToken = new web3.eth.Contract(securityTokenABI, securityTokenAddress);
+  let iSecurityTokenABI = abis.iSecurityToken();
+  securityToken = new web3.eth.Contract(iSecurityTokenABI, securityTokenAddress);
   securityToken.setProvider(web3.currentProvider);
 }
 
@@ -1077,8 +1094,8 @@ function welcome() {
 async function setup() {
   try {
     let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
-    let securityTokenRegistryABI = abis.securityTokenRegistry();
-    securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
+    let iSecurityTokenRegistryABI = abis.iSecurityTokenRegistry();
+    securityTokenRegistry = new web3.eth.Contract(iSecurityTokenRegistryABI, securityTokenRegistryAddress);
     securityTokenRegistry.setProvider(web3.currentProvider);
 
     let moduleRegistryAddress = await contracts.moduleRegistry();

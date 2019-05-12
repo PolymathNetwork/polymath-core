@@ -315,7 +315,7 @@ async function addTransferManagerModule() {
         break;
     }
     let selectedTMFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, gbl.constants.MODULES_TYPES.TRANSFER, options[index]);
-    let addModuleAction = securityToken.methods.addModule(selectedTMFactoryAddress, bytes, 0, 0);
+    let addModuleAction = securityToken.methods.addModule(selectedTMFactoryAddress, bytes, 0, 0, false);
     let receipt = await common.sendTransaction(addModuleAction);
     let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
     console.log(chalk.green(`Module deployed at address: ${event._module}`));
@@ -442,7 +442,7 @@ async function generalTransferManager() {
         "Is Volume Restricted",
         "Custom Flag"
       );
-      let index = readlineSync.keyInSelect(options, 'Select the flag you wish to set: ', { cancel: 'RETURN' });
+      let index = readlineSync.keyInSelect(options, 'Select the flag you wish to set: ', { cancel: false });
       let optionSelected = index !== -1 ? options[index] : 'RETURN';
       console.log('Selected:', optionSelected, '\n');
       let flag
@@ -1301,6 +1301,8 @@ async function percentageTransferManager() {
         console.log(chalk.green(`Transactions which are part of the primary issuance will NOT be ignored!`));
       }
       break;
+    case 'RETURN':
+      return;
   }
 
   await percentageTransferManager();
@@ -1754,29 +1756,29 @@ async function removeInvestorsFromBlacklistsInBatch() {
 async function volumeRestrictionTM() {
   console.log('\n', chalk.blue(`Volume Restriction Transfer Manager at ${currentTransferManager.options.address}`, '\n'));
 
-  let globalDailyRestriction = await currentTransferManager.methods.defaultDailyRestriction().call();
-  let hasGlobalDailyRestriction = parseInt(globalDailyRestriction.startTime) !== 0;
-  let globalCustomRestriction = await currentTransferManager.methods.defaultRestriction().call();
-  let hasGlobalCustomRestriction = parseInt(globalCustomRestriction.startTime) !== 0;
+  let globalDailyRestriction = await currentTransferManager.methods.getDefaultDailyRestriction().call();
+  let hasGlobalDailyRestriction = parseInt(globalDailyRestriction[1]) !== 0; //startTime
+  let globalCustomRestriction = await currentTransferManager.methods.getDefaultRestriction().call();
+  let hasGlobalCustomRestriction = parseInt(globalCustomRestriction[1]) !== 0; //startime
 
   console.log(`- Default daily restriction:     ${hasGlobalDailyRestriction ? '' : 'None'}`);
   if (hasGlobalDailyRestriction) {
-    console.log(`     Type:                         ${RESTRICTION_TYPES[globalDailyRestriction.typeOfRestriction]}`);
-    console.log(`     Allowed tokens:               ${globalDailyRestriction.typeOfRestriction === "0" ? `${web3.utils.fromWei(globalDailyRestriction.allowedTokens)} ${tokenSymbol}` : `${fromWeiPercentage(globalDailyRestriction.allowedTokens)}%`}`);
-    console.log(`     Start time:                   ${moment.unix(globalDailyRestriction.startTime).format('MMMM Do YYYY, HH:mm:ss')}`);
-    console.log(`     Rolling period:               ${globalDailyRestriction.rollingPeriodInDays} days`);
-    console.log(`     End time:                     ${moment.unix(globalDailyRestriction.endTime).format('MMMM Do YYYY, HH:mm:ss')} `);
+    console.log(`     Type:                         ${RESTRICTION_TYPES[globalDailyRestriction[4]]}`);
+    console.log(`     Allowed tokens:               ${globalDailyRestriction[4] === "0" ? `${web3.utils.fromWei(globalDailyRestriction[0])} ${tokenSymbol}` : `${fromWeiPercentage(globalDailyRestriction[0])}%`}`);
+    console.log(`     Start time:                   ${moment.unix(globalDailyRestriction[1]).format('MMMM Do YYYY, HH:mm:ss')}`);
+    console.log(`     Rolling period:               ${globalDailyRestriction[2]} days`);
+    console.log(`     End time:                     ${moment.unix(globalDailyRestriction[3]).format('MMMM Do YYYY, HH:mm:ss')} `);
   }
   console.log(`- Default custom restriction:    ${hasGlobalCustomRestriction ? '' : 'None'}`);
   if (hasGlobalCustomRestriction) {
-    console.log(`     Type:                         ${RESTRICTION_TYPES[globalCustomRestriction.typeOfRestriction]}`);
-    console.log(`     Allowed tokens:               ${globalCustomRestriction.typeOfRestriction === "0" ? `${web3.utils.fromWei(globalCustomRestriction.allowedTokens)} ${tokenSymbol}` : `${fromWeiPercentage(globalCustomRestriction.allowedTokens)}%`}`);
-    console.log(`     Start time:                   ${moment.unix(globalCustomRestriction.startTime).format('MMMM Do YYYY, HH:mm:ss')}`);
-    console.log(`     Rolling period:               ${globalCustomRestriction.rollingPeriodInDays} days`);
-    console.log(`     End time:                     ${moment.unix(globalCustomRestriction.endTime).format('MMMM Do YYYY, HH:mm:ss')} `);
+    console.log(`     Type:                         ${RESTRICTION_TYPES[globalCustomRestriction[4]]}`);
+    console.log(`     Allowed tokens:               ${globalCustomRestriction[4] === "0" ? `${web3.utils.fromWei(globalCustomRestriction[0])} ${tokenSymbol}` : `${fromWeiPercentage(globalCustomRestriction[0])}%`}`);
+    console.log(`     Start time:                   ${moment.unix(globalCustomRestriction[1]).format('MMMM Do YYYY, HH:mm:ss')}`);
+    console.log(`     Rolling period:               ${globalCustomRestriction[2]} days`);
+    console.log(`     End time:                     ${moment.unix(globalCustomRestriction[3]).format('MMMM Do YYYY, HH:mm:ss')} `);
   }
 
-  let addressesAndRestrictions = await currentTransferManager.methods.getRestrictedData().call();
+  let addressesAndRestrictions = await currentTransferManager.methods.getRestrictionData().call();
   console.log(`- Individual restrictions:       ${addressesAndRestrictions.allAddresses.length}`);
   let exemptedAddresses = await currentTransferManager.methods.getExemptAddress().call();
   console.log(`- Exempted addresses:            ${exemptedAddresses.length}`);
@@ -1842,8 +1844,8 @@ function showRestrictionTable(investorArray, amountArray, typeArray, rollingPeri
       investorArray[i],
       typeArray[i] === "0" ? `${web3.utils.fromWei(amountArray[i])} ${tokenSymbol}` : `${fromWeiPercentage(amountArray[i])}%`,
       rollingPeriodArray[i],
-      moment.unix(startTimeArray[i]).format('MM/DD/YYYY HH:mm'),
-      moment.unix(endTimeTimeArray[i]).format('MM/DD/YYYY HH:mm')
+      moment.unix(startTimeArray[i]).format('MMM Do YYYY HH:mm'),
+      moment.unix(endTimeTimeArray[i]).format('MMM Do YYYY HH:mm')
     ]);
   }
   console.log();
@@ -1979,28 +1981,28 @@ async function changeIndividualRestrictions() {
     limitMessage: "Must be a valid address"
   });
 
-  let currentDailyRestriction = await currentTransferManager.methods.individualDailyRestriction(holder).call();
-  let hasDailyRestriction = parseInt(currentDailyRestriction.startTime) !== 0;
-  let currentCustomRestriction = await currentTransferManager.methods.individualRestriction(holder).call();
-  let hasCustomRestriction = parseInt(currentCustomRestriction.startTime) !== 0;
+  let currentDailyRestriction = await currentTransferManager.methods.getIndividualDailyRestriction(holder).call();
+  let hasDailyRestriction = parseInt(currentDailyRestriction[1]) !== 0;
+  let currentCustomRestriction = await currentTransferManager.methods.getIndividualRestriction(holder).call();
+  let hasCustomRestriction = parseInt(currentCustomRestriction[1]) !== 0;
 
   console.log(`*** Current individual restrictions for ${holder} ***`, '\n');
 
   console.log(`- Daily restriction:       ${hasDailyRestriction ? '' : 'None'}`);
   if (hasDailyRestriction) {
-    console.log(`     Type:                         ${RESTRICTION_TYPES[currentDailyRestriction.typeOfRestriction]}`);
-    console.log(`     Allowed tokens:               ${currentDailyRestriction.typeOfRestriction === "0" ? `${web3.utils.fromWei(currentDailyRestriction.allowedTokens)} ${tokenSymbol}` : `${fromWeiPercentage(currentDailyRestriction.allowedTokens)}%`}`);
-    console.log(`     Start time:                   ${moment.unix(currentDailyRestriction.startTime).format('MMMM Do YYYY, HH:mm:ss')}`);
-    console.log(`     Rolling period:               ${currentDailyRestriction.rollingPeriodInDays} days`);
-    console.log(`     End time:                     ${moment.unix(currentDailyRestriction.endTime).format('MMMM Do YYYY, HH:mm:ss')} `);
+    console.log(`     Type:                         ${RESTRICTION_TYPES[currentDailyRestriction[4]]}`);
+    console.log(`     Allowed tokens:               ${currentDailyRestriction[4] === "0" ? `${web3.utils.fromWei(currentDailyRestriction[0])} ${tokenSymbol}` : `${fromWeiPercentage(currentDailyRestriction[0])}%`}`);
+    console.log(`     Start time:                   ${moment.unix(currentDailyRestriction[1]).format('MMMM Do YYYY, HH:mm:ss')}`);
+    console.log(`     Rolling period:               ${currentDailyRestriction[2]} days`);
+    console.log(`     End time:                     ${moment.unix(currentDailyRestriction[3]).format('MMMM Do YYYY, HH:mm:ss')} `);
   }
   console.log(`- Custom restriction:      ${hasCustomRestriction ? '' : 'None'} `);
   if (hasCustomRestriction) {
-    console.log(`     Type:                         ${RESTRICTION_TYPES[currentCustomRestriction.typeOfRestriction]}`);
-    console.log(`     Allowed tokens:               ${currentCustomRestriction.typeOfRestriction === "0" ? `${web3.utils.fromWei(currentCustomRestriction.allowedTokens)} ${tokenSymbol}` : `${fromWeiPercentage(currentCustomRestriction.allowedTokens)}%`}`);
-    console.log(`     Start time:                   ${moment.unix(currentCustomRestriction.startTime).format('MMMM Do YYYY, HH:mm:ss')}`);
-    console.log(`     Rolling period:               ${currentCustomRestriction.rollingPeriodInDays} days`);
-    console.log(`     End time:                     ${moment.unix(currentCustomRestriction.endTime).format('MMMM Do YYYY, HH:mm:ss')} `);
+    console.log(`     Type:                         ${RESTRICTION_TYPES[currentCustomRestriction[4]]}`);
+    console.log(`     Allowed tokens:               ${currentCustomRestriction[4] === "0" ? `${web3.utils.fromWei(currentDailyRestriction[0])} ${tokenSymbol}` : `${fromWeiPercentage(currentDailyRestriction[0])}%`}`);
+    console.log(`     Start time:                   ${moment.unix(currentCustomRestriction[1]).format('MMMM Do YYYY, HH:mm:ss')}`);
+    console.log(`     Rolling period:               ${currentCustomRestriction[2]} days`);
+    console.log(`     End time:                     ${moment.unix(currentCustomRestriction[3]).format('MMMM Do YYYY, HH:mm:ss')} `);
   }
 
   let options = [];
@@ -2099,29 +2101,30 @@ async function exploreAccount() {
     limitMessage: "Must be a valid address"
   });
 
-  let appliyngDailyRestriction = null;
+  let applyingDailyRestriction = null;
   let applyingCustomRestriction = null;
   let hasIndividualRestrictions = false;
-  let isExempted = await currentTransferManager.methods.exemptList(account).call();
+  let exempted = await currentTransferManager.methods.getExemptAddress().call();
+  let isExempted = exempted.includes(account);
   if (!isExempted) {
-    let individuallDailyRestriction = await currentTransferManager.methods.individualDailyRestriction(account).call();
-    if (parseInt(individuallDailyRestriction.endTime) !== 0) {
-      appliyngDailyRestriction = individuallDailyRestriction;
+    let individuallDailyRestriction = await currentTransferManager.methods.getIndividualDailyRestriction(account).call();
+    if (parseInt(individuallDailyRestriction[3]) !== 0) {
+      applyingDailyRestriction = individuallDailyRestriction;
     }
-    let customRestriction = await currentTransferManager.methods.individualRestriction(account).call();
-    if (parseInt(customRestriction.endTime) !== 0) {
+    let customRestriction = await currentTransferManager.methods.getIndividualRestriction(account).call();
+    if (parseInt(customRestriction[3]) !== 0) {
       applyingCustomRestriction = customRestriction;
     }
 
-    hasIndividualRestrictions = applyingCustomRestriction || appliyngDailyRestriction;
+    hasIndividualRestrictions = applyingCustomRestriction || applyingDailyRestriction;
 
     if (!hasIndividualRestrictions) {
-      let globalDailyRestriction = await currentTransferManager.methods.defaultDailyRestriction().call();
-      if (parseInt(globalDailyRestriction.endTime) !== 0) {
-        appliyngDailyRestriction = globalDailyRestriction;
+      let globalDailyRestriction = await currentTransferManager.methods.getDefaultDailyRestriction().call();
+      if (parseInt(globalDailyRestriction[3]) !== 0) {
+        applyingDailyRestriction = globalDailyRestriction;
       }
-      let globalCustomRestriction = await currentTransferManager.methods.defaultRestriction().call();
-      if (parseInt(globalCustomRestriction.endTime) === 0) {
+      let globalCustomRestriction = await currentTransferManager.methods.getDefaultRestriction().call();
+      if (parseInt(globalCustomRestriction[3]) === 0) {
         applyingCustomRestriction = globalCustomRestriction;
       }
     }
@@ -2129,24 +2132,24 @@ async function exploreAccount() {
 
   console.log(`*** Applying restrictions for ${account} ***`, '\n');
 
-  console.log(`- Daily restriction:       ${appliyngDailyRestriction ? (!hasIndividualRestrictions ? 'global' : '') : 'None'}`);
-  if (appliyngDailyRestriction) {
-    console.log(`     Type:                 ${RESTRICTION_TYPES[appliyngDailyRestriction.typeOfRestriction]}`);
-    console.log(`     Allowed tokens:       ${appliyngDailyRestriction.typeOfRestriction === "0" ? `${web3.utils.fromWei(appliyngDailyRestriction.allowedTokens)} ${tokenSymbol}` : `${fromWeiPercentage(appliyngDailyRestriction.allowedTokens)}%`}`);
-    console.log(`     Start time:           ${moment.unix(appliyngDailyRestriction.startTime).format('MMMM Do YYYY, HH:mm:ss')}`);
-    console.log(`     Rolling period:       ${appliyngDailyRestriction.rollingPeriodInDays} days`);
-    console.log(`     End time:             ${moment.unix(appliyngDailyRestriction.endTime).format('MMMM Do YYYY, HH:mm:ss')} `);
+  console.log(`- Daily restriction:       ${applyingDailyRestriction ? (!hasIndividualRestrictions ? 'global' : '') : 'None'}`);
+  if (applyingDailyRestriction) {
+    console.log(`     Type:                 ${RESTRICTION_TYPES[applyingDailyRestriction[4]]}`);
+    console.log(`     Allowed tokens:       ${applyingDailyRestriction[4] === "0" ? `${web3.utils.fromWei(applyingDailyRestriction[0])} ${tokenSymbol}` : `${fromWeiPercentage(applyingDailyRestriction[0])}%`}`);
+    console.log(`     Start time:           ${moment.unix(applyingDailyRestriction[1]).format('MMMM Do YYYY, HH:mm:ss')}`);
+    console.log(`     Rolling period:       ${applyingDailyRestriction[2]} days`);
+    console.log(`     End time:             ${moment.unix(applyingDailyRestriction[3]).format('MMMM Do YYYY, HH:mm:ss')} `);
   }
   console.log(`- Other restriction:       ${applyingCustomRestriction ? (!hasIndividualRestrictions ? 'global' : '') : 'None'} `);
   if (applyingCustomRestriction) {
-    console.log(`     Type:                 ${RESTRICTION_TYPES[applyingCustomRestriction.typeOfRestriction]}`);
-    console.log(`     Allowed tokens:       ${applyingCustomRestriction.typeOfRestriction === "0" ? `${web3.utils.fromWei(applyingCustomRestriction.allowedTokens)} ${tokenSymbol}` : `${fromWeiPercentage(applyingCustomRestriction.allowedTokens)}%`}`);
-    console.log(`     Start time:           ${moment.unix(applyingCustomRestriction.startTime).format('MMMM Do YYYY, HH:mm:ss')}`);
-    console.log(`     Rolling period:       ${applyingCustomRestriction.rollingPeriodInDays} days`);
-    console.log(`     End time:             ${moment.unix(applyingCustomRestriction.endTime).format('MMMM Do YYYY, HH:mm:ss')} `);
+    console.log(`     Type:                 ${RESTRICTION_TYPES[applyingCustomRestriction[4]]}`);
+    console.log(`     Allowed tokens:       ${applyingCustomRestriction[4] === "0" ? `${web3.utils.fromWei(applyingCustomRestriction[0])} ${tokenSymbol}` : `${fromWeiPercentage(applyingCustomRestriction[0])}%`}`);
+    console.log(`     Start time:           ${moment.unix(applyingCustomRestriction[1]).format('MMMM Do YYYY, HH:mm:ss')}`);
+    console.log(`     Rolling period:       ${applyingCustomRestriction[2]} days`);
+    console.log(`     End time:             ${moment.unix(applyingCustomRestriction[3]).format('MMMM Do YYYY, HH:mm:ss')} `);
   }
 
-  if (applyingCustomRestriction || appliyngDailyRestriction) {
+  if (applyingCustomRestriction || applyingDailyRestriction) {
     let bucketDetails;
     if (hasIndividualRestrictions) {
       bucketDetails = await currentTransferManager.methods.getIndividualBucketDetailsToUser(account).call();

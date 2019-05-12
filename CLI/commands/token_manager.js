@@ -296,16 +296,8 @@ async function issueTokens() {
   console.log('Selected:', selected);
   switch (selected) {
     case 'Modify whitelist':
-      let investor = readlineSync.question('Enter the address to whitelist: ', {
-        limit: function (input) {
-          return web3.utils.isAddress(input);
-        },
-        limitMessage: "Must be a valid address"
-      });
-      let fromTime = readlineSync.questionInt('Enter the time (Unix Epoch time) when the sale lockup period ends and the investor can freely sell his tokens: ');
-      let toTime = readlineSync.questionInt('Enter the time (Unix Epoch time) when the purchase lockup period ends and the investor can freely purchase tokens from others: ');
-      let expiryTime = readlineSync.questionInt('Enter the time till investors KYC will be validated (after that investor need to do re-KYC): ');
-      await modifyKYCData(investor, fromTime, toTime, expiryTime);
+      let generalTransferManager = await getGeneralTransferManager();
+      await common.queryModifyWhiteList(generalTransferManager);
       break;
     case 'Issue tokens to a single address':
       console.log(chalk.yellow(`Investor should be previously whitelisted.`));
@@ -321,17 +313,13 @@ async function issueTokens() {
 }
 
 /// Issue actions
-async function modifyKYCData(investor, fromTime, toTime, expiryTime) {
+async function getGeneralTransferManager() {
   let gmtModules = await securityToken.methods.getModulesByName(web3.utils.toHex('GeneralTransferManager')).call();
   let generalTransferManagerAddress = gmtModules[0];
   let generalTransferManagerABI = abis.generalTransferManager();
   let generalTransferManager = new web3.eth.Contract(generalTransferManagerABI, generalTransferManagerAddress);
-
-  let modifyKYCDataAction = generalTransferManager.methods.modifyKYCData(investor, fromTime, toTime, expiryTime);
-  let modifyKYCDataReceipt = await common.sendTransaction(modifyKYCDataAction);
-  let modifyKYCDataEvent = common.getEventFromLogs(generalTransferManager._jsonInterface, modifyKYCDataReceipt.logs, 'ModifyKYCData');
-
-  console.log(chalk.green(`${modifyKYCDataEvent._investor} has been whitelisted sucessfully!`));
+  generalTransferManager.setProvider(web3.currentProvider);
+  return generalTransferManager;
 }
 
 async function issueToSingleAddress(_investor, _amount) {

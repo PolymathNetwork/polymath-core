@@ -2,12 +2,44 @@ const chalk = require('chalk');
 const Tx = require('ethereumjs-tx');
 const permissionsList = require('./permissions_list');
 const abis = require('../helpers/contract_abis');
+const readlineSync = require('readline-sync');
 
 function connect(abi, address) {
   contractRegistry = new web3.eth.Contract(abi, address);
   contractRegistry.setProvider(web3.currentProvider);
   return contractRegistry
 };
+
+async function queryModifyWhiteList(currentTransferManager) {
+  let investor = readlineSync.question('Enter the address to whitelist: ', {
+    limit: function (input) {
+      return web3.utils.isAddress(input);
+    },
+    limitMessage: "Must be a valid address"
+  });
+  let now = Math.floor(Date.now() / 1000);
+  let canSendAfter = readlineSync.questionInt(`Enter the time (Unix Epoch time) when the sale lockup period ends and the investor can freely transfer his tokens (now = ${now}): `, { defaultInput: now });
+  let canReceiveAfter = readlineSync.questionInt(`Enter the time (Unix Epoch time) when the purchase lockup period ends and the investor can freely receive tokens from others (now = ${now}): `, { defaultInput: now });
+  let oneYearFromNow = Math.floor(Date.now() / 1000 + (60 * 60 * 24 * 365));
+  let expiryTime = readlineSync.questionInt(`Enter the time until the investors KYC will be valid (after this time expires, the investor must re-do KYC) (1 year from now = ${oneYearFromNow}): `, { defaultInput: oneYearFromNow });
+  let modifyWhitelistAction = currentTransferManager.methods.modifyKYCData(investor, canSendAfter, canReceiveAfter, expiryTime);
+  let modifyWhitelistReceipt = await sendTransaction(modifyWhitelistAction);
+  let moduleVersion = await getModuleVersion(currentTransferManager);
+  if (moduleVersion != '1.0.0') {
+    let modifyWhitelistEvent = getEventFromLogs(currentTransferManager._jsonInterface, modifyWhitelistReceipt.logs, 'ModifyKYCData');
+    console.log(chalk.green(`${modifyWhitelistEvent._investor} has been whitelisted sucessfully!`));
+  } else {
+    console.log(chalk.green(`${investor} has been whitelisted sucessfully!`));
+  }
+}
+
+async function getModuleVersion(currentTransferManager) {
+  let moduleFactoryABI = abis.moduleFactory();
+  let factoryAddress = await currentTransferManager.methods.factory().call();
+  let moduleFactory = new web3.eth.Contract(moduleFactoryABI, factoryAddress);
+  let moduleVersion = await moduleFactory.methods.version().call();
+    return moduleVersion
+}
 
 async function checkPermission(contractName, functionName, contractRegistry) {
   let permission = permissionsList.verifyPermission(contractName, functionName);
@@ -63,6 +95,54 @@ async function checkPermissions(action) {
   return
 }
 
+async function sendTransaction(action, options) {
+  await checkPermissions(action);
+
+  options = getFinalOptions(options);
+  let gasLimit = await getGasLimit(options, action);
+
+  console.log(chalk.black.bgYellowBright(`---- Transaction executed: ${action._method.name} - Gas limit provided: ${gasLimit} ----`));
+
+  let nonce = await web3.eth.getTransactionCount(options.from.address);
+  if (nonce < options.minNonce) {
+    nonce = minNonce;
+  }
+  let abi = action.encodeABI();
+  let parameter = {
+    from: options.from.address,
+    to: action._parent._address,
+    data: abi,
+    gasLimit: gasLimit,
+    gasPrice: options.gasPrice,
+    nonce: nonce,
+    value: web3.utils.toHex(options.value)
+  };
+
+  const transaction = new Tx(parameter);
+  transaction.sign(Buffer.from(options.from.privateKey.replace('0x', ''), 'hex'));
+  return await web3.eth.sendSignedTransaction('0x' + transaction.serialize().toString('hex'))
+    .on('transactionHash', function (hash) {
+      console.log(`
+Your transaction is being processed. Please wait...
+TxHash: ${hash}`
+      );
+    })
+    .on('receipt', function (receipt) {
+      console.log(`
+Congratulations! The transaction was successfully completed.
+Gas used: ${receipt.gasUsed} - Gas spent: ${web3.utils.fromWei((new web3.utils.BN(options.gasPrice)).mul(new web3.utils.BN(receipt.gasUsed)))} Ether
+Review it on Etherscan.
+TxHash: ${receipt.transactionHash}\n`
+      );
+    });
+};
+
+function getEventFromLogs(jsonInterface, logs, eventName) {
+  let eventJsonInterface = jsonInterface.find(o => o.name === eventName && o.type === 'event');
+  let log = logs.find(l => l.topics.includes(eventJsonInterface.signature));
+  return web3.eth.abi.decodeLog(eventJsonInterface.inputs, log.data, log.topics.slice(1));
+}
+
 module.exports = {
   convertToDaysRemaining: function (timeRemaining) {
     var seconds = parseInt(timeRemaining, 10);
@@ -102,52 +182,6 @@ module.exports = {
   getNonce: async function (from) {
     return (await web3.eth.getTransactionCount(from.address, "pending"));
   },
-  sendTransaction: async function (action, options) {
-    await checkPermissions(action);
-
-    options = getFinalOptions(options);
-    let gasLimit = await getGasLimit(options, action);
-
-    console.log(chalk.black.bgYellowBright(`---- Transaction executed: ${action._method.name} - Gas limit provided: ${gasLimit} ----`));
-
-    let nonce = await web3.eth.getTransactionCount(options.from.address);
-    if (nonce < options.minNonce) {
-      nonce = minNonce;
-    }
-    let abi = action.encodeABI();
-    let parameter = {
-      from: options.from.address,
-      to: action._parent._address,
-      data: abi,
-      gasLimit: gasLimit,
-      gasPrice: options.gasPrice,
-      nonce: nonce,
-      value: web3.utils.toHex(options.value)
-    };
-
-    const transaction = new Tx(parameter);
-    transaction.sign(Buffer.from(options.from.privateKey.replace('0x', ''), 'hex'));
-    return await web3.eth.sendSignedTransaction('0x' + transaction.serialize().toString('hex'))
-      .on('transactionHash', function (hash) {
-        console.log(`
-  Your transaction is being processed. Please wait...
-  TxHash: ${hash}`
-        );
-      })
-      .on('receipt', function (receipt) {
-        console.log(`
-  Congratulations! The transaction was successfully completed.
-  Gas used: ${receipt.gasUsed} - Gas spent: ${web3.utils.fromWei((new web3.utils.BN(options.gasPrice)).mul(new web3.utils.BN(receipt.gasUsed)))} Ether
-  Review it on Etherscan.
-  TxHash: ${receipt.transactionHash}\n`
-        );
-      });
-  },
-  getEventFromLogs: function (jsonInterface, logs, eventName) {
-    let eventJsonInterface = jsonInterface.find(o => o.name === eventName && o.type === 'event');
-    let log = logs.find(l => l.topics.includes(eventJsonInterface.signature));
-    return web3.eth.abi.decodeLog(eventJsonInterface.inputs, log.data, log.topics.slice(1));
-  },
   getMultipleEventsFromLogs: function (jsonInterface, logs, eventName) {
     let eventJsonInterface = jsonInterface.find(o => o.name === eventName && o.type === 'event');
     let filteredLogs = logs.filter(l => l.topics.includes(eventJsonInterface.signature));
@@ -172,5 +206,8 @@ module.exports = {
       }
     }
     return result;
-  }
+  },
+  sendTransaction,
+  getEventFromLogs,
+  queryModifyWhiteList
 };

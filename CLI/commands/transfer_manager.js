@@ -398,25 +398,7 @@ async function generalTransferManager() {
       console.log(chalk.green(`Default times have been updated successfully!`));
       break;
     case 'Modify whitelist':
-      let investor = readlineSync.question('Enter the address to whitelist: ', {
-        limit: function (input) {
-          return web3.utils.isAddress(input);
-        },
-        limitMessage: "Must be a valid address"
-      });
-      let now = Math.floor(Date.now() / 1000);
-      let canSendAfter = readlineSync.questionInt(`Enter the time (Unix Epoch time) when the sale lockup period ends and the investor can freely transfer his tokens (now = ${now}): `, { defaultInput: now });
-      let canReceiveAfter = readlineSync.questionInt(`Enter the time (Unix Epoch time) when the purchase lockup period ends and the investor can freely receive tokens from others (now = ${now}): `, { defaultInput: now });
-      let oneYearFromNow = Math.floor(Date.now() / 1000 + (60 * 60 * 24 * 365));
-      let expiryTime = readlineSync.questionInt(`Enter the time until the investors KYC will be valid (after this time expires, the investor must re-do KYC) (1 year from now = ${oneYearFromNow}): `, { defaultInput: oneYearFromNow });
-      let modifyWhitelistAction = currentTransferManager.methods.modifyKYCData(investor, canSendAfter, canReceiveAfter, expiryTime);
-      let modifyWhitelistReceipt = await common.sendTransaction(modifyWhitelistAction);
-      if (moduleVersion != '1.0.0') {
-        let modifyWhitelistEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, modifyWhitelistReceipt.logs, 'ModifyKYCData');
-        console.log(chalk.green(`${modifyWhitelistEvent._investor} has been whitelisted sucessfully!`));
-      } else {
-        console.log(chalk.green(`${investor} has been whitelisted sucessfully!`));
-      }
+      await common.queryModifyWhiteList(currentTransferManager);
       break;
     case 'Modify whitelist from CSV':
       await modifyWhitelistInBatch();

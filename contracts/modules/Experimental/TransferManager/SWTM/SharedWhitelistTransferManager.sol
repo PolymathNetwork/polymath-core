@@ -1,7 +1,6 @@
 pragma solidity ^0.5.0;
 
 import "../../../TransferManager/BaseWhitelistTransferManager.sol";
-import "../../../TransferManager/BaseWhitelistTransferManagerStorage.sol";
 import "./SharedWhitelistTransferManagerStorage.sol";
 
 /**

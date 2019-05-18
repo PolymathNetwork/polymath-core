@@ -777,13 +777,14 @@ async function usdTieredSTO_configure(currentSTO) {
     let options = [];
     options.push('Finalize STO',
       'Change accredited account', 'Change accredited in batch',
-      'Change non accredited limit for an account', 'Change non accredited limits in batch');
+      'Change non accredited limit for an account', 'Change non accredited limits in batch',
+      'Modify addresses configuration');
 
     // If STO is not started, you can modify configuration
     let now = Math.floor(Date.now() / 1000);
     let startTime = await currentSTO.methods.startTime().call.call();
     if (now < startTime) {
-      options.push('Modify times configuration', 'Modify tiers configuration', 'Modify addresses configuration',
+      options.push('Modify times configuration', 'Modify tiers configuration',
         'Modify limits configuration', 'Modify funding configuration');
     }
 

@@ -421,7 +421,7 @@ async function createDividends() {
     let defaultTime = now + gbl.constants.DURATION.minutes(10);
     let expiryTime = readlineSync.questionInt('Enter the dividend expiry time (Unix Epoch time)\n(10 minutes from now = ' + defaultTime + ' ): ', { defaultInput: defaultTime });
 
-    let useDefaultExcluded = !readlineSync.keyInYNStrict(`Do you want to use data from 'dividends_exclusions_data.csv' for this dividend? If not, default exclusions will apply.`);
+    let useDefaultExcluded = !readlineSync.keyInYNStrict(`Do you want to use data from 'exclusions_data.csv' for this dividend? If not, default exclusions will apply.`);
 
     let createDividendAction;
     if (dividendsType == 'ERC20') {
@@ -451,14 +451,14 @@ async function createDividends() {
           createDividendAction = currentDividendsModule.methods.createDividendWithCheckpoint(maturityTime, expiryTime, checkpointId, web3.utils.toHex(dividendName));
         } else {
           let excluded = getExcludedFromDataFile();
-          createDividendAction = currentDividendsModule.methods.createDividendWithCheckpointAndExclusions(maturityTime, expiryTime, checkpointId, excluded, web3.utils.toHex(dividendName));
+          createDividendAction = currentDividendsModule.methods.createDividendWithCheckpointAndExclusions(maturityTime, expiryTime, checkpointId, excluded[0], web3.utils.toHex(dividendName));
         }
       } else {
         if (useDefaultExcluded) {
           createDividendAction = currentDividendsModule.methods.createDividend(maturityTime, expiryTime, web3.utils.toHex(dividendName));
         } else {
           let excluded = getExcludedFromDataFile();
-          createDividendAction = currentDividendsModule.methods.createDividendWithExclusions(maturityTime, expiryTime, excluded, web3.utils.toHex(dividendName));
+          createDividendAction = currentDividendsModule.methods.createDividendWithExclusions(maturityTime, expiryTime, excluded[0], web3.utils.toHex(dividendName));
         }
       }
       let receipt = await common.sendTransaction(createDividendAction, { value: dividendAmountBN });
@@ -648,7 +648,7 @@ async function addDividendsModule() {
     let bytes = web3.eth.abi.encodeFunctionCall(configureFunction, [wallet]);
 
     let selectedDividendFactoryAddress = moduleList[index].factoryAddress;
-    let addModuleAction = securityToken.methods.addModule(selectedDividendFactoryAddress, bytes, 0, 0);
+    let addModuleAction = securityToken.methods.addModule(selectedDividendFactoryAddress, bytes, 0, 0, false);
     let receipt = await common.sendTransaction(addModuleAction);
     let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
     console.log(chalk.green(`Module deployed at address: ${event._module} `));
@@ -863,8 +863,8 @@ async function initialize(_tokenSymbol) {
     console.log(chalk.red(`Selected Security Token ${tokenSymbol} does not exist.`));
     process.exit(0);
   }
-  let securityTokenABI = abis.securityToken();
-  securityToken = new web3.eth.Contract(securityTokenABI, securityTokenAddress);
+  let iSecurityTokenABI = abis.iSecurityToken();
+  securityToken = new web3.eth.Contract(iSecurityTokenABI, securityTokenAddress);
   securityToken.setProvider(web3.currentProvider);
 }
 
@@ -879,8 +879,8 @@ function welcome() {
 async function setup() {
   try {
     let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
-    let securityTokenRegistryABI = abis.securityTokenRegistry();
-    securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
+    let iSecurityTokenRegistryABI = abis.iSecurityTokenRegistry();
+    securityTokenRegistry = new web3.eth.Contract(iSecurityTokenRegistryABI, securityTokenRegistryAddress);
     securityTokenRegistry.setProvider(web3.currentProvider);
 
     let polyTokenAddress = await contracts.polyToken();

@@ -35,8 +35,8 @@ async function executeApp() {
 async function setup() {
   try {
     let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
-    let securityTokenRegistryABI = abis.securityTokenRegistry();
-    securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
+    let iSecurityTokenRegistryABI = abis.iSecurityTokenRegistry();
+    securityTokenRegistry = new web3.eth.Contract(iSecurityTokenRegistryABI, securityTokenRegistryAddress);
     securityTokenRegistry.setProvider(web3.currentProvider);
   } catch (err) {
     console.log(err)
@@ -55,8 +55,8 @@ async function selectST() {
     console.log(chalk.red(`Token symbol provided is not a registered Security Token.`));
     await selectST();
   } else {
-    let securityTokenABI = abis.securityToken();
-    securityToken = new web3.eth.Contract(securityTokenABI, result);
+    let iSecurityTokenABI = abis.iSecurityToken();
+    securityToken = new web3.eth.Contract(iSecurityTokenABI, result);
   }
 }
 
@@ -67,7 +67,7 @@ async function addPermissionModule() {
     console.log(chalk.red(`General Permission Manager is not attached.`));
     if (readlineSync.keyInYNStrict('Do you want to add General Permission Manager Module to your Security Token?')) {
       let permissionManagerFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, gbl.constants.MODULES_TYPES.PERMISSION, 'GeneralPermissionManager');
-      let addModuleAction = securityToken.methods.addModule(permissionManagerFactoryAddress, web3.utils.fromAscii('', 16), 0, 0);
+      let addModuleAction = securityToken.methods.addModule(permissionManagerFactoryAddress, web3.utils.fromAscii('', 16), 0, 0, false);
       let receipt = await common.sendTransaction(addModuleAction);
       let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
       console.log(`Module deployed at address: ${event._module}`);
@@ -91,12 +91,15 @@ async function changePermissionStep() {
     isNewDelegate = false;
     changePermissionAction(selectedDelegate);
   } else {
-    let selectFlow = readlineSync.keyInSelect(['Remove', 'Change permission'], 'Select an option:', { cancel: false });
+    let selectFlow = readlineSync.keyInSelect(['Remove', 'Change permission'], 'Select an option:', { cancel: 'RETURN' });
     if (selectFlow == 0) {
       await deleteDelegate(selectedDelegate);
-      console.log("Delegate successfully deleted.")
+      console.log("Delegate successfully deleted.");
+      await changePermissionStep();
+    } else if (selectFlow == -1) {
+      await changePermissionStep();
     } else {
-      changePermissionAction(selectedDelegate);
+      await changePermissionAction(selectedDelegate);
     }
   }
 }
@@ -104,7 +107,7 @@ async function changePermissionStep() {
 async function changePermissionAction(selectedDelegate) {
   let selectedModule = await selectModule();
   let selectedPermission = await selectPermission(selectedModule.permissions);
-  let isValid = isPermissionValid();
+  let isValid = await isPermissionValid();
   await changePermission(selectedDelegate, selectedModule.address, selectedPermission, isValid);
 }
 
@@ -129,10 +132,12 @@ async function selectDelegate() {
     Permisions: ${perm}`
   }));
 
-  let index = readlineSync.keyInSelect(options, 'Select a delegate:', { cancel: false });
+  let index = readlineSync.keyInSelect(options, 'Select a delegate:', { cancel: 'EXIT' });
   if (index == 0) {
     let newDelegate = await addNewDelegate();
     result = newDelegate;
+  } else if (index == -1) {
+    process.exit(0);
   } else {
     result = delegates[index - 1].address;
   }
@@ -145,7 +150,10 @@ async function selectModule() {
   let options = modules.map(function (m) {
     return m.name;
   });
-  let index = readlineSync.keyInSelect(options, 'Select a module:', { cancel: false });
+  let index = readlineSync.keyInSelect(options, 'Select a module:', { cancel: 'CANCEL' });
+  if (index == -1) {
+    await changePermissionStep();
+  }
   return modules[index];
 }
 
@@ -157,9 +165,12 @@ async function selectPermission(permissions) {
   return permissions[index];
 }
 
-function isPermissionValid() {
+async function isPermissionValid() {
   let options = ['Grant permission', 'Revoke permission'];
-  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: false });
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'CANCEL' });
+  if (index == -1) {
+    await changePermissionStep();
+  }
   return index == 0;
 }
 
@@ -168,6 +179,7 @@ async function changePermission(delegate, moduleAddress, permission, isValid) {
   let receipt = await common.sendTransaction(changePermissionAction, { factor: 2 });
   common.getEventFromLogs(generalPermissionManager._jsonInterface, receipt.logs, 'ChangePermission');
   console.log(`Permission changed successfully!`);
+  await changePermissionStep();
 }
 
 async function getDelegates() {

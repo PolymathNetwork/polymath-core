@@ -168,17 +168,16 @@ async function step_token_deploy(_name, _details, _divisible) {
 //////////////////////
 async function selectTicker() {
   let result;
-  let userTickers = (await securityTokenRegistry.methods.getTickersByOwner(Issuer.address).call()).map(t => web3.utils.hexToAscii(t));
+  let userTickers = (await securityTokenRegistry.methods.getTickersByOwner(Issuer.address).call()).map(t => web3.utils.hexToUtf8(t));
   let options = await Promise.all(userTickers.map(async function (t) {
     let tickerDetails = await securityTokenRegistry.methods.getTickerDetails(t).call();
     let tickerInfo;
     if (tickerDetails[4]) {
-      tickerInfo = `Token launched at ${(await securityTokenRegistry.methods.getSecurityTokenAddress(t).call())}`;
+      tickerInfo = `- Token launched at ${(await securityTokenRegistry.methods.getSecurityTokenAddress(t).call())}`;
     } else {
-      tickerInfo = `Expires at ${moment.unix(tickerDetails[2]).format('MMMM Do YYYY, HH:mm:ss')}`;
+      tickerInfo = `- Expires at ${moment.unix(tickerDetails[2]).format('MMMM Do YYYY, HH:mm:ss')}`;
     }
-    return `${t}
-    ${tickerInfo}`;
+    return `${t} ${tickerInfo}`;
   }));
   options.push('Register a new ticker');
 

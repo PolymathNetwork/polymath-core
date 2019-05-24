@@ -5,7 +5,6 @@ import "./interfaces/IModuleRegistry.sol";
 import "./interfaces/IModuleFactory.sol";
 import "./interfaces/ISecurityTokenRegistry.sol";
 import "./interfaces/IPolymathRegistry.sol";
-import "./interfaces/IFeatureRegistry.sol";
 import "./libraries/VersionUtils.sol";
 import "./storage/EternalStorage.sol";
 import "./libraries/Encoder.sol";

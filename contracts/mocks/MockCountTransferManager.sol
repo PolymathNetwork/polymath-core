@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "../modules/TransferManager/CTM/CountTransferManager.sol";
 

@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "../DividendCheckpoint.sol";
 import "./ERC20DividendCheckpointStorage.sol";

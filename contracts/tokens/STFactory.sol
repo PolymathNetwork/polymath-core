@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "./SecurityTokenProxy.sol";
 import "../proxy/OwnedUpgradeabilityProxy.sol";
@@ -50,8 +50,8 @@ contract STFactory is ISTFactory, Ownable {
         string memory _version,
         address _logicContract,
         bytes memory _initializationData
-    )   
-        public 
+    )
+        public
     {
         require(_logicContract != address(0), "Invalid Address");
         require(_transferManagerFactory != address(0), "Invalid Address");

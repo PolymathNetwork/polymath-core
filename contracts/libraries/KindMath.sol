@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 /**
  * @title KindMath
@@ -21,7 +21,7 @@ library KindMath {
         uint256 c = a * b;
         if (c / a == b)
             return true;
-        else 
+        else
             return false;
     }
 

@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 /**
  * @title Interface for security token proxy deployment
@@ -25,7 +25,7 @@ interface ISTFactory {
         bool _divisible,
         address _treasuryWallet,
         address _polymathRegistry
-    ) 
-    external 
+    )
+    external
     returns(address);
 }

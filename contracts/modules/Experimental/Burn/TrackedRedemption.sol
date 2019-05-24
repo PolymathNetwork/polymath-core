@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "../../Burn/IBurn.sol";
 import "../../Module.sol";

@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "./MockBurnFactory.sol";
 import "../modules/ModuleFactory.sol";

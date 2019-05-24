@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "../interfaces/IPoly.sol";
 import "../modules/UpgradableModuleFactory.sol";

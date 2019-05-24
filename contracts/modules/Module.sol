@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "../interfaces/IModule.sol";
 import "../Pausable.sol";
@@ -106,5 +106,5 @@ contract Module is IModule, ModuleStorage, Pausable {
     function reclaimETH() external {
         _onlySecurityTokenOwner();
         msg.sender.transfer(address(this).balance);
-    }	   
+    }
 }

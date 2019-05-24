@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 /**
  * @title Interface for all security tokens
@@ -571,7 +571,7 @@ interface ISecurityToken {
      * but it doesn't mean we operator is allowed to transfer the LOCKED partition values.
      * Logic for this restriction is written in `operatorTransferByPartition()` function.
      * @param _operator An address which is being authorised.
-     */ 
+     */
     function authorizeOperator(address _operator) external;
 
     /**
@@ -614,7 +614,7 @@ interface ISecurityToken {
         uint256 _value,
         bytes calldata _data,
         bytes calldata _operatorData
-    ) 
+    )
         external
         returns (bytes32);
 

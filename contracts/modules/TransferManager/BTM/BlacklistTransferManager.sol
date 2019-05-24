@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "../TransferManager.sol";
 import "./BlacklistTransferManagerStorage.sol";
@@ -443,11 +443,11 @@ contract BlacklistTransferManager is BlacklistTransferManagerStorage, TransferMa
         uint256 currentBalance = (msg.sender == securityToken) ? (IERC20(securityToken).balanceOf(_tokenHolder)).add(_additionalBalance) : IERC20(securityToken).balanceOf(_tokenHolder);
         if (paused && _partition == UNLOCKED)
             return currentBalance;
-            
+
         (Result success, ) = verifyTransfer(_tokenHolder, address(0), 0, "0x0");
         if ((_partition == LOCKED && success == Result.INVALID) || (_partition == UNLOCKED && success != Result.INVALID))
             return currentBalance;
-        else 
+        else
             return 0;
     }
 

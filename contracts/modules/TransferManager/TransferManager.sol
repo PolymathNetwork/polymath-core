@@ -16,16 +16,6 @@ contract TransferManager is ITransferManager, Module {
         _;
     }
 
-    function unpause() public {
-        _onlySecurityTokenOwner();
-        super._unpause();
-    }
-
-    function pause() public {
-        _onlySecurityTokenOwner();
-        super._pause();
-    }
-
     // Provide default versions of ERC1410 functions that can be overriden
 
     /**

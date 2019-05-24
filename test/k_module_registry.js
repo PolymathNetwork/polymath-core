@@ -197,10 +197,6 @@ contract("ModuleRegistry", async (accounts) => {
                     await I_MRProxied.getAddressValue.call(web3.utils.soliditySha3("securityTokenRegistry")),
                     I_SecurityTokenRegistryProxy.address
                 );
-                assert.equal(
-                    await I_MRProxied.getAddressValue.call(web3.utils.soliditySha3("featureRegistry")),
-                    .address
-                );
                 assert.equal(await I_MRProxied.getAddressValue.call(web3.utils.soliditySha3("polyToken")), I_PolyToken.address);
             });
         });

@@ -190,6 +190,18 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         _modifyAddresses(_wallet, _treasuryWallet, _usdTokens);
     }
 
+    /**
+     * @dev Modifies Oracle address.
+     *      By default, Polymath oracles are used but issuer can overide them using this function
+     * @param _currency Actual currency
+     * @param _denominatedCurrency denominated currency
+     * @param _oracleAddress address of the oracle
+     */
+    function modifyOracle(bytes32 _currency, bytes32 _denominatedCurrency, address _oracleAddress) external {
+        _onlySecurityTokenOwner();
+        customOracles[_currency][_denominatedCurrency] = _oracleAddress;
+    }
+
     function _modifyLimits(uint256 _nonAccreditedLimitUSD, uint256 _minimumInvestmentUSD) internal {
         minimumInvestmentUSD = _minimumInvestmentUSD;
         nonAccreditedLimitUSD = _nonAccreditedLimitUSD;
@@ -757,8 +769,9 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         return this.configure.selector;
     }
 
-    function _getOracle(bytes32 _currency, bytes32 _denominatedCurrency) internal view returns(address) {
-        return IPolymathRegistry(ISecurityToken(securityToken).polymathRegistry()).getAddress(oracleKeys[_currency][_denominatedCurrency]);
+    function _getOracle(bytes32 _currency, bytes32 _denominatedCurrency) internal view returns(address oracleAddress) {
+        oracleAddress = customOracles[_currency][_denominatedCurrency];
+        if (oracleAddress == address(0))
+            oracleAddress =  IPolymathRegistry(ISecurityToken(securityToken).polymathRegistry()).getAddress(oracleKeys[_currency][_denominatedCurrency]);
     }
-
 }

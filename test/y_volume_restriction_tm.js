@@ -46,7 +46,6 @@ contract('VolumeRestrictionTransferManager', accounts => {
     let I_GeneralTransferManager;
     let I_ModuleRegistryProxy;
     let I_ModuleRegistry;
-    let I_FeatureRegistry;
     let I_SecurityTokenRegistry;
     let I_DummySTOFactory;
     let I_STFactory;
@@ -179,7 +178,6 @@ contract('VolumeRestrictionTransferManager', accounts => {
         [
             I_PolymathRegistry,
             I_PolyToken,
-            I_FeatureRegistry,
             I_ModuleRegistry,
             I_ModuleRegistryProxy,
             I_MRProxied,
@@ -204,7 +202,6 @@ contract('VolumeRestrictionTransferManager', accounts => {
         SecurityTokenRegistry:             ${I_SecurityTokenRegistry.address}
         ModuleRegistryProxy                ${I_ModuleRegistryProxy.address}
         ModuleRegistry:                    ${I_ModuleRegistry.address}
-        FeatureRegistry:                   ${I_FeatureRegistry.address}
 
         STFactory:                         ${I_STFactory.address}
         GeneralTransferManagerFactory:     ${I_GeneralTransferManagerFactory.address}

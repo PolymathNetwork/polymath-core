@@ -333,7 +333,6 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     function updateFromRegistry() external onlyOwner {
         address _polymathRegistry = getAddressValue(POLYMATHREGISTRY);
         set(SECURITY_TOKEN_REGISTRY, IPolymathRegistry(_polymathRegistry).getAddress("SecurityTokenRegistry"));
-        set(FEATURE_REGISTRY, IPolymathRegistry(_polymathRegistry).getAddress("FeatureRegistry"));
         set(POLYTOKEN, IPolymathRegistry(_polymathRegistry).getAddress("PolyToken"));
     }
 

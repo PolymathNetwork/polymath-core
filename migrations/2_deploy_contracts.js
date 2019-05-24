@@ -21,7 +21,6 @@ const CappedSTOLogic = artifacts.require("./CappedSTO.sol");
 const USDTieredSTOFactory = artifacts.require("./USDTieredSTOFactory.sol");
 const SecurityTokenRegistry = artifacts.require("./SecurityTokenRegistry.sol");
 const SecurityTokenRegistryProxy = artifacts.require("./SecurityTokenRegistryProxy.sol");
-const FeatureRegistry = artifacts.require("./FeatureRegistry.sol");
 const STFactory = artifacts.require("./tokens/STFactory.sol");
 const DevPolyToken = artifacts.require("./helpers/PolyTokenFaucet.sol");
 const MockOracle = artifacts.require("./MockOracle.sol");
@@ -375,14 +374,6 @@ module.exports = function(deployer, network, accounts) {
             return deployer.deploy(STFactory, polymathRegistry.address, GeneralTransferManagerFactory.address, DataStoreFactory.address, "3.0.0", SecurityTokenLogic.address, tokenInitBytesCall, { from: PolymathAccount });
         })
         .then(() => {
-            // K) Deploy the FeatureRegistry contract to control feature switches
-            return deployer.deploy(FeatureRegistry, PolymathRegistry.address, { from: PolymathAccount });
-        })
-        .then(() => {
-            // Assign the address into the FeatureRegistry key
-            return polymathRegistry.changeAddress("FeatureRegistry", FeatureRegistry.address, { from: PolymathAccount });
-        })
-        .then(() => {
             // J) Deploy the SecurityTokenRegistry contract (Used to hold the deployed secuirtyToken details. It also act as the interface to deploy the SecurityToken)
             return deployer.deploy(SecurityTokenRegistry, { from: PolymathAccount });
         })
@@ -563,7 +554,6 @@ module.exports = function(deployer, network, accounts) {
     PolymathRegistry:                     ${PolymathRegistry.address}
     SecurityTokenRegistry (Proxy):        ${SecurityTokenRegistryProxy.address}
     ModuleRegistry (Proxy):               ${ModuleRegistryProxy.address}
-    FeatureRegistry:                      ${FeatureRegistry.address}
     STRGetter:                            ${STRGetter.address}
 
     ETHOracle:                            ${ETHOracle}

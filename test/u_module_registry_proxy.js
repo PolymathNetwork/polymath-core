@@ -36,7 +36,6 @@ contract("ModuleRegistryProxy", async (accounts) => {
     let I_MRProxied;
     let I_SecurityToken;
     let I_ModuleRegistry;
-    let I_FeatureRegistry;
     let I_STRGetter;
     let I_STGetter;
     let stGetter;
@@ -76,7 +75,6 @@ contract("ModuleRegistryProxy", async (accounts) => {
        [
            I_PolymathRegistry,
            I_PolyToken,
-           I_FeatureRegistry,
            I_ModuleRegistry,
            I_ModuleRegistryProxy,
            I_MRProxied,

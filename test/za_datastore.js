@@ -19,7 +19,6 @@ contract("Data store", async (accounts) => {
     let I_GeneralTransferManagerFactory;
     let I_SecurityTokenRegistryProxy;
     let I_ModuleRegistry;
-    let I_FeatureRegistry;
     let I_SecurityTokenRegistry;
     let I_STRProxied;
     let I_STFactory;
@@ -59,7 +58,6 @@ contract("Data store", async (accounts) => {
         [
             I_PolymathRegistry,
             I_PolyToken,
-            I_FeatureRegistry,
             I_ModuleRegistry,
             I_ModuleRegistryProxy,
             I_MRProxied,
@@ -81,7 +79,6 @@ contract("Data store", async (accounts) => {
         SecurityTokenRegistryProxy:        ${I_SecurityTokenRegistryProxy.address}
         SecurityTokenRegistry:             ${I_SecurityTokenRegistry.address}
         ModuleRegistry:                    ${I_ModuleRegistry.address}
-        FeatureRegistry:                   ${I_FeatureRegistry.address}
 
         STFactory:                         ${I_STFactory.address}
         GeneralTransferManagerFactory:     ${I_GeneralTransferManagerFactory.address}

@@ -25,7 +25,6 @@ const BlacklistTransferManagerFactory = artifacts.require("./BlacklistTransferMa
 const ScheduledCheckpointFactory = artifacts.require('./ScheduledCheckpointFactory.sol');
 const USDTieredSTOFactory = artifacts.require("./USDTieredSTOFactory.sol");
 const USDTieredSTO = artifacts.require("./USDTieredSTO");
-const FeatureRegistry = artifacts.require("./FeatureRegistry.sol");
 const STFactory = artifacts.require("./STFactory.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager.sol");
 const GeneralTransferManagerFactory = artifacts.require("./GeneralTransferManagerFactory.sol");
@@ -92,7 +91,6 @@ let I_ModuleRegistryProxy;
 let I_PreSaleSTOLogic;
 let I_PreSaleSTOFactory;
 let I_ModuleRegistry;
-let I_FeatureRegistry;
 let I_SecurityTokenRegistry;
 let I_CappedSTOLogic;
 let I_CappedSTOFactory;
@@ -131,8 +129,6 @@ export async function setUpPolymathNetwork(account_polymath, token_owner) {
     // ----------- POLYMATH NETWORK Configuration ------------
     // Step 1: Deploy the PolyToken and PolymathRegistry
     let a = await deployPolyRegistryAndPolyToken(account_polymath, token_owner);
-    // Step 2: Deploy the FeatureRegistry
-    let b = await deployFeatureRegistry(account_polymath);
     // STEP 3: Deploy the ModuleRegistry
     let c = await deployModuleRegistry(account_polymath);
     // STEP 4a: Deploy the GeneralTransferManagerFactory
@@ -153,7 +149,6 @@ export async function setUpPolymathNetwork(account_polymath, token_owner) {
     let tempArray = new Array(
         I_PolymathRegistry,
         I_PolyToken,
-        I_FeatureRegistry,
         I_ModuleRegistry,
         I_ModuleRegistryProxy,
         I_MRProxied,
@@ -195,14 +190,6 @@ export async function deployPolyRegistryAndPolyToken(account_polymath, token_own
     await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, { from: account_polymath });
 
     return new Array(I_PolymathRegistry, I_PolyToken);
-}
-
-async function deployFeatureRegistry(account_polymath) {
-    I_FeatureRegistry = await FeatureRegistry.new(I_PolymathRegistry.address, {
-        from: account_polymath
-    });
-
-    return new Array(I_FeatureRegistry);
 }
 
 async function deployModuleRegistry(account_polymath) {
@@ -301,7 +288,6 @@ async function deploySTR(account_polymath) {
 async function setInPolymathRegistry(account_polymath) {
     await I_PolymathRegistry.changeAddress("PolyToken", I_PolyToken.address, { from: account_polymath });
     await I_PolymathRegistry.changeAddress("ModuleRegistry", I_ModuleRegistryProxy.address, { from: account_polymath });
-    await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, { from: account_polymath });
     await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistryProxy.address, { from: account_polymath });
     await I_MRProxied.updateFromRegistry({ from: account_polymath });
 }

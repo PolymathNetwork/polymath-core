@@ -48,7 +48,6 @@ contract("ManualApprovalTransferManager", accounts => {
     let I_GeneralTransferManager;
     let I_ModuleRegistryProxy;
     let I_ModuleRegistry;
-    let I_FeatureRegistry;
     let I_SecurityTokenRegistry;
     let I_MRProxied;
     let I_STRProxied;
@@ -100,7 +99,6 @@ contract("ManualApprovalTransferManager", accounts => {
         [
             I_PolymathRegistry,
             I_PolyToken,
-            I_FeatureRegistry,
             I_ModuleRegistry,
             I_ModuleRegistryProxy,
             I_MRProxied,
@@ -129,7 +127,6 @@ contract("ManualApprovalTransferManager", accounts => {
         SecurityTokenRegistryProxy:        ${I_SecurityTokenRegistryProxy.address}
         SecurityTokenRegistry:             ${I_SecurityTokenRegistry.address}
         ModuleRegistry:                    ${I_ModuleRegistry.address}
-        FeatureRegistry:                   ${I_FeatureRegistry.address}
 
         STFactory:                         ${I_STFactory.address}
         GeneralTransferManagerFactory:     ${I_GeneralTransferManagerFactory.address}

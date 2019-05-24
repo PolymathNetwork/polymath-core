@@ -46,7 +46,6 @@ contract("SecurityTokenRegistry", async (accounts) => {
     let I_GeneralTransferManager;
     let I_ModuleRegistryProxy;
     let I_ModuleRegistry;
-    let I_FeatureRegistry;
     let I_SecurityTokenRegistry;
     let I_SecurityTokenRegistryV2;
     let I_DummySTOFactory;
@@ -126,7 +125,6 @@ contract("SecurityTokenRegistry", async (accounts) => {
         [
             I_PolymathRegistry,
             I_PolyToken,
-            I_FeatureRegistry,
             I_ModuleRegistry,
             I_ModuleRegistryProxy,
             I_MRProxied,
@@ -171,7 +169,6 @@ contract("SecurityTokenRegistry", async (accounts) => {
         SecurityTokenRegistry:             ${I_SecurityTokenRegistry.address}
         ModuleRegistry:                    ${I_ModuleRegistry.address}
         ModuleRegistryProxy:               ${I_ModuleRegistryProxy.address}
-        FeatureRegistry:                   ${I_FeatureRegistry.address}
 
         STFactory:                         ${I_STFactory.address}
         GeneralTransferManagerFactory:     ${I_GeneralTransferManagerFactory.address}

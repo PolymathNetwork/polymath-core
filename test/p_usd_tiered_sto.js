@@ -48,7 +48,6 @@ contract("USDTieredSTO", async (accounts) => {
     let I_GeneralTransferManager;
     let I_ModuleRegistry;
     let I_ModuleRegistryProxy;
-    let I_FeatureRegistry;
     let I_SecurityTokenRegistry;
     let I_USDTieredSTOFactory;
     let I_USDOracle;
@@ -227,7 +226,6 @@ contract("USDTieredSTO", async (accounts) => {
          [
              I_PolymathRegistry,
              I_PolyToken,
-             I_FeatureRegistry,
              I_ModuleRegistry,
              I_ModuleRegistryProxy,
              I_MRProxied,
@@ -261,7 +259,6 @@ contract("USDTieredSTO", async (accounts) => {
         SecurityTokenRegistryProxy:        ${I_SecurityTokenRegistryProxy.address}
         SecurityTokenRegistry:             ${I_SecurityTokenRegistry.address}
         ModuleRegistry:                    ${I_ModuleRegistry.address}
-        FeatureRegistry:                   ${I_FeatureRegistry.address}
 
         STFactory:                         ${I_STFactory.address}
         GeneralTransferManagerFactory:     ${I_GeneralTransferManagerFactory.address}

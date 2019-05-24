@@ -48,7 +48,6 @@ contract("ModuleRegistry", async (accounts) => {
     let I_GeneralTransferManager;
     let I_ModuleRegistryProxy;
     let I_ModuleRegistry;
-    let I_FeatureRegistry;
     let I_SecurityTokenRegistry;
     let I_CappedSTOFactory1;
     let I_CappedSTOFactory2;
@@ -118,7 +117,6 @@ contract("ModuleRegistry", async (accounts) => {
        [
            I_PolymathRegistry,
            I_PolyToken,
-           I_FeatureRegistry,
            I_ModuleRegistry,
            I_ModuleRegistryProxy,
            I_MRProxied,
@@ -141,7 +139,6 @@ contract("ModuleRegistry", async (accounts) => {
         SecurityTokenRegistry:             ${I_SecurityTokenRegistry.address}
         ModuleRegistry:                    ${I_ModuleRegistry.address}
         ModuleRegistryProxy:               ${I_ModuleRegistryProxy.address}
-        FeatureRegistry:                   ${I_FeatureRegistry.address}
 
         STFactory:                         ${I_STFactory.address}
         GeneralTransferManagerFactory:     ${I_GeneralTransferManagerFactory.address}
@@ -202,7 +199,7 @@ contract("ModuleRegistry", async (accounts) => {
                 );
                 assert.equal(
                     await I_MRProxied.getAddressValue.call(web3.utils.soliditySha3("featureRegistry")),
-                    I_FeatureRegistry.address
+                    .address
                 );
                 assert.equal(await I_MRProxied.getAddressValue.call(web3.utils.soliditySha3("polyToken")), I_PolyToken.address);
             });
@@ -492,7 +489,7 @@ contract("ModuleRegistry", async (accounts) => {
 
             describe("Test cases for the ReclaimTokens contract", async () => {
                 it("Should successfully reclaim POLY tokens -- fail because token address will be 0x", async () => {
-                    I_ReclaimERC20 = await ReclaimTokens.at(I_FeatureRegistry.address);
+                    I_ReclaimERC20 = await ReclaimTokens.at(I_MRProxied.address);
                     await I_PolyToken.transfer(I_ReclaimERC20.address, new BN(web3.utils.toWei("1")), { from: token_owner });
                     catchRevert(I_ReclaimERC20.reclaimERC20(address_zero, { from: account_polymath }));
                 });

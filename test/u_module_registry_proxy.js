@@ -140,9 +140,6 @@ contract("ModuleRegistryProxy", async (accounts) => {
             );
 
             let I_SecurityTokenLogic = await SecurityToken.new(
-                "",
-                "",
-                0,
                 { from: account_polymath }
             );
 

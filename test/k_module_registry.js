@@ -233,12 +233,6 @@ contract("ModuleRegistry", async (accounts) => {
         });
 
         describe("Test cases for the registering the module", async () => {
-            it("Should fail to register the module -- when registerModule is paused", async () => {
-                await I_MRProxied.pause({ from: account_polymath });
-
-                await catchRevert(I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: account_delegate }));
-                await I_MRProxied.unpause({ from: account_polymath });
-            });
 
             it("Should register the module with the Module Registry", async () => {
                 let tx = await I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
@@ -321,51 +315,12 @@ contract("ModuleRegistry", async (accounts) => {
                 await catchRevert(I_SecurityToken.addModule(I_CappedSTOFactory1.address, bytesSTO, new BN(0), new BN(0), false, { from: token_owner }));
             });
 
-            it("Should fail to register module because custom modules not allowed", async () => {
+            it("Should fail to register module because msg.sender is not authorised to call", async () => {
                 I_CappedSTOFactory2 = await CappedSTOFactory.new(new BN(0), new BN(0), I_CappedSTOLogic.address, I_PolymathRegistry.address, true, { from: token_owner });
 
                 assert.notEqual(I_CappedSTOFactory2.address.valueOf(), address_zero, "CappedSTOFactory contract was not deployed");
 
                 await catchRevert(I_MRProxied.registerModule(I_CappedSTOFactory2.address, { from: token_owner }));
-            });
-
-            it("Should switch customModulesAllowed to true", async () => {
-                assert.equal(
-                    false,
-                    await I_FeatureRegistry.getFeatureStatus.call("customModulesAllowed"),
-                    "Custom modules should be dissabled by default."
-                );
-                let tx = await I_FeatureRegistry.setFeatureStatus("customModulesAllowed", true, { from: account_polymath });
-                assert.equal(
-                    true,
-                    await I_FeatureRegistry.getFeatureStatus.call("customModulesAllowed"),
-                    "Custom modules should be switched to true."
-                );
-            });
-
-            it("Should successfully add module because custom modules switched on", async () => {
-                startTime = await latestTime() + duration.seconds(5000);
-                endTime = startTime + duration.days(30);
-                let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
-                let tx = await I_MRProxied.registerModule(I_CappedSTOFactory2.address, { from: token_owner });
-                tx = await I_SecurityToken.addModule(I_CappedSTOFactory2.address, bytesSTO, new BN(0), new BN(0), false, { from: token_owner });
-
-                assert.equal(tx.logs[2].args._types[0], stoKey, "CappedSTO doesn't get deployed");
-                assert.equal(
-                    web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
-                    "CappedSTO",
-                    "CappedSTOFactory module was not added"
-                );
-                let _reputation = await I_MRProxied.getFactoryDetails.call(I_CappedSTOFactory2.address);
-                assert.equal(_reputation[1].length, 1);
-            });
-
-            it("Should successfully add module when custom modules switched on -- fail because factory owner is different", async () => {
-                await I_MRProxied.registerModule(I_CappedSTOFactory3.address, { from: account_temp });
-                startTime = await latestTime() + duration.seconds(5000);
-                endTime = startTime + duration.days(30);
-                let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
-                catchRevert(I_SecurityToken.addModule(I_CappedSTOFactory3.address, bytesSTO, new BN(0), new BN(0), false, { from: token_owner }));
             });
 
             it("Should successfully add verified module", async () => {
@@ -427,14 +382,7 @@ contract("ModuleRegistry", async (accounts) => {
         });
 
         describe("Test case for the getModulesByTypeAndToken()", async () => {
-            it("Should get the list of available modules when the customModulesAllowed", async () => {
-                let _list = await I_MRProxied.getModulesByTypeAndToken.call(3, I_SecurityToken.address);
-                console.log(_list);
-                assert.equal(_list[0], I_CappedSTOFactory2.address);
-            });
-
             it("Should get the list of available modules when the customModulesAllowed is not allowed", async () => {
-                await I_FeatureRegistry.setFeatureStatus("customModulesAllowed", false, { from: account_polymath });
                 let _list = await I_MRProxied.getModulesByTypeAndToken.call(3, I_SecurityToken.address);
                 console.log(_list);
                 assert.equal(_list.length, 0);
@@ -478,43 +426,17 @@ contract("ModuleRegistry", async (accounts) => {
 
                 let sto1 = (await I_MRProxied.getModulesByType.call(3))[0];
                 let sto2 = (await I_MRProxied.getModulesByType.call(3))[1];
-                let sto3 = (await I_MRProxied.getModulesByType.call(3))[2];
-                let sto4 = (await I_MRProxied.getModulesByType.call(3))[3];
 
+                console.log(`List of modules - ${await I_MRProxied.getModulesByType.call(3)}`);
+                
                 assert.equal(sto1, I_CappedSTOFactory1.address);
-                assert.equal(sto2, I_CappedSTOFactory2.address);
-                assert.equal((await I_MRProxied.getModulesByType.call(3)).length, 4);
+                assert.equal(sto2, I_TestSTOFactory.address);
+                assert.equal((await I_MRProxied.getModulesByType.call(3)).length, 2);
 
-                let tx = await I_MRProxied.removeModule(sto4, { from: account_polymath });
-
-                assert.equal(tx.logs[0].args._moduleFactory, sto4, "Event is not properly emitted for _moduleFactory");
-                assert.equal(tx.logs[0].args._decisionMaker, account_polymath, "Event is not properly emitted for _decisionMaker");
-
-                let sto3_end = (await I_MRProxied.getModulesByType.call(3))[2];
-
-                // re-ordering
-                assert.equal(sto3_end, sto3);
-                // delete related data
-                assert.equal(await I_MRProxied.getUintValue.call(web3.utils.soliditySha3("registry", sto4)), 0);
-                assert.equal((await I_MRProxied.getFactoryDetails.call(sto4))[1], 0);
-                assert.equal((await I_MRProxied.getModulesByType.call(3)).length, 3);
-                assert.equal(await I_MRProxied.getBoolValue.call(web3.utils.soliditySha3("verified", sto4)), false);
-
-                await revertToSnapshot(snap);
-            });
-
-            it("Should successfully remove module and delete data if msg.sender is owner", async () => {
-                let sto1 = (await I_MRProxied.getModulesByType.call(3))[0];
-                let sto2 = (await I_MRProxied.getModulesByType.call(3))[1];
-
-                assert.equal(sto1, I_CappedSTOFactory1.address);
-                assert.equal(sto2, I_CappedSTOFactory2.address);
-                assert.equal((await I_MRProxied.getModulesByType.call(3)).length, 4);
-
-                let tx = await I_MRProxied.removeModule(sto2, { from: token_owner });
+                let tx = await I_MRProxied.removeModule(sto2, { from: account_polymath });
 
                 assert.equal(tx.logs[0].args._moduleFactory, sto2, "Event is not properly emitted for _moduleFactory");
-                assert.equal(tx.logs[0].args._decisionMaker, token_owner, "Event is not properly emitted for _decisionMaker");
+                assert.equal(tx.logs[0].args._decisionMaker, account_polymath, "Event is not properly emitted for _decisionMaker");
 
                 let sto1_end = (await I_MRProxied.getModulesByType.call(3))[0];
 
@@ -523,12 +445,25 @@ contract("ModuleRegistry", async (accounts) => {
                 // delete related data
                 assert.equal(await I_MRProxied.getUintValue.call(web3.utils.soliditySha3("registry", sto2)), 0);
                 assert.equal((await I_MRProxied.getFactoryDetails.call(sto2))[1], 0);
-                assert.equal((await I_MRProxied.getModulesByType.call(3)).length, 3);
+                assert.equal((await I_MRProxied.getModulesByType.call(3)).length, 1);
                 assert.equal(await I_MRProxied.getBoolValue.call(web3.utils.soliditySha3("verified", sto2)), false);
+
+                await revertToSnapshot(snap);
+            });
+
+            it("Should successfully fail to remove module and delete data if msg.sender is owner", async () => {
+                let sto1 = (await I_MRProxied.getModulesByType.call(3))[0];
+
+                assert.equal(sto1, I_CappedSTOFactory1.address);
+                assert.equal((await I_MRProxied.getModulesByType.call(3)).length, 2);
+
+                await catchRevert( I_MRProxied.removeModule(sto1, { from: token_owner }));
+
             });
 
             it("Should fail if module already removed", async () => {
-                await catchRevert(I_MRProxied.removeModule(I_CappedSTOFactory2.address, { from: account_polymath }));
+                await I_MRProxied.removeModule(I_TestSTOFactory.address, { from: account_polymath });
+                await catchRevert(I_MRProxied.removeModule(I_TestSTOFactory.address, { from: account_polymath }));
             });
         });
 
@@ -552,28 +487,6 @@ contract("ModuleRegistry", async (accounts) => {
                         bal2.div(new BN(10).pow(new BN(18))).toNumber(),
                         bal2.div(new BN(10).pow(new BN(18))).toNumber()
                     );
-                });
-            });
-
-            describe("Test cases for pausing the contract", async () => {
-                it("Should fail to pause if msg.sender is not owner", async () => {
-                    await catchRevert(I_MRProxied.pause({ from: account_temp }));
-                });
-
-                it("Should successfully pause the contract", async () => {
-                    await I_MRProxied.pause({ from: account_polymath });
-                    let status = await I_MRProxied.getBoolValue.call(web3.utils.soliditySha3("paused"));
-                    assert.isOk(status);
-                });
-
-                it("Should fail to unpause if msg.sender is not owner", async () => {
-                    await catchRevert(I_MRProxied.unpause({ from: account_temp }));
-                });
-
-                it("Should successfully unpause the contract", async () => {
-                    await I_MRProxied.unpause({ from: account_polymath });
-                    let status = await I_MRProxied.getBoolValue.call(web3.utils.soliditySha3("paused"));
-                    assert.isNotOk(status);
                 });
             });
 

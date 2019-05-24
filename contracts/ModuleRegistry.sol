@@ -76,33 +76,6 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         _;
     }
 
-    /**
-     * @notice Modifier to make a function callable only when the contract is not paused.
-     */
-    modifier whenNotPausedOrOwner() {
-        if (msg.sender == owner()) _;
-        else {
-            require(!isPaused(), "Already paused");
-            _;
-        }
-    }
-
-    /**
-     * @notice Modifier to make a function callable only when the contract is not paused and ignore is msg.sender is owner.
-     */
-    modifier whenNotPaused() {
-        require(!isPaused(), "Already paused");
-        _;
-    }
-
-    /**
-     * @notice Modifier to make a function callable only when the contract is paused.
-     */
-    modifier whenPaused() {
-        require(isPaused(), "Should not be paused");
-        _;
-    }
-
     /////////////////////////////
     // Initialization
     /////////////////////////////
@@ -130,14 +103,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @param _isUpgrade whether or not the function is being called as a result of an upgrade
      */
     function useModule(address _moduleFactory, bool _isUpgrade) external {
-        if (IFeatureRegistry(getAddressValue(FEATURE_REGISTRY)).getFeatureStatus("customModulesAllowed")) {
-            require(
-                getBoolValue(Encoder.getKey("verified", _moduleFactory)) || IOwnable(_moduleFactory).owner() == IOwnable(msg.sender).owner(),
-                "ModuleFactory must be verified or SecurityToken owner must be ModuleFactory owner"
-            );
-        } else {
-            require(getBoolValue(Encoder.getKey("verified", _moduleFactory)), "ModuleFactory must be verified");
-        }
+        require(getBoolValue(Encoder.getKey("verified", _moduleFactory)), "ModuleFactory must be verified");
         // This if statement is required to be able to add modules from the STFactory contract during deployment
         // before the token has been registered to the STR.
         if (ISecurityTokenRegistry(getAddressValue(SECURITY_TOKEN_REGISTRY)).isSecurityToken(msg.sender)) {
@@ -168,15 +134,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @notice Called by the ModuleFactory owner to register new modules for SecurityTokens to use
      * @param _moduleFactory is the address of the module factory to be registered
      */
-    function registerModule(address _moduleFactory) external whenNotPausedOrOwner {
-        if (IFeatureRegistry(getAddressValue(FEATURE_REGISTRY)).getFeatureStatus("customModulesAllowed")) {
-            require(
-                msg.sender == IOwnable(_moduleFactory).owner() || msg.sender == owner(),
-                "msg.sender must be the Module Factory owner or registry curator"
-            );
-        } else {
-            require(msg.sender == owner(), "Only owner allowed to register modules");
-        }
+    function registerModule(address _moduleFactory) external onlyOwner {
         require(getUintValue(Encoder.getKey("registry", _moduleFactory)) == 0, "Module factory should not be pre-registered");
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
         //Enforce type uniqueness
@@ -204,14 +162,10 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @notice Called by the ModuleFactory owner or registry curator to delete a ModuleFactory from the registry
      * @param _moduleFactory is the address of the module factory to be deleted from the registry
      */
-    function removeModule(address _moduleFactory) external whenNotPausedOrOwner {
+    function removeModule(address _moduleFactory) external onlyOwner {
         uint256 moduleType = getUintValue(Encoder.getKey("registry", _moduleFactory));
 
         require(moduleType != 0, "Module factory should be registered");
-        require(
-            msg.sender == IOwnable(_moduleFactory).owner() || msg.sender == owner(),
-            "msg.sender must be the Module Factory owner or registry curator"
-        );
         uint256 index = getUintValue(Encoder.getKey("moduleListIndex", _moduleFactory));
         uint256 last = getArrayAddress(Encoder.getKey("moduleList", moduleType)).length - 1;
         address temp = getArrayAddress(Encoder.getKey("moduleList", moduleType))[last];
@@ -258,9 +212,8 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     function unverifyModule(address _moduleFactory) external {
         // Can be called by the registry owner, the module factory, or the module factory owner
         bool isOwner = msg.sender == owner();
-        bool isFactoryOwner = msg.sender == IOwnable(_moduleFactory).owner();
         bool isFactory = msg.sender == _moduleFactory;
-        require(isOwner || isFactoryOwner || isFactory, "Not authorised");
+        require(isOwner || isFactory, "Not authorised");
         require(getUintValue(Encoder.getKey("registry", _moduleFactory)) != uint256(0), "Module factory must be registered");
         set(Encoder.getKey("verified", _moduleFactory), false);
         emit ModuleUnverified(_moduleFactory);
@@ -345,32 +298,16 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     function getModulesByTypeAndToken(uint8 _moduleType, address _securityToken) public view returns(address[] memory) {
         address[] memory _addressList = getArrayAddress(Encoder.getKey("moduleList", uint256(_moduleType)));
         uint256 _len = _addressList.length;
-        bool _isCustomModuleAllowed = IFeatureRegistry(getAddressValue(FEATURE_REGISTRY)).getFeatureStatus(
-            "customModulesAllowed"
-        );
         uint256 counter = 0;
         for (uint256 i = 0; i < _len; i++) {
-            if (_isCustomModuleAllowed) {
-                if (IOwnable(_addressList[i]).owner() == IOwnable(_securityToken).owner() || getBoolValue(
-                    Encoder.getKey("verified", _addressList[i])
-                )) if (isCompatibleModule(_addressList[i], _securityToken)) counter++;
-            } else if (getBoolValue(Encoder.getKey("verified", _addressList[i]))) {
+            if (getBoolValue(Encoder.getKey("verified", _addressList[i]))) {
                 if (isCompatibleModule(_addressList[i], _securityToken)) counter++;
             }
         }
         address[] memory _tempArray = new address[](counter);
         counter = 0;
         for (uint256 j = 0; j < _len; j++) {
-            if (_isCustomModuleAllowed) {
-                if (IOwnable(_addressList[j]).owner() == IOwnable(_securityToken).owner() || getBoolValue(
-                    Encoder.getKey("verified", _addressList[j])
-                )) {
-                    if (isCompatibleModule(_addressList[j], _securityToken)) {
-                        _tempArray[counter] = _addressList[j];
-                        counter++;
-                    }
-                }
-            } else if (getBoolValue(Encoder.getKey("verified", _addressList[j]))) {
+            if (getBoolValue(Encoder.getKey("verified", _addressList[j]))) {
                 if (isCompatibleModule(_addressList[j], _securityToken)) {
                     _tempArray[counter] = _addressList[j];
                     counter++;
@@ -389,24 +326,6 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         IERC20 token = IERC20(_tokenContract);
         uint256 balance = token.balanceOf(address(this));
         require(token.transfer(owner(), balance), "token transfer failed");
-    }
-
-    /**
-     * @notice Called by the owner to pause, triggers stopped state
-     */
-    function pause() external whenNotPaused onlyOwner {
-        set(PAUSED, true);
-        /*solium-disable-next-line security/no-block-members*/
-        emit Pause(msg.sender);
-    }
-
-    /**
-     * @notice Called by the owner to unpause, returns to normal state
-     */
-    function unpause() external whenPaused onlyOwner {
-        set(PAUSED, false);
-        /*solium-disable-next-line security/no-block-members*/
-        emit Unpause(msg.sender);
     }
 
     /**
@@ -437,11 +356,4 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         return getAddressValue(OWNER);
     }
 
-    /**
-     * @notice Checks whether the contract operations is paused or not
-     * @return bool
-     */
-    function isPaused() public view returns(bool) {
-        return getBoolValue(PAUSED);
-    }
 }

@@ -72,6 +72,11 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     // Emit when the budget allocated to a module is changed
     event ModuleBudgetChanged(uint8[] _moduleTypes, address _module, uint256 _oldBudget, uint256 _budget); //Event emitted by the tokenLib.
 
+    // Constructor
+    constructor() public {
+        initialized = true;
+    }
+
     /**
      * @notice Initialization function
      * @dev Expected to be called atomically with the proxy being created, by the owner of the token

@@ -195,6 +195,11 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     // Initialization
     /////////////////////////////
 
+    // Constructor
+    constructor() public {
+        set(INITIALIZE, true);
+    }
+
     /**
      * @notice Initializes instance of STR
      * @param _polymathRegistry is the address of the Polymath Registry

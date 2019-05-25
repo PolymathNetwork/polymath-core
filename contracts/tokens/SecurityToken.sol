@@ -527,11 +527,11 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
         // require(balanceOfByPartition(_partition, msg.sender) >= _value);
         // NB - Above condition will be automatically checked using the executeTransfer() function execution.
         // NB - passing `_additionalBalance` value is 0 because accessing the balance before transfer
-        uint256 balanceBeforeTransferLocked = _balanceOfByPartition(_partition, _to, 0);
+        uint256 lockedBalanceBeforeTransfer = _balanceOfByPartition(LOCKED, _to, 0);
         _transferWithData(_from, _to, _value, _data);
         // NB - passing `_additonalBalance` valie is 0 because balance of `_to` was updated in the transfer call
-        uint256 balanceAfterTransferLocked = _balanceOfByPartition(_partition, _to, 0);
-        toPartition =  _returnPartition(balanceBeforeTransferLocked, balanceAfterTransferLocked, _value);
+        uint256 lockedBalanceAfterTransfer = _balanceOfByPartition(LOCKED, _to, 0);
+        toPartition =  _returnPartition(lockedBalanceBeforeTransfer, lockedBalanceAfterTransfer, _value);
         emit TransferByPartition(_partition, _operator, _from, _to, _value, _data, _operatorData);
     }
 
@@ -975,8 +975,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
             bool success;
             (success, esc, appStatusCode) = _canTransfer(_from, _to, _value, _data);
             if (success) {
-                uint256 beforeBalance = _balanceOfByPartition(_partition, _to, 0);
-                uint256 afterbalance = _balanceOfByPartition(_partition, _to, _value);
+                uint256 beforeBalance = _balanceOfByPartition(LOCKED, _to, 0);
+                uint256 afterbalance = _balanceOfByPartition(LOCKED, _to, _value);
                 toPartition = _returnPartition(beforeBalance, afterbalance, _value);
             }
             return (esc, appStatusCode, toPartition);

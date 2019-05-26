@@ -2,6 +2,7 @@ pragma solidity ^0.5.0;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
+import "./interfaces/ISecurityTokenRegistry.sol";
 import "./interfaces/IOwnable.sol";
 import "./interfaces/ISTFactory.sol";
 import "./interfaces/ISecurityTokenRegistry.sol";
@@ -18,7 +19,7 @@ import "./proxy/Proxy.sol";
 /**
  * @title Registry contract for issuers to register their tickers and security tokens
  */
-contract SecurityTokenRegistry is EternalStorage, Proxy {
+contract SecurityTokenRegistry is ISecurityTokenRegistry, EternalStorage, Proxy {
 
     /**
      * @notice state variables

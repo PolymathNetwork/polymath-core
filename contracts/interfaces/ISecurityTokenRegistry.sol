@@ -26,6 +26,45 @@ interface ISecurityTokenRegistry {
     ) external;
 
     /**
+     * @notice Deploys an instance of a new Security Token and records it to the registry
+     * @param _name is the name of the token
+     * @param _ticker is the ticker symbol of the security token
+     * @param _tokenDetails is the off-chain details of the token
+     * @param _divisible is whether or not the token is divisible
+     * @param _treasuryWallet Ethereum address which will holds the STs.
+     * @param _protocolVersion Version of securityToken contract
+     * - `_protocolVersion` is the packed value of uin8[3] array (it will be calculated offchain)
+     * - if _protocolVersion == 0 then latest version of securityToken will be generated
+     */
+    function generateNewSecurityToken(
+        string calldata _name,
+        string calldata _ticker,
+        string calldata _tokenDetails,
+        bool _divisible,
+        address _treasuryWallet,
+        uint256 _protocolVersion
+    )
+        external;
+
+    /**
+     * @notice Deploys an instance of a new Security Token and replaces the old one in the registry
+     * This can be used to upgrade from version 2.0 of ST to 3.0 or in case something goes wrong with earlier ST
+     * @dev This function needs to be in STR 3.0. Defined public to avoid stack overflow
+     * @param _name is the name of the token
+     * @param _ticker is the ticker symbol of the security token
+     * @param _tokenDetails is the off-chain details of the token
+     * @param _divisible is whether or not the token is divisible
+     */
+    function refreshSecurityToken(
+        string calldata _name,
+        string calldata _ticker,
+        string calldata _tokenDetails,
+        bool _divisible,
+        address _treasuryWallet
+    )
+        external returns (address);
+
+    /**
      * @notice Adds a new custom Security Token and saves it to the registry. (Token should follow the ISecurityToken interface)
      * @param _name Name of the token
      * @param _ticker Ticker of the security token
@@ -196,16 +235,51 @@ interface ISecurityTokenRegistry {
     function changeFeesAmountAndCurrency(uint256 _tickerRegFee, uint256 _stLaunchFee, bool _isFeeInPoly) external;
 
     /**
+    * @notice Changes the SecurityToken contract for a particular factory version
+    * @notice Used only by Polymath to upgrade the SecurityToken contract and add more functionalities to future versions
+    * @notice Changing versions does not affect existing tokens.
+    * @param _STFactoryAddress is the address of the proxy.
+    * @param _major Major version of the proxy.
+    * @param _minor Minor version of the proxy.
+    * @param _patch Patch version of the proxy
+    */
+    function setProtocolFactory(address _STFactoryAddress, uint8 _major, uint8 _minor, uint8 _patch) external;
+
+    /**
+    * @notice Removes a STFactory
+    * @param _major Major version of the proxy.
+    * @param _minor Minor version of the proxy.
+    * @param _patch Patch version of the proxy
+    */
+    function removeProtocolFactory(uint8 _major, uint8 _minor, uint8 _patch) external;
+
+    /**
+    * @notice Changes the default protocol version
+    * @notice Used only by Polymath to upgrade the SecurityToken contract and add more functionalities to future versions
+    * @notice Changing versions does not affect existing tokens.
+    * @param _major Major version of the proxy.
+    * @param _minor Minor version of the proxy.
+    * @param _patch Patch version of the proxy
+    */
+    function setLatestVersion(uint8 _major, uint8 _minor, uint8 _patch) external;
+
+    /**
      * @notice Gets the security token launch fee
      * @return Fee amount
      */
-    function getSecurityTokenLaunchFee() external view returns(uint256);
+    function getSecurityTokenLaunchFee() external returns(uint256);
 
     /**
      * @notice Gets the ticker registration fee
      * @return Fee amount
      */
-    function getTickerRegistrationFee() external view returns(uint256);
+    function getTickerRegistrationFee() external returns(uint256);
+
+    /**
+     * @notice Returns the usd & poly fee for a particular feetype
+     * @param _feeType Key corresponding to fee type
+     */
+    function getFees(bytes32 _feeType) external returns (uint256 usdFee, uint256 polyFee);
 
     /**
      * @notice Returns the list of tokens to which the delegate has some access

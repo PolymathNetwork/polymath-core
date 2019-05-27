@@ -1,6 +1,7 @@
 pragma solidity ^0.5.0;
 
 import "../interfaces/IPoly.sol";
+import "./StatusCodes.sol";
 import "../modules/UpgradableModuleFactory.sol";
 import "../interfaces/IDataStore.sol";
 import "../tokens/SecurityTokenStorage.sol";
@@ -450,9 +451,9 @@ library TokenLib {
             // If no unarchived modules, return true by default
             // Use the local variables to avoid the stack too deep error
             isValid = transfersFrozen ? (isForceValid ? true : (isInvalid ? false : isValid)) : true;
-            return (isValid, isValid ? bytes32(hex"51"): appCode);
+            return (isValid, isValid ? bytes32(StatusCodes.code(StatusCodes.Status.TransferSuccess)): appCode);
         }
-        return (false, bytes32(hex"54"));
+        return (false, bytes32(StatusCodes.code(StatusCodes.Status.TransfersHalted)));
     }
 
     function canTransfer(
@@ -467,19 +468,19 @@ library TokenLib {
         returns (bool, byte, bytes32)
     {
         if (!success)
-            return (false, 0x50, appCode);
+            return (false, StatusCodes.code(StatusCodes.Status.TransferFailure), appCode);
 
         if (balanceOfFrom < value)
-            return (false, 0x52, bytes32(0));
+            return (false, StatusCodes.code(StatusCodes.Status.InsufficientBalance), bytes32(0));
 
         if (to == address(0))
-            return (false, 0x57, bytes32(0));
+            return (false, StatusCodes.code(StatusCodes.Status.InvalidReceiver), bytes32(0));
 
         // Balance overflow can never happen due to totalsupply being a uint256 as well
         // else if (!KindMath.checkAdd(balanceOf(_to), _value))
         //     return (false, 0x50, bytes32(0));
 
-        return (true, 0x51, bytes32(0));
+        return (true, StatusCodes.code(StatusCodes.Status.TransferSuccess), bytes32(0));
     }
 
     function _getKey(bytes32 _key1, address _key2) internal pure returns(bytes32) {

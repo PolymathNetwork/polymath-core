@@ -5,6 +5,7 @@ import "../PolymathRegistry.sol";
 import "../interfaces/IModule.sol";
 import "./SecurityTokenStorage.sol";
 import "../libraries/TokenLib.sol";
+import "../libraries/StatusCodes.sol";
 import "../interfaces/IDataStore.sol";
 import "../interfaces/IUpgradableTokenFactory.sol";
 import "../interfaces/IModuleFactory.sol";
@@ -934,7 +935,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     function canTransferFrom(address _from, address _to, uint256 _value, bytes calldata _data) external view returns (bool success, byte reasonCode, bytes32 appCode) {
         (success, reasonCode, appCode) = _canTransfer(_from, _to, _value, _data);
         if (success && _value > allowance(_from, msg.sender)) {
-            return (false, 0x53, bytes32(0));
+            return (false, StatusCodes.code(StatusCodes.Status.InsufficientAllowance), bytes32(0));
         }
     }
 
@@ -942,7 +943,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
         bytes32 appCode;
         bool success;
         if (_value % granularity != 0) {
-            return (false, 0x50, bytes32(0));
+            return (false, StatusCodes.code(StatusCodes.Status.TransferFailure), bytes32(0));
         }
         (success, appCode) = TokenLib.verifyTransfer(modules[TRANSFER_KEY], modulesToData, _from, _to, _value, _data, transfersFrozen);
         return TokenLib.canTransfer(success, appCode, _to, _value, balanceOf(_from));
@@ -981,7 +982,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
             }
             return (esc, appStatusCode, toPartition);
         }
-        return (0x50, bytes32(0), bytes32(0));
+        return (StatusCodes.code(StatusCodes.Status.TransferFailure), bytes32(0), bytes32(0));
     }
 
     /**

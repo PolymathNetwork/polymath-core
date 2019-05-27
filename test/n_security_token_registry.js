@@ -684,7 +684,10 @@ contract("SecurityTokenRegistry", async (accounts) => {
             assert.equal(_protocol[0], 2);
             assert.equal(_protocol[1], 2);
             assert.equal(_protocol[2], 0);
-            await I_STRProxied.setProtocolFactory(I_STFactory.address, new BN(3), new BN(0), new BN(0), { from: account_polymath});
+            await catchRevert(
+                I_STRProxied.setProtocolFactory(I_STFactory.address, new BN(3), new BN(0), new BN(0), { from: account_polymath})
+            );
+            await I_STRProxied.setProtocolFactory(I_STFactory.address, new BN(3), new BN(0), new BN(1), { from: account_polymath});
             await I_STRProxied.setLatestVersion(new BN(3), new BN(0), new BN(0), { from: account_polymath});
             _protocol = await I_Getter.getLatestProtocolVersion.call();
             assert.equal(_protocol[0], 3);

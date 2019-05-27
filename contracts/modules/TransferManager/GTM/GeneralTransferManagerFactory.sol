@@ -47,7 +47,7 @@ contract GeneralTransferManagerFactory is UpgradableModuleFactory {
         external
         returns(address)
     {
-        address generalTransferManager = address(new GeneralTransferManagerProxy(logicContracts[latestUpgrade].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestUpgrade].logicContract));
+        address generalTransferManager = address(new GeneralTransferManagerProxy(logicContracts[latestUpgrade].version, msg.sender, polymathRegistry.getAddress("PolyToken"), logicContracts[latestUpgrade].logicContract));
         _initializeModule(generalTransferManager, _data);
         return generalTransferManager;
     }

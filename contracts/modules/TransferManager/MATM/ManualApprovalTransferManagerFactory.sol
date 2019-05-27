@@ -46,7 +46,7 @@ contract ManualApprovalTransferManagerFactory is UpgradableModuleFactory {
         external
         returns(address)
     {
-        address manualTransferManager = address(new ManualApprovalTransferManagerProxy(logicContracts[latestUpgrade].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestUpgrade].logicContract));
+        address manualTransferManager = address(new ManualApprovalTransferManagerProxy(logicContracts[latestUpgrade].version, msg.sender, polymathRegistry.getAddress("PolyToken"), logicContracts[latestUpgrade].logicContract));
         _initializeModule(manualTransferManager, _data);
         return manualTransferManager;
     }

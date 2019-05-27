@@ -45,7 +45,7 @@ contract WeightedVoteCheckpointFactory is UpgradableModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes calldata _data) external returns(address) {
-        address weightedVoteCheckpoint = address(new WeightedVoteCheckpointProxy(logicContracts[latestUpgrade].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestUpgrade].logicContract));
+        address weightedVoteCheckpoint = address(new WeightedVoteCheckpointProxy(logicContracts[latestUpgrade].version, msg.sender, polymathRegistry.getAddress("PolyToken"), logicContracts[latestUpgrade].logicContract));
         _initializeModule(weightedVoteCheckpoint, _data);
         return weightedVoteCheckpoint;
     }

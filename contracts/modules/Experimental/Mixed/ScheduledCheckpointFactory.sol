@@ -44,7 +44,7 @@ contract ScheduledCheckpointFactory is ModuleFactory {
         external
         returns(address)
     {
-        address scheduledCheckpoint = address(new ScheduledCheckpoint(msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken")));
+        address scheduledCheckpoint = address(new ScheduledCheckpoint(msg.sender, polymathRegistry.getAddress("PolyToken")));
         _initializeModule(scheduledCheckpoint, _data);
         return scheduledCheckpoint;
     }

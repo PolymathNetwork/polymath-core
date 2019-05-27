@@ -37,7 +37,7 @@ contract MockBurnFactory is TrackedRedemptionFactory {
         external
         returns(address)
     {
-        address mockRedemptionManager = address(new MockRedemptionManager(msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken")));
+        address mockRedemptionManager = address(new MockRedemptionManager(msg.sender, polymathRegistry.getAddress("PolyToken")));
         _initializeModule(mockRedemptionManager, _data);
         return mockRedemptionManager;
     }

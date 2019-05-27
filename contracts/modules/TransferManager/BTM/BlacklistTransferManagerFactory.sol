@@ -41,7 +41,7 @@ contract BlacklistTransferManagerFactory is UpgradableModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes calldata _data) external returns(address) {
-        address blacklistTransferManager = address(new BlacklistTransferManagerProxy(logicContracts[latestUpgrade].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestUpgrade].logicContract));
+        address blacklistTransferManager = address(new BlacklistTransferManagerProxy(logicContracts[latestUpgrade].version, msg.sender, polymathRegistry.getAddress("PolyToken"), logicContracts[latestUpgrade].logicContract));
         _initializeModule(blacklistTransferManager, _data);
         return blacklistTransferManager;
     }

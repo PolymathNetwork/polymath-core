@@ -35,7 +35,7 @@ contract STFactory is ISTFactory, Ownable {
 
     uint256 public latestUpgrade;
 
-    event LogicContractSet(string _version, address _logicContract, bytes _upgradeData);
+    event LogicContractSet(string _version, address _logicContract, bytes _initializationData, bytes _upgradeData);
     event TokenUpgraded(
         address indexed _securityToken,
         uint256 indexed _version
@@ -50,13 +50,14 @@ contract STFactory is ISTFactory, Ownable {
         string memory _version,
         address _logicContract,
         bytes memory _initializationData
-    )   
-        public 
+    )
+        public
     {
         require(_logicContract != address(0), "Invalid Address");
         require(_transferManagerFactory != address(0), "Invalid Address");
         require(_dataStoreFactory != address(0), "Invalid Address");
         require(_polymathRegistry != address(0), "Invalid Address");
+        require(_initializationData.length > 4, "Invalid Initialization");
         transferManagerFactory = _transferManagerFactory;
         dataStoreFactory = DataStoreFactory(_dataStoreFactory);
         polymathRegistry = IPolymathRegistry(_polymathRegistry);
@@ -136,15 +137,18 @@ contract STFactory is ISTFactory, Ownable {
      * @param _logicContract Address of deployed module logic contract referenced from proxy
      * @param _upgradeData Data to be passed in call to upgradeToAndCall when a token upgrades its module
      */
-    function setLogicContract(string calldata _version, address _logicContract, bytes calldata _upgradeData) external onlyOwner {
+    function setLogicContract(string calldata _version, address _logicContract, bytes calldata _initializationData, bytes calldata _upgradeData) external onlyOwner {
         require(keccak256(abi.encodePacked(_version)) != keccak256(abi.encodePacked(logicContracts[latestUpgrade].version)), "Same version");
         require(_logicContract != logicContracts[latestUpgrade].logicContract, "Same version");
         require(_logicContract != address(0), "Invalid address");
+        require(_initializationData.length > 4, "Invalid Initialization");
+        require(_upgradeData.length > 4, "Invalid Upgrade");
         latestUpgrade++;
         logicContracts[latestUpgrade].version = _version;
         logicContracts[latestUpgrade].logicContract = _logicContract;
         logicContracts[latestUpgrade].upgradeData = _upgradeData;
-        emit LogicContractSet(_version, _logicContract, _upgradeData);
+        logicContracts[latestUpgrade].initializationData = _initializationData;
+        emit LogicContractSet(_version, _logicContract, _initializationData, _upgradeData);
     }
 
     /**

@@ -779,7 +779,7 @@ contract("SecurityToken", async (accounts) => {
         it("Should upgrade token logic and getter", async () => {
             let mockSTGetter = await MockSTGetter.new({from: account_polymath});
             let mockSecurityTokenLogic = await MockSecurityTokenLogic.new("", "", 0, {from: account_polymath});
-            const tokenInitBytes = {
+            const tokenUpgradeBytes = {
                 name: "upgrade",
                 type: "function",
                 inputs: [
@@ -793,8 +793,21 @@ contract("SecurityToken", async (accounts) => {
                     }
                 ]
             };
-            let tokenInitBytesCall = web3.eth.abi.encodeFunctionCall(tokenInitBytes, [mockSTGetter.address, 10]);
-            await I_STFactory.setLogicContract("3.0.1", mockSecurityTokenLogic.address, tokenInitBytesCall, {from: account_polymath});
+            let tokenUpgradeBytesCall = web3.eth.abi.encodeFunctionCall(tokenUpgradeBytes, [mockSTGetter.address, 10]);
+
+            const tokenInitBytes = {
+                name: "initialize",
+                type: "function",
+                inputs: [
+                    {
+                        type: "address",
+                        name: "_getterDelegate"
+                    }
+                ]
+            };
+            let tokenInitBytesCall = web3.eth.abi.encodeFunctionCall(tokenInitBytes, [mockSTGetter.address]);
+
+            await I_STFactory.setLogicContract("3.0.1", mockSecurityTokenLogic.address, tokenInitBytesCall, tokenUpgradeBytesCall, {from: account_polymath});
             // NB - the mockSecurityTokenLogic sets its internal version to 3.0.0 not 3.0.1
             let tx = await I_SecurityToken.upgradeToken({from: token_owner, gas: 7000000});
             assert.equal(tx.logs[0].args._major, 3);
@@ -806,6 +819,32 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(tx.logs[0].args._upgrade, 11);
             tx = await newGetter.newGetter(12);
             assert.equal(tx.logs[0].args._upgrade, 12);
+        });
+
+        it("Should deploy new upgraded token", async () => {
+            //xxx
+            const symbolUpgrade = "DETU";
+            const nameUpgrade = "Demo Upgrade";
+            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
+            let tx = await I_STRProxied.registerTicker(token_owner, symbolUpgrade, nameUpgrade, { from: token_owner });
+            assert.equal(tx.logs[0].args._owner, token_owner);
+            assert.equal(tx.logs[0].args._ticker, symbolUpgrade);
+
+            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
+            let tokenTx = await I_STRProxied.generateNewSecurityToken(name, symbolUpgrade, tokenDetails, false, token_owner, 0, { from: token_owner });
+            // Verify the successful generation of the security token
+            for (let i = 0; i < tokenTx.logs.length; i++) {
+              console.log("LOGS: " + i);
+              console.log(tx.logs[i]);
+            }
+            assert.equal(tokenTx.logs[1].args._ticker, symbolUpgrade, "SecurityToken doesn't get deployed");
+
+            let newToken = await MockSecurityTokenLogic.at(tokenTx.logs[1].args._securityTokenAddress);
+            let newGetter = await MockSTGetter.at(newToken.address);
+            assert.equal(await newGetter.getTreasuryWallet.call(), token_owner, "Incorrect wallet set")
+            assert.equal(await newToken.owner.call(), token_owner);
+            assert.equal(await newToken.initialized.call(), true);
+
         });
 
         it("Should transfer from whitelist investor1 to whitelist investor 2", async () => {

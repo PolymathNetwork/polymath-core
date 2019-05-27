@@ -27,6 +27,22 @@ contract MockSecurityTokenLogic is SecurityToken {
         emit UpgradeEvent(_upgrade);
     }
 
+    /**
+     * @notice Initialization function
+     * @dev Expected to be called atomically with the proxy being created, by the owner of the token
+     * @dev Can only be called once
+     */
+    function initialize(address _getterDelegate, uint256 _someValue) public {
+        //Expected to be called atomically with the proxy being created
+        require(!initialized, "Already initialized");
+        getterDelegate = _getterDelegate;
+        securityTokenVersion = SemanticVersion(3, 0, 0);
+        updateFromRegistry();
+        tokenFactory = msg.sender;
+        initialized = true;
+        emit UpgradeEvent(_someValue);
+    }
+
     function newFunction(uint256 _upgrade) external {
         emit UpgradeEvent(_upgrade);
     }

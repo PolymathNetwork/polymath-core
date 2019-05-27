@@ -1,9 +1,7 @@
 pragma solidity ^0.5.0;
 
-import "../../../interfaces/IBoot.sol";
 import "./USDTieredSTOProxy.sol";
 import "../../UpgradableModuleFactory.sol";
-import "../../../libraries/Util.sol";
 
 /**
  * @title Factory for deploying CappedSTO module

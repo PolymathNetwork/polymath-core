@@ -15,6 +15,7 @@ import "../tokens/SecurityToken.sol";
 contract MockSecurityTokenLogic is SecurityToken {
 
     event UpgradeEvent(uint256 _upgrade);
+    uint256 public someValue;
 
     /**
      * @notice Initialization function
@@ -40,7 +41,7 @@ contract MockSecurityTokenLogic is SecurityToken {
         updateFromRegistry();
         tokenFactory = msg.sender;
         initialized = true;
-        emit UpgradeEvent(_someValue);
+        someValue = _someValue;
     }
 
     function newFunction(uint256 _upgrade) external {

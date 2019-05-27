@@ -802,10 +802,14 @@ contract("SecurityToken", async (accounts) => {
                     {
                         type: "address",
                         name: "_getterDelegate"
+                    },
+                    {
+                        type: "uint256",
+                        name: "_someValue"
                     }
                 ]
             };
-            let tokenInitBytesCall = web3.eth.abi.encodeFunctionCall(tokenInitBytes, [mockSTGetter.address]);
+            let tokenInitBytesCall = web3.eth.abi.encodeFunctionCall(tokenInitBytes, [mockSTGetter.address, 9]);
 
             await I_STFactory.setLogicContract("3.0.1", mockSecurityTokenLogic.address, tokenInitBytesCall, tokenUpgradeBytesCall, {from: account_polymath});
             // NB - the mockSecurityTokenLogic sets its internal version to 3.0.0 not 3.0.1
@@ -844,6 +848,7 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(await newGetter.getTreasuryWallet.call(), token_owner, "Incorrect wallet set")
             assert.equal(await newToken.owner.call(), token_owner);
             assert.equal(await newToken.initialized.call(), true);
+            assert.equal(await newToken.someValue.call(), 9);
 
         });
 

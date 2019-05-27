@@ -45,16 +45,6 @@ contract Module is IModule, ModuleStorage, Pausable {
         _;
     }
 
-    modifier onlyFactoryOwner() {
-        require(msg.sender == Ownable(factory).owner(), "Sender is not factory owner");
-        _;
-    }
-
-    modifier onlyFactoryOrOwner() {
-        require((msg.sender == Ownable(securityToken).owner()) || (msg.sender == factory), "Sender is not factory or owner");
-        _;
-    }
-
     /**
      * @notice Pause (overridden function)
      */
@@ -63,7 +53,7 @@ contract Module is IModule, ModuleStorage, Pausable {
         super._pause();
     }
 
-     /**
+    /**
      * @notice Unpause (overridden function)
      */
     function unpause() public {

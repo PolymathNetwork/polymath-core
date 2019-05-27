@@ -193,13 +193,18 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
     /**
      * @dev Modifies Oracle address.
      *      By default, Polymath oracles are used but issuer can overide them using this function
-     * @param _currency Actual currency
-     * @param _denominatedCurrency denominated currency
+     *      Set _oracleAddress to 0x0 to fallback to using Polymath oracles
+     * @param _fundRaiseType Actual currency
      * @param _oracleAddress address of the oracle
      */
-    function modifyOracle(bytes32 _currency, bytes32 _denominatedCurrency, address _oracleAddress) external {
+    function modifyOracle(FundRaiseType _fundRaiseType, address _oracleAddress) external {
         _onlySecurityTokenOwner();
-        customOracles[_currency][_denominatedCurrency] = _oracleAddress;
+        if (_fundRaiseType == FundRaiseType.ETH) {
+            customOracles[bytes32("ETH")][bytes32("USD")] = _oracleAddress;
+        } else {
+            require(_fundRaiseType == FundRaiseType.POLY, "Invalid currency");
+            customOracles[bytes32("POLY")][bytes32("USD")] = _oracleAddress;
+        }
     }
 
     function _modifyLimits(uint256 _nonAccreditedLimitUSD, uint256 _minimumInvestmentUSD) internal {

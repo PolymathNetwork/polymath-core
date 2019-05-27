@@ -431,11 +431,9 @@ library TokenLib {
             bool isValid = false;
             bool isForceValid = false;
             // Use the local variables to avoid the stack too deep error
-            transfersFrozen = false; // bool unarchived = false;
             bytes32 appCode;
             for (uint256 i = 0; i < modules.length; i++) {
                 if (!modulesToData[modules[i]].isArchived) {
-                    transfersFrozen = true;
                     (ITransferManager.Result valid, bytes32 reason) = ITransferManager(modules[i]).verifyTransfer(from, to, value, data);
                     if (valid == ITransferManager.Result.INVALID) {
                         isInvalid = true;
@@ -447,9 +445,8 @@ library TokenLib {
                     }
                 }
             }
-            // If no unarchived modules, return true by default
             // Use the local variables to avoid the stack too deep error
-            isValid = transfersFrozen ? (isForceValid ? true : (isInvalid ? false : isValid)) : true;
+            isValid = isForceValid ? true : (isInvalid ? false : isValid);
             return (isValid, isValid ? bytes32(hex"51"): appCode);
         }
         return (false, bytes32(hex"54"));

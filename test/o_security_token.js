@@ -513,16 +513,6 @@ contract("SecurityToken", async (accounts) => {
             let tx = await I_SecurityToken.removeModule(I_GeneralTransferManager.address, { from: token_owner });
             assert.equal(tx.logs[0].args._types[0], transferManagerKey);
             assert.equal(tx.logs[0].args._module, I_GeneralTransferManager.address);
-            await I_SecurityToken.issue(account_investor1, new BN(web3.utils.toWei("500")), "0x0", { from: token_owner });
-            let _canTransfer = await I_SecurityToken.canTransfer.call(account_investor2, new BN(web3.utils.toWei("200")), "0x0", {from: account_investor1});
-
-            assert.isTrue(_canTransfer[0]);
-            assert.equal(_canTransfer[1], 0x51);
-            assert.equal(_canTransfer[2], empty_hash);
-
-            await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("200")), { from: account_investor1 });
-
-            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).div(new BN(10).pow(new BN(18))).toNumber(), 200);
             await revertToSnapshot(key);
         });
 
@@ -575,12 +565,8 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(moduleData[3], true);
         });
 
-        it("Should successfully issue tokens while GTM archived", async () => {
-            let key = await takeSnapshot();
-            await I_SecurityToken.issue(one_address, new BN(100).mul(new BN(10).pow(new BN(18))), "0x0", { from: token_owner, gas: 500000 });
-            let balance = await I_SecurityToken.balanceOf(one_address);
-            assert.equal(balance.div(new BN(10).pow(new BN(18))).toNumber(), 100);
-            await revertToSnapshot(key);
+        it("Should fail to issue (or transfer) tokens while all TM are archived archived", async () => {
+            await catchRevert(I_SecurityToken.issue(one_address, new BN(100).mul(new BN(10).pow(new BN(18))), "0x0", { from: token_owner }));
         });
 
         it("Should successfully unarchive the general transfer manager module from the securityToken", async () => {

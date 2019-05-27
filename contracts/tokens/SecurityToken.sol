@@ -672,13 +672,13 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
             bool isInvalid;
             bool isValid;
             bool isForceValid;
-            bool unarchived;
             address module;
             uint256 tmLength = modules[TRANSFER_KEY].length;
             for (uint256 i = 0; i < tmLength; i++) {
                 module = modules[TRANSFER_KEY][i];
                 if (!modulesToData[module].isArchived) {
-                    unarchived = true;
+                    // refer to https://github.com/PolymathNetwork/polymath-core/wiki/Transfer-manager-results
+                    // for understanding what these results mean
                     ITransferManager.Result valid = ITransferManager(module).executeTransfer(_from, _to, _value, _data);
                     if (valid == ITransferManager.Result.INVALID) {
                         isInvalid = true;
@@ -689,8 +689,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
                     }
                 }
             }
-            // If no unarchived modules, return true by default
-            return unarchived ? (isForceValid ? true : (isInvalid ? false : isValid)) : true;
+            return isForceValid ? true : (isInvalid ? false : isValid);
         }
         return false;
     }

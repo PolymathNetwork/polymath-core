@@ -94,17 +94,6 @@ interface ISecurityTokenRegistry {
     function registerTicker(address _owner, string calldata _ticker, string calldata _tokenName) external;
 
     /**
-    * @notice Changes the protocol version and the SecurityToken contract
-    * @notice Used only by Polymath to upgrade the SecurityToken contract and add more functionalities to future versions
-    * @notice Changing versions does not affect existing tokens.
-    * @param _STFactoryAddress Address of the proxy.
-    * @param _major Major version of the proxy.
-    * @param _minor Minor version of the proxy.
-    * @param _patch Patch version of the proxy
-    */
-    function setProtocolVersion(address _STFactoryAddress, uint8 _major, uint8 _minor, uint8 _patch) external;
-
-    /**
     * @notice Check that Security Token is registered
     * @param _securityToken Address of the Scurity token
     * @return bool
@@ -143,7 +132,7 @@ interface ISecurityTokenRegistry {
     /**
      * @notice Get Protocol version
      */
-    function getProtocolVersion() external view returns(uint8[] memory);
+    function getLatestProtocolVersion() external view returns(uint8[] memory);
 
     /**
      * @notice Used to get the ticker list as per the owner

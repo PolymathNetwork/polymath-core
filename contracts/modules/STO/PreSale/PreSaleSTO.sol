@@ -79,7 +79,7 @@ contract PreSaleSTO is PreSaleSTOStorage, STO {
         require(now <= endTime, "Already passed Endtime");
         require(_amount > 0, "No. of tokens provided should be greater the zero");
         require(_canBuy(_investor), "Unauthorized");
-        ISecurityToken(securityToken).issue(_investor, _amount, "");
+        securityToken.issue(_investor, _amount, "");
         if (investors[_investor] == uint256(0)) {
             investorCount = investorCount.add(1);
         }

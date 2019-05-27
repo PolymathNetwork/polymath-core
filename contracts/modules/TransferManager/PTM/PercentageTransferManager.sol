@@ -86,8 +86,8 @@ contract PercentageTransferManager is PercentageTransferManagerStorage, Transfer
             if (whitelist[_to]) {
                 return (Result.NA, bytes32(0));
             }
-            uint256 newBalance = IERC20(securityToken).balanceOf(_to).add(_amount);
-            if (newBalance.mul(uint256(10) ** 18).div(IERC20(securityToken).totalSupply()) > maxHolderPercentage) {
+            uint256 newBalance = securityToken.balanceOf(_to).add(_amount);
+            if (newBalance.mul(uint256(10) ** 18).div(securityToken.totalSupply()) > maxHolderPercentage) {
                 return (Result.INVALID, bytes32(uint256(address(this)) << 96));
             }
             return (Result.NA, bytes32(0));

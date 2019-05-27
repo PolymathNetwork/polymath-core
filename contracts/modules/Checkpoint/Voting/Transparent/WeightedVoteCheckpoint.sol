@@ -52,7 +52,7 @@ contract WeightedVoteCheckpoint is WeightedVoteCheckpointStorage, VotingCheckpoi
      */
     function createBallot(uint256 _duration, uint256 _noOfProposals, uint256 _proposedQuorum) external withPerm(ADMIN) {
         require(_duration > 0, "Incorrect ballot duration");
-        uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
+        uint256 checkpointId = securityToken.createCheckpoint();
         uint256 endTime = now.add(_duration);
         _createCustomBallot(checkpointId, _proposedQuorum, now, endTime, _noOfProposals);
     }
@@ -93,7 +93,7 @@ contract WeightedVoteCheckpoint is WeightedVoteCheckpointStorage, VotingCheckpoi
      * @param _noOfProposals Number of proposals
      */
     function createCustomBallot(uint256 _checkpointId, uint256 _proposedQuorum, uint256 _startTime, uint256 _endTime, uint256 _noOfProposals) external withPerm(ADMIN) {
-        require(_checkpointId <= ISecurityToken(securityToken).currentCheckpointId(), "Invalid checkpoint Id");
+        require(_checkpointId <= securityToken.currentCheckpointId(), "Invalid checkpoint Id");
         require(_startTime >= now, "Invalid startTime");
         _createCustomBallot(_checkpointId, _proposedQuorum, _startTime, _endTime, _noOfProposals);
     }
@@ -107,7 +107,7 @@ contract WeightedVoteCheckpoint is WeightedVoteCheckpointStorage, VotingCheckpoi
         _validBallotId(_ballotId);
         Ballot storage ballot = ballots[_ballotId];
         require(isVoterAllowed(_ballotId, msg.sender), "Invalid voter");
-        uint256 weight = ISecurityToken(securityToken).balanceOfAt(msg.sender, ballot.checkpointId);
+        uint256 weight = securityToken.balanceOfAt(msg.sender, ballot.checkpointId);
         require(weight > 0, "weight should be > 0");
         require(ballot.totalProposals >= _proposalId && _proposalId > 0, "Incorrect proposals Id");
         require(now >= ballot.startTime && now <= ballot.endTime, "Voting period is not active");
@@ -198,7 +198,7 @@ contract WeightedVoteCheckpoint is WeightedVoteCheckpointStorage, VotingCheckpoi
         uint256 i;
         uint256 counter = 0;
         uint256 maxWeight = 0;
-        uint256 supplyAtCheckpoint = ISecurityToken(securityToken).totalSupplyAt(ballot.checkpointId);
+        uint256 supplyAtCheckpoint = securityToken.totalSupplyAt(ballot.checkpointId);
         uint256 quorumWeight = (supplyAtCheckpoint.mul(ballot.quorum)).div(10 ** 18);
         voteWeighting = new uint256[](ballot.totalProposals);
         for (i = 0; i < ballot.totalProposals; i++) {
@@ -257,7 +257,7 @@ contract WeightedVoteCheckpoint is WeightedVoteCheckpointStorage, VotingCheckpoi
         Ballot memory ballot = ballots[_ballotId];
         return (
             ballot.quorum,
-            ISecurityToken(securityToken).totalSupplyAt(ballot.checkpointId),
+            securityToken.totalSupplyAt(ballot.checkpointId),
             ballot.checkpointId,
             ballot.startTime,
             ballot.endTime,

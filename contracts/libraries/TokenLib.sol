@@ -1,13 +1,13 @@
 pragma solidity ^0.5.0;
 
+import "./KindMath.sol";
 import "../interfaces/IPoly.sol";
-import "../modules/UpgradableModuleFactory.sol";
-import "../interfaces/IDataStore.sol";
 import "../tokens/SecurityTokenStorage.sol";
 import "../interfaces/ITransferManager.sol";
+import "../modules/UpgradableModuleFactory.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "../modules/PermissionManager/IPermissionManager.sol";
-import "./KindMath.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
 library TokenLib {
 
@@ -138,11 +138,11 @@ library TokenLib {
     * @notice Unarchives a module attached to the SecurityToken
     * @param _moduleData Storage data
     */
-    function unarchiveModule(address _moduleRegistry, SecurityTokenStorage.ModuleData storage _moduleData) public {
+    function unarchiveModule(IModuleRegistry _moduleRegistry, SecurityTokenStorage.ModuleData storage _moduleData) public {
         require(_moduleData.isArchived, "Module unarchived");
         /*solium-disable-next-line security/no-block-members*/
         // Check the version is still valid - can only be false if token was upgraded between unarchive / archive
-        IModuleRegistry(_moduleRegistry).useModule(_moduleData.moduleFactory, true);
+        _moduleRegistry.useModule(_moduleData.moduleFactory, true);
         emit ModuleUnarchived(_moduleData.moduleTypes, _moduleData.module);
         _moduleData.isArchived = false;
     }
@@ -151,10 +151,10 @@ library TokenLib {
     * @notice Upgrades a module attached to the SecurityToken
     * @param _moduleData Storage data
     */
-    function upgradeModule(address _moduleRegistry, SecurityTokenStorage.ModuleData storage _moduleData) public {
+    function upgradeModule(IModuleRegistry _moduleRegistry, SecurityTokenStorage.ModuleData storage _moduleData) public {
         require(_moduleData.module != address(0), "Module missing");
         //Check module is verified and within version bounds
-        IModuleRegistry(_moduleRegistry).useModule(_moduleData.moduleFactory, true);
+        _moduleRegistry.useModule(_moduleData.moduleFactory, true);
         // Will revert if module isn't upgradable
         UpgradableModuleFactory(_moduleData.moduleFactory).upgrade(_moduleData.module);
         emit ModuleUpgraded(_moduleData.moduleTypes, _moduleData.module);
@@ -231,19 +231,19 @@ library TokenLib {
         address _module,
         uint256 _change,
         bool _increase,
-        address _polyToken,
+        IERC20 _polyToken,
         mapping(address => SecurityTokenStorage.ModuleData) storage _modulesToData
     )
         public
     {
         require(_modulesToData[_module].module != address(0), "Module missing");
-        uint256 currentAllowance = IPoly(_polyToken).allowance(address(this), _module);
+        uint256 currentAllowance = _polyToken.allowance(address(this), _module);
         uint256 newAllowance;
         if (_increase) {
-            require(IPoly(_polyToken).increaseApproval(_module, _change), "IncreaseApproval fail");
+            require(IPoly(address(_polyToken)).increaseApproval(_module, _change), "IncreaseApproval fail");
             newAllowance = currentAllowance.add(_change);
         } else {
-            require(IPoly(_polyToken).decreaseApproval(_module, _change), "Insufficient allowance");
+            require(IPoly(address(_polyToken)).decreaseApproval(_module, _change), "Insufficient allowance");
             newAllowance = currentAllowance.sub(_change);
         }
         emit ModuleBudgetChanged(_modulesToData[_module].moduleTypes, _module, currentAllowance, newAllowance);
@@ -325,7 +325,7 @@ library TokenLib {
         uint256 _value,
         uint256 _balanceTo,
         uint256 _balanceFrom,
-        address _dataStore
+        IDataStore _dataStore
     )
         public
         returns(uint256)
@@ -336,11 +336,10 @@ library TokenLib {
         // Check whether receiver is a new token holder
         if ((_balanceTo == 0) && (_to != address(0))) {
             _holderCount = _holderCount.add(1);
-            IDataStore dataStore = IDataStore(_dataStore);
-            if (!_isExistingInvestor(_to, dataStore)) {
-                dataStore.insertAddress(INVESTORSKEY, _to);
+            if (!_isExistingInvestor(_to, _dataStore)) {
+                _dataStore.insertAddress(INVESTORSKEY, _to);
                 //KYC data can not be present if added is false and hence we can set packed KYC as uint256(1) to set added as true
-                dataStore.setUint256(_getKey(WHITELIST, _to), uint256(1));
+                _dataStore.setUint256(_getKey(WHITELIST, _to), uint256(1));
             }
         }
         // Check whether sender is moving all of their tokens

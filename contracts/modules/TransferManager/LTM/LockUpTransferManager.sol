@@ -456,7 +456,7 @@ contract LockUpTransferManager is LockUpTransferManagerStorage, TransferManager 
     function _checkIfValidTransfer(address _userAddress, uint256 _amount) internal view returns (Result, bytes32) {
         uint256 totalRemainingLockedAmount = getLockedTokenToUser(_userAddress);
         // Present balance of the user
-        uint256 currentBalance = IERC20(securityToken).balanceOf(_userAddress);
+        uint256 currentBalance = securityToken.balanceOf(_userAddress);
         if ((currentBalance.sub(_amount)) >= totalRemainingLockedAmount) {
             return (Result.NA, bytes32(0));
         }
@@ -684,7 +684,7 @@ contract LockUpTransferManager is LockUpTransferManagerStorage, TransferManager 
      * @param _additionalBalance It is the `_value` that transfer during transfer/transferFrom function call
      */
     function getTokensByPartition(bytes32 _partition, address _tokenHolder, uint256 _additionalBalance) external view returns(uint256){
-        uint256 currentBalance = (msg.sender == securityToken) ? (IERC20(securityToken).balanceOf(_tokenHolder)).add(_additionalBalance) : IERC20(securityToken).balanceOf(_tokenHolder);
+        uint256 currentBalance = (msg.sender == address(securityToken)) ? (securityToken.balanceOf(_tokenHolder)).add(_additionalBalance) : securityToken.balanceOf(_tokenHolder);
         uint256 lockedBalance = Math.min(getLockedTokenToUser(_tokenHolder), currentBalance);
         if (paused) {
             return (_partition == UNLOCKED ? currentBalance : uint256(0));

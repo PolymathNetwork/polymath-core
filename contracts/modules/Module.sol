@@ -31,13 +31,13 @@ contract Module is IModule, ModuleStorage, Pausable {
     }
 
     function _checkPerm(bytes32 _perm, address _caller) internal view returns (bool) {
-        bool isOwner = _caller == Ownable(securityToken).owner();
+        bool isOwner = _caller == Ownable(address(securityToken)).owner();
         bool isFactory = _caller == factory;
-        return isOwner || isFactory || ICheckPermission(securityToken).checkPermission(_caller, address(this), _perm);
+        return isOwner || isFactory || ICheckPermission(address(securityToken)).checkPermission(_caller, address(this), _perm);
     }
 
     function _onlySecurityTokenOwner() internal view {
-        require(msg.sender == Ownable(securityToken).owner(), "Sender is not owner");
+        require(msg.sender == Ownable(address(securityToken)).owner(), "Sender is not owner");
     }
 
     modifier onlyFactory() {
@@ -51,7 +51,7 @@ contract Module is IModule, ModuleStorage, Pausable {
     }
 
     modifier onlyFactoryOrOwner() {
-        require((msg.sender == Ownable(securityToken).owner()) || (msg.sender == factory), "Sender is not factory or owner");
+        require((msg.sender == Ownable(address(securityToken)).owner()) || (msg.sender == factory), "Sender is not factory or owner");
         _;
     }
 
@@ -75,7 +75,7 @@ contract Module is IModule, ModuleStorage, Pausable {
      * @notice used to withdraw the fee by the factory owner
      */
     function takeUsageFee() public withPerm(ADMIN) returns(bool) {
-        require(polyToken.transferFrom(securityToken, Ownable(factory).owner(), IModuleFactory(factory).usageCostInPoly()), "Unable to take fee");
+        require(polyToken.transferFrom(address(securityToken), Ownable(factory).owner(), IModuleFactory(factory).usageCostInPoly()), "Unable to take fee");
         return true;
     }
 
@@ -83,7 +83,7 @@ contract Module is IModule, ModuleStorage, Pausable {
      * @notice used to return the data store address of securityToken
      */
     function getDataStore() public view returns(IDataStore) {
-        return IDataStore(ISecurityToken(securityToken).dataStore());
+        return IDataStore(securityToken.dataStore());
     }
 
     /**

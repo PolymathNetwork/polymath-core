@@ -16,7 +16,7 @@ import "../libraries/DecimalMath.sol";
  */
 contract ModuleFactory is IModuleFactory, Ownable {
 
-    address public polymathRegistry;
+    IPolymathRegistry public polymathRegistry;
 
     string initialVersion;
     bytes32 public name;
@@ -45,7 +45,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
     constructor(uint256 _setupCost, uint256 _usageCost, address _polymathRegistry, bool _isCostInPoly) public {
         setupCost = _setupCost;
         usageCost = _usageCost;
-        polymathRegistry = _polymathRegistry;
+        polymathRegistry = IPolymathRegistry(_polymathRegistry);
         isCostInPoly = _isCostInPoly;
     }
 
@@ -186,7 +186,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
     function setupCostInPoly() public returns (uint256) {
         if (isCostInPoly)
             return setupCost;
-        uint256 polyRate = IOracle(IPolymathRegistry(polymathRegistry).getAddress(POLY_ORACLE)).getPrice();
+        uint256 polyRate = IOracle(polymathRegistry.getAddress(POLY_ORACLE)).getPrice();
         return DecimalMath.div(setupCost, polyRate);
     }
 
@@ -196,7 +196,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
     function usageCostInPoly() public returns (uint256) {
         if (isCostInPoly)
             return usageCost;
-        uint256 polyRate = IOracle(IPolymathRegistry(polymathRegistry).getAddress(POLY_ORACLE)).getPrice();
+        uint256 polyRate = IOracle(polymathRegistry.getAddress(POLY_ORACLE)).getPrice();
         return DecimalMath.div(usageCost, polyRate);
     }
 
@@ -205,7 +205,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      */
     function _takeFee() internal returns(uint256) {
         uint256 polySetupCost = setupCostInPoly();
-        address polyToken = IPolymathRegistry(polymathRegistry).getAddress("PolyToken");
+        address polyToken = polymathRegistry.getAddress("PolyToken");
         if (polySetupCost > 0) {
             require(IERC20(polyToken).transferFrom(msg.sender, owner(), polySetupCost), "Insufficient allowance for module fee");
         }

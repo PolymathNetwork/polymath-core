@@ -968,7 +968,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
     {
         uint256 _allowedAmount = 0;
         if (_restriction.typeOfRestriction == RestrictionType.Percentage) {
-            _allowedAmount = (_restriction.allowedTokens.mul(IERC20(securityToken).totalSupply())) / uint256(10) ** 18;
+            _allowedAmount = (_restriction.allowedTokens.mul(securityToken.totalSupply())) / uint256(10) ** 18;
         } else {
             _allowedAmount = _restriction.allowedTokens;
         }
@@ -1093,7 +1093,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         uint256 allowedAmountToTransact;
         uint256 fromTimestamp;
         uint256 dailyTime;
-        uint256 currentBalance = (msg.sender == securityToken) ? (IERC20(securityToken).balanceOf(_tokenHolder)).add(_additionalBalance) : IERC20(securityToken).balanceOf(_tokenHolder);
+        uint256 currentBalance = (msg.sender == address(securityToken)) ? (securityToken.balanceOf(_tokenHolder)).add(_additionalBalance) : securityToken.balanceOf(_tokenHolder);
         if (paused)
             return (_partition == UNLOCKED ? currentBalance: 0);
 

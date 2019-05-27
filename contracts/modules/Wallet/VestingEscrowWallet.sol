@@ -93,7 +93,7 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, Wallet {
     function _depositTokens(uint256 _numberOfTokens) internal {
         require(_numberOfTokens > 0, "Should be > 0");
         require(
-            ISecurityToken(securityToken).transferFrom(msg.sender, address(this), _numberOfTokens),
+            securityToken.transferFrom(msg.sender, address(this), _numberOfTokens),
             "Failed transferFrom"
         );
         unassignedTokens = unassignedTokens.add(_numberOfTokens);
@@ -108,7 +108,7 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, Wallet {
         require(_amount > 0, "Amount cannot be zero");
         require(_amount <= unassignedTokens, "Amount is greater than unassigned tokens");
         unassignedTokens = unassignedTokens - _amount;
-        require(ISecurityToken(securityToken).transfer(getTreasuryWallet(), _amount), "Transfer failed");
+        require(securityToken.transfer(getTreasuryWallet(), _amount), "Transfer failed");
         emit SendToTreasury(_amount, msg.sender);
     }
 
@@ -547,7 +547,7 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, Wallet {
         uint256 periodCount = _duration.div(_frequency);
         require(_numberOfTokens % periodCount == 0);
         uint256 amountPerPeriod = _numberOfTokens.div(periodCount);
-        require(amountPerPeriod % ISecurityToken(securityToken).granularity() == 0, "Invalid granularity");
+        require(amountPerPeriod % securityToken.granularity() == 0, "Invalid granularity");
     }
 
     function _sendTokens(address _beneficiary) internal {
@@ -560,7 +560,7 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, Wallet {
         uint256 amount = _getAvailableTokens(_beneficiary, _index);
         if (amount > 0) {
             schedules[_beneficiary][_index].claimedTokens = schedules[_beneficiary][_index].claimedTokens.add(amount);
-            require(ISecurityToken(securityToken).transfer(_beneficiary, amount), "Transfer failed");
+            require(securityToken.transfer(_beneficiary, amount), "Transfer failed");
             emit SendTokens(_beneficiary, amount);
         }
     }

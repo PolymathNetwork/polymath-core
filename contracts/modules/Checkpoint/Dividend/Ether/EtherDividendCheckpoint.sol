@@ -79,7 +79,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         payable
         withPerm(ADMIN)
     {
-        uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
+        uint256 checkpointId = securityToken.createCheckpoint();
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, checkpointId, _excluded, _name);
     }
 
@@ -127,10 +127,10 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         /*solium-disable-next-line security/no-block-members*/
         require(_expiry > now, "Expiry is in the past");
         require(msg.value > 0, "No dividend sent");
-        require(_checkpointId <= ISecurityToken(securityToken).currentCheckpointId());
+        require(_checkpointId <= securityToken.currentCheckpointId());
         require(_name[0] != bytes32(0));
         uint256 dividendIndex = dividends.length;
-        uint256 currentSupply = ISecurityToken(securityToken).totalSupplyAt(_checkpointId);
+        uint256 currentSupply = securityToken.totalSupplyAt(_checkpointId);
         require(currentSupply > 0, "Invalid supply");
         uint256 excludedSupply = 0;
         dividends.push(
@@ -152,7 +152,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         for (uint256 j = 0; j < _excluded.length; j++) {
             require(_excluded[j] != address(0), "Invalid address");
             require(!dividends[dividendIndex].dividendExcluded[_excluded[j]], "duped exclude address");
-            excludedSupply = excludedSupply.add(ISecurityToken(securityToken).balanceOfAt(_excluded[j], _checkpointId));
+            excludedSupply = excludedSupply.add(securityToken.balanceOfAt(_excluded[j], _checkpointId));
             dividends[dividendIndex].dividendExcluded[_excluded[j]] = true;
         }
         dividends[dividendIndex].totalSupply = currentSupply.sub(excludedSupply);

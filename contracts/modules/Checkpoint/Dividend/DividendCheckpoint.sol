@@ -94,7 +94,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @return Checkpoint ID
      */
     function createCheckpoint() public withPerm(OPERATOR) returns(uint256) {
-        return ISecurityToken(securityToken).createCheckpoint();
+        return securityToken.createCheckpoint();
     }
 
     /**
@@ -182,7 +182,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
         _validDividendIndex(_dividendIndex);
         Dividend storage dividend = dividends[_dividendIndex];
         uint256 checkpointId = dividend.checkpointId;
-        address[] memory investors = ISecurityToken(securityToken).getInvestorsSubsetAt(checkpointId, _start, _end);
+        address[] memory investors = securityToken.getInvestorsSubsetAt(checkpointId, _start, _end);
         // The investors list maybe smaller than _end - _start becuase it only contains addresses that had a positive balance
         // the _start and _end used here are for the address list stored in the dataStore
         for (uint256 i = 0; i < investors.length; i++) {
@@ -231,7 +231,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
         if (dividend.claimed[_payee] || dividend.dividendExcluded[_payee]) {
             return (0, 0);
         }
-        uint256 balance = ISecurityToken(securityToken).balanceOfAt(_payee, dividend.checkpointId);
+        uint256 balance = securityToken.balanceOfAt(_payee, dividend.checkpointId);
         uint256 claim = balance.mul(dividend.amount).div(dividend.totalSupply);
         uint256 withheld = claim.mul(withholdingTax[_payee]).div(e18);
         return (claim, withheld);
@@ -362,7 +362,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
         //Get list of Investors
         Dividend storage dividend = dividends[_dividendIndex];
         uint256 checkpointId = dividend.checkpointId;
-        investors = ISecurityToken(securityToken).getInvestorsAt(checkpointId);
+        investors = securityToken.getInvestorsAt(checkpointId);
         resultClaimed = new bool[](investors.length);
         resultExcluded = new bool[](investors.length);
         resultWithheld = new uint256[](investors.length);
@@ -371,7 +371,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
         for (uint256 i; i < investors.length; i++) {
             resultClaimed[i] = dividend.claimed[investors[i]];
             resultExcluded[i] = dividend.dividendExcluded[investors[i]];
-            resultBalance[i] = ISecurityToken(securityToken).balanceOfAt(investors[i], dividend.checkpointId);
+            resultBalance[i] = securityToken.balanceOfAt(investors[i], dividend.checkpointId);
             if (!resultExcluded[i]) {
                 if (resultClaimed[i]) {
                     resultWithheld[i] = dividend.withheld[investors[i]];
@@ -393,12 +393,12 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
      * @return uint256[] investor withheld percentages
      */
     function getCheckpointData(uint256 _checkpointId) external view returns (address[] memory investors, uint256[] memory balances, uint256[] memory withholdings) {
-        require(_checkpointId <= ISecurityToken(securityToken).currentCheckpointId(), "Invalid checkpoint");
-        investors = ISecurityToken(securityToken).getInvestorsAt(_checkpointId);
+        require(_checkpointId <= securityToken.currentCheckpointId(), "Invalid checkpoint");
+        investors = securityToken.getInvestorsAt(_checkpointId);
         balances = new uint256[](investors.length);
         withholdings = new uint256[](investors.length);
         for (uint256 i; i < investors.length; i++) {
-            balances[i] = ISecurityToken(securityToken).balanceOfAt(investors[i], _checkpointId);
+            balances[i] = securityToken.balanceOfAt(investors[i], _checkpointId);
             withholdings[i] = withholdingTax[investors[i]];
         }
     }

@@ -1,6 +1,7 @@
 pragma solidity ^0.5.0;
 
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
+import "../../interfaces/ISecurityToken.sol";
 /**
  * @title Storage for Module contract
  * @notice Contract is abstract
@@ -8,7 +9,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 contract ModuleStorage {
     address public factory;
 
-    address public securityToken;
+    ISecurityToken public securityToken;
 
     // Permission flag
     bytes32 public constant ADMIN = "ADMIN";
@@ -24,7 +25,7 @@ contract ModuleStorage {
      * @param _polyAddress Address of the polytoken
      */
     constructor(address _securityToken, address _polyAddress) public {
-        securityToken = _securityToken;
+        securityToken = ISecurityToken(_securityToken);
         factory = msg.sender;
         polyToken = IERC20(_polyAddress);
     }

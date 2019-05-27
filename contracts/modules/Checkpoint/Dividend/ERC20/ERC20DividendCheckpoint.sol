@@ -103,7 +103,7 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
         public
         withPerm(ADMIN)
     {
-        uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
+        uint256 checkpointId = securityToken.createCheckpoint();
         _createDividendWithCheckpointAndExclusions(_maturity, _expiry, _token, _amount, checkpointId, _excluded, _name);
     }
 
@@ -153,18 +153,17 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
     )
         internal
     {
-        ISecurityToken securityTokenInstance = ISecurityToken(securityToken);
         require(_excluded.length <= EXCLUDED_ADDRESS_LIMIT, "Too many addresses excluded");
         require(_expiry > _maturity, "Expiry before maturity");
         /*solium-disable-next-line security/no-block-members*/
         require(_expiry > now, "Expiry in past");
         require(_amount > 0, "No dividend sent");
         require(_token != address(0), "Invalid token");
-        require(_checkpointId <= securityTokenInstance.currentCheckpointId(), "Invalid checkpoint");
+        require(_checkpointId <= securityToken.currentCheckpointId(), "Invalid checkpoint");
         require(IERC20(_token).transferFrom(msg.sender, address(this), _amount), "insufficent allowance");
         require(_name != bytes32(0));
         uint256 dividendIndex = dividends.length;
-        uint256 currentSupply = securityTokenInstance.totalSupplyAt(_checkpointId);
+        uint256 currentSupply = securityToken.totalSupplyAt(_checkpointId);
         require(currentSupply > 0, "Invalid supply");
         uint256 excludedSupply = 0;
         dividends.push(
@@ -186,7 +185,7 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
         for (uint256 j = 0; j < _excluded.length; j++) {
             require(_excluded[j] != address(0), "Invalid address");
             require(!dividends[dividendIndex].dividendExcluded[_excluded[j]], "duped exclude address");
-            excludedSupply = excludedSupply.add(securityTokenInstance.balanceOfAt(_excluded[j], _checkpointId));
+            excludedSupply = excludedSupply.add(securityToken.balanceOfAt(_excluded[j], _checkpointId));
             dividends[dividendIndex].dividendExcluded[_excluded[j]] = true;
         }
 

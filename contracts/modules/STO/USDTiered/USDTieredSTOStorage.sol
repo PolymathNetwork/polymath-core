@@ -1,5 +1,7 @@
 pragma solidity ^0.5.0;
 
+import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
+
 /**
  * @title Contract used to store layout for the USDTieredSTO storage
  */
@@ -42,7 +44,7 @@ contract USDTieredSTOStorage {
     address public treasuryWallet;
 
     // List of stable coin addresses
-    address[] internal usdTokens;
+    IERC20[] internal usdTokens;
 
     // Current tier
     uint256 public currentTier;

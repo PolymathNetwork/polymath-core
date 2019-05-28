@@ -24,6 +24,7 @@ contract MockSecurityTokenLogic is SecurityToken {
      */
     function upgrade(address _getterDelegate, uint256 _upgrade) external {
         getterDelegate = _getterDelegate;
+        someValue = _upgrade;
         //securityTokenVersion = SemanticVersion(3, 1, 0);
         emit UpgradeEvent(_upgrade);
     }

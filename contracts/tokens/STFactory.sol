@@ -35,7 +35,7 @@ contract STFactory is ISTFactory, Ownable {
 
     uint256 public latestUpgrade;
 
-    event LogicContractSet(string _version, address _logicContract, bytes _initializationData, bytes _upgradeData);
+    event LogicContractSet(string _version, uint256 _upgrade, address _logicContract, bytes _initializationData, bytes _upgradeData);
     event TokenUpgraded(
         address indexed _securityToken,
         uint256 indexed _version
@@ -122,6 +122,7 @@ contract STFactory is ISTFactory, Ownable {
             address(polymathRegistry)
         );
         // Sets logic contract
+        emit Log(latestUpgrade);
         proxy.upgradeTo(logicContracts[latestUpgrade].version, logicContracts[latestUpgrade].logicContract);
         // Initialises security token contract - needed for functions that can only be called by the
         // owner of the contract, or are specific to this particular logic contract (e.g. setting version)
@@ -130,6 +131,8 @@ contract STFactory is ISTFactory, Ownable {
         tokenUpgrade[address(proxy)] = latestUpgrade;
         return address(proxy);
     }
+
+    event Log(uint256 _upgrade);
 
     /**
      * @notice Used to set a new token logic contract
@@ -144,13 +147,37 @@ contract STFactory is ISTFactory, Ownable {
         require(_initializationData.length > 4, "Invalid Initialization");
         require(_upgradeData.length > 4, "Invalid Upgrade");
         latestUpgrade++;
-        logicContracts[latestUpgrade].version = _version;
-        logicContracts[latestUpgrade].logicContract = _logicContract;
-        logicContracts[latestUpgrade].upgradeData = _upgradeData;
-        logicContracts[latestUpgrade].initializationData = _initializationData;
-        emit LogicContractSet(_version, _logicContract, _initializationData, _upgradeData);
+        _modifyLogicContract(latestUpgrade, _version, _logicContract, _initializationData, _upgradeData);
     }
 
+    /**
+     * @notice Used to update an existing token logic contract
+     * @param _upgrade logic contract to upgrade
+     * @param _version Version of upgraded module
+     * @param _logicContract Address of deployed module logic contract referenced from proxy
+     * @param _upgradeData Data to be passed in call to upgradeToAndCall when a token upgrades its module
+     */
+    function updateLogicContract(uint256 _upgrade, string calldata _version, address _logicContract, bytes calldata _initializationData, bytes calldata _upgradeData) external onlyOwner {
+        require(_upgrade <= latestUpgrade, "Invalid upgrade");
+        require(_upgrade > 0, "Invalid upgrade");
+        // version & contract must differ from previous version, otherwise upgrade proxy will fail
+        if (_upgrade > 1) {
+          require(keccak256(abi.encodePacked(_version)) != keccak256(abi.encodePacked(logicContracts[_upgrade - 1].version)), "Same version");
+          require(_logicContract != logicContracts[_upgrade - 1].logicContract, "Same version");
+        }
+        require(_logicContract != address(0), "Invalid address");
+        require(_initializationData.length > 4, "Invalid Initialization");
+        require(_upgradeData.length > 4, "Invalid Upgrade");
+        _modifyLogicContract(_upgrade, _version, _logicContract, _initializationData, _upgradeData);
+    }
+
+    function _modifyLogicContract(uint256 _upgrade, string memory _version, address _logicContract, bytes memory _initializationData, bytes memory _upgradeData) internal {
+        logicContracts[_upgrade].version = _version;
+        logicContracts[_upgrade].logicContract = _logicContract;
+        logicContracts[_upgrade].upgradeData = _upgradeData;
+        logicContracts[_upgrade].initializationData = _initializationData;
+        emit LogicContractSet(_version, _upgrade, _logicContract, _initializationData, _upgradeData);
+    }
     /**
      * @notice Used to upgrade a token
      * @param _maxModuleType maximum module type enumeration

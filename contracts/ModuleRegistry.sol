@@ -224,7 +224,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @notice Called by the ModuleFactory owner or registry curator to delete a ModuleFactory from the registry
      * @param _moduleFactory is the address of the module factory to be deleted from the registry
      */
-    function removeModule(address _moduleFactory) external whenNotPausedOrOwner nonReentrant {
+    function removeModule(address _moduleFactory) external whenNotPausedOrOwner {
         uint256 moduleType = getUintValue(Encoder.getKey("registry", _moduleFactory));
 
         require(moduleType != 0, "Module factory should be registered");

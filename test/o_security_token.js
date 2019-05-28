@@ -215,6 +215,10 @@ contract("SecurityToken", async (accounts) => {
             await catchRevert(I_SecurityToken.changeName("new token name"));
         });
 
+        it("Should not allow 0 length name", async() => {
+            await catchRevert(I_SecurityToken.changeName("", { from: token_owner }));
+        });
+
         it("Should allow authorized address to change name", async() => {
             let snapId = await takeSnapshot();
             await I_SecurityToken.changeName("new token name", { from: token_owner });

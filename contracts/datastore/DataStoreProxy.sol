@@ -1,12 +1,12 @@
 pragma solidity ^0.5.0;
 
-import "../proxy/OwnedProxy.sol";
+import "../proxy/Proxy.sol";
 import "./DataStoreStorage.sol";
 
 /**
  * @title DataStoreProxy Proxy
  */
-contract DataStoreProxy is DataStoreStorage, OwnedProxy {
+contract DataStoreProxy is DataStoreStorage, Proxy {
 
     /**
     * @notice Constructor
@@ -14,7 +14,7 @@ contract DataStoreProxy is DataStoreStorage, OwnedProxy {
     * @param _implementation representing the address of the new implementation to be set
     */
     constructor(
-        address _securityToken, 
+        address _securityToken,
         address _implementation
     )
         public

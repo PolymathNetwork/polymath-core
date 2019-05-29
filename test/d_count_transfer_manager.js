@@ -555,32 +555,19 @@ contract("CountTransferManager", async (accounts) => {
 
             it("Should successfully change the cost type -- fail beacuse of bad owner", async () => {
                 await catchRevert(
-                    I_CountTransferManagerFactory.changeCostsAndType(new BN(web3.utils.toWei("100")), new BN(web3.utils.toWei("500")), true, { from: account_investor3 })
+                    I_CountTransferManagerFactory.changeCostAndType(new BN(web3.utils.toWei("500")), true, { from: account_investor3 })
                 );
             });
 
             it("Should successfully change the cost type", async () => {
                 let snapId = await takeSnapshot();
-                let tx = await I_CountTransferManagerFactory.changeCostsAndType(new BN(web3.utils.toWei("100")), new BN(web3.utils.toWei("500")), true, { from: account_polymath });
+                let tx = await I_CountTransferManagerFactory.changeCostAndType(new BN(web3.utils.toWei("500")), true, { from: account_polymath });
                 assert.equal(tx.logs[0].args[1].toString(), new BN(web3.utils.toWei("100")).toString(), "wrong setup fee in event");
                 assert.equal(tx.logs[1].args[1].toString(), new BN(web3.utils.toWei("500")).toString(), "wrong usage fee in event");
                 assert.equal(tx.logs[2].args[1], true, "wrong fee type in event");
                 assert.equal((await I_CountTransferManagerFactory.setupCost.call()).toString(), new BN(web3.utils.toWei("100")).toString());
-                assert.equal((await I_CountTransferManagerFactory.usageCost.call()).toString(), new BN(web3.utils.toWei("500")).toString());
                 assert.equal((await I_CountTransferManagerFactory.setupCost.call()).toString(), (await I_CountTransferManagerFactory.setupCostInPoly.call()).toString());
-                assert.equal((await I_CountTransferManagerFactory.usageCost.call()).toString(), (await I_CountTransferManagerFactory.usageCostInPoly.call()).toString());
                 await revertToSnapshot(snapId);
-            });
-
-            it("Should successfully change the usage fee -- fail beacuse of bad owner", async () => {
-                await catchRevert(
-                    I_CountTransferManagerFactory.changeUsageCost(new BN(web3.utils.toWei("500")), { from: account_investor3 })
-                );
-            });
-
-            it("Should successfully change the usage fee", async () => {
-                await I_CountTransferManagerFactory.changeUsageCost(new BN(web3.utils.toWei("800")), { from: account_polymath });
-                assert.equal((await I_CountTransferManagerFactory.usageCost.call()).toString(), new BN(web3.utils.toWei("800")).toString());
             });
 
         });

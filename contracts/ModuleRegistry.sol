@@ -85,8 +85,9 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     }
 
     function _whenNotPausedOrOwner() internal view {
-        if (msg.sender != owner())
+        if (msg.sender != owner()) {
             require(!isPaused(), "Paused");
+        }
     }
 
     /**

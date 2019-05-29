@@ -1,6 +1,5 @@
 pragma solidity ^0.5.0;
 
-import "./KindMath.sol";
 import "../interfaces/IPoly.sol";
 import "../tokens/SecurityTokenStorage.sol";
 import "../interfaces/ITransferManager.sol";

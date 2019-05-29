@@ -257,7 +257,7 @@ contract("ModuleRegistryProxy", async (accounts) => {
     describe("Execute functionality of the implementation contract on the earlier storage", async () => {
         it("Should get the previous data", async () => {
             let _data = await I_MRProxied.getFactoryDetails.call(I_GeneralTransferManagerFactory.address);
-            assert.equal(_data[1].length, new BN(0), "Should give the original length");
+            assert.equal(_data[2].length, new BN(0), "Should give the original length");
         });
 
         it("Should alter the old storage", async () => {
@@ -265,7 +265,7 @@ contract("ModuleRegistryProxy", async (accounts) => {
                 from: account_polymath
             });
             let _data = await I_MRProxied.getFactoryDetails.call(I_GeneralTransferManagerFactory.address);
-            assert.equal(_data[1].length, 2, "Should give the updated length");
+            assert.equal(_data[2].length, 2, "Should give the updated length");
         });
     });
 

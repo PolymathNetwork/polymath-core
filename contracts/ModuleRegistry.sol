@@ -228,8 +228,6 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         uint256 moduleType = getUintValue(Encoder.getKey("registry", _moduleFactory));
 
         require(moduleType != 0, "Module factory should be registered");
-        // Ordering (lazy evaluation) in below require statement is important. A moduleFactory should not be able
-        // to prevent the MR owner from removing it by throwing on a call to `owner`
         require(
             msg.sender == owner() || msg.sender == getAddressValue(Encoder.getKey("factoryOwner", _moduleFactory)),
             "msg.sender must be the Module Factory owner or registry curator"
@@ -284,8 +282,6 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         bool isOwner = msg.sender == owner();
         bool isFactory = msg.sender == _moduleFactory;
         bool isFactoryOwner = msg.sender == getAddressValue(Encoder.getKey("factoryOwner", _moduleFactory));
-        // Ordering (lazy evaluation) in below require statement is important. A moduleFactory should not be able
-        // to prevent the MR owner from unverifying it by throwing on a call to `owner`
         require(isOwner || isFactory || isFactoryOwner, "Not authorised");
         require(getUintValue(Encoder.getKey("registry", _moduleFactory)) != uint256(0), "Module factory must be registered");
         set(Encoder.getKey("verified", _moduleFactory), false);

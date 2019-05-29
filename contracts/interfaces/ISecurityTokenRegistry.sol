@@ -110,20 +110,25 @@ interface ISecurityTokenRegistry {
     function getSecurityTokenAddress(string calldata _ticker) external view returns(address);
 
     /**
-     * @notice Get security token data by its address
-     * @param _securityToken Address of the Scurity token.
-     * @return string Symbol of the Security Token.
-     * @return address Address of the issuer of Security Token.
-     * @return string Details of the Token.
-     * @return uint256 Timestamp at which Security Token get launched on Polymath platform
-     * @return version of the securityToken
-     */
-    function getSecurityTokenData(address _securityToken) external view returns(string memory, address, string memory, uint256, uint8[] memory);
+    * @notice Returns the security token data by address
+    * @param _securityToken is the address of the security token.
+    * @return string is the ticker of the security Token.
+    * @return address is the issuer of the security Token.
+    * @return string is the details of the security token.
+    * @return uint256 is the timestamp at which security Token was deployed.
+    */
+    function getSecurityTokenData(address _securityToken) external view returns (string memory, address, string memory, uint256);
 
     /**
      * @notice Get the current STFactory Address
      */
     function getSTFactoryAddress() external view returns(address);
+
+    /**
+     * @notice Returns the STFactory Address of a particular version
+     * @param _protocolVersion Packed protocol version
+     */
+    function getSTFactoryAddressOfVersion(uint256 _protocolVersion) external view returns(address);
 
     /**
      * @notice Get Protocol version
@@ -275,7 +280,7 @@ interface ISecurityTokenRegistry {
      * @notice Set the getter contract address
      * @param _getterContract Address of the contract
      */
-    function setGetterRegistry(address _getterContract) public;
+    function setGetterRegistry(address _getterContract) external;
 
     /**
      * @notice Returns the usd & poly fee for a particular feetype
@@ -295,6 +300,26 @@ interface ISecurityTokenRegistry {
      * @return Expiry limit
      */
     function getExpiryLimit() external view returns(uint256);
+
+    /**
+     * @notice Gets the status of the ticker
+     * @param _ticker Ticker whose status need to determine
+     * @return bool
+     */
+    function getTickerStatus(string memory _ticker) external view returns(bool);
+
+    /**
+     * @notice Gets the fee currency
+     * @return true = poly, false = usd
+     */
+    function getIsFeeInPoly() external view returns(bool);
+
+    /**
+     * @notice Gets the owner of the ticker
+     * @param _ticker Ticker whose owner need to determine
+     * @return address Address of the owner
+     */
+    function getTickerOwner(string memory _ticker) external view returns(address);
 
     /**
      * @notice Checks whether the registry is paused or not

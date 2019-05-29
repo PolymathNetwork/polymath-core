@@ -6,24 +6,20 @@ pragma solidity ^0.5.0;
 interface ISecurityTokenRegistry {
 
     /**
-     * @notice Deploys an instance of a new Security Token and records it to the registry
+     * @notice Deploys an instance of a new Security Token of version 2.0 and records it to the registry
+     * @dev this function is for backwards compatibilty with 2.0 dApp.
      * @param _name is the name of the token
      * @param _ticker is the ticker symbol of the security token
      * @param _tokenDetails is the off-chain details of the token
      * @param _divisible is whether or not the token is divisible
-     * @param _treasuryWallet Ethereum address which will holds the STs.
-     * @param _protocolVersion Version of securityToken contract
-     * - `_protocolVersion` is the packed value of uin8[3] array (it will be calculated offchain)
-     * - if _protocolVersion == 0 then latest version of securityToken will be generated
      */
     function generateSecurityToken(
         string calldata _name,
         string calldata _ticker,
         string calldata _tokenDetails,
-        bool _divisible,
-        address _treasuryWallet,
-        uint256 _protocolVersion
-    ) external;
+        bool _divisible
+    )
+        external;
 
     /**
      * @notice Deploys an instance of a new Security Token and records it to the registry
@@ -253,6 +249,17 @@ interface ISecurityTokenRegistry {
     function setLatestVersion(uint8 _major, uint8 _minor, uint8 _patch) external;
 
     /**
+     * @notice Changes the PolyToken address. Only Polymath.
+     * @param _newAddress is the address of the polytoken.
+     */
+    function updatePolyTokenAddress(address _newAddress) external;
+
+    /**
+     * @notice Used to update the polyToken contract address
+     */
+    function updateFromRegistry() external;
+
+    /**
      * @notice Gets the security token launch fee
      * @return Fee amount
      */
@@ -263,6 +270,12 @@ interface ISecurityTokenRegistry {
      * @return Fee amount
      */
     function getTickerRegistrationFee() external returns(uint256);
+
+    /**
+     * @notice Set the getter contract address
+     * @param _getterContract Address of the contract
+     */
+    function setGetterRegistry(address _getterContract) public;
 
     /**
      * @notice Returns the usd & poly fee for a particular feetype

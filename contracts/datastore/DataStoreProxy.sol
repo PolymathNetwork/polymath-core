@@ -8,6 +8,9 @@ import "./DataStoreStorage.sol";
  */
 contract DataStoreProxy is DataStoreStorage, Proxy {
 
+    // Address of the current implementation
+    address internal __implementation;
+
     /**
     * @notice Constructor
     * @param _securityToken Address of the security token
@@ -24,6 +27,13 @@ contract DataStoreProxy is DataStoreStorage, Proxy {
         );
         securityToken = ISecurityToken(_securityToken);
         __implementation = _implementation;
+    }
+
+    /**
+    * @notice Internal function to provide the address of the implementation contract
+    */
+    function _implementation() internal view returns(address) {
+        return __implementation;
     }
 
 }

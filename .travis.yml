@@ -14,6 +14,7 @@ jobs:
         - sudo apt-get install -y solc
         - curl -L -o solc https://github.com/ethereum/solidity/releases/download/v0.5.8/solc-static-linux
         - sudo mv solc /usr/bin/solc
+        - sudo chmod +x /usr/bin/solc
         - yarn install
       before_script:
         - truffle version

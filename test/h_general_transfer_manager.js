@@ -1034,6 +1034,12 @@ contract("GeneralTransferManager", async (accounts) => {
         });
 
         it("Should change the Issuance address", async () => {
+            let log = await I_GeneralPermissionManager.addDelegate(account_delegate, web3.utils.fromAscii("My details"), { from: token_owner });
+            assert.equal(log.logs[0].args._delegate, account_delegate);
+
+            await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("ADMIN"), true, {
+                from: token_owner
+            });
             let tx = await I_GeneralTransferManager.changeIssuanceAddress(account_investor2, { from: account_delegate });
             assert.equal(tx.logs[0].args._issuanceAddress, account_investor2);
         });

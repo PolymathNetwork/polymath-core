@@ -562,9 +562,9 @@ contract("CountTransferManager", async (accounts) => {
             it("Should successfully change the cost type", async () => {
                 let snapId = await takeSnapshot();
                 let tx = await I_CountTransferManagerFactory.changeCostAndType(new BN(web3.utils.toWei("500")), true, { from: account_polymath });
-                assert.equal(tx.logs[0].args[1].toString(), new BN(web3.utils.toWei("100")).toString(), "wrong setup fee in event");
+                assert.equal(tx.logs[0].args[1].toString(), new BN(web3.utils.toWei("500")).toString(), "wrong setup fee in event");
                 assert.equal(tx.logs[1].args[1], true, "wrong fee type in event");
-                assert.equal((await I_CountTransferManagerFactory.setupCost.call()).toString(), new BN(web3.utils.toWei("100")).toString());
+                assert.equal((await I_CountTransferManagerFactory.setupCost.call()).toString(), new BN(web3.utils.toWei("500")).toString());
                 assert.equal((await I_CountTransferManagerFactory.setupCost.call()).toString(), (await I_CountTransferManagerFactory.setupCostInPoly.call()).toString());
                 await revertToSnapshot(snapId);
             });

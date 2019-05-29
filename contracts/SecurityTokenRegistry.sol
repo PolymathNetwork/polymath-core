@@ -1,3 +1,11 @@
+/**
+    //
+        IMPORTANT: Developer should update the ISecurityTokenRegistry.sol (Interface) if there is any change in
+        function signature or addition/removal of the functions from SecurityTokenRegistry & STRGetter contract.
+    //
+
+ */
+
 pragma solidity ^0.5.0;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";

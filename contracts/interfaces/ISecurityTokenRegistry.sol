@@ -306,7 +306,7 @@ interface ISecurityTokenRegistry {
      * @param _ticker Ticker whose status need to determine
      * @return bool
      */
-    function getTickerStatus(string memory _ticker) external view returns(bool);
+    function getTickerStatus(string calldata _ticker) external view returns(bool);
 
     /**
      * @notice Gets the fee currency
@@ -319,7 +319,7 @@ interface ISecurityTokenRegistry {
      * @param _ticker Ticker whose owner need to determine
      * @return address Address of the owner
      */
-    function getTickerOwner(string memory _ticker) external view returns(address);
+    function getTickerOwner(string calldata _ticker) external view returns(address);
 
     /**
      * @notice Checks whether the registry is paused or not

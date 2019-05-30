@@ -23,7 +23,7 @@ contract WeightedVoteCheckpoint is WeightedVoteCheckpointStorage, VotingCheckpoi
     );
     event VoteCast(address indexed _voter,  uint256 _weight, uint256 indexed _ballotId, uint256 indexed _proposalId);
     event BallotStatusChanged(uint256 indexed _ballotId, bool _isActive);
-    event ChangedBallotExemptedVotersList(uint256 indexed _ballotId, address indexed _voter, bool _change);
+    event ChangedBallotExemptedVotersList(uint256 indexed _ballotId, address indexed _voter, bool _exempt);
 
     /**
      * @notice Constructor
@@ -124,31 +124,31 @@ contract WeightedVoteCheckpoint is WeightedVoteCheckpointStorage, VotingCheckpoi
      * Change the given ballot exempted list
      * @param _ballotId Given ballot Id
      * @param _voter Address of the voter
-     * @param _change Whether it is exempted or not
+     * @param _exempt Whether it is exempted or not
      */
-    function changeBallotExemptedVotersList(uint256 _ballotId, address _voter, bool _change) external withPerm(ADMIN) {
-        _changeBallotExemptedVotersList(_ballotId, _voter, _change);
+    function changeBallotExemptedVotersList(uint256 _ballotId, address _voter, bool _exempt) external withPerm(ADMIN) {
+        _changeBallotExemptedVotersList(_ballotId, _voter, _exempt);
     }
 
     /**
      * Change the given ballot exempted list (Multi)
      * @param _ballotId Given ballot Id
      * @param _voters Address of the voter
-     * @param _changes Whether it is exempted or not
+     * @param _exempts Whether it is exempted or not
      */
-    function changeBallotExemptedVotersListMulti(uint256 _ballotId, address[] calldata _voters, bool[] calldata _changes) external withPerm(ADMIN) {
-        require(_voters.length == _changes.length, "Array length mismatch");
+    function changeBallotExemptedVotersListMulti(uint256 _ballotId, address[] calldata _voters, bool[] calldata _exempts) external withPerm(ADMIN) {
+        require(_voters.length == _exempts.length, "Array length mismatch");
         for (uint256 i = 0; i < _voters.length; i++) {
-            _changeBallotExemptedVotersList(_ballotId, _voters[i], _changes[i]);
+            _changeBallotExemptedVotersList(_ballotId, _voters[i], _exempts[i]);
         }
     }
 
-    function _changeBallotExemptedVotersList(uint256 _ballotId, address _voter, bool _change) internal {
+    function _changeBallotExemptedVotersList(uint256 _ballotId, address _voter, bool _exempt) internal {
         require(_voter != address(0), "Invalid address");
         _validBallotId(_ballotId);
-        require(ballots[_ballotId].exemptedVoters[_voter] != _change, "No change");
-        ballots[_ballotId].exemptedVoters[_voter] = _change;
-        emit ChangedBallotExemptedVotersList(_ballotId, _voter, _change);
+        require(ballots[_ballotId].exemptedVoters[_voter] != _exempt, "No change");
+        ballots[_ballotId].exemptedVoters[_voter] = _exempt;
+        emit ChangedBallotExemptedVotersList(_ballotId, _voter, _exempt);
     }
 
     /**

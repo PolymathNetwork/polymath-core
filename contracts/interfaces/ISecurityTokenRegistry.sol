@@ -232,4 +232,11 @@ interface ISecurityTokenRegistry {
      */
     function owner() external view returns(address);
 
+    /**
+     * @notice Checks if the entered ticker is registered and has not expired
+     * @param _ticker is the token ticker
+     * @return bool
+     */
+    function tickerAvailable(string calldata _ticker) external view returns(bool);
+
 }

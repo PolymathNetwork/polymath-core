@@ -42,7 +42,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
         bytes32 _label,
         bool _archived
     );
-
+    // Emit when Module get upgraded from the securityToken
+    event ModuleUpgraded(uint8[] _types, address _module);
     // Emit when the token details get updated
     event UpdateTokenDetails(string _oldDetails, string _newDetails);
     // Emit when the token name get updated

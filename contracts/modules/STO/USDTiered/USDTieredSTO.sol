@@ -22,7 +22,6 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
 
     event SetAllowBeneficialInvestments(bool _allowed);
     event SetNonAccreditedLimit(address _investor, uint256 _limit);
-    event SetAccredited(address _investor, bool _accredited);
     event TokenPurchase(
         address indexed _purchaser,
         address indexed _beneficiary,
@@ -126,8 +125,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @dev Modifies fund raise types
      * @param _fundRaiseTypes Array of fund raise types to allow
      */
-    function modifyFunding(FundRaiseType[] calldata _fundRaiseTypes) external {
-        _onlySecurityTokenOwner();
+    function modifyFunding(FundRaiseType[] calldata _fundRaiseTypes) external withPerm(OPERATOR) {
         _isSTOStarted();
         _setFundRaiseType(_fundRaiseTypes);
     }
@@ -137,8 +135,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @param _nonAccreditedLimitUSD max non accredited invets limit
      * @param _minimumInvestmentUSD overall minimum investment limit
      */
-    function modifyLimits(uint256 _nonAccreditedLimitUSD, uint256 _minimumInvestmentUSD) external {
-        _onlySecurityTokenOwner();
+    function modifyLimits(uint256 _nonAccreditedLimitUSD, uint256 _minimumInvestmentUSD) external withPerm(OPERATOR) {
         _isSTOStarted();
         _modifyLimits(_nonAccreditedLimitUSD, _minimumInvestmentUSD);
     }
@@ -157,8 +154,8 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         uint256[] calldata _tokensPerTierDiscountPoly
     )
         external
+        withPerm(OPERATOR)
     {
-        _onlySecurityTokenOwner();
         _isSTOStarted();
         _modifyTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
     }
@@ -168,8 +165,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @param _startTime start time of sto
      * @param _endTime end time of sto
      */
-    function modifyTimes(uint256 _startTime, uint256 _endTime) external {
-        _onlySecurityTokenOwner();
+    function modifyTimes(uint256 _startTime, uint256 _endTime) external withPerm(OPERATOR) {
         _isSTOStarted();
         _modifyTimes(_startTime, _endTime);
     }
@@ -258,8 +254,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @notice Finalizes the STO and mint remaining tokens to treasury address
      * @notice Treasury wallet address must be whitelisted to successfully finalize
      */
-    function finalize() external {
-        _onlySecurityTokenOwner();
+    function finalize() external withPerm(ADMIN) {
         require(!isFinalized, "STO is finalized");
         isFinalized = true;
         uint256 tempReturned;
@@ -289,8 +284,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @param _investors Array of investor addresses to modify
      * @param _nonAccreditedLimit Array of uints specifying non-accredited limits
      */
-    function changeNonAccreditedLimit(address[] calldata _investors, uint256[] calldata _nonAccreditedLimit) external {
-        _onlySecurityTokenOwner();
+    function changeNonAccreditedLimit(address[] calldata _investors, uint256[] calldata _nonAccreditedLimit) external withPerm(OPERATOR) {
         //nonAccreditedLimitUSDOverride
         require(_investors.length == _nonAccreditedLimit.length, "Length mismatch");
         for (uint256 i = 0; i < _investors.length; i++) {
@@ -320,8 +314,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @notice Function to set allowBeneficialInvestments (allow beneficiary to be different to funder)
      * @param _allowBeneficialInvestments Boolean to allow or disallow beneficial investments
      */
-    function changeAllowBeneficialInvestments(bool _allowBeneficialInvestments) external {
-        _onlySecurityTokenOwner();
+    function changeAllowBeneficialInvestments(bool _allowBeneficialInvestments) external withPerm(OPERATOR) {
         require(_allowBeneficialInvestments != allowBeneficialInvestments);
         allowBeneficialInvestments = _allowBeneficialInvestments;
         emit SetAllowBeneficialInvestments(allowBeneficialInvestments);

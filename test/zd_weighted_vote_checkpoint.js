@@ -308,7 +308,7 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
                 let tx = await I_WeightedVoteCheckpoint.changeBallotExemptedVotersList(new BN(0), account_investor2, true, {from: token_owner});
                 assert.equal((tx.logs[0].args._ballotId).toString(), 0);
                 assert.equal(tx.logs[0].args._voter, account_investor2);
-                assert.equal(tx.logs[0].args._change, true);
+                assert.equal(tx.logs[0].args._exempt, true);
             });
 
             it("\t\t Should fail to add voter in ballot exemption list -- doing the same change again", async() => {
@@ -355,7 +355,7 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
             it("\t\t Should add the voter in to the default exemption list", async() => {
                 let tx = await I_WeightedVoteCheckpoint.changeDefaultExemptedVotersList(account_investor1, true, {from: token_owner});
                 assert.equal(tx.logs[0].args._voter, account_investor1);
-                assert.equal(tx.logs[0].args._change, true);
+                assert.equal(tx.logs[0].args._exempt, true);
             });
 
             it("\t\t Should fail to add voter in default exemption list -- doing the same change again", async() => {

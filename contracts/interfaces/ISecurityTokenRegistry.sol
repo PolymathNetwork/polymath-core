@@ -5,6 +5,75 @@ pragma solidity ^0.5.0;
  */
 interface ISecurityTokenRegistry {
 
+    // Emit when network becomes paused
+    event Pause(address account);
+    // Emit when network becomes unpaused
+    event Unpause(address account);
+    // Emit when the ticker is removed from the registry
+    event TickerRemoved(string _ticker, address _removedBy);
+    // Emit when the token ticker expiry is changed
+    event ChangeExpiryLimit(uint256 _oldExpiry, uint256 _newExpiry);
+    // Emit when changeSecurityLaunchFee is called
+    event ChangeSecurityLaunchFee(uint256 _oldFee, uint256 _newFee);
+    // Emit when changeTickerRegistrationFee is called
+    event ChangeTickerRegistrationFee(uint256 _oldFee, uint256 _newFee);
+    // Emit when Fee currency is changed
+    event ChangeFeeCurrency(bool _isFeeInPoly);
+    // Emit when ownership gets transferred
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    // Emit when ownership of the ticker gets changed
+    event ChangeTickerOwnership(string _ticker, address indexed _oldOwner, address indexed _newOwner);
+    // Emit at the time of launching a new security token of version 3.0+
+    event NewSecurityTokenCreated(
+        string _ticker,
+        string _name,
+        address indexed _securityTokenAddress,
+        address indexed _owner,
+        uint256 _addedAt,
+        address _registrant,
+        bool _fromAdmin,
+        uint256 _usdFee,
+        uint256 _polyFee,
+        uint256 _protocolVersion
+    );
+    // Emit at the time of launching a new security token v2.0.
+    // _registrationFee is in poly
+    event NewSecurityToken(
+        string _ticker,
+        string _name,
+        address indexed _securityTokenAddress,
+        address indexed _owner,
+        uint256 _addedAt,
+        address _registrant,
+        bool _fromAdmin,
+        uint256 _registrationFee
+    );
+    // Emit after ticker registration
+    // _registrationFee is in poly
+    // fee in usd is not being emitted to maintain backwards compatibility
+    event RegisterTicker(
+        address indexed _owner,
+        string _ticker,
+        string _name,
+        uint256 indexed _registrationDate,
+        uint256 indexed _expiryDate,
+        bool _fromAdmin,
+        uint256 _registrationFee
+    );
+    // Emit at when issuer refreshes exisiting token
+    event SecurityTokenRefreshed(
+        string _ticker,
+        string _name,
+        address indexed _securityTokenAddress,
+        address indexed _owner,
+        uint256 _addedAt,
+        address _registrant,
+        uint256 _protocolVersion
+    );
+    event ProtocolFactorySet(address indexed _STFactory, uint8 _major, uint8 _minor, uint8 _patch);
+    event LatestVersionSet(uint8 _major, uint8 _minor, uint8 _patch);
+    event ProtocolFactoryRemoved(address indexed _STFactory, uint8 _major, uint8 _minor, uint8 _patch);
+
     /**
      * @notice Deploys an instance of a new Security Token of version 2.0 and records it to the registry
      * @dev this function is for backwards compatibilty with 2.0 dApp.
@@ -326,6 +395,22 @@ interface ISecurityTokenRegistry {
      * @return bool
      */
     function isPaused() external view returns(bool);
+
+    /**
+    * @notice Called by the owner to pause, triggers stopped state
+    */
+    function pause() external;
+
+    /**
+     * @notice Called by the owner to unpause, returns to normal state
+     */
+    function unpause() external;
+
+    /**
+     * @notice Reclaims all ERC20Basic compatible tokens
+     * @param _tokenContract is the address of the token contract
+     */
+    function reclaimERC20(address _tokenContract) external;
 
     /**
      * @notice Gets the owner of the contract

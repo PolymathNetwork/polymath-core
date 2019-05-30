@@ -17,6 +17,47 @@ interface ISecurityToken {
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
 
+     // Emit at the time when module get added
+    event ModuleAdded(
+        uint8[] _types,
+        bytes32 indexed _name,
+        address indexed _moduleFactory,
+        address _module,
+        uint256 _moduleCost,
+        uint256 _budget,
+        bytes32 _label,
+        bool _archived
+    );
+
+    // Emit when the token details get updated
+    event UpdateTokenDetails(string _oldDetails, string _newDetails);
+    // Emit when the token name get updated
+    event UpdateTokenName(string _oldName, string _newName);
+    // Emit when the granularity get changed
+    event GranularityChanged(uint256 _oldGranularity, uint256 _newGranularity);
+    // Emit when is permanently frozen by the issuer
+    event FreezeIssuance();
+    // Emit when transfers are frozen or unfrozen
+    event FreezeTransfers(bool _status);
+    // Emit when new checkpoint created
+    event CheckpointCreated(uint256 indexed _checkpointId, uint256 _investorLength);
+    // Events to log controller actions
+    event SetController(address indexed _oldController, address indexed _newController);
+    //Event emit when the global treasury wallet address get changed
+    event TreasuryWalletChanged(address _oldTreasuryWallet, address _newTreasuryWallet);
+    event DisableController();
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event TokenUpgraded(uint8 _major, uint8 _minor, uint8 _patch);
+
+    // Emit when Module get archived from the securityToken
+    event ModuleArchived(uint8[] _types, address _module); //Event emitted by the tokenLib.
+    // Emit when Module get unarchived from the securityToken
+    event ModuleUnarchived(uint8[] _types, address _module); //Event emitted by the tokenLib.
+    // Emit when Module get removed from the securityToken
+    event ModuleRemoved(uint8[] _types, address _module); //Event emitted by the tokenLib.
+    // Emit when the budget allocated to a module is changed
+    event ModuleBudgetChanged(uint8[] _moduleTypes, address _module, uint256 _oldBudget, uint256 _budget); //Event emitted by the tokenLib.
+
     /**
      * @notice Transfers of securities may fail for a number of reasons. So this function will used to understand the
      * cause of failure by getting the byte value. Which will be the ESC that follows the EIP 1066. ESC can be mapped
@@ -479,7 +520,7 @@ interface ISecurityToken {
      * @notice Used by the issuer to permanently disable controller functionality
      * @dev enabled via feature switch "disableControllerAllowed"
      */
-    function disableController() external;
+    function disableController(bytes calldata _signature) external;
 
     /**
      * @notice Used to get the version of the securityToken
@@ -622,4 +663,22 @@ interface ISecurityToken {
     * @notice Returns if transfers are currently frozen or not
     */
     function transfersFrozen() external view returns (bool);
+
+    /**
+     * @dev Allows the current owner to transfer control of the contract to a newOwner.
+     * @param newOwner The address to transfer ownership to.
+     */
+    function transferOwnership(address newOwner) external;
+
+    /**
+     * @return true if `msg.sender` is the owner of the contract.
+     */
+    function isOwner() external view returns (bool);
+
+    /**
+     * @return the address of the owner.
+     */
+    function owner() external view returns (address);
+
+    function updateFromRegistry() external;
 }

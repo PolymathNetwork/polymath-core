@@ -68,9 +68,9 @@ interface IModuleFactory {
 
     /**
      * @notice Used to change the usage fee
-     * @param _newUsageCost New usage fee
+     * @param _usageCost New usage fee
      */
-    function changeUsageCost(uint256 _newUsageCost) external;
+    function changeUsageCost(uint256 _usageCost) external;
 
     /**
      * @notice Used to change the currency and amount of usage and setup cost
@@ -108,5 +108,29 @@ interface IModuleFactory {
      * @return Upper bound
      */
     function upperSTVersionBounds() external view returns(uint8[] memory);
+
+    /**
+     * @notice Updates the tags of the ModuleFactory
+     * @param _tagsData New list of tags
+     */
+    function changeTags(bytes32[] calldata _tagsData) external;
+
+    /**
+     * @notice Updates the name of the ModuleFactory
+     * @param _name New name that will replace the old one.
+     */
+    function changeName(bytes32 _name) external;
+
+    /**
+     * @notice Updates the description of the ModuleFactory
+     * @param _description New description that will replace the old one.
+     */
+    function changeDescription(string calldata _description) external;
+
+    /**
+     * @notice Updates the title of the ModuleFactory
+     * @param _title New Title that will replace the old one.
+     */
+    function changeTitle(string calldata _title) external;
 
 }

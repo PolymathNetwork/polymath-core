@@ -8,9 +8,6 @@ import "./DataStoreStorage.sol";
  */
 contract DataStoreProxy is DataStoreStorage, Proxy {
 
-    // Address of the current implementation
-    address internal __implementation;
-
     /**
     * @notice Constructor
     * @param _securityToken Address of the security token

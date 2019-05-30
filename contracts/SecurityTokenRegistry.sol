@@ -53,7 +53,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
            address owner;
            uint256 registrationDate;
            uint256 expiryDate;
-           string tokenName;
+           string tokenName; //Not stored since 3.0.0
            bool status;
        }
 
@@ -126,8 +126,16 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         uint256 _registrationFee
     );
     // Emit after ticker registration
-    // _registrationFee is in poly
-    // fee in usd is not being emitted to maintain backwards compatibility
+    event RegisterTicker(
+        address indexed _owner,
+        string _ticker,
+        uint256 indexed _registrationDate,
+        uint256 indexed _expiryDate,
+        bool _fromAdmin,
+        uint256 _registrationFeePoly,
+        uint256 _registrationFeeUsd
+    );
+    // For backwards compatibility
     event RegisterTicker(
         address indexed _owner,
         string _ticker,
@@ -307,13 +315,12 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @notice its ownership. If the ticker expires and its issuer hasn't used it, then someone else can take it.
      * @param _owner is address of the owner of the token
      * @param _ticker is unique token ticker
-     * @param _tokenName is the name of the token
      */
-    function registerTicker(address _owner, string memory _ticker, string memory _tokenName) public whenNotPausedOrOwner {
+    function registerTicker(address _owner, string memory _ticker) public whenNotPausedOrOwner {
         require(_owner != address(0), "Bad address");
         require(bytes(_ticker).length > 0 && bytes(_ticker).length <= 10, "Bad ticker");
         // Attempt to charge the reg fee if it is > 0 USD
-        (, uint256 _polyFee) = _takeFee(TICKERREGFEE);
+        (uint256 usdFee, uint256 polyFee) = _takeFee(TICKERREGFEE);
         string memory ticker = Util.upper(_ticker);
         require(_tickerAvailable(ticker), "Ticker reserved");
         // Check whether ticker was previously registered (and expired)
@@ -322,7 +329,16 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
             _deleteTickerOwnership(previousOwner, ticker);
         }
         /*solium-disable-next-line security/no-block-members*/
-        _addTicker(_owner, ticker, _tokenName, now, now.add(getUintValue(EXPIRYLIMIT)), false, false, _polyFee);
+        _addTicker(_owner, ticker, now, now.add(getUintValue(EXPIRYLIMIT)), false, false, polyFee, usdFee);
+    }
+
+    /**
+     * @dev This function is just for backwards compatibility
+     */
+    function registerTicker(address _owner, string memory _ticker, string memory _tokenName) public {
+        registerTicker(_owner, _ticker);
+        (, uint256 polyFee) = getFees(TICKERREGFEE);
+        emit RegisterTicker(_owner, _ticker, _tokenName, now, now.add(getUintValue(EXPIRYLIMIT)), false, polyFee);
     }
 
     /**
@@ -331,18 +347,18 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     function _addTicker(
         address _owner,
         string memory _ticker,
-        string memory _tokenName,
         uint256 _registrationDate,
         uint256 _expiryDate,
         bool _status,
         bool _fromAdmin,
-        uint256 _polyFee
+        uint256 _polyFee,
+        uint256 _usdFee
     )
         internal
     {
         _setTickerOwnership(_owner, _ticker);
-        _storeTickerDetails(_ticker, _owner, _registrationDate, _expiryDate, _tokenName, _status);
-        emit RegisterTicker(_owner, _ticker, _tokenName, _registrationDate, _expiryDate, _fromAdmin, _polyFee);
+        _storeTickerDetails(_ticker, _owner, _registrationDate, _expiryDate, _status);
+        emit RegisterTicker(_owner, _ticker, _registrationDate, _expiryDate, _fromAdmin, _polyFee, _usdFee);
     }
 
     /**
@@ -350,7 +366,6 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @notice Only allowed to modify the tickers which are not yet deployed.
      * @param _owner is the owner of the token
      * @param _ticker is the token ticker
-     * @param _tokenName is the name of the token
      * @param _registrationDate is the date at which ticker is registered
      * @param _expiryDate is the expiry date for the ticker
      * @param _status is the token deployment status
@@ -358,7 +373,6 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     function modifyTicker(
         address _owner,
         string memory _ticker,
-        string memory _tokenName,
         uint256 _registrationDate,
         uint256 _expiryDate,
         bool _status
@@ -371,7 +385,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         require(_registrationDate <= _expiryDate, "Bad dates");
         require(_owner != address(0), "Bad address");
         string memory ticker = Util.upper(_ticker);
-        _modifyTicker(_owner, ticker, _tokenName, _registrationDate, _expiryDate, _status);
+        _modifyTicker(_owner, ticker, _registrationDate, _expiryDate, _status);
     }
 
     /**
@@ -380,7 +394,6 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     function _modifyTicker(
         address _owner,
         string memory _ticker,
-        string memory _tokenName,
         uint256 _registrationDate,
         uint256 _expiryDate,
         bool _status
@@ -398,7 +411,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         if (_status) {
             require(getAddressValue(Encoder.getKey("tickerToSecurityToken", _ticker)) != address(0), "Not registered");
         }
-        _addTicker(_owner, _ticker, _tokenName, _registrationDate, _expiryDate, _status, true, uint256(0));
+        _addTicker(_owner, _ticker, _registrationDate, _expiryDate, _status, true, uint256(0), uint256(0));
     }
 
     function _tickerOwner(string memory _ticker) internal view returns(address) {
@@ -415,7 +428,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         require(owner != address(0), "Bad ticker");
         _deleteTickerOwnership(owner, ticker);
         set(Encoder.getKey("tickerToSecurityToken", ticker), address(0));
-        _storeTickerDetails(ticker, address(0), 0, 0, "", false);
+        _storeTickerDetails(ticker, address(0), 0, 0, false);
         /*solium-disable-next-line security/no-block-members*/
         emit TickerRemoved(ticker, msg.sender);
     }
@@ -464,7 +477,6 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         address _owner,
         uint256 _registrationDate,
         uint256 _expiryDate,
-        string memory _tokenName,
         bool _status
     )
         internal
@@ -475,8 +487,6 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         set(key, _registrationDate);
         key = Encoder.getKey("registeredTickers_expiryDate", _ticker);
         set(key, _expiryDate);
-        key = Encoder.getKey("registeredTickers_tokenName", _ticker);
-        set(key, _tokenName);
         key = Encoder.getKey("registeredTickers_status", _ticker);
         set(key, _status);
     }
@@ -664,7 +674,6 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
 
     /**
      * @notice Adds a new custom Security Token and saves it to the registry. (Token should follow the ISecurityToken interface)
-     * @param _name is the name of the token
      * @param _ticker is the ticker symbol of the security token
      * @param _owner is the owner of the token
      * @param _securityToken is the address of the securityToken
@@ -672,7 +681,6 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @param _deployedAt is the timestamp at which the security token is deployed
      */
     function modifySecurityToken(
-        string memory _name,
         string memory _ticker,
         address _owner,
         address _securityToken,
@@ -682,7 +690,6 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         public
         onlyOwner
     {
-        require(bytes(_name).length > 0 && bytes(_ticker).length > 0, "Bad data");
         require(bytes(_ticker).length <= 10, "Bad ticker");
         require(_deployedAt != 0 && _owner != address(0), "Bad data");
         string memory ticker = Util.upper(_ticker);
@@ -695,10 +702,10 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
             expiryTime = registrationTime.add(getUintValue(EXPIRYLIMIT));
         }
         set(Encoder.getKey("tickerToSecurityToken", ticker), _securityToken);
-        _modifyTicker(_owner, ticker, _name, registrationTime, expiryTime, true);
+        _modifyTicker(_owner, ticker, registrationTime, expiryTime, true);
         _storeSecurityTokenData(_securityToken, ticker, _tokenDetails, _deployedAt);
         emit NewSecurityTokenCreated(
-            ticker, _name, _securityToken, _owner, _deployedAt, msg.sender, true, uint256(0), uint256(0), 0
+            ticker, ISecurityToken(_securityToken).name(), _securityToken, _owner, _deployedAt, msg.sender, true, uint256(0), uint256(0), 0
         );
     }
 

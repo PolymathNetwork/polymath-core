@@ -17,6 +17,8 @@ interface ISecurityToken {
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
 
+    function name() external view returns(string memory);
+
     /**
      * @notice Transfers of securities may fail for a number of reasons. So this function will used to understand the
      * cause of failure by getting the byte value. Which will be the ESC that follows the EIP 1066. ESC can be mapped
@@ -571,7 +573,7 @@ interface ISecurityToken {
      * but it doesn't mean we operator is allowed to transfer the LOCKED partition values.
      * Logic for this restriction is written in `operatorTransferByPartition()` function.
      * @param _operator An address which is being authorised.
-     */ 
+     */
     function authorizeOperator(address _operator) external;
 
     /**
@@ -614,7 +616,7 @@ interface ISecurityToken {
         uint256 _value,
         bytes calldata _data,
         bytes calldata _operatorData
-    ) 
+    )
         external
         returns (bytes32);
 

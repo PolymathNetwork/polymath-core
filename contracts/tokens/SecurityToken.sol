@@ -164,14 +164,6 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
         require(isModule(msg.sender, _type));
     }
 
-    /**
-     * @dev Throws if called by any account other than the STFactory.
-     */
-    modifier onlyTokenFactory() {
-        require(msg.sender == tokenFactory);
-        _;
-    }
-
     modifier checkGranularity(uint256 _value) {
         require(_value % granularity == 0, "Invalid granularity");
         _;

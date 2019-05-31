@@ -8,7 +8,6 @@ import "../tokens/SecurityTokenStorage.sol";
 import "../interfaces/ITransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "../modules/PermissionManager/IPermissionManager.sol";
-import "./KindMath.sol";
 
 library TokenLib {
 

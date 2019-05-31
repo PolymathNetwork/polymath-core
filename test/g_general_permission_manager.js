@@ -134,7 +134,7 @@ contract("GeneralPermissionManager", async (accounts) => {
     describe("Generate the SecurityToken", async () => {
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let tx = await I_STRProxied.registerTicker(token_owner, symbol, { from: token_owner });
+            let tx = await I_STRProxied.registerNewTicker(token_owner, symbol, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._ticker, symbol.toUpperCase());
         });
@@ -324,7 +324,7 @@ contract("GeneralPermissionManager", async (accounts) => {
         it("Should create a new token and add some more delegates, then get them", async() => {
             await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let tx1 = await I_STRProxied.registerTicker(token_owner, "DEL", { from: token_owner });
+            let tx1 = await I_STRProxied.registerNewTicker(token_owner, "DEL", { from: token_owner });
             assert.equal(tx1.logs[0].args._owner, token_owner);
             assert.equal(tx1.logs[0].args._ticker, "DEL");
 

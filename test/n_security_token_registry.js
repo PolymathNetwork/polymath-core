@@ -294,7 +294,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should fail to register ticker if tickerRegFee not approved", async () => {
             await catchRevert(
-                I_STRProxied.registerTicker(account_temp, symbol, { from: account_temp }),
+                I_STRProxied.registerNewTicker(account_temp, symbol, { from: account_temp }),
                 "tx revert -> POLY allowance not provided for registration fee"
             );
         });
@@ -304,24 +304,24 @@ contract("SecurityTokenRegistry", async (accounts) => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFeePOLY, { from: account_temp });
 
             await catchRevert(
-                I_STRProxied.registerTicker(address_zero, symbol, { from: account_temp }),
+                I_STRProxied.registerNewTicker(address_zero, symbol, { from: account_temp }),
                 "tx revert -> owner should not be 0x"
             );
         });
 
         it("Should fail to register ticker due to the symbol length is 0", async () => {
-            await catchRevert(I_STRProxied.registerTicker(account_temp, "", { from: account_temp }), "tx revert -> Symbol Length is 0");
+            await catchRevert(I_STRProxied.registerNewTicker(account_temp, "", { from: account_temp }), "tx revert -> Symbol Length is 0");
         });
 
         it("Should fail to register ticker due to the symbol length is greater than 10", async () => {
             await catchRevert(
-                I_STRProxied.registerTicker(account_temp, "POLYMATHNET", { from: account_temp }),
+                I_STRProxied.registerNewTicker(account_temp, "POLYMATHNET", { from: account_temp }),
                 "tx revert -> Symbol Length is greater than 10"
             );
         });
 
         it("Should register the ticker before the generation of the security token", async () => {
-            let tx = await I_STRProxied.registerTicker(account_temp, symbol, { from: account_temp });
+            let tx = await I_STRProxied.registerNewTicker(account_temp, symbol, { from: account_temp });
             assert.equal(tx.logs[0].args._owner, account_temp, `Owner should be the ${account_temp}`);
             assert.equal(tx.logs[0].args._ticker, symbol, `Symbol should be ${symbol}`);
             let data = await I_Getter.getTickerDetails.call(symbol);
@@ -388,7 +388,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         it("Should register the ticker when the tickerRegFee is 0", async () => {
             let snap_Id = await takeSnapshot();
             await I_STRProxied.changeTickerRegistrationFee(0, { from: account_polymath });
-            let tx = await I_STRProxied.registerTicker(account_temp, "ZERO", name, { from: account_temp });
+            let tx = await I_STRProxied.registerNewTicker(account_temp, "ZERO", name, { from: account_temp });
             assert.equal(tx.logs[0].args._owner, account_temp, `Owner should be the ${account_temp}`);
             assert.equal(tx.logs[0].args._ticker, "ZERO", `Symbol should be ZERO`);
             await revertToSnapshot(snap_Id);
@@ -400,7 +400,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFeePOLY, { from: token_owner });
             // Call registration function
             await catchRevert(
-                I_STRProxied.registerTicker(token_owner, symbol, { from: token_owner }),
+                I_STRProxied.registerNewTicker(token_owner, symbol, { from: token_owner }),
                 "tx revert -> Symbol is already alloted to someone else"
             );
         });
@@ -408,7 +408,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         it("Should successfully register pre registerd ticker if expiry is reached", async () => {
             await increaseTime(5184000 + 100); // 60(5184000) days of expiry + 100 sec for buffer
             await I_PolyToken.approve(I_STRProxied.address, initRegFeePOLY, { from: token_owner });
-            let tx = await I_STRProxied.registerTicker(token_owner, symbol, { from: token_owner });
+            let tx = await I_STRProxied.registerNewTicker(token_owner, symbol, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner, `Owner should be the ${token_owner}`);
             assert.equal(tx.logs[0].args._ticker, symbol, `Symbol should be ${symbol}`);
         });
@@ -418,7 +418,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFeePOLY, { from: token_owner });
 
             await catchRevert(
-                I_STRProxied.registerTicker(token_owner, "AAA", { from: token_owner }),
+                I_STRProxied.registerNewTicker(token_owner, "AAA", { from: token_owner }),
                 "tx revert -> Registration is paused"
             );
         });
@@ -430,7 +430,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         it("Should successfully register ticker if registration is unpaused", async () => {
             await I_STRProxied.unpause({ from: account_polymath });
             await I_PolyToken.approve(I_STRProxied.address, initRegFeePOLY, { from: token_owner });
-            let tx = await I_STRProxied.registerTicker(token_owner, "AAA", { from: token_owner });
+            let tx = await I_STRProxied.registerNewTicker(token_owner, "AAA", { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner, `Owner should be the ${token_owner}`);
             assert.equal(tx.logs[0].args._ticker, "AAA", `Symbol should be AAA`);
         });
@@ -577,7 +577,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         it("Should fail to generate the SecurityToken because ticker gets expired", async () => {
             let snap_Id = await takeSnapshot();
             await I_PolyToken.approve(I_STRProxied.address, new BN(web3.utils.toWei("2000")), { from: token_owner });
-            let tx = await I_STRProxied.registerTicker(token_owner, "CCC", { from: token_owner });
+            let tx = await I_STRProxied.registerNewTicker(token_owner, "CCC", { from: token_owner });
             await increaseTime(duration.days(65));
             await catchRevert(
                 I_STRProxied.generateNewSecurityToken(name, "CCC", tokenDetails, false, treasury_wallet, 0, { from: token_owner }),
@@ -591,7 +591,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
             await I_STRProxied.changeSecurityLaunchFee(0, { from: account_polymath });
             await I_STRProxied.changeTickerRegistrationFee(0, { from: account_polymath });
             //await I_PolyToken.approve(I_STRProxied.address, new BN(web3.utils.toWei("2000")), { from: token_owner });
-            await I_STRProxied.registerTicker(token_owner, "CCC", name, { from: token_owner });
+            await I_STRProxied.registerNewTicker(token_owner, "CCC", name, { from: token_owner });
             await I_STRProxied.generateNewSecurityToken(name, "CCC", tokenDetails, false, treasury_wallet, 0, { from: token_owner }),
             await revertToSnapshot(snap_Id);
         });
@@ -600,7 +600,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
             let snap_Id = await takeSnapshot();
             await I_PolyToken.getTokens(web3.utils.toWei("2000"), account_temp);
             await I_PolyToken.approve(I_STRProxied.address, web3.utils.toWei("2000"), { from: account_temp });
-            await I_STRProxied.registerTicker(account_temp, "TMP", { from: account_temp });
+            await I_STRProxied.registerNewTicker(account_temp, "TMP", { from: account_temp });
             let tx = await I_STRProxied.generateNewSecurityToken(name, "TMP", tokenDetails, false, account_temp, 0, { from: account_temp });
 
             // Verify the successful generation of the security token
@@ -667,7 +667,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFeePOLY, { from: token_owner });
-            let tx = await I_STRProxied.registerTicker(token_owner, symbol2, { from: token_owner });
+            let tx = await I_STRProxied.registerNewTicker(token_owner, symbol2, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner, `Token owner should be ${token_owner}`);
             assert.equal(tx.logs[0].args._ticker, symbol2, `Symbol should be ${symbol2}`);
         });
@@ -758,7 +758,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
     describe("Generate custom tokens", async () => {
         it("Should fail if msg.sender is not polymath", async () => {
             await catchRevert(
-                I_STRProxied.modifySecurityToken("LOG", account_temp, dummy_token, "I am custom ST", currentTime, {
+                I_STRProxied.modifyExistingSecurityToken("LOG", account_temp, dummy_token, "I am custom ST", currentTime, {
                     from: account_delegate
                 }),
                 "tx revert -> msg.sender is not polymath account"
@@ -767,7 +767,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should fail to genrate the custom security token -- ticker length is greater than 10 chars", async () => {
             await catchRevert(
-                I_STRProxied.modifySecurityToken("LOGLOGLOGLOG", account_temp, dummy_token, "I am custom ST", currentTime, {
+                I_STRProxied.modifyExistingSecurityToken("LOGLOGLOGLOG", account_temp, dummy_token, "I am custom ST", currentTime, {
                     from: account_polymath
                 }),
                 "tx revert -> ticker length is greater than 10 chars"
@@ -776,7 +776,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should fail to generate the custom security token -- name should not be 0 length ", async () => {
             await catchRevert(
-                I_STRProxied.modifySecurityToken("LOG", account_temp, dummy_token, "I am custom ST", currentTime, {
+                I_STRProxied.modifyExistingSecurityToken("LOG", account_temp, dummy_token, "I am custom ST", currentTime, {
                     from: account_polymath
                 }),
                 "tx revert -> name should not be 0 length"
@@ -785,7 +785,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should fail if ST address is 0 address", async () => {
             await catchRevert(
-                I_STRProxied.modifySecurityToken("LOG", account_temp, address_zero, "I am custom ST", currentTime, {
+                I_STRProxied.modifyExistingSecurityToken("LOG", account_temp, address_zero, "I am custom ST", currentTime, {
                     from: account_polymath
                 }),
                 "tx revert -> Security token address is 0"
@@ -794,7 +794,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should fail if symbol length is 0", async () => {
             await catchRevert(
-                I_STRProxied.modifySecurityToken("0x0", account_temp, dummy_token, "I am custom ST", currentTime, {
+                I_STRProxied.modifyExistingSecurityToken("0x0", account_temp, dummy_token, "I am custom ST", currentTime, {
                     from: account_polymath
                 }),
                 "tx revert -> zero length of the symbol is not allowed"
@@ -803,7 +803,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should fail to generate the custom ST -- deployedAt param is 0", async () => {
             await catchRevert(
-                I_STRProxied.modifySecurityToken(symbol2, token_owner, dummy_token, "I am custom ST", new BN(0), { from: account_polymath }),
+                I_STRProxied.modifyExistingSecurityToken(symbol2, token_owner, dummy_token, "I am custom ST", new BN(0), { from: account_polymath }),
                 "tx revert -> because deployedAt param is 0"
             );
         });
@@ -814,11 +814,11 @@ contract("SecurityTokenRegistry", async (accounts) => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFeePOLY, { from: account_temp });
             let tickersListArray = await I_Getter.getTickersByOwner.call(account_temp);
             console.log(tickersListArray);
-            await I_STRProxied.registerTicker(account_temp, "LOG", { from: account_temp });
+            await I_STRProxied.registerNewTicker(account_temp, "LOG", { from: account_temp });
             tickersListArray = await I_Getter.getTickersByOwner.call(account_temp);
             console.log(tickersListArray);
             // Generating the ST
-            let tx = await I_STRProxied.modifySecurityToken("LOG", account_temp, dummy_token, "I am custom ST", currentTime, {
+            let tx = await I_STRProxied.modifyExistingSecurityToken("LOG", account_temp, dummy_token, "I am custom ST", currentTime, {
                 from: account_polymath
             });
             tickersListArray = await I_Getter.getTickersByOwner.call(account_temp);
@@ -837,10 +837,10 @@ contract("SecurityTokenRegistry", async (accounts) => {
         it("Should successfully generate the custom token", async () => {
             // Fulfilling the TickerStatus.NN condition
             //
-            // await catchRevert(I_STRProxied.modifySecurityToken("LOG2", account_temp, dummy_token, "I am custom ST", await latestTime(), {from: account_polymath}));
-            // await I_STRProxied.modifyTicker(account_temp, "LOG2", await latestTime(), currentTime.add(new BN(duration.days(10))), false, {from: account_polymath});
+            // await catchRevert(I_STRProxied.modifyExistingSecurityToken("LOG2", account_temp, dummy_token, "I am custom ST", await latestTime(), {from: account_polymath}));
+            // await I_STRProxied.modifyExistingTicker(account_temp, "LOG2", await latestTime(), currentTime.add(new BN(duration.days(10))), false, {from: account_polymath});
             // await increaseTime(duration.days(1));
-            let tx = await I_STRProxied.modifySecurityToken("LOG2", account_temp, dummy_token, "I am custom ST", currentTime, {
+            let tx = await I_STRProxied.modifyExistingSecurityToken("LOG2", account_temp, dummy_token, "I am custom ST", currentTime, {
                 from: account_polymath
             });
             assert.equal(tx.logs[1].args._ticker, "LOG2", "Symbol should match with the registered symbol");
@@ -858,7 +858,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should successfully modify the ticker", async () => {
             let snap_Id = await takeSnapshot();
-            let tx = await I_STRProxied.modifyTicker(
+            let tx = await I_STRProxied.modifyExistingTicker(
                 account_temp,
                 "LOG2",
                 currentTime,
@@ -874,7 +874,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         it("Should add the custom ticker --failed because of bad owner", async () => {
             currentTime = new BN(await latestTime());
             await catchRevert(
-                I_STRProxied.modifyTicker(token_owner, "ETH", currentTime, currentTime.add(new BN(duration.days(10))), false, {
+                I_STRProxied.modifyExistingTicker(token_owner, "ETH", currentTime, currentTime.add(new BN(duration.days(10))), false, {
                     from: account_temp
                 }),
                 "tx revert -> failed beacause of bad owner0"
@@ -883,7 +883,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should add the custom ticker --fail ticker length should not be 0", async () => {
             await catchRevert(
-                I_STRProxied.modifyTicker(token_owner, "", currentTime, currentTime.add(new BN(duration.days(10))), false, {
+                I_STRProxied.modifyExistingTicker(token_owner, "", currentTime, currentTime.add(new BN(duration.days(10))), false, {
                     from: account_polymath
                 }),
                 "tx revert -> failed beacause ticker length should not be 0"
@@ -892,7 +892,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should add the custom ticker --failed because time should not be 0", async () => {
             await catchRevert(
-                I_STRProxied.modifyTicker(token_owner, "ETH", new BN(0), currentTime.add(new BN(duration.days(10))), false, {
+                I_STRProxied.modifyExistingTicker(token_owner, "ETH", new BN(0), currentTime.add(new BN(duration.days(10))), false, {
                     from: account_polymath
                 }),
                 "tx revert -> failed because time should not be 0"
@@ -902,7 +902,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         it("Should add the custom ticker --failed because registeration date is greater than the expiryDate", async () => {
             let ctime = currentTime;
             await catchRevert(
-                I_STRProxied.modifyTicker(token_owner, "ETH", ctime, ctime.sub(new BN(duration.minutes(10))), false, {
+                I_STRProxied.modifyExistingTicker(token_owner, "ETH", ctime, ctime.sub(new BN(duration.minutes(10))), false, {
                     from: account_polymath
                 }),
                 "tx revert -> failed because registeration date is greater than the expiryDate"
@@ -912,7 +912,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         it("Should add the custom ticker --failed because owner should not be 0x", async () => {
             let ctime = currentTime;
             await catchRevert(
-                I_STRProxied.modifyTicker(
+                I_STRProxied.modifyExistingTicker(
                     address_zero,
                     "ETH",
                     ctime,
@@ -926,7 +926,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should add the new custom ticker", async () => {
             let ctime = currentTime;
-            let tx = await I_STRProxied.modifyTicker(
+            let tx = await I_STRProxied.modifyExistingTicker(
                 account_temp,
                 "ETH",
                 ctime,
@@ -940,7 +940,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should change the details of the existing ticker", async () => {
             let ctime = currentTime;
-            let tx = await I_STRProxied.modifyTicker(
+            let tx = await I_STRProxied.modifyExistingTicker(
                 token_owner,
                 "ETH",
                 ctime,
@@ -1089,7 +1089,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         it("Should fail to register the ticker with the old fee", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFeePOLY, { from: token_owner });
             await catchRevert(
-                I_STRProxied.registerTicker(token_owner, "POLY", { from: token_owner }),
+                I_STRProxied.registerNewTicker(token_owner, "POLY", { from: token_owner }),
                 "tx revert -> failed because of ticker registeration fee gets change"
             );
         });
@@ -1097,7 +1097,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         it("Should register the ticker with the new fee", async () => {
             await I_PolyToken.getTokens(new BN(web3.utils.toWei("1600")), token_owner);
             await I_PolyToken.approve(I_STRProxied.address, new BN(web3.utils.toWei("2000")), { from: token_owner });
-            let tx = await I_STRProxied.registerTicker(token_owner, "POLY", { from: token_owner });
+            let tx = await I_STRProxied.registerNewTicker(token_owner, "POLY", { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner, `Token owner should be ${token_owner}`);
             assert.equal(tx.logs[0].args._ticker, "POLY", `Symbol should be POLY`);
         });
@@ -1249,7 +1249,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         it("Should register the ticker 1", async () => {
             await I_PolyToken.getTokens(new BN(web3.utils.toWei("1600")), account_temp);
             await I_PolyToken.approve(I_STRProxied.address, new BN(web3.utils.toWei("1600")), { from: account_temp });
-            let tx = await I_STRProxied.registerTicker(account_temp, "TOK1", { from: account_temp });
+            let tx = await I_STRProxied.registerNewTicker(account_temp, "TOK1", { from: account_temp });
             assert.equal(tx.logs[0].args._owner, account_temp, `Owner should be the ${account_temp}`);
             assert.equal(tx.logs[0].args._ticker, "TOK1", `Symbol should be TOK1`);
             console.log((await I_Getter.getTickersByOwner.call(account_temp)).map(x => web3.utils.toUtf8(x)));
@@ -1258,7 +1258,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         it("Should register the ticker 2", async () => {
             await I_PolyToken.getTokens(new BN(web3.utils.toWei("1600")), account_temp);
             await I_PolyToken.approve(I_STRProxied.address, new BN(web3.utils.toWei("1600")), { from: account_temp });
-            let tx = await I_STRProxied.registerTicker(account_temp, "TOK2", { from: account_temp });
+            let tx = await I_STRProxied.registerNewTicker(account_temp, "TOK2", { from: account_temp });
             assert.equal(tx.logs[0].args._owner, account_temp, `Owner should be the ${account_temp}`);
             assert.equal(tx.logs[0].args._ticker, "TOK2", `Symbol should be TOK2`);
             console.log((await I_Getter.getTickersByOwner.call(account_temp)).map(x => web3.utils.toUtf8(x)));
@@ -1267,7 +1267,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         it("Should register the ticker 3", async () => {
             await I_PolyToken.getTokens(new BN(web3.utils.toWei("1600")), account_temp);
             await I_PolyToken.approve(I_STRProxied.address, new BN(web3.utils.toWei("1600")), { from: account_temp });
-            let tx = await I_STRProxied.registerTicker(account_temp, "TOK3", { from: account_temp });
+            let tx = await I_STRProxied.registerNewTicker(account_temp, "TOK3", { from: account_temp });
             assert.equal(tx.logs[0].args._owner, account_temp, `Owner should be the ${account_temp}`);
             assert.equal(tx.logs[0].args._ticker, "TOK3", `Symbol should be TOK3`);
             console.log((await I_Getter.getTickersByOwner.call(account_temp)).map(x => web3.utils.toUtf8(x)));
@@ -1281,7 +1281,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should modify ticker 1", async () => {
             currentTime = new BN(await latestTime());
-            let tx = await I_STRProxied.modifyTicker(
+            let tx = await I_STRProxied.modifyExistingTicker(
                 account_temp,
                 "TOK1",
                 currentTime,
@@ -1295,7 +1295,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         });
 
         it("Should modify ticker 3", async () => {
-            let tx = await I_STRProxied.modifyTicker(
+            let tx = await I_STRProxied.modifyExistingTicker(
                 account_temp,
                 "TOK3",
                 currentTime,

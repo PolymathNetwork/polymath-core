@@ -171,7 +171,7 @@ contract("CappedSTO", async (accounts) => {
     describe("Generate the SecurityToken", async () => {
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let tx = await I_STRProxied.registerTicker(token_owner, symbol, { from: token_owner });
+            let tx = await I_STRProxied.registerNewTicker(token_owner, symbol, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._ticker, symbol);
         });
@@ -624,7 +624,7 @@ contract("CappedSTO", async (accounts) => {
         describe("Launch a new SecurityToken", async () => {
             it("POLY: Should register the ticker before the generation of the security token", async () => {
                 await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-                let tx = await I_STRProxied.registerTicker(token_owner, P_symbol, { from: token_owner });
+                let tx = await I_STRProxied.registerNewTicker(token_owner, P_symbol, { from: token_owner });
                 assert.equal(tx.logs[0].args._owner, token_owner);
                 assert.equal(tx.logs[0].args._ticker, P_symbol);
             });

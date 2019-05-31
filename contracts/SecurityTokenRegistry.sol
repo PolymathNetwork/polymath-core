@@ -316,7 +316,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @param _owner is address of the owner of the token
      * @param _ticker is unique token ticker
      */
-    function registerTicker(address _owner, string memory _ticker) public whenNotPausedOrOwner {
+    function registerNewTicker(address _owner, string memory _ticker) public whenNotPausedOrOwner {
         require(_owner != address(0), "Bad address");
         require(bytes(_ticker).length > 0 && bytes(_ticker).length <= 10, "Bad ticker");
         // Attempt to charge the reg fee if it is > 0 USD
@@ -336,7 +336,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @dev This function is just for backwards compatibility
      */
     function registerTicker(address _owner, string calldata _ticker, string calldata _tokenName) external {
-        registerTicker(_owner, _ticker);
+        registerNewTicker(_owner, _ticker);
         (, uint256 polyFee) = getFees(TICKERREGFEE);
         emit RegisterTicker(_owner, _ticker, _tokenName, now, now.add(getUintValue(EXPIRYLIMIT)), false, polyFee);
     }
@@ -370,7 +370,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @param _expiryDate is the expiry date for the ticker
      * @param _status is the token deployment status
      */
-    function modifyTicker(
+    function modifyExistingTicker(
         address _owner,
         string memory _ticker,
         uint256 _registrationDate,
@@ -401,7 +401,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     )
         external
     {
-        modifyTicker(_owner, _ticker, _registrationDate, _expiryDate, _status);
+        modifyExistingTicker(_owner, _ticker, _registrationDate, _expiryDate, _status);
         emit RegisterTicker(_owner, _ticker, _tokenName, now, now.add(getUintValue(EXPIRYLIMIT)), false, 0);
     }
 
@@ -697,7 +697,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @param _tokenDetails is the off-chain details of the token
      * @param _deployedAt is the timestamp at which the security token is deployed
      */
-    function modifySecurityToken(
+    function modifyExistingSecurityToken(
         string memory _ticker,
         address _owner,
         address _securityToken,
@@ -739,7 +739,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     )
         external
     {
-        modifySecurityToken(_ticker, _owner, _securityToken, _tokenDetails, _deployedAt);
+        modifyExistingSecurityToken(_ticker, _owner, _securityToken, _tokenDetails, _deployedAt);
     }
 
     /**

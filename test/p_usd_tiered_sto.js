@@ -277,7 +277,7 @@ contract("USDTieredSTO", async (accounts) => {
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.getTokens(REGFEE, ISSUER);
             await I_PolyToken.approve(I_STRProxied.address, REGFEE, { from: ISSUER });
-            let tx = await I_STRProxied.registerTicker(ISSUER, SYMBOL, { from: ISSUER });
+            let tx = await I_STRProxied.registerNewTicker(ISSUER, SYMBOL, { from: ISSUER });
             assert.equal(tx.logs[0].args._owner, ISSUER);
             assert.equal(tx.logs[0].args._ticker, SYMBOL);
         });

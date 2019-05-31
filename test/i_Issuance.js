@@ -147,7 +147,7 @@ contract("Issuance", async (accounts) => {
             it("POLYMATH: Should register the ticker before the generation of the security token", async () => {
                 await I_PolyToken.getTokens(new BN(10000).mul(new BN(10).pow(new BN(18))), account_polymath);
                 await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: account_polymath });
-                let tx = await I_STRProxied.registerTicker(account_polymath, symbol, name, { from: account_polymath });
+                let tx = await I_STRProxied.registerTicker(account_polymath, symbol, { from: account_polymath });
                 assert.equal(tx.logs[0].args._owner, account_polymath);
                 assert.equal(tx.logs[0].args._ticker, symbol);
             });

@@ -155,7 +155,7 @@ contract("SecurityTokenRegistryProxy", async (accounts) => {
         it("Register the ticker", async () => {
             await I_PolyToken.getTokens(new BN(web3.utils.toWei("8000")), token_owner);
             await I_PolyToken.approve(I_STRProxied.address, initRegFeePOLY, { from: token_owner });
-            let tx = await I_STRProxied.registerTicker(token_owner, symbol, name, { from: token_owner });
+            let tx = await I_STRProxied.registerTicker(token_owner, symbol, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner, "Owner should be the same as registered with the ticker");
             assert.equal(tx.logs[0].args._ticker, symbol, "Same as the symbol registered in the registerTicker function call");
         });

@@ -128,7 +128,7 @@ process.env.COVERAGE ? contract.skip : contract("ScheduledCheckpoint", async (ac
     describe("Generate the SecurityToken", async () => {
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let tx = await I_STRProxied.registerTicker(token_owner, symbol, contact, { from: token_owner });
+            let tx = await I_STRProxied.registerTicker(token_owner, symbol, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._ticker, symbol.toUpperCase());
         });

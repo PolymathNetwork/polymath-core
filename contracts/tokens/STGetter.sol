@@ -212,7 +212,7 @@ contract STGetter is OZStorage, SecurityTokenStorage {
      * @return Whether the `_operator` is an operator for all partitions of `_tokenHolder`
      */
     function isOperator(address _operator, address _tokenHolder) external view returns (bool) {
-        return (_allowed[_tokenHolder][_operator] == uint(-1));
+        return (_allowance(_tokenHolder, _operator) == uint(-1));
     }
 
     /**

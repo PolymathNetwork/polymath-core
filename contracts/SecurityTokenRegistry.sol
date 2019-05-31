@@ -335,7 +335,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     /**
      * @dev This function is just for backwards compatibility
      */
-    function registerTicker(address _owner, string memory _ticker, string memory _tokenName) public {
+    function registerTicker(address _owner, string calldata _ticker, string calldata _tokenName) external {
         registerTicker(_owner, _ticker);
         (, uint256 polyFee) = getFees(TICKERREGFEE);
         emit RegisterTicker(_owner, _ticker, _tokenName, now, now.add(getUintValue(EXPIRYLIMIT)), false, polyFee);
@@ -386,6 +386,23 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         require(_owner != address(0), "Bad address");
         string memory ticker = Util.upper(_ticker);
         _modifyTicker(_owner, ticker, _registrationDate, _expiryDate, _status);
+    }
+
+    /**
+     * @dev This function is just for backwards compatibility
+     */
+    function modifyTicker(
+        address _owner,
+        string calldata _ticker,
+        string calldata _tokenName,
+        uint256 _registrationDate,
+        uint256 _expiryDate,
+        bool _status
+    )
+        external
+    {
+        modifyTicker(_owner, _ticker, _registrationDate, _expiryDate, _status);
+        emit RegisterTicker(_owner, _ticker, _tokenName, now, now.add(getUintValue(EXPIRYLIMIT)), false, 0);
     }
 
     /**
@@ -707,6 +724,22 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         emit NewSecurityTokenCreated(
             ticker, ISecurityToken(_securityToken).name(), _securityToken, _owner, _deployedAt, msg.sender, true, uint256(0), uint256(0), 0
         );
+    }
+
+    /**
+     * @dev This function is just for backwards compatibility
+     */
+    function modifySecurityToken(
+        string calldata /* */,
+        string calldata _ticker,
+        address _owner,
+        address _securityToken,
+        string calldata _tokenDetails,
+        uint256 _deployedAt
+    )
+        external
+    {
+        modifySecurityToken(_ticker, _owner, _securityToken, _tokenDetails, _deployedAt);
     }
 
     /**

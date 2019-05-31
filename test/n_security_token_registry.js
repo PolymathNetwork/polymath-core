@@ -388,7 +388,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         it("Should register the ticker when the tickerRegFee is 0", async () => {
             let snap_Id = await takeSnapshot();
             await I_STRProxied.changeTickerRegistrationFee(0, { from: account_polymath });
-            let tx = await I_STRProxied.registerNewTicker(account_temp, "ZERO", name, { from: account_temp });
+            let tx = await I_STRProxied.registerNewTicker(account_temp, "ZERO", { from: account_temp });
             assert.equal(tx.logs[0].args._owner, account_temp, `Owner should be the ${account_temp}`);
             assert.equal(tx.logs[0].args._ticker, "ZERO", `Symbol should be ZERO`);
             await revertToSnapshot(snap_Id);
@@ -466,7 +466,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         it("Should get the details of the symbol", async () => {
             let tx = await I_Getter.getTickerDetails.call(symbol);
             assert.equal(tx[0], token_owner, "Should equal to the rightful owner of the ticker");
-            assert.equal(tx[3], name, `Name of the token should equal to ${name}`);
+            assert.equal(tx[3], "", "Name of the token should equal be null/empty as it's not stored anymore");
             assert.equal(tx[4], false, "Status if the symbol should be undeployed -- false");
         });
 
@@ -482,7 +482,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         it("Should get the ticker details successfully and prove the data is not storing in to the logic contract", async () => {
             let data = await I_Getter.getTickerDetails(symbol, { from: token_owner });
             assert.equal(data[0], token_owner, "Token owner should be equal");
-            assert.equal(data[3], name, "Name of the token should match with the registered symbol infor");
+            assert.equal(data[3], "", "Name of the token should equal be null/empty as it's not stored anymore");
             assert.equal(data[4], false, "Token is not launched yet so it should return False");
             data = await I_STRGetter.getTickerDetails(symbol, { from: token_owner });
             console.log("This is the data from the original securityTokenRegistry contract");
@@ -591,7 +591,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
             await I_STRProxied.changeSecurityLaunchFee(0, { from: account_polymath });
             await I_STRProxied.changeTickerRegistrationFee(0, { from: account_polymath });
             //await I_PolyToken.approve(I_STRProxied.address, new BN(web3.utils.toWei("2000")), { from: token_owner });
-            await I_STRProxied.registerNewTicker(token_owner, "CCC", name, { from: token_owner });
+            await I_STRProxied.registerNewTicker(token_owner, "CCC", { from: token_owner });
             await I_STRProxied.generateNewSecurityToken(name, "CCC", tokenDetails, false, treasury_wallet, 0, { from: token_owner }),
             await revertToSnapshot(snap_Id);
         });
@@ -818,7 +818,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
             tickersListArray = await I_Getter.getTickersByOwner.call(account_temp);
             console.log(tickersListArray);
             // Generating the ST
-            let tx = await I_STRProxied.modifyExistingSecurityToken("LOG", account_temp, dummy_token, "I am custom ST", currentTime, {
+            let tx = await I_STRProxied.modifyExistingSecurityToken("LOG", account_temp, I_SecurityToken.address, "I am custom ST", currentTime, {
                 from: account_polymath
             });
             tickersListArray = await I_Getter.getTickersByOwner.call(account_temp);
@@ -826,12 +826,9 @@ contract("SecurityTokenRegistry", async (accounts) => {
             assert.equal(tx.logs[1].args._ticker, "LOG", "Symbol should match with the registered symbol");
             assert.equal(
                 tx.logs[1].args._securityTokenAddress,
-                dummy_token,
+                I_SecurityToken.address,
                 `Address of the SecurityToken should be matched with the input value of addCustomSecurityToken`
             );
-            let symbolDetails = await I_Getter.getTickerDetails("LOG");
-            assert.equal(symbolDetails[0], account_temp, `Owner of the symbol should be ${account_temp}`);
-            assert.equal(symbolDetails[3], "LOGAN", `Name of the symbol should be LOGAN`);
         });
 
         it("Should successfully generate the custom token", async () => {
@@ -840,20 +837,17 @@ contract("SecurityTokenRegistry", async (accounts) => {
             // await catchRevert(I_STRProxied.modifyExistingSecurityToken("LOG2", account_temp, dummy_token, "I am custom ST", await latestTime(), {from: account_polymath}));
             // await I_STRProxied.modifyExistingTicker(account_temp, "LOG2", await latestTime(), currentTime.add(new BN(duration.days(10))), false, {from: account_polymath});
             // await increaseTime(duration.days(1));
-            let tx = await I_STRProxied.modifyExistingSecurityToken("LOG2", account_temp, dummy_token, "I am custom ST", currentTime, {
+            let tx = await I_STRProxied.modifyExistingSecurityToken("LOG2", account_temp, I_SecurityToken.address, "I am custom ST", currentTime, {
                 from: account_polymath
             });
             assert.equal(tx.logs[1].args._ticker, "LOG2", "Symbol should match with the registered symbol");
             assert.equal(
                 tx.logs[1].args._securityTokenAddress,
-                dummy_token,
+                I_SecurityToken.address,
                 `Address of the SecurityToken should be matched with the input value of addCustomSecurityToken`
             );
             assert.equal(tx.logs[0].args._owner, account_temp, `Token owner should be ${account_temp}`);
             assert.equal(tx.logs[0].args._ticker, "LOG2", `Symbol should be LOG2`);
-            let symbolDetails = await I_Getter.getTickerDetails("LOG2");
-            assert.equal(symbolDetails[0], account_temp, `Owner of the symbol should be ${account_temp}`);
-            assert.equal(symbolDetails[3], "LOGAN2", `Name of the symbol should be LOGAN`);
         });
 
         it("Should successfully modify the ticker", async () => {
@@ -980,7 +974,6 @@ contract("SecurityTokenRegistry", async (accounts) => {
             assert.equal(tx.logs[0].args._newOwner, account_temp);
             let symbolDetails = await I_Getter.getTickerDetails.call(symbol2);
             assert.equal(symbolDetails[0], account_temp, `Owner of the symbol should be ${account_temp}`);
-            assert.equal(symbolDetails[3], name2, `Name of the symbol should be ${name2}`);
         });
     });
 
@@ -1210,7 +1203,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should get the security token data", async () => {
             let data = await I_Getter.getSecurityTokenData.call(I_SecurityToken.address);
-            assert.equal(data[0], symbol);
+            assert.equal(data[0], "LOG2");
             assert.equal(data[1], token_owner);
         });
 

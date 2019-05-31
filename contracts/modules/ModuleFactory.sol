@@ -2,7 +2,7 @@ pragma solidity ^0.5.0;
 
 import "../libraries/VersionUtils.sol";
 import "../libraries/Util.sol";
-import "../interfaces/IBoot.sol";
+import "../interfaces/IModule.sol";
 import "../interfaces/IOracle.sol";
 import "../interfaces/IPolymathRegistry.sol";
 import "../interfaces/IModuleFactory.sol";
@@ -219,7 +219,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      */
     function _initializeModule(address _module, bytes memory _data) internal {
         uint256 polySetupCost = _takeFee();
-        bytes4 initFunction = IBoot(_module).getInitFunction();
+        bytes4 initFunction = IModule(_module).getInitFunction();
         if (initFunction != bytes4(0)) {
             require(Util.getSig(_data) == initFunction, "Provided data is not valid");
             /*solium-disable-next-line security/no-low-level-calls*/

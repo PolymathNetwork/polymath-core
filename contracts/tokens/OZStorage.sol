@@ -1,5 +1,10 @@
 pragma solidity ^0.5.0;
 
+/* 
+ * @dev It is the contract that contains the storage items related to the ERC20 contract implementaiton
+ * of the openzeppelin-solidity. Used to allow the storage declaration of ERC20 to the STGetter contract
+*/
+
 contract OZStorage {
 
     mapping (address => uint256) private _balances;

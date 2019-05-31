@@ -80,10 +80,13 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @notice Modifier to make a function callable only when the contract is not paused.
      */
     modifier whenNotPausedOrOwner() {
-        if (msg.sender == owner()) _;
-        else {
-            require(!isPaused(), "Already paused");
-            _;
+        _whenNotPausedOrOwner();
+        _;
+    }
+
+    function _whenNotPausedOrOwner() internal view {
+        if (msg.sender != owner()) {
+            require(!isPaused(), "Paused");
         }
     }
 

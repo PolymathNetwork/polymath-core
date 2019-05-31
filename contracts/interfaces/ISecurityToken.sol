@@ -5,15 +5,17 @@ pragma solidity ^0.5.0;
  */
 interface ISecurityToken {
     // Standard ERC20 interface
+    function symbol() external view returns (string memory);
+    function name() external view returns (string memory);
     function decimals() external view returns(uint8);
     function totalSupply() external view returns(uint256);
-    function balanceOf(address _owner) external view returns(uint256);
-    function allowance(address _owner, address _spender) external view returns(uint256);
-    function transfer(address _to, uint256 _value) external returns(bool);
-    function transferFrom(address _from, address _to, uint256 _value) external returns(bool);
-    function approve(address _spender, uint256 _value) external returns(bool);
-    function decreaseApproval(address _spender, uint _subtractedValue) external returns(bool);
-    function increaseApproval(address _spender, uint _addedValue) external returns(bool);
+    function balanceOf(address owner) external view returns(uint256);
+    function allowance(address owner, address spender) external view returns(uint256);
+    function transfer(address to, uint256 value) external returns(bool);
+    function transferFrom(address from, address to, uint256 value) external returns(bool);
+    function approve(address spender, uint256 value) external returns(bool);
+    function decreaseAllowance(address spender, uint256 subtractedValue) external returns (bool);
+    function increaseAllowance(address spender, uint256 addedValue) external returns (bool);
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
 
@@ -58,6 +60,53 @@ interface ISecurityToken {
     // Emit when the budget allocated to a module is changed
     event ModuleBudgetChanged(uint8[] _moduleTypes, address _module, uint256 _oldBudget, uint256 _budget); //Event emitted by the tokenLib.
 
+    // Transfer Events
+    event TransferByPartition(
+        bytes32 indexed _fromPartition,
+        address _operator,
+        address indexed _from,
+        address indexed _to,
+        uint256 _value,
+        bytes _data,
+        bytes _operatorData
+    );
+
+    // Operator Events
+    event AuthorizedOperator(address indexed operator, address indexed tokenHolder);
+    event RevokedOperator(address indexed operator, address indexed tokenHolder);
+    event AuthorizedOperatorByPartition(bytes32 indexed partition, address indexed operator, address indexed tokenHolder);
+    event RevokedOperatorByPartition(bytes32 indexed partition, address indexed operator, address indexed tokenHolder);
+
+    // Issuance / Redemption Events
+    event IssuedByPartition(bytes32 indexed partition, address indexed to, uint256 value, bytes data);
+    event RedeemedByPartition(bytes32 indexed partition, address indexed operator, address indexed from, uint256 value, bytes data, bytes operatorData);
+
+    // Document Events
+    event DocumentRemoved(bytes32 indexed _name, string _uri, bytes32 _documentHash);
+    event DocumentUpdated(bytes32 indexed _name, string _uri, bytes32 _documentHash);
+
+    // Controller Events
+    event ControllerTransfer(
+        address _controller,
+        address indexed _from,
+        address indexed _to,
+        uint256 _value,
+        bytes _data,
+        bytes _operatorData
+    );
+
+    event ControllerRedemption(
+        address _controller,
+        address indexed _tokenHolder,
+        uint256 _value,
+        bytes _data,
+        bytes _operatorData
+    );
+
+    // Issuance / Redemption Events
+    event Issued(address indexed _operator, address indexed _to, uint256 _value, bytes _data);
+    event Redeemed(address indexed _operator, address indexed _from, uint256 _value, bytes _data);
+
     /**
      * @notice Transfers of securities may fail for a number of reasons. So this function will used to understand the
      * cause of failure by getting the byte value. Which will be the ESC that follows the EIP 1066. ESC can be mapped
@@ -76,21 +125,7 @@ interface ISecurityToken {
      * @dev Expected to be called atomically with the proxy being created, by the owner of the token
      * @dev Can only be called once
      */
-    function initialize() external;
-
-    /**
-     * @notice Transfers of securities may fail for a number of reasons. So this function will used to understand the
-     * cause of failure by getting the byte value. Which will be the ESC that follows the EIP 1066. ESC can be mapped
-     * with a reson string to understand the failure cause, table of Ethereum status code will always reside off-chain
-     * @param _from address The address which you want to send tokens from
-     * @param _to address The address which you want to transfer to
-     * @param _value uint256 the amount of tokens to be transferred
-     * @param _data The `bytes _data` allows arbitrary data to be submitted alongside the transfer.
-     * @return bool It signifies whether the transaction will be executed or not.
-     * @return byte Ethereum status code (ESC)
-     * @return bytes32 Application specific reason code
-     */
-    function canTransferFrom(address _from, address _to, uint256 _value, bytes calldata _data) external view returns (bool, byte, bytes32);
+    function initialize(address _getterDelegate) external;
 
     /**
      * @notice The standard provides an on-chain function to determine whether a transfer will succeed,
@@ -104,7 +139,30 @@ interface ISecurityToken {
      * @return Application specific reason codes with additional details
      * @return The partition to which the transferred tokens were allocated for the _to address
      */
-    function canTransferByPartition(address _from, address _to, bytes32 _partition, uint256 _value, bytes calldata _data) external view returns (byte, bytes32, bytes32);
+    function canTransferByPartition(
+        address _from,
+        address _to,
+        bytes32 _partition,
+        uint256 _value,
+        bytes calldata _data
+    )
+        external
+        view
+        returns (byte esc, bytes32 appStatusCode, bytes32 toPartition);
+
+    /**
+     * @notice Transfers of securities may fail for a number of reasons. So this function will used to understand the
+     * cause of failure by getting the byte value. Which will be the ESC that follows the EIP 1066. ESC can be mapped
+     * with a reson string to understand the failure cause, table of Ethereum status code will always reside off-chain
+     * @param _from address The address which you want to send tokens from
+     * @param _to address The address which you want to transfer to
+     * @param _value uint256 the amount of tokens to be transferred
+     * @param _data The `bytes _data` allows arbitrary data to be submitted alongside the transfer.
+     * @return bool It signifies whether the transaction will be executed or not.
+     * @return byte Ethereum status code (ESC)
+     * @return bytes32 Application specific reason code
+     */
+    function canTransferFrom(address _from, address _to, uint256 _value, bytes calldata _data) external view returns (bool success, byte reasonCode, bytes32 appCode);
 
     /**
      * @notice Used to attach a new document to the contract, or update the URI or hash of an existing attached document
@@ -227,10 +285,6 @@ interface ISecurityToken {
         bytes calldata _operatorData
     ) external;
 
-    // Issuance / Redemption Events
-    event Issued(address indexed _operator, address indexed _to, uint256 _value, bytes _data);
-    event Redeemed(address indexed _operator, address indexed _from, uint256 _value, bytes _data);
-
     /**
      * @notice Validate permissions with PermissionManager if it exists, If no Permission return false
      * @dev Note that IModule withPerm will allow ST owner all permissions anyway
@@ -298,11 +352,11 @@ interface ISecurityToken {
     function getCheckpointTimes() external view returns(uint256[] memory);
 
     /**
-     * @notice Gets length of investors array
-     * NB - this length may differ from investorCount if the list has not been pruned of zero-balance investors
-     * @return Length
+     * @notice returns an array of investors
+     * NB - this length may differ from investorCount as it contains all investors that ever held tokens
+     * @return list of addresses
      */
-    function getInvestors() external view returns(address[] memory);
+    function getInvestors() external view returns(address[] memory investors);
 
     /**
      * @notice returns an array of investors at a given checkpoint
@@ -424,9 +478,10 @@ interface ISecurityToken {
     function unfreezeTransfers() external;
 
     /**
-     * @notice Ends token minting period permanently
+     * @notice Permanently freeze issuance of this security token.
+     * @dev It MUST NOT be possible to increase `totalSuppy` after this function is called.
      */
-    function freezeIssuance() external;
+    function freezeIssuance(bytes calldata _signature) external;
 
      /**
       * @notice Attachs a module to the SecurityToken
@@ -681,4 +736,23 @@ interface ISecurityToken {
     function owner() external view returns (address);
 
     function updateFromRegistry() external;
+
+    function controller() external view returns(address);
+
+    function moduleRegistry() external view returns(address);
+
+    function securityTokenRegistry() external view returns(address);
+
+    function polyToken() external view returns(address);
+
+    function tokenFactory() external view returns(address);
+
+    function getterDelegate() external view returns(address);
+
+    function controllerDisabled() external view returns(bool);
+
+    function initialized() external view returns(bool);
+
+    function tokenDetails() external view returns(string memory);
+
 }

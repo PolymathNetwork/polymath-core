@@ -1057,9 +1057,9 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
 
     function updateFromRegistry() public {
         _onlyOwner();
-        moduleRegistry = IModuleRegistry(IPolymathRegistry(polymathRegistry).getAddress("ModuleRegistry"));
-        securityTokenRegistry = ISecurityTokenRegistry(IPolymathRegistry(polymathRegistry).getAddress("SecurityTokenRegistry"));
-        polyToken = IERC20(IPolymathRegistry(polymathRegistry).getAddress("PolyToken"));
+        moduleRegistry = IModuleRegistry(polymathRegistry.getAddress("ModuleRegistry"));
+        securityTokenRegistry = ISecurityTokenRegistry(polymathRegistry.getAddress("SecurityTokenRegistry"));
+        polyToken = IERC20(polymathRegistry.getAddress("PolyToken"));
     }
 
     //Ownable Functions

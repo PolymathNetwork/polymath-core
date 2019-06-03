@@ -102,6 +102,6 @@ interface IModuleRegistry {
      * @notice Check whether the contract operations is paused or not
      * @return bool
      */
-    function isPaused() external view returns(bool isPaused);
+    function isPaused() external view returns(bool paused);
 
 }

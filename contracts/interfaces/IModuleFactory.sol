@@ -48,7 +48,7 @@ interface IModuleFactory {
     /**
      * @notice Get the setup cost of the module in USD
      */
-    function setupCost() external returns(uint256 setupCost);
+    function setupCost() external returns(uint256 usdSetupCost);
 
     /**
      * @notice Type of the Module factory

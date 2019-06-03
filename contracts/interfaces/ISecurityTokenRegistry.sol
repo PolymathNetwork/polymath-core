@@ -70,7 +70,7 @@ interface ISecurityTokenRegistry {
     * @param _securityToken Address of the Scurity token
     * @return bool
     */
-    function isSecurityToken(address _securityToken) external view returns(bool isSecurityToken);
+    function isSecurityToken(address _securityToken) external view returns(bool isValid);
 
     /**
     * @dev Allows the current owner to transfer control of the contract to a newOwner.
@@ -224,7 +224,7 @@ interface ISecurityTokenRegistry {
      * @notice Checks whether the registry is paused or not
      * @return bool
      */
-    function isPaused() external view returns(bool isPaused);
+    function isPaused() external view returns(bool paused);
 
     /**
      * @notice Gets the owner of the contract

@@ -103,14 +103,14 @@ interface ISecurityToken {
      * `controllerTransfer` / `controllerRedeem` will always revert.
      * @return bool `true` when controller address is non-zero otherwise return `false`.
      */
-    function isControllable() external view returns (bool isControllable);
+    function isControllable() external view returns (bool controlled);
 
     /**
      * @notice Checks if an address is a module of certain type
      * @param _module Address to check
      * @param _type type to check against
      */
-    function isModule(address _module, uint8 _type) external view returns(bool isModule);
+    function isModule(address _module, uint8 _type) external view returns(bool isValid);
 
     /**
      * @notice This function must be called to increase the total supply (Corresponds to mint function of ERC20).
@@ -236,7 +236,7 @@ interface ISecurityToken {
      * @notice Queries totalSupply at a specified checkpoint
      * @param _checkpointId Checkpoint ID to query as of
      */
-    function totalSupplyAt(uint256 _checkpointId) external view returns(uint256 totalSupply);
+    function totalSupplyAt(uint256 _checkpointId) external view returns(uint256 supply);
 
     /**
      * @notice Queries balance at a specified checkpoint
@@ -301,7 +301,7 @@ interface ISecurityToken {
      * @param _tokenHolder The token holder to check
      * @return Whether the `_operator` is an operator for all partitions of `_tokenHolder`
      */
-    function isOperator(address _operator, address _tokenHolder) external view returns (bool isOperator);
+    function isOperator(address _operator, address _tokenHolder) external view returns (bool isValid);
 
     /**
      * @notice Determines whether `_operator` is an operator for a specified partition of `_tokenHolder`
@@ -310,7 +310,7 @@ interface ISecurityToken {
      * @param _tokenHolder The token holder to check
      * @return Whether the `_operator` is an operator for a specified partition of `_tokenHolder`
      */
-    function isOperatorForPartition(bytes32 _partition, address _operator, address _tokenHolder) external view returns (bool isOperator);
+    function isOperatorForPartition(bytes32 _partition, address _operator, address _tokenHolder) external view returns (bool isValid);
 
     /**
      * @notice Return all partitions
@@ -323,7 +323,7 @@ interface ISecurityToken {
      * @notice Gets data store address
      * @return data store address
      */
-    function dataStore() external view returns (address dataStore);
+    function dataStore() external view returns (address dataStoreAddress);
 
     /**
     * @notice Allows owner to change data store
@@ -494,7 +494,7 @@ interface ISecurityToken {
     /**
      * @notice Gets the holder count (investors with non zero balance)
      */
-    function holderCount() external view returns(uint256 holderCount);
+    function holderCount() external view returns(uint256 count);
 
     /**
       * @notice Overloaded version of the transfer function
@@ -537,7 +537,7 @@ interface ISecurityToken {
       * @notice Provides the granularity of the token
       * @return uint256
       */
-    function granularity() external view returns(uint256 granularity);
+    function granularity() external view returns(uint256 granularityAmount);
 
     /**
       * @notice Provides the address of the polymathRegistry
@@ -563,7 +563,7 @@ interface ISecurityToken {
      * If a token returns FALSE for `isIssuable()` then it MUST never allow additional tokens to be issued.
      * @return bool `true` signifies the minting is allowed. While `false` denotes the end of minting
      */
-    function isIssuable() external view returns (bool isIssuable);
+    function isIssuable() external view returns (bool issuable);
 
     /**
      * @notice Authorises an operator for all partitions of `msg.sender`.

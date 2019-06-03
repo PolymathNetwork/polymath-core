@@ -9,6 +9,6 @@ interface IFeatureRegistry {
      * @param _nameKey is the key for the feature status mapping
      * @return bool
      */
-    function getFeatureStatus(string calldata _nameKey) external view returns(bool);
+    function getFeatureStatus(string calldata _nameKey) external view returns(bool hasFeature);
 
 }

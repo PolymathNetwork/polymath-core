@@ -25,7 +25,7 @@ interface ISTFactory {
         bool _divisible,
         address _treasuryWallet,
         address _polymathRegistry
-    ) 
-    external 
-    returns(address);
+    )
+    external
+    returns(address tokenAddress);
 }

@@ -516,9 +516,8 @@ contract("SecurityToken", async (accounts) => {
             await I_SecurityToken.issue(account_investor1, new BN(web3.utils.toWei("500")), "0x0", { from: token_owner });
             let _canTransfer = await I_SecurityToken.canTransfer.call(account_investor2, new BN(web3.utils.toWei("200")), "0x0", {from: account_investor1});
 
-            assert.isTrue(_canTransfer[0]);
-            assert.equal(_canTransfer[1], 0x51);
-            assert.equal(_canTransfer[2], empty_hash);
+            assert.equal(_canTransfer[0], 0x51);
+            assert.equal(_canTransfer[1], empty_hash);
 
             await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("200")), { from: account_investor1 });
 
@@ -668,8 +667,7 @@ contract("SecurityToken", async (accounts) => {
         it("Should Fail in transferring the token from one whitelist investor 1 to non whitelist investor 2", async () => {
             let _canTransfer = await I_SecurityToken.canTransfer.call(account_investor2, new BN(10).mul(new BN(10).pow(new BN(18))), "0x0", {from: account_investor1});
 
-            assert.isFalse(_canTransfer[0]);
-            assert.equal(_canTransfer[1], 0x50);
+            assert.equal(_canTransfer[0], 0x50);
 
             await catchRevert(I_SecurityToken.transfer(account_investor2, new BN(10).mul(new BN(10).pow(new BN(18))), { from: account_investor1 }));
         });

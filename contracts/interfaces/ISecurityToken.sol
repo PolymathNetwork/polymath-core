@@ -24,11 +24,10 @@ interface ISecurityToken {
      * @param _to address The address which you want to transfer to
      * @param _value uint256 the amount of tokens to be transferred
      * @param _data The `bytes _data` allows arbitrary data to be submitted alongside the transfer.
-     * @return bool It signifies whether the transaction will be executed or not.
      * @return byte Ethereum status code (ESC)
      * @return bytes32 Application specific reason code
      */
-    function canTransfer(address _to, uint256 _value, bytes calldata _data) external view returns (bool, byte, bytes32);
+    function canTransfer(address _to, uint256 _value, bytes calldata _data) external view returns (byte, bytes32);
 
     /**
      * @notice Initialization function
@@ -45,11 +44,10 @@ interface ISecurityToken {
      * @param _to address The address which you want to transfer to
      * @param _value uint256 the amount of tokens to be transferred
      * @param _data The `bytes _data` allows arbitrary data to be submitted alongside the transfer.
-     * @return bool It signifies whether the transaction will be executed or not.
      * @return byte Ethereum status code (ESC)
      * @return bytes32 Application specific reason code
      */
-    function canTransferFrom(address _from, address _to, uint256 _value, bytes calldata _data) external view returns (bool, byte, bytes32);
+    function canTransferFrom(address _from, address _to, uint256 _value, bytes calldata _data) external view returns (byte, bytes32);
 
     /**
      * @notice The standard provides an on-chain function to determine whether a transfer will succeed,
@@ -571,7 +569,7 @@ interface ISecurityToken {
      * but it doesn't mean we operator is allowed to transfer the LOCKED partition values.
      * Logic for this restriction is written in `operatorTransferByPartition()` function.
      * @param _operator An address which is being authorised.
-     */ 
+     */
     function authorizeOperator(address _operator) external;
 
     /**
@@ -614,7 +612,7 @@ interface ISecurityToken {
         uint256 _value,
         bytes calldata _data,
         bytes calldata _operatorData
-    ) 
+    )
         external
         returns (bytes32);
 

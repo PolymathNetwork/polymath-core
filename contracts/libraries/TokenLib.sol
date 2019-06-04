@@ -464,22 +464,22 @@ library TokenLib {
     )
         public
         pure
-        returns (bool, byte, bytes32)
+        returns (byte, bytes32)
     {
         if (!success)
-            return (false, 0x50, appCode);
+            return (0x50, appCode);
 
         if (balanceOfFrom < value)
-            return (false, 0x52, bytes32(0));
+            return (0x52, bytes32(0));
 
         if (to == address(0))
-            return (false, 0x57, bytes32(0));
+            return (0x57, bytes32(0));
 
         // Balance overflow can never happen due to totalsupply being a uint256 as well
         // else if (!KindMath.checkAdd(balanceOf(_to), _value))
-        //     return (false, 0x50, bytes32(0));
+        //     return (0x50, bytes32(0));
 
-        return (true, 0x51, bytes32(0));
+        return (0x51, bytes32(0));
     }
 
     function _getKey(bytes32 _key1, address _key2) internal pure returns(bytes32) {

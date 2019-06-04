@@ -11,3 +11,9 @@ export function encodeModuleCall(parametersType, values) {
     const params = abi.rawEncode(parametersType, values).toString("hex");
     return "0x" + methodId + params;
 }
+
+export function encodeCall(methodName, parametersType, values) {
+    const methodId = abi.methodID(methodName, parametersType).toString("hex");
+    const params = abi.rawEncode(parametersType, values).toString("hex");
+    return "0x" + methodId + params;
+}

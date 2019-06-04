@@ -731,14 +731,24 @@ contract("SecurityTokenRegistry", async (accounts) => {
         it("Should fail to upgrade the logic contract of the STRProxy -- bad owner", async () => {
             await I_STRProxied.pause({ from: account_polymath });
 
+            const STRProxyConfigParameters = ["uint256"];
+            let bytesProxy = encodeModuleCall(STRProxyConfigParameters, [
+                99
+            ]);
+
             await catchRevert(
-                I_SecurityTokenRegistryProxy.upgradeTo("1.1.0", I_SecurityTokenRegistryV2.address, { from: account_temp }),
+                I_SecurityTokenRegistryProxy.upgradeToAndCall("1.1.0", I_SecurityTokenRegistryV2.address, bytesProxy, { from: account_temp }),
                 "tx revert -> bad owner"
             );
         });
 
         it("Should upgrade the logic contract into the STRProxy", async () => {
-            await I_SecurityTokenRegistryProxy.upgradeTo("1.1.0", I_SecurityTokenRegistryV2.address, { from: account_polymath });
+            const STRProxyConfigParameters = ["uint256"];
+            let bytesProxy = encodeModuleCall(STRProxyConfigParameters, [
+                99
+            ]);
+
+            await I_SecurityTokenRegistryProxy.upgradeToAndCall("1.1.0", I_SecurityTokenRegistryV2.address, bytesProxy, { from: account_polymath });
             I_STRProxied = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
             assert.isTrue(await I_STRProxied.getBoolValue.call(web3.utils.soliditySha3("paused")), "Paused value should be false");
         });

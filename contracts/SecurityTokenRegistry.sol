@@ -162,6 +162,11 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         _;
     }
 
+    modifier onlyOwnerOrSelf() {
+        require(msg.sender == owner() || msg.sender == address(this), "Only owner or self");
+        _;
+    }
+
     /**
      * @notice Modifier to make a function callable only when the contract is not paused.
      */
@@ -293,7 +298,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @notice Set the getter contract address
      * @param _getterContract Address of the contract
      */
-    function setGetterRegistry(address _getterContract) public onlyOwner {
+    function setGetterRegistry(address _getterContract) public onlyOwnerOrSelf {
         require(_getterContract != address(0));
         set(STRGETTER, _getterContract);
     }

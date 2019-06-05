@@ -61,7 +61,7 @@ async function executeApp() {
   let nonArchivedModules = tmModules.filter(m => !m.archived);
   if (nonArchivedModules.length > 0) {
     console.log(`Transfer Manager modules attached:`);
-    nonArchivedModules.map(m => console.log(`- ${m.name} at ${m.address}`))
+    nonArchivedModules.map(m => `${m.name} (${m.version}) at ${m.address}`)
   } else {
     console.log(`There are no Transfer Manager modules attached`);
   }
@@ -287,11 +287,14 @@ async function configExistingModules(tmModules) {
 
 async function addTransferManagerModule() {
   let availableModules = await moduleRegistry.methods.getModulesByTypeAndToken(gbl.constants.MODULES_TYPES.TRANSFER, securityToken.options.address).call();
-  let options = await Promise.all(availableModules.map(async function (m) {
+  let moduleList = await Promise.all(availableModules.map(async function (m) {
     let moduleFactoryABI = abis.moduleFactory();
     let moduleFactory = new web3.eth.Contract(moduleFactoryABI, m);
-    return web3.utils.hexToUtf8(await moduleFactory.methods.name().call());
+    let moduleName = web3.utils.hexToUtf8(await moduleFactory.methods.name().call());
+      let moduleVersion = await moduleFactory.methods.version().call();
+      return { name: moduleName, version: moduleVersion, factoryAddress: m };
   }));
+  let options = moduleList.map(m => `${m.name} - ${m.version} (${m.factoryAddress})`);
 
   let index = readlineSync.keyInSelect(options, 'Which Transfer Manager module do you want to add? ', { cancel: 'RETURN' });
   if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]} module?`)) {
@@ -2855,13 +2858,14 @@ function fromWeiPercentage(number) {
 }
 
 async function getAllModulesByType(type) {
-  function ModuleInfo(_moduleType, _name, _address, _factoryAddress, _archived, _paused) {
+  function ModuleInfo(_moduleType, _name, _address, _factoryAddress, _archived, _paused, _version) {
     this.name = _name;
     this.type = _moduleType;
     this.address = _address;
     this.factoryAddress = _factoryAddress;
     this.archived = _archived;
     this.paused = _paused;
+    this.version = _version;
   }
 
   let modules = [];
@@ -2877,7 +2881,10 @@ async function getAllModulesByType(type) {
       let contractTemp = new web3.eth.Contract(abiTemp, details[1]);
       pausedTemp = await contractTemp.methods.paused().call();
     }
-    modules.push(new ModuleInfo(type, nameTemp, details[1], details[2], details[3], pausedTemp));
+    let factoryAbi = abis.moduleFactory();
+    let factory = new web3.eth.Contract(factoryAbi, details[2]);
+    let versionTemp = await factory.methods.version().call();
+    modules.push(new ModuleInfo(type, nameTemp, details[1], details[2], details[3], pausedTemp, versionTemp));
   }
 
   return modules;

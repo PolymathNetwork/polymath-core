@@ -6,6 +6,7 @@ const transferManager = require('./transfer_manager');
 const common = require('./common/common_functions');
 const gbl = require('./common/global');
 const csvParse = require('./helpers/csv');
+const moment = require('moment');
 
 // Constants
 const MULTIMINT_DATA_CSV = `${__dirname}/../data/ST/multi_mint_data.csv`;
@@ -69,6 +70,7 @@ async function displayTokenData() {
   let displayIsIssuable = await securityToken.methods.isIssuable().call();
   let displayUserTokens = await securityToken.methods.balanceOf(Issuer.address).call();
   let displayTreasuryWallet = await securityToken.methods.getTreasuryWallet().call();
+  let displayDocuments = await securityToken.methods.getAllDocuments().call();
 
   console.log(`
 ***************    Security Token Information    ****************
@@ -84,7 +86,8 @@ async function displayTokenData() {
 - Transfer frozen:      ${displayTransferFrozen ? 'YES' : 'NO'}
 - Issuance allowed:     ${displayIsIssuable ? 'YES' : 'NO'}
 - User balance:         ${web3.utils.fromWei(displayUserTokens)} ${displayTokenSymbol.toUpperCase()}
-- Treasury wallet:      ${displayTreasuryWallet}`);
+- Treasury wallet:      ${displayTreasuryWallet}
+- Documents attached:   ${displayDocuments.length}`);
 }
 
 async function displayModules() {
@@ -138,7 +141,7 @@ async function displayModules() {
 }
 
 async function selectAction() {
-  let options = ['Change token name', 'Update token details', 'Change treasury wallet']; // 'Change granularity'
+  let options = ['Change token name', 'Update token details', 'Change treasury wallet', 'Manage documents']; // 'Change granularity'
 
   let transferFrozen = await securityToken.methods.transfersFrozen().call();
   if (transferFrozen) {
@@ -191,6 +194,9 @@ async function selectAction() {
     case 'Change granularity':
       //let granularity = readlineSync.questionInt('Enter ')
       //await changeGranularity();
+      break;
+    case 'Manage documents':
+      await manageDocuments();
       break;
     case 'Freeze transfers':
       await freezeTransfers();
@@ -261,6 +267,54 @@ async function changeTreasuryWallet(newTreasuryWallet) {
   let changeTreasuryWalletAction = securityToken.methods.changeTreasuryWallet(newTreasuryWallet);
   await common.sendTransaction(changeTreasuryWalletAction);
   console.log(chalk.green(`Treasury wallet has been updated successfully!`));
+}
+
+async function manageDocuments() {
+  let options = ['Add document'];
+
+  const allDocuments = await securityToken.methods.getAllDocuments().call();
+  if (allDocuments.length > 0) {
+    options.push('Get document', 'Remove document');
+    console.log(`Attached documents:`)
+    allDocuments.map(d => console.log(`- ${web3.utils.hexToUtf8(d)}`));
+  } else {
+    console.log(`No documents attached:`);
+  }
+
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Return' });
+  let selected = index == -1 ? 'Return' : options[index];
+  console.log('Selected:', selected);
+  switch (selected) {
+    case 'Add document':
+      const documentName = readlineSync.question('Enter the document name: ');
+      const documentUri = readlineSync.question('Enter the document uri: ');
+      const documentHash = readlineSync.question('Enter the document hash: ');
+      const setDocumentAction = securityToken.methods.setDocument(web3.utils.toHex(documentName), documentUri, web3.utils.toHex(documentHash));
+      await common.sendTransaction(setDocumentAction);
+      console.log(chalk.green(`Document has been added successfully!`));
+      break;
+    case 'Get document':
+      const documentoToGet = selectDocument(allDocuments);
+      const document = await securityToken.methods.getDocument(documentoToGet).call();
+      console.log(web3.utils.hexToUtf8(documentoToGet));
+      console.log(`Uri: ${document[0]}`);
+      console.log(`Hash: ${web3.utils.hexToUtf8(document[1])}`);
+      console.log(`Last modified: ${moment.unix(document[2]).format('MM/DD/YYYY HH:mm')}`);
+      break;
+    case 'Remove document':
+      const documentoToRemove = selectDocument(allDocuments);
+      const removeDocumentAction = securityToken.methods.removeDocument(documentoToRemove);
+      await common.sendTransaction(removeDocumentAction);
+      console.log(chalk.green(`Document has been removed successfully!`));
+      break;
+  }
+}
+
+function selectDocument(allDocuments) {
+  const options = allDocuments.map(d => `${web3.utils.hexToUtf8(d)}`);
+  let index = readlineSync.keyInSelect(options, 'Select a document:', { cancel: 'Return' });
+  let selected = index == -1 ? 'Return' : allDocuments[index];
+  return selected;
 }
 
 async function freezeTransfers() {

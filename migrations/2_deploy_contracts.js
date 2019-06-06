@@ -193,34 +193,80 @@ module.exports = function(deployer, network, accounts) {
             deployer.link(TokenLib, MockSTGetter);
         })
         .then(() => {
-            return deployer.deploy(GeneralTransferManagerLogic, nullAddress, nullAddress, { from: PolymathAccount });
-        })
-        .then(() => {
-            return deployer.deploy(GeneralPermissionManagerLogic, nullAddress, nullAddress, { from: PolymathAccount });
-        })
-        .then(() => {
-            return deployer.deploy(CountTransferManagerLogic, nullAddress, nullAddress, { from: PolymathAccount });
-        })
-        .then(() => {
-            return deployer.deploy(ManualApprovalTransferManagerLogic, nullAddress, nullAddress, { from: PolymathAccount });
-        })
-        .then(() => {
-            return deployer.deploy(PercentageTransferManagerLogic, nullAddress, nullAddress, { from: PolymathAccount });
-        })
-        .then(() => {
-            return deployer.deploy(ERC20DividendCheckpointLogic, nullAddress, nullAddress, { from: PolymathAccount });
-        })
-        .then(() => {
-            return deployer.deploy(EtherDividendCheckpointLogic, nullAddress, nullAddress, { from: PolymathAccount });
-        })
-        .then(() => {
-            return deployer.deploy(USDTieredSTOLogic, nullAddress, nullAddress, { from: PolymathAccount });
-        })
-        .then(() => {
-            return deployer.deploy(VolumeRestrictionTMLogic, nullAddress, nullAddress, { from: PolymathAccount });
-        })
-        .then(() => {
-            return deployer.deploy(CappedSTOLogic, nullAddress, nullAddress, { from: PolymathAccount });
+            deployer.deploy(GeneralTransferManagerLogic, nullAddress, nullAddress, { from: PolymathAccount })
+            .then(() => {
+                return deployer.deploy(GeneralTransferManagerFactory, new BN(0), new BN(0), GeneralTransferManagerLogic.address, polymathRegistry.address, {
+                    from: PolymathAccount
+                });
+            })
+            deployer.deploy(GeneralPermissionManagerLogic, nullAddress, nullAddress, { from: PolymathAccount })
+            .then(() => {
+                return deployer.deploy(GeneralPermissionManagerFactory, new BN(0), new BN(0), GeneralPermissionManagerLogic.address, polymathRegistry.address, {
+                    from: PolymathAccount
+                });
+            })
+            deployer.deploy(CountTransferManagerLogic, nullAddress, nullAddress, { from: PolymathAccount })
+            .then(() => {
+                return deployer.deploy(CountTransferManagerFactory, new BN(0), new BN(0), CountTransferManagerLogic.address, polymathRegistry.address, {
+                    from: PolymathAccount
+                });
+            })
+            deployer.deploy(ManualApprovalTransferManagerLogic, nullAddress, nullAddress, { from: PolymathAccount })
+            .then(() => {
+                return deployer.deploy(ManualApprovalTransferManagerFactory, new BN(0), new BN(0), ManualApprovalTransferManagerLogic.address, polymathRegistry.address, {
+                    from: PolymathAccount
+                });
+            })
+            deployer.deploy(PercentageTransferManagerLogic, nullAddress, nullAddress, { from: PolymathAccount })
+            .then(() => {
+                return deployer.deploy(PercentageTransferManagerFactory, new BN(0), new BN(0), PercentageTransferManagerLogic.address, polymathRegistry.address, {
+                    from: PolymathAccount
+                });
+            })
+            deployer.deploy(ERC20DividendCheckpointLogic, nullAddress, nullAddress, { from: PolymathAccount })
+            .then(() => {
+                return deployer.deploy(ERC20DividendCheckpointFactory, new BN(0), new BN(0), ERC20DividendCheckpointLogic.address, polymathRegistry.address, {
+                    from: PolymathAccount
+                });
+            })
+            deployer.deploy(EtherDividendCheckpointLogic, nullAddress, nullAddress, { from: PolymathAccount })
+            .then(() => {
+                return deployer.deploy(EtherDividendCheckpointFactory, new BN(0), new BN(0), EtherDividendCheckpointLogic.address, polymathRegistry.address, {
+                    from: PolymathAccount
+                });
+            })
+            deployer.deploy(USDTieredSTOLogic, nullAddress, nullAddress, { from: PolymathAccount })
+            .then(() => {
+                return deployer.deploy(USDTieredSTOFactory, usdTieredSTOSetupCost, new BN(0), USDTieredSTOLogic.address, polymathRegistry.address, { from: PolymathAccount });
+            })
+            deployer.deploy(VolumeRestrictionTMLogic, nullAddress, nullAddress, { from: PolymathAccount })
+            .then(() => {
+                return deployer.deploy(VolumeRestrictionTMFactory, new BN(0), new BN(0), VolumeRestrictionTMLogic.address, polymathRegistry.address, { from: PolymathAccount });
+            })
+            deployer.deploy(PLCRVotingCheckpointLogic, nullAddress, nullAddress, { from: PolymathAccount })
+            .then(() => {
+                return deployer.deploy(PLCRVotingCheckpointFactory, new BN(0), new BN(0), PLCRVotingCheckpointLogic.address, polymathRegistry.address, { from: PolymathAccount });
+            })
+            deployer.deploy(WeightedVoteCheckpointLogic, nullAddress, nullAddress, { from: PolymathAccount })
+            .then(() => {
+                return deployer.deploy(WeightedVoteCheckpointFactory, new BN(0), new BN(0), WeightedVoteCheckpointLogic.address, polymathRegistry.address, { from: PolymathAccount });
+            })
+            deployer.deploy(BlacklistTransferManagerLogic, nullAddress, nullAddress, { from: PolymathAccount })
+            .then(() => {
+                return deployer.deploy(BlacklistTransferManagerFactory, new BN(0), new BN(0), BlacklistTransferManagerLogic.address, polymathRegistry.address, { from: PolymathAccount });
+            })
+            deployer.deploy(LockUpTransferManagerLogic, nullAddress, nullAddress, { from: PolymathAccount })
+            .then(() => {
+                return deployer.deploy(LockUpTransferManagerFactory, new BN(0), new BN(0), LockUpTransferManagerLogic.address, polymathRegistry.address, { from: PolymathAccount });
+            })
+            deployer.deploy(VestingEscrowWalletLogic, nullAddress, nullAddress, { from: PolymathAccount })
+            .then(() => {
+                return deployer.deploy(VestingEscrowWalletFactory, new BN(0), new BN(0), VestingEscrowWalletLogic.address, polymathRegistry.address, { from: PolymathAccount });
+            })
+            return deployer.deploy(CappedSTOLogic, nullAddress, nullAddress, { from: PolymathAccount })
+            .then(() => {
+                return deployer.deploy(CappedSTOFactory, cappedSTOSetupCost, new BN(0), CappedSTOLogic.address, polymathRegistry.address, { from: PolymathAccount });
+            })
         })
         .then(() => {
             return deployer.deploy(DataStoreLogic, { from: PolymathAccount });
@@ -230,50 +276,6 @@ module.exports = function(deployer, network, accounts) {
         })
         .then(() => {
             return deployer.deploy(DataStoreFactory, DataStoreLogic.address, { from: PolymathAccount });
-        })
-        .then(() => {
-            return deployer.deploy(GeneralTransferManagerFactory, new BN(0), new BN(0), GeneralTransferManagerLogic.address, polymathRegistry.address, {
-                from: PolymathAccount
-            });
-        })
-        .then(() => {
-            return deployer.deploy(GeneralPermissionManagerFactory, new BN(0), new BN(0), GeneralPermissionManagerLogic.address, polymathRegistry.address, {
-                from: PolymathAccount
-            });
-        })
-        .then(() => {
-            return deployer.deploy(CountTransferManagerFactory, new BN(0), new BN(0), CountTransferManagerLogic.address, polymathRegistry.address, {
-                from: PolymathAccount
-            });
-        })
-        .then(() => {
-            return deployer.deploy(PercentageTransferManagerFactory, new BN(0), new BN(0), PercentageTransferManagerLogic.address, polymathRegistry.address, {
-                from: PolymathAccount
-            });
-        })
-        .then(() => {
-            return deployer.deploy(EtherDividendCheckpointFactory, new BN(0), new BN(0), EtherDividendCheckpointLogic.address, polymathRegistry.address, {
-                from: PolymathAccount
-            });
-        })
-        .then(() => {
-            return deployer.deploy(ERC20DividendCheckpointFactory, new BN(0), new BN(0), ERC20DividendCheckpointLogic.address, polymathRegistry.address, {
-                from: PolymathAccount
-            });
-        })
-        .then(() => {
-            return deployer.deploy(VolumeRestrictionTMFactory, new BN(0), new BN(0), VolumeRestrictionTMLogic.address, polymathRegistry.address, { from: PolymathAccount });
-        })
-        .then(() => {
-            return deployer.deploy(ManualApprovalTransferManagerFactory, new BN(0), new BN(0), ManualApprovalTransferManagerLogic.address, polymathRegistry.address, {
-                from: PolymathAccount
-            });
-        })
-        .then(() => {
-            return deployer.deploy(USDTieredSTOFactory, usdTieredSTOSetupCost, new BN(0), USDTieredSTOLogic.address, polymathRegistry.address, { from: PolymathAccount });
-        })
-        .then(() => {
-            return deployer.deploy(CappedSTOFactory, cappedSTOSetupCost, new BN(0), CappedSTOLogic.address, polymathRegistry.address, { from: PolymathAccount });
         })
         .then(() => {
             return deployer.deploy(STGetter, { from: PolymathAccount });
@@ -295,22 +297,22 @@ module.exports = function(deployer, network, accounts) {
             return deployer.deploy(STRGetter, {from: PolymathAccount});
         })
         .then(() => {
-            deployer.deploy(GeneralTransferManagerProxy, "", PolyToken, PolyToken, PolyToken, { from: PolymathAccount });
-            deployer.deploy(GeneralPermissionManagerProxy, "", PolyToken, PolyToken, PolyToken, { from: PolymathAccount });
-            deployer.deploy(PercentageTransferManagerProxy, "", PolyToken, PolyToken, PolyToken, { from: PolymathAccount });
-            deployer.deploy(CountTransferManagerProxy, "", PolyToken, PolyToken, PolyToken, { from: PolymathAccount });
-            deployer.deploy(EtherDividendCheckpointProxy, "", PolyToken, PolyToken, PolyToken, { from: PolymathAccount });
-            deployer.deploy(ERC20DividendCheckpointProxy, "", PolyToken, PolyToken, PolyToken, { from: PolymathAccount });
-            deployer.deploy(ManualApprovalTransferManagerProxy, "", PolyToken, PolyToken, PolyToken, { from: PolymathAccount });
-            deployer.deploy(CappedSTOProxy, "", PolyToken, PolyToken, PolyToken, { from: PolymathAccount });
-            deployer.deploy(USDTieredSTOProxy, "", PolyToken, PolyToken, PolyToken, { from: PolymathAccount });
-            deployer.deploy(DataStoreProxy, "", PolyToken, PolyToken, PolyToken, { from: PolymathAccount });
-            deployer.deploy(VolumeRestrictionTMProxy, "", PolyToken, PolyToken, PolyToken, { from: PolymathAccount });
-            deployer.deploy(PLCRVotingCheckpointProxy, "", PolyToken, PolyToken, PolyToken, { from: PolymathAccount });
-            deployer.deploy(WeightedVoteCheckpointProxy, "", PolyToken, PolyToken, PolyToken, { from: PolymathAccount });
-            deployer.deploy(BlacklistTransferManagerProxy, "", PolyToken, PolyToken, PolyToken, { from: PolymathAccount });
-            deployer.deploy(LockUpTransferManagerProxy, "", PolyToken, PolyToken, PolyToken, { from: PolymathAccount });
-            return deployer.deploy(VestingEscrowWalletProxy, "", PolyToken, PolyToken, PolyToken, { from: PolymathAccount });
+            deployer.deploy(GeneralTransferManagerProxy, "3.0.0", PolyToken, PolyToken, PolyToken, { from: PolymathAccount });
+            deployer.deploy(GeneralPermissionManagerProxy, "3.0.0", PolyToken, PolyToken, PolyToken, { from: PolymathAccount });
+            deployer.deploy(PercentageTransferManagerProxy, "3.0.0", PolyToken, PolyToken, PolyToken, { from: PolymathAccount });
+            deployer.deploy(CountTransferManagerProxy, "3.0.0", PolyToken, PolyToken, PolyToken, { from: PolymathAccount });
+            deployer.deploy(EtherDividendCheckpointProxy, "3.0.0", PolyToken, PolyToken, PolyToken, { from: PolymathAccount });
+            deployer.deploy(ERC20DividendCheckpointProxy, "3.0.0", PolyToken, PolyToken, PolyToken, { from: PolymathAccount });
+            deployer.deploy(ManualApprovalTransferManagerProxy, "3.0.0", PolyToken, PolyToken, PolyToken, { from: PolymathAccount });
+            deployer.deploy(CappedSTOProxy, "3.0.0", PolyToken, PolyToken, PolyToken, { from: PolymathAccount });
+            deployer.deploy(USDTieredSTOProxy, "3.0.0", PolyToken, PolyToken, PolyToken, { from: PolymathAccount });
+            deployer.deploy(DataStoreProxy, "3.0.0", PolyToken, PolyToken, PolyToken, { from: PolymathAccount });
+            deployer.deploy(VolumeRestrictionTMProxy, "3.0.0", PolyToken, PolyToken, PolyToken, { from: PolymathAccount });
+            deployer.deploy(PLCRVotingCheckpointProxy, "3.0.0", PolyToken, PolyToken, PolyToken, { from: PolymathAccount });
+            deployer.deploy(WeightedVoteCheckpointProxy, "3.0.0", PolyToken, PolyToken, PolyToken, { from: PolymathAccount });
+            deployer.deploy(BlacklistTransferManagerProxy, "3.0.0", PolyToken, PolyToken, PolyToken, { from: PolymathAccount });
+            deployer.deploy(LockUpTransferManagerProxy, "3.0.0", PolyToken, PolyToken, PolyToken, { from: PolymathAccount });
+            return deployer.deploy(VestingEscrowWalletProxy, "3.0.0", PolyToken, PolyToken, PolyToken, { from: PolymathAccount });
         })
         .then(() => {
             console.log("\n");

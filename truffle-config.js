@@ -52,7 +52,6 @@ module.exports = {
         return wallet
       },
       network_id: '42', // Match any network id
-      gas: 7900000,
       gasPrice: 5000000000 // 5 gwei
     },
     coverage: {

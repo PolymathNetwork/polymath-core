@@ -162,11 +162,13 @@ module.exports = function (deployer, network, accounts) {
     // A) Deploy the PolymathRegistry contract
     return deployer
         .deploy(TokenLib, {
-            from: PolymathAccount
+            from: PolymathAccount,
+            gas: 3500000
         })
         .then(() => {
             return deployer.deploy(VolumeRestrictionLib, {
-                from: PolymathAccount
+                from: PolymathAccount,
+                gas: 3500000
             });
         })
         .then(() => {
@@ -180,287 +182,358 @@ module.exports = function (deployer, network, accounts) {
         })
         .then(() => {
             deployer.deploy(STGetter, {
-                from: PolymathAccount
+                from: PolymathAccount,
+                gas: 5000000
             }); // Logic contract, ownership does not matter
             deployer.deploy(SecurityTokenRegistry, {
-                from: PolymathAccount
+                from: PolymathAccount,
+                gas: 7000000
             }); // Logic contract, ownership does not matter
             deployer.deploy(ModuleRegistry, {
-                from: PolymathAccount
+                from: PolymathAccount,
+                gas: 5000000
             }); // Logic contract, ownership does not matter
             deployer.deploy(STRGetter, {
-                from: PolymathAccount
+                from: PolymathAccount,
+                gas: 5000000
             }); // Logic contract, ownership does not matter
             deployer.deploy(GeneralPermissionManagerLogic, nullAddress, nullAddress, {
-                    from: PolymathAccount
+                    from: PolymathAccount,
+                    gas: 6000000
                 })
                 .then(() => {
                     return deployer.deploy(GeneralPermissionManagerFactory, new BN(0), new BN(0), GeneralPermissionManagerLogic.address, polymathRegistry, {
-                        from: PolymathAccount
+                        from: PolymathAccount,
+                        gas: 6000000
                     });
                 })
                 .then((factory) => {
-                    return factory.transferOwnership(actualOwner, {
-                        from: PolymathAccount
+                    factory.transferOwnership(actualOwner, {
+                        from: PolymathAccount,
+                        gas: 1500000
                     })
                 })
             deployer.deploy(CountTransferManagerLogic, nullAddress, nullAddress, {
-                    from: PolymathAccount
+                    from: PolymathAccount,
+                    gas: 2000000
                 })
                 .then(() => {
                     return deployer.deploy(CountTransferManagerFactory, new BN(0), new BN(0), CountTransferManagerLogic.address, polymathRegistry, {
-                        from: PolymathAccount
+                        from: PolymathAccount,
+                        gas: 6000000
                     });
                 })
                 .then((factory) => {
-                    return factory.transferOwnership(actualOwner, {
-                        from: PolymathAccount
+                    factory.transferOwnership(actualOwner, {
+                        from: PolymathAccount,
+                        gas: 1500000
                     });
                 })
             deployer.deploy(ManualApprovalTransferManagerLogic, nullAddress, nullAddress, {
-                    from: PolymathAccount
+                    from: PolymathAccount,
+                    gas: 4500000
                 })
                 .then(() => {
                     return deployer.deploy(ManualApprovalTransferManagerFactory, new BN(0), new BN(0), ManualApprovalTransferManagerLogic.address, polymathRegistry, {
-                        from: PolymathAccount
+                        from: PolymathAccount,
+                        gas: 6000000
                     });
                 })
                 .then((factory) => {
-                    return factory.transferOwnership(actualOwner, {
-                        from: PolymathAccount
+                    factory.transferOwnership(actualOwner, {
+                        from: PolymathAccount,
+                        gas: 1500000
                     })
                 })
             deployer.deploy(PercentageTransferManagerLogic, nullAddress, nullAddress, {
-                    from: PolymathAccount
+                    from: PolymathAccount,
+                    gas: 3000000
                 })
                 .then(() => {
                     return deployer.deploy(PercentageTransferManagerFactory, new BN(0), new BN(0), PercentageTransferManagerLogic.address, polymathRegistry, {
-                        from: PolymathAccount
+                        from: PolymathAccount,
+                        gas: 6000000
                     });
                 })
                 .then((factory) => {
-                    return factory.transferOwnership(actualOwner, {
-                        from: PolymathAccount
+                    factory.transferOwnership(actualOwner, {
+                        from: PolymathAccount,
+                        gas: 1500000
                     })
                 })
             deployer.deploy(ERC20DividendCheckpointLogic, nullAddress, nullAddress, {
-                    from: PolymathAccount
+                    from: PolymathAccount,
+                    gas: 6000000
                 })
                 .then(() => {
                     return deployer.deploy(ERC20DividendCheckpointFactory, new BN(0), new BN(0), ERC20DividendCheckpointLogic.address, polymathRegistry, {
-                        from: PolymathAccount
+                        from: PolymathAccount,
+                        gas: 6000000
                     });
                 })
                 .then((factory) => {
-                    return factory.transferOwnership(actualOwner, {
-                        from: PolymathAccount
+                    factory.transferOwnership(actualOwner, {
+                        from: PolymathAccount,
+                        gas: 1500000
                     })
                 })
             deployer.deploy(EtherDividendCheckpointLogic, nullAddress, nullAddress, {
-                    from: PolymathAccount
+                    from: PolymathAccount,
+                    gas: 6000000
                 })
                 .then(() => {
                     return deployer.deploy(EtherDividendCheckpointFactory, new BN(0), new BN(0), EtherDividendCheckpointLogic.address, polymathRegistry, {
-                        from: PolymathAccount
+                        from: PolymathAccount,
+                        gas: 6000000
                     });
                 })
                 .then((factory) => {
-                    return factory.transferOwnership(actualOwner, {
-                        from: PolymathAccount
+                    factory.transferOwnership(actualOwner, {
+                        from: PolymathAccount,
+                        gas: 1500000
                     })
                 })
             deployer.deploy(USDTieredSTOLogic, nullAddress, nullAddress, {
-                    from: PolymathAccount
+                    from: PolymathAccount,
+                    gas: 6500000
                 })
                 .then(() => {
                     return deployer.deploy(USDTieredSTOFactory, usdTieredSTOSetupCost, new BN(0), USDTieredSTOLogic.address, polymathRegistry, {
-                        from: PolymathAccount
+                        from: PolymathAccount,
+                        gas: 6000000
                     });
                 })
                 .then((factory) => {
-                    return factory.transferOwnership(actualOwner, {
-                        from: PolymathAccount
+                    factory.transferOwnership(actualOwner, {
+                        from: PolymathAccount,
+                        gas: 1500000
                     })
                 })
             deployer.deploy(VolumeRestrictionTMLogic, nullAddress, nullAddress, {
-                    from: PolymathAccount
+                    from: PolymathAccount,
+                    gas: 6500000
                 })
                 .then(() => {
                     return deployer.deploy(VolumeRestrictionTMFactory, new BN(0), new BN(0), VolumeRestrictionTMLogic.address, polymathRegistry, {
-                        from: PolymathAccount
+                        from: PolymathAccount,
+                        gas: 6000000
                     });
                 })
                 .then((factory) => {
-                    return factory.transferOwnership(actualOwner, {
-                        from: PolymathAccount
+                    factory.transferOwnership(actualOwner, {
+                        from: PolymathAccount,
+                        gas: 1500000
                     })
                 })
             deployer.deploy(PLCRVotingCheckpointLogic, nullAddress, nullAddress, {
-                    from: PolymathAccount
+                    from: PolymathAccount,
+                    gas: 4500000
                 })
                 .then(() => {
                     return deployer.deploy(PLCRVotingCheckpointFactory, new BN(0), new BN(0), PLCRVotingCheckpointLogic.address, polymathRegistry, {
-                        from: PolymathAccount
+                        from: PolymathAccount,
+                        gas: 6000000
                     });
                 })
                 .then((factory) => {
-                    return factory.transferOwnership(actualOwner, {
-                        from: PolymathAccount
+                    factory.transferOwnership(actualOwner, {
+                        from: PolymathAccount,
+                        gas: 1500000
                     })
                 })
             deployer.deploy(WeightedVoteCheckpointLogic, nullAddress, nullAddress, {
-                    from: PolymathAccount
+                    from: PolymathAccount,
+                    gas: 3500000
                 })
                 .then(() => {
                     return deployer.deploy(WeightedVoteCheckpointFactory, new BN(0), new BN(0), WeightedVoteCheckpointLogic.address, polymathRegistry, {
-                        from: PolymathAccount
+                        from: PolymathAccount,
+                        gas: 6000000
                     });
                 })
                 .then((factory) => {
-                    return factory.transferOwnership(actualOwner, {
-                        from: PolymathAccount
+                    factory.transferOwnership(actualOwner, {
+                        from: PolymathAccount,
+                        gas: 1500000
                     })
                 })
             deployer.deploy(BlacklistTransferManagerLogic, nullAddress, nullAddress, {
-                    from: PolymathAccount
+                    from: PolymathAccount,
+                    gas: 4500000
                 })
                 .then(() => {
                     return deployer.deploy(BlacklistTransferManagerFactory, new BN(0), new BN(0), BlacklistTransferManagerLogic.address, polymathRegistry, {
-                        from: PolymathAccount
+                        from: PolymathAccount,
+                        gas: 6000000
                     });
                 })
                 .then((factory) => {
-                    return factory.transferOwnership(actualOwner, {
-                        from: PolymathAccount
+                    factory.transferOwnership(actualOwner, {
+                        from: PolymathAccount,
+                        gas: 1500000
                     })
                 })
             deployer.deploy(LockUpTransferManagerLogic, nullAddress, nullAddress, {
-                    from: PolymathAccount
+                    from: PolymathAccount,
+                    gas: 4500000
                 })
                 .then(() => {
                     return deployer.deploy(LockUpTransferManagerFactory, new BN(0), new BN(0), LockUpTransferManagerLogic.address, polymathRegistry, {
-                        from: PolymathAccount
+                        from: PolymathAccount,
+                        gas: 6000000
                     });
                 })
                 .then((factory) => {
-                    return factory.transferOwnership(actualOwner, {
-                        from: PolymathAccount
+                    factory.transferOwnership(actualOwner, {
+                        from: PolymathAccount,
+                        gas: 1500000
                     })
                 })
             deployer.deploy(VestingEscrowWalletLogic, nullAddress, nullAddress, {
-                    from: PolymathAccount
+                    from: PolymathAccount,
+                    gas: 6500000
                 })
                 .then(() => {
                     return deployer.deploy(VestingEscrowWalletFactory, new BN(0), new BN(0), VestingEscrowWalletLogic.address, polymathRegistry, {
-                        from: PolymathAccount
+                        from: PolymathAccount,
+                        gas: 6000000
                     });
                 })
                 .then((factory) => {
-                    return factory.transferOwnership(actualOwner, {
-                        from: PolymathAccount
+                    factory.transferOwnership(actualOwner, {
+                        from: PolymathAccount,
+                        gas: 1500000
                     })
                 })
             deployer.deploy(CappedSTOLogic, nullAddress, nullAddress, {
-                    from: PolymathAccount
+                    from: PolymathAccount,
+                    gas: 4500000
                 })
                 .then(() => {
                     return deployer.deploy(CappedSTOFactory, cappedSTOSetupCost, new BN(0), CappedSTOLogic.address, polymathRegistry, {
-                        from: PolymathAccount
+                        from: PolymathAccount,
+                        gas: 6000000
                     });
                 })
                 .then((factory) => {
-                    return factory.transferOwnership(actualOwner, {
-                        from: PolymathAccount
+                    factory.transferOwnership(actualOwner, {
+                        from: PolymathAccount,
+                        gas: 1500000
                     })
                 })
             return deployer.deploy(GeneralTransferManagerLogic, nullAddress, nullAddress, {
-                    from: PolymathAccount
+                    from: PolymathAccount,
+                    gas: 6500000
                 })
                 .then(() => {
                     return deployer.deploy(GeneralTransferManagerFactory, new BN(0), new BN(0), GeneralTransferManagerLogic.address, polymathRegistry, {
-                        from: PolymathAccount
+                        from: PolymathAccount,
+                        gas: 6000000
                     })
                 })
                 .then((factory) => {
-                    return factory.transferOwnership(actualOwner, {
-                        from: PolymathAccount
+                    //console.log(factory);
+                    factory.transferOwnership(actualOwner, {
+                        from: PolymathAccount,
+                        gas: 1500000
                     })
                 })
                 .then(() => {
                     return deployer.deploy(DataStoreLogic, {
-                        from: PolymathAccount
+                        from: PolymathAccount,
+                        gas: 6000000
                     })
                 })
                 .then(() => {
                     return deployer.deploy(DataStoreFactory, DataStoreLogic.address, {
-                        from: PolymathAccount
+                        from: PolymathAccount,
+                        gas: 6000000
                     });
                 })
                 .then(() => {
                     return deployer.deploy(SecurityTokenLogic, "", "", 0, {
-                        from: PolymathAccount
+                        from: PolymathAccount,
+                        gas: 7000000
                     });
                 });
         })
         .then(() => {
             let tokenInitBytesCall = web3.eth.abi.encodeFunctionCall(tokenInitBytes, [STGetter.address]);
             return deployer.deploy(STFactory, polymathRegistry, GeneralTransferManagerFactory.address, DataStoreFactory.address, "3.0.0", SecurityTokenLogic.address, tokenInitBytesCall, {
-                from: PolymathAccount
+                from: PolymathAccount,
+                gas: 4000000
             });
         })
         .then((factory) => {
-            return factory.transferOwnership(actualOwner, {
-                from: PolymathAccount
+            factory.transferOwnership(actualOwner, {
+                from: PolymathAccount,
+                gas: 1500000
             })
         })
         .then(() => {
             deployer.deploy(GeneralTransferManagerProxy, "3.0.0", PolyToken, PolyToken, PolyToken, {
-                from: PolymathAccount
+                from: PolymathAccount,
+                gas: 1500000
             }); // Only for etherscan verification, ownership does not matter
             deployer.deploy(GeneralPermissionManagerProxy, "3.0.0", PolyToken, PolyToken, PolyToken, {
-                from: PolymathAccount
+                from: PolymathAccount,
+                gas: 1500000
             }); // Only for etherscan verification, ownership does not matter
             deployer.deploy(PercentageTransferManagerProxy, "3.0.0", PolyToken, PolyToken, PolyToken, {
-                from: PolymathAccount
+                from: PolymathAccount,
+                gas: 1500000
             }); // Only for etherscan verification, ownership does not matter
             deployer.deploy(CountTransferManagerProxy, "3.0.0", PolyToken, PolyToken, PolyToken, {
-                from: PolymathAccount
+                from: PolymathAccount,
+                gas: 1500000
             }); // Only for etherscan verification, ownership does not matter
             deployer.deploy(EtherDividendCheckpointProxy, "3.0.0", PolyToken, PolyToken, PolyToken, {
-                from: PolymathAccount
+                from: PolymathAccount,
+                gas: 1500000
             }); // Only for etherscan verification, ownership does not matter
             deployer.deploy(ERC20DividendCheckpointProxy, "3.0.0", PolyToken, PolyToken, PolyToken, {
-                from: PolymathAccount
+                from: PolymathAccount,
+                gas: 1500000
             }); // Only for etherscan verification, ownership does not matter
             deployer.deploy(ManualApprovalTransferManagerProxy, "3.0.0", PolyToken, PolyToken, PolyToken, {
-                from: PolymathAccount
+                from: PolymathAccount,
+                gas: 1500000
             }); // Only for etherscan verification, ownership does not matter
             deployer.deploy(CappedSTOProxy, "3.0.0", PolyToken, PolyToken, PolyToken, {
-                from: PolymathAccount
+                from: PolymathAccount,
+                gas: 1500000
             }); // Only for etherscan verification, ownership does not matter
             deployer.deploy(USDTieredSTOProxy, "3.0.0", PolyToken, PolyToken, PolyToken, {
-                from: PolymathAccount
+                from: PolymathAccount,
+                gas: 1500000
             }); // Only for etherscan verification, ownership does not matter
             deployer.deploy(DataStoreProxy, "3.0.0", PolyToken, PolyToken, PolyToken, {
-                from: PolymathAccount
+                from: PolymathAccount,
+                gas: 1500000
             }); // Only for etherscan verification, ownership does not matter
             deployer.deploy(VolumeRestrictionTMProxy, "3.0.0", PolyToken, PolyToken, PolyToken, {
-                from: PolymathAccount
+                from: PolymathAccount,
+                gas: 1500000
             }); // Only for etherscan verification, ownership does not matter
             deployer.deploy(PLCRVotingCheckpointProxy, "3.0.0", PolyToken, PolyToken, PolyToken, {
-                from: PolymathAccount
+                from: PolymathAccount,
+                gas: 1500000
             }); // Only for etherscan verification, ownership does not matter
             deployer.deploy(WeightedVoteCheckpointProxy, "3.0.0", PolyToken, PolyToken, PolyToken, {
-                from: PolymathAccount
+                from: PolymathAccount,
+                gas: 1500000
             }); // Only for etherscan verification, ownership does not matter
             deployer.deploy(BlacklistTransferManagerProxy, "3.0.0", PolyToken, PolyToken, PolyToken, {
-                from: PolymathAccount
+                from: PolymathAccount,
+                gas: 1500000
             }); // Only for etherscan verification, ownership does not matter
             deployer.deploy(LockUpTransferManagerProxy, "3.0.0", PolyToken, PolyToken, PolyToken, {
-                from: PolymathAccount
+                from: PolymathAccount,
+                gas: 1500000
             }); // Only for etherscan verification, ownership does not matter
             return deployer.deploy(VestingEscrowWalletProxy, "3.0.0", PolyToken, PolyToken, PolyToken, {
-                from: PolymathAccount
+                from: PolymathAccount,
+                gas: 1500000
             }); // Only for etherscan verification, ownership does not matter
         })
         .then(() => {

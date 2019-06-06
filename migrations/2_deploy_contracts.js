@@ -453,7 +453,7 @@ module.exports = function (deployer, network, accounts) {
                 .then(() => {
                     return deployer.deploy(SecurityTokenLogic, "", "", 0, {
                         from: PolymathAccount,
-                        gas: 7000000
+                        gas: 7500000
                     });
                 });
         })

@@ -1,6 +1,6 @@
 require('babel-register');
 require('babel-polyfill');
-const fs = require('fs');
+require('dotenv').config()
 const NonceTrackerSubprovider = require("web3-provider-engine/subproviders/nonce-tracker")
 
 const HDWalletProvider = require("truffle-hdwallet-provider");
@@ -14,11 +14,18 @@ module.exports = {
       gas: 7900000,
     },
     mainnet: {
-      host: 'localhost',
-      port: 8545,
+      provider: () => {
+        // Replace with mainnet endpoint for deployment
+        // Using kovan endpoint by default to avoid accidental ether loss
+        let wallet = new HDWalletProvider(process.env.PRIVATE_KEY, process.env.KOVAN_ENDPOINT)
+        var nonceTracker = new NonceTrackerSubprovider()
+        wallet.engine._providers.unshift(nonceTracker)
+        nonceTracker.setEngine(wallet.engine)
+        return wallet
+      },
       network_id: '1', // Match any network id
       gas: 7900000,
-      gasPrice: 10000000000
+      gasPrice: 10000000000 // 10 gwei
     },
     ropsten: {
       // provider: new HDWalletProvider(privKey, "http://localhost:8545"),
@@ -38,8 +45,7 @@ module.exports = {
     },
     kovan: {
       provider: () => {
-        const key = fs.readFileSync('./privKey').toString();
-        let wallet = new HDWalletProvider(key, "https://kovan.infura.io/")
+        let wallet = new HDWalletProvider(process.env.PRIVATE_KEY, process.env.KOVAN_ENDPOINT)
         var nonceTracker = new NonceTrackerSubprovider()
         wallet.engine._providers.unshift(nonceTracker)
         nonceTracker.setEngine(wallet.engine)
@@ -47,7 +53,7 @@ module.exports = {
       },
       network_id: '42', // Match any network id
       gas: 7900000,
-      gasPrice: 5000000000
+      gasPrice: 5000000000 // 5 gwei
     },
     coverage: {
       host: "localhost",
@@ -59,11 +65,11 @@ module.exports = {
   },
   compilers: {
     solc: {
-      version: "native",  
+      version: "native",
       settings: {
         optimizer: {
-          enabled: true, 
-          runs: 200    
+          enabled: true,
+          runs: 200
         }
       }
     }

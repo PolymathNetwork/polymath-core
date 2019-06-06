@@ -25,11 +25,11 @@ let dividendsType;
 async function executeApp() {
   console.log('\n', chalk.blue('Dividends Manager - Main Menu', '\n'));
 
-  let tmModules = await getAllModulesByType(gbl.constants.MODULES_TYPES.DIVIDENDS);
+  let tmModules = await common.getAllModulesByType(securityToken, gbl.constants.MODULES_TYPES.DIVIDENDS);
   let nonArchivedModules = tmModules.filter(m => !m.archived);
   if (nonArchivedModules.length > 0) {
     console.log(`Dividends modules attached:`);
-    nonArchivedModules.map(m => console.log(`- ${m.name} at ${m.address}`))
+    nonArchivedModules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
   } else {
     console.log(`There are no dividends modules attached`);
   }
@@ -101,7 +101,7 @@ async function exploreAddress(currentCheckpoint) {
 }
 
 async function configExistingModules(dividendModules) {
-  let options = dividendModules.map(m => `${m.name} at ${m.address}`);
+  let options = dividendModules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module do you want to config? ', { cancel: 'RETURN' });
   console.log('Selected:', index != -1 ? options[index] : 'RETURN', '\n');
   let moduleNameSelected = index != -1 ? dividendModules[index].name : 'RETURN';
@@ -625,34 +625,26 @@ to account ${ event._claimer} `
 }
 
 async function addDividendsModule() {
-  let availableModules = await moduleRegistry.methods.getModulesByTypeAndToken(gbl.constants.MODULES_TYPES.DIVIDENDS, securityToken.options.address).call();
-  let moduleList = await Promise.all(availableModules.map(async function (m) {
-    let moduleFactoryABI = abis.moduleFactory();
-    let moduleFactory = new web3.eth.Contract(moduleFactoryABI, m);
-    let moduleName = web3.utils.hexToUtf8(await moduleFactory.methods.name().call());
-    let moduleVersion = await moduleFactory.methods.version().call();
-    return { name: moduleName, version: moduleVersion, factoryAddress: m };
-  }));
-
+  let moduleList = await common.getAvailableModules(moduleRegistry, gbl.constants.MODULES_TYPES.DIVIDENDS, securityToken.options.address);
   let options = moduleList.map(m => `${m.name} - ${m.version} (${m.factoryAddress})`);
 
   let index = readlineSync.keyInSelect(options, 'Which dividends module do you want to add? ', { cancel: 'Return' });
   if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]}? `)) {
-    let wallet = readlineSync.question('Enter the account address to receive reclaimed dividends and tax: ', {
-      limit: function (input) {
-        return web3.utils.isAddress(input);
-      },
-      limitMessage: "Must be a valid address",
-    });
-    let configureFunction = abis.erc20DividendCheckpoint().find(o => o.name === 'configure' && o.type === 'function');
-    let bytes = web3.eth.abi.encodeFunctionCall(configureFunction, [wallet]);
-
-    let selectedDividendFactoryAddress = moduleList[index].factoryAddress;
-    let addModuleAction = securityToken.methods.addModule(selectedDividendFactoryAddress, bytes, 0, 0, false);
-    let receipt = await common.sendTransaction(addModuleAction);
-    let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
-    console.log(chalk.green(`Module deployed at address: ${event._module} `));
+    const moduleABI = moduleList[index].name === 'ERC20DividendCheckpoint' ? abis.erc20DividendCheckpoint() : abis.etherDividendCheckpoint();
+    await common.addModule(securityToken, polyToken, moduleList[index].factoryAddress, moduleABI, getDividendsInitializeData);
   }
+}
+
+function getDividendsInitializeData(moduleABI) {
+  let wallet = readlineSync.question('Enter the account address to receive reclaimed dividends and tax: ', {
+    limit: function (input) {
+      return web3.utils.isAddress(input);
+    },
+    limitMessage: "Must be a valid address",
+  });
+  let configureFunction = moduleABI.find(o => o.name === 'configure' && o.type === 'function');
+  let bytes = web3.eth.abi.encodeFunctionCall(configureFunction, [wallet]);
+  return bytes;
 }
 
 // Helper functions
@@ -819,35 +811,6 @@ function showExcluded(excluded) {
   console.log('Current default excluded addresses:')
   excluded.map(address => console.log(address));
   console.log();
-}
-
-async function getAllModulesByType(type) {
-  function ModuleInfo(_moduleType, _name, _address, _factoryAddress, _archived, _paused) {
-    this.name = _name;
-    this.type = _moduleType;
-    this.address = _address;
-    this.factoryAddress = _factoryAddress;
-    this.archived = _archived;
-    this.paused = _paused;
-  }
-
-  let modules = [];
-
-  let allModules = await securityToken.methods.getModulesByType(type).call();
-
-  for (let i = 0; i < allModules.length; i++) {
-    let details = await securityToken.methods.getModule(allModules[i]).call();
-    let nameTemp = web3.utils.hexToUtf8(details[0]);
-    let pausedTemp = null;
-    if (type == gbl.constants.MODULES_TYPES.STO || type == gbl.constants.MODULES_TYPES.TRANSFER) {
-      let abiTemp = JSON.parse(require('fs').readFileSync(`${__dirname} /../../ build / contracts / ${nameTemp}.json`).toString()).abi;
-      let contractTemp = new web3.eth.Contract(abiTemp, details[1]);
-      pausedTemp = await contractTemp.methods.paused().call();
-    }
-    modules.push(new ModuleInfo(type, nameTemp, details[1], details[2], details[3], pausedTemp));
-  }
-
-  return modules;
 }
 
 async function initialize(_tokenSymbol) {

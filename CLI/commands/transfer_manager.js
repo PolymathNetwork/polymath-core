@@ -50,6 +50,7 @@ const MATM_MENU_OPERATE_REVOKE = 'Revoke multiple approvals in batch';
 // App flow
 let tokenSymbol;
 let securityToken;
+let polyToken;
 let securityTokenRegistry;
 let moduleRegistry;
 let currentTransferManager;
@@ -57,11 +58,11 @@ let currentTransferManager;
 async function executeApp() {
   console.log('\n', chalk.blue('Transfer Manager - Main Menu', '\n'));
 
-  let tmModules = await getAllModulesByType(gbl.constants.MODULES_TYPES.TRANSFER);
+  let tmModules = await common.getAllModulesByType(securityToken, gbl.constants.MODULES_TYPES.TRANSFER);
   let nonArchivedModules = tmModules.filter(m => !m.archived);
   if (nonArchivedModules.length > 0) {
     console.log(`Transfer Manager modules attached:`);
-    nonArchivedModules.map(m => `${m.name} (${m.version}) at ${m.address}`)
+    nonArchivedModules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
   } else {
     console.log(`There are no Transfer Manager modules attached`);
   }
@@ -241,7 +242,7 @@ async function forcedTransfers() {
 }
 
 async function configExistingModules(tmModules) {
-  let options = tmModules.map(m => `${m.name} at ${m.address}`);
+  let options = tmModules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module do you want to config? ', { cancel: 'RETURN' });
   console.log('Selected:', index !== -1 ? options[index] : 'RETURN', '\n');
   let moduleNameSelected = index !== -1 ? tmModules[index].name : 'RETURN';
@@ -286,43 +287,45 @@ async function configExistingModules(tmModules) {
 }
 
 async function addTransferManagerModule() {
-  let availableModules = await moduleRegistry.methods.getModulesByTypeAndToken(gbl.constants.MODULES_TYPES.TRANSFER, securityToken.options.address).call();
-  let moduleList = await Promise.all(availableModules.map(async function (m) {
-    let moduleFactoryABI = abis.moduleFactory();
-    let moduleFactory = new web3.eth.Contract(moduleFactoryABI, m);
-    let moduleName = web3.utils.hexToUtf8(await moduleFactory.methods.name().call());
-      let moduleVersion = await moduleFactory.methods.version().call();
-      return { name: moduleName, version: moduleVersion, factoryAddress: m };
-  }));
+  let moduleList = await common.getAvailableModules(moduleRegistry, gbl.constants.MODULES_TYPES.TRANSFER, securityToken.options.address);
   let options = moduleList.map(m => `${m.name} - ${m.version} (${m.factoryAddress})`);
 
   let index = readlineSync.keyInSelect(options, 'Which Transfer Manager module do you want to add? ', { cancel: 'RETURN' });
-  if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]} module?`)) {
-    let bytes = web3.utils.fromAscii('', 16);
-    switch (options[index]) {
+  if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${moduleList[index].name} module?`)) {
+    let getInitializeData;
+    let moduleAbi;
+    switch (moduleList[index].name) {
       case 'CountTransferManager':
-        let maxHolderCount = readlineSync.question('Enter the maximum no. of holders the SecurityToken is allowed to have: ');
-        let configureCountTM = abis.countTransferManager().find(o => o.name === 'configure' && o.type === 'function');
-        bytes = web3.eth.abi.encodeFunctionCall(configureCountTM, [maxHolderCount]);
+        moduleAbi = abis.countTransferManager();
+        getInitializeData = getCountTMInitializeData;
         break;
       case 'PercentageTransferManager':
-        let maxHolderPercentage = toWeiPercentage(readlineSync.question('Enter the maximum amount of tokens in percentage that an investor can hold: ', {
-          limit: function (input) {
-            return (parseInt(input) > 0 && parseInt(input) <= 100);
-          },
-          limitMessage: "Must be greater than 0 and less than 100"
-        }));
-        let allowPercentagePrimaryIssuance = readlineSync.keyInYNStrict(`Do you want to ignore transactions which are part of the primary issuance? `);
-        let configurePercentageTM = abis.percentageTransferManager().find(o => o.name === 'configure' && o.type === 'function');
-        bytes = web3.eth.abi.encodeFunctionCall(configurePercentageTM, [maxHolderPercentage, allowPercentagePrimaryIssuance]);
+        moduleAbi = abis.percentageTransferManager();
+        getInitializeData = getPercentageTMInitializeData;
         break;
     }
-    let selectedTMFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, gbl.constants.MODULES_TYPES.TRANSFER, options[index]);
-    let addModuleAction = securityToken.methods.addModule(selectedTMFactoryAddress, bytes, 0, 0, false);
-    let receipt = await common.sendTransaction(addModuleAction);
-    let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
-    console.log(chalk.green(`Module deployed at address: ${event._module}`));
+    await common.addModule(securityToken, polyToken, moduleList[index].factoryAddress, moduleAbi, getInitializeData);
   }
+}
+
+function getPercentageTMInitializeData(moduleAbi) {
+  const maxHolderPercentage = toWeiPercentage(readlineSync.question('Enter the maximum amount of tokens in percentage that an investor can hold: ', {
+    limit: function (input) {
+      return (parseInt(input) > 0 && parseInt(input) <= 100);
+    },
+    limitMessage: "Must be greater than 0 and less than 100"
+  }));
+  const allowPercentagePrimaryIssuance = readlineSync.keyInYNStrict(`Do you want to ignore transactions which are part of the primary issuance? `);
+  const configurePercentageTM = moduleAbi.find(o => o.name === 'configure' && o.type === 'function');
+  const bytes = web3.eth.abi.encodeFunctionCall(configurePercentageTM, [maxHolderPercentage, allowPercentagePrimaryIssuance]);
+  return bytes
+}
+
+function getCountTMInitializeData(moduleABI) {
+  const maxHolderCount = readlineSync.question('Enter the maximum no. of holders the SecurityToken is allowed to have: ');
+  const configureCountTM = moduleABI.find(o => o.name === 'configure' && o.type === 'function');
+  const bytes = web3.eth.abi.encodeFunctionCall(configureCountTM, [maxHolderCount]);
+  return bytes;
 }
 
 async function generalTransferManager() {
@@ -2857,39 +2860,6 @@ function fromWeiPercentage(number) {
   return web3.utils.fromWei(new web3.utils.BN(number).muln(100)).toString();
 }
 
-async function getAllModulesByType(type) {
-  function ModuleInfo(_moduleType, _name, _address, _factoryAddress, _archived, _paused, _version) {
-    this.name = _name;
-    this.type = _moduleType;
-    this.address = _address;
-    this.factoryAddress = _factoryAddress;
-    this.archived = _archived;
-    this.paused = _paused;
-    this.version = _version;
-  }
-
-  let modules = [];
-
-  let allModules = await securityToken.methods.getModulesByType(type).call();
-
-  for (let i = 0; i < allModules.length; i++) {
-    let details = await securityToken.methods.getModule(allModules[i]).call();
-    let nameTemp = web3.utils.hexToUtf8(details[0]);
-    let pausedTemp = null;
-    if (type == gbl.constants.MODULES_TYPES.STO || type == gbl.constants.MODULES_TYPES.TRANSFER) {
-      let abiTemp = JSON.parse(require('fs').readFileSync(`${__dirname}/../../build/contracts/${nameTemp}.json`).toString()).abi;
-      let contractTemp = new web3.eth.Contract(abiTemp, details[1]);
-      pausedTemp = await contractTemp.methods.paused().call();
-    }
-    let factoryAbi = abis.moduleFactory();
-    let factory = new web3.eth.Contract(factoryAbi, details[2]);
-    let versionTemp = await factory.methods.version().call();
-    modules.push(new ModuleInfo(type, nameTemp, details[1], details[2], details[3], pausedTemp, versionTemp));
-  }
-
-  return modules;
-}
-
 async function initialize(_tokenSymbol) {
   welcome();
   await setup();
@@ -2927,6 +2897,11 @@ async function setup() {
     let moduleRegistryABI = abis.moduleRegistry();
     moduleRegistry = new web3.eth.Contract(moduleRegistryABI, moduleRegistryAddress);
     moduleRegistry.setProvider(web3.currentProvider);
+
+    let polyTokenAddress = await contracts.polyToken();
+    let polyTokenABI = abis.polyToken();
+    polyToken = new web3.eth.Contract(polyTokenABI, polyTokenAddress);
+    polyToken.setProvider(web3.currentProvider);
   } catch (err) {
     console.log(err)
     console.log('\x1b[31m%s\x1b[0m', "There was a problem getting the contracts. Make sure they are deployed to the selected network.");
@@ -2965,8 +2940,8 @@ async function selectToken() {
 }
 
 async function logTotalInvestors() {
-  let investorsCount = await securityToken.methods.getInvestorCount().call();
-  console.log(chalk.yellow(`Total investors at the moment: ${investorsCount} `));
+  let holdersCount = await securityToken.methods.holderCount().call();
+  console.log(chalk.yellow(`Total holders at the moment: ${holdersCount} `));
 }
 
 async function logBalance(from, totalSupply) {

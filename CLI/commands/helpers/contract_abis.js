@@ -26,6 +26,7 @@ let ownableABI;
 let stoABI;
 let iTransferManagerABI;
 let moduleFactoryABI;
+let moduleABI;
 let erc20ABI;
 
 try {
@@ -57,6 +58,7 @@ try {
     stoABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/STO.json`).toString()).abi
     iTransferManagerABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/ITransferManager.json`).toString()).abi
     moduleFactoryABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/ModuleFactory.json`).toString()).abi;
+    moduleABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/Module.json`).toString()).abi;
     // Note: use ISecurity Token for ERC20 as it contains full ERC20Detailed ABI
     erc20ABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/ISecurityToken.json`).toString()).abi;
 } catch (err) {
@@ -163,5 +165,8 @@ module.exports = {
             "type": "function"
         }];
         return alternativeErc20;
+    },
+    moduleABI: function () {
+        return moduleABI;
     }
 }

@@ -9,6 +9,7 @@ var abis = require('./helpers/contract_abis');
 let tokenSymbol;
 let securityTokenRegistry;
 let securityToken;
+let polyToken;
 let generalPermissionManager;
 let isNewDelegate = false;
 
@@ -38,6 +39,11 @@ async function setup() {
     let iSecurityTokenRegistryABI = abis.iSecurityTokenRegistry();
     securityTokenRegistry = new web3.eth.Contract(iSecurityTokenRegistryABI, securityTokenRegistryAddress);
     securityTokenRegistry.setProvider(web3.currentProvider);
+
+    let polyTokenAddress = await contracts.polyToken();
+    let polyTokenABI = abis.polyToken();
+    polyToken = new web3.eth.Contract(polyTokenABI, polyTokenAddress);
+    polyToken.setProvider(web3.currentProvider);
   } catch (err) {
     console.log(err)
     console.log('\x1b[31m%s\x1b[0m', "There was a problem getting the contracts. Make sure they are deployed to the selected network.");
@@ -67,11 +73,8 @@ async function addPermissionModule() {
     console.log(chalk.red(`General Permission Manager is not attached.`));
     if (readlineSync.keyInYNStrict('Do you want to add General Permission Manager Module to your Security Token?')) {
       let permissionManagerFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, gbl.constants.MODULES_TYPES.PERMISSION, 'GeneralPermissionManager');
-      let addModuleAction = securityToken.methods.addModule(permissionManagerFactoryAddress, web3.utils.fromAscii('', 16), 0, 0, false);
-      let receipt = await common.sendTransaction(addModuleAction);
-      let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
-      console.log(`Module deployed at address: ${event._module}`);
-      generalPermissionManagerAddress = event._module;
+      const gpmABI = abis.generalPermissionManager();
+      generalPermissionManagerAddress = await common.addModule(securityToken, polyToken, permissionManagerFactoryAddress, gpmABI);
     } else {
       process.exit(0);
     }

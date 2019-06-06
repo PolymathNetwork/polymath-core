@@ -131,7 +131,7 @@ module.exports = function (deployer, network, accounts) {
             });
         deployer.deploy(PolymathRegistry)
             .then((pr) => {
-                polymathRegistry = pr;
+                polymathRegistry = pr.address;
             });
     } else if (network === "kovan") {
         web3 = new Web3(new Web3.providers.HttpProvider("https://kovan.infura.io/g5xfoQ0jFSE9S5LwM1Ei"));
@@ -195,7 +195,7 @@ module.exports = function (deployer, network, accounts) {
                     from: PolymathAccount
                 })
                 .then(() => {
-                    return deployer.deploy(GeneralPermissionManagerFactory, new BN(0), new BN(0), GeneralPermissionManagerLogic.address, polymathRegistry.address, {
+                    return deployer.deploy(GeneralPermissionManagerFactory, new BN(0), new BN(0), GeneralPermissionManagerLogic.address, polymathRegistry, {
                         from: PolymathAccount
                     });
                 })
@@ -208,7 +208,7 @@ module.exports = function (deployer, network, accounts) {
                     from: PolymathAccount
                 })
                 .then(() => {
-                    return deployer.deploy(CountTransferManagerFactory, new BN(0), new BN(0), CountTransferManagerLogic.address, polymathRegistry.address, {
+                    return deployer.deploy(CountTransferManagerFactory, new BN(0), new BN(0), CountTransferManagerLogic.address, polymathRegistry, {
                         from: PolymathAccount
                     });
                 })
@@ -221,7 +221,7 @@ module.exports = function (deployer, network, accounts) {
                     from: PolymathAccount
                 })
                 .then(() => {
-                    return deployer.deploy(ManualApprovalTransferManagerFactory, new BN(0), new BN(0), ManualApprovalTransferManagerLogic.address, polymathRegistry.address, {
+                    return deployer.deploy(ManualApprovalTransferManagerFactory, new BN(0), new BN(0), ManualApprovalTransferManagerLogic.address, polymathRegistry, {
                         from: PolymathAccount
                     });
                 })
@@ -234,7 +234,7 @@ module.exports = function (deployer, network, accounts) {
                     from: PolymathAccount
                 })
                 .then(() => {
-                    return deployer.deploy(PercentageTransferManagerFactory, new BN(0), new BN(0), PercentageTransferManagerLogic.address, polymathRegistry.address, {
+                    return deployer.deploy(PercentageTransferManagerFactory, new BN(0), new BN(0), PercentageTransferManagerLogic.address, polymathRegistry, {
                         from: PolymathAccount
                     });
                 })
@@ -247,7 +247,7 @@ module.exports = function (deployer, network, accounts) {
                     from: PolymathAccount
                 })
                 .then(() => {
-                    return deployer.deploy(ERC20DividendCheckpointFactory, new BN(0), new BN(0), ERC20DividendCheckpointLogic.address, polymathRegistry.address, {
+                    return deployer.deploy(ERC20DividendCheckpointFactory, new BN(0), new BN(0), ERC20DividendCheckpointLogic.address, polymathRegistry, {
                         from: PolymathAccount
                     });
                 })
@@ -260,7 +260,7 @@ module.exports = function (deployer, network, accounts) {
                     from: PolymathAccount
                 })
                 .then(() => {
-                    return deployer.deploy(EtherDividendCheckpointFactory, new BN(0), new BN(0), EtherDividendCheckpointLogic.address, polymathRegistry.address, {
+                    return deployer.deploy(EtherDividendCheckpointFactory, new BN(0), new BN(0), EtherDividendCheckpointLogic.address, polymathRegistry, {
                         from: PolymathAccount
                     });
                 })
@@ -273,7 +273,7 @@ module.exports = function (deployer, network, accounts) {
                     from: PolymathAccount
                 })
                 .then(() => {
-                    return deployer.deploy(USDTieredSTOFactory, usdTieredSTOSetupCost, new BN(0), USDTieredSTOLogic.address, polymathRegistry.address, {
+                    return deployer.deploy(USDTieredSTOFactory, usdTieredSTOSetupCost, new BN(0), USDTieredSTOLogic.address, polymathRegistry, {
                         from: PolymathAccount
                     });
                 })
@@ -286,7 +286,7 @@ module.exports = function (deployer, network, accounts) {
                     from: PolymathAccount
                 })
                 .then(() => {
-                    return deployer.deploy(VolumeRestrictionTMFactory, new BN(0), new BN(0), VolumeRestrictionTMLogic.address, polymathRegistry.address, {
+                    return deployer.deploy(VolumeRestrictionTMFactory, new BN(0), new BN(0), VolumeRestrictionTMLogic.address, polymathRegistry, {
                         from: PolymathAccount
                     });
                 })
@@ -299,7 +299,7 @@ module.exports = function (deployer, network, accounts) {
                     from: PolymathAccount
                 })
                 .then(() => {
-                    return deployer.deploy(PLCRVotingCheckpointFactory, new BN(0), new BN(0), PLCRVotingCheckpointLogic.address, polymathRegistry.address, {
+                    return deployer.deploy(PLCRVotingCheckpointFactory, new BN(0), new BN(0), PLCRVotingCheckpointLogic.address, polymathRegistry, {
                         from: PolymathAccount
                     });
                 })
@@ -312,7 +312,7 @@ module.exports = function (deployer, network, accounts) {
                     from: PolymathAccount
                 })
                 .then(() => {
-                    return deployer.deploy(WeightedVoteCheckpointFactory, new BN(0), new BN(0), WeightedVoteCheckpointLogic.address, polymathRegistry.address, {
+                    return deployer.deploy(WeightedVoteCheckpointFactory, new BN(0), new BN(0), WeightedVoteCheckpointLogic.address, polymathRegistry, {
                         from: PolymathAccount
                     });
                 })
@@ -325,7 +325,7 @@ module.exports = function (deployer, network, accounts) {
                     from: PolymathAccount
                 })
                 .then(() => {
-                    return deployer.deploy(BlacklistTransferManagerFactory, new BN(0), new BN(0), BlacklistTransferManagerLogic.address, polymathRegistry.address, {
+                    return deployer.deploy(BlacklistTransferManagerFactory, new BN(0), new BN(0), BlacklistTransferManagerLogic.address, polymathRegistry, {
                         from: PolymathAccount
                     });
                 })
@@ -338,7 +338,7 @@ module.exports = function (deployer, network, accounts) {
                     from: PolymathAccount
                 })
                 .then(() => {
-                    return deployer.deploy(LockUpTransferManagerFactory, new BN(0), new BN(0), LockUpTransferManagerLogic.address, polymathRegistry.address, {
+                    return deployer.deploy(LockUpTransferManagerFactory, new BN(0), new BN(0), LockUpTransferManagerLogic.address, polymathRegistry, {
                         from: PolymathAccount
                     });
                 })
@@ -351,7 +351,7 @@ module.exports = function (deployer, network, accounts) {
                     from: PolymathAccount
                 })
                 .then(() => {
-                    return deployer.deploy(VestingEscrowWalletFactory, new BN(0), new BN(0), VestingEscrowWalletLogic.address, polymathRegistry.address, {
+                    return deployer.deploy(VestingEscrowWalletFactory, new BN(0), new BN(0), VestingEscrowWalletLogic.address, polymathRegistry, {
                         from: PolymathAccount
                     });
                 })
@@ -364,7 +364,7 @@ module.exports = function (deployer, network, accounts) {
                     from: PolymathAccount
                 })
                 .then(() => {
-                    return deployer.deploy(CappedSTOFactory, cappedSTOSetupCost, new BN(0), CappedSTOLogic.address, polymathRegistry.address, {
+                    return deployer.deploy(CappedSTOFactory, cappedSTOSetupCost, new BN(0), CappedSTOLogic.address, polymathRegistry, {
                         from: PolymathAccount
                     });
                 })
@@ -377,7 +377,7 @@ module.exports = function (deployer, network, accounts) {
                     from: PolymathAccount
                 })
                 .then(() => {
-                    return deployer.deploy(GeneralTransferManagerFactory, new BN(0), new BN(0), GeneralTransferManagerLogic.address, polymathRegistry.address, {
+                    return deployer.deploy(GeneralTransferManagerFactory, new BN(0), new BN(0), GeneralTransferManagerLogic.address, polymathRegistry, {
                         from: PolymathAccount
                     })
                 })
@@ -404,7 +404,7 @@ module.exports = function (deployer, network, accounts) {
         })
         .then(() => {
             let tokenInitBytesCall = web3.eth.abi.encodeFunctionCall(tokenInitBytes, [STGetter.address]);
-            return deployer.deploy(STFactory, polymathRegistry.address, GeneralTransferManagerFactory.address, DataStoreFactory.address, "3.0.0", SecurityTokenLogic.address, tokenInitBytesCall, {
+            return deployer.deploy(STFactory, polymathRegistry, GeneralTransferManagerFactory.address, DataStoreFactory.address, "3.0.0", SecurityTokenLogic.address, tokenInitBytesCall, {
                 from: PolymathAccount
             });
         })

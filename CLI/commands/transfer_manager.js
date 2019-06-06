@@ -70,7 +70,7 @@ async function executeApp() {
   let options = ['Verify transfer', 'Transfer'];
   let forcedTransferDisabled = await securityToken.methods.controllerDisabled().call();
   if (!forcedTransferDisabled) {
-    options.push('Forced transfers');
+    options.push('Controller transfers');
   }
   if (nonArchivedModules.length > 0) {
     options.push('Config existing modules');
@@ -143,7 +143,7 @@ async function executeApp() {
         console.log(chalk.red(`Transfer failed at verification. Please review the transfer restrictions.`));
       }
       break;
-    case 'Forced transfers':
+    case 'Controller transfers':
       await forcedTransfers();
       break;
     case 'Config existing modules':
@@ -163,7 +163,7 @@ async function forcedTransfers() {
   let options = ['Disable controller', 'Set controller'];
   let controller = await securityToken.methods.controller().call();
   if (controller == Issuer.address) {
-    options.push('Force Transfer');
+    options.push('Controller Transfer');
   }
   let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
   let optionSelected = index !== -1 ? options[index] : 'RETURN';
@@ -176,7 +176,7 @@ async function forcedTransfers() {
           let signature = await getDisableControllerAckSigner(securityToken.options.address, Issuer.address);
           let disableControllerAction = securityToken.methods.disableController(signature);
           await common.sendTransaction(disableControllerAction);
-          console.log(chalk.green(`Forced transfers have been disabled permanently`));
+          console.log(chalk.green(`Controller transfers have been disabled permanently`));
           return;
         }
       break;
@@ -199,7 +199,7 @@ async function forcedTransfers() {
       let setControllerEvent = common.getEventFromLogs(securityToken._jsonInterface, setControllerReceipt.logs, 'SetController');
       console.log(chalk.green(`New controller is ${setControllerEvent._newController}`));
       break;
-    case 'Force Transfer':
+    case 'Controller Transfer':
       let from = readlineSync.question('Enter the address from which to take tokens: ', {
         limit: function (input) {
           return web3.utils.isAddress(input);

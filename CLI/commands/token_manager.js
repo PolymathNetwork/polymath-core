@@ -68,6 +68,7 @@ async function displayTokenData() {
   let displayTransferFrozen = await securityToken.methods.transfersFrozen().call();
   let displayIsIssuable = await securityToken.methods.isIssuable().call();
   let displayUserTokens = await securityToken.methods.balanceOf(Issuer.address).call();
+  let displayTreasuryWallet = await securityToken.methods.getTreasuryWallet().call();
 
   console.log(`
 ***************    Security Token Information    ****************
@@ -82,7 +83,8 @@ async function displayTokenData() {
 - Current checkpoint:   ${displayCurrentCheckpointId}
 - Transfer frozen:      ${displayTransferFrozen ? 'YES' : 'NO'}
 - Issuance allowed:     ${displayIsIssuable ? 'YES' : 'NO'}
-- User balance:         ${web3.utils.fromWei(displayUserTokens)} ${displayTokenSymbol.toUpperCase()}`);
+- User balance:         ${web3.utils.fromWei(displayUserTokens)} ${displayTokenSymbol.toUpperCase()}
+- Treasury wallet:      ${displayTreasuryWallet}`);
 }
 
 async function displayModules() {
@@ -136,7 +138,7 @@ async function displayModules() {
 }
 
 async function selectAction() {
-  let options = ['Update token details'/*, 'Change granularity'*/];
+  let options = ['Update token details', 'Change treasury wallet']; // 'Change granularity'
 
   let transferFrozen = await securityToken.methods.transfersFrozen().call();
   if (transferFrozen) {
@@ -172,6 +174,15 @@ async function selectAction() {
     case 'Update token details':
       let updatedDetails = readlineSync.question('Enter new off-chain details of the token (i.e. Dropbox folder url): ');
       await updateTokenDetails(updatedDetails);
+      break;
+    case 'Change treasury wallet':
+      let newTreasuryWallet = readlineSync.question('Enter the address of the new treasury wallet: ', {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: "Must be a valid address"
+      });
+      await changeTreasuryWallet(newTreasuryWallet);
       break;
     case 'Change granularity':
       //let granularity = readlineSync.questionInt('Enter ')
@@ -234,6 +245,12 @@ async function updateTokenDetails(updatedDetails) {
   let updateTokenDetailsAction = securityToken.methods.updateTokenDetails(updatedDetails);
   await common.sendTransaction(updateTokenDetailsAction);
   console.log(chalk.green(`Token details have been updated successfully!`));
+}
+
+async function changeTreasuryWallet(newTreasuryWallet) {
+  let updateTokenDetailsAction = securityToken.methods.changeTreasuryWallet(newTreasuryWallet);
+  await common.sendTransaction(updateTokenDetailsAction);
+  console.log(chalk.green(`Treasury wallet has been updated successfully!`));
 }
 
 async function freezeTransfers() {

@@ -74,7 +74,7 @@ async function displayTokenData() {
 ***************    Security Token Information    ****************
 - Address:              ${securityToken.options.address}
 - Token symbol:         ${displayTokenSymbol.toUpperCase()}
-- Token name:           ${displayTokenName.toUpperCase()}
+- Token name:           ${displayTokenName}
 - Token details:        ${displayTokenDetails}
 - Token version:        ${displayVersion[0]}.${displayVersion[1]}.${displayVersion[2]}
 - Total supply:         ${web3.utils.fromWei(displayTokenSupply)} ${displayTokenSymbol.toUpperCase()}
@@ -138,7 +138,7 @@ async function displayModules() {
 }
 
 async function selectAction() {
-  let options = ['Update token details', 'Change treasury wallet']; // 'Change granularity'
+  let options = ['Change token name', 'Update token details', 'Change treasury wallet']; // 'Change granularity'
 
   let transferFrozen = await securityToken.methods.transfersFrozen().call();
   if (transferFrozen) {
@@ -171,6 +171,10 @@ async function selectAction() {
   let selected = index == -1 ? 'Exit' : options[index];
   console.log('Selected:', selected);
   switch (selected) {
+    case 'Change token name':
+      let newTokenName = readlineSync.question('Enter new token name: ');
+      await changeTokenName(newTokenName);
+      break;
     case 'Update token details':
       let updatedDetails = readlineSync.question('Enter new off-chain details of the token (i.e. Dropbox folder url): ');
       await updateTokenDetails(updatedDetails);
@@ -241,6 +245,12 @@ async function selectAction() {
 }
 
 // Token actions
+async function changeTokenName(newTokenName) {
+  let changeTokenNameAction = securityToken.methods.changeName(newTokenName);
+  await common.sendTransaction(changeTokenNameAction);
+  console.log(chalk.green(`Token details have been updated successfully!`));
+}
+
 async function updateTokenDetails(updatedDetails) {
   let updateTokenDetailsAction = securityToken.methods.updateTokenDetails(updatedDetails);
   await common.sendTransaction(updateTokenDetailsAction);
@@ -248,8 +258,8 @@ async function updateTokenDetails(updatedDetails) {
 }
 
 async function changeTreasuryWallet(newTreasuryWallet) {
-  let updateTokenDetailsAction = securityToken.methods.changeTreasuryWallet(newTreasuryWallet);
-  await common.sendTransaction(updateTokenDetailsAction);
+  let changeTreasuryWalletAction = securityToken.methods.changeTreasuryWallet(newTreasuryWallet);
+  await common.sendTransaction(changeTreasuryWalletAction);
   console.log(chalk.green(`Treasury wallet has been updated successfully!`));
 }
 

@@ -61,6 +61,7 @@
     "dotenv": "^8.0.0",
     "truffle": "^5.0.4",
     "truffle-hdwallet-provider": "^1.0.4",
+    "truffle-plugin-verify": "^0.2.1",
     "web3-provider-engine": "^14.1.0"
   },
   "devDependencies": {

@@ -69,7 +69,6 @@ const cappedSTOSetupCost = new BN(20000).mul(new BN(10).pow(new BN(18))); // 20K
 const usdTieredSTOSetupCost = new BN(100000).mul(new BN(10).pow(new BN(18))); // 100K POLY fee
 let PolyToken;
 let POLYOracle;
-let StablePOLYOracle;
 
 module.exports = function (deployer, network, accounts) {
     // Ethereum account address hold by the Polymath (Act as the main account which have ownable permissions)
@@ -114,11 +113,7 @@ module.exports = function (deployer, network, accounts) {
                             from: PolymathAccount
                         }
                     );
-            }).then(() => {
-                return StableOracle.deployed();
-            }).then(stableOracle => {
-                StablePOLYOracle = stableOracle.address;
-            });
+            })
         deployer
             .deploy(
                 MockOracle,
@@ -144,16 +139,14 @@ module.exports = function (deployer, network, accounts) {
         PolyToken = "0xb347b9f5b56b431b2cf4e1d90a5995f7519ca792"; // PolyToken Kovan Faucet Address
         POLYOracle = "0x461d98EF2A0c7Ac1416EF065840fF5d4C946206C"; // Poly Oracle Kovan Address
         ETHOracle = "0xCE5551FC9d43E9D2CC255139169FC889352405C8"; // ETH Oracle Kovan Address
-        StablePOLYOracle = ""; // TODO
-        polymathRegistry = ""; // TODO
+        polymathRegistry = "0x5b215a7D39Ee305AD28da29BF2f0425C6C2a00B3";
     } else if (network === "mainnet") {
         web3 = new Web3(new Web3.providers.HttpProvider("https://mainnet.infura.io/g5xfoQ0jFSE9S5LwM1Ei"));
         PolymathAccount = accounts[0];
         PolyToken = "0x9992eC3cF6A55b00978cdDF2b27BC6882d88D1eC"; // Mainnet PolyToken Address
         POLYOracle = "0x52cb4616E191Ff664B0bff247469ce7b74579D1B"; // Poly Oracle Mainnet Address
         ETHOracle = "0x60055e9a93aae267da5a052e95846fa9469c0e7a"; // ETH Oracle Mainnet Address
-        StablePOLYOracle = ""; // TODO
-        polymathRegistry = ""; // TODO
+        polymathRegistry = "0xdfabf3e4793cd30affb47ab6fa4cf4eef26bbc27";
     }
 
     const tokenInitBytes = {

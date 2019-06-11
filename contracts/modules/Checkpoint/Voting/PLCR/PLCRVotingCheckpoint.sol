@@ -144,7 +144,7 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
     /**
      * @notice Used to reveal the vote
      * @param _ballotId Given ballot Id
-     * @param _choiceOfProposal Proposal chossed by the voter. It varies from (0 to totalProposals - 1)
+     * @param _choiceOfProposal Proposal chossed by the voter. It varies from (1 to totalProposals)
      * @param _salt used salt for hashing (unique for each user)
      */
     function revealVote(uint256 _ballotId, uint256 _choiceOfProposal, uint256 _salt) external {
@@ -153,7 +153,7 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
         Ballot storage ballot = ballots[_ballotId];
         require(ballot.isActive, "Inactive ballot");
         require(ballot.investorToProposal[msg.sender].secretVote != bytes32(0), "Secret vote not available");
-        require(_choiceOfProposal < ballot.totalProposals && _choiceOfProposal >= 1, "Invalid proposal choice");
+        require(ballot.totalProposals >= _choiceOfProposal && _choiceOfProposal > 0, "Invalid proposal choice");
 
         // validate the secret vote
         require(

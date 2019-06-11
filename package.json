@@ -58,7 +58,7 @@
   },
   "homepage": "https://github.com/PolymathNetwork/polymath-core#readme",
   "dependencies": {
-    "truffle": "^5.0.4",
+    "truffle": "^5.0.20",
     "truffle-hdwallet-provider": "^1.0.4",
     "web3-provider-engine": "^14.1.0"
   },

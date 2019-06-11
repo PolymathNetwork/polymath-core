@@ -25,13 +25,13 @@ contract UpgradableModuleFactory is ModuleFactory {
     }
 
     // Mapping from version to logic contract
-    mapping (uint256 => LogicContract) logicContracts;
+    mapping (uint256 => LogicContract) public logicContracts;
 
     // Mapping from Security Token address, to deployed proxy module address, to module version
-    mapping (address => mapping (address => uint256)) modules;
+    mapping (address => mapping (address => uint256)) public modules;
 
     // Mapping of which security token owns a given module
-    mapping (address => address) moduleToSecurityToken;
+    mapping (address => address) public moduleToSecurityToken;
 
     // Current version
     uint256 public latestUpgrade;

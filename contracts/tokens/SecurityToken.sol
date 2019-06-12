@@ -353,6 +353,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     */
     function changeName(string calldata _name) external {
         _onlyOwner();
+        require(bytes(_name).length > 0);
         emit UpdateTokenName(name, _name);
         name = _name;
     }

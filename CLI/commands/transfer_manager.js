@@ -6,6 +6,7 @@ const contracts = require('./helpers/contract_addresses');
 const abis = require('./helpers/contract_abis');
 const gbl = require('./common/global');
 const csvParse = require('./helpers/csv');
+const output = require('./IO/output');
 const { table } = require('table');
 
 ///////////////////
@@ -67,11 +68,12 @@ async function executeApp() {
     console.log(`There are no Transfer Manager modules attached`);
   }
 
-  let options = ['Verify transfer', 'Transfer'];
+  let options = ['Verify transfer', 'Transfer', 'Operator transfer'];
   let forcedTransferDisabled = await securityToken.methods.controllerDisabled().call();
   if (!forcedTransferDisabled) {
     options.push('Controller transfers');
   }
+  options.push('Manage operators');
   if (nonArchivedModules.length > 0) {
     options.push('Config existing modules');
   }
@@ -143,8 +145,14 @@ async function executeApp() {
         console.log(chalk.red(`Transfer failed at verification. Please review the transfer restrictions.`));
       }
       break;
+    case 'Operator transfer':
+      await operatorTransfer();
+      break;
     case 'Controller transfers':
       await forcedTransfers();
+      break;
+    case 'Manage operators':
+      await manageOperators();
       break;
     case 'Config existing modules':
       await configExistingModules(nonArchivedModules);
@@ -157,6 +165,59 @@ async function executeApp() {
   }
 
   await executeApp();
+}
+
+async function operatorTransfer() {
+  const partition = 'UNLOCKED';
+  const from = readlineSync.question('Enter the address from which to take tokens: ', {
+    limit: function (input) {
+      return web3.utils.isAddress(input);
+    },
+    limitMessage: "Must be a valid address"
+  });
+  const isOperator = await securityToken.methods.isOperator(Issuer.address, from).call();
+  if (!isOperator) {
+    console.log(chalk.red(`You are not an authorized operator for ${from}`));
+  } else {
+    await logBalance(from);
+    const to = readlineSync.question('Enter address where to send tokens: ', {
+      limit: function (input) {
+        return web3.utils.isAddress(input);
+      },
+      limitMessage: "Must be a valid address",
+    });
+    await logBalance(to);
+    const amount = readlineSync.question('Enter amount of tokens to transfer: ', {
+      limit: function (input) {
+        return parseInt(input) <= parseInt(fromBalance);
+      },
+      limitMessage: `Amount must be less or equal than ${fromBalance} ${tokenSymbol}`,
+    });
+    let isTranferVerified = await securityToken.methods.canTransferByPartition(from, to, web3.utils.asciiToHex(partition), web3.utils.toWei(amount), web3.utils.fromAscii("")).call();
+    if (!isTranferVerified) {
+      console.log(chalk.red(`Transfer failed at verification. Please review the transfer restrictions.`));
+    } else {
+      const data = '';
+      const operatorData = readlineSync.question('Enter a message to attach to the transfer: ');
+      const action = securityToken.methods.operatorTransferByPartition(
+        web3.utils.asciiToHex(partition),
+        from,
+        to,
+        web3.utils.toWei(amount),
+        web3.utils.fromAscii(data),
+        web3.utils.fromAscii(operatorData)
+      )
+      let receipt = await common.sendTransaction(action, { factor: 1.5 });
+      let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'TransferByPartition');
+      console.log(chalk.green(`  ${event._operator} has successfully transferred ${web3.utils.fromWei(event._value)} ${tokenSymbol}
+from ${event._from} to ${event._to}
+Data: ${web3.utils.hexToAscii(event._data)}
+Operator data: ${web3.utils.hexToAscii(event._operatorData)}
+        `));
+      await logBalance(from);
+      await logBalance(to);
+    }
+  }
 }
 
 async function forcedTransfers() {
@@ -206,22 +267,21 @@ async function forcedTransfers() {
         },
         limitMessage: "Must be a valid address",
       });
-      let fromBalance = web3.utils.fromWei(await securityToken.methods.balanceOf(from).call());
-      console.log(chalk.yellow(`Balance of ${from}: ${fromBalance} ${tokenSymbol}`));
+      await logBalance(from);
       let to = readlineSync.question('Enter address where to send tokens: ', {
         limit: function (input) {
           return web3.utils.isAddress(input);
         },
         limitMessage: "Must be a valid address",
       });
-      let toBalance = web3.utils.fromWei(await securityToken.methods.balanceOf(to).call());
-      console.log(chalk.yellow(`Balance of ${to}: ${toBalance} ${tokenSymbol}`));
+      await logBalance(to);
       let amount = readlineSync.question('Enter amount of tokens to transfer: ', {
         limit: function (input) {
           return parseInt(input) <= parseInt(fromBalance);
         },
         limitMessage: `Amount must be less or equal than ${fromBalance} ${tokenSymbol}`,
       });
+
       let data = '';//readlineSync.question('Enter the data to indicate validation: ');
       let log = readlineSync.question('Enter a message to attach to the transfer (i.e. "Private key lost"): ');
       let forceTransferAction = securityToken.methods.controllerTransfer(from, to, web3.utils.toWei(amount), web3.utils.asciiToHex(data), web3.utils.asciiToHex(log));
@@ -231,14 +291,45 @@ async function forcedTransfers() {
   from ${forceTransferEvent._from} to ${forceTransferEvent._to}
   Data: ${web3.utils.hexToAscii(forceTransferEvent._operatorData)}
         `));
-      console.log(`Balance of ${from} after transfer: ${web3.utils.fromWei(await securityToken.methods.balanceOf(from).call())} ${tokenSymbol}`);
-      console.log(`Balance of ${to} after transfer: ${web3.utils.fromWei(await securityToken.methods.balanceOf(to).call())} ${tokenSymbol}`);
+      await logBalance(from);
+      await logBalance(to);
       break;
     case 'RETURN':
       return;
   }
 
   await forcedTransfers();
+}
+
+async function manageOperators() {
+  const options = ['Authorize operator', 'Revoke operator'];
+  const index = readlineSync.keyInSelect(options, 'What do you want to do? ', { cancel: 'RETURN' });
+  const selected = index !== -1 ? options[index] : 'RETURN';
+  console.log('Selected:', selected, '\n');
+  switch (selected) {
+    case 'Authorize operator':
+        const operatorToAuth = readlineSync.question(`Enter the address of the operator you want to authorize: `, {
+          limit: function (input) {
+            return web3.utils.isAddress(input);
+          },
+          limitMessage: `Must be a valid address`
+        });
+        const authAction = securityToken.methods.authorizeOperator(operatorToAuth);
+        await common.sendTransaction(authAction);
+        console.log(chalk.green(`${operatorToAuth} has been authorized as operator successfully!`));
+      break;
+    case 'Revoke operator':
+      const operatorToRevoke = readlineSync.question(`Enter the address of the operator you want to revoke: `, {
+        limit: function (input) {
+          return web3.utils.isAddress(input);
+        },
+        limitMessage: `Must be a valid address`
+      });
+      const revokeAction = securityToken.methods.revokeOperator(operatorToRevoke);
+      await common.sendTransaction(revokeAction);
+      console.log(chalk.green(`${operatorToRevoke} has been revoked as operator successfully!`));
+      break;
+  }
 }
 
 async function configExistingModules(tmModules) {
@@ -2946,8 +3037,8 @@ async function logTotalInvestors() {
 
 async function logBalance(from, totalSupply) {
   let fromBalance = web3.utils.fromWei(await securityToken.methods.balanceOf(from).call());
-  let percentage = totalSupply != '0' ? ` - ${parseFloat(fromBalance) / parseFloat(totalSupply) * 100}% of total supply` : '';
-  console.log(chalk.yellow(`Balance of ${from}: ${fromBalance} ${tokenSymbol} ${percentage} `));
+  let fromBalanceUnlocked = web3.utils.fromWei(await securityToken.methods.balanceOfByPartition(web3.utils.asciiToHex('UNLOCKED'), from).call());
+  output.logUnlockedBalanceWithPercentage(from, tokenSymbol, fromBalanceUnlocked, fromBalance, totalSupply);
 }
 
 module.exports = {

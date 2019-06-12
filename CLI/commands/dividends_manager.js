@@ -6,6 +6,7 @@ const gbl = require('./common/global');
 const contracts = require('./helpers/contract_addresses');
 const abis = require('./helpers/contract_abis');
 const csvParse = require('./helpers/csv');
+const output = require('./IO/output');
 const BigNumber = require('bignumber.js');
 const { table } = require('table')
 
@@ -87,16 +88,19 @@ async function exploreAddress(currentCheckpoint) {
     checkpoint = await selectCheckpoint(false);
   }
 
-  let balance = web3.utils.fromWei(await securityToken.methods.balanceOf(address).call());
+  let balanceUnlocked = web3.utils.fromWei(await securityToken.methods.balanceOfByPartition(web3.utils.asciiToHex('UNLOCKED'), address).call());
+  let balanceTotal = web3.utils.fromWei(await securityToken.methods.balanceOf(address).call());
+  output.logUnlockedBalance(address, tokenSymbol, balanceUnlocked, balanceTotal);
+
   let totalSupply = web3.utils.fromWei(await securityToken.methods.totalSupply().call());
-  console.log(`Balance of ${address} is: ${balance} ${tokenSymbol}`);
-  console.log(`TotalSupply is: ${totalSupply} ${tokenSymbol}`);
+  output.logTotalSupply(tokenSymbol, totalSupply);
 
   if (checkpoint) {
-    let balanceAt = web3.utils.fromWei(await securityToken.methods.balanceOfAt(address, checkpoint).call());
-    let totalSupplyAt = web3.utils.fromWei(await securityToken.methods.totalSupplyAt(checkpoint).call());
-    console.log(`Balance of ${address} at checkpoint ${checkpoint}: ${balanceAt} ${tokenSymbol}`);
-    console.log(`TotalSupply at checkpoint ${checkpoint} is: ${totalSupplyAt} ${tokenSymbol}`);
+    let balanceAtCheckpoint = web3.utils.fromWei(await securityToken.methods.balanceOfAt(address, checkpoint).call());
+    output.logBalanceAtCheckpoint(address, tokenSymbol, checkpoint, balanceAtCheckpoint);
+
+    let totalSupplyAtCheckpoint = web3.utils.fromWei(await securityToken.methods.totalSupplyAt(checkpoint).call());
+    output.logTotalSupplyAtCheckpoint(tokenSymbol, checkpoint, totalSupplyAtCheckpoint);
   }
 }
 
@@ -477,7 +481,7 @@ async function reclaimFromContract() {
   switch (selected) {
     case 'ETH':
       let ethBalance = await web3.eth.getBalance(currentDividendsModule.options.address);
-      console.log(chalk.yellow(`Current ETH balance: ${web3.utils.fromWei(ethBalance)} ETH`));
+      output.logBalance(currentDividendsModule.options.address, 'ETH', web3.utils.fromWei(ethBalance));
       let reclaimETHAction = currentDividendsModule.methods.reclaimETH();
       await common.sendTransaction(reclaimETHAction);
       console.log(chalk.green('ETH has been reclaimed succesfully!'));

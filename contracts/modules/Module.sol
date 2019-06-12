@@ -62,14 +62,6 @@ contract Module is IModule, ModuleStorage, Pausable {
     }
 
     /**
-     * @notice used to withdraw the fee by the factory owner
-     */
-    function takeUsageFee() public withPerm(ADMIN) returns(bool) {
-        require(polyToken.transferFrom(securityToken, Ownable(factory).owner(), IModuleFactory(factory).usageCostInPoly()), "Unable to take fee");
-        return true;
-    }
-
-    /**
      * @notice used to return the data store address of securityToken
      */
     function getDataStore() public view returns(IDataStore) {
@@ -96,5 +88,5 @@ contract Module is IModule, ModuleStorage, Pausable {
     function reclaimETH() external {
         _onlySecurityTokenOwner();
         msg.sender.transfer(address(this).balance);
-    }	   
+    }
 }

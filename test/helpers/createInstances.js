@@ -233,7 +233,7 @@ async function deployGTMLogic(account_polymath) {
 }
 
 async function deployGTM(account_polymath) {
-    I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(new BN(0), new BN(0), I_GeneralTransferManagerLogic.address, I_PolymathRegistry.address, true, {
+    I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(new BN(0), I_GeneralTransferManagerLogic.address, I_PolymathRegistry.address, true, {
         from: account_polymath
     });
 
@@ -319,7 +319,7 @@ async function registerAndVerifyByMR(factoryAdrress, owner, mr) {
 /// Deploy the TransferManagers
 
 export async function deployGTMAndVerifyed(accountPolymath, MRProxyInstance, setupCost, feeInPoly = false) {
-    I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(setupCost, new BN(0), I_GeneralTransferManagerLogic.address, I_PolymathRegistry.address, feeInPoly, {
+    I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(setupCost, I_GeneralTransferManagerLogic.address, I_PolymathRegistry.address, feeInPoly, {
         from: accountPolymath
     });
 
@@ -337,7 +337,7 @@ export async function deployGTMAndVerifyed(accountPolymath, MRProxyInstance, set
 export async function deployVRTMAndVerifyed(accountPolymath, MRProxyInstance, setupCost, feeInPoly = false) {
     I_VolumeRestrictionTMLogic = await VolumeRestrictionTM.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
 
-    I_VolumeRestrictionTMFactory = await VolumeRestrictionTMFactory.new(setupCost, new BN(0), I_VolumeRestrictionTMLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
+    I_VolumeRestrictionTMFactory = await VolumeRestrictionTMFactory.new(setupCost, I_VolumeRestrictionTMLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
 
     assert.notEqual(
         I_VolumeRestrictionTMFactory.address.valueOf(),
@@ -352,7 +352,7 @@ export async function deployVRTMAndVerifyed(accountPolymath, MRProxyInstance, se
 
 export async function deployCountTMAndVerifyed(accountPolymath, MRProxyInstance, setupCost, feeInPoly = false) {
     I_CountTransferManagerLogic = await CountTransferManager.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
-    I_CountTransferManagerFactory = await CountTransferManagerFactory.new(setupCost, new BN(0), I_CountTransferManagerLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
+    I_CountTransferManagerFactory = await CountTransferManagerFactory.new(setupCost, I_CountTransferManagerLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
 
     assert.notEqual(
         I_CountTransferManagerFactory.address.valueOf(),
@@ -366,7 +366,7 @@ export async function deployCountTMAndVerifyed(accountPolymath, MRProxyInstance,
 
 export async function deployManualApprovalTMAndVerifyed(accountPolymath, MRProxyInstance, setupCost, feeInPoly = false) {
     I_ManualApprovalTransferManagerLogic = await ManualApprovalTransferManager.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
-    I_ManualApprovalTransferManagerFactory = await ManualApprovalTransferManagerFactory.new(setupCost, new BN(0), ManualApprovalTransferManager.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
+    I_ManualApprovalTransferManagerFactory = await ManualApprovalTransferManagerFactory.new(setupCost, ManualApprovalTransferManager.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
     assert.notEqual(
         I_ManualApprovalTransferManagerFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",
@@ -379,7 +379,7 @@ export async function deployManualApprovalTMAndVerifyed(accountPolymath, MRProxy
 
 export async function deployPercentageTMAndVerified(accountPolymath, MRProxyInstance, setupCost, feeInPoly = false) {
     I_PercentageTransferManagerLogic = await PercentageTransferManager.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
-    I_PercentageTransferManagerFactory = await PercentageTransferManagerFactory.new(setupCost, new BN(0), I_PercentageTransferManagerLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
+    I_PercentageTransferManagerFactory = await PercentageTransferManagerFactory.new(setupCost, I_PercentageTransferManagerLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
     assert.notEqual(
         I_PercentageTransferManagerFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",
@@ -392,7 +392,7 @@ export async function deployPercentageTMAndVerified(accountPolymath, MRProxyInst
 
 export async function deployBlacklistTMAndVerified(accountPolymath, MRProxyInstance, setupCost, feeInPoly = false) {
     I_BlacklistTransferManagerLogic = await BlacklistTransferManager.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
-    I_BlacklistTransferManagerFactory = await BlacklistTransferManagerFactory.new(setupCost, new BN(0), I_BlacklistTransferManagerLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
+    I_BlacklistTransferManagerFactory = await BlacklistTransferManagerFactory.new(setupCost, I_BlacklistTransferManagerLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
     assert.notEqual(
         I_BlacklistTransferManagerFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",
@@ -405,7 +405,7 @@ export async function deployBlacklistTMAndVerified(accountPolymath, MRProxyInsta
 
 export async function deployLockUpTMAndVerified(accountPolymath, MRProxyInstance, setupCost, feeInPoly = false) {
     I_LockUpTransferManagerLogic = await LockUpTransferManager.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
-    I_LockUpTransferManagerFactory = await LockUpTransferManagerFactory.new(setupCost, new BN(0), I_LockUpTransferManagerLogic.address, I_PolymathRegistry.address, feeInPoly, {
+    I_LockUpTransferManagerFactory = await LockUpTransferManagerFactory.new(setupCost, I_LockUpTransferManagerLogic.address, I_PolymathRegistry.address, feeInPoly, {
         from: accountPolymath
     });
     assert.notEqual(
@@ -419,7 +419,7 @@ export async function deployLockUpTMAndVerified(accountPolymath, MRProxyInstance
 }
 
 export async function deployScheduleCheckpointAndVerified(accountPolymath, MRProxyInstance, setupCost, feeInPoly = false) {
-    I_ScheduledCheckpointFactory = await ScheduledCheckpointFactory.new(setupCost, new BN(0), I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
+    I_ScheduledCheckpointFactory = await ScheduledCheckpointFactory.new(setupCost, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
     assert.notEqual(
         I_ScheduledCheckpointFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",
@@ -434,7 +434,7 @@ export async function deployScheduleCheckpointAndVerified(accountPolymath, MRPro
 
 export async function deployGPMAndVerifyed(accountPolymath, MRProxyInstance, setupCost, feeInPoly = false) {
     I_GeneralPermissionManagerLogic = await GeneralPermissionManager.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
-    I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(setupCost, new BN(0), I_GeneralPermissionManagerLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
+    I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(setupCost, I_GeneralPermissionManagerLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
 
     assert.notEqual(
         I_GeneralPermissionManagerFactory.address.valueOf(),
@@ -451,7 +451,7 @@ export async function deployGPMAndVerifyed(accountPolymath, MRProxyInstance, set
 
 export async function deployDummySTOAndVerifyed(accountPolymath, MRProxyInstance, setupCost, feeInPoly = false) {
     I_DummySTOLogic = await DummySTO.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
-    I_DummySTOFactory = await DummySTOFactory.new(setupCost, new BN(0), I_DummySTOLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
+    I_DummySTOFactory = await DummySTOFactory.new(setupCost, I_DummySTOLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
 
     assert.notEqual(
         I_DummySTOFactory.address.valueOf(),
@@ -464,7 +464,7 @@ export async function deployDummySTOAndVerifyed(accountPolymath, MRProxyInstance
 
 export async function deployCappedSTOAndVerifyed(accountPolymath, MRProxyInstance, setupCost, feeInPoly = false) {
     I_CappedSTOLogic = await CappedSTO.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
-    I_CappedSTOFactory = await CappedSTOFactory.new(setupCost, new BN(0), I_CappedSTOLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
+    I_CappedSTOFactory = await CappedSTOFactory.new(setupCost, I_CappedSTOLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
     assert.notEqual(
         I_CappedSTOFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",
@@ -477,7 +477,7 @@ export async function deployCappedSTOAndVerifyed(accountPolymath, MRProxyInstanc
 
 export async function deployPresaleSTOAndVerified(accountPolymath, MRProxyInstance, setupCost, feeInPoly = false) {
     I_PreSaleSTOLogic = await PreSaleSTO.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
-    I_PreSaleSTOFactory = await PreSaleSTOFactory.new(setupCost, new BN(0), I_PreSaleSTOLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
+    I_PreSaleSTOFactory = await PreSaleSTOFactory.new(setupCost, I_PreSaleSTOLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
 
     assert.notEqual(
         I_PreSaleSTOFactory.address.valueOf(),
@@ -496,7 +496,7 @@ export async function deployUSDTieredSTOAndVerified(accountPolymath, MRProxyInst
         { from: accountPolymath }
     );
 
-    I_USDTieredSTOFactory = await USDTieredSTOFactory.new(setupCost, new BN(0), I_USDTieredSTOLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
+    I_USDTieredSTOFactory = await USDTieredSTOFactory.new(setupCost, I_USDTieredSTOLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
 
     assert.notEqual(
         I_USDTieredSTOFactory.address.valueOf(),
@@ -516,7 +516,7 @@ export async function deployERC20DividendAndVerifyed(accountPolymath, MRProxyIns
         "0x0000000000000000000000000000000000000000",
         { from: accountPolymath }
     );
-    I_ERC20DividendCheckpointFactory = await ERC20DividendCheckpointFactory.new(setupCost, new BN(0), I_ERC20DividendCheckpointLogic.address, I_PolymathRegistry.address, feeInPoly, {
+    I_ERC20DividendCheckpointFactory = await ERC20DividendCheckpointFactory.new(setupCost, I_ERC20DividendCheckpointLogic.address, I_PolymathRegistry.address, feeInPoly, {
         from: accountPolymath
     });
 
@@ -535,7 +535,7 @@ export async function deployEtherDividendAndVerifyed(accountPolymath, MRProxyIns
         "0x0000000000000000000000000000000000000000",
         { from: accountPolymath }
     );
-    I_EtherDividendCheckpointFactory = await EtherDividendCheckpointFactory.new(setupCost, new BN(0), I_EtherDividendCheckpointLogic.address, I_PolymathRegistry.address, feeInPoly, {
+    I_EtherDividendCheckpointFactory = await EtherDividendCheckpointFactory.new(setupCost, I_EtherDividendCheckpointLogic.address, I_PolymathRegistry.address, feeInPoly, {
         from: accountPolymath
     });
 
@@ -552,7 +552,7 @@ export async function deployEtherDividendAndVerifyed(accountPolymath, MRProxyIns
 /// Deploy the Burn Module
 
 export async function deployRedemptionAndVerifyed(accountPolymath, MRProxyInstance, setupCost, feeInPoly = false) {
-    I_TrackedRedemptionFactory = await TrackedRedemptionFactory.new(setupCost, new BN(0), I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
+    I_TrackedRedemptionFactory = await TrackedRedemptionFactory.new(setupCost, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
 
     assert.notEqual(
         I_TrackedRedemptionFactory.address.valueOf(),
@@ -566,7 +566,7 @@ export async function deployRedemptionAndVerifyed(accountPolymath, MRProxyInstan
 
 export async function deployVestingEscrowWalletAndVerifyed(accountPolymath, MRProxyInstance, setupCost, feeInPoly = false) {
     I_VestingEscrowWalletLogic = await VestingEscrowWallet.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
-    I_VestingEscrowWalletFactory = await VestingEscrowWalletFactory.new(setupCost, new BN(0), I_VestingEscrowWalletLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
+    I_VestingEscrowWalletFactory = await VestingEscrowWalletFactory.new(setupCost, I_VestingEscrowWalletLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
 
     assert.notEqual(
         I_VestingEscrowWalletFactory.address.valueOf(),
@@ -579,7 +579,7 @@ export async function deployVestingEscrowWalletAndVerifyed(accountPolymath, MRPr
 }
 
 export async function deployMockRedemptionAndVerifyed(accountPolymath, MRProxyInstance, setupCost, feeInPoly = false) {
-    I_MockBurnFactory = await MockBurnFactory.new(setupCost, new BN(0), I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
+    I_MockBurnFactory = await MockBurnFactory.new(setupCost, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
 
     assert.notEqual(
         I_MockBurnFactory.address.valueOf(),
@@ -592,7 +592,7 @@ export async function deployMockRedemptionAndVerifyed(accountPolymath, MRProxyIn
 }
 
 export async function deployMockWrongTypeRedemptionAndVerifyed(accountPolymath, MRProxyInstance, setupCost, feeInPoly = false) {
-    I_MockWrongTypeBurnFactory = await MockWrongTypeFactory.new(setupCost, new BN(0), I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
+    I_MockWrongTypeBurnFactory = await MockWrongTypeFactory.new(setupCost, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
 
     assert.notEqual(
         I_MockWrongTypeBurnFactory.address.valueOf(),
@@ -605,7 +605,7 @@ export async function deployMockWrongTypeRedemptionAndVerifyed(accountPolymath, 
 }
 
 export async function deploySignedTMAndVerifyed(accountPolymath, MRProxyInstance, setupCost, feeInPoly = false) {
-    I_SignedTransferManagerFactory = await SignedTransferManagerFactory.new(setupCost, new BN(0), I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
+    I_SignedTransferManagerFactory = await SignedTransferManagerFactory.new(setupCost, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
     assert.notEqual(
         I_SignedTransferManagerFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",
@@ -620,7 +620,7 @@ export async function deploySignedTMAndVerifyed(accountPolymath, MRProxyInstance
 
 export async function deployPLCRVoteCheckpoint(accountPolymath, MRProxyInstance, setupCost, feeInPoly = false) {
     I_PLCRVotingCheckpointLogic = await PLCRVotingCheckpoint.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
-    I_PLCRVotingCheckpointFactory = await PLCRVotingCheckpointFactory.new(setupCost, new BN(0), I_PLCRVotingCheckpointLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
+    I_PLCRVotingCheckpointFactory = await PLCRVotingCheckpointFactory.new(setupCost, I_PLCRVotingCheckpointLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
     assert.notEqual(
         I_PLCRVotingCheckpointFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",
@@ -634,7 +634,7 @@ export async function deployPLCRVoteCheckpoint(accountPolymath, MRProxyInstance,
 
 export async function deployWeightedVoteCheckpoint(accountPolymath, MRProxyInstance, setupCost, feeInPoly = false) {
     I_WeightedVoteCheckpointLogic = await WeightedVoteCheckpoint.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
-    I_WeightedVoteCheckpointFactory = await WeightedVoteCheckpointFactory.new(setupCost, new BN(0), I_WeightedVoteCheckpointLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
+    I_WeightedVoteCheckpointFactory = await WeightedVoteCheckpointFactory.new(setupCost, I_WeightedVoteCheckpointLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
     assert.notEqual(
         I_WeightedVoteCheckpointFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",

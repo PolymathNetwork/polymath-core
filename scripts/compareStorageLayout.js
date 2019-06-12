@@ -1,47 +1,48 @@
 const fs = require("fs");
 const _ = require("underscore");
 const solc = require("solc");
-const prompt = require("prompt");
 const path = require("path");
 const util = require("util");
 const exec = util.promisify(require("child_process").exec);
 
-console.log(`Mandatory: Solc cli tool should be installed globally. Please put the contract name only`);
-prompt.start();
+console.log(`Mandatory: Solc cli tool should be installed globally. Please put the contract name only in any order`);
 
-prompt.get(["LogicContract", "ProxyContract"], async (err, result) => {
-    let temp;
-    let logicFilePath;
-    let proxyFilePath; 
+let contractA = process.argv.slice(2)[0];
+let contractB = process.argv.slice(2)[1];
+
+compareStorage(contractA, contractB);
+
+async function compareStorage() {
 
     const fileList = walkSync("./contracts", []);
-
-    let paths = findPath(result.LogicContract, result.ProxyContract, fileList);
+    let paths = findPath(contractA, contractB, fileList);
 
     if (paths.length == 2) {
         console.log("Contracts exists \n");
 
         await flatContracts(paths);
         let temp;
-        let logicFilePath = `./flat/${path.basename(paths[0])}`;
-        let proxyFilePath = `./flat/${path.basename(paths[1])}`;
+        let contractAPath = `./flat/${path.basename(paths[0])}`;
+        let contractBPath = `./flat/${path.basename(paths[1])}`;
         
-        if (path.basename(paths[0]) === result.LogicContract) {
-            temp = logicFilePath;
-            logicFilePath = proxyFilePath;
-            proxyFilePath = temp;
+        if (path.basename(paths[0]) === contractA) {
+            temp = contractAPath;
+            contractAPath = contractBPath;
+            contractBPath = temp;
         }
 
-        let logicAST = await getAST(logicFilePath);
-        let proxyAST = await getAST(proxyFilePath);
+        let contractAAST = await getAST(contractAPath);
+        let contractBAST = await getAST(contractBPath);
         // Deleting the temp folder (no longer required)
         await flushTemp();
 
-        console.log(compareStorageLayouts(parseContract(logicAST), parseContract(proxyAST)));
+        var result = compareStorageLayouts(parseContract(contractAAST), parseContract(contractBAST));
+        if (!result)
+            process.exit(1);
     } else {
         console.log("Contracts doesn't exists");
     }
-});
+}
 
 function traverseAST(_input, _elements) {
     if (_input.children) {
@@ -101,7 +102,7 @@ function parseContract(input) {
     return orderedStateVariables;
 }
 
-var walkSync = function(dir, filelist) {
+function walkSync(dir, filelist) {
     files = fs.readdirSync(dir);
     filelist = filelist || [];
     files.forEach(function(file) {
@@ -114,7 +115,7 @@ var walkSync = function(dir, filelist) {
     return filelist;
 };
 
-var findPath = function(logicContractName, proxyContractName, fileList) {
+function findPath(logicContractName, proxyContractName, fileList) {
     let paths = new Array();
     for (let i = 0; i < fileList.length; i++) {
         if (

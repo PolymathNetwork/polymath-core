@@ -1828,7 +1828,16 @@ contract("SecurityToken", async (accounts) => {
 
             let afterTotalSupply = await I_SecurityToken.totalSupply.call();
             assert.equal(web3.utils.fromWei(beforeTotalSupply.sub(afterTotalSupply)), 10);
-        })
+        });
+
+        it("Should get the partitions of the secuirtyToken", async() => {
+            let partitions = await I_STGetter.partitionsOf.call(account_investor1);
+            console.log(`Partitions of the investor 1: ${web3.utils.hexToUtf8(partitions[0])}`);
+            assert.equal("UNLOCKED", web3.utils.hexToUtf8(partitions[0]));
+            assert.equal("LOCKED", web3.utils.hexToUtf8(partitions[1]));
+            partitions = await I_STGetter.partitionsOf.call(account_investor2);
+            console.log(`Partitions of the investor 2: ${web3.utils.hexToUtf8(partitions[0])}`);
+        });
     });
 
     describe("Test cases for the storage", async() => {

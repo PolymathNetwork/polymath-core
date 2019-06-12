@@ -1,11 +1,13 @@
 import { duration, promisifyLogWatch, latestBlock } from "./helpers/utils";
-import { encodeProxyCall } from "./helpers/encodeCall";
+import { encodeProxyCall, encodeCall } from "./helpers/encodeCall";
+import { takeSnapshot, increaseTime, revertToSnapshot } from "./helpers/time";
 import { catchRevert } from "./helpers/exceptions";
 import { setUpPolymathNetwork } from "./helpers/createInstances";
 
 const SecurityTokenRegistry = artifacts.require("./SecurityTokenRegistry.sol");
 const SecurityTokenRegistryProxy = artifacts.require("./SecurityTokenRegistryProxy.sol");
 const SecurityTokenRegistryMock = artifacts.require("./SecurityTokenRegistryMock.sol");
+const MockSTRGetter = artifacts.require("./MockSTRGetter.sol");
 const OwnedUpgradeabilityProxy = artifacts.require("./OwnedUpgradeabilityProxy.sol");
 const STFactory = artifacts.require("./STFactory.sol");
 const SecurityToken = artifacts.require("./SecurityToken.sol");
@@ -149,6 +151,41 @@ contract("SecurityTokenRegistryProxy", async (accounts) => {
                 web3.utils.toWei("250")
             );
         });
+
+        it("Upgrade the proxy again and change getter", async () => {
+          let snapId = await takeSnapshot();
+          const I_MockSTRGetter = await MockSTRGetter.new({from: account_polymath});
+          const I_MockSecurityTokenRegistry = await SecurityTokenRegistry.new({ from: account_polymath });
+          const bytesProxy = encodeCall("setGetterRegistry", ["address"], [I_MockSTRGetter.address]);
+          console.log("Getter: " + I_MockSTRGetter.address);
+          console.log("Registry: " + I_MockSecurityTokenRegistry.address);
+          console.log("STRProxy: " + I_SecurityTokenRegistryProxy.address);
+
+          await I_SecurityTokenRegistryProxy.upgradeToAndCall("2.0.0", I_MockSecurityTokenRegistry.address, bytesProxy, {
+              from: account_polymath
+          });
+
+          let c = await OwnedUpgradeabilityProxy.at(I_SecurityTokenRegistryProxy.address);
+          assert.equal(await readStorage(c.address, 12), I_MockSecurityTokenRegistry.address.toLowerCase());
+          assert.equal(
+              web3.utils
+                  .toAscii(await readStorage(c.address, 11))
+                  .replace(/\u0000/g, "")
+                  .replace(/\n/, ""),
+              "2.0.0"
+          );
+
+          const I_MockSecurityTokenRegistryProxy = await SecurityTokenRegistry.at(I_SecurityTokenRegistryProxy.address);
+          const I_MockSTRGetterProxy = await MockSTRGetter.at(I_SecurityTokenRegistryProxy.address);
+          await I_MockSecurityTokenRegistryProxy.setProtocolFactory(I_STFactory.address, 3, 1, 0);
+          await I_MockSecurityTokenRegistryProxy.setLatestVersion(3, 1, 0);
+          let newValue = await I_MockSTRGetterProxy.newFunction.call();
+          assert.equal(newValue.toNumber(), 99);
+          //assert.isTrue(false);
+          await revertToSnapshot(snapId);
+        });
+
+
     });
 
     describe("Feed some data in storage", async () => {

@@ -305,7 +305,7 @@ module.exports = function(deployer, network, accounts) {
         })
         .then(() => {
             // B) Deploy the SecurityTokenLogic Contract
-            return deployer.deploy(SecurityTokenLogic, "", "", 0, { from: PolymathAccount });
+            return deployer.deploy(SecurityTokenLogic, { from: PolymathAccount });
         })
         .then(() => {
             // B) Deploy the DataStoreFactory Contract

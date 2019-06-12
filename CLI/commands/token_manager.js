@@ -6,6 +6,7 @@ const transferManager = require('./transfer_manager');
 const common = require('./common/common_functions');
 const gbl = require('./common/global');
 const csvParse = require('./helpers/csv');
+const input = require('./IO/input');
 const moment = require('moment');
 
 // Constants
@@ -183,17 +184,12 @@ async function selectAction() {
       await updateTokenDetails(updatedDetails);
       break;
     case 'Change treasury wallet':
-      let newTreasuryWallet = readlineSync.question('Enter the address of the new treasury wallet: ', {
-        limit: function (input) {
-          return web3.utils.isAddress(input);
-        },
-        limitMessage: "Must be a valid address"
-      });
+      let newTreasuryWallet = input.readAddress('Enter the address of the new treasury wallet: ');
       await changeTreasuryWallet(newTreasuryWallet);
       break;
     case 'Change granularity':
-      //let granularity = readlineSync.questionInt('Enter ')
-      //await changeGranularity();
+      // let granularity = readlineSync.questionInt('Enter ')
+      // await changeGranularity();
       break;
     case 'Manage documents':
       await manageDocuments();
@@ -214,12 +210,7 @@ async function selectAction() {
       await listInvestors();
       break;
     case 'List investors at checkpoint':
-      let checkpointId = readlineSync.question('Enter the id of the checkpoint: ', {
-        limit: function (input) {
-          return parseInt(input) > 0 && parseInt(input) <= parseInt(currentCheckpointId);
-        },
-        limitMessage: `Must be greater than 0 and less than ${currentCheckpointId}`
-      });
+      let checkpointId = input.readNumberBetween(1, parseInt(currentCheckpointId), 'Enter the id of the checkpoint: ');
       await listInvestorsAtCheckpoint(checkpointId);
       break;
     case 'Issue tokens':
@@ -229,19 +220,8 @@ async function selectAction() {
       await listModuleOptions();
       break;
     case 'Withdraw tokens from contract':
-      let tokenAddress = readlineSync.question(`Enter the ERC20 token address (POLY ${polyToken.options.address}): `, {
-        limit: function (input) {
-          return web3.utils.isAddress(input);
-        },
-        limitMessage: "Must be a valid address",
-        defaultInput: polyToken.options.address
-      });
-      let value = readlineSync.questionFloat('Enter the value to withdraw: ', {
-        limit: function (input) {
-          return input > 0;
-        },
-        limitMessage: "Must be a greater than 0"
-      });
+      let tokenAddress = input.readAddress(`Enter the ERC20 token address (POLY ${polyToken.options.address}): `, polyToken.options.address);
+      let value = parseFloat(input.readNumberGreaterThan(0, 'Enter the value to withdraw: '));
       await withdrawFromContract(tokenAddress, web3.utils.toWei(new web3.utils.BN(value)));
       break;
     case 'Exit':
@@ -431,13 +411,7 @@ async function multiIssue(_csvFilePath, _batchSize) {
   if (typeof _batchSize !== 'undefined') {
     batchSize = _batchSize;
   } else {
-    batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
-      limit: function (input) {
-        return parseInt(input) > 0;
-      },
-      limitMessage: 'Must be greater than 0',
-      defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
-    });
+    batchSize = input.readNumberGreaterThan(0, `Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, gbl.constants.DEFAULT_BATCH_SIZE);
   }
   let parsedData = csvParse(csvFilePath);
   let tokenDivisible = await securityToken.methods.granularity().call() == 1;

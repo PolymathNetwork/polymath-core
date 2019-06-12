@@ -2,6 +2,7 @@ const chalk = require('chalk');
 const Tx = require('ethereumjs-tx');
 const permissionsList = require('./permissions_list');
 const abis = require('../helpers/contract_abis');
+const input = require('../IO/input');
 const readlineSync = require('readline-sync');
 
 async function addModule (securityToken, polyToken, factoryAddress, moduleABI, getInitializeData, configFile) {
@@ -100,12 +101,7 @@ function connect(abi, address) {
 };
 
 async function queryModifyWhiteList(currentTransferManager) {
-  let investor = readlineSync.question('Enter the address to whitelist: ', {
-    limit: function (input) {
-      return web3.utils.isAddress(input);
-    },
-    limitMessage: "Must be a valid address"
-  });
+  let investor = input.readAddress('Enter the address to whitelist: ');
   let now = Math.floor(Date.now() / 1000);
   let canSendAfter = readlineSync.questionInt(`Enter the time (Unix Epoch time) when the sale lockup period ends and the investor can freely transfer his tokens (now = ${now}): `, { defaultInput: now });
   let canReceiveAfter = readlineSync.questionInt(`Enter the time (Unix Epoch time) when the purchase lockup period ends and the investor can freely receive tokens from others (now = ${now}): `, { defaultInput: now });

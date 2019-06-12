@@ -4,10 +4,13 @@ var BigNumber = require('bignumber.js');
 var chalk = require('chalk');
 var common = require('./common/common_functions');
 var gbl = require('./common/global');
+const input = require('./IO/input');
 
 // Load Contract artifacts
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
+
+const BigNumber = require('bignumber.js');
 
 const ETH = 'ETH';
 const POLY = 'POLY';
@@ -573,7 +576,7 @@ async function investUsdTieredSTO(currency, amount) {
 
     let cost;
     if (typeof amount === 'undefined') {
-        let investorInvestedUSD = web3.utils.fromWei(await currentSTO.methods.investorInvestedUSD(User.address).call());
+        let investorInvestedUSD = await currentSTO.methods.investorInvestedUSD(User.address).call();
         let minimumInvestmentUSD = await currentSTO.methods.minimumInvestmentUSD().call();
         let minimumInvestmentRaiseType;
 
@@ -584,12 +587,8 @@ async function investUsdTieredSTO(currency, amount) {
             minimumInvestmentRaiseType = await currentSTO.methods.convertFromUSD(gbl.constants.FUND_RAISE_TYPES[raiseType], minimumInvestmentUSD).call();
         }
 
-        cost = readlineSync.question(chalk.yellow(`Enter the amount of ${raiseType} you would like to invest or press 'Enter' to exit: `), {
-            limit: function (input) {
-                return investorInvestedUSD != 0 || parseInt(input) > parseInt(web3.utils.fromWei(minimumInvestmentRaiseType));
-            },
-            limitMessage: `Amount must be greater than minimum investment (${web3.utils.fromWei(minimumInvestmentRaiseType)} ${raiseType} = ${web3.utils.fromWei(minimumInvestmentUSD)} USD)`
-        });
+        let minimumCost = web3.utils.fromWei((new BigNumber(investorInvestedUSD)).minus(new BigNumber(minimumInvestmentRaiseType)));
+        cost = input.readNumberGreaterThan(minimumCost, (chalk.yellow(`Enter the amount of ${raiseType} you would like to invest or press 'Enter' to exit: `)));
     } else {
         cost = amount;
     }

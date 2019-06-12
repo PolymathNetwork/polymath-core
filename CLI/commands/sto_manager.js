@@ -5,6 +5,7 @@ const abis = require('./helpers/contract_abis');
 const common = require('./common/common_functions');
 const gbl = require('./common/global');
 const csvParse = require('./helpers/csv');
+const input = require('./IO/input');
 const { table } = require('table');
 const STABLE = 'STABLE';
 
@@ -277,36 +278,16 @@ async function addressesConfigUSDTieredSTO (usdTokenRaise) {
   do {
     addresses = {};
 
-    addresses.wallet = readlineSync.question('Enter the address that will receive the funds from the STO (' + Issuer.address + '): ', {
-      limit: function (input) {
-        return web3.utils.isAddress(input);
-      },
-      limitMessage: "Must be a valid address",
-      defaultInput: Issuer.address
-    });
+    addresses.wallet = input.readAddress('Enter the address that will receive the funds from the STO (' + Issuer.address + '): ', Issuer.address);
     if (addresses.wallet === "") addresses.wallet = Issuer.address;
 
-    addresses.treasuryWallet = readlineSync.question('Enter the address that will receive remaining tokens in the case the cap is not met (' + Issuer.address + '): ', {
-      limit: function (input) {
-        return web3.utils.isAddress(input);
-      },
-      limitMessage: "Must be a valid address",
-      defaultInput: Issuer.address
-    });
+    addresses.treasuryWallet = input.readAddress('Enter the address that will receive remaining tokens in the case the cap is not met (' + Issuer.address + '): ', Issuer.address);
     if (addresses.treasuryWallet === "") addresses.treasuryWallet = Issuer.address;
 
     let listOfAddress;
 
     if (usdTokenRaise) {
-      addresses.usdToken = readlineSync.question('Enter the address (or multiple addresses separated by commas) of the USD stable coin(s): ', {
-        limit: function (input) {
-          listOfAddress = input.split(',');
-          return listOfAddress.every((addr) => {
-            return web3.utils.isAddress(addr)
-          })
-        },
-        limitMessage: "Must be a valid address"
-      });
+      addresses.usdToken = input.readMultipleAddresses('Enter the address (or multiple addresses separated by commas) of the USD stable coin(s): ');
     } else {
       listOfAddress = []
       addresses.usdToken = [];
@@ -361,13 +342,7 @@ function tiersConfigUSDTieredSTO (polyRaise) {
   let tiers = {};
 
   let defaultTiers = 3;
-  tiers.tiers = parseInt(readlineSync.question(`Enter the number of tiers for the STO? (${defaultTiers}): `, {
-    limit: function (input) {
-      return parseInt(input) > 0;
-    },
-    limitMessage: 'Must be greater than zero',
-    defaultInput: defaultTiers
-  }));
+  tiers.tiers = parseInt(input.readNumberGreaterThan(0, `Enter the number of tiers for the STO? (${defaultTiers}): `, defaultTiers));
 
   let defaultTokensPerTier = [190000000, 100000000, 200000000];
   let defaultRatePerTier = ['0.05', '0.10', '0.15'];
@@ -378,38 +353,13 @@ function tiersConfigUSDTieredSTO (polyRaise) {
   tiers.tokensPerTierDiscountPoly = [];
   tiers.ratePerTierDiscountPoly = [];
   for (let i = 0; i < tiers.tiers; i++) {
-    tiers.tokensPerTier[i] = readlineSync.question(`How many tokens do you plan to sell on tier No. ${i + 1}? (${defaultTokensPerTier[i]}): `, {
-      limit: function (input) {
-        return parseFloat(input) > 0;
-      },
-      limitMessage: 'Must be greater than zero',
-      defaultInput: defaultTokensPerTier[i]
-    });
+    tiers.tokensPerTier[i] = input.readNumberGreaterThan(0, `How many tokens do you plan to sell on tier No. ${i + 1}? (${defaultTokensPerTier[i]}): `, defaultTokensPerTier[i]);
 
-    tiers.ratePerTier[i] = readlineSync.question(`What is the USD per token rate for tier No. ${i + 1}? (${defaultRatePerTier[i]}): `, {
-      limit: function (input) {
-        return parseFloat(input) > 0;
-      },
-      limitMessage: 'Must be greater than zero',
-      defaultInput: defaultRatePerTier[i]
-    });
+    tiers.ratePerTier[i] = input.readNumberGreaterThan(0, `What is the USD per token rate for tier No. ${i + 1}? (${defaultRatePerTier[i]}): `, defaultRatePerTier[i]);
 
     if (polyRaise && readlineSync.keyInYNStrict(`Do you plan to have a discounted rate for POLY investments for tier No. ${i + 1}? `)) {
-      tiers.tokensPerTierDiscountPoly[i] = readlineSync.question(`How many of those tokens do you plan to sell at discounted rate on tier No. ${i + 1}? (${defaultTokensPerTierDiscountPoly[i]}): `, {
-        limit: function (input) {
-          return parseFloat(input) < parseFloat(tiers.tokensPerTier[i]);
-        },
-        limitMessage: 'Must be less than the No. of tokens of the tier',
-        defaultInput: defaultTokensPerTierDiscountPoly[i]
-      });
-
-      tiers.ratePerTierDiscountPoly[i] = readlineSync.question(`What is the discounted rate for tier No. ${i + 1}? (${defaultRatePerTierDiscountPoly[i]}): `, {
-        limit: function (input) {
-          return parseFloat(input) < parseFloat(tiers.ratePerTier[i]);
-        },
-        limitMessage: 'Must be less than the rate of the tier',
-        defaultInput: defaultRatePerTierDiscountPoly[i]
-      });
+      tiers.tokensPerTierDiscountPoly[i] = input.readNumberLessThan(parseFloat(tiers.tokensPerTier[i]), `How many of those tokens do you plan to sell at discounted rate on tier No. ${i + 1}? (${defaultTokensPerTierDiscountPoly[i]}): `, defaultTokensPerTierDiscountPoly[i]);
+      tiers.ratePerTierDiscountPoly[i] = input.readNumberLessThan(parseFloat(tiers.ratePerTier[i]), `What is the discounted rate for tier No. ${i + 1}? (${defaultRatePerTierDiscountPoly[i]}): `, defaultRatePerTierDiscountPoly[i]);
     } else {
       tiers.tokensPerTierDiscountPoly[i] = 0;
       tiers.ratePerTierDiscountPoly[i] = 0;
@@ -423,22 +373,10 @@ function limitsConfigUSDTieredSTO () {
   let limits = {};
 
   let defaultMinimumInvestment = 5;
-  limits.minimumInvestmentUSD = readlineSync.question(`What is the minimum investment in USD? (${defaultMinimumInvestment}): `, {
-    limit: function (input) {
-      return parseFloat(input) > 0;
-    },
-    limitMessage: "Must be greater than zero",
-    defaultInput: defaultMinimumInvestment
-  });
+  limits.minimumInvestmentUSD = input.readNumberGreaterThan(0, `What is the minimum investment in USD? (${defaultMinimumInvestment}): `, defaultMinimumInvestment);
 
   let nonAccreditedLimit = 2500;
-  limits.nonAccreditedLimitUSD = readlineSync.question(`What is the default limit for non accredited investors in USD? (${nonAccreditedLimit}): `, {
-    limit: function (input) {
-      return parseFloat(input) >= parseFloat(limits.minimumInvestmentUSD);
-    },
-    limitMessage: "Must be greater than minimum investment",
-    defaultInput: nonAccreditedLimit
-  });
+  limits.nonAccreditedLimitUSD = input.readNumberGreaterThanOrEqual(parseFloat(limits.minimumInvestmentUSD), `What is the default limit for non accredited investors in USD? (${nonAccreditedLimit}): `, nonAccreditedLimit);
 
   return limits;
 }
@@ -448,13 +386,7 @@ function timesConfigUSDTieredSTO (stoConfig) {
 
   let oneMinuteFromNow = Math.floor(Date.now() / 1000) + 60;
   if (typeof stoConfig === 'undefined') {
-    times.startTime = parseInt(readlineSync.question('Enter the start time for the STO (Unix Epoch time)\n(1 minutes from now = ' + oneMinuteFromNow + ' ): ', {
-      limit: function (input) {
-        return parseInt(input) > Math.floor(Date.now() / 1000);
-      },
-      limitMessage: "Must be a future time",
-      defaultInput: oneMinuteFromNow
-    }));
+    times.startTime = parseInt(input.readNumberGreaterThan(Math.floor(Date.now() / 1000), 'Enter the start time for the STO (Unix Epoch time)\n(1 minutes from now = ' + oneMinuteFromNow + ' ): ', oneMinuteFromNow));
   } else {
     times.startTime = stoConfig.times.startTime;
   }
@@ -462,13 +394,7 @@ function timesConfigUSDTieredSTO (stoConfig) {
 
   let oneMonthFromNow = Math.floor(Date.now() / 1000) + (30 * 24 * 60 * 60);
   if (typeof stoConfig === 'undefined') {
-    times.endTime = parseInt(readlineSync.question('Enter the end time for the STO (Unix Epoch time)\n(1 month from now = ' + oneMonthFromNow + ' ): ', {
-      limit: function (input) {
-        return parseInt(input) > times.startTime;
-      },
-      limitMessage: "Must be greater than Start Time",
-      defaultInput: oneMonthFromNow
-    }));
+    times.endTime = parseInt(input.readNumberGreaterThan(times.startTime, 'Enter the end time for the STO (Unix Epoch time)\n(1 month from now = ' + oneMonthFromNow + ' ): ', oneMonthFromNow));
   } else {
     times.endTime = stoConfig.times.startTime;
   }
@@ -831,13 +757,7 @@ async function changeAccreditedInBatch (currentSTO) {
   let csvFilePath = readlineSync.question(`Enter the path for csv data file (${ACCREDIT_DATA_CSV}): `, {
     defaultInput: ACCREDIT_DATA_CSV
   });
-  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
-    limit: function (input) {
-      return parseInt(input) > 0;
-    },
-    limitMessage: 'Must be greater than 0',
-    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
-  });
+  let batchSize = input.readNumberGreaterThan(0, `Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, gbl.constants.DEFAULT_BATCH_SIZE);
   let parsedData = csvParse(csvFilePath);
   let validData = parsedData.filter(row => web3.utils.isAddress(row[0]) && typeof row[1] === 'boolean');
   let invalidRows = parsedData.filter(row => !validData.includes(row));
@@ -863,13 +783,7 @@ async function changeNonAccreditedLimitsInBatch (currentSTO) {
   let csvFilePath = readlineSync.question(`Enter the path for csv data file (${NON_ACCREDIT_LIMIT_DATA_CSV}): `, {
     defaultInput: NON_ACCREDIT_LIMIT_DATA_CSV
   });
-  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
-    limit: function (input) {
-      return parseInt(input) > 0;
-    },
-    limitMessage: 'Must be greater than 0',
-    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
-  });
+  let batchSize = input.readNumberGreaterThan(0, `Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, gbl.constants.DEFAULT_BATCH_SIZE);
   let parsedData = csvParse(csvFilePath);
   let validData = parsedData.filter(row => web3.utils.isAddress(row[0]) && !isNaN(row[1]));
   let invalidRows = parsedData.filter(row => !validData.includes(row));
@@ -940,13 +854,7 @@ async function reclaimFromContract (currentSTO) {
       console.log(chalk.green('ETH has been reclaimed succesfully!'));
       break;
     case 'ERC20':
-      let erc20Address = readlineSync.question('Enter the ERC20 token address to reclaim (POLY = ' + polyToken.options.address + '): ', {
-        limit: function (input) {
-          return web3.utils.isAddress(input);
-        },
-        limitMessage: "Must be a valid address",
-        defaultInput: polyToken.options.address
-      });
+      let erc20Address = input.readAddress('Enter the ERC20 token address to reclaim (POLY = ' + polyToken.options.address + '): ', polyToken.options.address);
       let reclaimERC20Action = currentSTO.methods.reclaimERC20(erc20Address);
       await common.sendTransaction(reclaimERC20Action);
       console.log(chalk.green('ERC20 has been reclaimed succesfully!'));

@@ -4,6 +4,7 @@ var common = require('./common/common_functions');
 var gbl = require('./common/global');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
+const input = require('./IO/input');
 
 // App flow
 let tokenSymbol;
@@ -207,18 +208,8 @@ async function getDelegates() {
 }
 
 async function addNewDelegate() {
-  let newDelegate = readlineSync.question('Enter the delegate address: ', {
-    limit: function (input) {
-      return web3.utils.isAddress(input);
-    },
-    limitMessage: "Must be a valid address"
-  });
-  let details = readlineSync.question('Enter the delegate details (i.e `Belongs to financial firm`): ', {
-    limit: function (input) {
-      return input.length > 0;
-    },
-    limitMessage: "Must be a valid string"
-  });
+  let newDelegate = input.readAddress('Enter the delegate address: ');
+  let details = input.readStringNonEmpty('Enter the delegate details (i.e `Belongs to financial firm`): ');
 
   let addPermissionAction = generalPermissionManager.methods.addDelegate(newDelegate, web3.utils.asciiToHex(details));
   let receipt = await common.sendTransaction(addPermissionAction);

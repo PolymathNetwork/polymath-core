@@ -4,6 +4,7 @@ var common = require('./common/common_functions');
 var gbl = require('./common/global');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
+const input = require('./IO/input');
 const { table } = require('table');
 const moment = require('moment');
 
@@ -106,12 +107,7 @@ async function strActions () {
           console.log(`  Token name: ${tickerToModifyDetails[3]}`);
           console.log(`  Status: ${tickerToModifyDetails[4] ? 'Deployed' : 'Not deployed'}\n`);
         }
-        let tickerOwner = readlineSync.question(`Enter the token owner: `, {
-          limit: function (input) {
-            return web3.utils.isAddress(input);
-          },
-          limitMessage: "Must be a valid address"
-        });
+        let tickerOwner = input.readAddress(`Enter the token owner: `);
         let tickerSTName = readlineSync.question(`Enter the token name: `);
         let tickerRegistrationDate = readlineSync.question(`Enter the Unix Epoch time on which ticker get registered: `);
         let tickerExpiryDate = readlineSync.question(`Enter the Unix Epoch time on wich the ticker will expire: `);
@@ -132,12 +128,7 @@ async function strActions () {
         }
         break;
       case 'Modify SecurityToken':
-        let stAddress = readlineSync.question('Enter the security token address that you want to add or modify: ', {
-          limit: function (input) {
-            return web3.utils.isAddress(input);
-          },
-          limitMessage: "Must be a valid address"
-        });
+        let stAddress = input.readAddress('Enter the security token address that you want to add or modify: ');
         let ticker;
         let stData = await currentContract.methods.getSecurityTokenData(stAddress).call();
         if (stData[1] === '0x0000000000000000000000000000000000000000') {
@@ -159,12 +150,7 @@ async function strActions () {
           console.log(`  Token name: ${tickerDetails[3]}\n`);
         }
         let name = readlineSync.question(`Enter the token name: `);
-        let owner = readlineSync.question(`Enter the token owner: `, {
-          limit: function (input) {
-            return web3.utils.isAddress(input);
-          },
-          limitMessage: "Must be a valid address"
-        });
+        let owner = input.readAddress('Enter the token owner: ');
         let tokenDetails = readlineSync.question(`Enter the token details: `);
         let deployedAt = readlineSync.questionInt(`Enter the Unix Epoch timestamp at which security token was deployed: `);
         let modifySTAction = currentContract.methods.modifySecurityToken(name, ticker, owner, stAddress, tokenDetails, deployedAt);

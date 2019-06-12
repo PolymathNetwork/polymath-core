@@ -6,6 +6,7 @@ const gbl = require('./common/global');
 const contracts = require('./helpers/contract_addresses');
 const abis = require('./helpers/contract_abis');
 const csvParse = require('./helpers/csv');
+const input = require('./IO/input');
 const output = require('./IO/output');
 const BigNumber = require('bignumber.js');
 const { table } = require('table')
@@ -77,12 +78,7 @@ async function createCheckpointFromST() {
 }
 
 async function exploreAddress(currentCheckpoint) {
-  let address = readlineSync.question('Enter address to explore: ', {
-    limit: function (input) {
-      return web3.utils.isAddress(input);
-    },
-    limitMessage: "Must be a valid address",
-  });
+  let address = input.readAddress('Enter address to explore: ');
   let checkpoint = null;
   if (currentCheckpoint > 0) {
     checkpoint = await selectCheckpoint(false);
@@ -194,12 +190,7 @@ async function dividendsManager() {
 }
 
 async function changeWallet() {
-  let newWallet = readlineSync.question('Enter the new account address to receive reclaimed dividends and tax: ', {
-    limit: function (input) {
-      return web3.utils.isAddress(input);
-    },
-    limitMessage: "Must be a valid address",
-  });
+  let newWallet = input.readAddress('Enter the new account address to receive reclaimed dividends and tax: ');
   let action = currentDividendsModule.methods.changeWallet(newWallet);
   let receipt = await common.sendTransaction(action);
   let event = common.getEventFromLogs(currentDividendsModule._jsonInterface, receipt.logs, 'SetWallet');
@@ -345,19 +336,9 @@ async function manageExistingDividend(dividendIndex) {
 }
 
 async function taxWithholding() {
-  let addresses = readlineSync.question(`Enter addresses to set tax withholding to(ex - add1, add2, add3, ...) or leave empty to read from 'tax_withholding_data.csv': `, {
-    limit: function (input) {
-      return input === '' || (input.split(',').every(a => web3.utils.isAddress(a)));
-    },
-    limitMessage: `All addresses must be valid`
-  }).split(',');
+  let addresses = input.readMultipleAddresses(`Enter addresses to set tax withholding to(ex - add1, add2, add3, ...) or leave empty to read from 'tax_withholding_data.csv': `).split(',');
   if (addresses[0] !== '') {
-    let percentage = readlineSync.question('Enter the percentage of dividends to withhold (number between 0-100): ', {
-      limit: function (input) {
-        return (parseFloat(input) >= 0 && parseFloat(input) <= 100);
-      },
-      limitMessage: 'Must be a value between 0 and 100',
-    });
+    let percentage = input.readPercentage('Enter the percentage of dividends to withhold');
     let percentageWei = web3.utils.toWei((percentage / 100).toString());
     let setWithHoldingFixedAction = currentDividendsModule.methods.setWithholdingFixed(addresses, percentageWei);
     let receipt = await common.sendTransaction(setWithHoldingFixedAction);
@@ -395,13 +376,7 @@ async function createDividends() {
   let token;
   if (dividendsType === 'ERC20') {
     do {
-      dividendToken = readlineSync.question(`Enter the address of ERC20 token in which dividend will be denominated(POLY = ${polyToken.options.address}): `, {
-        limit: function (input) {
-          return web3.utils.isAddress(input);
-        },
-        limitMessage: "Must be a valid ERC20 address",
-        defaultInput: polyToken.options.address
-      });
+      dividendToken = input.readAddress(`Enter the address of ERC20 token in which dividend will be denominated(POLY = ${polyToken.options.address}): `, polyToken.options.address);
       let erc20Symbol = await getERC20TokenSymbol(dividendToken);
       if (erc20Symbol != null) {
         token = new web3.eth.Contract(abis.erc20(), dividendToken);
@@ -487,13 +462,7 @@ async function reclaimFromContract() {
       console.log(chalk.green('ETH has been reclaimed succesfully!'));
       break;
     case 'ERC20':
-      let erc20Address = readlineSync.question('Enter the ERC20 token address to reclaim (POLY = ' + polyToken.options.address + '): ', {
-        limit: function (input) {
-          return web3.utils.isAddress(input);
-        },
-        limitMessage: "Must be a valid address",
-        defaultInput: polyToken.options.address
-      });
+      let erc20Address = input.readAddress('Enter the ERC20 token address to reclaim (POLY = ' + polyToken.options.address + '): ', polyToken.options.address);
       let reclaimERC20Action = currentDividendsModule.methods.reclaimERC20(erc20Address);
       await common.sendTransaction(reclaimERC20Action);
       console.log(chalk.green('ERC20 has been reclaimed succesfully!'));
@@ -558,12 +527,7 @@ function showReport(_name, _tokenSymbol, _tokenDecimals, _amount, _witthheld, _c
 }
 
 async function pushDividends(dividendIndex, checkpointId) {
-  let accounts = readlineSync.question('Enter addresses to push dividends to (ex- add1,add2,add3,...) or leave empty to push to all addresses: ', {
-    limit: function (input) {
-      return input === '' || (input.split(',').every(a => web3.utils.isAddress(a)));
-    },
-    limitMessage: `All addresses must be valid`
-  }).split(',');
+  let accounts = input.readMultipleAddresses('Enter addresses to push dividends to (ex- add1,add2,add3,...) or leave empty to push to all addresses: ').split(',');
   if (accounts[0] !== '') {
     let action = currentDividendsModule.methods.pushDividendPaymentToAddresses(dividendIndex, accounts);
     let receipt = await common.sendTransaction(action);
@@ -581,12 +545,7 @@ async function pushDividends(dividendIndex, checkpointId) {
 }
 
 async function exploreAccount(dividendIndex, dividendTokenAddress, dividendTokenSymbol, dividendTokenDecimals) {
-  let account = readlineSync.question('Enter address to explore: ', {
-    limit: function (input) {
-      return web3.utils.isAddress(input);
-    },
-    limitMessage: "Must be a valid address",
-  });
+  let account = input.readAddress('Enter address to explore: ');
   let isExcluded = await currentDividendsModule.methods.isExcluded(account, dividendIndex).call();
   let hasClaimed = await currentDividendsModule.methods.isClaimed(account, dividendIndex).call();
   let dividendAmounts = await currentDividendsModule.methods.calculateDividend(dividendIndex, account).call();
@@ -640,12 +599,7 @@ async function addDividendsModule() {
 }
 
 function getDividendsInitializeData(moduleABI) {
-  let wallet = readlineSync.question('Enter the account address to receive reclaimed dividends and tax: ', {
-    limit: function (input) {
-      return web3.utils.isAddress(input);
-    },
-    limitMessage: "Must be a valid address",
-  });
+  let wallet = input.readAddress('Enter the account address to receive reclaimed dividends and tax: ');
   let configureFunction = moduleABI.find(o => o.name === 'configure' && o.type === 'function');
   let bytes = web3.eth.abi.encodeFunctionCall(configureFunction, [wallet]);
   return bytes;

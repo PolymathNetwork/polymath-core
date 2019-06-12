@@ -6,6 +6,7 @@ const tokenManager = require('./token_manager');
 const contracts = require('./helpers/contract_addresses');
 const abis = require('./helpers/contract_abis');
 const common = require('./common/common_functions');
+const input = require('./IO/input');
 
 //
 let securityTokenRegistryAddress;
@@ -100,12 +101,7 @@ async function step_transfer_ticker_ownership (_transferOwnership) {
     newOwner = _transferOwnership;
     console.log(`Transfer ownership to: ${newOwner}`);
   } else if (_transferOwnership !== 'false' && readlineSync.keyInYNStrict(`Do you want to transfer the ownership of ${tokenSymbol} ticker?`)) {
-    newOwner = readlineSync.question('Enter the address that will be the new owner: ', {
-      limit: function (input) {
-        return web3.utils.isAddress(input);
-      },
-      limitMessage: "Must be a valid address"
-    });
+    newOwner = input.readAddress('Enter the address that will be the new owner: ');
   }
 
   if (newOwner) {
@@ -150,15 +146,7 @@ async function step_token_deploy (_name, _details, _divisible) {
     divisibility = (divisible !== 'N' && divisible !== 'n');
   }
 
-  let treasuryWallet;
-  treasuryWallet = readlineSync.question('Enter the treasury address for the token (' + Issuer.address + '): ', {
-    limit: function (input) {
-      return web3.utils.isAddress(input);
-    },
-    limitMessage: "Must be a valid address",
-    defaultInput: Issuer.address
-  });
-
+  let treasuryWallet = input.readAddress('Enter the treasury address for the token (' + Issuer.address + '): ', ssuer.address);
   await approvePoly(securityTokenRegistryAddress, polyFee);
   let generateSecurityTokenAction = securityTokenRegistry.methods.generateNewSecurityToken(tokenName, tokenSymbol, tokenDetails, divisibility, treasuryWallet, 0);
   let receipt = await common.sendTransaction(generateSecurityTokenAction);

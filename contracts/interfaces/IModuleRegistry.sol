@@ -53,7 +53,7 @@ interface IModuleRegistry {
      * @return bool indicating whether module factory is verified
      * @return address array which contains the list of securityTokens that use that module factory
      */
-    function getFactoryDetails(address _factoryAddress) external view returns(bool, address[] memory);
+    function getFactoryDetails(address _factoryAddress) external view returns(bool, address, address[] memory);
 
     /**
      * @notice Returns all the tags related to the a module type which are valid for the given token
@@ -72,6 +72,12 @@ interface IModuleRegistry {
      */
     function getTagsByType(uint8 _moduleType) external view returns(bytes32[] memory, address[] memory);
 
+    /**
+     * @notice Returns the list of addresses of all Module Factory of a particular type
+     * @param _moduleType Type of Module
+     * @return address array that contains the list of addresses of module factory contracts.
+     */
+    function getAllModulesByType(uint8 _moduleType) external view returns(address[] memory);
     /**
      * @notice Returns the list of addresses of Module Factory of a particular type
      * @param _moduleType Type of Module

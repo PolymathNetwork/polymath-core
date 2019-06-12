@@ -10,17 +10,15 @@ contract ScheduledCheckpointFactory is ModuleFactory {
     /**
      * @notice Constructor
      * @param _setupCost Setup cost of the module
-     * @param _usageCost Usage cost of the module
-     * @param _polymathRegistry Address of the Polymath registry
+      * @param _polymathRegistry Address of the Polymath registry
      * @param _isCostInPoly true = cost in Poly, false = USD
      */
     constructor(
         uint256 _setupCost,
-        uint256 _usageCost,
         address _polymathRegistry,
         bool _isCostInPoly
     )
-        public ModuleFactory(_setupCost, _usageCost, _polymathRegistry, _isCostInPoly)
+        public ModuleFactory(_setupCost, _polymathRegistry, _isCostInPoly)
     {
         initialVersion = "3.0.0";
         name = "ScheduledCheckpoint";

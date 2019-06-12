@@ -17,6 +17,8 @@ interface ISecurityToken {
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
 
+    function name() external view returns(string memory);
+
     /**
      * @notice Transfers of securities may fail for a number of reasons. So this function will used to understand the
      * cause of failure by getting the byte value. Which will be the ESC that follows the EIP 1066. ESC can be mapped

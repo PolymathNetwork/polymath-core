@@ -171,12 +171,14 @@ contract STRGetter is EternalStorage {
         uint256 expiryDate = getUintValue(Encoder.getKey("registeredTickers_expiryDate", ticker));
         /*solium-disable-next-line security/no-block-members*/
         if ((tickerStatus == true) || (expiryDate > now)) {
+            address stAddress = getAddressValue(Encoder.getKey("tickerToSecurityToken", ticker));
+            string memory tokenName = stAddress == address(0) ? "" : ISecurityToken(stAddress).name();
             return
             (
                 getTickerOwner(ticker),
                 getUintValue(Encoder.getKey("registeredTickers_registrationDate", ticker)),
                 expiryDate,
-                getStringValue(Encoder.getKey("registeredTickers_tokenName", ticker)),
+                tokenName,
                 tickerStatus
             );
         } else {

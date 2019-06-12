@@ -5,6 +5,7 @@ import "../PolymathRegistry.sol";
 import "../interfaces/IModule.sol";
 import "./SecurityTokenStorage.sol";
 import "../libraries/TokenLib.sol";
+import "../libraries/StatusCodes.sol";
 import "../interfaces/IDataStore.sol";
 import "../interfaces/IUpgradableTokenFactory.sol";
 import "../interfaces/IModuleFactory.sol";
@@ -71,6 +72,11 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     event ModuleRemoved(uint8[] _types, address _module); //Event emitted by the tokenLib.
     // Emit when the budget allocated to a module is changed
     event ModuleBudgetChanged(uint8[] _moduleTypes, address _module, uint256 _oldBudget, uint256 _budget); //Event emitted by the tokenLib.
+
+    // Constructor
+    constructor() public {
+        initialized = true;
+    }
 
     /**
      * @notice Initialization function
@@ -161,14 +167,6 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      */
     function _onlyModule(uint8 _type) internal view {
         require(isModule(msg.sender, _type));
-    }
-
-    /**
-     * @dev Throws if called by any account other than the STFactory.
-     */
-    modifier onlyTokenFactory() {
-        require(msg.sender == tokenFactory);
-        _;
     }
 
     modifier checkGranularity(uint256 _value) {
@@ -360,6 +358,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     */
     function changeName(string calldata _name) external {
         _onlyOwner();
+        require(bytes(_name).length > 0);
         emit UpdateTokenName(name, _name);
         name = _name;
     }
@@ -934,7 +933,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     function canTransferFrom(address _from, address _to, uint256 _value, bytes calldata _data) external view returns (bool success, byte reasonCode, bytes32 appCode) {
         (success, reasonCode, appCode) = _canTransfer(_from, _to, _value, _data);
         if (success && _value > allowance(_from, msg.sender)) {
-            return (false, 0x53, bytes32(0));
+            return (false, StatusCodes.code(StatusCodes.Status.InsufficientAllowance), bytes32(0));
         }
     }
 
@@ -942,7 +941,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
         bytes32 appCode;
         bool success;
         if (_value % granularity != 0) {
-            return (false, 0x50, bytes32(0));
+            return (false, StatusCodes.code(StatusCodes.Status.TransferFailure), bytes32(0));
         }
         (success, appCode) = TokenLib.verifyTransfer(modules[TRANSFER_KEY], modulesToData, _from, _to, _value, _data, transfersFrozen);
         return TokenLib.canTransfer(success, appCode, _to, _value, balanceOf(_from));
@@ -981,7 +980,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
             }
             return (esc, appStatusCode, toPartition);
         }
-        return (0x50, bytes32(0), bytes32(0));
+        return (StatusCodes.code(StatusCodes.Status.TransferFailure), bytes32(0), bytes32(0));
     }
 
     /**

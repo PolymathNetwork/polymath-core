@@ -1,8 +1,6 @@
 pragma solidity 0.5.8;
 
 import "./PLCRVotingCheckpointProxy.sol";
-import "../../../../libraries/Util.sol";
-import "../../../../interfaces/IBoot.sol";
 import "../../../UpgradableModuleFactory.sol";
 
 /**
@@ -13,20 +11,18 @@ contract PLCRVotingCheckpointFactory is UpgradableModuleFactory {
     /**
      * @notice Constructor
      * @param _setupCost Setup cost of the module
-     * @param _usageCost Usage cost of the module
-     * @param _logicContract Contract address that contains the logic related to `description`
+      * @param _logicContract Contract address that contains the logic related to `description`
      * @param _polymathRegistry Address of the Polymath registry
      * @param _isCostInPoly true = cost in Poly, false = USD
      */
     constructor (
         uint256 _setupCost,
-        uint256 _usageCost,
         address _logicContract,
         address _polymathRegistry,
         bool _isCostInPoly
     )
         public
-        UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry, _isCostInPoly)
+        UpgradableModuleFactory("3.0.0", _setupCost, _logicContract, _polymathRegistry, _isCostInPoly)
     {
         initialVersion = "3.0.0";
         name = "PLCRVotingCheckpoint";

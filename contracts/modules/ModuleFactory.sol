@@ -2,7 +2,7 @@ pragma solidity 0.5.8;
 
 import "../libraries/VersionUtils.sol";
 import "../libraries/Util.sol";
-import "../interfaces/IBoot.sol";
+import "../interfaces/IModule.sol";
 import "../interfaces/IOracle.sol";
 import "../interfaces/IPolymathRegistry.sol";
 import "../interfaces/IModuleFactory.sol";
@@ -27,7 +27,6 @@ contract ModuleFactory is IModuleFactory, Ownable {
     bytes32[] tagsData;
 
     bool public isCostInPoly;
-    uint256 public usageCost;
     uint256 public setupCost;
 
     string constant POLY_ORACLE = "StablePolyUsdOracle";
@@ -42,9 +41,8 @@ contract ModuleFactory is IModuleFactory, Ownable {
     /**
      * @notice Constructor
      */
-    constructor(uint256 _setupCost, uint256 _usageCost, address _polymathRegistry, bool _isCostInPoly) public {
+    constructor(uint256 _setupCost, address _polymathRegistry, bool _isCostInPoly) public {
         setupCost = _setupCost;
-        usageCost = _usageCost;
         polymathRegistry = _polymathRegistry;
         isCostInPoly = _isCostInPoly;
     }
@@ -80,26 +78,14 @@ contract ModuleFactory is IModuleFactory, Ownable {
     }
 
     /**
-     * @notice Used to change the fee of the usage cost
-     * @param _usageCost new usage cost
-     */
-    function changeUsageCost(uint256 _usageCost) public onlyOwner {
-        emit ChangeUsageCost(usageCost, _usageCost);
-        usageCost = _usageCost;
-    }
-
-    /**
-     * @notice Used to change the currency and amount of usage and setup cost
+     * @notice Used to change the currency and amount of setup cost
      * @param _setupCost new setup cost
-     * @param _usageCost new usage cost
-     * @param _isCostInPoly new usage cost currency. USD or POLY
+     * @param _isCostInPoly new setup cost currency. USD or POLY
      */
-    function changeCostsAndType(uint256 _setupCost, uint256 _usageCost, bool _isCostInPoly) public onlyOwner {
+    function changeCostAndType(uint256 _setupCost, bool _isCostInPoly) public onlyOwner {
         emit ChangeSetupCost(setupCost, _setupCost);
-        emit ChangeUsageCost(usageCost, _usageCost);
         emit ChangeCostType(isCostInPoly, _isCostInPoly);
         setupCost = _setupCost;
-        usageCost = _usageCost;
         isCostInPoly = _isCostInPoly;
     }
 
@@ -191,16 +177,6 @@ contract ModuleFactory is IModuleFactory, Ownable {
     }
 
     /**
-     * @notice Get the setup cost of the module
-     */
-    function usageCostInPoly() public returns (uint256) {
-        if (isCostInPoly)
-            return usageCost;
-        uint256 polyRate = IOracle(IPolymathRegistry(polymathRegistry).getAddress(POLY_ORACLE)).getPrice();
-        return DecimalMath.div(usageCost, polyRate);
-    }
-
-    /**
      * @notice Calculates fee in POLY
      */
     function _takeFee() internal returns(uint256) {
@@ -219,7 +195,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      */
     function _initializeModule(address _module, bytes memory _data) internal {
         uint256 polySetupCost = _takeFee();
-        bytes4 initFunction = IBoot(_module).getInitFunction();
+        bytes4 initFunction = IModule(_module).getInitFunction();
         if (initFunction != bytes4(0)) {
             require(Util.getSig(_data) == initFunction, "Provided data is not valid");
             /*solium-disable-next-line security/no-low-level-calls*/

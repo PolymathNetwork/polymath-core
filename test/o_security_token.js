@@ -72,6 +72,7 @@ contract("SecurityToken", async (accounts) => {
     let I_CappedSTOFactory;
     let I_STFactory;
     let I_SecurityToken;
+    let I_SecurityToken2;
     let I_STRProxied;
     let I_MRProxied;
     let I_CappedSTO;
@@ -81,6 +82,7 @@ contract("SecurityToken", async (accounts) => {
     let I_MockRedemptionManager;
     let I_STRGetter;
     let I_STGetter;
+    let I_STGetter2;
     let stGetter;
 
     // SecurityToken Details (Launched ST on the behalf of the issuer)
@@ -183,7 +185,7 @@ contract("SecurityToken", async (accounts) => {
     describe("Generate the SecurityToken", async () => {
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let tx = await I_STRProxied.registerTicker(token_owner, symbol, name, { from: token_owner });
+            let tx = await I_STRProxied.registerNewTicker(token_owner, symbol, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._ticker, symbol);
         });
@@ -213,6 +215,10 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should not allow unauthorized address to change name", async() => {
             await catchRevert(I_SecurityToken.changeName("new token name"));
+        });
+
+        it("Should not allow 0 length name", async() => {
+            await catchRevert(I_SecurityToken.changeName("", { from: token_owner }));
         });
 
         it("Should allow authorized address to change name", async() => {
@@ -779,7 +785,8 @@ contract("SecurityToken", async (accounts) => {
         it("Should upgrade token logic and getter", async () => {
             let mockSTGetter = await MockSTGetter.new({from: account_polymath});
             let mockSecurityTokenLogic = await MockSecurityTokenLogic.new("", "", 0, {from: account_polymath});
-            const tokenInitBytes = {
+            console.log("STL1: " + mockSecurityTokenLogic.address);
+            const tokenUpgradeBytes = {
                 name: "upgrade",
                 type: "function",
                 inputs: [
@@ -793,8 +800,25 @@ contract("SecurityToken", async (accounts) => {
                     }
                 ]
             };
-            let tokenInitBytesCall = web3.eth.abi.encodeFunctionCall(tokenInitBytes, [mockSTGetter.address, 10]);
-            await I_STFactory.setLogicContract("3.0.1", mockSecurityTokenLogic.address, tokenInitBytesCall, {from: account_polymath});
+            let tokenUpgradeBytesCall = web3.eth.abi.encodeFunctionCall(tokenUpgradeBytes, [mockSTGetter.address, 10]);
+
+            const tokenInitBytes = {
+                name: "initialize",
+                type: "function",
+                inputs: [
+                    {
+                        type: "address",
+                        name: "_getterDelegate"
+                    },
+                    {
+                        type: "uint256",
+                        name: "_someValue"
+                    }
+                ]
+            };
+            let tokenInitBytesCall = web3.eth.abi.encodeFunctionCall(tokenInitBytes, [mockSTGetter.address, 9]);
+
+            await I_STFactory.setLogicContract("3.0.1", mockSecurityTokenLogic.address, tokenInitBytesCall, tokenUpgradeBytesCall, {from: account_polymath});
             // NB - the mockSecurityTokenLogic sets its internal version to 3.0.0 not 3.0.1
             let tx = await I_SecurityToken.upgradeToken({from: token_owner, gas: 7000000});
             assert.equal(tx.logs[0].args._major, 3);
@@ -806,6 +830,75 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(tx.logs[0].args._upgrade, 11);
             tx = await newGetter.newGetter(12);
             assert.equal(tx.logs[0].args._upgrade, 12);
+            console.log((await newToken.someValue.call()));
+            assert.equal((await newToken.someValue.call()).toNumber(), 10);
+        });
+
+        it("Should update token logic and getter", async () => {
+            let mockSTGetter = await MockSTGetter.new({from: account_polymath});
+            let mockSecurityTokenLogic = await MockSecurityTokenLogic.new("", "", 0, {from: account_polymath});
+            console.log("STL2: " + mockSecurityTokenLogic.address);
+            const tokenUpgradeBytes = {
+                name: "upgrade",
+                type: "function",
+                inputs: [
+                    {
+                        type: "address",
+                        name: "_getterDelegate"
+                    },
+                    {
+                        type: "uint256",
+                        name: "_upgrade"
+                    }
+                ]
+            };
+            let tokenUpgradeBytesCall = web3.eth.abi.encodeFunctionCall(tokenUpgradeBytes, [mockSTGetter.address, 12]);
+
+            const tokenInitBytes = {
+                name: "initialize",
+                type: "function",
+                inputs: [
+                    {
+                        type: "address",
+                        name: "_getterDelegate"
+                    },
+                    {
+                        type: "uint256",
+                        name: "_someValue"
+                    }
+                ]
+            };
+            let tokenInitBytesCall = web3.eth.abi.encodeFunctionCall(tokenInitBytes, [mockSTGetter.address, 11]);
+
+            await I_STFactory.updateLogicContract(2, "3.0.1", mockSecurityTokenLogic.address, tokenInitBytesCall, tokenUpgradeBytesCall, {from: account_polymath});
+            // assert.equal(0,1);
+        });
+
+        it("Should deploy new upgraded token", async () => {
+
+            const symbolUpgrade = "DETU";
+            const nameUpgrade = "Demo Upgrade";
+            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
+            let tx = await I_STRProxied.registerTicker(token_owner, symbolUpgrade, nameUpgrade, { from: token_owner });
+            assert.equal(tx.logs[0].args._owner, token_owner);
+            assert.equal(tx.logs[0].args._ticker, symbolUpgrade);
+
+            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
+            let tokenTx = await I_STRProxied.generateNewSecurityToken(name, symbolUpgrade, tokenDetails, false, token_owner, 0, { from: token_owner });
+            // Verify the successful generation of the security token
+            for (let i = 0; i < tokenTx.logs.length; i++) {
+              console.log("LOGS: " + i);
+              console.log(tx.logs[i]);
+            }
+            assert.equal(tokenTx.logs[1].args._ticker, symbolUpgrade, "SecurityToken doesn't get deployed");
+
+            I_SecurityToken2 = await MockSecurityTokenLogic.at(tokenTx.logs[1].args._securityTokenAddress);
+            I_STGetter2 = await MockSTGetter.at(I_SecurityToken2.address);
+            assert.equal(await I_STGetter2.getTreasuryWallet.call(), token_owner, "Incorrect wallet set")
+            assert.equal(await I_SecurityToken2.owner.call(), token_owner);
+            assert.equal(await I_SecurityToken2.initialized.call(), true);
+            assert.equal((await I_SecurityToken2.someValue.call()).toNumber(), 11);
+
         });
 
         it("Should transfer from whitelist investor1 to whitelist investor 2", async () => {
@@ -1735,7 +1828,16 @@ contract("SecurityToken", async (accounts) => {
 
             let afterTotalSupply = await I_SecurityToken.totalSupply.call();
             assert.equal(web3.utils.fromWei(beforeTotalSupply.sub(afterTotalSupply)), 10);
-        })
+        });
+
+        it("Should get the partitions of the secuirtyToken", async() => {
+            let partitions = await I_STGetter.partitionsOf.call(account_investor1);
+            console.log(`Partitions of the investor 1: ${web3.utils.hexToUtf8(partitions[0])}`);
+            assert.equal("UNLOCKED", web3.utils.hexToUtf8(partitions[0]));
+            assert.equal("LOCKED", web3.utils.hexToUtf8(partitions[1]));
+            partitions = await I_STGetter.partitionsOf.call(account_investor2);
+            console.log(`Partitions of the investor 2: ${web3.utils.hexToUtf8(partitions[0])}`);
+        });
     });
 
     describe("Test cases for the storage", async() => {

@@ -15,6 +15,7 @@ import "../tokens/SecurityToken.sol";
 contract MockSecurityTokenLogic is SecurityToken {
 
     event UpgradeEvent(uint256 _upgrade);
+    uint256 public someValue;
 
     /**
      * @notice Initialization function
@@ -23,8 +24,25 @@ contract MockSecurityTokenLogic is SecurityToken {
      */
     function upgrade(address _getterDelegate, uint256 _upgrade) external {
         getterDelegate = _getterDelegate;
+        someValue = _upgrade;
         //securityTokenVersion = SemanticVersion(3, 1, 0);
         emit UpgradeEvent(_upgrade);
+    }
+
+    /**
+     * @notice Initialization function
+     * @dev Expected to be called atomically with the proxy being created, by the owner of the token
+     * @dev Can only be called once
+     */
+    function initialize(address _getterDelegate, uint256 _someValue) public {
+        //Expected to be called atomically with the proxy being created
+        require(!initialized, "Already initialized");
+        getterDelegate = _getterDelegate;
+        securityTokenVersion = SemanticVersion(3, 0, 0);
+        updateFromRegistry();
+        tokenFactory = msg.sender;
+        initialized = true;
+        someValue = _someValue;
     }
 
     function newFunction(uint256 _upgrade) external {

@@ -872,6 +872,8 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     function _setProtocolFactory(address _STFactoryAddress, uint8 _major, uint8 _minor, uint8 _patch) internal {
         require(_STFactoryAddress != address(0), "Bad address");
         uint24 _packedVersion = VersionUtils.pack(_major, _minor, _patch);
+        address stFactoryAddress = getAddressValue(Encoder.getKey("protocolVersionST", uint256(_packedVersion)));
+        require(stFactoryAddress == address(0), "Already exists");
         set(Encoder.getKey("protocolVersionST", uint256(_packedVersion)), _STFactoryAddress);
         emit ProtocolFactorySet(_STFactoryAddress, _major, _minor, _patch);
     }

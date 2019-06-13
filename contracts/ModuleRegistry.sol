@@ -346,6 +346,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @notice Returns the verified status, and reputation of the entered Module Factory
      * @param _factoryAddress is the address of the module factory
      * @return bool indicating whether module factory is verified
+     * @return address of the factory owner
      * @return address array which contains the list of securityTokens that use that module factory
      */
     function getFactoryDetails(address _factoryAddress) external view returns(bool, address, address[] memory) {

@@ -159,6 +159,15 @@ interface ISecurityTokenRegistry {
     function registerTicker(address _owner, string calldata _ticker, string calldata _tokenName) external;
 
     /**
+     * @notice Registers the token ticker to the selected owner
+     * @notice Once the token ticker is registered to its owner then no other issuer can claim
+     * @notice its ownership. If the ticker expires and its issuer hasn't used it, then someone else can take it.
+     * @param _owner is address of the owner of the token
+     * @param _ticker is unique token ticker
+     */
+    function registerNewTicker(address _owner, string calldata _ticker) external;
+
+    /**
     * @notice Check that Security Token is registered
     * @param _securityToken Address of the Scurity token
     * @return bool

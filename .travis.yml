@@ -11,7 +11,6 @@ jobs:
         - yarn install
       before_script:
         - truffle version
-        - solc --version
       script: npm run test
 notifications:
   slack:

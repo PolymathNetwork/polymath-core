@@ -42,7 +42,7 @@ contract PLCRVotingCheckpointFactory is UpgradableModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes calldata _data) external returns(address) {
-        address plcrVotingCheckpoint = address(new PLCRVotingCheckpointProxy(logicContracts[latestUpgrade].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestUpgrade].logicContract));
+        address plcrVotingCheckpoint = address(new PLCRVotingCheckpointProxy(logicContracts[latestUpgrade].version, msg.sender, polymathRegistry.getAddress("PolyToken"), logicContracts[latestUpgrade].logicContract));
         _initializeModule(plcrVotingCheckpoint, _data);
         return plcrVotingCheckpoint;
     }

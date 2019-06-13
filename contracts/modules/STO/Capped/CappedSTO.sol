@@ -204,7 +204,7 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
     * @param _tokenAmount Number of tokens to be emitted
     */
     function _deliverTokens(address _beneficiary, uint256 _tokenAmount) internal {
-        ISecurityToken(securityToken).issue(_beneficiary, _tokenAmount, "");
+        securityToken.issue(_beneficiary, _tokenAmount, "");
     }
 
     /**
@@ -233,7 +233,7 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
         if (totalTokensSold.add(tokens) > cap) {
             tokens = cap.sub(totalTokensSold);
         }
-        uint256 granularity = ISecurityToken(securityToken).granularity();
+        uint256 granularity = securityToken.granularity();
         tokens = tokens.div(granularity);
         tokens = tokens.mul(granularity);
         require(tokens > 0, "Cap reached");

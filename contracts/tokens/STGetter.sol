@@ -3,7 +3,6 @@ pragma solidity 0.5.8;
 import "./OZStorage.sol";
 import "./SecurityTokenStorage.sol";
 import "../libraries/TokenLib.sol";
-import "../interfaces/IDataStore.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "../modules/PermissionManager/IPermissionManager.sol";
 
@@ -35,8 +34,7 @@ contract STGetter is OZStorage, SecurityTokenStorage {
      * @return Investor count
      */
     function getInvestorCount() external view returns(uint256) {
-        IDataStore dataStoreInstance = IDataStore(dataStore);
-        return dataStoreInstance.getAddressArrayLength(INVESTORSKEY);
+        return dataStore.getAddressArrayLength(INVESTORSKEY);
     }
 
     /**
@@ -45,8 +43,7 @@ contract STGetter is OZStorage, SecurityTokenStorage {
      * @return list of addresses
      */
     function getInvestors() public view returns(address[] memory investors) {
-        IDataStore dataStoreInstance = IDataStore(dataStore);
-        investors = dataStoreInstance.getAddressArray(INVESTORSKEY);
+        investors = dataStore.getAddressArray(INVESTORSKEY);
     }
 
     /**
@@ -57,8 +54,7 @@ contract STGetter is OZStorage, SecurityTokenStorage {
     function getInvestorsAt(uint256 _checkpointId) external view returns(address[] memory) {
         uint256 count;
         uint256 i;
-        IDataStore dataStoreInstance = IDataStore(dataStore);
-        address[] memory investors = dataStoreInstance.getAddressArray(INVESTORSKEY);
+        address[] memory investors = dataStore.getAddressArray(INVESTORSKEY);
         for (i = 0; i < investors.length; i++) {
             if (balanceOfAt(investors[i], _checkpointId) > 0) {
                 count++;
@@ -87,8 +83,7 @@ contract STGetter is OZStorage, SecurityTokenStorage {
     function getInvestorsSubsetAt(uint256 _checkpointId, uint256 _start, uint256 _end) external view returns(address[] memory) {
         uint256 count;
         uint256 i;
-        IDataStore dataStoreInstance = IDataStore(dataStore);
-        address[] memory investors = dataStoreInstance.getAddressArrayElements(INVESTORSKEY, _start, _end);
+        address[] memory investors = dataStore.getAddressArrayElements(INVESTORSKEY, _start, _end);
         for (i = 0; i < investors.length; i++) {
             if (balanceOfAt(investors[i], _checkpointId) > 0) {
                 count++;
@@ -150,7 +145,7 @@ contract STGetter is OZStorage, SecurityTokenStorage {
      * @notice use to return the global treasury wallet
      */
     function getTreasuryWallet() external view returns(address) {
-        return IDataStore(dataStore).getAddress(TREASURY);
+        return dataStore.getAddress(TREASURY);
     }
 
     /**
@@ -181,8 +176,7 @@ contract STGetter is OZStorage, SecurityTokenStorage {
      * @return list of investors
      */
     function iterateInvestors(uint256 _start, uint256 _end) external view returns(address[] memory) {
-        IDataStore dataStoreInstance = IDataStore(dataStore);
-        return dataStoreInstance.getAddressArrayElements(INVESTORSKEY, _start, _end);
+        return dataStore.getAddressArrayElements(INVESTORSKEY, _start, _end);
     }
 
     /**

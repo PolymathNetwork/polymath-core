@@ -94,7 +94,7 @@ contract UpgradableModuleFactory is ModuleFactory {
         logicContracts[_upgrade].version = _version;
         logicContracts[_upgrade].logicContract = _logicContract;
         logicContracts[_upgrade].upgradeData = _upgradeData;
-        IModuleRegistry moduleRegistry = IModuleRegistry(IPolymathRegistry(polymathRegistry).getAddress("ModuleRegistry"));
+        IModuleRegistry moduleRegistry = IModuleRegistry(polymathRegistry.getAddress("ModuleRegistry"));
         moduleRegistry.unverifyModule(address(this));
         emit LogicContractSet(_version, _upgrade, _logicContract, _upgradeData);
     }

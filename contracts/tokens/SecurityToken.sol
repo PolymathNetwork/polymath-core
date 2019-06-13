@@ -1,7 +1,6 @@
 pragma solidity 0.5.8;
 
 import "../proxy/Proxy.sol";
-import "../PolymathRegistry.sol";
 import "../interfaces/IModule.sol";
 import "./SecurityTokenStorage.sol";
 import "../libraries/TokenLib.sol";
@@ -13,7 +12,6 @@ import "../interfaces/token/IERC1410.sol";
 import "../interfaces/token/IERC1594.sol";
 import "../interfaces/token/IERC1643.sol";
 import "../interfaces/token/IERC1644.sol";
-import "../interfaces/IModuleRegistry.sol";
 import "../interfaces/ITransferManager.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/ERC20.sol";
@@ -198,18 +196,18 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     {
         _onlyOwner();
         //Check that the module factory exists in the ModuleRegistry - will throw otherwise
-        IModuleRegistry(moduleRegistry).useModule(_moduleFactory, false);
+        moduleRegistry.useModule(_moduleFactory, false);
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
         uint8[] memory moduleTypes = moduleFactory.types();
         uint256 moduleCost = moduleFactory.setupCostInPoly();
         require(moduleCost <= _maxCost, "Invalid cost");
         //Approve fee for module
-        ERC20(polyToken).approve(_moduleFactory, moduleCost);
+        polyToken.approve(_moduleFactory, moduleCost);
         //Creates instance of module from factory
         address module = moduleFactory.deploy(_data);
         require(modulesToData[module].module == address(0), "Module exists");
         //Approve ongoing budget
-        ERC20(polyToken).approve(module, _budget);
+        polyToken.approve(module, _budget);
         _addModuleData(moduleTypes, _moduleFactory, module, moduleCost, _budget, _label, _archived);
     }
 
@@ -350,7 +348,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     function changeDataStore(address _dataStore) external {
         _onlyOwner();
         _zeroAddressCheck(_dataStore);
-        dataStore = _dataStore;
+        dataStore = IDataStore(_dataStore);
     }
 
     /**
@@ -371,8 +369,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     function changeTreasuryWallet(address _wallet) external {
         _onlyOwner();
         _zeroAddressCheck(_wallet);
-        emit TreasuryWalletChanged(IDataStore(dataStore).getAddress(TREASURY), _wallet);
-        IDataStore(dataStore).setAddress(TREASURY, _wallet);
+        emit TreasuryWalletChanged(dataStore.getAddress(TREASURY), _wallet);
+        dataStore.setAddress(TREASURY, _wallet);
     }
 
     /**
@@ -873,13 +871,12 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      */
     function createCheckpoint() external returns(uint256) {
         _onlyModuleOrOwner(CHECKPOINT_KEY);
-        IDataStore dataStoreInstance = IDataStore(dataStore);
         // currentCheckpointId can only be incremented by 1 and hence it can not be overflowed
         currentCheckpointId = currentCheckpointId + 1;
         /*solium-disable-next-line security/no-block-members*/
         checkpointTimes.push(now);
         checkpointTotalSupply[currentCheckpointId] = totalSupply();
-        emit CheckpointCreated(currentCheckpointId, dataStoreInstance.getAddressArrayLength(INVESTORSKEY));
+        emit CheckpointCreated(currentCheckpointId, dataStore.getAddressArrayLength(INVESTORSKEY));
         return currentCheckpointId;
     }
 
@@ -1064,9 +1061,9 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
 
     function updateFromRegistry() public {
         _onlyOwner();
-        moduleRegistry = PolymathRegistry(polymathRegistry).getAddress("ModuleRegistry");
-        securityTokenRegistry = PolymathRegistry(polymathRegistry).getAddress("SecurityTokenRegistry");
-        polyToken = PolymathRegistry(polymathRegistry).getAddress("PolyToken");
+        moduleRegistry = IModuleRegistry(polymathRegistry.getAddress("ModuleRegistry"));
+        securityTokenRegistry = ISecurityTokenRegistry(polymathRegistry.getAddress("SecurityTokenRegistry"));
+        polyToken = IERC20(polymathRegistry.getAddress("PolyToken"));
     }
 
     //Ownable Functions

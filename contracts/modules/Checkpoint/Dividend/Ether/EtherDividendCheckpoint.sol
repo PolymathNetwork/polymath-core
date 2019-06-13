@@ -155,7 +155,8 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
             excludedSupply = excludedSupply.add(securityToken.balanceOfAt(_excluded[j], _checkpointId));
             dividends[dividendIndex].dividendExcluded[_excluded[j]] = true;
         }
-        dividends[dividendIndex].totalSupply = currentSupply.sub(excludedSupply);
+        require(currentSupply > excludedSupply, "Invalid supply");
+        dividends[dividendIndex].totalSupply = currentSupply - excludedSupply;
         /*solium-disable-next-line security/no-block-members*/
         emit EtherDividendDeposited(msg.sender, _checkpointId, _maturity, _expiry, msg.value, currentSupply, dividendIndex, _name);
     }

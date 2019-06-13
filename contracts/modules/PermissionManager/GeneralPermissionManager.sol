@@ -67,6 +67,7 @@ contract GeneralPermissionManager is GeneralPermissionManagerStorage, IPermissio
             if (allDelegates[i] == _delegate) {
                 allDelegates[i] = allDelegates[delegateLen - 1];
                 allDelegates.length--;
+                break;
             }
         }
         delete delegateDetails[_delegate];

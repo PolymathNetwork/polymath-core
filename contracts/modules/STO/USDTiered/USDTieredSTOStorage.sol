@@ -76,4 +76,6 @@ contract USDTieredSTOStorage {
     // Array of Tiers
     Tier[] public tiers;
 
+    // Optional custom Oracles.
+    mapping(bytes32 => mapping(bytes32 => address)) customOracles;
 }

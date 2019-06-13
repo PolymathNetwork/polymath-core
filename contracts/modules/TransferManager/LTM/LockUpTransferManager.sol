@@ -550,7 +550,7 @@ contract LockUpTransferManager is LockUpTransferManagerStorage, TransferManager 
         // delete the user from the lockup type
         uint256 _lockupIndex = lockupToUserIndex[_lockupName][_userAddress];
         uint256 _len = lockupToUsers[_lockupName].length;
-        if ( _lockupIndex != _len) {
+        if ( _lockupIndex != _len - 1) {
             lockupToUsers[_lockupName][_lockupIndex] = lockupToUsers[_lockupName][_len - 1];
             lockupToUserIndex[_lockupName][lockupToUsers[_lockupName][_lockupIndex]] = _lockupIndex;
         }
@@ -560,7 +560,7 @@ contract LockUpTransferManager is LockUpTransferManagerStorage, TransferManager 
         // delete the lockup from the user
         uint256 _userIndex = userToLockupIndex[_userAddress][_lockupName];
         _len = userToLockups[_userAddress].length;
-        if ( _userIndex != _len) {
+        if ( _userIndex != _len - 1) {
             userToLockups[_userAddress][_userIndex] = userToLockups[_userAddress][_len - 1];
             userToLockupIndex[_userAddress][userToLockups[_userAddress][_userIndex]] = _userIndex;
         }

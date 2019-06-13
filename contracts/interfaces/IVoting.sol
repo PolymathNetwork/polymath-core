@@ -44,7 +44,7 @@ interface IVoting {
      * @return uint256 endTime
      * @return uint256 totalProposals
      * @return uint256 totalVoters
-     * @return bool isActive 
+     * @return bool isActive
      */
-    function getBallotDetails(uint256 _ballotId) external view returns(uint256, uint256, uint256, uint256, uint256, uint256, uint256, bool);
+    function getBallotDetails(uint256 _ballotId) external view returns(uint256 quorum, uint256 totalSupplyAtCheckpoint, uint256 checkpointId, uint256 startTime, uint256 endTime, uint256 totalProposals, uint256 totalVoters, bool isActive);
 }

@@ -127,18 +127,6 @@ interface ISecurityToken {
     function initialize(address _getterDelegate) external;
 
     /**
-     * @notice Transfers of securities may fail for a number of reasons. So this function will used to understand the
-     * cause of failure by getting the byte value. Which will be the ESC that follows the EIP 1066. ESC can be mapped
-     * with a reson string to understand the failure cause, table of Ethereum status code will always reside off-chain
-     * @param _to address The address which you want to transfer to
-     * @param _value uint256 the amount of tokens to be transferred
-     * @param _data The `bytes _data` allows arbitrary data to be submitted alongside the transfer.
-     * @return byte Ethereum status code (ESC)
-     * @return bytes32 Application specific reason code
-     */
-    function canTransferFrom(address _from, address _to, uint256 _value, bytes calldata _data) external view returns (byte statusCode, bytes32 reasonCode);
-
-    /**
      * @notice The standard provides an on-chain function to determine whether a transfer will succeed,
      * and return details indicating the reason if the transfer is not valid.
      * @param _from The address from whom the tokens get transferred.
@@ -169,11 +157,10 @@ interface ISecurityToken {
      * @param _to address The address which you want to transfer to
      * @param _value uint256 the amount of tokens to be transferred
      * @param _data The `bytes _data` allows arbitrary data to be submitted alongside the transfer.
-     * @return bool It signifies whether the transaction will be executed or not.
      * @return byte Ethereum status code (ESC)
      * @return bytes32 Application specific reason code
      */
-    function canTransferFrom(address _from, address _to, uint256 _value, bytes calldata _data) external view returns (bool isExecuted, byte statusCode, bytes32 reasonCode);
+    function canTransferFrom(address _from, address _to, uint256 _value, bytes calldata _data) external view returns (byte statusCode, bytes32 reasonCode);
 
     /**
      * @notice Used to attach a new document to the contract, or update the URI or hash of an existing attached document

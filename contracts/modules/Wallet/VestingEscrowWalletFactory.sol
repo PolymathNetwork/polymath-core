@@ -37,7 +37,7 @@ contract VestingEscrowWalletFactory is UpgradableModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes calldata _data) external returns(address) {
-        address vestingEscrowWallet = address(new VestingEscrowWalletProxy(logicContracts[latestUpgrade].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestUpgrade].logicContract));
+        address vestingEscrowWallet = address(new VestingEscrowWalletProxy(logicContracts[latestUpgrade].version, msg.sender, polymathRegistry.getAddress("PolyToken"), logicContracts[latestUpgrade].logicContract));
         _initializeModule(vestingEscrowWallet, _data);
         return vestingEscrowWallet;
     }

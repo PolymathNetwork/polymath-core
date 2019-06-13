@@ -12,7 +12,7 @@ contract TransferManager is ITransferManager, Module {
     bytes32 public constant UNLOCKED = "UNLOCKED";
 
     modifier onlySecurityToken() {
-        require(msg.sender == securityToken, "Sender is not owner");
+        require(msg.sender == address(securityToken), "Sender is not owner");
         _;
     }
 

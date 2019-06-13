@@ -34,7 +34,7 @@ contract KYCTransferManagerFactory is ModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes calldata _data) external returns(address) {
-        address kycTransferManager = address(new KYCTransferManager(msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken")));
+        address kycTransferManager = address(new KYCTransferManager(msg.sender, polymathRegistry.getAddress("PolyToken")));
         _initializeModule(kycTransferManager, _data);
         return kycTransferManager;
     }

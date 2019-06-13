@@ -41,7 +41,7 @@ contract TrackedRedemptionFactory is ModuleFactory {
         external
         returns(address)
     {
-        address trackedRedemption = address(new TrackedRedemption(msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken")));
+        address trackedRedemption = address(new TrackedRedemption(msg.sender, polymathRegistry.getAddress("PolyToken")));
         _initializeModule(trackedRedemption, _data);
         return trackedRedemption;
     }

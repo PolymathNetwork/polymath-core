@@ -31,13 +31,13 @@ contract Module is IModule, ModuleStorage, Pausable {
     }
 
     function _checkPerm(bytes32 _perm, address _caller) internal view returns (bool) {
-        bool isOwner = _caller == Ownable(securityToken).owner();
+        bool isOwner = _caller == Ownable(address(securityToken)).owner();
         bool isFactory = _caller == factory;
-        return isOwner || isFactory || ICheckPermission(securityToken).checkPermission(_caller, address(this), _perm);
+        return isOwner || isFactory || ICheckPermission(address(securityToken)).checkPermission(_caller, address(this), _perm);
     }
 
     function _onlySecurityTokenOwner() internal view {
-        require(msg.sender == Ownable(securityToken).owner(), "Sender is not owner");
+        require(msg.sender == Ownable(address(securityToken)).owner(), "Sender is not owner");
     }
 
     modifier onlyFactory() {
@@ -65,7 +65,7 @@ contract Module is IModule, ModuleStorage, Pausable {
      * @notice used to return the data store address of securityToken
      */
     function getDataStore() public view returns(IDataStore) {
-        return IDataStore(ISecurityToken(securityToken).dataStore());
+        return IDataStore(securityToken.dataStore());
     }
 
     /**

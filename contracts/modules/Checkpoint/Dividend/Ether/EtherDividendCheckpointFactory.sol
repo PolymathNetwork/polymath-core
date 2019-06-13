@@ -40,7 +40,7 @@ contract EtherDividendCheckpointFactory is UpgradableModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes calldata _data) external returns(address) {
-        address ethDividendCheckpoint = address(new EtherDividendCheckpointProxy(logicContracts[latestUpgrade].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestUpgrade].logicContract));
+        address ethDividendCheckpoint = address(new EtherDividendCheckpointProxy(logicContracts[latestUpgrade].version, msg.sender, polymathRegistry.getAddress("PolyToken"), logicContracts[latestUpgrade].logicContract));
         _initializeModule(ethDividendCheckpoint, _data);
         return ethDividendCheckpoint;
     }

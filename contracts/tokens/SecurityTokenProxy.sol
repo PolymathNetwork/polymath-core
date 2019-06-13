@@ -33,7 +33,7 @@ contract SecurityTokenProxy is OZStorage, SecurityTokenStorage, OwnedUpgradeabil
         name = _name;
         symbol = _symbol;
         decimals = _decimals;
-        polymathRegistry = _polymathRegistry;
+        polymathRegistry = IPolymathRegistry(_polymathRegistry);
         tokenDetails = _tokenDetails;
         granularity = _granularity;
         _owner = msg.sender;

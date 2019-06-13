@@ -36,7 +36,7 @@ contract SignedTransferManagerFactory is ModuleFactory {
      * @return address Contract address of the Module
      */
      function deploy(bytes calldata _data) external returns(address) {
-        address signedTransferManager = address(new SignedTransferManager(msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken")));
+        address signedTransferManager = address(new SignedTransferManager(msg.sender, polymathRegistry.getAddress("PolyToken")));
         _initializeModule(signedTransferManager, _data);
         return signedTransferManager;
     }

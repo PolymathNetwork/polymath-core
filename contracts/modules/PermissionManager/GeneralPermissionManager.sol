@@ -164,7 +164,7 @@ contract GeneralPermissionManager is GeneralPermissionManagerStorage, IPermissio
         uint256 counter = 0;
         // loop through _types and get their modules from securityToken->getModulesByType
         for (uint256 i = 0; i < _types.length; i++) {
-            address[] memory _currentTypeModules = ISecurityToken(securityToken).getModulesByType(_types[i]);
+            address[] memory _currentTypeModules = securityToken.getModulesByType(_types[i]);
             // loop through each modules to get their perms from IModule->getPermissions
             for (uint256 j = 0; j < _currentTypeModules.length; j++) {
                 bytes32[] memory _allModulePerms = IModule(_currentTypeModules[j]).getPermissions();
@@ -182,7 +182,7 @@ contract GeneralPermissionManager is GeneralPermissionManagerStorage, IPermissio
         counter = 0;
 
         for (uint256 i = 0; i < _types.length; i++) {
-            address[] memory _currentTypeModules = ISecurityToken(securityToken).getModulesByType(_types[i]);
+            address[] memory _currentTypeModules = securityToken.getModulesByType(_types[i]);
             for (uint256 j = 0; j < _currentTypeModules.length; j++) {
                 bytes32[] memory _allModulePerms = IModule(_currentTypeModules[j]).getPermissions();
                 for (uint256 k = 0; k < _allModulePerms.length; k++) {

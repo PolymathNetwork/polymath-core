@@ -12,11 +12,6 @@ import "../../interfaces/ISTO.sol";
 contract STO is ISTO, STOStorage, Module {
     using SafeMath for uint256;
 
-    enum FundRaiseType {ETH, POLY, SC}
-
-    // Event
-    event SetFundRaiseTypes(FundRaiseType[] _fundRaiseTypes);
-
     /**
      * @notice Returns funds raised by the STO
      */

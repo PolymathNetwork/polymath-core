@@ -43,28 +43,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     bytes32 constant POLYMATHREGISTRY = 0x90eeab7c36075577c7cc5ff366e389fefa8a18289b949bab3529ab4471139d4d; //keccak256("polymathRegistry")
     bytes32 constant FEATURE_REGISTRY = 0xed9ca06607835ad25ecacbcb97f2bc414d4a51ecf391b5ae42f15991227ab146; //keccak256("featureRegistry")
     bytes32 constant SECURITY_TOKEN_REGISTRY = 0x12ada4f7ee6c2b7b933330be61fefa007a1f497dc8df1b349b48071a958d7a81; //keccak256("securityTokenRegistry")
-
-    ///////////
-    // Events
-    //////////
-
-    // Emit when network becomes paused
-    event Pause(address account);
-    // Emit when network becomes unpaused
-    event Unpause(address account);
-    // Emit when Module is used by the SecurityToken
-    event ModuleUsed(address indexed _moduleFactory, address indexed _securityToken);
-    // Emit when the Module Factory gets registered on the ModuleRegistry contract
-    event ModuleRegistered(address indexed _moduleFactory, address indexed _owner);
-    // Emit when the module gets verified by Polymath
-    event ModuleVerified(address indexed _moduleFactory);
-    // Emit when the module gets unverified by Polymath or the factory owner
-    event ModuleUnverified(address indexed _moduleFactory);
-    // Emit when a ModuleFactory is removed by Polymath
-    event ModuleRemoved(address indexed _moduleFactory, address indexed _decisionMaker);
-    // Emit when ownership gets transferred
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
+    
     ///////////////
     //// Modifiers
     ///////////////

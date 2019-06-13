@@ -1,10 +1,17 @@
-pragma solidity 0.5.8;
+/**
+    //
+        IMPORTANT: Developer should update the ISecurityTokenRegistry.sol (Interface) if there is any change in
+        function signature or addition/removal of the functions from SecurityTokenRegistry & STRGetter contract.
+    //
+
+ */
+
+pragma solidity ^0.5.0;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IOwnable.sol";
 import "./interfaces/ISTFactory.sol";
-import "./interfaces/ISecurityTokenRegistry.sol";
 import "./interfaces/ISecurityToken.sol";
 import "./interfaces/IPolymathRegistry.sol";
 import "./interfaces/IOracle.sol";

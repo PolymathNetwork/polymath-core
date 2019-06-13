@@ -9,8 +9,6 @@ import "./interfaces/IFeatureRegistry.sol";
 contract FeatureRegistry is IFeatureRegistry, ReclaimTokens {
     mapping(bytes32 => bool) public featureStatus;
 
-    event ChangeFeatureStatus(string _nameKey, bool _newStatus);
-
     /**
      * @notice Get the status of a feature
      * @param _nameKey is the key for the feature status mapping

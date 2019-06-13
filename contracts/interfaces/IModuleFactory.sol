@@ -6,7 +6,6 @@ pragma solidity ^0.5.0;
 interface IModuleFactory {
     event ChangeSetupCost(uint256 _oldSetupCost, uint256 _newSetupCost);
     event ChangeCostType(bool _isOldCostInPoly, bool _isNewCostInPoly);
-    event ChangeUsageCost(uint256 _oldUsageCost, uint256 _newUsageCost);
     event GenerateModuleFromFactory(
         address _module,
         bytes32 indexed _moduleName,
@@ -43,11 +42,6 @@ interface IModuleFactory {
     /**
      * @notice Get the setup cost of the module in USD
      */
-    function usageCost() external returns(uint256);
-
-    /**
-     * @notice Get the setup cost of the module in USD
-     */
     function setupCost() external returns(uint256 usdSetupCost);
 
     /**
@@ -67,18 +61,11 @@ interface IModuleFactory {
     function changeSetupCost(uint256 _newSetupCost) external;
 
     /**
-     * @notice Used to change the usage fee
-     * @param _newUsageCost New usage fee
-     */
-    function changeUsageCost(uint256 _newUsageCost) external;
-
-    /**
-     * @notice Used to change the currency and amount of usage and setup cost
+     * @notice Used to change the currency and amount setup cost
      * @param _setupCost new setup cost
-     * @param _usageCost new usage cost
-     * @param _isCostInPoly new usage cost currency. USD or POLY
+     * @param _isCostInPoly new setup cost currency. USD or POLY
      */
-    function changeCostsAndType(uint256 _setupCost, uint256 _usageCost, bool _isCostInPoly) external;
+    function changeCostAndType(uint256 _setupCost, bool _isCostInPoly) external;
 
     /**
      * @notice Function use to change the lower and upper bound of the compatible version st
@@ -86,11 +73,6 @@ interface IModuleFactory {
      * @param _newVersion New version array
      */
     function changeSTVersionBounds(string calldata _boundType, uint8[] calldata _newVersion) external;
-
-    /**
-     * @notice Get the setup cost of the module in USD
-     */
-    function usageCostInPoly() external returns(uint256);
 
     /**
      * @notice Get the setup cost of the module

@@ -14,9 +14,4 @@ interface IModule {
      */
     function getPermissions() external view returns(bytes32[] memory permissions);
 
-    /**
-     * @notice Used to withdraw the fee by the factory owner
-     */
-    function takeUsageFee() external returns(bool);
-
 }

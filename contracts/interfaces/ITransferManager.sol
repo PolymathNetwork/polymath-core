@@ -26,10 +26,4 @@ interface ITransferManager {
      */
     function getTokensByPartition(bytes32 _partition, address _tokenHolder, uint256 _additionalBalance) external view returns(uint256 amount);
 
-    /**
-     * @notice return the list of partitions for a tokenHolder
-     * @param _tokenHolder Whom token amount need to query
-     */
-    function getPartitions(address _tokenHolder) external view returns(bytes32[] memory partitions);
-
 }

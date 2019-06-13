@@ -73,6 +73,12 @@ interface IModuleRegistry {
     function getTagsByType(uint8 _moduleType) external view returns(bytes32[] memory tags, address[] memory factories);
 
     /**
+     * @notice Returns the list of addresses of all Module Factory of a particular type
+     * @param _moduleType Type of Module
+     * @return address array that contains the list of addresses of module factory contracts.
+     */
+    function getAllModulesByType(uint8 _moduleType) external view returns(address[] memory);
+    /**
      * @notice Returns the list of addresses of Module Factory of a particular type
      * @param _moduleType Type of Module
      * @return address array that contains the list of addresses of module factory contracts.

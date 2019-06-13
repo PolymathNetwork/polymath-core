@@ -212,7 +212,7 @@ contract STGetter is OZStorage, SecurityTokenStorage {
      * @return Whether the `_operator` is an operator for all partitions of `_tokenHolder`
      */
     function isOperator(address _operator, address _tokenHolder) external view returns (bool) {
-        return (_allowed[_tokenHolder][_operator] == uint(-1));
+        return (_allowance(_tokenHolder, _operator) == uint(-1));
     }
 
     /**
@@ -228,63 +228,13 @@ contract STGetter is OZStorage, SecurityTokenStorage {
 
     /**
      * @notice Return all partitions
-     * @param _tokenHolder Whom balance need to queried
      * @return List of partitions
      */
-    function partitionsOf(address _tokenHolder) external view returns (bytes32[] memory) {
-        address[] memory tms = modules[TRANSFER_KEY];
-        /* uint256 count; */
-        bytes32[] memory partitions;
-        bytes32[] memory tmPartitions;
-        // First determine the total number of non-distinct partitions
-        for (uint256 i = 0; i < tms.length; i++) {
-            tmPartitions = ITransferManager(tms[i]).getPartitions(_tokenHolder);
-            for (uint256 j = 0 ; j < tmPartitions.length; j++) {
-                partitions = _appendPartition(partitions, tmPartitions[j]);
-            }
-        }
-        partitions = _appendPartition(partitions, "DEFAULT");
-        /* bytes32[] memory partitions = new bytes32[](count + 1);
-        count = 0;
-        for (uint256 i = 0; i < tms.length; i++) {
-            tmPartitions = ITransferManager(tms[i]).getPartitions(_tokenHolder);
-            for (uint256 j = 0; j < tmPartitions.length; j++) {
-                partitions[count + j] = tmPartitions[j];
-            }
-            count += tmPartitions.length;
-        }
-        partitions[count] = "DEFAULT";
-        uint256[] memory index = new uint256[](count);
-        count = 0;
-        for (uint256 i = 0; i < partitions.length; i++) {
-            for (uint256 j = 0; j < partitions.length; j++) {
-                if (partitions[i] == partitions[j]) {
-                    index[i] = j;
-                }
-            }
-        }
-        // Create distinct list
-        bytes32[] memory result */
-        return partitions;
-    }
-
-    function _appendPartition(bytes32[] memory partitions, bytes32 partition) internal pure returns (bytes32[] memory) {
-        bool duplicate = false;
-        for (uint256 i = 0; i < partitions.length; i++) {
-            if (partition == partitions[i]) {
-                duplicate = true;
-                break;
-            }
-        }
-        if (duplicate) {
-            bytes32[] memory result = new bytes32[](1 + partitions.length);
-            for (uint256 i = 0; i < partitions.length; i++) {
-                result[i] = partitions[i];
-            }
-            result[partitions.length] = partition;
-            return result;
-        }
-        return partitions;
+    function partitionsOf(address /*_tokenHolder*/) external view returns (bytes32[] memory) {
+        bytes32[] memory result = new bytes32[](2);
+        result[0] = UNLOCKED;
+        result[1] = LOCKED;
+        return result;
     }
 
     /**
@@ -307,9 +257,9 @@ contract STGetter is OZStorage, SecurityTokenStorage {
      */
     function getDocument(bytes32 _name) external view returns (string memory, bytes32, uint256) {
         return (
-           _documents[_name].uri,
-           _documents[_name].docHash,
-           _documents[_name].lastModified
+            _documents[_name].uri,
+            _documents[_name].docHash,
+            _documents[_name].lastModified
         );
     }
 

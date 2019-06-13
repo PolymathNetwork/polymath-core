@@ -733,15 +733,15 @@ interface ISecurityToken {
     /**
      * @return the address of the owner.
      */
-    function owner() external view returns (address owner);
+    function owner() external view returns (address ownerAddress);
 
-    function controller() external view returns(address controller);
+    function controller() external view returns(address controllerAddress);
 
     function moduleRegistry() external view returns(address moduleRegistryAddress);
 
     function securityTokenRegistry() external view returns(address securityTokenRegistryAddress);
 
-    function polyToken() external view returns(address polyToken);
+    function polyToken() external view returns(address polyTokenAddress);
 
     function tokenFactory() external view returns(address tokenFactoryAddress);
 

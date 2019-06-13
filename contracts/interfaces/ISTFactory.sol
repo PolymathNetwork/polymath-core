@@ -42,9 +42,10 @@ interface ISTFactory {
      * @notice Used to set a new token logic contract
      * @param _version Version of upgraded module
      * @param _logicContract Address of deployed module logic contract referenced from proxy
+     * @param _initializationData Initialization data that used to intialize value in the securityToken
      * @param _upgradeData Data to be passed in call to upgradeToAndCall when a token upgrades its module
      */
-    function setLogicContract(string calldata _version, address _logicContract, bytes calldata _upgradeData) external;
+    function setLogicContract(string calldata _version, address _logicContract, bytes calldata _initializationData, bytes calldata _upgradeData) external;
 
     /**
      * @notice Used to upgrade a token

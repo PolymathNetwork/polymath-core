@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "../../Burn/IBurn.sol";
 import "../../Module.sol";
@@ -34,7 +34,7 @@ contract TrackedRedemption is IBurn, Module {
      * @param _value The number of tokens to redeem
      */
     function redeemTokens(uint256 _value) public {
-        ISecurityToken(securityToken).redeemFrom(msg.sender, _value, "");
+        securityToken.redeemFrom(msg.sender, _value, "");
         redeemedTokens[msg.sender] = redeemedTokens[msg.sender].add(_value);
         /*solium-disable-next-line security/no-block-members*/
         emit Redeemed(msg.sender, _value);

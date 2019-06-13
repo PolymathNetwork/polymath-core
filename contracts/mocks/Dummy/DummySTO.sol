@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "../../modules/STO/STO.sol";
 import "../../interfaces/ISecurityToken.sol";
@@ -49,7 +49,7 @@ contract DummySTO is DummySTOStorage, STO {
         require(!paused, "Should not be paused");
         require(_amount > 0, "Amount should be greater than 0");
         require(_canBuy(_investor), "Unauthorized");
-        ISecurityToken(securityToken).issue(_investor, _amount, "");
+        securityToken.issue(_investor, _amount, "");
         if (investors[_investor] == 0) {
             investorCount = investorCount + 1;
         }

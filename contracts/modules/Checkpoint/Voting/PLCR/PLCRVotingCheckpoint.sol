@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "../VotingCheckpoint.sol";
 import "./PLCRVotingCheckpointStorage.sol";
@@ -27,14 +27,14 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
         uint256 _proposedQuorum
     );
     event BallotStatusChanged(uint256 indexed _ballotId, bool _newStatus);
-    event ChangedBallotExemptedVotersList(uint256 indexed _ballotId, address indexed _voter, bool _change);
+    event ChangedBallotExemptedVotersList(uint256 indexed _ballotId, address indexed _voter, bool _exempt);
 
     constructor(address _securityToken, address _polyAddress)
     public
     Module(_securityToken, _polyAddress)
     {
 
-    } 
+    }
 
     /**
      * @notice Use to create the ballot
@@ -48,7 +48,7 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
         uint256 _revealDuration,
         uint256 _noOfProposals,
         uint256 _proposedQuorum
-    )   
+    )
         external
         withPerm(ADMIN)
     {
@@ -98,7 +98,7 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
         require(_proposedQuorum <= 100 * 10 ** 16, "Invalid quorum percentage"); // not more than 100 %
         // Overflow check
         require(
-            uint64(_commitDuration) == _commitDuration && 
+            uint64(_commitDuration) == _commitDuration &&
             uint64(_revealDuration) == _revealDuration &&
             uint64(_startTime) == _startTime &&
             uint24(_totalProposals) == _totalProposals,
@@ -172,43 +172,43 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
      * Change the given ballot exempted list
      * @param _ballotId Given ballot Id
      * @param _voter Address of the voter
-     * @param _change Whether it is exempted or not
+     * @param _exempt Whether it is exempted or not
      */
-    function changeBallotExemptedVotersList(uint256 _ballotId, address _voter, bool _change) external withPerm(ADMIN) {
-        _changeBallotExemptedVotersList(_ballotId, _voter, _change);
+    function changeBallotExemptedVotersList(uint256 _ballotId, address _voter, bool _exempt) external withPerm(ADMIN) {
+        _changeBallotExemptedVotersList(_ballotId, _voter, _exempt);
     }
 
     /**
      * Change the given ballot exempted list (Multi)
      * @param _ballotId Given ballot Id
      * @param _voters Address of the voter
-     * @param _changes Whether it is exempted or not
+     * @param _exempts Whether it is exempted or not
      */
-    function changeBallotExemptedVotersListMulti(uint256 _ballotId, address[] calldata _voters, bool[] calldata _changes) external withPerm(ADMIN) {
-        require(_voters.length == _changes.length, "Array length mismatch");
+    function changeBallotExemptedVotersListMulti(uint256 _ballotId, address[] calldata _voters, bool[] calldata _exempts) external withPerm(ADMIN) {
+        require(_voters.length == _exempts.length, "Array length mismatch");
         for (uint256 i = 0; i < _voters.length; i++) {
-            _changeBallotExemptedVotersList(_ballotId, _voters[i], _changes[i]);
+            _changeBallotExemptedVotersList(_ballotId, _voters[i], _exempts[i]);
         }
     }
 
-    function _changeBallotExemptedVotersList(uint256 _ballotId, address _voter, bool _change) internal {
+    function _changeBallotExemptedVotersList(uint256 _ballotId, address _voter, bool _exempt) internal {
         require(_voter != address(0), "Invalid address");
         _validBallotId(_ballotId);
-        require(ballots[_ballotId].exemptedVoters[_voter] != _change, "No change");
-        ballots[_ballotId].exemptedVoters[_voter] = _change;
-        emit ChangedBallotExemptedVotersList(_ballotId, _voter, _change);
+        require(ballots[_ballotId].exemptedVoters[_voter] != _exempt, "No change");
+        ballots[_ballotId].exemptedVoters[_voter] = _exempt;
+        emit ChangedBallotExemptedVotersList(_ballotId, _voter, _exempt);
     }
 
     /**
      * Use to check whether the voter is allowed to vote or not
      * @param _ballotId The index of the target ballot
      * @param _voter Address of the voter
-     * @return bool 
+     * @return bool
      */
     function isVoterAllowed(uint256 _ballotId, address _voter) public view returns(bool) {
         bool allowed = (ballots[_ballotId].exemptedVoters[_voter] || (defaultExemptIndex[_voter] != 0));
         return !allowed;
-    } 
+    }
 
     /**
      * @notice Allows the token issuer to set the active stats of a ballot
@@ -265,7 +265,7 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
     ) {
         if (_ballotId >= ballots.length)
             return (new uint256[](0), new uint256[](0), 0, false, 0);
-        
+
         Ballot storage ballot = ballots[_ballotId];
         uint256 i = 0;
         uint256 counter = 0;
@@ -288,7 +288,7 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
                     counter ++;
             }
         }
-        
+
         tieWith = new uint256[](counter);
         if (counter > 0) {
             counter = 0;
@@ -296,7 +296,7 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
                 if (maxWeight == ballot.proposalToVotes[i + 1] && (i + 1) != winningProposal) {
                     tieWith[counter] = i + 1;
                     counter ++;
-                }   
+                }
             }
         }
         totalVotes = uint256(ballot.totalVoters);
@@ -323,7 +323,7 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
      * @return uint256 endTime
      * @return uint256 totalProposals
      * @return uint256 totalVoters
-     * @return bool isActive 
+     * @return bool isActive
      */
     function getBallotDetails(uint256 _ballotId) external view returns(uint256, uint256, uint256, uint256, uint256, uint256, uint256, bool) {
         Ballot memory ballot = ballots[_ballotId];

@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "../interfaces/IModule.sol";
 import "../Pausable.sol";
@@ -31,27 +31,17 @@ contract Module is IModule, ModuleStorage, Pausable {
     }
 
     function _checkPerm(bytes32 _perm, address _caller) internal view returns (bool) {
-        bool isOwner = _caller == Ownable(securityToken).owner();
+        bool isOwner = _caller == Ownable(address(securityToken)).owner();
         bool isFactory = _caller == factory;
-        return isOwner || isFactory || ICheckPermission(securityToken).checkPermission(_caller, address(this), _perm);
+        return isOwner || isFactory || ICheckPermission(address(securityToken)).checkPermission(_caller, address(this), _perm);
     }
 
     function _onlySecurityTokenOwner() internal view {
-        require(msg.sender == Ownable(securityToken).owner(), "Sender is not owner");
+        require(msg.sender == Ownable(address(securityToken)).owner(), "Sender is not owner");
     }
 
     modifier onlyFactory() {
         require(msg.sender == factory, "Sender is not factory");
-        _;
-    }
-
-    modifier onlyFactoryOwner() {
-        require(msg.sender == Ownable(factory).owner(), "Sender is not factory owner");
-        _;
-    }
-
-    modifier onlyFactoryOrOwner() {
-        require((msg.sender == Ownable(securityToken).owner()) || (msg.sender == factory), "Sender is not factory or owner");
         _;
     }
 
@@ -63,7 +53,7 @@ contract Module is IModule, ModuleStorage, Pausable {
         super._pause();
     }
 
-     /**
+    /**
      * @notice Unpause (overridden function)
      */
     function unpause() public {
@@ -72,18 +62,10 @@ contract Module is IModule, ModuleStorage, Pausable {
     }
 
     /**
-     * @notice used to withdraw the fee by the factory owner
-     */
-    function takeUsageFee() public withPerm(ADMIN) returns(bool) {
-        require(polyToken.transferFrom(securityToken, Ownable(factory).owner(), IModuleFactory(factory).usageCostInPoly()), "Unable to take fee");
-        return true;
-    }
-
-    /**
      * @notice used to return the data store address of securityToken
      */
     function getDataStore() public view returns(IDataStore) {
-        return IDataStore(ISecurityToken(securityToken).dataStore());
+        return IDataStore(securityToken.dataStore());
     }
 
     /**
@@ -106,5 +88,5 @@ contract Module is IModule, ModuleStorage, Pausable {
     function reclaimETH() external {
         _onlySecurityTokenOwner();
         msg.sender.transfer(address(this).balance);
-    }	   
+    }
 }

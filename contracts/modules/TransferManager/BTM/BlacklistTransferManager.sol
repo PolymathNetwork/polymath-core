@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "../TransferManager.sol";
 import "./BlacklistTransferManagerStorage.sol";
@@ -440,14 +440,14 @@ contract BlacklistTransferManager is BlacklistTransferManagerStorage, TransferMa
      * @param _additionalBalance It is the `_value` that transfer during transfer/transferFrom function call
      */
     function getTokensByPartition(bytes32 _partition, address _tokenHolder, uint256 _additionalBalance) external view returns(uint256) {
-        uint256 currentBalance = (msg.sender == securityToken) ? (IERC20(securityToken).balanceOf(_tokenHolder)).add(_additionalBalance) : IERC20(securityToken).balanceOf(_tokenHolder);
+        uint256 currentBalance = (msg.sender == address(securityToken)) ? (securityToken.balanceOf(_tokenHolder)).add(_additionalBalance) : securityToken.balanceOf(_tokenHolder);
         if (paused && _partition == UNLOCKED)
             return currentBalance;
-            
+
         (Result success, ) = verifyTransfer(_tokenHolder, address(0), 0, "0x0");
         if ((_partition == LOCKED && success == Result.INVALID) || (_partition == UNLOCKED && success != Result.INVALID))
             return currentBalance;
-        else 
+        else
             return 0;
     }
 

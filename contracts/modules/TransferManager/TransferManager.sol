@@ -20,9 +20,14 @@ contract TransferManager is ITransferManager, Module {
 
     /**
      * @notice return the amount of tokens for a given user as per the partition
+     * @dev returning the balance of token holder against the UNLOCKED partition. 
+     * This condition is valid only when the base contract doesn't implement the
+     * `getTokensByPartition()` function.  
      */
-    function getTokensByPartition(bytes32 /*_partition*/, address /*_tokenHolder*/, uint256 /*_additionalBalance*/) external view returns(uint256) {
-        return 0;
+    function getTokensByPartition(bytes32 _partition, address _tokenHolder, uint256 /*_additionalBalance*/) external view returns(uint256) {
+        if (_partition == UNLOCKED)
+            return ISecurityToken(securityToken).balanceOf(_tokenHolder);
+        return uint256(0);
     }
 
 }

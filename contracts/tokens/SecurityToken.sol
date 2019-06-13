@@ -486,13 +486,20 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
         return _balanceOfByPartition(_partition, _tokenHolder, 0);
     }
 
-    function _balanceOfByPartition(bytes32 _partition, address _tokenHolder, uint256 _additionalBalance) internal view returns(uint256 max) {
+    function _balanceOfByPartition(bytes32 _partition, address _tokenHolder, uint256 _additionalBalance) internal view returns(uint256 partitionBalance) {
         address[] memory tms = modules[TRANSFER_KEY];
         uint256 amount;
         for (uint256 i = 0; i < tms.length; i++) {
             amount = ITransferManager(tms[i]).getTokensByPartition(_partition, _tokenHolder, _additionalBalance);
-            if (max < amount) {
-                max = amount;
+            // In UNLOCKED partition we are returning the minimum of all the unlocked balances
+            if (_partition == UNLOCKED) {
+                if (amount < partitionBalance || i == 0)
+                    partitionBalance = amount;
+            }
+            // In locked partition we are returning the maximum of all the Locked balances
+            else {
+                if (partitionBalance < amount)
+                    partitionBalance = amount;
             }
         }
     }

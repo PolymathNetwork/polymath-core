@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 /**
  * @title Interface for security token proxy deployment
@@ -36,7 +36,7 @@ interface ISTFactory {
         address _polymathRegistry
     ) 
     external 
-    returns(address);
+    returns(address tokenAddress);
 
     /**
      * @notice Used to set a new token logic contract

@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "../STO.sol";
 import "../../../interfaces/IPolymathRegistry.sol";
@@ -188,6 +188,23 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
     function modifyAddresses(address payable _wallet, address _treasuryWallet, address[] calldata _usdTokens) external {
         _onlySecurityTokenOwner();
         _modifyAddresses(_wallet, _treasuryWallet, _usdTokens);
+    }
+
+    /**
+     * @dev Modifies Oracle address.
+     *      By default, Polymath oracles are used but issuer can overide them using this function
+     *      Set _oracleAddress to 0x0 to fallback to using Polymath oracles
+     * @param _fundRaiseType Actual currency
+     * @param _oracleAddress address of the oracle
+     */
+    function modifyOracle(FundRaiseType _fundRaiseType, address _oracleAddress) external {
+        _onlySecurityTokenOwner();
+        if (_fundRaiseType == FundRaiseType.ETH) {
+            customOracles[bytes32("ETH")][bytes32("USD")] = _oracleAddress;
+        } else {
+            require(_fundRaiseType == FundRaiseType.POLY, "Invalid currency");
+            customOracles[bytes32("POLY")][bytes32("USD")] = _oracleAddress;
+        }
     }
 
     function _modifyLimits(uint256 _nonAccreditedLimitUSD, uint256 _minimumInvestmentUSD) internal {
@@ -757,8 +774,9 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         return this.configure.selector;
     }
 
-    function _getOracle(bytes32 _currency, bytes32 _denominatedCurrency) internal view returns(address) {
-        return IPolymathRegistry(ISecurityToken(securityToken).polymathRegistry()).getAddress(oracleKeys[_currency][_denominatedCurrency]);
+    function _getOracle(bytes32 _currency, bytes32 _denominatedCurrency) internal view returns(address oracleAddress) {
+        oracleAddress = customOracles[_currency][_denominatedCurrency];
+        if (oracleAddress == address(0))
+            oracleAddress =  IPolymathRegistry(ISecurityToken(securityToken).polymathRegistry()).getAddress(oracleKeys[_currency][_denominatedCurrency]);
     }
-
 }

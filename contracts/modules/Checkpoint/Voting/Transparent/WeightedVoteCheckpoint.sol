@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "../VotingCheckpoint.sol";
 import "./WeightedVoteCheckpointStorage.sol";
@@ -63,7 +63,7 @@ contract WeightedVoteCheckpoint is WeightedVoteCheckpointStorage, VotingCheckpoi
         uint256 _startTime,
         uint256 _endTime,
         uint256 _noOfProposals
-    ) 
+    )
         internal
     {
         require(_noOfProposals > 1, "Incorrect proposals no");
@@ -155,12 +155,12 @@ contract WeightedVoteCheckpoint is WeightedVoteCheckpointStorage, VotingCheckpoi
      * Use to check whether the voter is allowed to vote or not
      * @param _ballotId The index of the target ballot
      * @param _voter Address of the voter
-     * @return bool 
+     * @return bool
      */
     function isVoterAllowed(uint256 _ballotId, address _voter) public view returns(bool) {
         bool allowed = (ballots[_ballotId].exemptedVoters[_voter] || (defaultExemptIndex[_voter] != 0));
         return !allowed;
-    } 
+    }
 
     /**
      * @notice Allows the token issuer to set the active stats of a ballot
@@ -216,7 +216,7 @@ contract WeightedVoteCheckpoint is WeightedVoteCheckpointStorage, VotingCheckpoi
                     counter ++;
             }
         }
-        
+
         tieWith = new uint256[](counter);
         if (counter > 0) {
             counter = 0;
@@ -224,7 +224,7 @@ contract WeightedVoteCheckpoint is WeightedVoteCheckpointStorage, VotingCheckpoi
                 if (maxWeight == ballot.proposalToVotes[i + 1] && (i + 1) != winningProposal) {
                     tieWith[counter] = i + 1;
                     counter ++;
-                }   
+                }
             }
         }
         totalVotes = uint256(ballot.totalVoters);
@@ -251,7 +251,7 @@ contract WeightedVoteCheckpoint is WeightedVoteCheckpointStorage, VotingCheckpoi
      * @return uint256 endTime
      * @return uint256 totalProposals
      * @return uint256 totalVoters
-     * @return bool isActive 
+     * @return bool isActive
      */
     function getBallotDetails(uint256 _ballotId) external view returns(uint256, uint256, uint256, uint256, uint256, uint256, uint256, bool) {
         Ballot memory ballot = ballots[_ballotId];

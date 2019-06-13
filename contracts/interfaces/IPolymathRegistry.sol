@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 interface IPolymathRegistry {
 
@@ -9,7 +9,7 @@ interface IPolymathRegistry {
      * @param _nameKey is the key for the contract address mapping
      * @return address
      */
-    function getAddress(string calldata _nameKey) external view returns(address);
+    function getAddress(string calldata _nameKey) external view returns(address registryAddress);
 
     /**
      * @notice Changes the contract address

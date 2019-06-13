@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 /**
  * @title Interface for the Polymath Security Token Registry contract
@@ -127,7 +127,7 @@ interface ISecurityTokenRegistry {
         bool _divisible,
         address _treasuryWallet
     )
-        external returns (address);
+        external returns (address securityToken);
 
     /**
      * @notice Adds a new custom Security Token and saves it to the registry. (Token should follow the ISecurityToken interface)
@@ -163,7 +163,7 @@ interface ISecurityTokenRegistry {
     * @param _securityToken Address of the Scurity token
     * @return bool
     */
-    function isSecurityToken(address _securityToken) external view returns(bool);
+    function isSecurityToken(address _securityToken) external view returns(bool isValid);
 
     /**
     * @dev Allows the current owner to transfer control of the contract to a newOwner.
@@ -176,7 +176,7 @@ interface ISecurityTokenRegistry {
      * @param _ticker Symbol of the Scurity token
      * @return address
      */
-    function getSecurityTokenAddress(string calldata _ticker) external view returns(address);
+    function getSecurityTokenAddress(string calldata _ticker) external view returns(address tokenAddress);
 
     /**
     * @notice Returns the security token data by address
@@ -186,42 +186,48 @@ interface ISecurityTokenRegistry {
     * @return string is the details of the security token.
     * @return uint256 is the timestamp at which security Token was deployed.
     */
-    function getSecurityTokenData(address _securityToken) external view returns (string memory, address, string memory, uint256);
+    function getSecurityTokenData(address _securityToken) external view returns (
+        string memory tokenSymbol,
+        address tokenAddress,
+        string memory tokenDetails,
+        uint256 tokenTime,
+        uint8[] memory tokenVersion
+    );
 
     /**
      * @notice Get the current STFactory Address
      */
-    function getSTFactoryAddress() external view returns(address);
+    function getSTFactoryAddress() external view returns(address stFactoryAddress);
 
     /**
      * @notice Returns the STFactory Address of a particular version
      * @param _protocolVersion Packed protocol version
      */
-    function getSTFactoryAddressOfVersion(uint256 _protocolVersion) external view returns(address);
+    function getSTFactoryAddressOfVersion(uint256 _protocolVersion) external view returns(address stFactory);
 
     /**
      * @notice Get Protocol version
      */
-    function getLatestProtocolVersion() external view returns(uint8[] memory);
+    function getLatestProtocolVersion() external view returns(uint8[] memory protocolVersion);
 
     /**
      * @notice Used to get the ticker list as per the owner
      * @param _owner Address which owns the list of tickers
      */
-    function getTickersByOwner(address _owner) external view returns(bytes32[] memory);
+    function getTickersByOwner(address _owner) external view returns(bytes32[] memory tickers);
 
     /**
      * @notice Returns the list of tokens owned by the selected address
      * @param _owner is the address which owns the list of tickers
      * @dev Intention is that this is called off-chain so block gas limit is not relevant
      */
-    function getTokensByOwner(address _owner) external view returns(address[] memory);
+    function getTokensByOwner(address _owner) external view returns(address[] memory tokens);
 
     /**
      * @notice Returns the list of all tokens
      * @dev Intention is that this is called off-chain so block gas limit is not relevant
      */
-    function getTokens() external view returns(address[] memory);
+    function getTokens() external view returns(address[] memory tokens);
 
     /**
      * @notice Returns the owner and timestamp for a given ticker
@@ -232,7 +238,7 @@ interface ISecurityTokenRegistry {
      * @return string
      * @return bool
      */
-    function getTickerDetails(string calldata _ticker) external view returns(address, uint256, uint256, string memory, bool);
+    function getTickerDetails(string calldata _ticker) external view returns(address tickerOwner, uint256 tickerRegistration, uint256 tickerExpiry, string memory tokenName, bool tickerStatus);
 
     /**
      * @notice Modifies the ticker details. Only polymath account has the ability
@@ -337,13 +343,13 @@ interface ISecurityTokenRegistry {
      * @notice Gets the security token launch fee
      * @return Fee amount
      */
-    function getSecurityTokenLaunchFee() external returns(uint256);
+    function getSecurityTokenLaunchFee() external returns(uint256 fee);
 
     /**
      * @notice Gets the ticker registration fee
      * @return Fee amount
      */
-    function getTickerRegistrationFee() external returns(uint256);
+    function getTickerRegistrationFee() external returns(uint256 fee);
 
     /**
      * @notice Set the getter contract address
@@ -362,39 +368,39 @@ interface ISecurityTokenRegistry {
      * @param _delegate is the address for the delegate
      * @dev Intention is that this is called off-chain so block gas limit is not relevant
      */
-    function getTokensByDelegate(address _delegate) external view returns(address[] memory);
+    function getTokensByDelegate(address _delegate) external view returns(address[] memory tokens);
 
     /**
      * @notice Gets the expiry limit
      * @return Expiry limit
      */
-    function getExpiryLimit() external view returns(uint256);
+    function getExpiryLimit() external view returns(uint256 expiry);
 
     /**
      * @notice Gets the status of the ticker
      * @param _ticker Ticker whose status need to determine
      * @return bool
      */
-    function getTickerStatus(string calldata _ticker) external view returns(bool);
+    function getTickerStatus(string calldata _ticker) external view returns(bool status);
 
     /**
      * @notice Gets the fee currency
      * @return true = poly, false = usd
      */
-    function getIsFeeInPoly() external view returns(bool);
+    function getIsFeeInPoly() external view returns(bool isInPoly);
 
     /**
      * @notice Gets the owner of the ticker
      * @param _ticker Ticker whose owner need to determine
      * @return address Address of the owner
      */
-    function getTickerOwner(string calldata _ticker) external view returns(address);
+    function getTickerOwner(string calldata _ticker) external view returns(address owner);
 
     /**
      * @notice Checks whether the registry is paused or not
      * @return bool
      */
-    function isPaused() external view returns(bool);
+    function isPaused() external view returns(bool paused);
 
     /**
     * @notice Called by the owner to pause, triggers stopped state
@@ -416,6 +422,6 @@ interface ISecurityTokenRegistry {
      * @notice Gets the owner of the contract
      * @return address owner
      */
-    function owner() external view returns(address);
+    function owner() external view returns(address ownerAddress);
 
 }

@@ -1,10 +1,11 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "../proxy/Proxy.sol";
 import "../PolymathRegistry.sol";
 import "../interfaces/IModule.sol";
 import "./SecurityTokenStorage.sol";
 import "../libraries/TokenLib.sol";
+import "../libraries/StatusCodes.sol";
 import "../interfaces/IDataStore.sol";
 import "../interfaces/IUpgradableTokenFactory.sol";
 import "../interfaces/IModuleFactory.sol";
@@ -71,6 +72,11 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     event ModuleRemoved(uint8[] _types, address _module); //Event emitted by the tokenLib.
     // Emit when the budget allocated to a module is changed
     event ModuleBudgetChanged(uint8[] _moduleTypes, address _module, uint256 _oldBudget, uint256 _budget); //Event emitted by the tokenLib.
+
+    // Constructor
+    constructor() public {
+        initialized = true;
+    }
 
     /**
      * @notice Initialization function
@@ -161,14 +167,6 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      */
     function _onlyModule(uint8 _type) internal view {
         require(isModule(msg.sender, _type));
-    }
-
-    /**
-     * @dev Throws if called by any account other than the STFactory.
-     */
-    modifier onlyTokenFactory() {
-        require(msg.sender == tokenFactory);
-        _;
     }
 
     modifier checkGranularity(uint256 _value) {
@@ -360,6 +358,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     */
     function changeName(string calldata _name) external {
         _onlyOwner();
+        require(bytes(_name).length > 0);
         emit UpdateTokenName(name, _name);
         name = _name;
     }
@@ -527,21 +526,18 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
         // require(balanceOfByPartition(_partition, msg.sender) >= _value);
         // NB - Above condition will be automatically checked using the executeTransfer() function execution.
         // NB - passing `_additionalBalance` value is 0 because accessing the balance before transfer
-        uint256 balanceBeforeTransferLocked = _balanceOfByPartition(_partition, _to, 0);
+        uint256 lockedBalanceBeforeTransfer = _balanceOfByPartition(LOCKED, _to, 0);
         _transferWithData(_from, _to, _value, _data);
         // NB - passing `_additonalBalance` valie is 0 because balance of `_to` was updated in the transfer call
-        uint256 balanceAfterTransferLocked = _balanceOfByPartition(_partition, _to, 0);
-        toPartition =  _returnPartition(balanceBeforeTransferLocked, balanceAfterTransferLocked, _value);
+        uint256 lockedBalanceAfterTransfer = _balanceOfByPartition(LOCKED, _to, 0);
+        toPartition =  _returnPartition(lockedBalanceBeforeTransfer, lockedBalanceAfterTransfer, _value);
         emit TransferByPartition(_partition, _operator, _from, _to, _value, _data, _operatorData);
     }
 
     function _returnPartition(uint256 _beforeBalance, uint256 _afterBalance, uint256 _value) internal pure returns(bytes32 toPartition) {
         // return LOCKED only when the transaction `_value` should be equal to the change in the LOCKED partition
         // balance otherwise return UNLOCKED
-        if (_afterBalance.sub(_beforeBalance) == _value)
-            toPartition = LOCKED;
-        // Returning the same partition UNLOCKED
-        toPartition = UNLOCKED;
+        toPartition = _afterBalance.sub(_beforeBalance) == _value ? LOCKED : UNLOCKED; // Returning the same partition UNLOCKED
     }
 
     ///////////////////////
@@ -672,13 +668,13 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
             bool isInvalid;
             bool isValid;
             bool isForceValid;
-            bool unarchived;
             address module;
             uint256 tmLength = modules[TRANSFER_KEY].length;
             for (uint256 i = 0; i < tmLength; i++) {
                 module = modules[TRANSFER_KEY][i];
                 if (!modulesToData[module].isArchived) {
-                    unarchived = true;
+                    // refer to https://github.com/PolymathNetwork/polymath-core/wiki/Transfer-manager-results
+                    // for understanding what these results mean
                     ITransferManager.Result valid = ITransferManager(module).executeTransfer(_from, _to, _value, _data);
                     if (valid == ITransferManager.Result.INVALID) {
                         isInvalid = true;
@@ -689,8 +685,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
                     }
                 }
             }
-            // If no unarchived modules, return true by default
-            return unarchived ? (isForceValid ? true : (isInvalid ? false : isValid)) : true;
+            return isForceValid ? true : (isInvalid ? false : isValid);
         }
         return false;
     }
@@ -934,7 +929,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     function canTransferFrom(address _from, address _to, uint256 _value, bytes calldata _data) external view returns (bool success, byte reasonCode, bytes32 appCode) {
         (success, reasonCode, appCode) = _canTransfer(_from, _to, _value, _data);
         if (success && _value > allowance(_from, msg.sender)) {
-            return (false, 0x53, bytes32(0));
+            return (false, StatusCodes.code(StatusCodes.Status.InsufficientAllowance), bytes32(0));
         }
     }
 
@@ -942,7 +937,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
         bytes32 appCode;
         bool success;
         if (_value % granularity != 0) {
-            return (false, 0x50, bytes32(0));
+            return (false, StatusCodes.code(StatusCodes.Status.TransferFailure), bytes32(0));
         }
         (success, appCode) = TokenLib.verifyTransfer(modules[TRANSFER_KEY], modulesToData, _from, _to, _value, _data, transfersFrozen);
         return TokenLib.canTransfer(success, appCode, _to, _value, balanceOf(_from));
@@ -975,13 +970,13 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
             bool success;
             (success, esc, appStatusCode) = _canTransfer(_from, _to, _value, _data);
             if (success) {
-                uint256 beforeBalance = _balanceOfByPartition(_partition, _to, 0);
-                uint256 afterbalance = _balanceOfByPartition(_partition, _to, _value);
+                uint256 beforeBalance = _balanceOfByPartition(LOCKED, _to, 0);
+                uint256 afterbalance = _balanceOfByPartition(LOCKED, _to, _value);
                 toPartition = _returnPartition(beforeBalance, afterbalance, _value);
             }
             return (esc, appStatusCode, toPartition);
         }
-        return (0x50, bytes32(0), bytes32(0));
+        return (StatusCodes.code(StatusCodes.Status.TransferFailure), bytes32(0), bytes32(0));
     }
 
     /**

@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 /**
  * @title Contract used to store layout for the USDTieredSTO storage
@@ -74,4 +74,6 @@ contract USDTieredSTOStorage {
     // Array of Tiers
     Tier[] public tiers;
 
+    // Optional custom Oracles.
+    mapping(bytes32 => mapping(bytes32 => address)) customOracles;
 }

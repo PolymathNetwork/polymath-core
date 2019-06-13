@@ -1,12 +1,12 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
-import "../proxy/OwnedProxy.sol";
+import "../proxy/Proxy.sol";
 import "./DataStoreStorage.sol";
 
 /**
  * @title DataStoreProxy Proxy
  */
-contract DataStoreProxy is DataStoreStorage, OwnedProxy {
+contract DataStoreProxy is DataStoreStorage, Proxy {
 
     /**
     * @notice Constructor
@@ -14,7 +14,7 @@ contract DataStoreProxy is DataStoreStorage, OwnedProxy {
     * @param _implementation representing the address of the new implementation to be set
     */
     constructor(
-        address _securityToken, 
+        address _securityToken,
         address _implementation
     )
         public
@@ -24,6 +24,13 @@ contract DataStoreProxy is DataStoreStorage, OwnedProxy {
         );
         securityToken = ISecurityToken(_securityToken);
         __implementation = _implementation;
+    }
+
+    /**
+    * @notice Internal function to provide the address of the implementation contract
+    */
+    function _implementation() internal view returns(address) {
+        return __implementation;
     }
 
 }

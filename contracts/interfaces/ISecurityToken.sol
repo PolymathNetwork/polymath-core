@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 /**
  * @title Interface for all security tokens
@@ -108,6 +108,13 @@ interface ISecurityToken {
     event Redeemed(address indexed _operator, address indexed _from, uint256 _value, bytes _data);
 
     /**
+     * @notice Initialization function
+     * @dev Expected to be called atomically with the proxy being created, by the owner of the token
+     * @dev Can only be called once
+     */
+    function initialize(address _getterDelegate) external;
+
+    /**
      * @notice Transfers of securities may fail for a number of reasons. So this function will used to understand the
      * cause of failure by getting the byte value. Which will be the ESC that follows the EIP 1066. ESC can be mapped
      * with a reson string to understand the failure cause, table of Ethereum status code will always reside off-chain
@@ -118,14 +125,7 @@ interface ISecurityToken {
      * @return byte Ethereum status code (ESC)
      * @return bytes32 Application specific reason code
      */
-    function canTransfer(address _to, uint256 _value, bytes calldata _data) external view returns (bool, byte, bytes32);
-
-    /**
-     * @notice Initialization function
-     * @dev Expected to be called atomically with the proxy being created, by the owner of the token
-     * @dev Can only be called once
-     */
-    function initialize(address _getterDelegate) external;
+    function canTransfer(address _to, uint256 _value, bytes calldata _data) external view returns (bool isExecuted, byte statusCode, bytes32 reasonCode);
 
     /**
      * @notice The standard provides an on-chain function to determine whether a transfer will succeed,
@@ -148,7 +148,7 @@ interface ISecurityToken {
     )
         external
         view
-        returns (byte esc, bytes32 appStatusCode, bytes32 toPartition);
+        returns (byte statusCode, bytes32 reasonCode, bytes32 partition);
 
     /**
      * @notice Transfers of securities may fail for a number of reasons. So this function will used to understand the
@@ -162,7 +162,7 @@ interface ISecurityToken {
      * @return byte Ethereum status code (ESC)
      * @return bytes32 Application specific reason code
      */
-    function canTransferFrom(address _from, address _to, uint256 _value, bytes calldata _data) external view returns (bool success, byte reasonCode, bytes32 appCode);
+    function canTransferFrom(address _from, address _to, uint256 _value, bytes calldata _data) external view returns (bool isExecuted, byte statusCode, bytes32 reasonCode);
 
     /**
      * @notice Used to attach a new document to the contract, or update the URI or hash of an existing attached document
@@ -187,13 +187,13 @@ interface ISecurityToken {
      * @return bytes32 The hash (of the contents) of the document.
      * @return uint256 the timestamp at which the document was last modified.
      */
-    function getDocument(bytes32 _name) external view returns (string memory, bytes32, uint256);
+    function getDocument(bytes32 _name) external view returns (string memory documentUri, bytes32 documentHash, uint256 documentTime);
 
     /**
      * @notice Used to retrieve a full list of documents attached to the smart contract.
      * @return bytes32 List of all documents names present in the contract.
      */
-    function getAllDocuments() external view returns (bytes32[] memory);
+    function getAllDocuments() external view returns (bytes32[] memory documentNames);
 
     /**
      * @notice In order to provide transparency over whether `controllerTransfer` / `controllerRedeem` are useable
@@ -202,14 +202,14 @@ interface ISecurityToken {
      * `controllerTransfer` / `controllerRedeem` will always revert.
      * @return bool `true` when controller address is non-zero otherwise return `false`.
      */
-    function isControllable() external view returns (bool);
+    function isControllable() external view returns (bool controlled);
 
     /**
      * @notice Checks if an address is a module of certain type
      * @param _module Address to check
      * @param _type type to check against
      */
-    function isModule(address _module, uint8 _type) external view returns(bool);
+    function isModule(address _module, uint8 _type) external view returns(bool isValid);
 
     /**
      * @notice This function must be called to increase the total supply (Corresponds to mint function of ERC20).
@@ -294,7 +294,7 @@ interface ISecurityToken {
      * @param _perm the permissions
      * @return success
      */
-    function checkPermission(address _delegate, address _module, bytes32 _perm) external view returns(bool);
+    function checkPermission(address _delegate, address _module, bytes32 _perm) external view returns(bool hasPermission);
 
     /**
      * @notice Returns module list for a module type
@@ -306,50 +306,50 @@ interface ISecurityToken {
      * @return uint8 Array of module types
      * @return bytes32 Module label
      */
-    function getModule(address _module) external view returns (bytes32, address, address, bool, uint8[] memory, bytes32);
+    function getModule(address _module) external view returns (bytes32 moduleName, address moduleAddress, address factoryAddress, bool isArchived, uint8[] memory moduleTypes, bytes32 moduleLabel);
 
     /**
      * @notice Returns module list for a module name
      * @param _name Name of the module
      * @return address[] List of modules with this name
      */
-    function getModulesByName(bytes32 _name) external view returns(address[] memory);
+    function getModulesByName(bytes32 _name) external view returns(address[] memory modules);
 
     /**
      * @notice Returns module list for a module type
      * @param _type Type of the module
      * @return address[] List of modules with this type
      */
-    function getModulesByType(uint8 _type) external view returns(address[] memory);
+    function getModulesByType(uint8 _type) external view returns(address[] memory modules);
 
     /**
      * @notice use to return the global treasury wallet
      */
-    function getTreasuryWallet() external view returns(address);
+    function getTreasuryWallet() external view returns(address treasuryWallet);
 
     /**
      * @notice Queries totalSupply at a specified checkpoint
      * @param _checkpointId Checkpoint ID to query as of
      */
-    function totalSupplyAt(uint256 _checkpointId) external view returns(uint256);
+    function totalSupplyAt(uint256 _checkpointId) external view returns(uint256 supply);
 
     /**
      * @notice Queries balance at a specified checkpoint
      * @param _investor Investor to query balance for
      * @param _checkpointId Checkpoint ID to query as of
      */
-    function balanceOfAt(address _investor, uint256 _checkpointId) external view returns(uint256);
+    function balanceOfAt(address _investor, uint256 _checkpointId) external view returns(uint256 balance);
 
     /**
      * @notice Creates a checkpoint that can be used to query historical balances / totalSuppy
      */
-    function createCheckpoint() external returns(uint256);
+    function createCheckpoint() external returns(uint256 checkpointId);
 
     /**
      * @notice Gets list of times that checkpoints were created
      * @return List of checkpoint times
      */
-    function getCheckpointTimes() external view returns(uint256[] memory);
+    function getCheckpointTimes() external view returns(uint256[] memory checkpointTimes);
 
     /**
      * @notice returns an array of investors
@@ -364,7 +364,7 @@ interface ISecurityToken {
      * @param _checkpointId Checkpoint id at which investor list is to be populated
      * @return list of investors
      */
-    function getInvestorsAt(uint256 _checkpointId) external view returns(address[] memory);
+    function getInvestorsAt(uint256 _checkpointId) external view returns(address[] memory investors);
 
     /**
      * @notice returns an array of investors with non zero balance at a given checkpoint
@@ -373,7 +373,7 @@ interface ISecurityToken {
      * @param _end Position of investor to stop iteration at
      * @return list of investors
      */
-    function getInvestorsSubsetAt(uint256 _checkpointId, uint256 _start, uint256 _end) external view returns(address[] memory);
+    function getInvestorsSubsetAt(uint256 _checkpointId, uint256 _start, uint256 _end) external view returns(address[] memory investors);
 
     /**
      * @notice generates subset of investors
@@ -382,13 +382,13 @@ interface ISecurityToken {
      * @param _end Position of investor to stop iteration at
      * @return list of investors
      */
-    function iterateInvestors(uint256 _start, uint256 _end) external view returns(address[] memory);
+    function iterateInvestors(uint256 _start, uint256 _end) external view returns(address[] memory investors);
 
     /**
      * @notice Gets current checkpoint ID
      * @return Id
      */
-    function currentCheckpointId() external view returns(uint256);
+    function currentCheckpointId() external view returns(uint256 checkpointId);
 
     /**
      * @notice Determines whether `_operator` is an operator for all partitions of `_tokenHolder`
@@ -396,7 +396,7 @@ interface ISecurityToken {
      * @param _tokenHolder The token holder to check
      * @return Whether the `_operator` is an operator for all partitions of `_tokenHolder`
      */
-    function isOperator(address _operator, address _tokenHolder) external view returns (bool);
+    function isOperator(address _operator, address _tokenHolder) external view returns (bool isValid);
 
     /**
      * @notice Determines whether `_operator` is an operator for a specified partition of `_tokenHolder`
@@ -405,20 +405,20 @@ interface ISecurityToken {
      * @param _tokenHolder The token holder to check
      * @return Whether the `_operator` is an operator for a specified partition of `_tokenHolder`
      */
-    function isOperatorForPartition(bytes32 _partition, address _operator, address _tokenHolder) external view returns (bool);
+    function isOperatorForPartition(bytes32 _partition, address _operator, address _tokenHolder) external view returns (bool isValid);
 
     /**
      * @notice Return all partitions
      * @param _tokenHolder Whom balance need to queried
      * @return List of partitions
      */
-    function partitionsOf(address _tokenHolder) external view returns (bytes32[] memory);
+    function partitionsOf(address _tokenHolder) external view returns (bytes32[] memory partitions);
 
     /**
      * @notice Gets data store address
      * @return data store address
      */
-    function dataStore() external view returns (address);
+    function dataStore() external view returns (address dataStoreAddress);
 
     /**
     * @notice Allows owner to change data store
@@ -483,7 +483,7 @@ interface ISecurityToken {
      */
     function freezeIssuance(bytes calldata _signature) external;
 
-     /**
+    /**
       * @notice Attachs a module to the SecurityToken
       * @dev  E.G.: On deployment (through the STR) ST gets a TransferManager module attached to it
       * @dev to control restrictions on transfers.
@@ -580,17 +580,17 @@ interface ISecurityToken {
     /**
      * @notice Used to get the version of the securityToken
      */
-    function getVersion() external view returns(uint8[] memory);
+    function getVersion() external view returns(uint8[] memory version);
 
     /**
      * @notice Gets the investor count
      */
-    function getInvestorCount() external view returns(uint256);
+    function getInvestorCount() external view returns(uint256 investorCount);
 
     /**
      * @notice Gets the holder count (investors with non zero balance)
      */
-    function holderCount() external view returns(uint256);
+    function holderCount() external view returns(uint256 count);
 
     /**
       * @notice Overloaded version of the transfer function
@@ -619,7 +619,7 @@ interface ISecurityToken {
      * @param _data Additional data attached to the transfer of tokens
      * @return The partition to which the transferred tokens were allocated for the _to address
      */
-    function transferByPartition(bytes32 _partition, address _to, uint256 _value, bytes calldata _data) external returns (bytes32);
+    function transferByPartition(bytes32 _partition, address _to, uint256 _value, bytes calldata _data) external returns (bytes32 partition);
 
     /**
      * @notice Get the balance according to the provided partitions
@@ -627,19 +627,19 @@ interface ISecurityToken {
      * @param _tokenHolder Whom balance need to queried
      * @return Amount of tokens as per the given partitions
      */
-    function balanceOfByPartition(bytes32 _partition, address _tokenHolder) external view returns(uint256);
+    function balanceOfByPartition(bytes32 _partition, address _tokenHolder) external view returns(uint256 balance);
 
     /**
       * @notice Provides the granularity of the token
       * @return uint256
       */
-    function granularity() external view returns(uint256);
+    function granularity() external view returns(uint256 granularityAmount);
 
     /**
       * @notice Provides the address of the polymathRegistry
       * @return address
       */
-    function polymathRegistry() external view returns(address);
+    function polymathRegistry() external view returns(address registryAddress);
 
     /**
     * @notice Upgrades a module attached to the SecurityToken
@@ -659,7 +659,7 @@ interface ISecurityToken {
      * If a token returns FALSE for `isIssuable()` then it MUST never allow additional tokens to be issued.
      * @return bool `true` signifies the minting is allowed. While `false` denotes the end of minting
      */
-    function isIssuable() external view returns (bool);
+    function isIssuable() external view returns (bool issuable);
 
     /**
      * @notice Authorises an operator for all partitions of `msg.sender`.
@@ -667,7 +667,7 @@ interface ISecurityToken {
      * but it doesn't mean we operator is allowed to transfer the LOCKED partition values.
      * Logic for this restriction is written in `operatorTransferByPartition()` function.
      * @param _operator An address which is being authorised.
-     */ 
+     */
     function authorizeOperator(address _operator) external;
 
     /**
@@ -710,14 +710,14 @@ interface ISecurityToken {
         uint256 _value,
         bytes calldata _data,
         bytes calldata _operatorData
-    ) 
+    )
         external
-        returns (bytes32);
+        returns (bytes32 partition);
 
     /*
     * @notice Returns if transfers are currently frozen or not
     */
-    function transfersFrozen() external view returns (bool);
+    function transfersFrozen() external view returns (bool isFrozen);
 
     /**
      * @dev Allows the current owner to transfer control of the contract to a newOwner.
@@ -733,26 +733,26 @@ interface ISecurityToken {
     /**
      * @return the address of the owner.
      */
-    function owner() external view returns (address);
+    function owner() external view returns (address owner);
+
+    function controller() external view returns(address controller);
+
+    function moduleRegistry() external view returns(address moduleRegistryAddress);
+
+    function securityTokenRegistry() external view returns(address securityTokenRegistryAddress);
+
+    function polyToken() external view returns(address polyToken);
+
+    function tokenFactory() external view returns(address tokenFactoryAddress);
+
+    function getterDelegate() external view returns(address delegate);
+
+    function controllerDisabled() external view returns(bool isDisabled);
+
+    function initialized() external view returns(bool isInitialized);
+
+    function tokenDetails() external view returns(string memory details);
 
     function updateFromRegistry() external;
-
-    function controller() external view returns(address);
-
-    function moduleRegistry() external view returns(address);
-
-    function securityTokenRegistry() external view returns(address);
-
-    function polyToken() external view returns(address);
-
-    function tokenFactory() external view returns(address);
-
-    function getterDelegate() external view returns(address);
-
-    function controllerDisabled() external view returns(bool);
-
-    function initialized() external view returns(bool);
-
-    function tokenDetails() external view returns(string memory);
 
 }

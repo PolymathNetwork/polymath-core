@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "./IPermissionManager.sol";
 import "../Module.sol";
@@ -67,6 +67,7 @@ contract GeneralPermissionManager is GeneralPermissionManagerStorage, IPermissio
             if (allDelegates[i] == _delegate) {
                 allDelegates[i] = allDelegates[delegateLen - 1];
                 allDelegates.length--;
+                break;
             }
         }
         delete delegateDetails[_delegate];

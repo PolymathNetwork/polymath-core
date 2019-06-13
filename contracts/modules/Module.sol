@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "../interfaces/IModule.sol";
 import "../Pausable.sol";
@@ -45,16 +45,6 @@ contract Module is IModule, ModuleStorage, Pausable {
         _;
     }
 
-    modifier onlyFactoryOwner() {
-        require(msg.sender == Ownable(factory).owner(), "Sender is not factory owner");
-        _;
-    }
-
-    modifier onlyFactoryOrOwner() {
-        require((msg.sender == Ownable(securityToken).owner()) || (msg.sender == factory), "Sender is not factory or owner");
-        _;
-    }
-
     /**
      * @notice Pause (overridden function)
      */
@@ -63,20 +53,12 @@ contract Module is IModule, ModuleStorage, Pausable {
         super._pause();
     }
 
-     /**
+    /**
      * @notice Unpause (overridden function)
      */
     function unpause() public {
         _onlySecurityTokenOwner();
         super._unpause();
-    }
-
-    /**
-     * @notice used to withdraw the fee by the factory owner
-     */
-    function takeUsageFee() public withPerm(ADMIN) returns(bool) {
-        require(polyToken.transferFrom(securityToken, Ownable(factory).owner(), IModuleFactory(factory).usageCostInPoly()), "Unable to take fee");
-        return true;
     }
 
     /**
@@ -106,5 +88,5 @@ contract Module is IModule, ModuleStorage, Pausable {
     function reclaimETH() external {
         _onlySecurityTokenOwner();
         msg.sender.transfer(address(this).balance);
-    }	   
+    }
 }

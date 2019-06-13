@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "./Wallet.sol";
@@ -433,7 +433,7 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, Wallet {
      * @param _toIndex End index of array of beneficiary's addresses
      */
     function pushAvailableTokensMulti(uint256 _fromIndex, uint256 _toIndex) public withPerm(OPERATOR) {
-        require(_toIndex <= beneficiaries.length - 1, "Array out of bound");
+        require(_toIndex < beneficiaries.length, "Array out of bound");
         for (uint256 i = _fromIndex; i <= _toIndex; i++) {
             if (schedules[beneficiaries[i]].length !=0)
                 pushAvailableTokens(beneficiaries[i]);

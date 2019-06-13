@@ -1,10 +1,10 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 /**
  * @title Wallet for core vesting escrow functionality
  */
 contract VestingEscrowWalletStorage {
-        
+
     struct Schedule {
         // Name of the template
         bytes32 templateName;

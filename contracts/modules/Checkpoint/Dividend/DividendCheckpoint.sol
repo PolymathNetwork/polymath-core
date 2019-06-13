@@ -5,7 +5,7 @@
  * the function may fail. If this happens investors can pull their dividends, or the Issuer
  * can use pushDividendPaymentToAddresses to provide an explict address list in batches
  */
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import ".././ICheckpoint.sol";
 import "../../../storage/modules/Checkpoint/Dividend/DividendCheckpointStorage.sol";

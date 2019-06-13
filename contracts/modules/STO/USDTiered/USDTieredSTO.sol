@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "../STO.sol";
 import "../../../interfaces/IPolymathRegistry.sol";
@@ -22,7 +22,6 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
 
     event SetAllowBeneficialInvestments(bool _allowed);
     event SetNonAccreditedLimit(address _investor, uint256 _limit);
-    event SetAccredited(address _investor, bool _accredited);
     event TokenPurchase(
         address indexed _purchaser,
         address indexed _beneficiary,
@@ -126,8 +125,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @dev Modifies fund raise types
      * @param _fundRaiseTypes Array of fund raise types to allow
      */
-    function modifyFunding(FundRaiseType[] calldata _fundRaiseTypes) external {
-        _onlySecurityTokenOwner();
+    function modifyFunding(FundRaiseType[] calldata _fundRaiseTypes) external withPerm(OPERATOR) {
         _isSTOStarted();
         _setFundRaiseType(_fundRaiseTypes);
     }
@@ -137,8 +135,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @param _nonAccreditedLimitUSD max non accredited invets limit
      * @param _minimumInvestmentUSD overall minimum investment limit
      */
-    function modifyLimits(uint256 _nonAccreditedLimitUSD, uint256 _minimumInvestmentUSD) external {
-        _onlySecurityTokenOwner();
+    function modifyLimits(uint256 _nonAccreditedLimitUSD, uint256 _minimumInvestmentUSD) external withPerm(OPERATOR) {
         _isSTOStarted();
         _modifyLimits(_nonAccreditedLimitUSD, _minimumInvestmentUSD);
     }
@@ -157,8 +154,8 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         uint256[] calldata _tokensPerTierDiscountPoly
     )
         external
+        withPerm(OPERATOR)
     {
-        _onlySecurityTokenOwner();
         _isSTOStarted();
         _modifyTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
     }
@@ -168,8 +165,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @param _startTime start time of sto
      * @param _endTime end time of sto
      */
-    function modifyTimes(uint256 _startTime, uint256 _endTime) external {
-        _onlySecurityTokenOwner();
+    function modifyTimes(uint256 _startTime, uint256 _endTime) external withPerm(OPERATOR) {
         _isSTOStarted();
         _modifyTimes(_startTime, _endTime);
     }
@@ -188,6 +184,23 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
     function modifyAddresses(address payable _wallet, address _treasuryWallet, address[] calldata _usdTokens) external {
         _onlySecurityTokenOwner();
         _modifyAddresses(_wallet, _treasuryWallet, _usdTokens);
+    }
+
+    /**
+     * @dev Modifies Oracle address.
+     *      By default, Polymath oracles are used but issuer can overide them using this function
+     *      Set _oracleAddress to 0x0 to fallback to using Polymath oracles
+     * @param _fundRaiseType Actual currency
+     * @param _oracleAddress address of the oracle
+     */
+    function modifyOracle(FundRaiseType _fundRaiseType, address _oracleAddress) external {
+        _onlySecurityTokenOwner();
+        if (_fundRaiseType == FundRaiseType.ETH) {
+            customOracles[bytes32("ETH")][bytes32("USD")] = _oracleAddress;
+        } else {
+            require(_fundRaiseType == FundRaiseType.POLY, "Invalid currency");
+            customOracles[bytes32("POLY")][bytes32("USD")] = _oracleAddress;
+        }
     }
 
     function _modifyLimits(uint256 _nonAccreditedLimitUSD, uint256 _minimumInvestmentUSD) internal {
@@ -258,8 +271,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @notice Finalizes the STO and mint remaining tokens to treasury address
      * @notice Treasury wallet address must be whitelisted to successfully finalize
      */
-    function finalize() external {
-        _onlySecurityTokenOwner();
+    function finalize() external withPerm(ADMIN) {
         require(!isFinalized, "STO is finalized");
         isFinalized = true;
         uint256 tempReturned;
@@ -289,8 +301,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @param _investors Array of investor addresses to modify
      * @param _nonAccreditedLimit Array of uints specifying non-accredited limits
      */
-    function changeNonAccreditedLimit(address[] calldata _investors, uint256[] calldata _nonAccreditedLimit) external {
-        _onlySecurityTokenOwner();
+    function changeNonAccreditedLimit(address[] calldata _investors, uint256[] calldata _nonAccreditedLimit) external withPerm(OPERATOR) {
         //nonAccreditedLimitUSDOverride
         require(_investors.length == _nonAccreditedLimit.length, "Length mismatch");
         for (uint256 i = 0; i < _investors.length; i++) {
@@ -320,8 +331,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @notice Function to set allowBeneficialInvestments (allow beneficiary to be different to funder)
      * @param _allowBeneficialInvestments Boolean to allow or disallow beneficial investments
      */
-    function changeAllowBeneficialInvestments(bool _allowBeneficialInvestments) external {
-        _onlySecurityTokenOwner();
+    function changeAllowBeneficialInvestments(bool _allowBeneficialInvestments) external withPerm(OPERATOR) {
         require(_allowBeneficialInvestments != allowBeneficialInvestments);
         allowBeneficialInvestments = _allowBeneficialInvestments;
         emit SetAllowBeneficialInvestments(allowBeneficialInvestments);
@@ -710,6 +720,9 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @notice Return the permissions flag that are associated with STO
      */
     function getPermissions() public view returns(bytes32[] memory allPermissions) {
+        bytes32[] memory allPermissions = new bytes32[](2);
+        allPermissions[0] = OPERATOR;
+        allPermissions[1] = ADMIN;
         return allPermissions;
     }
 
@@ -757,8 +770,9 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         return this.configure.selector;
     }
 
-    function _getOracle(bytes32 _currency, bytes32 _denominatedCurrency) internal view returns(address) {
-        return IPolymathRegistry(ISecurityToken(securityToken).polymathRegistry()).getAddress(oracleKeys[_currency][_denominatedCurrency]);
+    function _getOracle(bytes32 _currency, bytes32 _denominatedCurrency) internal view returns(address oracleAddress) {
+        oracleAddress = customOracles[_currency][_denominatedCurrency];
+        if (oracleAddress == address(0))
+            oracleAddress =  IPolymathRegistry(ISecurityToken(securityToken).polymathRegistry()).getAddress(oracleKeys[_currency][_denominatedCurrency]);
     }
-
 }

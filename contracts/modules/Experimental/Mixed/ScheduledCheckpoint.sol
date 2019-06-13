@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "./../../Checkpoint/ICheckpoint.sol";
 import "../../TransferManager/TransferManager.sol";
@@ -194,7 +194,7 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
             _update(names[i]);
         }
     }
-    
+
     /**
      * @notice Return the permissions flag that are associated with CountTransferManager
      */

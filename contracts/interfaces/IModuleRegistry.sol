@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 /**
  * @title Interface for the Polymath Module Registry contract
@@ -51,9 +51,10 @@ interface IModuleRegistry {
      * @notice Returns the verified status, and reputation of the entered Module Factory
      * @param _factoryAddress is the address of the module factory
      * @return bool indicating whether module factory is verified
+     * @return address of factory owner
      * @return address array which contains the list of securityTokens that use that module factory
      */
-    function getFactoryDetails(address _factoryAddress) external view returns(bool isVerified, address[] memory usingTokens);
+    function getFactoryDetails(address _factoryAddress) external view returns(bool isVerified, address factoryOwner, address[] memory usingTokens);
 
     /**
      * @notice Returns all the tags related to the a module type which are valid for the given token

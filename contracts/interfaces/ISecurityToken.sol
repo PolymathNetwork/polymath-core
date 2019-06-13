@@ -29,7 +29,7 @@ interface ISecurityToken {
      * @return byte Ethereum status code (ESC)
      * @return bytes32 Application specific reason code
      */
-    function canTransfer(address _to, uint256 _value, bytes calldata _data) external view returns (byte, bytes32);
+    function canTransfer(address _to, uint256 _value, bytes calldata _data) external view returns (byte statusCode, bytes32 reasonCode);
 
     // Emit at the time when module get added
     event ModuleAdded(

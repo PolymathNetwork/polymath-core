@@ -14,9 +14,9 @@ interface ITransferManager {
     /**
      * @notice Determines if the transfer between these two accounts can happen
      */
-    function executeTransfer(address _from, address _to, uint256 _amount, bytes calldata _data) external returns(Result);
+    function executeTransfer(address _from, address _to, uint256 _amount, bytes calldata _data) external returns(Result result);
 
-    function verifyTransfer(address _from, address _to, uint256 _amount, bytes calldata _data) external view returns(Result, bytes32);
+    function verifyTransfer(address _from, address _to, uint256 _amount, bytes calldata _data) external view returns(Result result, bytes32 partition);
 
     /**
      * @notice return the amount of tokens for a given user as per the partition
@@ -24,6 +24,6 @@ interface ITransferManager {
      * @param _tokenHolder Whom token amount need to query
      * @param _additionalBalance It is the `_value` that transfer during transfer/transferFrom function call
      */
-    function getTokensByPartition(bytes32 _partition, address _tokenHolder, uint256 _additionalBalance) external view returns(uint256);
+    function getTokensByPartition(bytes32 _partition, address _tokenHolder, uint256 _additionalBalance) external view returns(uint256 amount);
 
 }

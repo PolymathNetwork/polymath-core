@@ -17,42 +17,42 @@ interface IModuleFactory {
     event ChangeSTVersionBound(string _boundType, uint8 _major, uint8 _minor, uint8 _patch);
 
     //Should create an instance of the Module, or throw
-    function deploy(bytes calldata _data) external returns(address);
+    function deploy(bytes calldata _data) external returns(address moduleAddress);
 
     /**
      * @notice Get the tags related to the module factory
      */
-    function version() external view returns(string memory);
+    function version() external view returns(string memory moduleVersion);
 
     /**
      * @notice Get the tags related to the module factory
      */
-    function name() external view returns(bytes32);
+    function name() external view returns(bytes32 moduleName);
 
     /**
      * @notice Returns the title associated with the module
      */
-    function title() external view returns(string memory);
+    function title() external view returns(string memory moduleTitle);
 
     /**
      * @notice Returns the description associated with the module
      */
-    function description() external view returns(string memory);
+    function description() external view returns(string memory moduleDescription);
 
     /**
      * @notice Get the setup cost of the module in USD
      */
-    function setupCost() external returns(uint256);
+    function setupCost() external returns(uint256 usdSetupCost);
 
     /**
      * @notice Type of the Module factory
      */
-    function types() external view returns(uint8[] memory);
+    function types() external view returns(uint8[] memory moduleTypes);
 
     /**
      * @notice Get the tags related to the module factory
      */
-    function tags() external view returns(bytes32[] memory);
+    function tags() external view returns(bytes32[] memory moduleTags);
 
     /**
      * @notice Used to change the setup fee
@@ -77,18 +77,18 @@ interface IModuleFactory {
     /**
      * @notice Get the setup cost of the module
      */
-    function setupCostInPoly() external returns (uint256);
+    function setupCostInPoly() external returns (uint256 polySetupCost);
 
     /**
      * @notice Used to get the lower bound
      * @return Lower bound
      */
-    function lowerSTVersionBounds() external view returns(uint8[] memory);
+    function lowerSTVersionBounds() external view returns(uint8[] memory lowerBounds);
 
     /**
      * @notice Used to get the upper bound
      * @return Upper bound
      */
-    function upperSTVersionBounds() external view returns(uint8[] memory);
+    function upperSTVersionBounds() external view returns(uint8[] memory upperBounds);
 
 }

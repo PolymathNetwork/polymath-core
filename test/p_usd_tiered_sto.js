@@ -390,7 +390,7 @@ contract("USDTieredSTO", async (accounts) => {
                 _tokensPerTierTotal[stoId].length,
                 "Incorrect number of tiers"
             );
-            assert.equal((await I_USDTieredSTO_Array[stoId].getPermissions()).length, new BN(0), "Incorrect number of permissions");
+            assert.equal((await I_USDTieredSTO_Array[stoId].getPermissions()).length, new BN(2), "Incorrect number of permissions");
         });
 
         it("Should attach the paid STO factory -- failed because of no tokens", async () => {
@@ -579,7 +579,7 @@ contract("USDTieredSTO", async (accounts) => {
                 _tokensPerTierTotal[stoId].length,
                 "Incorrect number of tiers"
             );
-            assert.equal((await I_USDTieredSTO_Array[stoId].getPermissions()).length, new BN(0), "Incorrect number of permissions");
+            assert.equal((await I_USDTieredSTO_Array[stoId].getPermissions()).length, new BN(2), "Incorrect number of permissions");
         });
 
         it("Should successfully attach the third STO module to the security token", async () => {

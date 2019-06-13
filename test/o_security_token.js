@@ -9,7 +9,8 @@ import {
     deployGPMAndVerifyed,
     deployCappedSTOAndVerifyed,
     deployMockRedemptionAndVerifyed,
-    deployMockWrongTypeRedemptionAndVerifyed
+    deployMockWrongTypeRedemptionAndVerifyed,
+    deployLockUpTMAndVerified
 } from "./helpers/createInstances";
 
 const MockSecurityTokenLogic = artifacts.require("./MockSecurityTokenLogic.sol");
@@ -20,6 +21,7 @@ const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager");
 const MockRedemptionManager = artifacts.require("./MockRedemptionManager.sol");
+const LockUpTransferManager = artifacts.require("./LockUpTransferManager.sol");
 const STGetter = artifacts.require("./STGetter.sol");
 
 const Web3 = require("web3");
@@ -61,6 +63,8 @@ contract("SecurityToken", async (accounts) => {
 
     // Contract Instance Declaration
     let I_GeneralPermissionManagerFactory;
+    let I_LockUpTransferManagerFactory;
+    let I_LockUpTransferManager;
     let I_SecurityTokenRegistryProxy;
     let I_GeneralTransferManagerFactory;
     let I_GeneralPermissionManager;
@@ -162,6 +166,8 @@ contract("SecurityToken", async (accounts) => {
         [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
         // STEP 3: Deploy the CappedSTOFactory
         [I_CappedSTOFactory] = await deployCappedSTOAndVerifyed(account_polymath, I_MRProxied, cappedSTOSetupCost);
+        // STEP 4(c): Deploy the LockUpVolumeRestrictionTMFactory
+        [I_LockUpTransferManagerFactory] = await deployLockUpTMAndVerified(account_polymath, I_MRProxied, 0);
 
         // Printing all the contract addresses
         console.log(`
@@ -519,16 +525,6 @@ contract("SecurityToken", async (accounts) => {
             let tx = await I_SecurityToken.removeModule(I_GeneralTransferManager.address, { from: token_owner });
             assert.equal(tx.logs[0].args._types[0], transferManagerKey);
             assert.equal(tx.logs[0].args._module, I_GeneralTransferManager.address);
-            await I_SecurityToken.issue(account_investor1, new BN(web3.utils.toWei("500")), "0x0", { from: token_owner });
-            let _canTransfer = await I_SecurityToken.canTransfer.call(account_investor2, new BN(web3.utils.toWei("200")), "0x0", {from: account_investor1});
-
-            assert.isTrue(_canTransfer[0]);
-            assert.equal(_canTransfer[1], 0x51);
-            assert.equal(_canTransfer[2], empty_hash);
-
-            await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("200")), { from: account_investor1 });
-
-            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).div(new BN(10).pow(new BN(18))).toNumber(), 200);
             await revertToSnapshot(key);
         });
 
@@ -581,12 +577,8 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(moduleData[3], true);
         });
 
-        it("Should successfully issue tokens while GTM archived", async () => {
-            let key = await takeSnapshot();
-            await I_SecurityToken.issue(one_address, new BN(100).mul(new BN(10).pow(new BN(18))), "0x0", { from: token_owner, gas: 500000 });
-            let balance = await I_SecurityToken.balanceOf(one_address);
-            assert.equal(balance.div(new BN(10).pow(new BN(18))).toNumber(), 100);
-            await revertToSnapshot(key);
+        it("Should fail to issue (or transfer) tokens while all TM are archived archived", async () => {
+            await catchRevert(I_SecurityToken.issue(one_address, new BN(100).mul(new BN(10).pow(new BN(18))), "0x0", { from: token_owner }));
         });
 
         it("Should successfully unarchive the general transfer manager module from the securityToken", async () => {
@@ -2172,6 +2164,57 @@ contract("SecurityToken", async (accounts) => {
                 assert.equal(web3.utils.toUtf8(allDocs[0]), "doc4");
             });
         });
+
+        describe("Test cases for the returnPartition", async() => {
+            // It will work once the balanceOfByPartition function fixed added
+            it.skip("Should add the lockup Transfer manager and create a lockup for investor 1", async() => {
+
+                console.log(web3.utils.fromWei(await I_SecurityToken.balanceOf.call(account_investor1)));
+                console.log(web3.utils.fromWei(await I_SecurityToken.balanceOfByPartition.call(web3.utils.toHex("UNLOCKED"),account_investor1)));
+                console.log(web3.utils.fromWei(await I_SecurityToken.balanceOf.call(account_investor2)));
+
+                const tx = await I_SecurityToken.addModule(I_LockUpTransferManagerFactory.address, "0x", 0, 0, false, { from: token_owner });
+                assert.equal(tx.logs[2].args._types[0].toString(), transferManagerKey, "LockUpVolumeRestrictionTMFactory doesn't get deployed");
+                assert.equal(
+                    web3.utils.toAscii(tx.logs[2].args._name)
+                    .replace(/\u0000/g, ''),
+                    "LockUpTransferManager",
+                    "LockUpTransferManager module was not added"
+                );
+                I_LockUpTransferManager = await LockUpTransferManager.at(tx.logs[2].args._module);
+                let currentTime = new BN(await latestTime());
+                await I_LockUpTransferManager.addNewLockUpToUser(
+                    account_investor2,
+                    new BN(web3.utils.toWei("1000")),
+                    currentTime.add(new BN(duration.seconds(1))),
+                    new BN(duration.seconds(400000)),
+                    new BN(duration.seconds(100000)),
+                    web3.utils.fromAscii("a_lockup"),
+                    {
+                        from: token_owner
+                    }
+                );
+
+                // transfer balance of Unlocked partition of invesotor 1 to 2
+                await increaseTime(10);
+
+                console.log(`UNLOCKED balance - ${web3.utils.fromWei(await I_SecurityToken.balanceOfByPartition.call(web3.utils.toHex("UNLOCKED"),account_investor2))}`);
+                console.log(`Locked Balance - ${web3.utils.fromWei(await I_SecurityToken.balanceOfByPartition.call(web3.utils.toHex("LOCKED"),account_investor2))}`);
+
+                let partition = await I_SecurityToken.transferByPartition.call(
+                    web3.utils.toHex("UNLOCKED"),
+                    account_investor2,
+                    new BN(web3.utils.toWei("500")),
+                    "0x0",
+                    {
+                        from: account_investor1
+                    }
+                );
+                console.log(`UNLOCKED balance - ${web3.utils.fromWei(await I_SecurityToken.balanceOfByPartition.call(web3.utils.toHex("UNLOCKED"),account_investor2))}`);
+                console.log(`Locked Balance - ${web3.utils.fromWei(await I_SecurityToken.balanceOfByPartition.call(web3.utils.toHex("LOCKED"),account_investor2))}`);
+                assert.equal(web3.utils.hexToUtf8(partition), "LOCKED");
+            });
+        })
     })
     });
 

@@ -325,7 +325,6 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         uint256 i;
         uint256 j;
         for (i = 0; i < _modules.length; i++) {
-            // NB - a malicious unverified module could throw on .tags()
             counter = counter + IModuleFactory(_modules[i]).tags().length;
         }
         bytes32[] memory tags = new bytes32[](counter);

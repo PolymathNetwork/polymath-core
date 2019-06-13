@@ -27,5 +27,5 @@ interface ISTFactory {
         address _polymathRegistry
     )
     external
-    returns(address);
+    returns(address tokenAddress);
 }

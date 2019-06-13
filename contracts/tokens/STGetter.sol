@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "./OZStorage.sol";
 import "./SecurityTokenStorage.sol";
@@ -224,7 +224,7 @@ contract STGetter is OZStorage, SecurityTokenStorage {
      * @notice Return all partitions
      * @return List of partitions
      */
-    function partitionsOf(address /*_tokenHolder*/) external view returns (bytes32[] memory) {
+    function partitionsOf(address /*_tokenHolder*/) external pure returns (bytes32[] memory) {
         bytes32[] memory result = new bytes32[](2);
         result[0] = UNLOCKED;
         result[1] = LOCKED;

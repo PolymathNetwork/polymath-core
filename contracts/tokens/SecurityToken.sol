@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "../proxy/Proxy.sol";
 import "../interfaces/IModule.sol";
@@ -41,7 +41,8 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
         bytes32 _label,
         bool _archived
     );
-
+    // Emit when Module get upgraded from the securityToken
+    event ModuleUpgraded(uint8[] _types, address _module);
     // Emit when the token details get updated
     event UpdateTokenDetails(string _oldDetails, string _newDetails);
     // Emit when the token name get updated
@@ -419,7 +420,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @return bool success
      */
     function transfer(address _to, uint256 _value) public returns(bool success) {
-        transferWithData(_to, _value, "");
+        _transferWithData(msg.sender, _to, _value, "");
         return true;
     }
 
@@ -484,13 +485,20 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
         return _balanceOfByPartition(_partition, _tokenHolder, 0);
     }
 
-    function _balanceOfByPartition(bytes32 _partition, address _tokenHolder, uint256 _additionalBalance) internal view returns(uint256 max) {
+    function _balanceOfByPartition(bytes32 _partition, address _tokenHolder, uint256 _additionalBalance) internal view returns(uint256 partitionBalance) {
         address[] memory tms = modules[TRANSFER_KEY];
         uint256 amount;
         for (uint256 i = 0; i < tms.length; i++) {
             amount = ITransferManager(tms[i]).getTokensByPartition(_partition, _tokenHolder, _additionalBalance);
-            if (max < amount) {
-                max = amount;
+            // In UNLOCKED partition we are returning the minimum of all the unlocked balances
+            if (_partition == UNLOCKED) {
+                if (amount < partitionBalance || i == 0)
+                    partitionBalance = amount;
+            }
+            // In locked partition we are returning the maximum of all the Locked balances
+            else {
+                if (partitionBalance < amount)
+                    partitionBalance = amount;
             }
         }
     }

@@ -1,9 +1,32 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 /**
  * @title Interface for the Polymath Module Registry contract
  */
 interface IModuleRegistry {
+
+    ///////////
+    // Events
+    //////////
+
+    // Emit when network becomes paused
+    event Pause(address account);
+    // Emit when network becomes unpaused
+    event Unpause(address account);
+    // Emit when Module is used by the SecurityToken
+    event ModuleUsed(address indexed _moduleFactory, address indexed _securityToken);
+    // Emit when the Module Factory gets registered on the ModuleRegistry contract
+    event ModuleRegistered(address indexed _moduleFactory, address indexed _owner);
+    // Emit when the module gets verified by Polymath
+    event ModuleVerified(address indexed _moduleFactory);
+    // Emit when the module gets unverified by Polymath or the factory owner
+    event ModuleUnverified(address indexed _moduleFactory);
+    // Emit when a ModuleFactory is removed by Polymath
+    event ModuleRemoved(address indexed _moduleFactory, address indexed _decisionMaker);
+    // Emit when ownership gets transferred
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+
     /**
      * @notice Called by a security token to notify the registry it is using a module
      * @param _moduleFactory is the address of the relevant module factory
@@ -78,7 +101,7 @@ interface IModuleRegistry {
      * @param _moduleType Type of Module
      * @return address array that contains the list of addresses of module factory contracts.
      */
-    function getAllModulesByType(uint8 _moduleType) external view returns(address[] memory);
+    function getAllModulesByType(uint8 _moduleType) external view returns(address[] memory factories);
     /**
      * @notice Returns the list of addresses of Module Factory of a particular type
      * @param _moduleType Type of Module
@@ -110,5 +133,27 @@ interface IModuleRegistry {
      * @return bool
      */
     function isPaused() external view returns(bool paused);
+
+    /**
+     * @notice Reclaims all ERC20Basic compatible tokens
+     * @param _tokenContract The address of the token contract
+     */
+    function reclaimERC20(address _tokenContract) external;
+
+    /**
+     * @notice Called by the owner to pause, triggers stopped state
+     */
+    function pause() external;
+
+    /**
+     * @notice Called by the owner to unpause, returns to normal state
+     */
+    function unpause() external;
+
+    /**
+    * @dev Allows the current owner to transfer control of the contract to a newOwner.
+    * @param _newOwner The address to transfer ownership to.
+    */
+    function transferOwnership(address _newOwner) external;
 
 }

@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
@@ -8,7 +8,7 @@ import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 contract USDTieredSTOStorage {
 
     bytes32 internal constant INVESTORSKEY = 0xdf3a8dd24acdd05addfc6aeffef7574d2de3f844535ec91e8e0f3e45dba96731; //keccak256(abi.encodePacked("INVESTORS"))
-
+    
     /////////////
     // Storage //
     /////////////

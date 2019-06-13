@@ -1,23 +1,118 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 /**
  * @title Interface for all security tokens
  */
 interface ISecurityToken {
     // Standard ERC20 interface
+    function symbol() external view returns (string memory);
+    function name() external view returns (string memory);
     function decimals() external view returns(uint8);
     function totalSupply() external view returns(uint256);
-    function balanceOf(address _owner) external view returns(uint256);
-    function allowance(address _owner, address _spender) external view returns(uint256);
-    function transfer(address _to, uint256 _value) external returns(bool);
-    function transferFrom(address _from, address _to, uint256 _value) external returns(bool);
-    function approve(address _spender, uint256 _value) external returns(bool);
-    function decreaseApproval(address _spender, uint _subtractedValue) external returns(bool);
-    function increaseApproval(address _spender, uint _addedValue) external returns(bool);
+    function balanceOf(address owner) external view returns(uint256);
+    function allowance(address owner, address spender) external view returns(uint256);
+    function transfer(address to, uint256 value) external returns(bool);
+    function transferFrom(address from, address to, uint256 value) external returns(bool);
+    function approve(address spender, uint256 value) external returns(bool);
+    function decreaseAllowance(address spender, uint256 subtractedValue) external returns (bool);
+    function increaseAllowance(address spender, uint256 addedValue) external returns (bool);
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
 
-    function name() external view returns(string memory);
+     // Emit at the time when module get added
+    event ModuleAdded(
+        uint8[] _types,
+        bytes32 indexed _name,
+        address indexed _moduleFactory,
+        address _module,
+        uint256 _moduleCost,
+        uint256 _budget,
+        bytes32 _label,
+        bool _archived
+    );
+
+    // Emit when the token details get updated
+    event UpdateTokenDetails(string _oldDetails, string _newDetails);
+    // Emit when the token name get updated
+    event UpdateTokenName(string _oldName, string _newName);
+    // Emit when the granularity get changed
+    event GranularityChanged(uint256 _oldGranularity, uint256 _newGranularity);
+    // Emit when is permanently frozen by the issuer
+    event FreezeIssuance();
+    // Emit when transfers are frozen or unfrozen
+    event FreezeTransfers(bool _status);
+    // Emit when new checkpoint created
+    event CheckpointCreated(uint256 indexed _checkpointId, uint256 _investorLength);
+    // Events to log controller actions
+    event SetController(address indexed _oldController, address indexed _newController);
+    //Event emit when the global treasury wallet address get changed
+    event TreasuryWalletChanged(address _oldTreasuryWallet, address _newTreasuryWallet);
+    event DisableController();
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event TokenUpgraded(uint8 _major, uint8 _minor, uint8 _patch);
+
+    // Emit when Module get archived from the securityToken
+    event ModuleArchived(uint8[] _types, address _module); //Event emitted by the tokenLib.
+    // Emit when Module get unarchived from the securityToken
+    event ModuleUnarchived(uint8[] _types, address _module); //Event emitted by the tokenLib.
+    // Emit when Module get removed from the securityToken
+    event ModuleRemoved(uint8[] _types, address _module); //Event emitted by the tokenLib.
+    // Emit when the budget allocated to a module is changed
+    event ModuleBudgetChanged(uint8[] _moduleTypes, address _module, uint256 _oldBudget, uint256 _budget); //Event emitted by the tokenLib.
+
+    // Transfer Events
+    event TransferByPartition(
+        bytes32 indexed _fromPartition,
+        address _operator,
+        address indexed _from,
+        address indexed _to,
+        uint256 _value,
+        bytes _data,
+        bytes _operatorData
+    );
+
+    // Operator Events
+    event AuthorizedOperator(address indexed operator, address indexed tokenHolder);
+    event RevokedOperator(address indexed operator, address indexed tokenHolder);
+    event AuthorizedOperatorByPartition(bytes32 indexed partition, address indexed operator, address indexed tokenHolder);
+    event RevokedOperatorByPartition(bytes32 indexed partition, address indexed operator, address indexed tokenHolder);
+
+    // Issuance / Redemption Events
+    event IssuedByPartition(bytes32 indexed partition, address indexed to, uint256 value, bytes data);
+    event RedeemedByPartition(bytes32 indexed partition, address indexed operator, address indexed from, uint256 value, bytes data, bytes operatorData);
+
+    // Document Events
+    event DocumentRemoved(bytes32 indexed _name, string _uri, bytes32 _documentHash);
+    event DocumentUpdated(bytes32 indexed _name, string _uri, bytes32 _documentHash);
+
+    // Controller Events
+    event ControllerTransfer(
+        address _controller,
+        address indexed _from,
+        address indexed _to,
+        uint256 _value,
+        bytes _data,
+        bytes _operatorData
+    );
+
+    event ControllerRedemption(
+        address _controller,
+        address indexed _tokenHolder,
+        uint256 _value,
+        bytes _data,
+        bytes _operatorData
+    );
+
+    // Issuance / Redemption Events
+    event Issued(address indexed _operator, address indexed _to, uint256 _value, bytes _data);
+    event Redeemed(address indexed _operator, address indexed _from, uint256 _value, bytes _data);
+
+    /**
+     * @notice Initialization function
+     * @dev Expected to be called atomically with the proxy being created, by the owner of the token
+     * @dev Can only be called once
+     */
+    function initialize(address _getterDelegate) external;
 
     /**
      * @notice Transfers of securities may fail for a number of reasons. So this function will used to understand the
@@ -33,11 +128,27 @@ interface ISecurityToken {
     function canTransfer(address _to, uint256 _value, bytes calldata _data) external view returns (bool isExecuted, byte statusCode, bytes32 reasonCode);
 
     /**
-     * @notice Initialization function
-     * @dev Expected to be called atomically with the proxy being created, by the owner of the token
-     * @dev Can only be called once
+     * @notice The standard provides an on-chain function to determine whether a transfer will succeed,
+     * and return details indicating the reason if the transfer is not valid.
+     * @param _from The address from whom the tokens get transferred.
+     * @param _to The address to which to transfer tokens to.
+     * @param _partition The partition from which to transfer tokens
+     * @param _value The amount of tokens to transfer from `_partition`
+     * @param _data Additional data attached to the transfer of tokens
+     * @return ESC (Ethereum Status Code) following the EIP-1066 standard
+     * @return Application specific reason codes with additional details
+     * @return The partition to which the transferred tokens were allocated for the _to address
      */
-    function initialize() external;
+    function canTransferByPartition(
+        address _from,
+        address _to,
+        bytes32 _partition,
+        uint256 _value,
+        bytes calldata _data
+    )
+        external
+        view
+        returns (byte statusCode, bytes32 reasonCode, bytes32 partition);
 
     /**
      * @notice Transfers of securities may fail for a number of reasons. So this function will used to understand the
@@ -52,20 +163,6 @@ interface ISecurityToken {
      * @return bytes32 Application specific reason code
      */
     function canTransferFrom(address _from, address _to, uint256 _value, bytes calldata _data) external view returns (bool isExecuted, byte statusCode, bytes32 reasonCode);
-
-    /**
-     * @notice The standard provides an on-chain function to determine whether a transfer will succeed,
-     * and return details indicating the reason if the transfer is not valid.
-     * @param _from The address from whom the tokens get transferred.
-     * @param _to The address to which to transfer tokens to.
-     * @param _partition The partition from which to transfer tokens
-     * @param _value The amount of tokens to transfer from `_partition`
-     * @param _data Additional data attached to the transfer of tokens
-     * @return ESC (Ethereum Status Code) following the EIP-1066 standard
-     * @return Application specific reason codes with additional details
-     * @return The partition to which the transferred tokens were allocated for the _to address
-     */
-    function canTransferByPartition(address _from, address _to, bytes32 _partition, uint256 _value, bytes calldata _data) external view returns (byte isExecuted, bytes32 statusCode, bytes32 reasonCode);
 
     /**
      * @notice Used to attach a new document to the contract, or update the URI or hash of an existing attached document
@@ -188,10 +285,6 @@ interface ISecurityToken {
         bytes calldata _operatorData
     ) external;
 
-    // Issuance / Redemption Events
-    event Issued(address indexed _operator, address indexed _to, uint256 _value, bytes _data);
-    event Redeemed(address indexed _operator, address indexed _from, uint256 _value, bytes _data);
-
     /**
      * @notice Validate permissions with PermissionManager if it exists, If no Permission return false
      * @dev Note that IModule withPerm will allow ST owner all permissions anyway
@@ -259,9 +352,9 @@ interface ISecurityToken {
     function getCheckpointTimes() external view returns(uint256[] memory checkpointTimes);
 
     /**
-     * @notice Gets length of investors array
-     * NB - this length may differ from investorCount if the list has not been pruned of zero-balance investors
-     * @return Length
+     * @notice returns an array of investors
+     * NB - this length may differ from investorCount as it contains all investors that ever held tokens
+     * @return list of addresses
      */
     function getInvestors() external view returns(address[] memory investors);
 
@@ -385,11 +478,12 @@ interface ISecurityToken {
     function unfreezeTransfers() external;
 
     /**
-     * @notice Ends token minting period permanently
+     * @notice Permanently freeze issuance of this security token.
+     * @dev It MUST NOT be possible to increase `totalSuppy` after this function is called.
      */
-    function freezeIssuance() external;
+    function freezeIssuance(bytes calldata _signature) external;
 
-     /**
+    /**
       * @notice Attachs a module to the SecurityToken
       * @dev  E.G.: On deployment (through the STR) ST gets a TransferManager module attached to it
       * @dev to control restrictions on transfers.
@@ -481,7 +575,7 @@ interface ISecurityToken {
      * @notice Used by the issuer to permanently disable controller functionality
      * @dev enabled via feature switch "disableControllerAllowed"
      */
-    function disableController() external;
+    function disableController(bytes calldata _signature) external;
 
     /**
      * @notice Used to get the version of the securityToken
@@ -624,4 +718,41 @@ interface ISecurityToken {
     * @notice Returns if transfers are currently frozen or not
     */
     function transfersFrozen() external view returns (bool isFrozen);
+
+    /**
+     * @dev Allows the current owner to transfer control of the contract to a newOwner.
+     * @param newOwner The address to transfer ownership to.
+     */
+    function transferOwnership(address newOwner) external;
+
+    /**
+     * @return true if `msg.sender` is the owner of the contract.
+     */
+    function isOwner() external view returns (bool);
+
+    /**
+     * @return the address of the owner.
+     */
+    function owner() external view returns (address ownerAddress);
+
+    function controller() external view returns(address controllerAddress);
+
+    function moduleRegistry() external view returns(address moduleRegistryAddress);
+
+    function securityTokenRegistry() external view returns(address securityTokenRegistryAddress);
+
+    function polyToken() external view returns(address polyTokenAddress);
+
+    function tokenFactory() external view returns(address tokenFactoryAddress);
+
+    function getterDelegate() external view returns(address delegate);
+
+    function controllerDisabled() external view returns(bool isDisabled);
+
+    function initialized() external view returns(bool isInitialized);
+
+    function tokenDetails() external view returns(string memory details);
+
+    function updateFromRegistry() external;
+
 }

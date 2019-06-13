@@ -1,10 +1,17 @@
+/**
+    //
+        IMPORTANT: Developer should update the ISecurityTokenRegistry.sol (Interface) if there is any change in
+        function signature or addition/removal of the functions from SecurityTokenRegistry & STRGetter contract.
+    //
+
+ */
+
 pragma solidity ^0.5.0;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IOwnable.sol";
 import "./interfaces/ISTFactory.sol";
-import "./interfaces/ISecurityTokenRegistry.sol";
 import "./interfaces/ISecurityToken.sol";
 import "./interfaces/IPolymathRegistry.sol";
 import "./interfaces/IOracle.sol";
@@ -333,7 +340,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         // Attempt to charge the reg fee if it is > 0 USD
         (uint256 usdFee, uint256 polyFee) = _takeFee(TICKERREGFEE);
         string memory ticker = Util.upper(_ticker);
-        require(_tickerAvailable(ticker), "Ticker reserved");
+        require(tickerAvailable(ticker), "Ticker reserved");
         // Check whether ticker was previously registered (and expired)
         address previousOwner = _tickerOwner(ticker);
         if (previousOwner != address(0)) {
@@ -462,11 +469,11 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     }
 
     /**
-     * @notice Internal - Checks if the entered ticker is registered and has not expired
+     * @notice Checks if the entered ticker is registered and has not expired
      * @param _ticker is the token ticker
      * @return bool
      */
-    function _tickerAvailable(string memory _ticker) internal view returns(bool) {
+    function tickerAvailable(string memory _ticker) public view returns(bool) {
         if (_tickerOwner(_ticker) != address(0)) {
             /*solium-disable-next-line security/no-block-members*/
             if ((now > getUintValue(Encoder.getKey("registeredTickers_expiryDate", _ticker))) && !_tickerStatus(_ticker)) {

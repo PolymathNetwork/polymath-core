@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "../modules/Experimental/Burn/TrackedRedemption.sol";
 
@@ -7,7 +7,7 @@ import "../modules/Experimental/Burn/TrackedRedemption.sol";
  */
 contract MockRedemptionManager is TrackedRedemption {
     mapping(address => uint256) tokenToRedeem;
-    mapping(address => mapping(bytes32 => uint256)) redeemedTokensByPartition; 
+    mapping(address => mapping(bytes32 => uint256)) redeemedTokensByPartition;
 
     event RedeemedTokenByOwner(address _investor, address _byWhoom, uint256 _value);
     event RedeemedTokensByPartition(address indexed _investor, address indexed _operator, bytes32 _partition, uint256 _value, bytes _data, bytes _operatorData);

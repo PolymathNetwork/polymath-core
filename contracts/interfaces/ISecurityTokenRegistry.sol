@@ -48,6 +48,16 @@ interface ISecurityTokenRegistry {
         bool _fromAdmin,
         uint256 _registrationFee
     );
+    // Emit when new ticker get registers
+    event RegisterTicker(
+        address indexed _owner,
+        string _ticker,
+        uint256 indexed _registrationDate,
+        uint256 indexed _expiryDate,
+        bool _fromAdmin,
+        uint256 _registrationFeePoly,
+        uint256 _registrationFeeUsd
+    );
     // Emit after ticker registration
     // _registrationFee is in poly
     // fee in usd is not being emitted to maintain backwards compatibility
@@ -147,6 +157,41 @@ interface ISecurityTokenRegistry {
         uint256 _deployedAt
     )
     external;
+
+    /**
+     * @notice Adds a new custom Security Token and saves it to the registry. (Token should follow the ISecurityToken interface)
+     * @param _ticker is the ticker symbol of the security token
+     * @param _owner is the owner of the token
+     * @param _securityToken is the address of the securityToken
+     * @param _tokenDetails is the off-chain details of the token
+     * @param _deployedAt is the timestamp at which the security token is deployed
+     */
+    function modifyExistingSecurityToken(
+        string calldata _ticker,
+        address _owner,
+        address _securityToken,
+        string calldata _tokenDetails,
+        uint256 _deployedAt
+    )
+        external;
+
+    /**
+     * @notice Modifies the ticker details. Only Polymath has the ability to do so.
+     * @notice Only allowed to modify the tickers which are not yet deployed.
+     * @param _owner is the owner of the token
+     * @param _ticker is the token ticker
+     * @param _registrationDate is the date at which ticker is registered
+     * @param _expiryDate is the expiry date for the ticker
+     * @param _status is the token deployment status
+     */
+    function modifyExistingTicker(
+        address _owner,
+        string calldata _ticker,
+        uint256 _registrationDate,
+        uint256 _expiryDate,
+        bool _status
+    )
+        external;
 
     /**
      * @notice Registers the token ticker for its particular owner

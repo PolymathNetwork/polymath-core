@@ -994,7 +994,7 @@ contract("CappedSTO", async (accounts) => {
 
             it("Should get the listed permissions", async () => {
                 let tx = await I_CappedSTO_Array_POLY[0].getPermissions.call();
-                assert.equal(tx.length, 0);
+                assert.equal(tx.length, 1);
             });
 
             it("Should get the metrics of the STO", async () => {

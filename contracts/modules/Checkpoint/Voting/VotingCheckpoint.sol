@@ -7,33 +7,33 @@ import "../../../storage/modules/Checkpoint/Voting/VotingCheckpointStorage.sol";
 
 contract VotingCheckpoint is VotingCheckpointStorage, ICheckpoint, IVoting, Module {
 
-    event ChangedDefaultExemptedVotersList(address indexed _voter, bool _change);
+    event ChangedDefaultExemptedVotersList(address indexed _voter, bool _exempt);
 
     /**
      * Change the global exempted voters list
      * @param _voter Address of the voter
-     * @param _change Whether it is exempted or not
+     * @param _exempt Whether it is exempted or not
      */
-    function changeDefaultExemptedVotersList(address _voter, bool _change) external withPerm(ADMIN) {
-        _changeDefaultExemptedVotersList(_voter, _change);
+    function changeDefaultExemptedVotersList(address _voter, bool _exempt) external withPerm(ADMIN) {
+        _changeDefaultExemptedVotersList(_voter, _exempt);
     }
 
     /**
      * Change the global exempted voters list
      * @param _voters Address of the voter
-     * @param _changes Whether it is exempted or not
+     * @param _exempts Whether it is exempted or not
      */
-    function changeDefaultExemptedVotersListMulti(address[] calldata _voters, bool[] calldata _changes) external withPerm(ADMIN) {
-        require(_voters.length == _changes.length, "Array length mismatch");
+    function changeDefaultExemptedVotersListMulti(address[] calldata _voters, bool[] calldata _exempts) external withPerm(ADMIN) {
+        require(_voters.length == _exempts.length, "Array length mismatch");
         for (uint256 i = 0; i < _voters.length; i++) {
-            _changeDefaultExemptedVotersList(_voters[i], _changes[i]);
+            _changeDefaultExemptedVotersList(_voters[i], _exempts[i]);
         }
     }
 
-    function _changeDefaultExemptedVotersList(address _voter, bool _change) internal {
+    function _changeDefaultExemptedVotersList(address _voter, bool _exempt) internal {
         require(_voter != address(0), "Invalid address");
-        require((defaultExemptIndex[_voter] == 0) == _change);
-        if (_change) {
+        require((defaultExemptIndex[_voter] == 0) == _exempt);
+        if (_exempt) {
             defaultExemptedVoters.push(_voter);
             defaultExemptIndex[_voter] = defaultExemptedVoters.length;
         } else {
@@ -44,7 +44,7 @@ contract VotingCheckpoint is VotingCheckpointStorage, ICheckpoint, IVoting, Modu
             delete defaultExemptIndex[_voter];
             defaultExemptedVoters.length --;
         }
-        emit ChangedDefaultExemptedVotersList(_voter, _change);
+        emit ChangedDefaultExemptedVotersList(_voter, _exempt);
     }
 
     /**

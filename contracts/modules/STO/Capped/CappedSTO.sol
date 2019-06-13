@@ -80,8 +80,7 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
      * @notice Function to set allowBeneficialInvestments (allow beneficiary to be different to funder)
      * @param _allowBeneficialInvestments Boolean to allow or disallow beneficial investments
      */
-    function changeAllowBeneficialInvestments(bool _allowBeneficialInvestments) public {
-        _onlySecurityTokenOwner();
+    function changeAllowBeneficialInvestments(bool _allowBeneficialInvestments) public withPerm(OPERATOR) {
         require(_allowBeneficialInvestments != allowBeneficialInvestments, "Does not change value");
         allowBeneficialInvestments = _allowBeneficialInvestments;
         emit SetAllowBeneficialInvestments(allowBeneficialInvestments);
@@ -134,7 +133,8 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
      * @notice Return the permissions flag that are associated with STO
      */
     function getPermissions() public view returns(bytes32[] memory) {
-        bytes32[] memory allPermissions = new bytes32[](0);
+        bytes32[] memory allPermissions = new bytes32[](1);
+        allPermissions[0] = OPERATOR;
         return allPermissions;
     }
 

@@ -10,7 +10,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
     using SafeMath for uint256;
 
     // Emit when the token holder is added/removed from the exemption list
-    event ChangedExemptWalletList(address indexed _wallet, bool _change);
+    event ChangedExemptWalletList(address indexed _wallet, bool _exempted);
     // Emit when the new individual restriction is added corresponds to new token holders
     event AddIndividualRestriction(
         address indexed _holder,
@@ -186,12 +186,12 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
     /**
      * @notice Add/Remove wallet address from the exempt list
      * @param _wallet Ethereum wallet/contract address that need to be exempted
-     * @param _change Boolean value used to add (i.e true) or remove (i.e false) from the list
+     * @param _exempted Boolean value used to add (i.e true) or remove (i.e false) from the list
      */
-    function changeExemptWalletList(address _wallet, bool _change) public withPerm(ADMIN) {
+    function changeExemptWalletList(address _wallet, bool _exempted) public withPerm(ADMIN) {
         require(_wallet != address(0));
-        require((exemptions.exemptIndex[_wallet] == 0) == _change);
-        if (_change) {
+        require((exemptions.exemptIndex[_wallet] == 0) == _exempted);
+        if (_exempted) {
             exemptions.exemptAddresses.push(_wallet);
             exemptions.exemptIndex[_wallet] = exemptions.exemptAddresses.length;
         } else {
@@ -200,7 +200,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
             delete exemptions.exemptIndex[_wallet];
             exemptions.exemptAddresses.length--;
         }
-        emit ChangedExemptWalletList(_wallet, _change);
+        emit ChangedExemptWalletList(_wallet, _exempted);
     }
 
     /**

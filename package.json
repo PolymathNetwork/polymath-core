@@ -59,6 +59,7 @@
   },
   "homepage": "https://github.com/PolymathNetwork/polymath-core#readme",
   "dependencies": {
+    "dotenv": "^8.0.0",
     "openzeppelin-solidity": "2.2.0",
     "truffle": "^5.0.4",
     "truffle-hdwallet-provider": "^1.0.4",

@@ -246,11 +246,11 @@ contract("ModuleRegistry", async (accounts) => {
                 assert.equal(tx.logs[0].args._owner, account_polymath, "Should be the right owner");
 
                 let _list = await I_MRProxied.getModulesByType(transferManagerKey);
-                assert.equal(_list.length, 1, "Length should be 1");
-                assert.equal(_list[0], I_GeneralTransferManagerFactory.address);
+                assert.equal(_list.length, 0, "Length should be 0 - unverified");
+                // assert.equal(_list[0], I_GeneralTransferManagerFactory.address);
 
                 let _reputation = await I_MRProxied.getFactoryDetails(I_GeneralTransferManagerFactory.address);
-                assert.equal(_reputation[1].length, 0);
+                assert.equal(_reputation[2].length, 0);
             });
 
             it("Should fail the register the module -- Already registered module", async () => {
@@ -258,14 +258,14 @@ contract("ModuleRegistry", async (accounts) => {
             });
 
             it("Should fail in registering the module-- type = 0", async () => {
-                I_MockFactory = await MockFactory.new(new BN(0), new BN(0), one_address, I_PolymathRegistry.address, true, { from: account_polymath });
+                I_MockFactory = await MockFactory.new(new BN(0), one_address, I_PolymathRegistry.address, true, { from: account_polymath });
 
                 catchRevert(I_MRProxied.registerModule(I_MockFactory.address, { from: account_polymath }));
             });
 
             it("Should fail to register the new module because msg.sender is not the owner of the module", async() => {
                 I_CappedSTOLogic = await CappedSTO.new(address_zero, address_zero, { from: account_polymath });
-                I_CappedSTOFactory3 = await CappedSTOFactory.new(new BN(0), new BN(0), I_CappedSTOLogic.address, I_PolymathRegistry.address, true, { from: account_temp });
+                I_CappedSTOFactory3 = await CappedSTOFactory.new(new BN(0), I_CappedSTOLogic.address, I_PolymathRegistry.address, true, { from: account_temp });
                 catchRevert(I_MRProxied.registerModule(I_CappedSTOFactory3.address, { from: token_owner }));
             });
 
@@ -284,11 +284,15 @@ contract("ModuleRegistry", async (accounts) => {
                 let tx = await I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, { from: account_polymath });
                 assert.equal(tx.logs[0].args._moduleFactory, I_GeneralTransferManagerFactory.address, "Failed in verifying the module");
                 let info = await I_MRProxied.getFactoryDetails.call(I_GeneralTransferManagerFactory.address);
+                let _list = await I_MRProxied.getModulesByType(transferManagerKey);
+                assert.equal(_list.length, 1, "Length should be 1");
+                assert.equal(_list[0], I_GeneralTransferManagerFactory.address);
                 assert.equal(info[0], true);
+                assert.equal(info[1], account_polymath);
             });
 
             it("Should successfully verify the module -- false", async () => {
-                I_CappedSTOFactory1 = await CappedSTOFactory.new(new BN(0), new BN(0), I_CappedSTOLogic.address, I_PolymathRegistry.address, true, { from: account_polymath });
+                I_CappedSTOFactory1 = await CappedSTOFactory.new(new BN(0), I_CappedSTOLogic.address, I_PolymathRegistry.address, true, { from: account_polymath });
                 await I_MRProxied.registerModule(I_CappedSTOFactory1.address, { from: account_polymath });
                 let tx = await I_MRProxied.unverifyModule(I_CappedSTOFactory1.address, { from: account_polymath });
                 assert.equal(tx.logs[0].args._moduleFactory, I_CappedSTOFactory1.address, "Failed in verifying the module");
@@ -305,7 +309,7 @@ contract("ModuleRegistry", async (accounts) => {
             it("Deploy the securityToken", async () => {
                 await I_PolyToken.getTokens(new BN(web3.utils.toWei("2000")), account_issuer);
                 await I_PolyToken.approve(I_STRProxied.address, new BN(web3.utils.toWei("2000")), { from: account_issuer });
-                await I_STRProxied.registerTicker(account_issuer, symbol, name, { from: account_issuer });
+                await I_STRProxied.registerNewTicker(account_issuer, symbol, { from: account_issuer });
                 let tx = await I_STRProxied.generateNewSecurityToken(name, symbol, tokenDetails, true, account_issuer, 0, { from: account_issuer });
                 assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase());
                 I_SecurityToken = await SecurityToken.at(tx.logs[1].args._securityTokenAddress);
@@ -322,7 +326,7 @@ contract("ModuleRegistry", async (accounts) => {
             });
 
             it("Should fail to register module because custom modules not allowed", async () => {
-                I_CappedSTOFactory2 = await CappedSTOFactory.new(new BN(0), new BN(0), I_CappedSTOLogic.address, I_PolymathRegistry.address, true, { from: token_owner });
+                I_CappedSTOFactory2 = await CappedSTOFactory.new(new BN(0), I_CappedSTOLogic.address, I_PolymathRegistry.address, true, { from: token_owner });
 
                 assert.notEqual(I_CappedSTOFactory2.address.valueOf(), address_zero, "CappedSTOFactory contract was not deployed");
 
@@ -357,7 +361,7 @@ contract("ModuleRegistry", async (accounts) => {
                     "CappedSTOFactory module was not added"
                 );
                 let _reputation = await I_MRProxied.getFactoryDetails.call(I_CappedSTOFactory2.address);
-                assert.equal(_reputation[1].length, 1);
+                assert.equal(_reputation[2].length, 1);
             });
 
             it("Should successfully add module when custom modules switched on -- fail because factory owner is different", async () => {
@@ -370,7 +374,7 @@ contract("ModuleRegistry", async (accounts) => {
 
             it("Should successfully add verified module", async () => {
                 I_GeneralPermissionManagerLogic = await GeneralPermissionManager.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: account_polymath });
-                I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(new BN(0), new BN(0), I_GeneralPermissionManagerLogic.address, I_PolymathRegistry.address, true, {
+                I_GeneralPermissionManagerFactory = await GeneralPermissionManagerFactory.new(new BN(0), I_GeneralPermissionManagerLogic.address, I_PolymathRegistry.address, true, {
                     from: account_polymath
                 });
                 await I_MRProxied.registerModule(I_GeneralPermissionManagerFactory.address, { from: account_polymath });
@@ -381,7 +385,7 @@ contract("ModuleRegistry", async (accounts) => {
 
             it("Should failed in adding the TestSTOFactory module because not compatible with the current protocol version --lower", async () => {
                 let I_TestSTOFactoryLogic = await DummySTO.new(address_zero, address_zero);
-                I_TestSTOFactory = await TestSTOFactory.new(new BN(0), new BN(0), I_TestSTOFactoryLogic.address, I_PolymathRegistry.address, true, { from: account_polymath });
+                I_TestSTOFactory = await TestSTOFactory.new(new BN(0), I_TestSTOFactoryLogic.address, I_PolymathRegistry.address, true, { from: account_polymath });
                 await I_MRProxied.registerModule(I_TestSTOFactory.address, { from: account_polymath });
                 await I_MRProxied.verifyModule(I_TestSTOFactory.address, { from: account_polymath });
                 // Taking the snapshot the revert the changes from here
@@ -411,7 +415,7 @@ contract("ModuleRegistry", async (accounts) => {
                 let newSymbol = "toro";
                 await I_PolyToken.getTokens(new BN(web3.utils.toWei("2000")), account_issuer);
                 await I_PolyToken.approve(I_STRProxied.address, new BN(web3.utils.toWei("2000")), { from: account_issuer });
-                await I_STRProxied.registerTicker(account_issuer, newSymbol, name, { from: account_issuer });
+                await I_STRProxied.registerNewTicker(account_issuer, newSymbol, { from: account_issuer });
                 let tx = await I_STRProxied.generateNewSecurityToken(name, newSymbol, tokenDetails, true, account_issuer, 0, { from: account_issuer });
                 assert.equal(tx.logs[1].args._ticker, newSymbol.toUpperCase());
                 I_SecurityToken2 = await SecurityToken.at(tx.logs[1].args._securityTokenAddress);
@@ -475,55 +479,52 @@ contract("ModuleRegistry", async (accounts) => {
 
             it("Should successfully remove module and delete data if msg.sender is curator", async () => {
                 let snap = await takeSnapshot();
-
+                console.log("All modules: " + (await I_MRProxied.getModulesByType.call(3)));
                 let sto1 = (await I_MRProxied.getModulesByType.call(3))[0];
-                let sto2 = (await I_MRProxied.getModulesByType.call(3))[1];
-                let sto3 = (await I_MRProxied.getModulesByType.call(3))[2];
-                let sto4 = (await I_MRProxied.getModulesByType.call(3))[3];
+                // let sto2 = (await I_MRProxied.getModulesByType.call(3))[1];
+                // let sto3 = (await I_MRProxied.getModulesByType.call(3))[2];
+                // let sto4 = (await I_MRProxied.getModulesByType.call(3))[3];
 
-                assert.equal(sto1, I_CappedSTOFactory1.address);
-                assert.equal(sto2, I_CappedSTOFactory2.address);
-                assert.equal((await I_MRProxied.getModulesByType.call(3)).length, 4);
+                assert.equal(sto1, I_TestSTOFactory.address);
+                assert.equal((await I_MRProxied.getModulesByType.call(3)).length, 1);
 
-                let tx = await I_MRProxied.removeModule(sto4, { from: account_polymath });
+                let tx = await I_MRProxied.removeModule(sto1, { from: account_polymath });
 
-                assert.equal(tx.logs[0].args._moduleFactory, sto4, "Event is not properly emitted for _moduleFactory");
+                assert.equal(tx.logs[0].args._moduleFactory, sto1, "Event is not properly emitted for _moduleFactory");
                 assert.equal(tx.logs[0].args._decisionMaker, account_polymath, "Event is not properly emitted for _decisionMaker");
 
                 let sto3_end = (await I_MRProxied.getModulesByType.call(3))[2];
 
-                // re-ordering
-                assert.equal(sto3_end, sto3);
                 // delete related data
-                assert.equal(await I_MRProxied.getUintValue.call(web3.utils.soliditySha3("registry", sto4)), 0);
-                assert.equal((await I_MRProxied.getFactoryDetails.call(sto4))[1], 0);
-                assert.equal((await I_MRProxied.getModulesByType.call(3)).length, 3);
-                assert.equal(await I_MRProxied.getBoolValue.call(web3.utils.soliditySha3("verified", sto4)), false);
+                assert.equal(await I_MRProxied.getUintValue.call(web3.utils.soliditySha3("registry", sto1)), 0);
+                assert.equal((await I_MRProxied.getFactoryDetails.call(sto1))[1], 0);
+                assert.equal((await I_MRProxied.getModulesByType.call(3)).length, 0);
+                assert.equal(await I_MRProxied.getBoolValue.call(web3.utils.soliditySha3("verified", sto1)), false);
 
                 await revertToSnapshot(snap);
             });
 
             it("Should successfully remove module and delete data if msg.sender is owner", async () => {
-                let sto1 = (await I_MRProxied.getModulesByType.call(3))[0];
-                let sto2 = (await I_MRProxied.getModulesByType.call(3))[1];
+                let sto1 = (await I_MRProxied.getAllModulesByType.call(3))[0];
+                let sto2 = (await I_MRProxied.getAllModulesByType.call(3))[1];
 
                 assert.equal(sto1, I_CappedSTOFactory1.address);
                 assert.equal(sto2, I_CappedSTOFactory2.address);
-                assert.equal((await I_MRProxied.getModulesByType.call(3)).length, 4);
+                assert.equal((await I_MRProxied.getAllModulesByType.call(3)).length, 4);
 
                 let tx = await I_MRProxied.removeModule(sto2, { from: token_owner });
 
                 assert.equal(tx.logs[0].args._moduleFactory, sto2, "Event is not properly emitted for _moduleFactory");
                 assert.equal(tx.logs[0].args._decisionMaker, token_owner, "Event is not properly emitted for _decisionMaker");
 
-                let sto1_end = (await I_MRProxied.getModulesByType.call(3))[0];
+                let sto1_end = (await I_MRProxied.getAllModulesByType.call(3))[0];
 
                 // re-ordering
                 assert.equal(sto1_end, sto1);
                 // delete related data
                 assert.equal(await I_MRProxied.getUintValue.call(web3.utils.soliditySha3("registry", sto2)), 0);
                 assert.equal((await I_MRProxied.getFactoryDetails.call(sto2))[1], 0);
-                assert.equal((await I_MRProxied.getModulesByType.call(3)).length, 3);
+                assert.equal((await I_MRProxied.getAllModulesByType.call(3)).length, 3);
                 assert.equal(await I_MRProxied.getBoolValue.call(web3.utils.soliditySha3("verified", sto2)), false);
             });
 

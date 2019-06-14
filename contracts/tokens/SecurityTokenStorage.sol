@@ -1,4 +1,10 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
+
+import "../interfaces/IDataStore.sol";
+import "../interfaces/IModuleRegistry.sol";
+import "../interfaces/IPolymathRegistry.sol";
+import "../interfaces/ISecurityTokenRegistry.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
 contract SecurityTokenStorage {
 
@@ -64,13 +70,13 @@ contract SecurityTokenStorage {
     // set by the issuer/owner of the token
     address public controller;
 
-    address public polymathRegistry;
-    address public moduleRegistry;
-    address public securityTokenRegistry;
-    address public polyToken;
+    IPolymathRegistry public polymathRegistry;
+    IModuleRegistry public moduleRegistry;
+    ISecurityTokenRegistry public securityTokenRegistry;
+    IERC20 public polyToken;
     address public getterDelegate;
     // Address of the data store used to store shared data
-    address public dataStore;
+    IDataStore public dataStore;
 
     uint256 public granularity;
 

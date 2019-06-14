@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "../SecurityTokenRegistry.sol";
 
@@ -8,8 +8,15 @@ import "../SecurityTokenRegistry.sol";
 contract SecurityTokenRegistryMock is SecurityTokenRegistry {
     /// @notice It is a dummy function
     /// Alert! Alert! Do NOT use it for the mainnet release
-    function changeTheDeployedAddress(string memory _ticker, address _newSecurityTokenAddress) public {
-        set(Encoder.getKey("tickerToSecurityToken", _ticker), _newSecurityTokenAddress);
+
+    uint256 public someValue;
+
+    function changeTheFee(uint256 _newFee) public {
+        set(STLAUNCHFEE, _newFee);
+    }
+
+    function configure(uint256 _someValue) public {
+        someValue = _someValue;
     }
 
 }

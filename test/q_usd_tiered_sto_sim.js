@@ -252,7 +252,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.getTokens(REGFEE, ISSUER);
             await I_PolyToken.approve(I_STRProxied.address, REGFEE, { from: ISSUER });
-            let tx = await I_STRProxied.registerTicker(ISSUER, SYMBOL, NAME, { from: ISSUER });
+            let tx = await I_STRProxied.registerNewTicker(ISSUER, SYMBOL, { from: ISSUER });
             assert.equal(tx.logs[0].args._owner, ISSUER);
             assert.equal(tx.logs[0].args._ticker, SYMBOL);
         });
@@ -362,7 +362,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
                 _tokensPerTierTotal[stoId].length,
                 "Incorrect number of tiers"
             );
-            assert.equal((await I_USDTieredSTO_Array[stoId].getPermissions()).length, new BN(0), "Incorrect number of permissions");
+            assert.equal((await I_USDTieredSTO_Array[stoId].getPermissions()).length, new BN(2), "Incorrect number of permissions");
         });
 
         it("Should successfully prepare the STO", async () => {

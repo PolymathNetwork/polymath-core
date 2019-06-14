@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "./../../Checkpoint/ICheckpoint.sol";
 import "../../TransferManager/TransferManager.sol";
@@ -154,7 +154,7 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
     function _update(bytes32 _name) internal {
         Schedule storage schedule = schedules[_name];
         if (schedule.nextTime <= now) {
-            uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
+            uint256 checkpointId = securityToken.createCheckpoint();
             schedule.checkpointIds.push(checkpointId);
             schedule.timestamps.push(schedule.nextTime);
             uint256 periods;
@@ -194,7 +194,7 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
             _update(names[i]);
         }
     }
-    
+
     /**
      * @notice Return the permissions flag that are associated with CountTransferManager
      */

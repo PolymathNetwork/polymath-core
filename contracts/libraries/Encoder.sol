@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 library Encoder {
     function getKey(string memory _key) internal pure returns(bytes32) {

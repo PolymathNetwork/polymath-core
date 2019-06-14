@@ -6153,10 +6153,10 @@ truffle-hdwallet-provider@^1.0.4:
     bindings "^1.3.1"
     websocket "^1.0.28"
 
-truffle-plugin-verify@^0.2.1:
-  version "0.2.1"
-  resolved "https://registry.yarnpkg.com/truffle-plugin-verify/-/truffle-plugin-verify-0.2.1.tgz#a8ee015fbf42b6318d253ad739685e7490d828ac"
-  integrity sha512-WhTZEUGmU3TSx8pI3nGfdKV5sLghEe/QGkSKbkZ7tVRdPT4ioBey42PelsIGNer7NvW7zaVrvMdzVesSFTyobA==
+truffle-plugin-verify@^0.2.2:
+  version "0.2.2"
+  resolved "https://registry.yarnpkg.com/truffle-plugin-verify/-/truffle-plugin-verify-0.2.2.tgz#9df10d8fe46f3648660093e2b8e781f20416bc3a"
+  integrity sha512-qs+pn+8fnVqPC96hTmij8fTbb6TP/pcaE7v3PGxRfRtXEvr9MTLf6A11P94PMTUYguj02YRCHIL1LDu78g7T+g==
   dependencies:
     await-sleep "0.0.1"
     axios "^0.18.0"

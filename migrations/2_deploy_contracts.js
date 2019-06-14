@@ -302,7 +302,7 @@ module.exports = function (deployer, network, accounts) {
                     gas: 6500000
                 })
                 .then(() => {
-                    return deployer.deploy(USDTieredSTOFactory, usdTieredSTOSetupCost, new BN(0), USDTieredSTOLogic.address, polymathRegistry, true, {
+                    return deployer.deploy(USDTieredSTOFactory, usdTieredSTOSetupCost, USDTieredSTOLogic.address, polymathRegistry, true, {
                         from: PolymathAccount,
                         gas: 6000000
                     });
@@ -414,7 +414,7 @@ module.exports = function (deployer, network, accounts) {
                     gas: 3500000
                 })
                 .then(() => {
-                    return deployer.deploy(CappedSTOFactory, cappedSTOSetupCost, new BN(0), CappedSTOLogic.address, polymathRegistry, true, {
+                    return deployer.deploy(CappedSTOFactory, cappedSTOSetupCost, CappedSTOLogic.address, polymathRegistry, true, {
                         from: PolymathAccount,
                         gas: 6000000
                     });
@@ -454,7 +454,7 @@ module.exports = function (deployer, network, accounts) {
                     });
                 })
                 .then(() => {
-                    return deployer.deploy(SecurityTokenLogic, "", "", 0, {
+                    return deployer.deploy(SecurityTokenLogic, {
                         from: PolymathAccount,
                         gas: 7000000
                     });
@@ -464,7 +464,7 @@ module.exports = function (deployer, network, accounts) {
             let tokenInitBytesCall = web3.eth.abi.encodeFunctionCall(tokenInitBytes, [STGetter.address]);
             return deployer.deploy(STFactory, polymathRegistry, GeneralTransferManagerFactory.address, DataStoreFactory.address, "3.0.0", SecurityTokenLogic.address, tokenInitBytesCall, {
                 from: PolymathAccount,
-                gas: 4000000
+                gas: 5000000
             });
         })
         .then((factory) => {

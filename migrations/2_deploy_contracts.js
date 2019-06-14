@@ -25,10 +25,8 @@ const MockOracle = artifacts.require("./MockOracle.sol");
 const StableOracle = artifacts.require("./StableOracle.sol");
 const TokenLib = artifacts.require("./TokenLib.sol");
 const SecurityTokenLogic = artifacts.require("./tokens/SecurityToken.sol");
-const MockSecurityTokenLogic = artifacts.require("./tokens/MockSecurityTokenLogic.sol");
 const STRGetter = artifacts.require('./STRGetter.sol');
 const STGetter = artifacts.require('./STGetter.sol');
-const MockSTGetter = artifacts.require('./MockSTGetter.sol');
 const DataStoreLogic = artifacts.require('./DataStore.sol');
 const DataStoreFactory = artifacts.require('./DataStoreFactory.sol');
 const VolumeRestrictionTMFactory = artifacts.require('./VolumeRestrictionTMFactory.sol');
@@ -175,10 +173,8 @@ module.exports = function (deployer, network, accounts) {
             // Link libraries
             deployer.link(VolumeRestrictionLib, VolumeRestrictionTMLogic);
             deployer.link(TokenLib, SecurityTokenLogic);
-            deployer.link(TokenLib, MockSecurityTokenLogic);
             deployer.link(TokenLib, STFactory);
             deployer.link(TokenLib, STGetter);
-            deployer.link(TokenLib, MockSTGetter);
         })
         .then(() => {
             deployer.deploy(STGetter, {

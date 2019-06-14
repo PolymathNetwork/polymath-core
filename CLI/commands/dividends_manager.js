@@ -774,19 +774,10 @@ function showExcluded(excluded) {
 async function initialize(_tokenSymbol) {
   welcome();
   await setup();
-  if (typeof _tokenSymbol === 'undefined') {
-    tokenSymbol = await selectToken();
-  } else {
-    tokenSymbol = _tokenSymbol;
-  }
-  let securityTokenAddress = await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call();
-  if (securityTokenAddress == '0x0000000000000000000000000000000000000000') {
-    console.log(chalk.red(`Selected Security Token ${tokenSymbol} does not exist.`));
+  securityToken = await common.selectToken(securityTokenRegistry, _tokenSymbol);
+  if (securityToken === null) {
     process.exit(0);
   }
-  let iSecurityTokenABI = abis.iSecurityToken();
-  securityToken = new web3.eth.Contract(iSecurityTokenABI, securityTokenAddress);
-  securityToken.setProvider(web3.currentProvider);
 }
 
 function welcome() {
@@ -818,36 +809,6 @@ async function setup() {
     console.log('\x1b[31m%s\x1b[0m', "There was a problem getting the contracts. Make sure they are deployed to the selected network.");
     process.exit(0);
   }
-}
-
-async function selectToken() {
-  let result = null;
-
-  let userTokens = await securityTokenRegistry.methods.getTokensByOwner(Issuer.address).call();
-  let tokenDataArray = await Promise.all(userTokens.map(async function (t) {
-    let tokenData = await securityTokenRegistry.methods.getSecurityTokenData(t).call();
-    return { symbol: tokenData[0], address: t };
-  }));
-  let options = tokenDataArray.map(function (t) {
-    return `${t.symbol} - Deployed at ${t.address} `;
-  });
-  options.push('Enter token symbol manually');
-
-  let index = readlineSync.keyInSelect(options, 'Select a token:', { cancel: 'Exit' });
-  let selected = index != -1 ? options[index] : 'Exit';
-  switch (selected) {
-    case 'Enter token symbol manually':
-      result = readlineSync.question('Enter the token symbol: ');
-      break;
-    case 'Exit':
-      process.exit();
-      break;
-    default:
-      result = tokenDataArray[index].symbol;
-      break;
-  }
-
-  return result;
 }
 
 async function getERC20TokenSymbol(tokenAddress) {

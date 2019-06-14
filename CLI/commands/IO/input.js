@@ -1,3 +1,5 @@
+var readlineSync = require('readline-sync');
+
 function readAddress(message, defaultValue) {
   return readlineSync.question(message, {
     limit: function (input) {

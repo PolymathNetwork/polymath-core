@@ -10,8 +10,6 @@ const input = require('./IO/input');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
 
-const BigNumber = require('bignumber.js');
-
 const ETH = 'ETH';
 const POLY = 'POLY';
 const STABLE = 'STABLE';
@@ -559,14 +557,14 @@ async function investUsdTieredSTO(currency, amount) {
                     raiseTypes.push(stable.symbol)
                 })
             }
-            raiseType = raiseTypes[selectToken('Choose one of the allowed raise types: ')];
+            raiseType = raiseTypes[selectRaiseType('Choose one of the allowed raise types: ')];
         } else {
             if (raiseTypes[0] == STABLE) {
                 raiseTypes.splice(raiseTypes.indexOf(STABLE), 1)
                 stableSymbols.forEach((stable) => {
                     raiseTypes.push(stable.symbol)
                 })
-                raiseType = raiseTypes[selectToken('Choose one of the allowed stable coin(s): ')];
+                raiseType = raiseTypes[selectRaiseType('Choose one of the allowed stable coin(s): ')];
             } else {
                 raiseType = raiseTypes[0];
                 console.log('');
@@ -673,7 +671,7 @@ async function investUsdTieredSTO(currency, amount) {
     await showUserInfoForUSDTieredSTO();
 }
 
-function selectToken(msg) {
+function selectRaiseType(msg) {
     return readlineSync.keyInSelect(raiseTypes, msg, { cancel: false });
 }
 

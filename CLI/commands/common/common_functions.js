@@ -180,6 +180,50 @@ async function checkPermissions(action) {
   return
 }
 
+async function selectToken(securityTokenRegistry, tokenSymbol) {
+  if (typeof tokenSymbol === 'undefined') {
+    const tokensByOwner = await securityTokenRegistry.methods.getTokensByOwner(Issuer.address).call();
+    const tokensByDelegate = await securityTokenRegistry.methods.getTokensByDelegate(Issuer.address).call();
+    const userTokens = tokensByOwner.concat(tokensByDelegate);
+    const tokenDataArray = await Promise.all(userTokens.map(async function (t) {
+      const tokenData = await securityTokenRegistry.methods.getSecurityTokenData(t).call();
+      return { symbol: tokenData[0], address: t };
+    }));
+    const options = tokenDataArray.map(function (t) {
+      return `${t.symbol} - Deployed at ${t.address}`;
+    });
+    options.push('Enter token symbol manually');
+
+    const index = readlineSync.keyInSelect(options, 'Select a token:', { cancel: 'Exit' });
+    const selected = index !== -1 ? options[index] : 'Exit';
+    switch (selected) {
+      case 'Enter token symbol manually':
+        tokenSymbol = input.readStringNonEmpty('Enter the token symbol: ');
+        break;
+      case 'Exit':
+        tokenSymbol = '';
+        break;
+      default:
+        tokenSymbol = tokenDataArray[index].symbol;
+        break;
+    }
+  }
+
+  let securityToken = null;
+  if (tokenSymbol !== '') {
+    const securityTokenAddress = await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call();
+    if (securityTokenAddress === '0x0000000000000000000000000000000000000000') {
+      console.log(chalk.red(`Selected Security Token ${tokenSymbol} does not exist.`));
+    } else {
+      const iSecurityTokenABI = abis.iSecurityToken();
+      securityToken = new web3.eth.Contract(iSecurityTokenABI, securityTokenAddress);
+      securityToken.setProvider(web3.currentProvider);
+    }
+  }
+
+  return securityToken;
+}
+
 async function sendTransaction(action, options) {
   await checkPermissions(action);
 
@@ -297,5 +341,6 @@ module.exports = {
   queryModifyWhiteList,
   addModule,
   getAvailableModules,
-  getAllModulesByType
+  getAllModulesByType,
+  selectToken
 };

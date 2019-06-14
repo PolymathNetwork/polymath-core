@@ -146,7 +146,7 @@ async function step_token_deploy (_name, _details, _divisible) {
     divisibility = (divisible !== 'N' && divisible !== 'n');
   }
 
-  let treasuryWallet = input.readAddress('Enter the treasury address for the token (' + Issuer.address + '): ', ssuer.address);
+  let treasuryWallet = input.readAddress('Enter the treasury address for the token (' + Issuer.address + '): ', Issuer.address);
   await approvePoly(securityTokenRegistryAddress, polyFee);
   let generateSecurityTokenAction = securityTokenRegistry.methods.generateNewSecurityToken(tokenName, tokenSymbol, tokenDetails, divisibility, treasuryWallet, 0);
   let receipt = await common.sendTransaction(generateSecurityTokenAction);

@@ -24,7 +24,7 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
         uint256 _commitDuration,
         uint256 _revealDuration,
         uint256 _noOfProposals,
-        uint256 _proposedQuorum
+        uint256 _quorumPercentage
     );
     event BallotStatusChanged(uint256 indexed _ballotId, bool _newStatus);
     event ChangedBallotExemptedVotersList(uint256 indexed _ballotId, address indexed _voter, bool _exempt);
@@ -41,20 +41,20 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
      * @param _commitDuration Unix time period till the voters commit there vote
      * @param _revealDuration Unix time period till the voters reveal there vote starts when commit duration ends
      * @param _noOfProposals Total number of proposal used in the ballot. In general it is 2 (For & Against)
-     * @param _proposedQuorum Minimum number of weight vote requires to win a election.
+     * @param _quorumPercentage Minimum number of weight vote percentage requires to win a election.
      */
     function createBallot(
         uint256 _commitDuration,
         uint256 _revealDuration,
         uint256 _noOfProposals,
-        uint256 _proposedQuorum
-    )
+        uint256 _quorumPercentage
+    )   
         external
         withPerm(ADMIN)
     {
         uint256 startTime = now;
         uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
-        _createBallotWithCheckpoint(_commitDuration, _revealDuration, _noOfProposals, _proposedQuorum, checkpointId, startTime);
+        _createBallotWithCheckpoint(_commitDuration, _revealDuration, _noOfProposals, _quorumPercentage, checkpointId, startTime);
     }
 
     /**
@@ -62,7 +62,7 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
      * @param _commitDuration Unix time period till the voters commit there vote
      * @param _revealDuration Unix time period till the voters reveal there vote starts when commit duration ends
      * @param _noOfProposals Total number of proposal used in the ballot. In general it is 2 (For & Against)
-     * @param _proposedQuorum Minimum number of weight vote requires to win a election.
+     * @param _quorumPercentage Minimum number of weight vote percentage requires to win a election.
      * @param _checkpointId Valid checkpoint Id
      * @param _startTime startTime of the ballot
      */
@@ -70,56 +70,56 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
         uint256 _commitDuration,
         uint256 _revealDuration,
         uint256 _noOfProposals,
-        uint256 _proposedQuorum,
+        uint256 _quorumPercentage,
         uint256 _checkpointId,
         uint256 _startTime
     )
         external
         withPerm(ADMIN)
     {
+        // validate the checkpointId, It should be less than or equal to the current checkpointId of the securityToken
         require(_checkpointId <= ISecurityToken(securityToken).currentCheckpointId(), "Invalid checkpoint Id");
-        _createBallotWithCheckpoint(_commitDuration, _revealDuration, _noOfProposals, _proposedQuorum, _checkpointId, _startTime);
+        _createBallotWithCheckpoint(_commitDuration, _revealDuration, _noOfProposals, _quorumPercentage, _checkpointId, _startTime);
     }
 
     function _createBallotWithCheckpoint(
         uint256 _commitDuration,
         uint256 _revealDuration,
-        uint256 _totalProposals,
-        uint256 _proposedQuorum,
+        uint256 _noOfProposals,
+        uint256 _quorumPercentage,
         uint256 _checkpointId,
         uint256 _startTime
     )
         internal
     {
         // Sanity checks
-        _validValueCheck(_commitDuration);
-        _validValueCheck(_revealDuration);
-        _validValueCheck(_proposedQuorum);
-        require(_proposedQuorum <= 100 * 10 ** 16, "Invalid quorum percentage"); // not more than 100 %
+        _isGreaterThanZero(_commitDuration);
+        _isGreaterThanZero(_revealDuration);
+        _isGreaterThanZero(_quorumPercentage);
+        require(_quorumPercentage <= 100 * 10 ** 16, "Invalid quorum percentage"); // not more than 100 %
         // Overflow check
         require(
             uint64(_commitDuration) == _commitDuration &&
             uint64(_revealDuration) == _revealDuration &&
             uint64(_startTime) == _startTime &&
-            uint24(_totalProposals) == _totalProposals,
+            uint24(_noOfProposals) == _noOfProposals,
             "Parameter values get overflowed"
         );
         require(_startTime >= now, "Invalid start time");
-        // Total no of proposals always greater than 2 it means minimum valid
-        // proposal id will be 0 or 1. Proposal Id should be start from 0 instead of 1.
-        require(_totalProposals > 1, "Invalid number of totalProposals");
+        // Valid proposal Id range should be 1 to `_noOfProposals`.
+        require(_noOfProposals > 1, "Invalid number of proposals");
         uint256 _ballotId = ballots.length;
         ballots.push(Ballot(
             _checkpointId,
-            _proposedQuorum,
+            _quorumPercentage,
             uint64(_commitDuration),
             uint64(_revealDuration),
             uint64(_startTime),
-            uint24(_totalProposals),
+            uint24(_noOfProposals),
             uint32(0),
             true
         ));
-        emit BallotCreated(_ballotId, _checkpointId, _startTime, _commitDuration, _revealDuration, _totalProposals, _proposedQuorum);
+        emit BallotCreated(_ballotId, _checkpointId, _startTime, _commitDuration, _revealDuration, _noOfProposals, _quorumPercentage);
     }
 
     /**
@@ -128,15 +128,21 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
      * @param _secretVote It is secret hash value (hashed offchain)
      */
     function commitVote(uint256 _ballotId, bytes32 _secretVote) external {
-        _validBallotId(_ballotId);
+        // Check for the ballots array out of bound
+        _checkIndexOutOfBound(_ballotId);
+        require(_secretVote != bytes32(0), "Invalid vote");
+        // Check for the valid stage. Whether that ballot is in the COMMIT state or not.
+        _checkValidStage(_ballotId, Stage.COMMIT);
+        // Check whether the msg.sender is allowed to vote for a given ballotId or not. 
         require(isVoterAllowed(_ballotId, msg.sender), "Invalid voter");
-        require(getCurrentBallotStage(_ballotId) == Stage.COMMIT, "Not in commit stage");
+        // validate the storage values
         Ballot storage ballot = ballots[_ballotId];
         require(ballot.investorToProposal[msg.sender].secretVote == bytes32(0), "Already voted");
-        require(_secretVote != bytes32(0), "Invalid vote");
         require(ballot.isActive, "Inactive ballot");
+        // Get the balance of the voter (i.e `msg.sender`) at the checkpoint on which ballot was created.
         uint256 weight = ISecurityToken(securityToken).balanceOfAt(msg.sender, ballot.checkpointId);
         require(weight > 0, "Zero weight is not allowed");
+        // Update the storage value. Assigned `0` as vote option it will be updated when voter reveals its vote.
         ballot.investorToProposal[msg.sender] = Vote(0, _secretVote);
         emit VoteCommit(msg.sender, weight, _ballotId, _secretVote);
     }
@@ -144,24 +150,29 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
     /**
      * @notice Used to reveal the vote
      * @param _ballotId Given ballot Id
-     * @param _choiceOfProposal Proposal chossed by the voter. It varies from (0 to totalProposals - 1)
+     * @param _choiceOfProposal Proposal chossed by the voter. It varies from (1 to totalProposals)
      * @param _salt used salt for hashing (unique for each user)
      */
     function revealVote(uint256 _ballotId, uint256 _choiceOfProposal, uint256 _salt) external {
-        _validBallotId(_ballotId);
-        require(getCurrentBallotStage(_ballotId) == Stage.REVEAL, "Not in reveal stage");
+        // Check for the ballots array out of bound
+        _checkIndexOutOfBound(_ballotId);
+        // Check for the valid stage. Whether that ballot is in the REVEAL state or not.
+        _checkValidStage(_ballotId, Stage.REVEAL);
         Ballot storage ballot = ballots[_ballotId];
+        // validate the storage values 
         require(ballot.isActive, "Inactive ballot");
         require(ballot.investorToProposal[msg.sender].secretVote != bytes32(0), "Secret vote not available");
-        require(_choiceOfProposal < ballot.totalProposals && _choiceOfProposal >= 1, "Invalid proposal choice");
+        require(ballot.totalProposals >= _choiceOfProposal && _choiceOfProposal > 0, "Invalid proposal choice");
 
         // validate the secret vote
         require(
             bytes32(keccak256(abi.encodePacked(_choiceOfProposal, _salt))) == ballot.investorToProposal[msg.sender].secretVote,
             "Invalid vote"
         );
+        // Get the balance of the voter (i.e `msg.sender`) at the checkpoint on which ballot was created.
         uint256 weight = ISecurityToken(securityToken).balanceOfAt(msg.sender, ballot.checkpointId);
         bytes32 secretVote = ballot.investorToProposal[msg.sender].secretVote;
+        // update the storage values
         ballot.proposalToVotes[_choiceOfProposal] = ballot.proposalToVotes[_choiceOfProposal].add(weight);
         ballot.totalVoters = ballot.totalVoters + 1;
         ballot.investorToProposal[msg.sender] = Vote(_choiceOfProposal, bytes32(0));
@@ -192,8 +203,9 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
     }
 
     function _changeBallotExemptedVotersList(uint256 _ballotId, address _voter, bool _exempt) internal {
+        // Check for the ballots array out of bound
+        _checkIndexOutOfBound(_ballotId);
         require(_voter != address(0), "Invalid address");
-        _validBallotId(_ballotId);
         require(ballots[_ballotId].exemptedVoters[_voter] != _exempt, "No change");
         ballots[_ballotId].exemptedVoters[_voter] = _exempt;
         emit ChangedBallotExemptedVotersList(_ballotId, _voter, _exempt);
@@ -216,7 +228,8 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
      * @param _isActive The bool value of the active stats of the ballot
      */
     function changeBallotStatus(uint256 _ballotId, bool _isActive) external withPerm(ADMIN) {
-        _validBallotId(_ballotId);
+        // Check for the ballots array out of bound
+        _checkIndexOutOfBound(_ballotId);
         require(
             now <= uint256(ballots[_ballotId].startTime)
             .add(uint256(ballots[_ballotId].commitDuration)
@@ -239,7 +252,7 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
 
         if (now < ballot.startTime)
             return Stage.PREP;
-        else if (now <= commitTimeEnd && now >= ballot.startTime)
+        else if (now >= ballot.startTime && now <= commitTimeEnd) 
             return Stage.COMMIT;
         else if ( now > commitTimeEnd && now <= revealTimeEnd)
             return Stage.REVEAL;
@@ -367,12 +380,16 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
         return allPermissions;
     }
 
-    function _validValueCheck(uint256 _value) internal pure {
+    function _isGreaterThanZero(uint256 _value) internal pure {
         require(_value > 0, "Invalid value");
     }
 
-    function _validBallotId(uint256 _ballotId) internal view {
+    function _checkIndexOutOfBound(uint256 _ballotId) internal view {
         require(ballots.length > _ballotId, "Index out of bound");
+    }
+
+    function _checkValidStage(uint256 _ballotId, Stage _stage) internal view {
+        require(getCurrentBallotStage(_ballotId) == _stage, "Not in a valid stage");
     }
 
 }

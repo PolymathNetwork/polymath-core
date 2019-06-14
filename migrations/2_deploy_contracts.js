@@ -177,6 +177,14 @@ module.exports = function (deployer, network, accounts) {
             deployer.link(TokenLib, STGetter);
         })
         .then(() => {
+            deployer.deploy(
+                StableOracle,
+                POLYOracle,
+                new BN(10).mul(new BN(10).pow(new BN(16))), {
+                    from: PolymathAccount,
+                    gas: 5000000
+                }
+            );
             deployer.deploy(STGetter, {
                 from: PolymathAccount,
                 gas: 5000000
@@ -198,7 +206,7 @@ module.exports = function (deployer, network, accounts) {
                     gas: 6000000
                 })
                 .then(() => {
-                    return deployer.deploy(GeneralPermissionManagerFactory, new BN(0), new BN(0), GeneralPermissionManagerLogic.address, polymathRegistry, true, {
+                    return deployer.deploy(GeneralPermissionManagerFactory, new BN(0), GeneralPermissionManagerLogic.address, polymathRegistry, true, {
                         from: PolymathAccount,
                         gas: 6000000
                     });
@@ -214,7 +222,7 @@ module.exports = function (deployer, network, accounts) {
                     gas: 2000000
                 })
                 .then(() => {
-                    return deployer.deploy(CountTransferManagerFactory, new BN(0), new BN(0), CountTransferManagerLogic.address, polymathRegistry, true, {
+                    return deployer.deploy(CountTransferManagerFactory, new BN(0), CountTransferManagerLogic.address, polymathRegistry, true, {
                         from: PolymathAccount,
                         gas: 6000000
                     });
@@ -230,7 +238,7 @@ module.exports = function (deployer, network, accounts) {
                     gas: 4500000
                 })
                 .then(() => {
-                    return deployer.deploy(ManualApprovalTransferManagerFactory, new BN(0), new BN(0), ManualApprovalTransferManagerLogic.address, polymathRegistry, true, {
+                    return deployer.deploy(ManualApprovalTransferManagerFactory, new BN(0), ManualApprovalTransferManagerLogic.address, polymathRegistry, true, {
                         from: PolymathAccount,
                         gas: 6000000
                     });
@@ -246,7 +254,7 @@ module.exports = function (deployer, network, accounts) {
                     gas: 2500000
                 })
                 .then(() => {
-                    return deployer.deploy(PercentageTransferManagerFactory, new BN(0), new BN(0), PercentageTransferManagerLogic.address, polymathRegistry, true, {
+                    return deployer.deploy(PercentageTransferManagerFactory, new BN(0), PercentageTransferManagerLogic.address, polymathRegistry, true, {
                         from: PolymathAccount,
                         gas: 6000000
                     });
@@ -262,7 +270,7 @@ module.exports = function (deployer, network, accounts) {
                     gas: 6000000
                 })
                 .then(() => {
-                    return deployer.deploy(ERC20DividendCheckpointFactory, new BN(0), new BN(0), ERC20DividendCheckpointLogic.address, polymathRegistry, true, {
+                    return deployer.deploy(ERC20DividendCheckpointFactory, new BN(0), ERC20DividendCheckpointLogic.address, polymathRegistry, true, {
                         from: PolymathAccount,
                         gas: 6000000
                     });
@@ -278,7 +286,7 @@ module.exports = function (deployer, network, accounts) {
                     gas: 6000000
                 })
                 .then(() => {
-                    return deployer.deploy(EtherDividendCheckpointFactory, new BN(0), new BN(0), EtherDividendCheckpointLogic.address, polymathRegistry, true, {
+                    return deployer.deploy(EtherDividendCheckpointFactory, new BN(0), EtherDividendCheckpointLogic.address, polymathRegistry, true, {
                         from: PolymathAccount,
                         gas: 6000000
                     });
@@ -310,7 +318,7 @@ module.exports = function (deployer, network, accounts) {
                     gas: 6500000
                 })
                 .then(() => {
-                    return deployer.deploy(VolumeRestrictionTMFactory, new BN(0), new BN(0), VolumeRestrictionTMLogic.address, polymathRegistry, true, {
+                    return deployer.deploy(VolumeRestrictionTMFactory, new BN(0), VolumeRestrictionTMLogic.address, polymathRegistry, true, {
                         from: PolymathAccount,
                         gas: 6000000
                     });
@@ -326,7 +334,7 @@ module.exports = function (deployer, network, accounts) {
                     gas: 4000000
                 })
                 .then(() => {
-                    return deployer.deploy(PLCRVotingCheckpointFactory, new BN(0), new BN(0), PLCRVotingCheckpointLogic.address, polymathRegistry, true, {
+                    return deployer.deploy(PLCRVotingCheckpointFactory, new BN(0), PLCRVotingCheckpointLogic.address, polymathRegistry, true, {
                         from: PolymathAccount,
                         gas: 6000000
                     });
@@ -342,7 +350,7 @@ module.exports = function (deployer, network, accounts) {
                     gas: 3500000
                 })
                 .then(() => {
-                    return deployer.deploy(WeightedVoteCheckpointFactory, new BN(0), new BN(0), WeightedVoteCheckpointLogic.address, polymathRegistry, true, {
+                    return deployer.deploy(WeightedVoteCheckpointFactory, new BN(0), WeightedVoteCheckpointLogic.address, polymathRegistry, true, {
                         from: PolymathAccount,
                         gas: 6000000
                     });
@@ -358,7 +366,7 @@ module.exports = function (deployer, network, accounts) {
                     gas: 4000000
                 })
                 .then(() => {
-                    return deployer.deploy(BlacklistTransferManagerFactory, new BN(0), new BN(0), BlacklistTransferManagerLogic.address, polymathRegistry, true, {
+                    return deployer.deploy(BlacklistTransferManagerFactory, new BN(0), BlacklistTransferManagerLogic.address, polymathRegistry, true, {
                         from: PolymathAccount,
                         gas: 6000000
                     });
@@ -374,7 +382,7 @@ module.exports = function (deployer, network, accounts) {
                     gas: 4500000
                 })
                 .then(() => {
-                    return deployer.deploy(LockUpTransferManagerFactory, new BN(0), new BN(0), LockUpTransferManagerLogic.address, polymathRegistry, true, {
+                    return deployer.deploy(LockUpTransferManagerFactory, new BN(0), LockUpTransferManagerLogic.address, polymathRegistry, true, {
                         from: PolymathAccount,
                         gas: 6000000
                     });
@@ -390,7 +398,7 @@ module.exports = function (deployer, network, accounts) {
                     gas: 5500000
                 })
                 .then(() => {
-                    return deployer.deploy(VestingEscrowWalletFactory, new BN(0), new BN(0), VestingEscrowWalletLogic.address, polymathRegistry, true, {
+                    return deployer.deploy(VestingEscrowWalletFactory, new BN(0), VestingEscrowWalletLogic.address, polymathRegistry, true, {
                         from: PolymathAccount,
                         gas: 6000000
                     });
@@ -422,13 +430,12 @@ module.exports = function (deployer, network, accounts) {
                     gas: 6000000
                 })
                 .then(() => {
-                    return deployer.deploy(GeneralTransferManagerFactory, new BN(0), new BN(0), GeneralTransferManagerLogic.address, polymathRegistry, true, {
+                    return deployer.deploy(GeneralTransferManagerFactory, new BN(0), GeneralTransferManagerLogic.address, polymathRegistry, true, {
                         from: PolymathAccount,
                         gas: 6000000
                     })
                 })
                 .then((factory) => {
-                    //console.log(factory);
                     factory.transferOwnership(actualOwner, {
                         from: PolymathAccount,
                         gas: 1500000
@@ -541,6 +548,7 @@ module.exports = function (deployer, network, accounts) {
     ModuleRegistry:                       ${ModuleRegistry.address}
     STRGetter:                            ${STRGetter.address}
     STFactory:                            ${STFactory.address}
+    StableOracle (Poly):                  ${StableOracle.address}
 
     GeneralPermissionManagerLogic:        ${GeneralPermissionManagerLogic.address}
     GeneralPermissionManagerFactory:      ${GeneralPermissionManagerFactory.address}

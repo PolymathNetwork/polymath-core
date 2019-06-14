@@ -1,6 +1,6 @@
 require('babel-register');
 require('babel-polyfill');
-require('dotenv').config()
+require('dotenv').config();
 const NonceTrackerSubprovider = require("web3-provider-engine/subproviders/nonce-tracker")
 
 const HDWalletProvider = require("truffle-hdwallet-provider");

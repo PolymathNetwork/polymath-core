@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 interface ICheckPermission {
     /**
@@ -10,5 +10,5 @@ interface ICheckPermission {
      * @param _perm the permissions
      * @return success
      */
-    function checkPermission(address _delegate, address _module, bytes32 _perm) external view returns(bool);
+    function checkPermission(address _delegate, address _module, bytes32 _perm) external view returns(bool hasPerm);
 }

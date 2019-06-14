@@ -16,6 +16,10 @@ const Web3 = require("web3");
 let BN = Web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
+const SUCCESS_CODE = 0x51;
+const FAILURE_CODE = 0x50;
+
+
 contract("ManualApprovalTransferManager", accounts => {
     // Accounts Variable declaration
     let account_polymath;
@@ -396,18 +400,20 @@ contract("ManualApprovalTransferManager", accounts => {
                     from: account_investor1
                 }
             );
-            console.log(JSON.stringify(verified[0]));
-            assert.equal(verified[0], true);
+            // console.log(JSON.stringify(verified[0]));
+            assert.equal(verified[0], SUCCESS_CODE);
 
             verified = await I_SecurityToken.canTransfer.call(account_investor4, web3.utils.toWei("4", "ether"), "0x0", {
                 from: account_investor1
             });
-            assert.equal(verified[0], false);
+            // console.log(JSON.stringify(verified[0]));
+            assert.equal(verified[0], FAILURE_CODE);
 
             verified = await I_SecurityToken.canTransfer.call(account_investor4, web3.utils.toWei("1", "ether"), "0x0", {
                 from: account_investor1
             });
-            assert.equal(verified[0], true);
+            // console.log(JSON.stringify(verified[0]));
+            assert.equal(verified[0], SUCCESS_CODE);
         });
 
         it("Should fail to sell the tokens more than the allowance", async() => {

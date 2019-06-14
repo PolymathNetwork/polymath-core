@@ -911,11 +911,10 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @param _to address The address which you want to transfer to
      * @param _value uint256 the amount of tokens to be transferred
      * @param _data The `bytes _data` allows arbitrary data to be submitted alongside the transfer.
-     * @return bool It signifies whether the transaction will be executed or not.
      * @return byte Ethereum status code (ESC)
      * @return bytes32 Application specific reason code
      */
-    function canTransfer(address _to, uint256 _value, bytes calldata _data) external view returns (bool, byte, bytes32) {
+    function canTransfer(address _to, uint256 _value, bytes calldata _data) external view returns (byte, bytes32) {
         return _canTransfer(msg.sender, _to, _value, _data);
     }
 
@@ -927,22 +926,21 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      * @param _to address The address which you want to transfer to
      * @param _value uint256 the amount of tokens to be transferred
      * @param _data The `bytes _data` allows arbitrary data to be submitted alongside the transfer.
-     * @return bool It signifies whether the transaction will be executed or not.
      * @return byte Ethereum status code (ESC)
      * @return bytes32 Application specific reason code
      */
-    function canTransferFrom(address _from, address _to, uint256 _value, bytes calldata _data) external view returns (bool success, byte reasonCode, bytes32 appCode) {
-        (success, reasonCode, appCode) = _canTransfer(_from, _to, _value, _data);
-        if (success && _value > allowance(_from, msg.sender)) {
-            return (false, StatusCodes.code(StatusCodes.Status.InsufficientAllowance), bytes32(0));
+    function canTransferFrom(address _from, address _to, uint256 _value, bytes calldata _data) external view returns (byte reasonCode, bytes32 appCode) {
+        (reasonCode, appCode) = _canTransfer(_from, _to, _value, _data);
+        if (isSuccess(reasonCode) && _value > allowance(_from, msg.sender)) {
+            return (StatusCodes.code(StatusCodes.Status.InsufficientAllowance), bytes32(0));
         }
     }
 
-    function _canTransfer(address _from, address _to, uint256 _value, bytes memory _data) internal view returns (bool, byte, bytes32) {
+    function _canTransfer(address _from, address _to, uint256 _value, bytes memory _data) internal view returns (byte, bytes32) {
         bytes32 appCode;
         bool success;
         if (_value % granularity != 0) {
-            return (false, StatusCodes.code(StatusCodes.Status.TransferFailure), bytes32(0));
+            return (StatusCodes.code(StatusCodes.Status.TransferFailure), bytes32(0));
         }
         (success, appCode) = TokenLib.verifyTransfer(modules[TRANSFER_KEY], modulesToData, _from, _to, _value, _data, transfersFrozen);
         return TokenLib.canTransfer(success, appCode, _to, _value, balanceOf(_from));
@@ -969,17 +967,16 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     )
         external
         view
-        returns (byte esc, bytes32 appStatusCode, bytes32 toPartition)
+        returns (byte reasonCode, bytes32 appStatusCode, bytes32 toPartition)
     {
         if (_partition == UNLOCKED) {
-            bool success;
-            (success, esc, appStatusCode) = _canTransfer(_from, _to, _value, _data);
-            if (success) {
+            (reasonCode, appStatusCode) = _canTransfer(_from, _to, _value, _data);
+            if (isSuccess(reasonCode)) {
                 uint256 beforeBalance = _balanceOfByPartition(LOCKED, _to, 0);
                 uint256 afterbalance = _balanceOfByPartition(LOCKED, _to, _value);
                 toPartition = _returnPartition(beforeBalance, afterbalance, _value);
             }
-            return (esc, appStatusCode, toPartition);
+            return (reasonCode, appStatusCode, toPartition);
         }
         return (StatusCodes.code(StatusCodes.Status.TransferFailure), bytes32(0), bytes32(0));
     }
@@ -1099,5 +1096,14 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
         require(newOwner != address(0));
         emit OwnershipTransferred(_owner, newOwner);
         _owner = newOwner;
+    }
+
+    /**
+    * @dev Check if a status code represents success (ie: 0x*1)
+    * @param status Binary ERC-1066 status code
+    * @return successful A boolean representing if the status code represents success
+    */
+    function isSuccess(byte status) public pure returns (bool successful) {
+        return (status & 0x0F) == 0x01;
     }
 }

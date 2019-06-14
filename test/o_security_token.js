@@ -525,6 +525,7 @@ contract("SecurityToken", async (accounts) => {
             let tx = await I_SecurityToken.removeModule(I_GeneralTransferManager.address, { from: token_owner });
             assert.equal(tx.logs[0].args._types[0], transferManagerKey);
             assert.equal(tx.logs[0].args._module, I_GeneralTransferManager.address);
+
             await revertToSnapshot(key);
         });
 
@@ -666,8 +667,7 @@ contract("SecurityToken", async (accounts) => {
         it("Should Fail in transferring the token from one whitelist investor 1 to non whitelist investor 2", async () => {
             let _canTransfer = await I_SecurityToken.canTransfer.call(account_investor2, new BN(10).mul(new BN(10).pow(new BN(18))), "0x0", {from: account_investor1});
 
-            assert.isFalse(_canTransfer[0]);
-            assert.equal(_canTransfer[1], 0x50);
+            assert.equal(_canTransfer[0], 0x50);
 
             await catchRevert(I_SecurityToken.transfer(account_investor2, new BN(10).mul(new BN(10).pow(new BN(18))), { from: account_investor1 }));
         });

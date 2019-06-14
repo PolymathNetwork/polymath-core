@@ -7,7 +7,7 @@
     "stable_coin": "scripts/stable_coin.sh"
   },
   "author": "Polymath Inc",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "dependencies": {
     "bignumber.js": "^8.1.1",
     "chalk": "^2.4.1",

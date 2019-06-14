@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "./ReclaimTokens.sol";
 import "./interfaces/IFeatureRegistry.sol";
@@ -8,8 +8,6 @@ import "./interfaces/IFeatureRegistry.sol";
  */
 contract FeatureRegistry is IFeatureRegistry, ReclaimTokens {
     mapping(bytes32 => bool) public featureStatus;
-
-    event ChangeFeatureStatus(string _nameKey, bool _newStatus);
 
     /**
      * @notice Get the status of a feature

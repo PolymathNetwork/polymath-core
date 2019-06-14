@@ -1,9 +1,7 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "../../modules/UpgradableModuleFactory.sol";
-import "../../libraries/Util.sol";
 import "./DummySTOProxy.sol";
-import "../../interfaces/IBoot.sol";
 
 /**
  * @title Factory for deploying DummySTO module
@@ -13,20 +11,18 @@ contract DummySTOFactory is UpgradableModuleFactory {
     /**
      * @notice Constructor
      * @param _setupCost Setup cost of the module
-     * @param _usageCost Usage cost of the module
-     * @param _logicContract Contract address that contains the logic related to `description`
+      * @param _logicContract Contract address that contains the logic related to `description`
      * @param _polymathRegistry Address of the Polymath registry
      * @param _isCostInPoly true = cost in Poly, false = USD
      */
     constructor (
         uint256 _setupCost,
-        uint256 _usageCost,
         address _logicContract,
         address _polymathRegistry,
         bool _isCostInPoly
     )
         public
-        UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry, _isCostInPoly)
+        UpgradableModuleFactory("3.0.0", _setupCost, _logicContract, _polymathRegistry, _isCostInPoly)
     {
         name = "DummySTO";
         title = "Dummy STO";
@@ -45,7 +41,7 @@ contract DummySTOFactory is UpgradableModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes calldata _data) external returns(address) {
-        address dummySTO = address(new DummySTOProxy(logicContracts[latestUpgrade].version, msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"), logicContracts[latestUpgrade].logicContract));
+        address dummySTO = address(new DummySTOProxy(logicContracts[latestUpgrade].version, msg.sender, polymathRegistry.getAddress("PolyToken"), logicContracts[latestUpgrade].logicContract));
         _initializeModule(dummySTO, _data);
         return dummySTO;
     }

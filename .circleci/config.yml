@@ -69,6 +69,21 @@ jobs:
           key: dependency-cache-{{ checksum "package.json" }}
           paths:
             - node_modules
+  st-storage-layout-check:
+    docker:
+      - image: maxsam4/solidity-kit
+    steps:
+      - checkout
+      - restore_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+      - run: yarn install
+      - run: node --version
+      - run: truffle version
+      - run: npm run st-storage-layout-check
+      - save_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+          paths:
+            - node_modules
   docs:
     docker:
       - image: maxsam4/solidity-kit
@@ -90,6 +105,7 @@ workflows:
     jobs:
       - coverage
       - clash-check
+      - st-storage-layout-check
   daily-builds:
     triggers:
       - schedule:

@@ -4,10 +4,10 @@
   "description": "CLI for Polymath-core",
   "main": "polymath-cli.js",
   "scripts": {
-    "stable_coin": "scripts/stable_coin.sh" 
+    "stable_coin": "scripts/stable_coin.sh"
   },
   "author": "Polymath Inc",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "dependencies": {
     "chalk": "^2.4.1",
     "commander": "^2.16.0",

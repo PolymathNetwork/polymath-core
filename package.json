@@ -53,12 +53,13 @@
     "ST20"
   ],
   "author": "Polymath Inc",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/PolymathNetwork/polymath-core/issues"
   },
   "homepage": "https://github.com/PolymathNetwork/polymath-core#readme",
   "dependencies": {
+    "openzeppelin-solidity": "2.2.0",
     "truffle": "^5.0.4",
     "truffle-hdwallet-provider": "^1.0.4",
     "web3-provider-engine": "^14.1.0"
@@ -83,7 +84,6 @@
     "fs": "0.0.2",
     "ganache-cli": "6.1.8",
     "mocha-junit-reporter": "^1.18.0",
-    "openzeppelin-solidity": "2.2.0",
     "prettier": "^1.15.3",
     "request": "^2.88.0",
     "request-promise": "^4.2.2",

@@ -166,7 +166,7 @@ module.exports = function (deployer, network, accounts) {
         .then(() => {
             return deployer.deploy(VolumeRestrictionLib, {
                 from: PolymathAccount,
-                gas: 3500000
+                gas: 2500000
             });
         })
         .then(() => {
@@ -243,7 +243,7 @@ module.exports = function (deployer, network, accounts) {
                 })
             deployer.deploy(PercentageTransferManagerLogic, nullAddress, nullAddress, {
                     from: PolymathAccount,
-                    gas: 3000000
+                    gas: 2500000
                 })
                 .then(() => {
                     return deployer.deploy(PercentageTransferManagerFactory, new BN(0), new BN(0), PercentageTransferManagerLogic.address, polymathRegistry, true, {
@@ -323,7 +323,7 @@ module.exports = function (deployer, network, accounts) {
                 })
             deployer.deploy(PLCRVotingCheckpointLogic, nullAddress, nullAddress, {
                     from: PolymathAccount,
-                    gas: 4500000
+                    gas: 4000000
                 })
                 .then(() => {
                     return deployer.deploy(PLCRVotingCheckpointFactory, new BN(0), new BN(0), PLCRVotingCheckpointLogic.address, polymathRegistry, true, {
@@ -355,7 +355,7 @@ module.exports = function (deployer, network, accounts) {
                 })
             deployer.deploy(BlacklistTransferManagerLogic, nullAddress, nullAddress, {
                     from: PolymathAccount,
-                    gas: 4500000
+                    gas: 4000000
                 })
                 .then(() => {
                     return deployer.deploy(BlacklistTransferManagerFactory, new BN(0), new BN(0), BlacklistTransferManagerLogic.address, polymathRegistry, true, {
@@ -387,7 +387,7 @@ module.exports = function (deployer, network, accounts) {
                 })
             deployer.deploy(VestingEscrowWalletLogic, nullAddress, nullAddress, {
                     from: PolymathAccount,
-                    gas: 6500000
+                    gas: 5500000
                 })
                 .then(() => {
                     return deployer.deploy(VestingEscrowWalletFactory, new BN(0), new BN(0), VestingEscrowWalletLogic.address, polymathRegistry, true, {
@@ -403,7 +403,7 @@ module.exports = function (deployer, network, accounts) {
                 })
             deployer.deploy(CappedSTOLogic, nullAddress, nullAddress, {
                     from: PolymathAccount,
-                    gas: 4500000
+                    gas: 3500000
                 })
                 .then(() => {
                     return deployer.deploy(CappedSTOFactory, cappedSTOSetupCost, new BN(0), CappedSTOLogic.address, polymathRegistry, true, {
@@ -419,7 +419,7 @@ module.exports = function (deployer, network, accounts) {
                 })
             return deployer.deploy(GeneralTransferManagerLogic, nullAddress, nullAddress, {
                     from: PolymathAccount,
-                    gas: 6500000
+                    gas: 6000000
                 })
                 .then(() => {
                     return deployer.deploy(GeneralTransferManagerFactory, new BN(0), new BN(0), GeneralTransferManagerLogic.address, polymathRegistry, true, {
@@ -437,7 +437,7 @@ module.exports = function (deployer, network, accounts) {
                 .then(() => {
                     return deployer.deploy(DataStoreLogic, {
                         from: PolymathAccount,
-                        gas: 6000000
+                        gas: 4000000
                     })
                 })
                 .then(() => {
@@ -449,7 +449,7 @@ module.exports = function (deployer, network, accounts) {
                 .then(() => {
                     return deployer.deploy(SecurityTokenLogic, "", "", 0, {
                         from: PolymathAccount,
-                        gas: 7500000
+                        gas: 7000000
                     });
                 });
         })
@@ -469,7 +469,7 @@ module.exports = function (deployer, network, accounts) {
         .then(() => {
             deployer.deploy(GeneralTransferManagerProxy, "3.0.0", PolyToken, PolyToken, PolyToken, {
                 from: PolymathAccount,
-                gas: 1500000
+                gas: 2500000
             }); // Only for etherscan verification, ownership does not matter
             deployer.deploy(GeneralPermissionManagerProxy, "3.0.0", PolyToken, PolyToken, PolyToken, {
                 from: PolymathAccount,
@@ -501,7 +501,7 @@ module.exports = function (deployer, network, accounts) {
             }); // Only for etherscan verification, ownership does not matter
             deployer.deploy(USDTieredSTOProxy, "3.0.0", PolyToken, PolyToken, PolyToken, {
                 from: PolymathAccount,
-                gas: 1500000
+                gas: 4000000
             }); // Only for etherscan verification, ownership does not matter
             deployer.deploy(DataStoreProxy, PolyToken, PolyToken, {
                 from: PolymathAccount,

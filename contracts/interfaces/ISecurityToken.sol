@@ -4,65 +4,6 @@ pragma solidity 0.5.8;
  * @title Interface for all security tokens
  */
 interface ISecurityToken {
-
-    // Emit at the time when module get added
-    event ModuleAdded(
-        uint8[] _types,
-        bytes32 indexed _name,
-        address indexed _moduleFactory,
-        address _module,
-        uint256 _moduleCost,
-        uint256 _budget,
-        bytes32 _label,
-        bool _archived
-    );
-
-    // Emit when the token details get updated
-    event UpdateTokenDetails(string _oldDetails, string _newDetails);
-    // Emit when the token name get updated
-    event UpdateTokenName(string _oldName, string _newName);
-    // Emit when the granularity get changed
-    event GranularityChanged(uint256 _oldGranularity, uint256 _newGranularity);
-    // Emit when is permanently frozen by the issuer
-    event FreezeIssuance();
-    // Emit when transfers are frozen or unfrozen
-    event FreezeTransfers(bool _status);
-    // Emit when new checkpoint created
-    event CheckpointCreated(uint256 indexed _checkpointId, uint256 _investorLength);
-    // Events to log controller actions
-    event SetController(address indexed _oldController, address indexed _newController);
-    //Event emit when the global treasury wallet address get changed
-    event TreasuryWalletChanged(address _oldTreasuryWallet, address _newTreasuryWallet);
-    event DisableController();
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-    event TokenUpgraded(uint8 _major, uint8 _minor, uint8 _patch);
-
-    // Emit when Module get archived from the securityToken
-    event ModuleArchived(uint8[] _types, address _module); //Event emitted by the tokenLib.
-    // Emit when Module get unarchived from the securityToken
-    event ModuleUnarchived(uint8[] _types, address _module); //Event emitted by the tokenLib.
-    // Emit when Module get removed from the securityToken
-    event ModuleRemoved(uint8[] _types, address _module); //Event emitted by the tokenLib.
-    // Emit when the budget allocated to a module is changed
-    event ModuleBudgetChanged(uint8[] _moduleTypes, address _module, uint256 _oldBudget, uint256 _budget); //Event emitted by the tokenLib.
-
-    // Standard ERC1644 Controller Events
-    event ControllerTransfer(
-        address _controller,
-        address indexed _from,
-        address indexed _to,
-        uint256 _value,
-        bytes _data,
-        bytes _operatorData
-    );
-    event ControllerRedemption(
-        address _controller,
-        address indexed _tokenHolder,
-        uint256 _value,
-        bytes _data,
-        bytes _operatorData
-    );
-
     // Standard ERC20 interface
     function symbol() external view returns (string memory);
     function name() external view returns (string memory);
@@ -691,42 +632,6 @@ interface ISecurityToken {
       * @return uint256
       */
     function granularity() external view returns(uint256 granularityAmount);
-
-    /**
-      * @notice Gets the token owner
-      * @return address
-      */
-    function _owner() external view returns(address);
-
-    /**
-      * @notice Gets the token name
-      * @return string
-      */
-    function name() external view returns(string memory);
-
-    /**
-      * @notice Gets the token symbol
-      * @return string
-      */
-    function symbol() external view returns(string memory);
-
-    /**
-      * @notice Gets the token controller
-      * @return address
-      */
-    function controller() external view returns(address);
-
-    /**
-      * @notice Gets the token details
-      * @return string
-      */
-    function tokenDetails() external view returns(string memory);
-
-    /**
-      * @notice Checks if controler has been permanently disabled
-      * @return bool
-      */
-    function controllerDisabled() external view returns(bool);
 
     /**
       * @notice Provides the address of the polymathRegistry

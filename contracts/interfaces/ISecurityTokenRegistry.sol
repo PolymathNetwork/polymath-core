@@ -140,23 +140,6 @@ interface ISecurityTokenRegistry {
         external returns (address securityToken);
 
     /**
-     * @notice Deploys an instance of a new Security Token and replaces the old one in the registry
-     * This can be used to upgrade from version 2.0 of ST to 3.0 or in case something goes wrong with earlier ST
-     * @dev This function needs to be in STR 3.0. Defined public to avoid stack overflow
-     * @param _name is the name of the token
-     * @param _ticker is the ticker symbol of the security token
-     * @param _tokenDetails is the off-chain details of the token
-     * @param _divisible is whether or not the token is divisible
-     */
-    function refreshSecurityToken(
-        string calldata _name,
-        string calldata _ticker,
-        string calldata _tokenDetails,
-        bool _divisible,
-        address _treasuryWallet
-    ) external;
-
-    /**
      * @notice Adds a new custom Security Token and saves it to the registry. (Token should follow the ISecurityToken interface)
      * @param _name Name of the token
      * @param _ticker Ticker of the security token
@@ -243,16 +226,6 @@ interface ISecurityTokenRegistry {
     function transferOwnership(address _newOwner) external;
 
     /**
-    * @notice Called by the owner to pause, triggers stopped state
-    */
-    function pause() external;
-
-    /**
-    * @notice Called by the owner to unpause, returns to normal state
-    */
-    function unpause() external;
-
-    /**
      * @notice Get security token address by ticker name
      * @param _ticker Symbol of the Scurity token
      * @return address
@@ -287,13 +260,7 @@ interface ISecurityTokenRegistry {
     function getSTFactoryAddressOfVersion(uint256 _protocolVersion) external view returns(address stFactory);
 
     /**
-     * @notice Returns the STFactory Address of a particular version
-     * @param _protocolVersion Packed protocol version
-     */
-    function getSTFactoryAddressOfVersion(uint256 _protocolVersion) external view returns(address);
-
-    /**
-     * @notice Gets Protocol version
+     * @notice Get Protocol version
      */
     function getLatestProtocolVersion() external view returns(uint8[] memory protocolVersion);
 
@@ -449,12 +416,6 @@ interface ISecurityTokenRegistry {
      * @param _feeType Key corresponding to fee type
      */
     function getFees(bytes32 _feeType) external returns (uint256 usdFee, uint256 polyFee);
-
-    /**
-     * @notice Set the getter contract address
-     * @param _getterContract Address of the contract
-     */
-    function setGetterRegistry(address _getterContract) external;
 
     /**
      * @notice Returns the list of tokens to which the delegate has some access

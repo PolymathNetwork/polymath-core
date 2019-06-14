@@ -53,7 +53,7 @@
     "ST20"
   ],
   "author": "Polymath Inc",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/PolymathNetwork/polymath-core/issues"
   },

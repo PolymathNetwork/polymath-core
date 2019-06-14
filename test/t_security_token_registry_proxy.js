@@ -274,9 +274,11 @@ contract("SecurityTokenRegistryProxy", async (accounts) => {
         });
 
         it("Should alter the old storage", async () => {
-            await I_STRProxied.changeTheDeployedAddress(symbol, account_temp, { from: account_polymath });
-            let _tokenAddress = await I_Getter.getSecurityTokenAddress.call(symbol);
-            assert.equal(_tokenAddress, account_temp, "Should match with the changed address");
+            await I_STRProxied.changeTheFee(0, { from: account_polymath });
+            let feesToken = await I_STRProxied.getFees.call("0xd677304bb45536bb7fdfa6b9e47a3c58fe413f9e8f01474b0a4b9c6e0275baf2");
+            console.log(feesToken);
+            // assert.equal(feesToken[0].toString(), origPriceUSD.toString());
+            // assert.equal(feesToken[1].toString(), origPricePOLY.toString());
         });
     });
 

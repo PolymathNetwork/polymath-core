@@ -25,8 +25,8 @@ contract LockUpTransferManager is ITransferManager {
     // get list of the addresses for a particular lockupName
     mapping (bytes32 => address[]) internal lockupToUsers;
     // holds lockup index corresponds to user address. userAddress => lockupName => lockupIndex
-    mapping (address => mapping(bytes32 => uint256)) internal userToLockupIndex; 
-    // holds the user address index corresponds to the lockup. lockupName => userAddress => userIndex 
+    mapping (address => mapping(bytes32 => uint256)) internal userToLockupIndex;
+    // holds the user address index corresponds to the lockup. lockupName => userAddress => userIndex
     mapping (bytes32 => mapping(address => uint256)) internal lockupToUserIndex;
 
     bytes32[] lockupArray;
@@ -76,7 +76,7 @@ contract LockUpTransferManager is ITransferManager {
      */
     function verifyTransfer(address  _from, address /* _to*/, uint256  _amount, bytes /* _data */, bool /*_isTransfer*/) public returns(Result) {
         // only attempt to verify the transfer if the token is unpaused, this isn't a mint txn, and there exists a lockup for this user
-        if (!paused && _from != address(0) && userToLockups[_from].length != 0) {  
+        if (!paused && _from != address(0) && userToLockups[_from].length != 0) {
             // check if this transfer is valid
             return _checkIfValidTransfer(_from, _amount);
         }
@@ -98,8 +98,8 @@ contract LockUpTransferManager is ITransferManager {
         uint256 _releaseFrequencySeconds,
         bytes32 _lockupName
     )
-        public
-        withPerm(ADMIN) 
+        external
+        withPerm(ADMIN)
     {
         _addNewLockUpType(
             _lockupAmount,
@@ -124,7 +124,7 @@ contract LockUpTransferManager is ITransferManager {
         uint256[] _lockUpPeriodsSeconds,
         uint256[] _releaseFrequenciesSeconds,
         bytes32[] _lockupNames
-    )  
+    )
         public
         withPerm(ADMIN)
     {
@@ -133,7 +133,7 @@ contract LockUpTransferManager is ITransferManager {
             _lockupNames.length == _releaseFrequenciesSeconds.length && /*solium-disable-line operator-whitespace*/
             _lockupNames.length == _startTimes.length && /*solium-disable-line operator-whitespace*/
             _lockupNames.length == _lockupAmounts.length,
-            "Input array length mismatch"
+            "Length mismatch"
         );
         for (uint256 i = 0; i < _lockupNames.length; i++) {
             _addNewLockUpType(
@@ -144,7 +144,7 @@ contract LockUpTransferManager is ITransferManager {
                 _lockupNames[i]
             );
         }
-    } 
+    }
 
     /**
      * @notice Add the lockup to a user
@@ -155,16 +155,16 @@ contract LockUpTransferManager is ITransferManager {
         address _userAddress,
         bytes32 _lockupName
     )
-        public
+        external
         withPerm(ADMIN)
     {
         _addLockUpByName(_userAddress, _lockupName);
     }
 
     /**
-     * @notice Add the lockup to a user
-     * @param _userAddresses Address of the user
-     * @param _lockupNames Name of the lockup
+     * @notice Add lockups to users
+     * @param _userAddresses Array of addresses of the users
+     * @param _lockupNames Array of names of the lockups
      */
     function addLockUpByNameMulti(
         address[] _userAddresses,
@@ -195,10 +195,10 @@ contract LockUpTransferManager is ITransferManager {
         uint256 _lockUpPeriodSeconds,
         uint256 _releaseFrequencySeconds,
         bytes32 _lockupName
-    ) 
-        external 
+    )
+        external
         withPerm(ADMIN)
-    {   
+    {
        _addNewLockUpToUser(
             _userAddress,
             _lockupAmount,
@@ -206,7 +206,7 @@ contract LockUpTransferManager is ITransferManager {
             _lockUpPeriodSeconds,
             _releaseFrequencySeconds,
             _lockupName
-        ); 
+        );
     }
 
     /**
@@ -225,7 +225,7 @@ contract LockUpTransferManager is ITransferManager {
         uint256[] _lockUpPeriodsSeconds,
         uint256[] _releaseFrequenciesSeconds,
         bytes32[] _lockupNames
-    ) 
+    )
         public
         withPerm(ADMIN)
     {
@@ -235,7 +235,7 @@ contract LockUpTransferManager is ITransferManager {
             _userAddresses.length == _startTimes.length && /*solium-disable-line operator-whitespace*/
             _userAddresses.length == _lockupAmounts.length &&
             _userAddresses.length == _lockupNames.length,
-            "Input array length mismatch"
+            "Length mismatch"
         );
         for (uint256 i = 0; i < _userAddresses.length; i++) {
             _addNewLockUpToUser(_userAddresses[i], _lockupAmounts[i], _startTimes[i], _lockUpPeriodsSeconds[i], _releaseFrequenciesSeconds[i], _lockupNames[i]);
@@ -272,10 +272,10 @@ contract LockUpTransferManager is ITransferManager {
     /**
      * @notice Use to remove the lockup for multiple users
      * @param _userAddresses Array of addresses of the user whose tokens are locked up
-     * @param _lockupNames Array of the names of the lockup that needs to be removed. 
+     * @param _lockupNames Array of the names of the lockup that needs to be removed.
      */
     function removeLockUpFromUserMulti(address[] _userAddresses, bytes32[] _lockupNames) external withPerm(ADMIN) {
-        require(_userAddresses.length == _lockupNames.length, "Array length mismatch");
+        require(_userAddresses.length == _lockupNames.length, "Length mismatch");
         for (uint256 i = 0; i < _userAddresses.length; i++) {
             _removeLockUpFromUser(_userAddresses[i], _lockupNames[i]);
         }
@@ -295,9 +295,9 @@ contract LockUpTransferManager is ITransferManager {
         uint256 _lockUpPeriodSeconds,
         uint256 _releaseFrequencySeconds,
         bytes32 _lockupName
-    ) 
-        external 
-        withPerm(ADMIN) 
+    )
+        external
+        withPerm(ADMIN)
     {
         _modifyLockUpType(
             _lockupAmount,
@@ -314,7 +314,7 @@ contract LockUpTransferManager is ITransferManager {
      * @param _startTimes Array of the start time of the lockups (seconds)
      * @param _lockUpPeriodsSeconds Array of unix timestamp for the list of lockups (seconds).
      * @param _releaseFrequenciesSeconds How often to release a tranche of tokens (seconds)
-     * @param _lockupNames Array of the lockup names that needs to be modified 
+     * @param _lockupNames Array of the lockup names that needs to be modified
      */
     function modifyLockUpTypeMulti(
         uint256[] _lockupAmounts,
@@ -322,8 +322,8 @@ contract LockUpTransferManager is ITransferManager {
         uint256[] _lockUpPeriodsSeconds,
         uint256[] _releaseFrequenciesSeconds,
         bytes32[] _lockupNames
-    ) 
-        public 
+    )
+        public
         withPerm(ADMIN)
     {
         require(
@@ -331,7 +331,7 @@ contract LockUpTransferManager is ITransferManager {
             _lockupNames.length == _releaseFrequenciesSeconds.length && /*solium-disable-line operator-whitespace*/
             _lockupNames.length == _startTimes.length && /*solium-disable-line operator-whitespace*/
             _lockupNames.length == _lockupAmounts.length,
-            "Input array length mismatch"
+            "Length mismatch"
         );
         for (uint256 i = 0; i < _lockupNames.length; i++) {
             _modifyLockUpType(
@@ -367,10 +367,35 @@ contract LockUpTransferManager is ITransferManager {
         return (uint256(0), uint256(0), uint256(0), uint256(0), uint256(0));
     }
 
+    /**
+     * @notice Return the data of the lockups
+     */
+    function getAllLockupData() external view returns(
+        bytes32[] memory lockupNames,
+        uint256[] memory lockupAmounts,
+        uint256[] memory startTimes,
+        uint256[] memory lockUpPeriodSeconds,
+        uint256[] memory releaseFrequencySeconds,
+        uint256[] memory unlockedAmounts
+    )
+    {
+        uint256 length = lockupArray.length;
+        lockupAmounts = new uint256[](length);
+        startTimes = new uint256[](length);
+        lockUpPeriodSeconds = new uint256[](length);
+        releaseFrequencySeconds = new uint256[](length);
+        unlockedAmounts = new uint256[](length);
+        lockupNames = new bytes32[](length);
+        for (uint256 i = 0; i < length; i++) {
+            (lockupAmounts[i], startTimes[i], lockUpPeriodSeconds[i], releaseFrequencySeconds[i], unlockedAmounts[i]) = getLockUp(lockupArray[i]);
+            lockupNames[i] = lockupArray[i];
+        }
+    }
+
    /**
     * @notice get the list of the users of a lockup type
     * @param _lockupName Name of the lockup type
-    * @return address List of users associated with the blacklist
+    * @return address List of users associated with the given lockup name
     */
     function getListOfAddresses(bytes32 _lockupName) external view returns(address[]) {
         require(lockups[_lockupName].startTime != 0, "Blacklist type doesn't exist");
@@ -383,36 +408,6 @@ contract LockUpTransferManager is ITransferManager {
      */
     function getAllLockups() external view returns(bytes32[]) {
         return lockupArray;
-    }
-
-    /**
-     * @notice Return the data of the lockups
-     */
-    function getAllLockupData() external view returns(
-        bytes32[] memory,
-        uint256[] memory,
-        uint256[] memory,
-        uint256[] memory,
-        uint256[] memory,
-        uint256[] memory
-    ) 
-    {   
-        uint256[] memory lockupAmounts = new uint256[](lockupArray.length);
-        uint256[] memory startTimes = new uint256[](lockupArray.length);
-        uint256[] memory lockUpPeriodSeconds = new uint256[](lockupArray.length);
-        uint256[] memory releaseFrequencySeconds = new uint256[](lockupArray.length);
-        uint256[] memory unlockedAmounts = new uint256[](lockupArray.length);
-        for (uint256 i = 0; i < lockupArray.length; i++) {
-            (lockupAmounts[i], startTimes[i], lockUpPeriodSeconds[i], releaseFrequencySeconds[i], unlockedAmounts[i]) = getLockUp(lockupArray[i]);
-        }
-        return (
-            lockupArray,
-            lockupAmounts,
-            startTimes,
-            lockUpPeriodSeconds,
-            releaseFrequencySeconds,
-            unlockedAmounts
-        );
     }
 
     /**
@@ -433,7 +428,6 @@ contract LockUpTransferManager is ITransferManager {
         require(_userAddress != address(0), "Invalid address");
         bytes32[] memory userLockupNames = userToLockups[_userAddress];
         uint256 totalRemainingLockedAmount = 0;
-
         for (uint256 i = 0; i < userLockupNames.length; i++) {
             // Find out the remaining locked amount for a given lockup
             uint256 remainingLockedAmount = lockups[userLockupNames[i]].lockupAmount.sub(_getUnlockedAmountForLockup(userLockupNames[i]));
@@ -468,7 +462,7 @@ contract LockUpTransferManager is ITransferManager {
         } else if (lockups[_lockupName].startTime.add(lockups[_lockupName].lockUpPeriodSeconds) <= now) {
             return lockups[_lockupName].lockupAmount;
         } else {
-            // Calculate the no. of periods for a lockup 
+            // Calculate the no. of periods for a lockup
             uint256 noOfPeriods = (lockups[_lockupName].lockUpPeriodSeconds).div(lockups[_lockupName].releaseFrequencySeconds);
             // Calculate the transaction time lies in which period
             /*solium-disable-next-line security/no-block-members*/
@@ -476,13 +470,13 @@ contract LockUpTransferManager is ITransferManager {
             // Find out the unlocked amount for a given lockup
             uint256 unLockedAmount = (lockups[_lockupName].lockupAmount.mul(elapsedPeriod)).div(noOfPeriods);
             return unLockedAmount;
-        } 
+        }
     }
 
     function _removeLockupType(bytes32 _lockupName) internal {
         require(lockups[_lockupName].startTime != 0, "Lockup type doesn’t exist");
-        require(lockupToUsers[_lockupName].length == 0, "Users are associated with the lockup");
-        // delete lockup type 
+        require(lockupToUsers[_lockupName].length == 0, "Users attached to lockup");
+        // delete lockup type
         delete(lockups[_lockupName]);
         uint256 i = 0;
         for (i = 0; i < lockupArray.length; i++) {
@@ -507,12 +501,10 @@ contract LockUpTransferManager is ITransferManager {
         internal
     {
         /*solium-disable-next-line security/no-block-members*/
-        uint256 startTime = _startTime;
-
         if (_startTime == 0) {
-            startTime = now;
+            _startTime = now;
         }
-        require(startTime >= now, "Invalid start time");
+        require(_startTime >= now, "Invalid start time");
         require(lockups[_lockupName].lockupAmount != 0, "Doesn't exist");
 
         _checkLockUpParams(
@@ -523,14 +515,14 @@ contract LockUpTransferManager is ITransferManager {
 
         lockups[_lockupName] =  LockUp(
             _lockupAmount,
-            startTime,
+            _startTime,
             _lockUpPeriodSeconds,
             _releaseFrequencySeconds
         );
-        
+
         emit ModifyLockUpType(
             _lockupAmount,
-            startTime,
+            _startTime,
             _lockUpPeriodSeconds,
             _releaseFrequencySeconds,
             _lockupName
@@ -542,13 +534,13 @@ contract LockUpTransferManager is ITransferManager {
         require(_lockupName != bytes32(0), "Invalid lockup name");
         require(
             userToLockups[_userAddress][userToLockupIndex[_userAddress][_lockupName]] == _lockupName,
-            "User not assosicated with given lockup"
+            "User not in lockup"
         );
 
         // delete the user from the lockup type
         uint256 _lockupIndex = lockupToUserIndex[_lockupName][_userAddress];
         uint256 _len = lockupToUsers[_lockupName].length;
-        if ( _lockupIndex != _len) {
+        if ( _lockupIndex != _len - 1) {
             lockupToUsers[_lockupName][_lockupIndex] = lockupToUsers[_lockupName][_len - 1];
             lockupToUserIndex[_lockupName][lockupToUsers[_lockupName][_lockupIndex]] = _lockupIndex;
         }
@@ -558,7 +550,7 @@ contract LockUpTransferManager is ITransferManager {
         // delete the lockup from the user
         uint256 _userIndex = userToLockupIndex[_userAddress][_lockupName];
         _len = userToLockups[_userAddress].length;
-        if ( _userIndex != _len) {
+        if ( _userIndex != _len - 1) {
             userToLockups[_userAddress][_userIndex] = userToLockups[_userAddress][_len - 1];
             userToLockupIndex[_userAddress][userToLockups[_userAddress][_userIndex]] = _userIndex;
         }
@@ -575,9 +567,9 @@ contract LockUpTransferManager is ITransferManager {
         uint256 _lockUpPeriodSeconds,
         uint256 _releaseFrequencySeconds,
         bytes32 _lockupName
-    ) 
-        internal 
-    {   
+    )
+        internal
+    {
         require(_userAddress != address(0), "Invalid address");
         _addNewLockUpType(
             _lockupAmount,
@@ -597,7 +589,7 @@ contract LockUpTransferManager is ITransferManager {
     {
         require(_userAddress != address(0), "Invalid address");
         require(lockups[_lockupName].startTime >= now, "Lockup expired");
-        if (userToLockups[_userAddress].length > 0) {
+        if(userToLockups[_userAddress].length > 0) {
             require(
                 userToLockups[_userAddress][userToLockupIndex[_userAddress][_lockupName]] != _lockupName,
                 "User already in lockup"
@@ -617,21 +609,20 @@ contract LockUpTransferManager is ITransferManager {
         uint256 _releaseFrequencySeconds,
         bytes32 _lockupName
     )
-        internal 
+        internal
     {
-        uint256 startTime = _startTime;
+      /*solium-disable-next-line security/no-block-members*/
+      if (_startTime == 0) {
+          _startTime = now;
+      }
         require(_lockupName != bytes32(0), "Invalid name");
         require(lockups[_lockupName].lockupAmount == 0, "Already exist");
-        /*solium-disable-next-line security/no-block-members*/
-        if (_startTime == 0) {
-            startTime = now;
-        }
-        require(startTime >= now, "Invalid start time");
+        require(_startTime >= now, "Invalid start time");
         _checkLockUpParams(_lockupAmount, _lockUpPeriodSeconds, _releaseFrequencySeconds);
-        lockups[_lockupName] = LockUp(_lockupAmount, startTime, _lockUpPeriodSeconds, _releaseFrequencySeconds);
+        lockups[_lockupName] = LockUp(_lockupAmount, _startTime, _lockUpPeriodSeconds, _releaseFrequencySeconds);
         lockupArray.push(_lockupName);
-        emit AddNewLockUpType(_lockupName, _lockupAmount, startTime, _lockUpPeriodSeconds, _releaseFrequencySeconds);
-    }  
+        emit AddNewLockUpType(_lockupName, _lockupAmount, _startTime, _lockUpPeriodSeconds, _releaseFrequencySeconds);
+    }
 
     /**
      * @notice Parameter checking function for creating or editing a lockup.
@@ -644,13 +635,16 @@ contract LockUpTransferManager is ITransferManager {
         uint256 _lockupAmount,
         uint256 _lockUpPeriodSeconds,
         uint256 _releaseFrequencySeconds
-    ) 
-        internal 
-        pure 
-    {   
-        require(_lockUpPeriodSeconds != 0, "lockUpPeriodSeconds cannot be zero");
-        require(_releaseFrequencySeconds != 0, "releaseFrequencySeconds cannot be zero");
-        require(_lockupAmount != 0, "lockupAmount cannot be zero");
+    )
+        internal
+        pure
+    {
+      require(
+          _lockUpPeriodSeconds != 0 &&
+          _releaseFrequencySeconds != 0 &&
+          _lockupAmount != 0,
+          "Cannot be zero"
+      );
     }
 
     /**

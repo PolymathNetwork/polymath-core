@@ -59,7 +59,7 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
      * @notice This function returns the signature of the configure function
      */
     function getInitFunction() public pure returns (bytes4) {
-        return bytes4(keccak256("configure(address)"));
+        return this.configure.selector;
     }
 
     /**
@@ -122,7 +122,7 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
     /**
      * @notice Used to withdraw available tokens by beneficiary
      */
-    function pullAvailableTokens() external {
+    function pullAvailableTokens() external whenNotPaused {
         _sendTokens(msg.sender);
     }
 
@@ -260,7 +260,7 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
      * @param _templateName Name of the template was used for schedule creation
      * @param _startTime Start time of the created vesting schedule
      */
-    function modifySchedule(address _beneficiary, bytes32 _templateName, uint256 _startTime) public withPerm(ADMIN) {
+    function modifySchedule(address _beneficiary, bytes32 _templateName, uint256 _startTime) external withPerm(ADMIN) {
         _modifySchedule(_beneficiary, _templateName, _startTime);
     }
 
@@ -420,7 +420,7 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
      * @param _toIndex End index of array of beneficiary's addresses
      */
     function pushAvailableTokensMulti(uint256 _fromIndex, uint256 _toIndex) external withPerm(ADMIN) {
-        require(_toIndex <= beneficiaries.length - 1, "Array out of bound");
+        require(_toIndex < beneficiaries.length, "Array out of bound");
         for (uint256 i = _fromIndex; i <= _toIndex; i++) {
             if (schedules[beneficiaries[i]].length !=0)
                 pushAvailableTokens(beneficiaries[i]);

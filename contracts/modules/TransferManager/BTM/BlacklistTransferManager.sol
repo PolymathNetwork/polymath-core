@@ -369,6 +369,7 @@ contract BlacklistTransferManager is BlacklistTransferManagerStorage, TransferMa
     */
     function _deleteInvestorFromAllBlacklist(address _investor) internal {
         require(_investor != address(0), "Invalid investor address");
+        require(investorToBlacklist[_investor].length >= 1, "Investor is not present in the blacklist");
         uint256 index = investorToBlacklist[_investor].length - 1;
         for (uint256 i = index; i >= 0 && i <= index; i--) {
             _deleteInvestorFromBlacklist(_investor, investorToBlacklist[_investor][i]);

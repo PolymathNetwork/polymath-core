@@ -11,6 +11,7 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
     using SafeMath for uint256;
 
     bytes32 public constant ADMIN = "ADMIN";
+    bytes32 public constant OPERATOR = "OPERATOR";
 
     // States used to represent the status of the schedule
     enum State {CREATED, STARTED, COMPLETED}
@@ -59,7 +60,7 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
      * @notice This function returns the signature of the configure function
      */
     function getInitFunction() public pure returns (bytes4) {
-        return bytes4(keccak256("configure(address)"));
+        return this.configure.selector;
     }
 
     /**
@@ -103,7 +104,7 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
      * @notice Sends unassigned tokens to the treasury wallet
      * @param _amount Amount of tokens that should be send to the treasury wallet
      */
-    function sendToTreasury(uint256 _amount) public withPerm(ADMIN) {
+    function sendToTreasury(uint256 _amount) public withPerm(OPERATOR) {
         require(_amount > 0, "Amount cannot be zero");
         require(_amount <= unassignedTokens, "Amount is greater than unassigned tokens");
         unassignedTokens = unassignedTokens - _amount;
@@ -115,14 +116,14 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
      * @notice Pushes available tokens to the beneficiary's address
      * @param _beneficiary Address of the beneficiary who will receive tokens
      */
-    function pushAvailableTokens(address _beneficiary) public withPerm(ADMIN) {
+    function pushAvailableTokens(address _beneficiary) public withPerm(OPERATOR) {
         _sendTokens(_beneficiary);
     }
 
     /**
      * @notice Used to withdraw available tokens by beneficiary
      */
-    function pullAvailableTokens() external {
+    function pullAvailableTokens() external whenNotPaused {
         _sendTokens(msg.sender);
     }
 
@@ -260,7 +261,7 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
      * @param _templateName Name of the template was used for schedule creation
      * @param _startTime Start time of the created vesting schedule
      */
-    function modifySchedule(address _beneficiary, bytes32 _templateName, uint256 _startTime) public withPerm(ADMIN) {
+    function modifySchedule(address _beneficiary, bytes32 _templateName, uint256 _startTime) external withPerm(ADMIN) {
         _modifySchedule(_beneficiary, _templateName, _startTime);
     }
 
@@ -419,8 +420,8 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
      * @param _fromIndex Start index of array of beneficiary's addresses
      * @param _toIndex End index of array of beneficiary's addresses
      */
-    function pushAvailableTokensMulti(uint256 _fromIndex, uint256 _toIndex) external withPerm(ADMIN) {
-        require(_toIndex <= beneficiaries.length - 1, "Array out of bound");
+    function pushAvailableTokensMulti(uint256 _fromIndex, uint256 _toIndex) external withPerm(OPERATOR) {
+        require(_toIndex < beneficiaries.length, "Array out of bound");
         for (uint256 i = _fromIndex; i <= _toIndex; i++) {
             if (schedules[beneficiaries[i]].length !=0)
                 pushAvailableTokens(beneficiaries[i]);
@@ -549,8 +550,9 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, IWallet {
      * @notice Return the permissions flag that are associated with VestingEscrowWallet
      */
     function getPermissions() public view returns(bytes32[]) {
-        bytes32[] memory allPermissions = new bytes32[](1);
+        bytes32[] memory allPermissions = new bytes32[](2);
         allPermissions[0] = ADMIN;
+        allPermissions[1] = OPERATOR;
         return allPermissions;
     }
 

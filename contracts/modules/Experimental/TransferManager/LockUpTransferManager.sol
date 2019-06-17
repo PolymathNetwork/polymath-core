@@ -504,7 +504,7 @@ contract LockUpTransferManager is ITransferManager {
         if (_startTime == 0) {
             _startTime = now;
         }
-        require(startTime >= now, "Invalid start time");
+        require(_startTime >= now, "Invalid start time");
         require(lockups[_lockupName].lockupAmount != 0, "Doesn't exist");
 
         _checkLockUpParams(

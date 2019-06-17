@@ -74,7 +74,7 @@ contract LockUpTransferManager is ITransferManager {
      * @param _from Address of the sender
      * @param _amount The amount of tokens to transfer
      */
-    function verifyTransfer(address  _from, address /* _to*/, uint256  _amount, bytes /* _data */, bool /*_isTransfer*/) external returns(Result) {
+    function verifyTransfer(address  _from, address /* _to*/, uint256  _amount, bytes /* _data */, bool /*_isTransfer*/) public returns(Result) {
         // only attempt to verify the transfer if the token is unpaused, this isn't a mint txn, and there exists a lockup for this user
         if (!paused && _from != address(0) && userToLockups[_from].length != 0) {
             // check if this transfer is valid

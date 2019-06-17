@@ -175,6 +175,12 @@ library VolumeRestrictionLib {
         return (volRestricted > 0 ? true : false);
     }
 
+    function isVolRestricted(address _holder, IDataStore _dataStore) public view returns(bool) {
+        require(_holder != address(0), "Invalid address");
+        uint256 flags = _dataStore.getUint256(_getKey(INVESTORFLAGS, _holder));
+        return _isVolRestricted(flags);
+    }
+
     function _getTypeOfPeriod(
         VolumeRestrictionTMStorage.TypeOfPeriod _currentTypeOfPeriod,
         VolumeRestrictionTMStorage.TypeOfPeriod _callFrom,

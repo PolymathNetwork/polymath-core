@@ -169,8 +169,9 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         // If `_from` is present in the exemptionList or it is `0x0` address then it will not follow the vol restriction
         if (!paused && _from != address(0) && exemptions.exemptIndex[_from] == 0) {
             // Checking the individual restriction if the `_from` comes in the individual category
-            if ((individualRestrictions.individualRestriction[_from].endTime >= now && individualRestrictions.individualRestriction[_from].startTime <= now)
-                || (individualRestrictions.individualDailyRestriction[_from].endTime >= now && individualRestrictions.individualDailyRestriction[_from].startTime <= now)) {
+            if (((individualRestrictions.individualRestriction[_from].endTime >= now && individualRestrictions.individualRestriction[_from].startTime <= now)
+                || (individualRestrictions.individualDailyRestriction[_from].endTime >= now && individualRestrictions.individualDailyRestriction[_from].startTime <= now)) 
+                &&  VolumeRestrictionLib.isVolRestricted(_from, getDataStore())) {
 
                 return _restrictionCheck(_amount, _from, false, individualRestrictions.individualRestriction[_from]);
                 // If the `_from` doesn't fall under the individual category. It will processed with in the global category automatically

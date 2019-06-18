@@ -171,6 +171,12 @@ async function selectAction() {
 
   options.push('Manage modules', 'Withdraw tokens from contract');
 
+  const tokenVersion = await securityToken.methods.getVersion().call();
+  const latestSTVersion = await securityTokenRegistry.methods.getLatestProtocolVersion().call();
+  if (tokenVersion !== latestSTVersion) {
+    options.push('Refresh security token');
+  }
+
   let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Exit' });
   let selected = index == -1 ? 'Exit' : options[index];
   console.log('Selected:', selected);
@@ -224,9 +230,31 @@ async function selectAction() {
       let value = parseFloat(input.readNumberGreaterThan(0, 'Enter the value to withdraw: '));
       await withdrawFromContract(tokenAddress, web3.utils.toWei(new web3.utils.BN(value)));
       break;
+    case 'Refresh security token':
+        console.log(chalk.yellow.bgRed.bold(`---- WARNING: THIS ACTION WILL LAUNCH A NEW SECURITY TOKEN INSTANCE! ----`));
+        const confirmation = readlineSync.keyInYNStrict(`Are you sure you want to refresh your ST to version ${tokenVersion[0]}.${tokenVersion[1]}.${tokenVersion[2]}?`);
+        if (confirmation) {
+          const name = await securityToken.methods.name().call();
+          const symbol = await securityToken.methods.symbol().call();
+          const tokenDetails = await securityToken.methods.tokenDetails().call();
+          const divisible = (await securityToken.methods.granularity().call()) === '1';
+          const treasuryWallet = await securityToken.methods.treasuryWallet().call();
+          const refreshAction = securityTokenRegistry.methods.refreshSecurityToken(
+            name,
+            ticker,
+            tokenDetails,
+            divisible,
+            treasuryWallet
+          );
+          const refreshReceipt = await common.sendTransaction(refreshAction);
+          const refreshEvent = common.getEventFromLogs(securityTokenRegistry._jsonInterface, receipt.logs, 'SecurityTokenRefreshed');
+          console.log(chalk.green(`Security Token has been refreshed successfully at ${refreshEvent._securityTokenAddress}!`));
+          securityToken = new web3.eth.Contract(abis.iSecurityToken(), refreshEvent._securityTokenAddress);
+          securityToken.setProvider(web3.currentProvider);
+        }
+      break;
     case 'Exit':
       process.exit();
-      break;
   }
 }
 

@@ -234,23 +234,32 @@ async function selectAction() {
         console.log(chalk.yellow.bgRed.bold(`---- WARNING: THIS ACTION WILL LAUNCH A NEW SECURITY TOKEN INSTANCE! ----`));
         const confirmation = readlineSync.keyInYNStrict(`Are you sure you want to refresh your ST to version ${tokenVersion[0]}.${tokenVersion[1]}.${tokenVersion[2]}?`);
         if (confirmation) {
-          const name = await securityToken.methods.name().call();
-          const symbol = await securityToken.methods.symbol().call();
-          const tokenDetails = await securityToken.methods.tokenDetails().call();
-          const divisible = (await securityToken.methods.granularity().call()) === '1';
-          const treasuryWallet = await securityToken.methods.treasuryWallet().call();
-          const refreshAction = securityTokenRegistry.methods.refreshSecurityToken(
-            name,
-            ticker,
-            tokenDetails,
-            divisible,
-            treasuryWallet
-          );
-          const refreshReceipt = await common.sendTransaction(refreshAction);
-          const refreshEvent = common.getEventFromLogs(securityTokenRegistry._jsonInterface, receipt.logs, 'SecurityTokenRefreshed');
-          console.log(chalk.green(`Security Token has been refreshed successfully at ${refreshEvent._securityTokenAddress}!`));
-          securityToken = new web3.eth.Contract(abis.iSecurityToken(), refreshEvent._securityTokenAddress);
-          securityToken.setProvider(web3.currentProvider);
+          let transferFrozen = await securityToken.methods.transfersFrozen().call();
+          if (!transferFrozen) {
+            if (readlineSync.keyInYNStrict(`Transfers must be frozen to refresh your ST version. Do you want to freeze transfer now?`)) {
+              await freezeTransfers();
+            }
+            transferFrozen = true;
+          }
+          if (transferFrozen) {
+            const name = await securityToken.methods.name().call();
+            const symbol = await securityToken.methods.symbol().call();
+            const tokenDetails = await securityToken.methods.tokenDetails().call();
+            const divisible = (await securityToken.methods.granularity().call()) === '1';
+              const treasuryWallet = input.readAddress('Enter the treasury address for the token (' + Issuer.address + '): ', Issuer.address);
+            const refreshAction = securityTokenRegistry.methods.refreshSecurityToken(
+              name,
+                symbol,
+              tokenDetails,
+              divisible,
+              treasuryWallet
+            );
+            const refreshReceipt = await common.sendTransaction(refreshAction);
+              const refreshEvent = common.getEventFromLogs(securityTokenRegistry._jsonInterface, refreshReceipt.logs, 'SecurityTokenRefreshed');
+            console.log(chalk.green(`Security Token has been refreshed successfully at ${refreshEvent._securityTokenAddress}!`));
+            securityToken = new web3.eth.Contract(abis.iSecurityToken(), refreshEvent._securityTokenAddress);
+            securityToken.setProvider(web3.currentProvider);
+          }
         }
       break;
     case 'Exit':

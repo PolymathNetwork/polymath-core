@@ -32,7 +32,7 @@ All notable changes to this project will be documented in this file.
 * Add `redeemByPartition()` & `operatorRedeemByPartition()` function.   
 * Add `issueByPartition()` to issue the tokens as per given partition.     
 * `disableController()` now takes the sender signature to confirm the operation.    
-* Introduce `canTransfer()`, `canTransferFrom()` & `canTransferByPartition()` to validate the trasnfer before actually executing it.  
+* Introduce `canTransfer()`, `canTransferFrom()` & `canTransferByPartition()` to validate the transfer before actually executing it.  
 * Add document specific functions `setDocument()`, `removeDocument()`.   
 * Rename `forceTransfer()` to `controllerTransfer()` similarly `forceRedeem()` to `forceBurn()`.   
 * Add `isControllable()` to know whether the controller functions are allowed to execute or not.    

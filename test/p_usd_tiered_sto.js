@@ -4778,7 +4778,7 @@ contract("USDTieredSTO", async (accounts) => {
     describe("Test cases for the USDTieredSTOFactory", async () => {
         it("should get the exact details of the factory", async () => {
             assert.equal((await I_USDTieredSTOFactory.setupCost.call()).toString(), STOSetupCost);
-            assert.equal((await I_USDTieredSTOFactory.types.call())[0], 3);
+            assert.equal((await I_USDTieredSTOFactory.getTypes.call())[0], 3);
             assert.equal(web3.utils.hexToString(await I_USDTieredSTOFactory.name.call()), "USDTieredSTO", "Wrong Module added");
             assert.equal(
                 await I_USDTieredSTOFactory.description.call(),
@@ -4787,7 +4787,7 @@ contract("USDTieredSTO", async (accounts) => {
             );
             assert.equal(await I_USDTieredSTOFactory.title.call(), "USD Tiered STO", "Wrong Module added");
             assert.equal(await I_USDTieredSTOFactory.version.call(), "3.0.0");
-            let tags = await I_USDTieredSTOFactory.tags.call();
+            let tags = await I_USDTieredSTOFactory.getTags.call();
             assert.equal(web3.utils.hexToString(tags[0]), "Tiered");
             assert.equal(web3.utils.hexToString(tags[1]), "ETH");
             assert.equal(web3.utils.hexToString(tags[2]), "POLY");

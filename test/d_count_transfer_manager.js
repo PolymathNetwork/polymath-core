@@ -585,7 +585,7 @@ contract("CountTransferManager", async (accounts) => {
         describe("Test cases for the factory", async () => {
             it("should get the exact details of the factory", async () => {
                 assert.equal(await I_CountTransferManagerFactory.setupCost.call(), 0);
-                assert.equal((await I_CountTransferManagerFactory.types.call())[0], 2);
+                assert.equal((await I_CountTransferManagerFactory.getTypes.call())[0], 2);
                 assert.equal(
                     web3.utils.toAscii(await I_CountTransferManagerFactory.name.call()).replace(/\u0000/g, ""),
                     "CountTransferManager",
@@ -600,7 +600,7 @@ contract("CountTransferManager", async (accounts) => {
             });
 
             it("Should get the tags of the factory", async () => {
-                let tags = await I_CountTransferManagerFactory.tags.call();
+                let tags = await I_CountTransferManagerFactory.getTags.call();
                 assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ""), "Count");
             });
         });

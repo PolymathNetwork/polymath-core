@@ -266,6 +266,7 @@ contract("ModuleRegistry", async (accounts) => {
             it("Should fail to register the new module because msg.sender is not the owner of the module", async() => {
                 I_CappedSTOLogic = await CappedSTO.new(address_zero, address_zero, { from: account_polymath });
                 I_CappedSTOFactory3 = await CappedSTOFactory.new(new BN(0), I_CappedSTOLogic.address, I_PolymathRegistry.address, true, { from: account_temp });
+                console.log(await I_MRProxied.owner());
                 catchRevert(I_MRProxied.registerModule(I_CappedSTOFactory3.address, { from: token_owner }));
             });
 
@@ -391,7 +392,7 @@ contract("ModuleRegistry", async (accounts) => {
                 // Taking the snapshot the revert the changes from here
                 let id = await takeSnapshot();
                 await I_TestSTOFactory.changeSTVersionBounds("lowerBound", [3, 1, 0], { from: account_polymath });
-                let _lstVersion = await I_TestSTOFactory.lowerSTVersionBounds.call();
+                let _lstVersion = await I_TestSTOFactory.getLowerSTVersionBounds.call();
                 assert.equal(_lstVersion[0], 3);
                 assert.equal(_lstVersion[1], 1);
                 assert.equal(_lstVersion[2], 0);
@@ -406,7 +407,7 @@ contract("ModuleRegistry", async (accounts) => {
 
             it("Should failed in adding the TestSTOFactory module because not compatible with the current protocol version --upper", async () => {
                 await I_TestSTOFactory.changeSTVersionBounds("upperBound", [0, new BN(0), 1], { from: account_polymath });
-                let _ustVersion = await I_TestSTOFactory.upperSTVersionBounds.call();
+                let _ustVersion = await I_TestSTOFactory.getUpperSTVersionBounds.call();
                 assert.equal(_ustVersion[0], 0);
                 assert.equal(_ustVersion[2], 1);
                 await I_STRProxied.setProtocolFactory(I_STFactory.address, 2, new BN(0), 1);

@@ -711,7 +711,7 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
         describe("\t\t Factory test cases \n", async() => {
             it("\t\t Should get the exact details of the factory \n", async () => {
                 assert.equal((await I_PLCRVotingCheckpointFactory.setupCost.call()).toNumber(), 0);
-                assert.equal((await I_PLCRVotingCheckpointFactory.types.call())[0], 4);
+                assert.equal((await I_PLCRVotingCheckpointFactory.getTypes.call())[0], 4);
                 assert.equal(await I_PLCRVotingCheckpointFactory.version.call(), "3.0.0");
                 assert.equal(
                     web3.utils.toAscii(await I_PLCRVotingCheckpointFactory.name.call()).replace(/\u0000/g, ""),
@@ -724,7 +724,7 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
                     "Wrong Module added"
                 );
                 assert.equal(await I_PLCRVotingCheckpointFactory.title.call(), "PLCR Voting Checkpoint", "Wrong Module added");
-                let tags = await I_PLCRVotingCheckpointFactory.tags.call();
+                let tags = await I_PLCRVotingCheckpointFactory.getTags.call();
                 assert.equal(tags.length, 3);
             });
         });

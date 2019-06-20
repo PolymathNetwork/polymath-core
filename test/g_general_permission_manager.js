@@ -474,7 +474,7 @@ contract("GeneralPermissionManager", async (accounts) => {
     describe("General Permission Manager Factory test cases", async () => {
         it("should get the exact details of the factory", async () => {
             assert.equal(await I_GeneralPermissionManagerFactory.setupCost.call(), 0);
-            assert.equal((await I_GeneralPermissionManagerFactory.types.call())[0], 1);
+            assert.equal((await I_GeneralPermissionManagerFactory.getTypes.call())[0], 1);
             assert.equal(await I_GeneralPermissionManagerFactory.version.call(), "3.0.0");
             assert.equal(
                 web3.utils.toAscii(await I_GeneralPermissionManagerFactory.name.call()).replace(/\u0000/g, ""),
@@ -490,7 +490,7 @@ contract("GeneralPermissionManager", async (accounts) => {
         });
 
         it("Should get the tags of the factory", async () => {
-            let tags = await I_GeneralPermissionManagerFactory.tags.call();
+            let tags = await I_GeneralPermissionManagerFactory.getTags.call();
             assert.equal(web3.utils.toUtf8(tags[0]), "Permission Management");
         });
 

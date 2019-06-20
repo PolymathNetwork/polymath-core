@@ -28,6 +28,12 @@ interface IModuleRegistry {
 
 
     /**
+     * @notice Called by a security token (2.x) to notify the registry it is using a module
+     * @param _moduleFactory is the address of the relevant module factory
+     */
+    function useModule(address _moduleFactory) external;
+
+    /**
      * @notice Called by a security token to notify the registry it is using a module
      * @param _moduleFactory is the address of the relevant module factory
      * @param _isUpgrade whether the use is part of an existing module upgrade

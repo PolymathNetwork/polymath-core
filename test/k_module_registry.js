@@ -421,7 +421,6 @@ contract("ModuleRegistry", async (accounts) => {
                 assert.equal(tx.logs[1].args._ticker, newSymbol.toUpperCase());
                 I_SecurityToken2 = await SecurityToken.at(tx.logs[1].args._securityTokenAddress);
                 stGetter = await STGetter.at(I_SecurityToken2.address);
-                assert.equal(await stGetter.getTreasuryWallet.call(), account_issuer, "Incorrect wallet set")
                 let bytesData = encodeModuleCall(
                     ["uint256", "uint256", "uint256", "string"],
                     [await latestTime(), currentTime.add(new BN(duration.days(1))), cap, "Test STO"]

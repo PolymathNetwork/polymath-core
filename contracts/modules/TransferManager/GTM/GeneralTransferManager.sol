@@ -626,7 +626,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         flags = _getInvestorFlags(_investor);
     }
 
-    function _getInvestorFlags(address _investor) public view returns(uint256 flags) {
+    function _getInvestorFlags(address _investor) internal view returns(uint256 flags) {
         IDataStore dataStore = getDataStore();
         flags = dataStore.getUint256(_getKey(INVESTORFLAGS, _investor));
     }

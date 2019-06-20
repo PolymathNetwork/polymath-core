@@ -5,6 +5,13 @@ const NonceTrackerSubprovider = require("web3-provider-engine/subproviders/nonce
 
 const HDWalletProvider = require("truffle-hdwallet-provider");
 
+let ver;
+if (process.env.POLYMATH_NATIVE_SOLC) {
+  ver = "native";
+} else {
+  ver = "0.5.8";
+}
+
 module.exports = {
   networks: {
     development: {
@@ -64,7 +71,7 @@ module.exports = {
   },
   compilers: {
     solc: {
-      version: "0.5.8",
+      version: ver,
       settings: {
         optimizer: {
           enabled: true,

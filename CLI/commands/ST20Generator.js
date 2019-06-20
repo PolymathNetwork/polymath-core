@@ -44,8 +44,8 @@ async function executeApp(_ticker, _transferOwnership, _name, _details, _divisib
 async function setup() {
   try {
     securityTokenRegistryAddress = await contracts.securityTokenRegistry();
-    let securityTokenRegistryABI = abis.securityTokenRegistry();
-    securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
+    let iSecurityTokenRegistryABI = abis.iSecurityTokenRegistry();
+    securityTokenRegistry = new web3.eth.Contract(iSecurityTokenRegistryABI, securityTokenRegistryAddress);
     securityTokenRegistry.setProvider(web3.currentProvider);
 
     let polytokenAddress = await contracts.polyToken();
@@ -147,10 +147,19 @@ async function step_token_deploy(_name, _details, _divisible) {
     divisibility = (divisible != 'N' && divisible != 'n');
   }
 
+  let treasuryWallet;
+  treasuryWallet = readlineSync.question('Enter the treasury address for the token (' + Issuer.address + '): ', {
+    limit: function (input) {
+      return web3.utils.isAddress(input);
+    },
+    limitMessage: "Must be a valid address",
+    defaultInput: Issuer.address
+  });
+
   await approvePoly(securityTokenRegistryAddress, launchFee);
-  let generateSecurityTokenAction = securityTokenRegistry.methods.generateSecurityToken(tokenName, tokenSymbol, tokenDetails, divisibility);
+  let generateSecurityTokenAction = securityTokenRegistry.methods.generateNewSecurityToken(tokenName, tokenSymbol, tokenDetails, divisibility, treasuryWallet, 0);
   let receipt = await common.sendTransaction(generateSecurityTokenAction);
-  let event = common.getEventFromLogs(securityTokenRegistry._jsonInterface, receipt.logs, 'NewSecurityToken');
+  let event = common.getEventFromLogs(securityTokenRegistry._jsonInterface, receipt.logs, 'NewSecurityTokenCreated');
   console.log(chalk.green(`Security Token has been successfully deployed at address ${event._securityTokenAddress}`));
 }
 
@@ -159,17 +168,16 @@ async function step_token_deploy(_name, _details, _divisible) {
 //////////////////////
 async function selectTicker() {
   let result;
-  let userTickers = (await securityTokenRegistry.methods.getTickersByOwner(Issuer.address).call()).map(t => web3.utils.hexToAscii(t));
+  let userTickers = (await securityTokenRegistry.methods.getTickersByOwner(Issuer.address).call()).map(t => web3.utils.hexToUtf8(t));
   let options = await Promise.all(userTickers.map(async function (t) {
     let tickerDetails = await securityTokenRegistry.methods.getTickerDetails(t).call();
     let tickerInfo;
     if (tickerDetails[4]) {
-      tickerInfo = `Token launched at ${(await securityTokenRegistry.methods.getSecurityTokenAddress(t).call())}`;
+      tickerInfo = `- Token launched at ${(await securityTokenRegistry.methods.getSecurityTokenAddress(t).call())}`;
     } else {
-      tickerInfo = `Expires at ${moment.unix(tickerDetails[2]).format('MMMM Do YYYY, HH:mm:ss')}`;
+      tickerInfo = `- Expires at ${moment.unix(tickerDetails[2]).format('MMMM Do YYYY, HH:mm:ss')}`;
     }
-    return `${t}
-    ${tickerInfo}`;
+    return `${t} ${tickerInfo}`;
   }));
   options.push('Register a new ticker');
 
@@ -187,13 +195,13 @@ async function selectTicker() {
 
 async function approvePoly(spender, fee) {
   polyBalance = await polyToken.methods.balanceOf(Issuer.address).call();
-  let requiredAmount = web3.utils.toWei(fee.toString(), "ether");
+  let requiredAmount = web3.utils.toWei(fee.toString());
   if (parseInt(polyBalance) >= parseInt(requiredAmount)) {
-    let allowance = await polyToken.methods.allowance(spender, Issuer.address).call();
-    if (allowance == web3.utils.toWei(fee.toString(), "ether")) {
+    let allowance = await polyToken.methods.allowance(Issuer.address, spender).call();
+    if (parseInt(allowance) >= parseInt(requiredAmount)) {
       return true;
     } else {
-      let approveAction = polyToken.methods.approve(spender, web3.utils.toWei(fee.toString(), "ether"));
+      let approveAction = polyToken.methods.approve(spender, requiredAmount);
       await common.sendTransaction(approveAction);
     }
   } else {

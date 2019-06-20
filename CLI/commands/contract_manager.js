@@ -4,6 +4,8 @@ var common = require('./common/common_functions');
 var gbl = require('./common/global');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
+const { table } = require('table');
+const moment = require('moment');
 
 // App flow
 let currentContract = null;
@@ -47,7 +49,7 @@ async function selectContract() {
         break;
       case 'SecurityTokenRegistry':
         let strAdress = await contracts.securityTokenRegistry();
-        let strABI = abis.securityTokenRegistry();
+        let strABI = abis.iSecurityTokenRegistry();
         currentContract = new web3.eth.Contract(strABI, strAdress);
         await strActions();
         break;
@@ -71,9 +73,10 @@ async function strActions() {
     console.log(chalk.red(`You are not the owner of this contract. Current owner is ${contractOwner}`));
     currentContract = null;
   } else {
-    let actions = ['Modify Ticker', 'Remove Ticker', 'Modify SecurityToken', 'Change Expiry Limit', 'Change registration fee', 'Change ST launch fee'];
+    let actions = ['Modify Ticker', 'Remove Ticker', 'Modify SecurityToken', 'Change Expiry Limit', 'Change registration fee', 'Change ST launch fee', 'Change fee type', 'Get all token details'];
     let index = readlineSync.keyInSelect(actions, 'What do you want to do? ');
     let selected = index == -1 ? 'CANCEL' : actions[index];
+    let isFeeInPoly = await currentContract.methods.getIsFeeInPoly().call();
     switch (selected) {
       case 'Modify Ticker':
         let tickerToModify = readlineSync.question('Enter the token symbol that you want to add or modify: ');
@@ -163,22 +166,70 @@ async function strActions() {
         console.log(chalk.green(`Expiry limit was changed successfully. New limit is ${Math.floor(parseInt(changeExpiryLimitEvent._newExpiry)/60/60/24)} days\n`));
         break;
       case 'Change registration fee':
-        let currentRegFee = web3.utils.fromWei(await currentContract.methods.getTickerRegistrationFee().call());
-        console.log(chalk.yellow(`\nCurrent ticker registration fee is ${currentRegFee} POLY`));
-        let newRegFee = web3.utils.toWei(readlineSync.questionInt('Enter a new value in POLY for ticker registration fee: ').toString());
+        isFeeInPoly = await currentContract.methods.getIsFeeInPoly().call();
+        let currentRegFees = await currentContract.methods.getFees(web3.utils.keccak256("tickerRegFee")).call();
+        let newRegFee;
+        if (isFeeInPoly) {
+          console.log(chalk.yellow("\nFee is set in POLY"));
+          console.log(chalk.yellow(`Current ticker registration fee is ${web3.utils.fromWei(currentRegFees.polyFee)} POLY (= ${web3.utils.fromWei(currentRegFees.usdFee)} USD)`));
+          newRegFee = web3.utils.toWei(readlineSync.questionInt('Enter a new value in POLY for ticker registration fee: ').toString());
+        } else {
+          console.log(chalk.yellow("\nFee is set in USD"));
+          console.log(chalk.yellow(`Current ticker registration fee is ${web3.utils.fromWei(currentRegFees.usdFee)} USD (= ${web3.utils.fromWei(currentRegFees.polyFee)} POLY)`));
+          newRegFee = web3.utils.toWei(readlineSync.questionInt('Enter a new value in USD for ticker registration fee: ').toString());
+        }
         let changeRegFeeAction = currentContract.methods.changeTickerRegistrationFee(newRegFee);
         let changeRegFeeReceipt = await common.sendTransaction(changeRegFeeAction);
         let changeRegFeeEvent = common.getEventFromLogs(currentContract._jsonInterface, changeRegFeeReceipt.logs, 'ChangeTickerRegistrationFee');
-        console.log(chalk.green(`Fee was changed successfully. New fee is ${web3.utils.fromWei(changeRegFeeEvent._newFee)} POLY\n`));
+        currentRegFee = web3.utils.fromWei(await currentContract.methods.getTickerRegistrationFee().call());
+        console.log(chalk.green(`Fee was changed successfully. New fee is ${web3.utils.fromWei(changeRegFeeEvent._newFee)} ${(isFeeInPoly) ? "POLY" : "USD"}\n`));
         break;
       case 'Change ST launch fee':
-      let currentLaunchFee = web3.utils.fromWei(await currentContract.methods.getSecurityTokenLaunchFee().call());
-        console.log(chalk.yellow(`\nCurrent ST launch fee is ${currentLaunchFee} POLY`));
-        let newLaunchFee = web3.utils.toWei(readlineSync.questionInt('Enter a new value in POLY for ST launch fee: ').toString());
+        let currentLaunchFees = await currentContract.methods.getFees(web3.utils.keccak256("stLaunchFee")).call();
+        let newLaunchFee;
+        if (isFeeInPoly) {
+          console.log(chalk.yellow("\nFee is set in POLY"));
+          console.log(chalk.yellow(`Current ST launch fee is ${web3.utils.fromWei(currentLaunchFees.polyFee)} POLY (= ${web3.utils.fromWei(currentLaunchFees.usdFee)} USD)`));
+          newLaunchFee = web3.utils.toWei(readlineSync.questionInt('Enter a new value in POLY for ST launch fee: ').toString());
+        } else {
+          console.log(chalk.yellow("\nFee is set in USD"));
+          console.log(chalk.yellow(`Current ST launch fee is ${web3.utils.fromWei(currentLaunchFees.usdFee)} USD (= ${web3.utils.fromWei(currentLaunchFees.polyFee)} POLY)`));
+          newLaunchFee = web3.utils.toWei(readlineSync.questionInt('Enter a new value in USD for ST launch fee: ').toString());
+        }
         let changeLaunchFeeAction = currentContract.methods.changeSecurityLaunchFee(newLaunchFee);
         let changeLaunchFeeReceipt = await common.sendTransaction(changeLaunchFeeAction);
         let changeLaunchFeeEvent = common.getEventFromLogs(currentContract._jsonInterface, changeLaunchFeeReceipt.logs, 'ChangeSecurityLaunchFee');
-        console.log(chalk.green(`Fee was changed successfully. New fee is ${web3.utils.fromWei(changeLaunchFeeEvent._newFee)} POLY\n`));
+        currentLaunchFee = web3.utils.fromWei(await currentContract.methods.getSecurityTokenLaunchFee().call());
+        console.log(chalk.green(`Fee was changed successfully. New fee is ${web3.utils.fromWei(changeLaunchFeeEvent._newFee)} ${(isFeeInPoly) ? "POLY" : "USD"}\n`));
+        break;
+      case 'Change fee type':
+        let changeFeeType = readlineSync.keyInYNStrict(`\nFees are currently set in ${(isFeeInPoly) ? "POLY" : "USD"}. Do you want to change to ${(isFeeInPoly) ? "USD" : "POLY"}`);
+        if (changeFeeType) {
+          let newRegFee = web3.utils.toWei(readlineSync.questionInt(`Enter a new ticker registration fee in ${(isFeeInPoly) ? "USD" : "POLY"}: `).toString());
+          let newLaunchFee = web3.utils.toWei(readlineSync.questionInt(`Enter a new ST launch fee in ${(isFeeInPoly) ? "USD" : "POLY"}: `).toString());
+          let changeFeesAmountAndCurrencyAction = currentContract.methods.changeFeesAmountAndCurrency(newRegFee, newLaunchFee, !isFeeInPoly);
+          let changeFeesAmountAndCurrencyReceipt = await common.sendTransaction(changeFeesAmountAndCurrencyAction);
+          let changeFeeCurrencyEvent = common.getEventFromLogs(currentContract._jsonInterface, changeFeesAmountAndCurrencyReceipt.logs, 'ChangeFeeCurrency');
+          let changeRegFeeEvent = common.getEventFromLogs(currentContract._jsonInterface, changeFeesAmountAndCurrencyReceipt.logs, 'ChangeTickerRegistrationFee');
+          let changeLaunchFeeEvent = common.getEventFromLogs(currentContract._jsonInterface, changeFeesAmountAndCurrencyReceipt.logs, 'ChangeSecurityLaunchFee');
+          console.log(chalk.green(`Fee type was changed successfully. New fee type is ${(changeFeeCurrencyEvent._isFeeInPoly) ? "POLY" : "USD"}`));
+          console.log(chalk.green(`New ticker registration fee is ${web3.utils.fromWei(changeRegFeeEvent._newFee)} ${(changeFeeCurrencyEvent._isFeeInPoly) ? "POLY" : "USD"}`));
+          console.log(chalk.green(`New token launch fee is ${web3.utils.fromWei(changeLaunchFeeEvent._newFee)} ${(changeFeeCurrencyEvent._isFeeInPoly) ? "POLY" : "USD"}\n`));
+        } else {
+          console.log(chalk.yellow("\nFee type was not changed\n"));
+        }
+        break;
+      case 'Get all token details':
+        let tokenSymbols = await currentContract.methods.getTokens().call();
+        let tokenDataTable = [['Symbol', 'Token Name','Address', 'Details', 'Deployed Date']];
+        let iSecurityTokenABI = abis.iSecurityToken();
+        for (let i = 0; i < tokenSymbols.length; i++) {
+          let securityToken = new web3.eth.Contract(iSecurityTokenABI, tokenSymbols[i]);
+          let tokenName = await securityToken.methods.name().call();
+          let stDetails = await currentContract.methods.getSecurityTokenData(tokenSymbols[i]).call();
+          tokenDataTable.push([stDetails[0], tokenName, stDetails[1], stDetails[2], moment.unix(stDetails[3]).format('MM/DD/YYYY HH:mm')]);
+        }
+        console.log(table(tokenDataTable));
         break;
       case 'CANCEL':
         process.exit(0);

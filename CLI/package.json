@@ -9,6 +9,7 @@
   "author": "Polymath Inc",
   "license": "Apache-2.0",
   "dependencies": {
+    "bignumber.js": "^8.1.1",
     "chalk": "^2.4.1",
     "commander": "^2.16.0",
     "csv-parse": "^4.0.1",

@@ -118,6 +118,18 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         return IFeatureRegistry(getAddressValue(FEATURE_REGISTRY)).getFeatureStatus("customModulesAllowed");
     }
 
+
+    /**
+     * @notice Called by a SecurityToken (2.x) to check if the ModuleFactory is verified or appropriate custom module
+     * @dev ModuleFactory reputation increases by one every time it is deployed(used) by a ST.
+     * @dev Any module can be added during token creation without being registered if it is defined in the token proxy deployment contract
+     * @dev The feature switch for custom modules is labelled "customModulesAllowed"
+     * @param _moduleFactory is the address of the relevant module factory
+     */
+    function useModule(address _moduleFactory) external {
+        useModule(_moduleFactory, false);
+    }
+
     /**
      * @notice Called by a SecurityToken to check if the ModuleFactory is verified or appropriate custom module
      * @dev ModuleFactory reputation increases by one every time it is deployed(used) by a ST.
@@ -126,7 +138,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @param _moduleFactory is the address of the relevant module factory
      * @param _isUpgrade whether or not the function is being called as a result of an upgrade
      */
-    function useModule(address _moduleFactory, bool _isUpgrade) external nonReentrant {
+    function useModule(address _moduleFactory, bool _isUpgrade) public nonReentrant {
         if (_customModules()) {
             require(
                 getBoolValue(Encoder.getKey("verified", _moduleFactory)) || getAddressValue(Encoder.getKey("factoryOwner", _moduleFactory))

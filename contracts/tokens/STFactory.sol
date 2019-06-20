@@ -80,8 +80,7 @@ contract STFactory is ISTFactory, Ownable {
         string calldata _tokenDetails,
         address _issuer,
         bool _divisible,
-        address _treasuryWallet,
-        address /* _polymathRegistry */
+        address _treasuryWallet
     )
         external
         returns(address)

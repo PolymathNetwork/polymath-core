@@ -121,7 +121,6 @@ contract STFactory is ISTFactory, Ownable {
             address(polymathRegistry)
         );
         // Sets logic contract
-        emit Log(latestUpgrade);
         proxy.upgradeTo(logicContracts[latestUpgrade].version, logicContracts[latestUpgrade].logicContract);
         // Initialises security token contract - needed for functions that can only be called by the
         // owner of the contract, or are specific to this particular logic contract (e.g. setting version)
@@ -130,8 +129,6 @@ contract STFactory is ISTFactory, Ownable {
         tokenUpgrade[address(proxy)] = latestUpgrade;
         return address(proxy);
     }
-
-    event Log(uint256 _upgrade);
 
     /**
      * @notice Used to set a new token logic contract

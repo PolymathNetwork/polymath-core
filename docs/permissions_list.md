@@ -1,4 +1,4 @@
-# Permissions List 
+# Permissions List
 
  <table>
     <thead>
@@ -105,7 +105,7 @@
             <td> changePermissionMulti() </td>
         </tr>
         <tr>
-            <td rowspan=10>STO</td>
+            <td rowspan=11>STO</td>
             <td>CappedSTO</td>
             <td> - </td>
             <td> - </td>
@@ -153,7 +153,7 @@
             <td>allocateTokensMulti()</td>
         </tr>
         <tr>
-            <td rowspan=42>TransferManager</td>
+            <td rowspan=49>TransferManager</td>
             <td>CountTransferManager</td>
             <td>changeHolderCount()</td>
             <td>withPerm(ADMIN)</td>
@@ -319,7 +319,7 @@
             <td>onlyOwner</td>
         </tr>
         <tr>
-            <td>sendToTreasury</tr>
+            <td>sendToTreasury</td>
             <td rowspan=3>withPerm(OPERATOR)</td>
         </tr>
         <tr>
@@ -330,7 +330,7 @@
         </tr>
         <tr>
             <td>depositTokens()</td>
-            <td rowspan=12>withPerm(ADMIN)</td>
+            <td rowspan=13>withPerm(ADMIN)</td>
         </tr>
         <tr>
             <td>addTemplate()</td>
@@ -418,8 +418,3 @@
    </tr>
   </tbody>
  </table>
- 
- 
-
-
-

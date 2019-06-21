@@ -25,7 +25,7 @@ function getGasPrice(networkId) {
 }
 
 function providerValidator(url) {
-  var expression = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}(\.[a-z]{2,4})*\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g;
+  var expression = /^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$/gm;
   var regex = new RegExp(expression);
   return url.match(regex);
 }

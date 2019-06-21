@@ -244,8 +244,7 @@ interface ISecurityTokenRegistry {
         string memory tokenSymbol,
         address tokenAddress,
         string memory tokenDetails,
-        uint256 tokenTime,
-        uint8[] memory tokenVersion
+        uint256 tokenTime
     );
 
     /**

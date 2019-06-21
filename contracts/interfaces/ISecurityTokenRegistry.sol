@@ -24,7 +24,7 @@ interface ISecurityTokenRegistry {
     // Emit when ownership of the ticker gets changed
     event ChangeTickerOwnership(string _ticker, address indexed _oldOwner, address indexed _newOwner);
     // Emit at the time of launching a new security token of version 3.0+
-    event NewSecurityTokenCreated(
+    event NewSecurityToken(
         string _ticker,
         string _name,
         address indexed _securityTokenAddress,

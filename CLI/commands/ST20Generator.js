@@ -159,7 +159,7 @@ async function step_token_deploy(_name, _details, _divisible) {
   await approvePoly(securityTokenRegistryAddress, launchFee);
   let generateSecurityTokenAction = securityTokenRegistry.methods.generateNewSecurityToken(tokenName, tokenSymbol, tokenDetails, divisibility, treasuryWallet, 0);
   let receipt = await common.sendTransaction(generateSecurityTokenAction);
-  let event = common.getEventFromLogs(securityTokenRegistry._jsonInterface, receipt.logs, 'NewSecurityTokenCreated');
+  let event = common.getEventFromLogs(securityTokenRegistry._jsonInterface, receipt.logs, 'NewSecurityToken');
   console.log(chalk.green(`Security Token has been successfully deployed at address ${event._securityTokenAddress}`));
 }
 

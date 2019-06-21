@@ -133,7 +133,7 @@ async function checkPermission(contractName, functionName, contractRegistry) {
   } else {
     let stAddress = await contractRegistry.methods.securityToken().call();
     let securityToken = connect(abis.iSecurityToken(), stAddress);
-    let stOwner = await securityToken.methods._owner().call();
+    let stOwner = await securityToken.methods.owner().call();
     if (stOwner == Issuer.address) {
       return true
     } else {

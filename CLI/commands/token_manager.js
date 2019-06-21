@@ -153,7 +153,7 @@ async function selectAction() {
 
   let isIssuable = await securityToken.methods.isIssuable().call();
   if (isIssuable) {
-    if (Issuer.address == await securityToken.methods._owner().call()) {
+    if (Issuer.address == await securityToken.methods.owner().call()) {
     options.push('Freeze Issuance permanently');
     }
   }

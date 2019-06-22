@@ -79,8 +79,8 @@ async function checkISTR() {
         for (let i = 0; i < ABIs[1].length; i++) {
             console.log(ABIs[1][i].name);
         }
-        console.log(chalk.red('The above Functions/events had no match found.'));
-        throw("Please synchronize the Interface with the contract.");
+        console.log(chalk.red('The above Functions/events had no match found. Please synchronize the Interface with the contract.'));
+        process.exit(1);
     }
 }
 

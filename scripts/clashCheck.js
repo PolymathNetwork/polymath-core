@@ -8,7 +8,7 @@ async function readFiles() {
         return fs.readdirSync("./build/contracts/");
     } else {
         console.log(chalk.yellow('Compiling contracts. This may take a while, please wait.'));
-        exec('truffle compile');
+        exec('npx truffle compile');
         return fs.readdirSync("./build/contracts/");
     }
 }

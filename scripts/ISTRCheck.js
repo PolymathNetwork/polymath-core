@@ -29,7 +29,7 @@ let exceptions = [
 async function readFiles() {
     if (!fs.existsSync("./build/contracts/ISecurityTokenRegistry.json")) {
         console.log(chalk.yellow('Compiling contracts. This may take a while, please wait.'));
-        exec('npx truffle compile');
+        exec('./node_modules/.bin/truffle compile');
     }
     return([
         JSON.parse(fs.readFileSync(`./build/contracts/ISecurityTokenRegistry.json`).toString()).abi,

@@ -4,11 +4,13 @@ var common = require('./common/common_functions');
 var gbl = require('./common/global');
 var contracts = require('./helpers/contract_addresses');
 var abis = require('./helpers/contract_abis');
+const input = require('./IO/input');
 
 // App flow
 let tokenSymbol;
 let securityTokenRegistry;
 let securityToken;
+let polyToken;
 let generalPermissionManager;
 let isNewDelegate = false;
 
@@ -38,6 +40,11 @@ async function setup() {
     let iSecurityTokenRegistryABI = abis.iSecurityTokenRegistry();
     securityTokenRegistry = new web3.eth.Contract(iSecurityTokenRegistryABI, securityTokenRegistryAddress);
     securityTokenRegistry.setProvider(web3.currentProvider);
+
+    let polyTokenAddress = await contracts.polyToken();
+    let polyTokenABI = abis.polyToken();
+    polyToken = new web3.eth.Contract(polyTokenABI, polyTokenAddress);
+    polyToken.setProvider(web3.currentProvider);
   } catch (err) {
     console.log(err)
     console.log('\x1b[31m%s\x1b[0m', "There was a problem getting the contracts. Make sure they are deployed to the selected network.");
@@ -67,11 +74,8 @@ async function addPermissionModule() {
     console.log(chalk.red(`General Permission Manager is not attached.`));
     if (readlineSync.keyInYNStrict('Do you want to add General Permission Manager Module to your Security Token?')) {
       let permissionManagerFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, gbl.constants.MODULES_TYPES.PERMISSION, 'GeneralPermissionManager');
-      let addModuleAction = securityToken.methods.addModule(permissionManagerFactoryAddress, web3.utils.fromAscii('', 16), 0, 0, false);
-      let receipt = await common.sendTransaction(addModuleAction);
-      let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
-      console.log(`Module deployed at address: ${event._module}`);
-      generalPermissionManagerAddress = event._module;
+      const gpmABI = abis.generalPermissionManager();
+      generalPermissionManagerAddress = await common.addModule(securityToken, polyToken, permissionManagerFactoryAddress, gpmABI);
     } else {
       process.exit(0);
     }
@@ -204,18 +208,8 @@ async function getDelegates() {
 }
 
 async function addNewDelegate() {
-  let newDelegate = readlineSync.question('Enter the delegate address: ', {
-    limit: function (input) {
-      return web3.utils.isAddress(input);
-    },
-    limitMessage: "Must be a valid address"
-  });
-  let details = readlineSync.question('Enter the delegate details (i.e `Belongs to financial firm`): ', {
-    limit: function (input) {
-      return input.length > 0;
-    },
-    limitMessage: "Must be a valid string"
-  });
+  let newDelegate = input.readAddress('Enter the delegate address: ');
+  let details = input.readStringNonEmpty('Enter the delegate details (i.e `Belongs to financial firm`): ');
 
   let addPermissionAction = generalPermissionManager.methods.addDelegate(newDelegate, web3.utils.asciiToHex(details));
   let receipt = await common.sendTransaction(addPermissionAction);

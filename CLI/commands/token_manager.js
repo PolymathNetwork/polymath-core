@@ -6,6 +6,8 @@ const transferManager = require('./transfer_manager');
 const common = require('./common/common_functions');
 const gbl = require('./common/global');
 const csvParse = require('./helpers/csv');
+const input = require('./IO/input');
+const moment = require('moment');
 
 // Constants
 const MULTIMINT_DATA_CSV = `${__dirname}/../data/ST/multi_mint_data.csv`;
@@ -62,25 +64,31 @@ async function displayTokenData() {
   let displayTokenDetails = await securityToken.methods.tokenDetails().call();
   let displayVersion = await securityToken.methods.getVersion().call();
   let displayTokenSupply = await securityToken.methods.totalSupply().call();
+  let displayHolderCount = await securityToken.methods.holderCount().call();
   let displayInvestorsCount = await securityToken.methods.getInvestorCount().call();
   let displayCurrentCheckpointId = await securityToken.methods.currentCheckpointId().call();
   let displayTransferFrozen = await securityToken.methods.transfersFrozen().call();
   let displayIsIssuable = await securityToken.methods.isIssuable().call();
   let displayUserTokens = await securityToken.methods.balanceOf(Issuer.address).call();
+  let displayTreasuryWallet = await securityToken.methods.getTreasuryWallet().call();
+  let displayDocuments = await securityToken.methods.getAllDocuments().call();
 
   console.log(`
 ***************    Security Token Information    ****************
 - Address:              ${securityToken.options.address}
 - Token symbol:         ${displayTokenSymbol.toUpperCase()}
-- Token name:           ${displayTokenName.toUpperCase()}
+- Token name:           ${displayTokenName}
 - Token details:        ${displayTokenDetails}
 - Token version:        ${displayVersion[0]}.${displayVersion[1]}.${displayVersion[2]}
 - Total supply:         ${web3.utils.fromWei(displayTokenSupply)} ${displayTokenSymbol.toUpperCase()}
+- Holders count:        ${displayHolderCount}
 - Investors count:      ${displayInvestorsCount}
 - Current checkpoint:   ${displayCurrentCheckpointId}
 - Transfer frozen:      ${displayTransferFrozen ? 'YES' : 'NO'}
 - Issuance allowed:     ${displayIsIssuable ? 'YES' : 'NO'}
-- User balance:         ${web3.utils.fromWei(displayUserTokens)} ${displayTokenSymbol.toUpperCase()}`);
+- User balance:         ${web3.utils.fromWei(displayUserTokens)} ${displayTokenSymbol.toUpperCase()}
+- Treasury wallet:      ${displayTreasuryWallet}
+- Documents attached:   ${displayDocuments.length}`);
 }
 
 async function displayModules() {
@@ -109,32 +117,32 @@ async function displayModules() {
 
   if (numPM) {
     console.log(`Permission Manager Modules:`);
-    pmModules.map(m => console.log(`- ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
+    pmModules.map(m => console.log(`- ${m.label}: ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
   }
 
   if (numTM) {
     console.log(`Transfer Manager Modules:`);
-    tmModules.map(m => console.log(`- ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
+    tmModules.map(m => console.log(`- ${m.label}: ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
   }
 
   if (numSTO) {
     console.log(`STO Modules:`);
-    stoModules.map(m => console.log(`- ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
+    stoModules.map(m => console.log(`- ${m.label}: ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
   }
 
   if (numCP) {
     console.log(`Checkpoint Modules:`);
-    cpModules.map(m => console.log(`- ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
+    cpModules.map(m => console.log(`- ${m.label}: ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
   }
 
   if (numBURN) {
     console.log(` Burn Modules:`);
-    burnModules.map(m => console.log(`- ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
+    burnModules.map(m => console.log(`- ${m.label}: ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
   }
 }
 
 async function selectAction() {
-  let options = ['Update token details'/*, 'Change granularity'*/];
+  let options = ['Change token name', 'Update token details', 'Change treasury wallet', 'Manage documents']; // 'Change granularity'
 
   let transferFrozen = await securityToken.methods.transfersFrozen().call();
   if (transferFrozen) {
@@ -145,7 +153,7 @@ async function selectAction() {
 
   let isIssuable = await securityToken.methods.isIssuable().call();
   if (isIssuable) {
-    if (Issuer.address == await securityToken.methods._owner().call()) {
+    if (Issuer.address == await securityToken.methods.owner().call()) {
     options.push('Freeze Issuance permanently');
     }
   }
@@ -163,17 +171,34 @@ async function selectAction() {
 
   options.push('Manage modules', 'Withdraw tokens from contract');
 
+  const tokenVersion = await securityToken.methods.getVersion().call();
+  const latestSTVersion = await securityTokenRegistry.methods.getLatestProtocolVersion().call();
+  if (tokenVersion !== latestSTVersion) {
+    options.push('Refresh security token');
+  }
+
   let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Exit' });
   let selected = index == -1 ? 'Exit' : options[index];
   console.log('Selected:', selected);
   switch (selected) {
+    case 'Change token name':
+      let newTokenName = readlineSync.question('Enter new token name: ');
+      await changeTokenName(newTokenName);
+      break;
     case 'Update token details':
       let updatedDetails = readlineSync.question('Enter new off-chain details of the token (i.e. Dropbox folder url): ');
       await updateTokenDetails(updatedDetails);
       break;
+    case 'Change treasury wallet':
+      let newTreasuryWallet = input.readAddress('Enter the address of the new treasury wallet: ');
+      await changeTreasuryWallet(newTreasuryWallet);
+      break;
     case 'Change granularity':
-      //let granularity = readlineSync.questionInt('Enter ')
-      //await changeGranularity();
+      // let granularity = readlineSync.questionInt('Enter ')
+      // await changeGranularity();
+      break;
+    case 'Manage documents':
+      await manageDocuments();
       break;
     case 'Freeze transfers':
       await freezeTransfers();
@@ -191,12 +216,7 @@ async function selectAction() {
       await listInvestors();
       break;
     case 'List investors at checkpoint':
-      let checkpointId = readlineSync.question('Enter the id of the checkpoint: ', {
-        limit: function (input) {
-          return parseInt(input) > 0 && parseInt(input) <= parseInt(currentCheckpointId);
-        },
-        limitMessage: `Must be greater than 0 and less than ${currentCheckpointId}`
-      });
+      let checkpointId = input.readNumberBetween(1, parseInt(currentCheckpointId), 'Enter the id of the checkpoint: ');
       await listInvestorsAtCheckpoint(checkpointId);
       break;
     case 'Issue tokens':
@@ -206,32 +226,112 @@ async function selectAction() {
       await listModuleOptions();
       break;
     case 'Withdraw tokens from contract':
-      let tokenAddress = readlineSync.question(`Enter the ERC20 token address (POLY ${polyToken.options.address}): `, {
-        limit: function (input) {
-          return web3.utils.isAddress(input);
-        },
-        limitMessage: "Must be a valid address",
-        defaultInput: polyToken.options.address
-      });
-      let value = readlineSync.questionFloat('Enter the value to withdraw: ', {
-        limit: function (input) {
-          return input > 0;
-        },
-        limitMessage: "Must be a greater than 0"
-      });
+      let tokenAddress = input.readAddress(`Enter the ERC20 token address (POLY ${polyToken.options.address}): `, polyToken.options.address);
+      let value = parseFloat(input.readNumberGreaterThan(0, 'Enter the value to withdraw: '));
       await withdrawFromContract(tokenAddress, web3.utils.toWei(new web3.utils.BN(value)));
+      break;
+    case 'Refresh security token':
+        console.log(chalk.yellow.bgRed.bold(`---- WARNING: THIS ACTION WILL LAUNCH A NEW SECURITY TOKEN INSTANCE! ----`));
+        const confirmation = readlineSync.keyInYNStrict(`Are you sure you want to refresh your ST to version ${tokenVersion[0]}.${tokenVersion[1]}.${tokenVersion[2]}?`);
+        if (confirmation) {
+          let transferFrozen = await securityToken.methods.transfersFrozen().call();
+          if (!transferFrozen) {
+            if (readlineSync.keyInYNStrict(`Transfers must be frozen to refresh your ST version. Do you want to freeze transfer now?`)) {
+              await freezeTransfers();
+            }
+            transferFrozen = true;
+          }
+          if (transferFrozen) {
+            const name = await securityToken.methods.name().call();
+            const symbol = await securityToken.methods.symbol().call();
+            const tokenDetails = await securityToken.methods.tokenDetails().call();
+            const divisible = (await securityToken.methods.granularity().call()) === '1';
+              const treasuryWallet = input.readAddress('Enter the treasury address for the token (' + Issuer.address + '): ', Issuer.address);
+            const refreshAction = securityTokenRegistry.methods.refreshSecurityToken(
+              name,
+                symbol,
+              tokenDetails,
+              divisible,
+              treasuryWallet
+            );
+            const refreshReceipt = await common.sendTransaction(refreshAction);
+              const refreshEvent = common.getEventFromLogs(securityTokenRegistry._jsonInterface, refreshReceipt.logs, 'SecurityTokenRefreshed');
+            console.log(chalk.green(`Security Token has been refreshed successfully at ${refreshEvent._securityTokenAddress}!`));
+            securityToken = new web3.eth.Contract(abis.iSecurityToken(), refreshEvent._securityTokenAddress);
+            securityToken.setProvider(web3.currentProvider);
+          }
+        }
       break;
     case 'Exit':
       process.exit();
-      break;
   }
 }
 
 // Token actions
+async function changeTokenName(newTokenName) {
+  let changeTokenNameAction = securityToken.methods.changeName(newTokenName);
+  await common.sendTransaction(changeTokenNameAction);
+  console.log(chalk.green(`Token details have been updated successfully!`));
+}
+
 async function updateTokenDetails(updatedDetails) {
   let updateTokenDetailsAction = securityToken.methods.updateTokenDetails(updatedDetails);
   await common.sendTransaction(updateTokenDetailsAction);
   console.log(chalk.green(`Token details have been updated successfully!`));
+}
+
+async function changeTreasuryWallet(newTreasuryWallet) {
+  let changeTreasuryWalletAction = securityToken.methods.changeTreasuryWallet(newTreasuryWallet);
+  await common.sendTransaction(changeTreasuryWalletAction);
+  console.log(chalk.green(`Treasury wallet has been updated successfully!`));
+}
+
+async function manageDocuments() {
+  let options = ['Add document'];
+
+  const allDocuments = await securityToken.methods.getAllDocuments().call();
+  if (allDocuments.length > 0) {
+    options.push('Get document', 'Remove document');
+    console.log(`Attached documents:`)
+    allDocuments.map(d => console.log(`- ${web3.utils.hexToUtf8(d)}`));
+  } else {
+    console.log(`No documents attached:`);
+  }
+
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'Return' });
+  let selected = index == -1 ? 'Return' : options[index];
+  console.log('Selected:', selected);
+  switch (selected) {
+    case 'Add document':
+      const documentName = readlineSync.question('Enter the document name: ');
+      const documentUri = readlineSync.question('Enter the document uri: ');
+      const documentHash = readlineSync.question('Enter the document hash: ');
+      const setDocumentAction = securityToken.methods.setDocument(web3.utils.toHex(documentName), documentUri, web3.utils.toHex(documentHash));
+      await common.sendTransaction(setDocumentAction);
+      console.log(chalk.green(`Document has been added successfully!`));
+      break;
+    case 'Get document':
+      const documentoToGet = selectDocument(allDocuments);
+      const document = await securityToken.methods.getDocument(documentoToGet).call();
+      console.log(web3.utils.hexToUtf8(documentoToGet));
+      console.log(`Uri: ${document[0]}`);
+      console.log(`Hash: ${web3.utils.hexToUtf8(document[1])}`);
+      console.log(`Last modified: ${moment.unix(document[2]).format('MM/DD/YYYY HH:mm')}`);
+      break;
+    case 'Remove document':
+      const documentoToRemove = selectDocument(allDocuments);
+      const removeDocumentAction = securityToken.methods.removeDocument(documentoToRemove);
+      await common.sendTransaction(removeDocumentAction);
+      console.log(chalk.green(`Document has been removed successfully!`));
+      break;
+  }
+}
+
+function selectDocument(allDocuments) {
+  const options = allDocuments.map(d => `${web3.utils.hexToUtf8(d)}`);
+  let index = readlineSync.keyInSelect(options, 'Select a document:', { cancel: 'Return' });
+  let selected = index == -1 ? 'Return' : allDocuments[index];
+  return selected;
 }
 
 async function freezeTransfers() {
@@ -348,13 +448,7 @@ async function multiIssue(_csvFilePath, _batchSize) {
   if (typeof _batchSize !== 'undefined') {
     batchSize = _batchSize;
   } else {
-    batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
-      limit: function (input) {
-        return parseInt(input) > 0;
-      },
-      limitMessage: 'Must be greater than 0',
-      defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
-    });
+    batchSize = input.readNumberGreaterThan(0, `Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, gbl.constants.DEFAULT_BATCH_SIZE);
   }
   let parsedData = csvParse(csvFilePath);
   let tokenDivisible = await securityToken.methods.granularity().call() == 1;
@@ -493,7 +587,7 @@ async function addModule() {
 }
 
 async function pauseModule(modules) {
-  let options = modules.map(m => `${m.name} (${m.version}) at ${m.address}`);
+  let options = modules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module would you like to pause?');
   if (index != -1) {
     console.log("\nSelected:", options[index]);
@@ -516,7 +610,7 @@ async function pauseModule(modules) {
 }
 
 async function unpauseModule(modules) {
-  let options = modules.map(m => `${m.name} (${m.version}) at ${m.address}`);
+  let options = modules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module would you like to pause?');
   if (index != -1) {
     console.log("\nSelected: ", options[index]);
@@ -539,7 +633,7 @@ async function unpauseModule(modules) {
 }
 
 async function archiveModule(modules) {
-  let options = modules.map(m => `${m.name} (${m.version}) at ${m.address}`);
+  let options = modules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module would you like to archive?');
   if (index != -1) {
     console.log("\nSelected: ", options[index]);
@@ -550,7 +644,7 @@ async function archiveModule(modules) {
 }
 
 async function unarchiveModule(modules) {
-  let options = modules.map(m => `${m.name} (${m.version}) at ${m.address}`);
+  let options = modules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module would you like to unarchive?');
   if (index != -1) {
     console.log("\nSelected: ", options[index]);
@@ -561,7 +655,7 @@ async function unarchiveModule(modules) {
 }
 
 async function removeModule(modules) {
-  let options = modules.map(m => `${m.name} (${m.version}) at ${m.address}`);
+  let options = modules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module would you like to remove?');
   if (index != -1) {
     console.log("\nSelected: ", options[index]);
@@ -572,7 +666,7 @@ async function removeModule(modules) {
 }
 
 async function changeBudget(modules) {
-  let options = modules.map(m => `${m.name} (${m.version}) at ${m.address}`);
+  let options = modules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module would you like to change budget for?');
   if (index != -1) {
     console.log("\nSelected: ", options[index]);
@@ -595,67 +689,23 @@ async function showUserInfo(_user) {
 }
 
 async function getAllModules() {
-  function ModuleInfo(_moduleType, _name, _address, _factoryAddress, _archived, _paused, _version) {
-    this.name = _name;
-    this.type = _moduleType;
-    this.address = _address;
-    this.factoryAddress = _factoryAddress;
-    this.archived = _archived;
-    this.paused = _paused;
-    this.version = _version;
-  }
-
-  let modules = [];
-
+  let allModules = [];
   // Iterate over all module types
   for (let type = 1; type <= 5; type++) {
-    let allModules = await securityToken.methods.getModulesByType(type).call();
-
-    // Iterate over all modules of each type
-    for (let i = 0; i < allModules.length; i++) {
-      try {
-        let details = await securityToken.methods.getModule(allModules[i]).call();
-        let nameTemp = web3.utils.hexToUtf8(details[0]);
-        let pausedTemp = null;
-        let factoryAbi = abis.moduleFactory();
-        let factory = new web3.eth.Contract(factoryAbi, details[2]);
-        let versionTemp = await factory.methods.version().call();
-        if (type == gbl.constants.MODULES_TYPES.STO || type == gbl.constants.MODULES_TYPES.TRANSFER || (type == gbl.constants.MODULES_TYPES.DIVIDENDS && versionTemp === '2.1.1')) {
-          let abiTemp = JSON.parse(require('fs').readFileSync(`${__dirname}/../../build/contracts/${nameTemp}.json`).toString()).abi;
-          let contractTemp = new web3.eth.Contract(abiTemp, details[1]);
-          pausedTemp = await contractTemp.methods.paused().call();
-        }
-
-        modules.push(new ModuleInfo(type, nameTemp, details[1], details[2], details[3], pausedTemp, versionTemp));
-      } catch (error) {
-        console.log(error);
-        console.log(chalk.red(`
-        *************************
-        Unable to iterate over module type - unexpected error
-        *************************`));
-      }
-    }
+    let modules = await common.getAllModulesByType(securityToken, type);
+    modules.forEach(m => allModules.push(m));
   }
 
-  return modules;
+  return allModules;
 }
 
 async function initialize(_tokenSymbol) {
   welcome();
   await setup();
-  if (typeof _tokenSymbol === 'undefined') {
-    tokenSymbol = await selectToken();
-  } else {
-    tokenSymbol = _tokenSymbol;
-  }
-  let securityTokenAddress = await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call();
-  if (securityTokenAddress == '0x0000000000000000000000000000000000000000') {
-    console.log(chalk.red(`Selected Security Token ${tokenSymbol} does not exist.`));
+  securityToken = await common.selectToken(securityTokenRegistry, _tokenSymbol);
+  if (securityToken === null) {
     process.exit(0);
   }
-  let iSecurityTokenABI = abis.iSecurityToken();
-  securityToken = new web3.eth.Contract(iSecurityTokenABI, securityTokenAddress);
-  securityToken.setProvider(web3.currentProvider);
 }
 
 function welcome() {
@@ -665,36 +715,6 @@ function welcome() {
   console.log(`*****************************************`);
   console.log("The following script will allow you to manage your ST-20 tokens");
   console.log("Issuer Account: " + Issuer.address + "\n");
-}
-
-async function selectToken() {
-  let result = null;
-
-  let userTokens = await securityTokenRegistry.methods.getTokensByOwner(Issuer.address).call();
-  let tokenDataArray = await Promise.all(userTokens.map(async function (t) {
-    let tokenData = await securityTokenRegistry.methods.getSecurityTokenData(t).call();
-    return { symbol: tokenData[0], address: t };
-  }));
-  let options = tokenDataArray.map(function (t) {
-    return `${t.symbol} - Deployed at ${t.address}`;
-  });
-  options.push('Enter token symbol manually');
-
-  let index = readlineSync.keyInSelect(options, 'Select a token:', { cancel: 'Exit' });
-  let selected = index != -1 ? options[index] : 'Exit';
-  switch (selected) {
-    case 'Enter token symbol manually':
-      result = readlineSync.question('Enter the token symbol: ');
-      break;
-    case 'Exit':
-      process.exit();
-      break;
-    default:
-      result = tokenDataArray[index].symbol;
-      break;
-  }
-
-  return result;
 }
 
 module.exports = {

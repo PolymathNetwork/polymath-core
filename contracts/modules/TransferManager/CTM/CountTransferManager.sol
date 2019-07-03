@@ -33,7 +33,7 @@ contract CountTransferManager is CountTransferManagerStorage, TransferManager {
         external
         returns(Result)
     {
-        (Result success, ) = _verifyTransfer(_from, _to, _amount);
+        (Result success, ) = _verifyTransfer(_from, _to, _amount, securityToken.holderCount());
         return success;
     }
 
@@ -53,20 +53,33 @@ contract CountTransferManager is CountTransferManagerStorage, TransferManager {
         view
         returns(Result, bytes32)
     {
-        return _verifyTransfer(_from, _to, _amount);
+        uint256 holderCount = securityToken.holderCount();
+        if (_amount != 0 && _from != _to) {
+            // Check whether receiver is a new token holder
+            if (_to != address(0) && securityToken.balanceOf(_to) == 0) {
+                holderCount++;
+            }
+            // Check whether sender is moving all of their tokens
+            if (_amount == securityToken.balanceOf(_from)) {
+                holderCount--;
+            }
+        }
+
+        return _verifyTransfer(_from, _to, _amount, holderCount);
     }
 
     function _verifyTransfer(
         address _from,
         address _to,
-        uint256 _amount
+        uint256 _amount,
+        uint256 _holderCount
     )
         internal
         view
         returns(Result, bytes32)
     {
         if (!paused) {
-            if (maxHolderCount < securityToken.holderCount()) {
+            if (maxHolderCount < _holderCount) {
                 // Allow transfers to existing maxHolders
                 if (securityToken.balanceOf(_to) != 0 || securityToken.balanceOf(_from) == _amount) {
                     return (Result.NA, bytes32(0));

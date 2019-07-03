@@ -917,7 +917,7 @@ contract("CappedSTO", async (accounts) => {
             it("should get the exact details of the factory", async () => {
                 assert.equal((await I_CappedSTOFactory.setupCost.call()).toString(), cappedSTOSetupCost.toString());
                 assert.equal((await I_CappedSTOFactory.setupCostInPoly.call()).toString(), cappedSTOSetupCostPOLY.toString());
-                assert.equal((await I_CappedSTOFactory.types.call())[0], 3);
+                assert.equal((await I_CappedSTOFactory.getTypes.call())[0], 3);
                 assert.equal(web3.utils.hexToString(await I_CappedSTOFactory.name.call()), "CappedSTO", "Wrong Module added");
                 assert.equal(
                     await I_CappedSTOFactory.description.call(),
@@ -925,7 +925,7 @@ contract("CappedSTO", async (accounts) => {
                     "Wrong Module added"
                 );
                 assert.equal(await I_CappedSTOFactory.title.call(), "Capped STO", "Wrong Module added");
-                let tags = await I_CappedSTOFactory.tags.call();
+                let tags = await I_CappedSTOFactory.getTags.call();
                 assert.equal(web3.utils.hexToString(tags[0]), "Capped");
                 assert.equal(await I_CappedSTOFactory.version.call(), "3.0.0");
             });

@@ -1253,7 +1253,7 @@ contract("GeneralTransferManager", async (accounts) => {
     describe("General Transfer Manager Factory test cases", async () => {
         it("Should get the exact details of the factory", async () => {
             assert.equal(await I_GeneralTransferManagerFactory.setupCost.call(), 0);
-            assert.equal((await I_GeneralTransferManagerFactory.types.call())[0], 2);
+            assert.equal((await I_GeneralTransferManagerFactory.getTypes.call())[0], 2);
             assert.equal(
                 web3.utils.toAscii(await I_GeneralTransferManagerFactory.name.call()).replace(/\u0000/g, ""),
                 "GeneralTransferManager",
@@ -1269,7 +1269,7 @@ contract("GeneralTransferManager", async (accounts) => {
         });
 
         it("Should get the tags of the factory", async () => {
-            let tags = await I_GeneralTransferManagerFactory.tags.call();
+            let tags = await I_GeneralTransferManagerFactory.getTags.call();
             assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ""), "General");
         });
     });
@@ -1277,7 +1277,7 @@ contract("GeneralTransferManager", async (accounts) => {
     describe("Dummy STO Factory test cases", async () => {
         it("should get the exact details of the factory", async () => {
             assert.equal(await I_DummySTOFactory.setupCost.call(), 0);
-            assert.equal((await I_DummySTOFactory.types.call())[0], 3);
+            assert.equal((await I_DummySTOFactory.getTypes.call())[0], 3);
             assert.equal(
                 web3.utils.toAscii(await I_DummySTOFactory.name.call()).replace(/\u0000/g, ""),
                 "DummySTO",
@@ -1288,7 +1288,7 @@ contract("GeneralTransferManager", async (accounts) => {
         });
 
         it("Should get the tags of the factory", async () => {
-            let tags = await I_DummySTOFactory.tags.call();
+            let tags = await I_DummySTOFactory.getTags.call();
             assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ""), "Dummy");
         });
 

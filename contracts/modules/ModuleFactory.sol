@@ -50,14 +50,14 @@ contract ModuleFactory is IModuleFactory, Ownable {
     /**
      * @notice Type of the Module factory
      */
-    function types() external view returns(uint8[] memory) {
+    function getTypes() external view returns(uint8[] memory) {
         return typesData;
     }
 
     /**
      * @notice Get the tags related to the module factory
      */
-    function tags() external view returns(bytes32[] memory) {
+    function getTags() external view returns(bytes32[] memory) {
         return tagsData;
     }
 
@@ -154,7 +154,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @notice Used to get the lower bound
      * @return lower bound
      */
-    function lowerSTVersionBounds() external view returns(uint8[] memory) {
+    function getLowerSTVersionBounds() external view returns(uint8[] memory) {
         return VersionUtils.unpack(compatibleSTVersionRange["lowerBound"]);
     }
 
@@ -162,7 +162,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @notice Used to get the upper bound
      * @return upper bound
      */
-    function upperSTVersionBounds() external view returns(uint8[] memory) {
+    function getUpperSTVersionBounds() external view returns(uint8[] memory) {
         return VersionUtils.unpack(compatibleSTVersionRange["upperBound"]);
     }
 

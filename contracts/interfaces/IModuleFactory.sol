@@ -47,12 +47,12 @@ interface IModuleFactory {
     /**
      * @notice Type of the Module factory
      */
-    function types() external view returns(uint8[] memory moduleTypes);
+    function getTypes() external view returns(uint8[] memory moduleTypes);
 
     /**
      * @notice Get the tags related to the module factory
      */
-    function tags() external view returns(bytes32[] memory moduleTags);
+    function getTags() external view returns(bytes32[] memory moduleTags);
 
     /**
      * @notice Used to change the setup fee
@@ -83,13 +83,13 @@ interface IModuleFactory {
      * @notice Used to get the lower bound
      * @return Lower bound
      */
-    function lowerSTVersionBounds() external view returns(uint8[] memory lowerBounds);
+    function getLowerSTVersionBounds() external view returns(uint8[] memory lowerBounds);
 
     /**
      * @notice Used to get the upper bound
      * @return Upper bound
      */
-    function upperSTVersionBounds() external view returns(uint8[] memory upperBounds);
+    function getUpperSTVersionBounds() external view returns(uint8[] memory upperBounds);
 
     /**
      * @notice Updates the tags of the ModuleFactory

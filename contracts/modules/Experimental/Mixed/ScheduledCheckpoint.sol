@@ -57,6 +57,7 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
      */
     function addSchedule(bytes32 _name, uint256 _startTime, uint256 _interval, TimeUnit _timeUnit) external {
         _onlySecurityTokenOwner();
+        require(_name != bytes32(""), "Empty name");
         require(_startTime > now, "Start time must be in the future");
         require(schedules[_name].name == bytes32(0), "Name already in use");
         schedules[_name].name = _name;
@@ -75,6 +76,7 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
      */
     function removeSchedule(bytes32 _name) external {
         _onlySecurityTokenOwner();
+        require(_name != bytes32(""), "Empty name");
         require(schedules[_name].name == _name, "Name does not exist");
         uint256 index = schedules[_name].index;
         names[index] = names[names.length - 1];

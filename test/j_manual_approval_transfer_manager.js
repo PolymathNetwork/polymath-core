@@ -811,7 +811,7 @@ contract("ManualApprovalTransferManager", accounts => {
     describe("ManualApproval Transfer Manager Factory test cases", async () => {
         it("Should get the exact details of the factory", async () => {
             assert.equal(await I_ManualApprovalTransferManagerFactory.setupCost.call(), 0);
-            assert.equal((await I_ManualApprovalTransferManagerFactory.types.call())[0], 2);
+            assert.equal((await I_ManualApprovalTransferManagerFactory.getTypes.call())[0], 2);
             let name = web3.utils.toUtf8(await I_ManualApprovalTransferManagerFactory.name.call());
             assert.equal(name, "ManualApprovalTransferManager", "Wrong Module added");
             let desc = await I_ManualApprovalTransferManagerFactory.description.call();
@@ -822,7 +822,7 @@ contract("ManualApprovalTransferManager", accounts => {
         });
 
         it("Should get the tags of the factory", async () => {
-            let tags = await I_ManualApprovalTransferManagerFactory.tags.call();
+            let tags = await I_ManualApprovalTransferManagerFactory.getTags.call();
             assert.equal(web3.utils.toUtf8(tags[0]), "Manual Approval");
             assert.equal(web3.utils.toUtf8(tags[1]), "Transfer Restriction");
         });

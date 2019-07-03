@@ -108,7 +108,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     // Emit when ownership of the ticker gets changed
     event ChangeTickerOwnership(string _ticker, address indexed _oldOwner, address indexed _newOwner);
     // Emit at the time of launching a new security token of version 3.0+
-    event NewSecurityTokenCreated(
+    event NewSecurityToken(
         string _ticker,
         string _name,
         address indexed _securityTokenAddress,
@@ -173,8 +173,12 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @dev Throws if called by any account other than the owner.
      */
     modifier onlyOwner() {
-        require(msg.sender == owner(), "Only owner");
+        _onlyOwner();
         _;
+    }
+
+    function _onlyOwner() internal view {
+        require(msg.sender == owner(), "Only owner");
     }
 
     modifier onlyOwnerOrSelf() {
@@ -639,7 +643,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
                 _ticker, _name, newSecurityTokenAddress, issuer, now, issuer, false, _polyFee
             );
         } else {
-            emit NewSecurityTokenCreated(
+            emit NewSecurityToken(
                 _ticker, _name, newSecurityTokenAddress, issuer, now, issuer, false, _usdFee, _polyFee, _protocolVersion
             );
         }
@@ -691,6 +695,16 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         internal
         returns(address newSecurityTokenAddress)
     {
+        // In v2.x of STFactory, the final argument to deployToken is the PolymathRegistry.
+        // In v3.x of STFactory, the final argument to deployToken is the Treasury wallet.
+        uint8[] memory upperLimit = new uint8[](3);
+        upperLimit[0] = 2;
+        upperLimit[1] = 99;
+        upperLimit[2] = 99;
+        if (VersionUtils.lessThanOrEqual(VersionUtils.unpack(uint24(_protocolVersion)), upperLimit)) {
+            _wallet = getAddressValue(POLYMATHREGISTRY);
+        }
+
         newSecurityTokenAddress = ISTFactory(getAddressValue(Encoder.getKey("protocolVersionST", _protocolVersion))).deployToken(
             _name,
             _ticker,
@@ -698,8 +712,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
             _tokenDetails,
             _issuer,
             _divisible,
-            _wallet,
-            getAddressValue(POLYMATHREGISTRY)
+            _wallet
         );
 
         /*solium-disable-next-line security/no-block-members*/
@@ -739,7 +752,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         set(Encoder.getKey("tickerToSecurityToken", ticker), _securityToken);
         _modifyTicker(_owner, ticker, registrationTime, expiryTime, true);
         _storeSecurityTokenData(_securityToken, ticker, _tokenDetails, _deployedAt);
-        emit NewSecurityTokenCreated(
+        emit NewSecurityToken(
             ticker, ISecurityToken(_securityToken).name(), _securityToken, _owner, _deployedAt, msg.sender, true, uint256(0), uint256(0), 0
         );
     }
@@ -951,5 +964,4 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     function owner() public view returns(address) {
         return getAddressValue(OWNER);
     }
-
 }

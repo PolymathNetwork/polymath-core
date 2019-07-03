@@ -26,7 +26,7 @@ contract TransferManager is ITransferManager, Module {
      */
     function getTokensByPartition(bytes32 _partition, address _tokenHolder, uint256 /*_additionalBalance*/) external view returns(uint256) {
         if (_partition == UNLOCKED)
-            return ISecurityToken(securityToken).balanceOf(_tokenHolder);
+            return securityToken.balanceOf(_tokenHolder);
         return uint256(0);
     }
 

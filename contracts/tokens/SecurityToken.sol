@@ -198,7 +198,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
         //Check that the module factory exists in the ModuleRegistry - will throw otherwise
         moduleRegistry.useModule(_moduleFactory, false);
         IModuleFactory moduleFactory = IModuleFactory(_moduleFactory);
-        uint8[] memory moduleTypes = moduleFactory.types();
+        uint8[] memory moduleTypes = moduleFactory.getTypes();
         uint256 moduleCost = moduleFactory.setupCostInPoly();
         require(moduleCost <= _maxCost, "Invalid cost");
         //Approve fee for module

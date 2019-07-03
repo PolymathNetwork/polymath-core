@@ -311,6 +311,9 @@ contract("CountTransferManager", async (accounts) => {
             );
 
             await catchRevert(I_SecurityToken.issue(account_investor3, new BN(web3.utils.toWei("3", "ether")), "0x0", { from: token_owner }));
+            await catchRevert(I_SecurityToken.transfer(account_investor3, new BN(web3.utils.toWei("1", "ether")), { from: account_investor2 }));
+            let canTransfer = await I_SecurityToken.canTransfer(account_investor3, new BN(web3.utils.toWei("1", "ether")), "0x0", { from: account_investor2 });
+            assert.equal(canTransfer[0], "0x50"); //Transfer failure.
         });
 
         it("Should still be able to add to original token holders", async () => {

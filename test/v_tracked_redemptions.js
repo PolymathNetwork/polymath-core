@@ -278,7 +278,7 @@ contract("TrackedRedemption", async (accounts) => {
         describe("Test cases for the TrackedRedemptionFactory", async () => {
             it("should get the exact details of the factory", async () => {
                 assert.equal((await I_TrackedRedemptionFactory.setupCost.call()).toNumber(), 0);
-                assert.equal((await I_TrackedRedemptionFactory.types.call())[0], 5);
+                assert.equal((await I_TrackedRedemptionFactory.getTypes.call())[0], 5);
                 assert.equal(await I_TrackedRedemptionFactory.version.call(), "3.0.0");
                 assert.equal(
                     web3.utils.toAscii(await I_TrackedRedemptionFactory.name.call()).replace(/\u0000/g, ""),
@@ -287,7 +287,7 @@ contract("TrackedRedemption", async (accounts) => {
                 );
                 assert.equal(await I_TrackedRedemptionFactory.description.call(), "Track token redemptions", "Wrong Module added");
                 assert.equal(await I_TrackedRedemptionFactory.title.call(), "Tracked Redemption", "Wrong Module added");
-                let tags = await I_TrackedRedemptionFactory.tags.call();
+                let tags = await I_TrackedRedemptionFactory.getTags.call();
                 assert.equal(tags.length, 2);
             });
         });

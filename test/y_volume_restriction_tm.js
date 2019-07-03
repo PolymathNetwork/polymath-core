@@ -1960,7 +1960,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
         it("Should get the exact details of the factory", async() => {
             assert.equal(await I_VolumeRestrictionTMFactory.setupCost.call(),0);
-            assert.equal((await I_VolumeRestrictionTMFactory.types.call())[0],2);
+            assert.equal((await I_VolumeRestrictionTMFactory.getTypes.call())[0],2);
             assert.equal(web3.utils.toAscii(await I_VolumeRestrictionTMFactory.name.call())
                         .replace(/\u0000/g, ''),
                         "VolumeRestrictionTM",
@@ -1975,7 +1975,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should get the tags of the factory", async() => {
-            let tags = await I_VolumeRestrictionTMFactory.tags.call();
+            let tags = await I_VolumeRestrictionTMFactory.getTags.call();
             assert.equal(tags.length, 3);
             assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ''), "Rolling Period");
         });

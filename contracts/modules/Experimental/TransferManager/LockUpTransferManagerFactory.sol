@@ -23,7 +23,7 @@ contract LockUpTransferManagerFactory is ModuleFactory {
         title = "LockUp Transfer Manager";
         description = "Manage transfers using lock ups over time";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(2), uint8(9), uint8(9));
     }
 
      /**
@@ -48,7 +48,7 @@ contract LockUpTransferManagerFactory is ModuleFactory {
         res[0] = 2;
         return res;
     }
-   
+
     /**
      * @notice Returns the instructions associated with the module
      */

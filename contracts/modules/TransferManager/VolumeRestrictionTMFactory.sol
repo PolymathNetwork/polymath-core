@@ -7,7 +7,7 @@ import "../ModuleFactory.sol";
  * @title Factory for deploying VolumeRestrictionTM module
  */
 contract VolumeRestrictionTMFactory is ModuleFactory {
-    
+
     address public logicContract;
 
     /**
@@ -16,14 +16,14 @@ contract VolumeRestrictionTMFactory is ModuleFactory {
      */
     constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost, address _logicContract) public
     ModuleFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
-    {   
+    {
         require(_logicContract != address(0), "Invalid address");
         version = "1.0.0";
         name = "VolumeRestrictionTM";
         title = "Volume Restriction Transfer Manager";
         description = "Manage transfers based on the volume of tokens that needs to be transact";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(2), uint8(9), uint8(9));
         logicContract = _logicContract;
     }
 

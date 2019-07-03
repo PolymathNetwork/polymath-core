@@ -27,7 +27,7 @@ contract GeneralTransferManagerFactory is ModuleFactory {
         title = "General Transfer Manager";
         description = "Manage transfers using a time based whitelist";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(2), uint8(9), uint8(9));
         logicContract = _logicContract;
     }
 

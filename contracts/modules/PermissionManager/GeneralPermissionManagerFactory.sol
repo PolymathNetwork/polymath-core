@@ -20,7 +20,7 @@ contract GeneralPermissionManagerFactory is ModuleFactory {
         title = "General Permission Manager";
         description = "Manage permissions within the Security Token and attached modules";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(2), uint8(9), uint8(9));
     }
 
     /**

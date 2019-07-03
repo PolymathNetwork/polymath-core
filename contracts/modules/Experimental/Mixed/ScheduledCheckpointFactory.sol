@@ -23,7 +23,7 @@ contract ScheduledCheckpointFactory is ModuleFactory {
         title = "Schedule Checkpoints";
         description = "Allows you to schedule checkpoints in the future";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(2), uint8(9), uint8(9));
     }
 
     /**

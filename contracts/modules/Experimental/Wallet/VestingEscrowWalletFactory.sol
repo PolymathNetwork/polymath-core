@@ -9,7 +9,7 @@ import "../../../libraries/Util.sol";
  * @title Factory for deploying VestingEscrowWallet module
  */
 contract VestingEscrowWalletFactory is ModuleFactory {
-    
+
     address public logicContract;
     /**
      * @notice Constructor
@@ -24,7 +24,7 @@ contract VestingEscrowWalletFactory is ModuleFactory {
         title = "Vesting Escrow Wallet";
         description = "Manage vesting schedules to employees / affiliates";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(2), uint8(9), uint8(9));
         logicContract = _logicContract;
     }
 

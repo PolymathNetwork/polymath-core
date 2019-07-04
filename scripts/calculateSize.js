@@ -9,7 +9,7 @@ async function readFiles() {
         return fs.readdirSync("./build/contracts/");
     } else {
         console.log('Compiling contracts. This may take a while, please wait.');
-        exec('truffle compile');
+        exec('./node_modules/.bin/truffle compile');
         return fs.readdirSync("./build/contracts/");
     }
 }

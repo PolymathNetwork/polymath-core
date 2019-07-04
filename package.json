@@ -9,6 +9,7 @@
   "scripts": {
     "test": "scripts/test.sh 2> /dev/null",
     "clash-check": "node scripts/clashCheck.js",
+    "istr-check": "node scripts/ISTRCheck.js",
     "gas": "scripts/gasUsage.sh",
     "wintest": "scripts\\wintest.cmd",
     "wincov": "scripts\\wincov.cmd",

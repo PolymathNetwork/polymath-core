@@ -76,6 +76,7 @@ All notable changes to this project will be documented in this file.
 
 ## Modules   
 * Introduced BTM, LTM and VEW modules.   
+* Remove `takeFee()` function.
 
 ## Generalize
 * Removed `_polyAddress` parameter from constructors of all modules and module factories.

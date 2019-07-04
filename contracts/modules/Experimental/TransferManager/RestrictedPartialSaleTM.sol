@@ -46,7 +46,7 @@ contract RestrictedPartialSaleTM is TransferManager {
         _changeExemptionWalletList(_treasuryWallet, true);
     }
 
-     /** 
+    /** 
      * @notice Used to verify the transfer transaction and prevent a transfer if it passes the allowed amount of token holders
      * @param _from Address of the sender
      * @param _amount Amount to send
@@ -84,7 +84,7 @@ contract RestrictedPartialSaleTM is TransferManager {
 
     function _verifyTransfer(address _from, uint256 _amount) internal view returns (Result, bytes32) {
         if (!paused && _from != address(0) && exemptIndex[_from] == 0) {
-            if (ISecurityToken(securityToken).balanceOf(_from) != _amount)
+            if (securityToken.balanceOf(_from) != _amount)
                 return (Result.INVALID, bytes32(uint256(address(this)) << 96));
         }
         return (Result.NA, bytes32(0));

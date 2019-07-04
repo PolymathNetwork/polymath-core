@@ -11,12 +11,12 @@ contract RestrictedPartialSaleTMFactory is ModuleFactory {
     /**
      * @notice Constructor
      * @param _setupCost Setup cost of the module
-     * @param _usageCost Usage cost of the module
      * @param _polymathRegistry Address of the polymath registry
      * @param _isCostInPoly Whether the cost is in POLY or not
      */
-    constructor (uint256 _setupCost, uint256 _usageCost, address _polymathRegistry, bool _isCostInPoly) public
-    ModuleFactory(_setupCost, _usageCost, _polymathRegistry, _isCostInPoly)
+    constructor (uint256 _setupCost, address _polymathRegistry, bool _isCostInPoly)
+    public
+    ModuleFactory(_setupCost, _polymathRegistry, _isCostInPoly)
     {   
         initialVersion = "3.0.0";
         name = "RestrictedPartialSaleTM";
@@ -35,7 +35,7 @@ contract RestrictedPartialSaleTMFactory is ModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes calldata _data) external returns(address) {
-        address restrictedPartialSaleTM = address(new RestrictedPartialSaleTM(msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken")));
+        address restrictedPartialSaleTM = address(new RestrictedPartialSaleTM(msg.sender, polymathRegistry.getAddress("PolyToken")));
         _initializeModule(restrictedPartialSaleTM, _data);
         return restrictedPartialSaleTM;
     }

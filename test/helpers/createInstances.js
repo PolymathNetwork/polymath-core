@@ -421,7 +421,7 @@ export async function deployLockUpTMAndVerified(accountPolymath, MRProxyInstance
 }
 
 export async function deployRestrictedPartialSaleTMAndVerifyed(accountPolymath, MRProxyInstance, setupCost, feeInPoly = false) {
-    I_RestrictedPartialSaleTMFactory = await RestrictedPartialSaleTMFactory.new(setupCost, new BN(0), I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
+    I_RestrictedPartialSaleTMFactory = await RestrictedPartialSaleTMFactory.new(setupCost, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
     assert.notEqual(
         I_RestrictedPartialSaleTMFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",

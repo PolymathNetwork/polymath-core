@@ -443,7 +443,7 @@ contract("RestrictedPartialSaleTM", accounts => {
     describe("Test cases for the RestrictedPartialSaleTMFactory", async () => {
         it("should get the exact details of the factory", async () => {
             assert.equal((await I_RestrictedPartialSaleTMFactory.setupCost.call()).toNumber(), 0);
-            assert.equal((await I_RestrictedPartialSaleTMFactory.types.call())[0], 2);
+            assert.equal((await I_RestrictedPartialSaleTMFactory.getTypes.call())[0], 2);
             assert.equal(await I_RestrictedPartialSaleTMFactory.version.call(), "3.0.0");
             assert.equal(
                 web3.utils.toAscii(await I_RestrictedPartialSaleTMFactory.name.call()).replace(/\u0000/g, ""),
@@ -456,7 +456,7 @@ contract("RestrictedPartialSaleTM", accounts => {
                 "Wrong Module added"
             );
             assert.equal(await I_RestrictedPartialSaleTMFactory.title.call(), "Restricted Partial Sale Transfer Manager", "Wrong Module added");
-            let tags = await I_RestrictedPartialSaleTMFactory.tags.call();
+            let tags = await I_RestrictedPartialSaleTMFactory.getTags.call();
             assert.equal(tags.length, 3);
         });
     });

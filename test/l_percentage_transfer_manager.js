@@ -423,7 +423,7 @@ contract("PercentageTransferManager", async (accounts) => {
     describe("Percentage Transfer Manager Factory test cases", async () => {
         it("Should get the exact details of the factory", async () => {
             assert.equal(await I_PercentageTransferManagerFactory.setupCost.call(), 0);
-            assert.equal((await I_PercentageTransferManagerFactory.types.call())[0], 2);
+            assert.equal((await I_PercentageTransferManagerFactory.getTypes.call())[0], 2);
             assert.equal(
                 web3.utils.toAscii(await I_PercentageTransferManagerFactory.name.call()).replace(/\u0000/g, ""),
                 "PercentageTransferManager",
@@ -439,7 +439,7 @@ contract("PercentageTransferManager", async (accounts) => {
         });
 
         it("Should get the tags of the factory", async () => {
-            let tags = await I_PercentageTransferManagerFactory.tags.call();
+            let tags = await I_PercentageTransferManagerFactory.getTags.call();
             assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ""), "Percentage");
         });
     });

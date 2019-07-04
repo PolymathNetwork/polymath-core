@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "./../../Checkpoint/ICheckpoint.sol";
 import "../../TransferManager/TransferManager.sol";
@@ -57,6 +57,7 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
      */
     function addSchedule(bytes32 _name, uint256 _startTime, uint256 _interval, TimeUnit _timeUnit) external {
         _onlySecurityTokenOwner();
+        require(_name != bytes32(""), "Empty name");
         require(_startTime > now, "Start time must be in the future");
         require(schedules[_name].name == bytes32(0), "Name already in use");
         schedules[_name].name = _name;
@@ -75,6 +76,7 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
      */
     function removeSchedule(bytes32 _name) external {
         _onlySecurityTokenOwner();
+        require(_name != bytes32(""), "Empty name");
         require(schedules[_name].name == _name, "Name does not exist");
         uint256 index = schedules[_name].index;
         names[index] = names[names.length - 1];
@@ -154,7 +156,7 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
     function _update(bytes32 _name) internal {
         Schedule storage schedule = schedules[_name];
         if (schedule.nextTime <= now) {
-            uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
+            uint256 checkpointId = securityToken.createCheckpoint();
             schedule.checkpointIds.push(checkpointId);
             schedule.timestamps.push(schedule.nextTime);
             uint256 periods;
@@ -194,7 +196,7 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
             _update(names[i]);
         }
     }
-    
+
     /**
      * @notice Return the permissions flag that are associated with CountTransferManager
      */

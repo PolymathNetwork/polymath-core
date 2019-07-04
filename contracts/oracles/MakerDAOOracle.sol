@@ -1,11 +1,11 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "../interfaces/IOracle.sol";
 import "../external/IMedianizer.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 contract MakerDAOOracle is IOracle, Ownable {
-    address public medianizer;
+    IMedianizer public medianizer;
     address public currencyAddress;
     bytes32 public currencySymbol;
 
@@ -24,7 +24,7 @@ contract MakerDAOOracle is IOracle, Ownable {
       * @param _currencySymbol Symbol of currency
       */
     constructor(address _medianizer, address _currencyAddress, bytes32 _currencySymbol) public {
-        medianizer = _medianizer;
+        medianizer = IMedianizer(_medianizer);
         currencyAddress = _currencyAddress;
         currencySymbol = _currencySymbol;
     }
@@ -36,8 +36,8 @@ contract MakerDAOOracle is IOracle, Ownable {
     function changeMedianier(address _medianizer) public onlyOwner {
         require(_medianizer != address(0), "0x not allowed");
         /*solium-disable-next-line security/no-block-members*/
-        emit ChangeMedianizer(_medianizer, medianizer);
-        medianizer = _medianizer;
+        emit ChangeMedianizer(_medianizer, address(medianizer));
+        medianizer = IMedianizer(_medianizer);
     }
 
     /**
@@ -69,7 +69,7 @@ contract MakerDAOOracle is IOracle, Ownable {
         if (manualOverride) {
             return manualPrice;
         }
-        (bytes32 price, bool valid) = IMedianizer(medianizer).peek();
+        (bytes32 price, bool valid) = medianizer.peek();
         require(valid, "MakerDAO Oracle returning invalid value");
         return uint256(price);
     }

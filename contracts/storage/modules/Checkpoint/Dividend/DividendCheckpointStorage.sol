@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 /**
  * @title Holds the storage variable for the DividendCheckpoint modules (i.e ERC20, Ether)

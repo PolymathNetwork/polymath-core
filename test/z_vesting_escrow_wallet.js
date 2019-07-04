@@ -138,7 +138,7 @@ contract('VestingEscrowWallet', accounts => {
 
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let tx = await I_STRProxied.registerTicker(token_owner, symbol, contact, { from : token_owner });
+            let tx = await I_STRProxied.registerNewTicker(token_owner, symbol, { from : token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._ticker, symbol.toUpperCase());
         });
@@ -290,7 +290,7 @@ contract('VestingEscrowWallet', accounts => {
         });
 
         it("Should get the tags of the factory", async () => {
-            let tags = await I_VestingEscrowWalletFactory.tags.call();
+            let tags = await I_VestingEscrowWalletFactory.getTags.call();
             assert.equal(tags.length, 3);
             assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ""), "Vesting");
             assert.equal(web3.utils.toAscii(tags[1]).replace(/\u0000/g, ""), "Escrow");

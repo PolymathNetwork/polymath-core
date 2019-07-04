@@ -139,7 +139,7 @@ contract("Concurrent STO", async (accounts) => {
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.getTokens(initRegFee, account_issuer);
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: account_issuer });
-            let tx = await I_STRProxied.registerTicker(account_issuer, symbol, name, { from: account_issuer });
+            let tx = await I_STRProxied.registerNewTicker(account_issuer, symbol, { from: account_issuer });
             assert.equal(tx.logs[0].args._owner, account_issuer);
             assert.equal(tx.logs[0].args._ticker, symbol);
         });

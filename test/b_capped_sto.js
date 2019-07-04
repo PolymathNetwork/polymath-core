@@ -171,7 +171,7 @@ contract("CappedSTO", async (accounts) => {
     describe("Generate the SecurityToken", async () => {
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let tx = await I_STRProxied.registerTicker(token_owner, symbol, name, { from: token_owner });
+            let tx = await I_STRProxied.registerNewTicker(token_owner, symbol, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._ticker, symbol);
         });
@@ -624,7 +624,7 @@ contract("CappedSTO", async (accounts) => {
         describe("Launch a new SecurityToken", async () => {
             it("POLY: Should register the ticker before the generation of the security token", async () => {
                 await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-                let tx = await I_STRProxied.registerTicker(token_owner, P_symbol, P_name, { from: token_owner });
+                let tx = await I_STRProxied.registerNewTicker(token_owner, P_symbol, { from: token_owner });
                 assert.equal(tx.logs[0].args._owner, token_owner);
                 assert.equal(tx.logs[0].args._ticker, P_symbol);
             });
@@ -848,16 +848,13 @@ contract("CappedSTO", async (accounts) => {
             it("Should return correct price when price is in poly", async () => {
                 let newFactory = await CappedSTOFactory.new(
                     new BN(1000),
-                    new BN(1000),
                     I_CappedSTO_Array_POLY[0].address,
                     I_PolymathRegistry.address,
                     true,
                     { from: account_polymath }
                 );
                 assert.equal((await newFactory.setupCostInPoly.call()).toString(), (new BN(1000)).toString());
-                assert.equal((await newFactory.usageCostInPoly.call()).toString(), (new BN(1000)).toString());
                 assert.equal((await newFactory.setupCost()).toString(), (new BN(1000)).toString());
-                assert.equal((await newFactory.usageCost()).toString(), (new BN(1000)).toString());
             });
         });
 
@@ -920,7 +917,7 @@ contract("CappedSTO", async (accounts) => {
             it("should get the exact details of the factory", async () => {
                 assert.equal((await I_CappedSTOFactory.setupCost.call()).toString(), cappedSTOSetupCost.toString());
                 assert.equal((await I_CappedSTOFactory.setupCostInPoly.call()).toString(), cappedSTOSetupCostPOLY.toString());
-                assert.equal((await I_CappedSTOFactory.types.call())[0], 3);
+                assert.equal((await I_CappedSTOFactory.getTypes.call())[0], 3);
                 assert.equal(web3.utils.hexToString(await I_CappedSTOFactory.name.call()), "CappedSTO", "Wrong Module added");
                 assert.equal(
                     await I_CappedSTOFactory.description.call(),
@@ -928,7 +925,7 @@ contract("CappedSTO", async (accounts) => {
                     "Wrong Module added"
                 );
                 assert.equal(await I_CappedSTOFactory.title.call(), "Capped STO", "Wrong Module added");
-                let tags = await I_CappedSTOFactory.tags.call();
+                let tags = await I_CappedSTOFactory.getTags.call();
                 assert.equal(web3.utils.hexToString(tags[0]), "Capped");
                 assert.equal(await I_CappedSTOFactory.version.call(), "3.0.0");
             });
@@ -997,7 +994,7 @@ contract("CappedSTO", async (accounts) => {
 
             it("Should get the listed permissions", async () => {
                 let tx = await I_CappedSTO_Array_POLY[0].getPermissions.call();
-                assert.equal(tx.length, 0);
+                assert.equal(tx.length, 1);
             });
 
             it("Should get the metrics of the STO", async () => {

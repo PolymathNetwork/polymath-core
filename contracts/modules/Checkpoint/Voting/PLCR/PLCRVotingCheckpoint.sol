@@ -53,7 +53,7 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
         withPerm(ADMIN)
     {
         uint256 startTime = now;
-        uint256 checkpointId = ISecurityToken(securityToken).createCheckpoint();
+        uint256 checkpointId = securityToken.createCheckpoint();
         _createBallotWithCheckpoint(_commitDuration, _revealDuration, _noOfProposals, _quorumPercentage, checkpointId, startTime);
     }
 
@@ -78,7 +78,7 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
         withPerm(ADMIN)
     {
         // validate the checkpointId, It should be less than or equal to the current checkpointId of the securityToken
-        require(_checkpointId <= ISecurityToken(securityToken).currentCheckpointId(), "Invalid checkpoint Id");
+        require(_checkpointId <= securityToken.currentCheckpointId(), "Invalid checkpoint Id");
         _createBallotWithCheckpoint(_commitDuration, _revealDuration, _noOfProposals, _quorumPercentage, _checkpointId, _startTime);
     }
 
@@ -140,7 +140,7 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
         require(ballot.investorToProposal[msg.sender].secretVote == bytes32(0), "Already voted");
         require(ballot.isActive, "Inactive ballot");
         // Get the balance of the voter (i.e `msg.sender`) at the checkpoint on which ballot was created.
-        uint256 weight = ISecurityToken(securityToken).balanceOfAt(msg.sender, ballot.checkpointId);
+        uint256 weight = securityToken.balanceOfAt(msg.sender, ballot.checkpointId);
         require(weight > 0, "Zero weight is not allowed");
         // Update the storage value. Assigned `0` as vote option it will be updated when voter reveals its vote.
         ballot.investorToProposal[msg.sender] = Vote(0, _secretVote);
@@ -170,7 +170,7 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
             "Invalid vote"
         );
         // Get the balance of the voter (i.e `msg.sender`) at the checkpoint on which ballot was created.
-        uint256 weight = ISecurityToken(securityToken).balanceOfAt(msg.sender, ballot.checkpointId);
+        uint256 weight = securityToken.balanceOfAt(msg.sender, ballot.checkpointId);
         bytes32 secretVote = ballot.investorToProposal[msg.sender].secretVote;
         // update the storage values
         ballot.proposalToVotes[_choiceOfProposal] = ballot.proposalToVotes[_choiceOfProposal].add(weight);
@@ -283,7 +283,7 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
         uint256 i = 0;
         uint256 counter = 0;
         uint256 maxWeight = 0;
-        uint256 supplyAtCheckpoint = ISecurityToken(securityToken).totalSupplyAt(ballot.checkpointId);
+        uint256 supplyAtCheckpoint = securityToken.totalSupplyAt(ballot.checkpointId);
         uint256 quorumWeight = (supplyAtCheckpoint.mul(ballot.quorum)).div(10 ** 18);
         voteWeighting = new uint256[](ballot.totalProposals);
         for (i = 0; i < ballot.totalProposals; i++) {
@@ -342,7 +342,7 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
         Ballot memory ballot = ballots[_ballotId];
         return (
             ballot.quorum,
-            ISecurityToken(securityToken).totalSupplyAt(ballot.checkpointId),
+            securityToken.totalSupplyAt(ballot.checkpointId),
             ballot.checkpointId,
             ballot.startTime,
             (uint256(ballot.startTime).add(uint256(ballot.commitDuration))).add(uint256(ballot.revealDuration)),

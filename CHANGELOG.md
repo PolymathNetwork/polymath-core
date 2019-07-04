@@ -32,9 +32,9 @@ All notable changes to this project will be documented in this file.
 * Add `redeemByPartition()` & `operatorRedeemByPartition()` function.   
 * Add `issueByPartition()` to issue the tokens as per given partition.     
 * `disableController()` now takes the sender signature to confirm the operation.    
-* Introduce `canTrasnfer()`, `canTransferFrom()` & `canTransferByPartition()` to validate the trasnfer before actually executing it.  
+* Introduce `canTransfer()`, `canTransferFrom()` & `canTransferByPartition()` to validate the transfer before actually executing it.  
 * Add document specific functions `setDocument()`, `removeDocument()`.   
-* Rename `forceTransfer()` to `controllerTransfer()` similarly `forceRedeem()` to `forceBurn()`.   
+* Rename `forceTransfer()` to `controllerTransfer()` similarly `forceBurn()` to `controllerRedeem()`.   
 * Add `isControllable()` to know whether the controller functions are allowed to execute or not.    
 * Add `isIssuable()`, `getInvestorsSubsetAt()`, `getTreasuryWallet()`, `isOperator()`, `isOperatorForPartition()`, `partitionsOf()`, `getDocument()`, `getAllDocument()` functions as getters to support ST functionality.   
 * Remove the `bool` return parameter from the `canTransfer` & `canTransferFrom` function.
@@ -42,7 +42,7 @@ All notable changes to this project will be documented in this file.
 ## STR
 * Introduce new contract `STRGetter.sol`. It only contains the getter functions of the STR.
 * Replaced `updatePolyTokenAddress()` function with `updateFromRegistry()` in `SecurityTokenRegistry`.  
-* Migrate all the getters of `SecurityTokenRegsitry.sol` to `STRGetter.sol` contract.
+* Migrate all the getters of `SecurityTokenRegistry.sol` to `STRGetter.sol` contract.
 * Removed `_polyToken` parameter from `initialize` function in `SecurityTokenRegistry`.
 * Allows an explicit token factory version to be used during creation of securityToken.
 * Rename the `getProtocolVersion()` to `getLatestProtocolVersion()`.
@@ -87,6 +87,7 @@ All notable changes to this project will be documented in this file.
 * Remove the  `_usageCost` variable when deploying any module factory.  
 * Remove `takeUsageFee()` function from evey module.   
 * Remove `changeUsageCost()` & `usageCostInPoly()` from every module factory. 
+* Remove `takeFee()` function.
 
 ## Generalize
 * Removed `_polyAddress` parameter from constructors of all modules and module factories.

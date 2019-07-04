@@ -43,7 +43,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
     bytes32 constant POLYMATHREGISTRY = 0x90eeab7c36075577c7cc5ff366e389fefa8a18289b949bab3529ab4471139d4d; //keccak256("polymathRegistry")
     bytes32 constant FEATURE_REGISTRY = 0xed9ca06607835ad25ecacbcb97f2bc414d4a51ecf391b5ae42f15991227ab146; //keccak256("featureRegistry")
     bytes32 constant SECURITY_TOKEN_REGISTRY = 0x12ada4f7ee6c2b7b933330be61fefa007a1f497dc8df1b349b48071a958d7a81; //keccak256("securityTokenRegistry")
-    
+
     ///////////////
     //// Modifiers
     ///////////////
@@ -118,6 +118,18 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         return IFeatureRegistry(getAddressValue(FEATURE_REGISTRY)).getFeatureStatus("customModulesAllowed");
     }
 
+
+    /**
+     * @notice Called by a SecurityToken (2.x) to check if the ModuleFactory is verified or appropriate custom module
+     * @dev ModuleFactory reputation increases by one every time it is deployed(used) by a ST.
+     * @dev Any module can be added during token creation without being registered if it is defined in the token proxy deployment contract
+     * @dev The feature switch for custom modules is labelled "customModulesAllowed"
+     * @param _moduleFactory is the address of the relevant module factory
+     */
+    function useModule(address _moduleFactory) external {
+        useModule(_moduleFactory, false);
+    }
+
     /**
      * @notice Called by a SecurityToken to check if the ModuleFactory is verified or appropriate custom module
      * @dev ModuleFactory reputation increases by one every time it is deployed(used) by a ST.
@@ -126,7 +138,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      * @param _moduleFactory is the address of the relevant module factory
      * @param _isUpgrade whether or not the function is being called as a result of an upgrade
      */
-    function useModule(address _moduleFactory, bool _isUpgrade) external nonReentrant {
+    function useModule(address _moduleFactory, bool _isUpgrade) public nonReentrant {
         if (_customModules()) {
             require(
                 getBoolValue(Encoder.getKey("verified", _moduleFactory)) || getAddressValue(Encoder.getKey("factoryOwner", _moduleFactory))
@@ -155,8 +167,8 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
      */
     function isCompatibleModule(address _moduleFactory, address _securityToken) public view returns(bool) {
         uint8[] memory _latestVersion = ISecurityToken(_securityToken).getVersion();
-        uint8[] memory _lowerBound = IModuleFactory(_moduleFactory).lowerSTVersionBounds();
-        uint8[] memory _upperBound = IModuleFactory(_moduleFactory).upperSTVersionBounds();
+        uint8[] memory _lowerBound = IModuleFactory(_moduleFactory).getLowerSTVersionBounds();
+        uint8[] memory _upperBound = IModuleFactory(_moduleFactory).getUpperSTVersionBounds();
         bool _isLowerAllowed = VersionUtils.lessThanOrEqual(_lowerBound, _latestVersion);
         bool _isUpperAllowed = VersionUtils.greaterThanOrEqual(_upperBound, _latestVersion);
         return (_isLowerAllowed && _isUpperAllowed);
@@ -183,7 +195,7 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         //Enforce type uniqueness
         uint256 i;
         uint256 j;
-        uint8[] memory moduleTypes = moduleFactory.types();
+        uint8[] memory moduleTypes = moduleFactory.getTypes();
         for (i = 1; i < moduleTypes.length; i++) {
             for (j = 0; j < i; j++) {
                 require(moduleTypes[i] != moduleTypes[j], "Type mismatch");
@@ -304,14 +316,14 @@ contract ModuleRegistry is IModuleRegistry, EternalStorage {
         uint256 i;
         uint256 j;
         for (i = 0; i < _modules.length; i++) {
-            counter = counter + IModuleFactory(_modules[i]).tags().length;
+            counter = counter + IModuleFactory(_modules[i]).getTags().length;
         }
         bytes32[] memory tags = new bytes32[](counter);
         address[] memory modules = new address[](counter);
         bytes32[] memory tempTags;
         counter = 0;
         for (i = 0; i < _modules.length; i++) {
-            tempTags = IModuleFactory(_modules[i]).tags();
+            tempTags = IModuleFactory(_modules[i]).getTags();
             for (j = 0; j < tempTags.length; j++) {
                 tags[counter] = tempTags[j];
                 modules[counter] = _modules[i];

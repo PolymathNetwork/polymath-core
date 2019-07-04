@@ -23,7 +23,6 @@ interface ISTFactory {
      * @param _issuer is the owner of the Security Token
      * @param _divisible whether the token is divisible or not
      * @param _treasuryWallet Ethereum address which will holds the STs.
-     * @param _polymathRegistry is the address of the Polymath Registry contract
      */
     function deployToken(
         string calldata _name,
@@ -32,10 +31,9 @@ interface ISTFactory {
         string calldata _tokenDetails,
         address _issuer,
         bool _divisible,
-        address _treasuryWallet,
-        address _polymathRegistry
-    ) 
-    external 
+        address _treasuryWallet //In v2.x this is the Polymath Registry
+    )
+    external
     returns(address tokenAddress);
 
     /**

@@ -6,6 +6,8 @@ const gbl = require('./common/global');
 const contracts = require('./helpers/contract_addresses');
 const abis = require('./helpers/contract_abis');
 const csvParse = require('./helpers/csv');
+const input = require('./IO/input');
+const output = require('./IO/output');
 const BigNumber = require('bignumber.js');
 const { table } = require('table')
 
@@ -25,11 +27,11 @@ let dividendsType;
 async function executeApp() {
   console.log('\n', chalk.blue('Dividends Manager - Main Menu', '\n'));
 
-  let tmModules = await getAllModulesByType(gbl.constants.MODULES_TYPES.DIVIDENDS);
+  let tmModules = await common.getAllModulesByType(securityToken, gbl.constants.MODULES_TYPES.DIVIDENDS);
   let nonArchivedModules = tmModules.filter(m => !m.archived);
   if (nonArchivedModules.length > 0) {
     console.log(`Dividends modules attached:`);
-    nonArchivedModules.map(m => console.log(`- ${m.name} at ${m.address}`))
+    nonArchivedModules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
   } else {
     console.log(`There are no dividends modules attached`);
   }
@@ -76,32 +78,30 @@ async function createCheckpointFromST() {
 }
 
 async function exploreAddress(currentCheckpoint) {
-  let address = readlineSync.question('Enter address to explore: ', {
-    limit: function (input) {
-      return web3.utils.isAddress(input);
-    },
-    limitMessage: "Must be a valid address",
-  });
+  let address = input.readAddress('Enter address to explore: ');
   let checkpoint = null;
   if (currentCheckpoint > 0) {
     checkpoint = await selectCheckpoint(false);
   }
 
-  let balance = web3.utils.fromWei(await securityToken.methods.balanceOf(address).call());
+  let balanceUnlocked = web3.utils.fromWei(await securityToken.methods.balanceOfByPartition(web3.utils.asciiToHex('UNLOCKED'), address).call());
+  let balanceTotal = web3.utils.fromWei(await securityToken.methods.balanceOf(address).call());
+  output.logUnlockedBalance(address, tokenSymbol, balanceUnlocked, balanceTotal);
+
   let totalSupply = web3.utils.fromWei(await securityToken.methods.totalSupply().call());
-  console.log(`Balance of ${address} is: ${balance} ${tokenSymbol}`);
-  console.log(`TotalSupply is: ${totalSupply} ${tokenSymbol}`);
+  output.logTotalSupply(tokenSymbol, totalSupply);
 
   if (checkpoint) {
-    let balanceAt = web3.utils.fromWei(await securityToken.methods.balanceOfAt(address, checkpoint).call());
-    let totalSupplyAt = web3.utils.fromWei(await securityToken.methods.totalSupplyAt(checkpoint).call());
-    console.log(`Balance of ${address} at checkpoint ${checkpoint}: ${balanceAt} ${tokenSymbol}`);
-    console.log(`TotalSupply at checkpoint ${checkpoint} is: ${totalSupplyAt} ${tokenSymbol}`);
+    let balanceAtCheckpoint = web3.utils.fromWei(await securityToken.methods.balanceOfAt(address, checkpoint).call());
+    output.logBalanceAtCheckpoint(address, tokenSymbol, checkpoint, balanceAtCheckpoint);
+
+    let totalSupplyAtCheckpoint = web3.utils.fromWei(await securityToken.methods.totalSupplyAt(checkpoint).call());
+    output.logTotalSupplyAtCheckpoint(tokenSymbol, checkpoint, totalSupplyAtCheckpoint);
   }
 }
 
 async function configExistingModules(dividendModules) {
-  let options = dividendModules.map(m => `${m.name} at ${m.address}`);
+  let options = dividendModules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module do you want to config? ', { cancel: 'RETURN' });
   console.log('Selected:', index != -1 ? options[index] : 'RETURN', '\n');
   let moduleNameSelected = index != -1 ? dividendModules[index].name : 'RETURN';
@@ -161,6 +161,7 @@ async function dividendsManager() {
       break;
     case 'Explore checkpoint':
       await exploreCheckpoint();
+      break;
     case 'Show current default exclusions':
       showExcluded(defaultExcluded);
       break;
@@ -190,12 +191,7 @@ async function dividendsManager() {
 }
 
 async function changeWallet() {
-  let newWallet = readlineSync.question('Enter the new account address to receive reclaimed dividends and tax: ', {
-    limit: function (input) {
-      return web3.utils.isAddress(input);
-    },
-    limitMessage: "Must be a valid address",
-  });
+  let newWallet = input.readAddress('Enter the new account address to receive reclaimed dividends and tax: ');
   let action = currentDividendsModule.methods.changeWallet(newWallet);
   let receipt = await common.sendTransaction(action);
   let event = common.getEventFromLogs(currentDividendsModule._jsonInterface, receipt.logs, 'SetWallet');
@@ -341,19 +337,9 @@ async function manageExistingDividend(dividendIndex) {
 }
 
 async function taxWithholding() {
-  let addresses = readlineSync.question(`Enter addresses to set tax withholding to(ex - add1, add2, add3, ...) or leave empty to read from 'tax_withholding_data.csv': `, {
-    limit: function (input) {
-      return input === '' || (input.split(',').every(a => web3.utils.isAddress(a)));
-    },
-    limitMessage: `All addresses must be valid`
-  }).split(',');
+  let addresses = input.readMultipleAddresses(`Enter addresses to set tax withholding to(ex - add1, add2, add3, ...) or leave empty to read from 'tax_withholding_data.csv': `).split(',');
   if (addresses[0] !== '') {
-    let percentage = readlineSync.question('Enter the percentage of dividends to withhold (number between 0-100): ', {
-      limit: function (input) {
-        return (parseFloat(input) >= 0 && parseFloat(input) <= 100);
-      },
-      limitMessage: 'Must be a value between 0 and 100',
-    });
+    let percentage = input.readPercentage('Enter the percentage of dividends to withhold');
     let percentageWei = web3.utils.toWei((percentage / 100).toString());
     let setWithHoldingFixedAction = currentDividendsModule.methods.setWithholdingFixed(addresses, percentageWei);
     let receipt = await common.sendTransaction(setWithHoldingFixedAction);
@@ -391,13 +377,7 @@ async function createDividends() {
   let token;
   if (dividendsType === 'ERC20') {
     do {
-      dividendToken = readlineSync.question(`Enter the address of ERC20 token in which dividend will be denominated(POLY = ${polyToken.options.address}): `, {
-        limit: function (input) {
-          return web3.utils.isAddress(input);
-        },
-        limitMessage: "Must be a valid ERC20 address",
-        defaultInput: polyToken.options.address
-      });
+      dividendToken = input.readAddress(`Enter the address of ERC20 token in which dividend will be denominated(POLY = ${polyToken.options.address}): `, polyToken.options.address);
       let erc20Symbol = await getERC20TokenSymbol(dividendToken);
       if (erc20Symbol != null) {
         token = new web3.eth.Contract(abis.erc20(), dividendToken);
@@ -477,19 +457,13 @@ async function reclaimFromContract() {
   switch (selected) {
     case 'ETH':
       let ethBalance = await web3.eth.getBalance(currentDividendsModule.options.address);
-      console.log(chalk.yellow(`Current ETH balance: ${web3.utils.fromWei(ethBalance)} ETH`));
+      output.logBalance(currentDividendsModule.options.address, 'ETH', web3.utils.fromWei(ethBalance));
       let reclaimETHAction = currentDividendsModule.methods.reclaimETH();
       await common.sendTransaction(reclaimETHAction);
       console.log(chalk.green('ETH has been reclaimed succesfully!'));
       break;
     case 'ERC20':
-      let erc20Address = readlineSync.question('Enter the ERC20 token address to reclaim (POLY = ' + polyToken.options.address + '): ', {
-        limit: function (input) {
-          return web3.utils.isAddress(input);
-        },
-        limitMessage: "Must be a valid address",
-        defaultInput: polyToken.options.address
-      });
+      let erc20Address = input.readAddress('Enter the ERC20 token address to reclaim (POLY = ' + polyToken.options.address + '): ', polyToken.options.address);
       let reclaimERC20Action = currentDividendsModule.methods.reclaimERC20(erc20Address);
       await common.sendTransaction(reclaimERC20Action);
       console.log(chalk.green('ERC20 has been reclaimed succesfully!'));
@@ -554,12 +528,7 @@ function showReport(_name, _tokenSymbol, _tokenDecimals, _amount, _witthheld, _c
 }
 
 async function pushDividends(dividendIndex, checkpointId) {
-  let accounts = readlineSync.question('Enter addresses to push dividends to (ex- add1,add2,add3,...) or leave empty to push to all addresses: ', {
-    limit: function (input) {
-      return input === '' || (input.split(',').every(a => web3.utils.isAddress(a)));
-    },
-    limitMessage: `All addresses must be valid`
-  }).split(',');
+  let accounts = input.readMultipleAddresses('Enter addresses to push dividends to (ex- add1,add2,add3,...) or leave empty to push to all addresses: ').split(',');
   if (accounts[0] !== '') {
     let action = currentDividendsModule.methods.pushDividendPaymentToAddresses(dividendIndex, accounts);
     let receipt = await common.sendTransaction(action);
@@ -577,12 +546,7 @@ async function pushDividends(dividendIndex, checkpointId) {
 }
 
 async function exploreAccount(dividendIndex, dividendTokenAddress, dividendTokenSymbol, dividendTokenDecimals) {
-  let account = readlineSync.question('Enter address to explore: ', {
-    limit: function (input) {
-      return web3.utils.isAddress(input);
-    },
-    limitMessage: "Must be a valid address",
-  });
+  let account = input.readAddress('Enter address to explore: ');
   let isExcluded = await currentDividendsModule.methods.isExcluded(account, dividendIndex).call();
   let hasClaimed = await currentDividendsModule.methods.isClaimed(account, dividendIndex).call();
   let dividendAmounts = await currentDividendsModule.methods.calculateDividend(dividendIndex, account).call();
@@ -625,34 +589,21 @@ to account ${ event._claimer} `
 }
 
 async function addDividendsModule() {
-  let availableModules = await moduleRegistry.methods.getModulesByTypeAndToken(gbl.constants.MODULES_TYPES.DIVIDENDS, securityToken.options.address).call();
-  let moduleList = await Promise.all(availableModules.map(async function (m) {
-    let moduleFactoryABI = abis.moduleFactory();
-    let moduleFactory = new web3.eth.Contract(moduleFactoryABI, m);
-    let moduleName = web3.utils.hexToUtf8(await moduleFactory.methods.name().call());
-    let moduleVersion = await moduleFactory.methods.version().call();
-    return { name: moduleName, version: moduleVersion, factoryAddress: m };
-  }));
-
+  let moduleList = await common.getAvailableModules(moduleRegistry, gbl.constants.MODULES_TYPES.DIVIDENDS, securityToken.options.address);
   let options = moduleList.map(m => `${m.name} - ${m.version} (${m.factoryAddress})`);
 
   let index = readlineSync.keyInSelect(options, 'Which dividends module do you want to add? ', { cancel: 'Return' });
   if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]}? `)) {
-    let wallet = readlineSync.question('Enter the account address to receive reclaimed dividends and tax: ', {
-      limit: function (input) {
-        return web3.utils.isAddress(input);
-      },
-      limitMessage: "Must be a valid address",
-    });
-    let configureFunction = abis.erc20DividendCheckpoint().find(o => o.name === 'configure' && o.type === 'function');
-    let bytes = web3.eth.abi.encodeFunctionCall(configureFunction, [wallet]);
-
-    let selectedDividendFactoryAddress = moduleList[index].factoryAddress;
-    let addModuleAction = securityToken.methods.addModule(selectedDividendFactoryAddress, bytes, 0, 0, false);
-    let receipt = await common.sendTransaction(addModuleAction);
-    let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
-    console.log(chalk.green(`Module deployed at address: ${event._module} `));
+    const moduleABI = moduleList[index].name === 'ERC20DividendCheckpoint' ? abis.erc20DividendCheckpoint() : abis.etherDividendCheckpoint();
+    await common.addModule(securityToken, polyToken, moduleList[index].factoryAddress, moduleABI, getDividendsInitializeData);
   }
+}
+
+function getDividendsInitializeData(moduleABI) {
+  let wallet = input.readAddress('Enter the account address to receive reclaimed dividends and tax: ');
+  let configureFunction = moduleABI.find(o => o.name === 'configure' && o.type === 'function');
+  let bytes = web3.eth.abi.encodeFunctionCall(configureFunction, [wallet]);
+  return bytes;
 }
 
 // Helper functions
@@ -821,51 +772,13 @@ function showExcluded(excluded) {
   console.log();
 }
 
-async function getAllModulesByType(type) {
-  function ModuleInfo(_moduleType, _name, _address, _factoryAddress, _archived, _paused) {
-    this.name = _name;
-    this.type = _moduleType;
-    this.address = _address;
-    this.factoryAddress = _factoryAddress;
-    this.archived = _archived;
-    this.paused = _paused;
-  }
-
-  let modules = [];
-
-  let allModules = await securityToken.methods.getModulesByType(type).call();
-
-  for (let i = 0; i < allModules.length; i++) {
-    let details = await securityToken.methods.getModule(allModules[i]).call();
-    let nameTemp = web3.utils.hexToUtf8(details[0]);
-    let pausedTemp = null;
-    if (type == gbl.constants.MODULES_TYPES.STO || type == gbl.constants.MODULES_TYPES.TRANSFER) {
-      let abiTemp = JSON.parse(require('fs').readFileSync(`${__dirname} /../../ build / contracts / ${nameTemp}.json`).toString()).abi;
-      let contractTemp = new web3.eth.Contract(abiTemp, details[1]);
-      pausedTemp = await contractTemp.methods.paused().call();
-    }
-    modules.push(new ModuleInfo(type, nameTemp, details[1], details[2], details[3], pausedTemp));
-  }
-
-  return modules;
-}
-
 async function initialize(_tokenSymbol) {
   welcome();
   await setup();
-  if (typeof _tokenSymbol === 'undefined') {
-    tokenSymbol = await selectToken();
-  } else {
-    tokenSymbol = _tokenSymbol;
-  }
-  let securityTokenAddress = await securityTokenRegistry.methods.getSecurityTokenAddress(tokenSymbol).call();
-  if (securityTokenAddress == '0x0000000000000000000000000000000000000000') {
-    console.log(chalk.red(`Selected Security Token ${tokenSymbol} does not exist.`));
+  securityToken = await common.selectToken(securityTokenRegistry, _tokenSymbol);
+  if (securityToken === null) {
     process.exit(0);
   }
-  let iSecurityTokenABI = abis.iSecurityToken();
-  securityToken = new web3.eth.Contract(iSecurityTokenABI, securityTokenAddress);
-  securityToken.setProvider(web3.currentProvider);
 }
 
 function welcome() {
@@ -897,36 +810,6 @@ async function setup() {
     console.log('\x1b[31m%s\x1b[0m', "There was a problem getting the contracts. Make sure they are deployed to the selected network.");
     process.exit(0);
   }
-}
-
-async function selectToken() {
-  let result = null;
-
-  let userTokens = await securityTokenRegistry.methods.getTokensByOwner(Issuer.address).call();
-  let tokenDataArray = await Promise.all(userTokens.map(async function (t) {
-    let tokenData = await securityTokenRegistry.methods.getSecurityTokenData(t).call();
-    return { symbol: tokenData[0], address: t };
-  }));
-  let options = tokenDataArray.map(function (t) {
-    return `${t.symbol} - Deployed at ${t.address} `;
-  });
-  options.push('Enter token symbol manually');
-
-  let index = readlineSync.keyInSelect(options, 'Select a token:', { cancel: 'Exit' });
-  let selected = index != -1 ? options[index] : 'Exit';
-  switch (selected) {
-    case 'Enter token symbol manually':
-      result = readlineSync.question('Enter the token symbol: ');
-      break;
-    case 'Exit':
-      process.exit();
-      break;
-    default:
-      result = tokenDataArray[index].symbol;
-      break;
-  }
-
-  return result;
 }
 
 async function getERC20TokenSymbol(tokenAddress) {

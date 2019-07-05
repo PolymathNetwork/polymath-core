@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 contract EternalStorage {
     /// @notice Internal mappings used to store all kinds on data into the contract

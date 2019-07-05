@@ -9,6 +9,7 @@
   "scripts": {
     "test": "scripts/test.sh 2> /dev/null",
     "clash-check": "node scripts/clashCheck.js",
+    "istr-check": "node scripts/ISTRCheck.js",
     "gas": "scripts/gasUsage.sh",
     "wintest": "scripts\\wintest.cmd",
     "wincov": "scripts\\wincov.cmd",
@@ -36,7 +37,8 @@
     "flatten-all": "npm run flatten-modules && npm run flatten-token && npm run flatten-mocks && npm run flatten-oracles && npm run flatten-proxies && npm run flatten && npm run flatten-proxyFactories",
     "ethereum-bridge": "node_modules/.bin/ethereum-bridge -H localhost:8545 -a 9 --dev",
     "st20generator": "node demo/ST20Generator",
-    "pretty": "prettier --write --print-width 140 --tab-width 4 \"**/*.js\""
+    "pretty": "prettier --write --print-width 140 --tab-width 4 \"**/*.js\"",
+    "st-storage-layout-check": "node scripts/compareStorageLayout.js SecurityToken STGetter"
   },
   "repository": {
     "type": "git",
@@ -52,12 +54,14 @@
     "ST20"
   ],
   "author": "Polymath Inc",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/PolymathNetwork/polymath-core/issues"
   },
   "homepage": "https://github.com/PolymathNetwork/polymath-core#readme",
   "dependencies": {
+    "dotenv": "^8.0.0",
+    "openzeppelin-solidity": "2.2.0",
     "truffle": "^5.0.4",
     "truffle-hdwallet-provider": "^1.0.4",
     "web3-provider-engine": "^14.1.0"
@@ -82,9 +86,7 @@
     "fs": "0.0.2",
     "ganache-cli": "6.1.8",
     "mocha-junit-reporter": "^1.18.0",
-    "openzeppelin-solidity": "2.2.0",
     "prettier": "^1.15.3",
-    "prompt": "^1.0.0",
     "request": "^2.88.0",
     "request-promise": "^4.2.2",
     "sol-merger": "^0.1.2",

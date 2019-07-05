@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "../TransferManager.sol";
 import "../../../libraries/Encoder.sol";
@@ -626,7 +626,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         flags = _getInvestorFlags(_investor);
     }
 
-    function _getInvestorFlags(address _investor) public view returns(uint256 flags) {
+    function _getInvestorFlags(address _investor) internal view returns(uint256 flags) {
         IDataStore dataStore = getDataStore();
         flags = dataStore.getUint256(_getKey(INVESTORFLAGS, _investor));
     }
@@ -686,7 +686,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
      * @param _additionalBalance It is the `_value` that transfer during transfer/transferFrom function call
      */
     function getTokensByPartition(bytes32 _partition, address _tokenHolder, uint256 _additionalBalance) external view returns(uint256) {
-        uint256 currentBalance = (msg.sender == securityToken) ? (IERC20(securityToken).balanceOf(_tokenHolder)).add(_additionalBalance) : IERC20(securityToken).balanceOf(_tokenHolder);
+        uint256 currentBalance = (msg.sender == address(securityToken)) ? (securityToken.balanceOf(_tokenHolder)).add(_additionalBalance) : securityToken.balanceOf(_tokenHolder);
         uint256 canSendAfter;
         (canSendAfter,,,) = _getKYCValues(_tokenHolder, getDataStore());
         canSendAfter = (canSendAfter == 0 ? defaults.canSendAfter:  canSendAfter);

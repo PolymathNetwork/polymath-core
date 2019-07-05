@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "../Module.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
@@ -11,11 +11,6 @@ import "../../interfaces/ISTO.sol";
  */
 contract STO is ISTO, STOStorage, Module {
     using SafeMath for uint256;
-
-    enum FundRaiseType {ETH, POLY, SC}
-
-    // Event
-    event SetFundRaiseTypes(FundRaiseType[] _fundRaiseTypes);
 
     /**
      * @notice Returns funds raised by the STO

@@ -8,12 +8,9 @@ jobs:
   include:
     - stage: Test
       install:
-        - echo -ne '\n' | sudo add-apt-repository ppa:ethereum/ethereum
-        - sudo apt-get update
-        - sudo apt-get install -y dpkg
-        - sudo apt-get install -y solc
         - yarn install
-      before_script: truffle version
+      before_script:
+        - truffle version
       script: npm run test
 notifications:
   slack:

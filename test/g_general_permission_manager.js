@@ -134,7 +134,7 @@ contract("GeneralPermissionManager", async (accounts) => {
     describe("Generate the SecurityToken", async () => {
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let tx = await I_STRProxied.registerTicker(token_owner, symbol, contact, { from: token_owner });
+            let tx = await I_STRProxied.registerNewTicker(token_owner, symbol, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._ticker, symbol.toUpperCase());
         });
@@ -324,7 +324,7 @@ contract("GeneralPermissionManager", async (accounts) => {
         it("Should create a new token and add some more delegates, then get them", async() => {
             await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let tx1 = await I_STRProxied.registerTicker(token_owner, "DEL", contact, { from: token_owner });
+            let tx1 = await I_STRProxied.registerNewTicker(token_owner, "DEL", { from: token_owner });
             assert.equal(tx1.logs[0].args._owner, token_owner);
             assert.equal(tx1.logs[0].args._ticker, "DEL");
 
@@ -474,7 +474,7 @@ contract("GeneralPermissionManager", async (accounts) => {
     describe("General Permission Manager Factory test cases", async () => {
         it("should get the exact details of the factory", async () => {
             assert.equal(await I_GeneralPermissionManagerFactory.setupCost.call(), 0);
-            assert.equal((await I_GeneralPermissionManagerFactory.types.call())[0], 1);
+            assert.equal((await I_GeneralPermissionManagerFactory.getTypes.call())[0], 1);
             assert.equal(await I_GeneralPermissionManagerFactory.version.call(), "3.0.0");
             assert.equal(
                 web3.utils.toAscii(await I_GeneralPermissionManagerFactory.name.call()).replace(/\u0000/g, ""),
@@ -490,7 +490,7 @@ contract("GeneralPermissionManager", async (accounts) => {
         });
 
         it("Should get the tags of the factory", async () => {
-            let tags = await I_GeneralPermissionManagerFactory.tags.call();
+            let tags = await I_GeneralPermissionManagerFactory.getTags.call();
             assert.equal(web3.utils.toUtf8(tags[0]), "Permission Management");
         });
 

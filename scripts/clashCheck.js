@@ -8,7 +8,7 @@ async function readFiles() {
         return fs.readdirSync("./build/contracts/");
     } else {
         console.log(chalk.yellow('Compiling contracts. This may take a while, please wait.'));
-        exec('truffle compile');
+        exec('./node_modules/.bin/truffle compile');
         return fs.readdirSync("./build/contracts/");
     }
 }
@@ -47,8 +47,9 @@ async function checkClashes() {
     });
     if (clashesFound) {
         console.log(chalk.yellow("The clash(es) might be in two different contracts and hence not be am Issue.\nThis script can not detect this (yet) because of proxy contracts"));
-        throw("Clash(es) found! Please fix.");
-    }  
+        console.log(chalk.red("Clash(es) found! Please fix."));
+        process.exit(1);
+    }
     console.log(chalk.green("Clash check finished. No Clashes found."));
 }
 

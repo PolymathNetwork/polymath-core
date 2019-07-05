@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "../modules/TransferManager/CTM/CountTransferManager.sol";
 
@@ -8,6 +8,7 @@ import "../modules/TransferManager/CTM/CountTransferManager.sol";
 contract MockCountTransferManager is CountTransferManager {
 
     event Upgrader(uint256 _someData);
+    uint256 public someValue;
 
     /**
      * @notice Constructor
@@ -19,6 +20,7 @@ contract MockCountTransferManager is CountTransferManager {
 
     function initialize(uint256 _someData) public {
         require(msg.sender == address(this));
+        someValue = _someData;
         emit Upgrader(_someData);
     }
 

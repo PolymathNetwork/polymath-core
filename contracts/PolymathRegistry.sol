@@ -1,14 +1,13 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "./ReclaimTokens.sol";
+import "./interfaces/IPolymathRegistry.sol";
 
 /**
  * @title Core functionality for registry upgradability
  */
-contract PolymathRegistry is ReclaimTokens {
+contract PolymathRegistry is ReclaimTokens, IPolymathRegistry {
     mapping(bytes32 => address) public storedAddresses;
-
-    event ChangeAddress(string _nameKey, address indexed _oldAddress, address indexed _newAddress);
 
     /**
      * @notice Gets the contract address

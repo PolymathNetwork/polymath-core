@@ -14,25 +14,74 @@ All notable changes to this project will be documented in this file.
 * Added datastore that is used to store data like investor list that is shared among modules.
 * `getInvestorCount()` now returns length of investor array that is everyone who ever held some st or has kyc data attached.
 * `holderCount()` returns the number of current st holders.
-* Added flags for Investors. Accredited and canbuyfromsto are now flags
+* Added flags for Investors. Accredited and canbuyfromsto are now flags.
+* Add `_archived` flag in `addModule()` to allow issuers to add archived modules into the ST.    
+* Add `upgradeModule()` function to upgrade the already attached module. It can only be called by owner of the token.   
+* Add `upgradeToken()` function to upgrade the token to the latest version. Can only be executed by the owner of the token.    
+* Add `changeDataStore()` function to change the dataStore contract address attached with the ST.    
+* Issuer is allowed to change the name of the token using the `changeName()` function.   
+* Add `changeTreasuryWallet()` funtion to change the treasury wallet of the token.     
+* `transferWithData()` & `transferFromWithData()` function doesn't return the bool anymore.    
+* Introduced `balanceOfByPartition()` function to read the balance of the token holder according to the given partition.  
+* Add `transferByPartition()` function to transfer the tokens as per the given partition.   
+* Removed `verifyTransfer()` function.   
+* Add `authorizeOperator`, `revokeOperator`, `authorizeOperatorByPartition`, `revokeOperatorByPartition`, `operatorTransferByPartition` as the operator functions.   
+* Remove `freezeMinting()` and introduced `freezeIssuance()`.      
+* Rename the `mintWithData()` function to `issue()` function and `mintMulti()` to `issueMulti()`, remove `mint` function.          
+* Rename the `burnWithData()` function to `redeem()` function and `burnFromWithData()` to `redeemFrom()`, remove `burn` function.
+* Add `redeemByPartition()` & `operatorRedeemByPartition()` function.   
+* Add `issueByPartition()` to issue the tokens as per given partition.     
+* `disableController()` now takes the sender signature to confirm the operation.    
+* Introduce `canTransfer()`, `canTransferFrom()` & `canTransferByPartition()` to validate the transfer before actually executing it.  
+* Add document specific functions `setDocument()`, `removeDocument()`.   
+* Rename `forceTransfer()` to `controllerTransfer()` similarly `forceBurn()` to `controllerRedeem()`.   
+* Add `isControllable()` to know whether the controller functions are allowed to execute or not.    
+* Add `isIssuable()`, `getInvestorsSubsetAt()`, `getTreasuryWallet()`, `isOperator()`, `isOperatorForPartition()`, `partitionsOf()`, `getDocument()`, `getAllDocument()` functions as getters to support ST functionality.    
 
 ## STR
 * Introduce new contract `STRGetter.sol`. It only contains the getter functions of the STR.
 * Replaced `updatePolyTokenAddress()` function with `updateFromRegistry()` in `SecurityTokenRegistry`.  
-* Migrate all the getters of `SecurityTokenRegsitry.sol` to `STRGetter.sol` contract.
+* Migrate all the getters of `SecurityTokenRegistry.sol` to `STRGetter.sol` contract.
 * Removed `_polyToken` parameter from `initialize` function in `SecurityTokenRegistry`.
 * Allows an explicit token factory version to be used during creation of securityToken.
 * Rename the `getProtocolVersion()` to `getLatestProtocolVersion()`.
 * Return SecurityToken version in the `getSecurityTokenData()` function.
+* Add `generateNewSecurityToken()` function to generate the 3.0 tokens.    
+* Add `refreshSecurityToken()` function to update the 2.x tokens to 3.0 tokens.   
+* Add `changeFeesAmountAndCurrency()` function to sets the ticker registration and ST launch fee amount and currency.     
+* Rename `setProtocolVersion()` to `setProtocolFactory()`, Add `removeProtocolFactory()`.   
+* Add `getTokensByDelegate()`, `getSTFactoryAddressOfVersion()`, `getLatestProtocolVersion()`, `getIsFeeInPoly()` some getters.   
+
+## MR   
+* Add `_isUpgrade` param in function `useModule()`.   
+* Add `isCompatibleModule()` to check whether the given module and ST is compatible or not.   
+* Remove `_isVerified` param from the `verifyModule()` function and introduced `unverifyModule()` function to unverify module.     
+* Removed `getReputationByFactory()`.   
 
 ## GeneralTransferManager
 * `modifyWhitelist()` function renamed to `modifyKYCData()`.
 * Added functions to modify and get flags
 * `canBuyFromSto` is now `canNotBuyFromSto` and it is the flag `1`
 * GTM logic reworked. Now, instead of flags like allowAllTransfers, there is a matrix of transfer requirements that must be fulfilled based on type of transfer.
+* Remove `changeSigningAddress()`, `changeAllowAllTransfers()`, `changeAllowAllWhitelistTransfers()`, `changeAllowAllWhitelistIssuances()`, `changeAllowAllBurnTransfers`.   
+* Introduced `modifyTransferRequirements()` & `modifyTransferRequirementsMulti()` to modify the transfer requirements.   
+* Add `modifyInvestorFlag()` & `modifyInvestorFlagMulti()` function to modify the flag.   
+* `modifyWhitelistSigned()` rename to `modifyKYCDataSigned()`. Add `modifyKYCDataSignedMulti`.    
+* Add `getAllInvestorFlags()`, `getInvestorFlag()`,`getInvestorFlags()`, `getAllKYCData()`, `getKYCData()` & `getTokensByPartition()`. 
+
+## USDTiererdSTO
+* Removed `changeAccredited()` function.    
+* `buyWithETH()`, `buyWithPOLY()`, `buyWithUSD()`, `buyWithETHRateLimited()`, `buyWithPOLYRateLimited()` & `buyWithUSDRateLimited()` will return spentUSD, spentValue & amount of mint tokens.   
+* Remove `buyTokensView()` function.  
+
+## Modules   
+* Introduced BTM, LTM and VEW modules.   
+* Remove `takeFee()` function.
 
 ## Generalize
 * Removed `_polyAddress` parameter from constructors of all modules and module factories.
+* All modules are upgradeable now. 
+* Permission types are only `ADMIN` and `OPERATOR` now.      
 
 
 # v2.1.0 - Release Candidate    

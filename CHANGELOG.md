@@ -17,6 +17,7 @@ All notable changes to this project will be documented in this file.
 * Added flags for Investors. Accredited and canbuyfromsto are now flags.
 * Add `_archived` flag in `addModule()` to allow issuers to add archived modules into the ST.    
 * Add `upgradeModule()` function to upgrade the already attached module. It can only be called by owner of the token.   
+* Add `archiveModule()` function to archive a module attached to the security token. It can only be called by owner of the token.   
 * Add `upgradeToken()` function to upgrade the token to the latest version. Can only be executed by the owner of the token.    
 * Add `changeDataStore()` function to change the dataStore contract address attached with the ST.    
 * Issuer is allowed to change the name of the token using the `changeName()` function.   

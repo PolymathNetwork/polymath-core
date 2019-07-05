@@ -56,6 +56,7 @@ const WeightedVoteCheckpointFactory = artifacts.require("./WeightedVoteCheckpoin
 const PLCRVotingCheckpoint = artifacts.require("./PLCRVotingCheckpoint.sol");
 const WeightedVoteCheckpoint = artifacts.require("./WeightedVoteCheckpoint.sol");
 const RestrictedPartialSaleTMFactory = artifacts.require("./RestrictedPartialSaleTMFactory.sol");
+const RestrictedPartialSaleTM = artifacts.require("./RestrictedPartialSaleTM.sol");
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -120,6 +121,7 @@ let I_StablePOLYOracle;
 let I_PLCRVotingCheckpointFactory;
 let I_WeightedVoteCheckpointLogic;
 let I_PLCRVotingCheckpointLogic;
+let I_RestrictedPartialSaleTMLogic;
 
 // Initial fee for ticker registry and security token registry
 const initRegFee = new BN(web3.utils.toWei("250"));
@@ -421,14 +423,15 @@ export async function deployLockUpTMAndVerified(accountPolymath, MRProxyInstance
 }
 
 export async function deployRestrictedPartialSaleTMAndVerifyed(accountPolymath, MRProxyInstance, setupCost, feeInPoly = false) {
-    I_RestrictedPartialSaleTMFactory = await RestrictedPartialSaleTMFactory.new(setupCost, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
+    I_RestrictedPartialSaleTMLogic = await RestrictedPartialSaleTM.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
+    I_RestrictedPartialSaleTMFactory = await RestrictedPartialSaleTMFactory.new(setupCost, I_RestrictedPartialSaleTMLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
     assert.notEqual(
         I_RestrictedPartialSaleTMFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",
         "RestrictedPartialSaleTMFactory contract was not deployed"
     );
 
-     await registerAndVerifyByMR(I_RestrictedPartialSaleTMFactory.address, accountPolymath, MRProxyInstance);
+    await registerAndVerifyByMR(I_RestrictedPartialSaleTMFactory.address, accountPolymath, MRProxyInstance);
     return Promise.all(new Array(I_RestrictedPartialSaleTMFactory));
 }
 

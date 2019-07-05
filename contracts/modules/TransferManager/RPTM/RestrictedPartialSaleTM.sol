@@ -1,21 +1,14 @@
 pragma solidity ^0.5.0;
 
-import "../../TransferManager/TransferManager.sol";
+import "../TransferManager.sol";
+import "./RestrictedPartialSaleTMStorage.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
  * @title This TransferManager is used to validate the transaction where partial balance of an 
  * investor is not allowed to trnasfer beside investor is present in the exemption list
  */
-contract RestrictedPartialSaleTM is TransferManager {
-
-    // permission definition
-    bytes32 internal constant OPERATOR = "OPERATOR";
-
-    address[] exemptAddresses;
-
-    mapping(address => uint256) exemptIndex;
-
+contract RestrictedPartialSaleTM is RestrictedPartialSaleTMStorage, TransferManager {
 
     // Emit when the token holder is added/removed from the exemption list
     event ChangedExemptWalletList(address indexed _wallet, bool _exempted);
@@ -43,7 +36,9 @@ contract RestrictedPartialSaleTM is TransferManager {
      * @param _treasuryWallet Ethereum address of the treasury wallet
      */
     function configure(address _treasuryWallet) external onlyFactory {
-        _changeExemptionWalletList(_treasuryWallet, true);
+        address treasuryWallet = _treasuryWallet == address(0) ? IDataStore(getDataStore()).getAddress(TREASURY) : _treasuryWallet;
+        if (treasuryWallet != address(0))
+            _changeExemptionWalletList(treasuryWallet, true);
     }
 
     /** 

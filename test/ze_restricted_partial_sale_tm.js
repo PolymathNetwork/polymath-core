@@ -70,6 +70,7 @@ contract("RestrictedPartialSaleTM", accounts => {
     // Initial fee for ticker registry and security token registry
     const initRegFee = web3.utils.toWei("1000");
     let bytesSale;
+    const address_zero = "0x0000000000000000000000000000000000000000";
     
     async function currentTime() {
         return new BN(await latestTime());
@@ -187,6 +188,23 @@ contract("RestrictedPartialSaleTM", accounts => {
                 "RestrictedPartialSaleTM",
                 "RestrictedPartialSaleTM module was not added"
             );
+            await revertToSnapshot(snapId);
+        });
+
+        it("Should successfully attach the RestrictedPartialSaleTM with the security token by providing the treasury wallet = 0x0", async () => {
+            let snapId = await takeSnapshot();
+            let data = encodeModuleCall(["address"], [address_zero]);
+            const tx = await I_SecurityToken.addModule(I_RestrictedPartialSaleTMFactory.address, data, new BN(0), new BN(0), false, { from: token_owner });
+            assert.equal(tx.logs[2].args._types[0].toNumber(), transferManagerKey, "RestrictedPartialSaleTMFactory doesn't get deployed");
+            assert.equal(
+                web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
+                "RestrictedPartialSaleTM",
+                "RestrictedPartialSaleTM module was not added"
+            );
+            I_RestrictedPartialSaleTM = await RestrictedPartialSaleTM.at(tx.logs[2].args._module);
+            let exemptedAddresses = await I_RestrictedPartialSaleTM.getExemptAddresses.call();
+            assert.equal(exemptedAddresses.length, 1);
+            assert.equal(exemptedAddresses[0], token_owner);
             await revertToSnapshot(snapId);
         });
 
@@ -444,7 +462,7 @@ contract("RestrictedPartialSaleTM", accounts => {
         it("should get the exact details of the factory", async () => {
             assert.equal((await I_RestrictedPartialSaleTMFactory.setupCost.call()).toNumber(), 0);
             assert.equal((await I_RestrictedPartialSaleTMFactory.getTypes.call())[0], 2);
-            assert.equal(await I_RestrictedPartialSaleTMFactory.version.call(), "3.0.0");
+            assert.equal(await I_RestrictedPartialSaleTMFactory.version.call(), "3.1.0");
             assert.equal(
                 web3.utils.toAscii(await I_RestrictedPartialSaleTMFactory.name.call()).replace(/\u0000/g, ""),
                 "RestrictedPartialSaleTM",

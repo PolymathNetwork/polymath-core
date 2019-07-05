@@ -157,15 +157,15 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
                 (
                     bool success, 
                     address[] memory investor,
-                    uint256[] memory canSendAfter,
                     ,
+                    uint256[] memory canRecieveAfter,
                     uint256[] memory expiryTime
                 ) = _processTransferSignatureView(data, validFrom, validTo, nonce);
                 if (success) {
                     for (nonce = 0; nonce < investor.length; nonce++) {
-                        // Searching the _from token holder to get the required details for _verifyTransfer validation 
-                        if (investor[nonce] == _from)
-                            return _verifyTransfer(_from, _to, uint64(canSendAfter[nonce]), uint64(expiryTime[nonce]));
+                        // Searching the _to token holder to get the required details for _verifyTransfer validation 
+                        if (investor[nonce] == _to)
+                            return _verifyTransfer(_from, _to, uint64(canRecieveAfter[nonce]), uint64(expiryTime[nonce]));
                     }
                 }
             }
@@ -202,8 +202,8 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     function _verifyTransfer(
         address _from,
         address _to,
-        uint64 _canSendAfter,
-        uint64 _fromExpiry
+        uint64 _canReceiveAfter,
+        uint64 _toExpiry
     )
         internal
         view
@@ -211,8 +211,8 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     {
         if (!paused) {
             TransferRequirements memory txReq;
-            uint64 toExpiry;
-            uint64 canReceiveAfter;
+            uint64 fromExpiry;
+            uint64 canSendAfter;
 
             if (_from == issuanceAddress) {
                 txReq = transferRequirements[uint8(TransferType.ISSUANCE)];
@@ -222,18 +222,18 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
                 txReq = transferRequirements[uint8(TransferType.GENERAL)];
             }
             // This if condition use to differentiate the read-only call & write call
-            if (_fromExpiry == 0)
-                (_canSendAfter, _fromExpiry, canReceiveAfter, toExpiry) = _getValuesForTransfer(_from, _to);
+            if (_toExpiry == 0)
+                (canSendAfter, fromExpiry, _canReceiveAfter, _toExpiry) = _getValuesForTransfer(_from, _to);
             else
-                (,, canReceiveAfter, toExpiry) = _getValuesForTransfer(_from, _to);
+                (canSendAfter,fromExpiry,,) = _getValuesForTransfer(_from, _to);
 
-            if ((txReq.fromValidKYC && !_validExpiry(_fromExpiry)) || (txReq.toValidKYC && !_validExpiry(toExpiry))) {
+            if ((txReq.fromValidKYC && !_validExpiry(fromExpiry)) || (txReq.toValidKYC && !_validExpiry(_toExpiry))) {
                 return (Result.NA, bytes32(0));
             }
 
-            (_canSendAfter, canReceiveAfter) = _adjustTimes(_canSendAfter, canReceiveAfter);
+            (canSendAfter, _canReceiveAfter) = _adjustTimes(canSendAfter, _canReceiveAfter);
 
-            if ((txReq.fromRestricted && !_validLockTime(_canSendAfter)) || (txReq.toRestricted && !_validLockTime(canReceiveAfter))) {
+            if ((txReq.fromRestricted && !_validLockTime(canSendAfter)) || (txReq.toRestricted && !_validLockTime(_canReceiveAfter))) {
                 return (Result.NA, bytes32(0));
             }
 

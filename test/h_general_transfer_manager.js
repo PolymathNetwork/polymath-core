@@ -1250,6 +1250,71 @@ contract("GeneralTransferManager", async (accounts) => {
         })
     });
 
+    describe("Test cases for dynamic whitelisting using canTransfer/canTransferFrom", async() => {
+        
+        it("Should successfully sell tokens by using dynamic whitelisting", async() => {
+            //De-whitelisting the addresses
+            await I_GeneralTransferManager.modifyKYCDataMulti(
+                    [account_investor3, account_investor4],
+                    [0, 0],
+                    [0, 0],
+                    [0, 0],
+                    {
+                        from: account_delegate,
+                        gas: 6000000
+                    }
+            )
+            
+            // Add the Investor in to the whitelist
+            //tmAddress, investorAddress, fromTime, toTime, validFrom, validTo, pk
+            let validFrom = await latestTime();
+            let validTo = await latestTime() + duration.days(5);
+            let nonce = 7;
+            const sig = getSignGTMTransferData(
+                I_GeneralTransferManager.address,
+                [account_investor3],
+                [currentTime.toNumber()],
+                [currentTime.toNumber()],
+                [expiryTime + duration.days(200)],
+                validFrom,
+                validTo,
+                nonce,
+                "0x" + token_owner_pk
+            );
+
+            console.log(`Get the balance:${web3.utils.fromWei((await I_SecurityToken.balanceOf.call(account_investor1)).toString())}`);
+
+            let isTransfer = await I_GeneralTransferManager.verifyTransfer.call(account_investor1, account_investor3, new BN(web3.utils.toWei("1")), sig);
+            assert.equal(isTransfer[0], 2);
+
+            let canTransferResult = await I_SecurityToken.canTransfer.call(account_investor3, new BN(web3.utils.toWei("1")), sig, {from: account_investor1});
+            assert.equal(canTransferResult[0], 0x51);
+        });
+
+        it("Successfully transfer the tokens by using dynamic whitelisting", async() => {
+            let validFrom = await latestTime();
+            let validTo = await latestTime() + duration.days(5);
+            let nonce = 8;
+            const sig = getSignGTMTransferData(
+                I_GeneralTransferManager.address,
+                [account_investor3, account_investor4],
+                [currentTime.toNumber(), currentTime.toNumber()],
+                [currentTime.toNumber(), currentTime.toNumber()],
+                [expiryTime + duration.days(200), expiryTime + duration.days(200)],
+                validFrom,
+                validTo,
+                nonce,
+                "0x" + token_owner_pk
+            );
+
+            let isTransfer = await I_GeneralTransferManager.verifyTransfer.call(account_investor1, account_investor4, new BN(web3.utils.toWei("1")), sig);
+            assert.equal(isTransfer[0], 2);
+
+            let canTransferResult = await I_SecurityToken.canTransfer.call(account_investor4, new BN(web3.utils.toWei("1")), sig, {from: account_investor1});
+            assert.equal(canTransferResult[0], 0x51);
+        });
+    });
+
     describe("General Transfer Manager Factory test cases", async () => {
         it("Should get the exact details of the factory", async () => {
             assert.equal(await I_GeneralTransferManagerFactory.setupCost.call(), 0);

@@ -63,6 +63,7 @@ async function displayTokenData() {
   let displayTokenName = await securityToken.methods.name().call();
   let displayTokenDetails = await securityToken.methods.tokenDetails().call();
   let displayVersion = await securityToken.methods.getVersion().call();
+  let displayGranularity = await securityToken.methods.granularity().call();
   let displayTokenSupply = await securityToken.methods.totalSupply().call();
   let displayHolderCount = await securityToken.methods.holderCount().call();
   let displayInvestorsCount = await securityToken.methods.getInvestorCount().call();
@@ -80,6 +81,7 @@ async function displayTokenData() {
 - Token name:           ${displayTokenName}
 - Token details:        ${displayTokenDetails}
 - Token version:        ${displayVersion[0]}.${displayVersion[1]}.${displayVersion[2]}
+- Granularity:          ${displayGranularity}
 - Total supply:         ${web3.utils.fromWei(displayTokenSupply)} ${displayTokenSymbol.toUpperCase()}
 - Holders count:        ${displayHolderCount}
 - Investors count:      ${displayInvestorsCount}
@@ -142,7 +144,7 @@ async function displayModules() {
 }
 
 async function selectAction() {
-  let options = ['Change token name', 'Update token details', 'Change treasury wallet', 'Manage documents']; // 'Change granularity'
+  let options = ['Change token name', 'Update token details', 'Change treasury wallet', 'Manage documents', 'Change granularity'];
 
   let transferFrozen = await securityToken.methods.transfersFrozen().call();
   if (transferFrozen) {
@@ -194,8 +196,8 @@ async function selectAction() {
       await changeTreasuryWallet(newTreasuryWallet);
       break;
     case 'Change granularity':
-      // let granularity = readlineSync.questionInt('Enter ')
-      // await changeGranularity();
+      let granularity = input.readNumberBetween(1, 18, 'Enter the granularity you want to set: ');
+      await changeGranularity(granularity);
       break;
     case 'Manage documents':
       await manageDocuments();
@@ -284,6 +286,12 @@ async function changeTreasuryWallet(newTreasuryWallet) {
   let changeTreasuryWalletAction = securityToken.methods.changeTreasuryWallet(newTreasuryWallet);
   await common.sendTransaction(changeTreasuryWalletAction);
   console.log(chalk.green(`Treasury wallet has been updated successfully!`));
+}
+
+async function changeGranularity(granularity) {
+  let changeGranularityAction = securityToken.methods.changeGranularity(granularity);
+  await common.sendTransaction(changeGranularityAction);
+  console.log(chalk.green(`Granularity has been updated successfully!`));
 }
 
 async function manageDocuments() {

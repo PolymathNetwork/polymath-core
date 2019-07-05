@@ -37,6 +37,7 @@ const REMOVE_LOCKUP_INVESTOR_DATA_CSV = `${__dirname}/../data/Transfer/LockupTM/
 
 const RESTRICTION_TYPES = ['Fixed', 'Percentage'];
 
+const MATM_MENU_VERIFY = 'Verify transfer';
 const MATM_MENU_ADD = 'Add new manual approval';
 const MATM_MENU_MANAGE = 'Manage existing approvals';
 const MATM_MENU_EXPLORE = 'Explore account';
@@ -85,30 +86,7 @@ async function executeApp() {
   console.log('Selected:', optionSelected, '\n');
   switch (optionSelected) {
     case 'Verify transfer':
-      let verifyTotalSupply = web3.utils.fromWei(await securityToken.methods.totalSupply().call());
-      await logTotalInvestors();
-      let verifyTransferFrom = input.readAddress(`Enter the sender account (${Issuer.address}): `, Issuer.address);
-      await logBalance(verifyTransferFrom, verifyTotalSupply);
-      let verifyTransferTo = input.readAddress('Enter the receiver account: ');
-      await logBalance(verifyTransferTo, verifyTotalSupply);
-      let verifyTransferAmount = readlineSync.question('Enter amount of tokens to verify: ');
-      let isVerified;
-      if (verifyTransferFrom == Issuer.address) {
-          isVerified = await securityToken.methods.canTransfer(verifyTransferTo, web3.utils.toWei(verifyTransferAmount), web3.utils.fromAscii("")).call();
-      } else {
-          isVerified = await securityToken.methods.canTransferFrom(verifyTransferFrom, verifyTransferTo, web3.utils.toWei(verifyTransferAmount), web3.utils.fromAscii("")).call();
-      }
-      if (isVerified[0] && isVerified[1] == "0x51") {
-        console.log(chalk.green(`\n${verifyTransferAmount} ${tokenSymbol} can be transferred from ${verifyTransferFrom} to ${verifyTransferTo}!`));
-      } else if (!isVerified[0] && isVerified[1] == "0x53") {
-        console.log(chalk.red(`\nAddress ${Issuer.address} cannot transfer on behalf of ${verifyTransferFrom}!`));
-        console.log(chalk.yellow(`Address ${verifyTransferFrom} can transfer ${verifyTransferAmount} ${tokenSymbol} to ${verifyTransferTo}`));
-      } else if (!isVerified[0] && isVerified[1] == "0x52") {
-        console.log(chalk.red(`\n${verifyTransferAmount} ${tokenSymbol} can't be transferred from ${verifyTransferFrom} to ${verifyTransferTo}!`));
-        console.log(chalk.red(`Insufficient balance!`));
-      } else {
-        console.log(chalk.red(`\n${verifyTransferAmount} ${tokenSymbol} can't be transferred from ${verifyTransferFrom} to ${verifyTransferTo}!`));
-      }
+      await canTransfer();
       break;
     case 'Transfer':
       let totalSupply = web3.utils.fromWei(await securityToken.methods.totalSupply().call());
@@ -118,7 +96,7 @@ async function executeApp() {
       await logBalance(transferTo, totalSupply);
       let transferAmount = readlineSync.question('Enter amount of tokens to transfer: ');
       let isTranferVerified = await securityToken.methods.canTransferFrom(Issuer.address, transferTo, web3.utils.toWei(transferAmount), web3.utils.fromAscii("")).call();
-      if (isTranferVerified) {
+      if (isTranferVerified[0] !== gbl.constants.TRASFER_RESULT.INVALID) {
         let transferAction = securityToken.methods.transfer(transferTo, web3.utils.toWei(transferAmount));
         let receipt = await common.sendTransaction(transferAction);
         let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'Transfer');
@@ -150,6 +128,81 @@ async function executeApp() {
   }
 
   await executeApp();
+}
+
+async function verifyTransfer(askAmount, askTo) {
+  let verifyTotalSupply = web3.utils.fromWei(await securityToken.methods.totalSupply().call());
+  await logTotalInvestors();
+  
+  let verifyTransferFrom = input.readAddress(`Enter the sender account (${Issuer.address}): `, Issuer.address);
+  await logBalance(verifyTransferFrom, verifyTotalSupply);
+  
+  let verifyTransferTo = gbl.constants.ADDRESS_ZERO;
+  if (askTo) {
+    verifyTransferTo = input.readAddress('Enter the receiver account: ');
+    await logBalance(verifyTransferTo, verifyTotalSupply);
+  }
+  
+  let verifyTransferAmount = askAmount ? input.readNumberGreaterThan(0, 'Enter amount of tokens to verify: ') : '0';
+  
+  let verifyResult = await currentTransferManager.methods.verifyTransfer(verifyTransferFrom, verifyTransferTo, web3.utils.toWei(verifyTransferAmount), web3.utils.fromAscii("")).call();
+  switch (verifyResult[0]) {
+    case gbl.constants.TRASFER_RESULT.INVALID:
+      console.log(chalk.red(`\nThis transfer is not valid for this module!`));
+      break;
+    default:
+      console.log(chalk.green(`\nThis transfer is valid for this module!`));
+      break;
+  }
+}
+
+async function canTransfer() {
+  let verifyTotalSupply = web3.utils.fromWei(await securityToken.methods.totalSupply().call());
+  await logTotalInvestors();
+  let verifyTransferFrom = input.readAddress(`Enter the sender account (${Issuer.address}): `, Issuer.address);
+  await logBalance(verifyTransferFrom, verifyTotalSupply);
+  let verifyTransferTo = input.readAddress('Enter the receiver account: ');
+  await logBalance(verifyTransferTo, verifyTotalSupply);
+  let verifyTransferAmount = readlineSync.question('Enter amount of tokens to verify: ');
+  let isVerified;
+  if (verifyTransferFrom == Issuer.address) {
+    isVerified = await securityToken.methods.canTransfer(verifyTransferTo, web3.utils.toWei(verifyTransferAmount), web3.utils.fromAscii("")).call();
+  } else {
+    isVerified = await securityToken.methods.canTransferFrom(verifyTransferFrom, verifyTransferTo, web3.utils.toWei(verifyTransferAmount), web3.utils.fromAscii("")).call();
+  }
+  switch (isVerified.statusCode) {
+    case gbl.constants.TRANSFER_STATUS_CODES.TransferFailure:
+      console.log(chalk.red(`\n${verifyTransferAmount} ${tokenSymbol} can't be transferred from ${verifyTransferFrom} to ${verifyTransferTo}!`));
+      if (web3.utils.hexToAscii(isVerified.reasonCode) !== '') {
+        const moduleData = await securityToken.methods.getModule(isVerified.reasonCode.substring(0, 42)).call();
+        console.log(chalk.red(`The module ${web3.utils.hexToUtf8(moduleData.moduleLabel)} - ${web3.utils.hexToUtf8(moduleData.moduleName)} at ${moduleData.moduleAddress} didn't allow the transfer!`));
+      } else {
+        console.log(chalk.red(`The transfer wasn't considered explicitly valid by any TMs!`));
+      }
+      break;
+    case gbl.constants.TRANSFER_STATUS_CODES.TransferSuccess:
+      console.log(chalk.green(`\n${verifyTransferAmount} ${tokenSymbol} can be transferred from ${verifyTransferFrom} to ${verifyTransferTo}!`));
+      break;
+    case gbl.constants.TRANSFER_STATUS_CODES.InsufficientBalance:
+      console.log(chalk.red(`\n${verifyTransferAmount} ${tokenSymbol} can't be transferred from ${verifyTransferFrom} to ${verifyTransferTo}!`));
+      console.log(chalk.red(`Insufficient balance!`));
+      break;
+    case gbl.constants.TRANSFER_STATUS_CODES.InsufficientAllowance:
+      console.log(chalk.red(`\nAddress ${Issuer.address} can't transfer ${verifyTransferAmount} ${tokenSymbol} on behalf of ${verifyTransferFrom}!`));
+      console.log(chalk.red(`Insufficient allowance!`));
+      break
+    case gbl.constants.TRANSFER_STATUS_CODES.TransfersHalted:
+      console.log(chalk.red(`\n${verifyTransferAmount} ${tokenSymbol} can't be transferred from ${verifyTransferFrom} to ${verifyTransferTo}!`));
+      console.log(chalk.red(`Transfers are halted!`));
+      break;
+    case gbl.constants.TRANSFER_STATUS_CODES.InvalidReceiver:
+      console.log(chalk.red(`\n${verifyTransferAmount} ${tokenSymbol} can't be transferred from ${verifyTransferFrom} to ${verifyTransferTo}!`));
+      console.log(chalk.red(`Invalid receiver!`));
+      break;
+    default:
+      console.log(chalk.red(`\n${verifyTransferAmount} ${tokenSymbol} can't be transferred from ${verifyTransferFrom} to ${verifyTransferTo}!`));
+      break;
+  }
 }
 
 async function operatorTransfer() {
@@ -384,6 +437,7 @@ async function generalTransferManager() {
     options.push(`Show investors`, `Show whitelist data`);
   }
   options.push(
+    'Verify transfer',
     'Modify whitelist',
     'Modify whitelist from CSV',
     'Show investor flags',
@@ -414,6 +468,8 @@ async function generalTransferManager() {
         showWhitelistTable(investorsArray, whitelistData[0], whitelistData[1], whitelistData[2]);
       }
       break;
+    case 'Verify transfer':
+      await verifyTransfer(false, true);
     case 'Change the default times used when they are zero':
       let fromTimeDefault = readlineSync.questionInt(`Enter the default time (Unix Epoch time) used when fromTime is zero: `);
       let toTimeDefault = readlineSync.questionInt(`Enter the default time (Unix Epoch time) used when toTime is zero: `);
@@ -761,6 +817,7 @@ async function manualApprovalTransferManager() {
   console.log(`- Current active approvals:      ${totalApprovals}`);
 
   let matmOptions = [
+    MATM_MENU_VERIFY,
     MATM_MENU_ADD,
     MATM_MENU_MANAGE,
     MATM_MENU_EXPLORE,
@@ -774,6 +831,9 @@ async function manualApprovalTransferManager() {
   console.log('Selected:', optionSelected, '\n');
 
   switch (optionSelected) {
+    case MATM_MENU_VERIFY:
+      await verifyTransfer(true, true);
+      break;
     case MATM_MENU_ADD:
       await matmAdd();
       break;
@@ -1103,13 +1163,16 @@ async function countTransferManager() {
 
   console.log(`- Max holder count:        ${displayMaxHolderCount}`);
 
-  let options = ['Change max holder count']
+  let options = ['Verify transfer', 'Change max holder count']
   let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
   let optionSelected = index !== -1 ? options[index] : 'RETURN';
   console.log('Selected:', optionSelected, '\n');
   switch (optionSelected) {
+    case 'Verify transfer':
+      await verifyTransfer(true, true);
+      break;
     case 'Change max holder count':
-      let maxHolderCount = readlineSync.question('Enter the maximum no. of holders the SecurityToken is allowed to have: ');
+      let maxHolderCount = input.readNumberGreaterThan(0, 'Enter the maximum no. of holders the SecurityToken is allowed to have: ');
       let changeHolderCountAction = currentTransferManager.methods.changeHolderCount(maxHolderCount);
       let changeHolderCountReceipt = await common.sendTransaction(changeHolderCountAction);
       let changeHolderCountEvent = common.getEventFromLogs(currentTransferManager._jsonInterface, changeHolderCountReceipt.logs, 'ModifyHolderCount');
@@ -1132,7 +1195,7 @@ async function percentageTransferManager() {
   console.log(`- Max holder percentage:   ${fromWeiPercentage(displayMaxHolderPercentage)}%`);
   console.log(`- Allow primary issuance:  ${displayAllowPrimaryIssuance ? `YES` : `NO`}`);
 
-  let options = ['Change max holder percentage', 'Check if investor is whitelisted', 'Modify whitelist', 'Modify whitelist from CSV'];
+  let options = ['Verify transfer', 'Change max holder percentage', 'Check if investor is whitelisted', 'Modify whitelist', 'Modify whitelist from CSV'];
   if (displayAllowPrimaryIssuance) {
     options.push('Disallow primary issuance');
   } else {
@@ -1142,6 +1205,8 @@ async function percentageTransferManager() {
   let optionSelected = index !== -1 ? options[index] : 'RETURN';
   console.log('Selected:', optionSelected, '\n');
   switch (optionSelected) {
+    case 'Verify transfer':
+      await verifyTransfer(false, true);
     case 'Change max holder percentage':
       let maxHolderPercentage = toWeiPercentage(input.readPercentage('Enter the maximum amount of tokens in percentage that an investor can hold'));
       let changeHolderPercentageAction = currentTransferManager.methods.changeHolderPercentage(maxHolderPercentage);
@@ -1215,7 +1280,7 @@ async function blacklistTransferManager() {
   let currentBlacklists = await currentTransferManager.methods.getAllBlacklists().call();
   console.log(`- Blacklists:    ${currentBlacklists.length}`);
 
-  let options = ['Add new blacklist'];
+  let options = ['Verify transfer', 'Add new blacklist'];
   if (currentBlacklists.length > 0) {
     options.push('Manage existing blacklist', 'Explore account');
   }
@@ -1225,6 +1290,8 @@ async function blacklistTransferManager() {
   let optionSelected = index !== -1 ? options[index] : 'RETURN';
   console.log('Selected:', optionSelected, '\n');
   switch (optionSelected) {
+    case 'Verify transfer':
+      await verifyTransfer(false, false);
     case 'Add new blacklist':
       let name = input.readStringNonEmpty(`Enter the name of the blacklist type: `);
       let minuteFromNow = Math.floor(Date.now() / 1000) + 60;
@@ -1632,6 +1699,7 @@ async function volumeRestrictionTM() {
     options.push('Show exempted addresses');
   }
   options.push(
+    'Verify transfer',
     'Change exempt wallet',
     'Change default restrictions',
     'Change individual restrictions',
@@ -1655,6 +1723,9 @@ async function volumeRestrictionTM() {
       break;
     case 'Show exempted addresses':
       showExemptedAddresses(exemptedAddresses);
+      break;
+    case 'Verify transfer':
+      await verifyTransfer(true, false);
       break;
     case 'Change exempt wallet':
       await changeExemptWallet();
@@ -2217,7 +2288,7 @@ async function lockUpTransferManager() {
   let currentLockups = await currentTransferManager.methods.getAllLockups().call();
   console.log(`- Lockups:    ${currentLockups.length}`);
 
-  let options = ['Add new lockup'];
+  let options = ['Verify transfer', 'Add new lockup'];
   if (currentLockups.length > 0) {
     options.push('Show all existing lockups', 'Manage existing lockups', 'Explore investor');
   }
@@ -2227,6 +2298,9 @@ async function lockUpTransferManager() {
   let optionSelected = index !== -1 ? options[index] : 'RETURN';
   console.log('Selected:', optionSelected, '\n');
   switch (optionSelected) {
+    case 'Verify transfer':
+      await verifyTransfer(true, false);
+      break;
     case 'Add new lockup':
       let name = input.readStringNonEmpty(`Enter the name of the lockup type: `);
       let lockupAmount = readlineSync.questionInt(`Enter the amount of tokens that will be locked: `);
@@ -2606,6 +2680,7 @@ async function initialize(_tokenSymbol) {
   welcome();
   await setup();
   securityToken = await common.selectToken(securityTokenRegistry, _tokenSymbol);
+  tokenSymbol = await securityToken.methods.symbol().call();
   if (securityToken === null) {
     process.exit(0);
   }

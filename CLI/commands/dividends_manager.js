@@ -161,6 +161,7 @@ async function dividendsManager() {
       break;
     case 'Explore checkpoint':
       await exploreCheckpoint();
+      break;
     case 'Show current default exclusions':
       showExcluded(defaultExcluded);
       break;

@@ -143,7 +143,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
     describe("Generate the SecurityToken", async () => {
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let tx = await I_STRProxied.registerTicker(token_owner, symbol, contact, { from: token_owner });
+            let tx = await I_STRProxied.registerNewTicker(token_owner, symbol, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._ticker, symbol.toUpperCase());
         });
@@ -1274,7 +1274,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
         describe("Test cases for the ERC20DividendCheckpointFactory", async () => {
             it("should get the exact details of the factory", async () => {
                 assert.equal((await I_ERC20DividendCheckpointFactory.setupCost.call()).toNumber(), 0);
-                assert.equal((await I_ERC20DividendCheckpointFactory.types.call())[0], 4);
+                assert.equal((await I_ERC20DividendCheckpointFactory.getTypes.call())[0], 4);
                 assert.equal(await I_ERC20DividendCheckpointFactory.version.call(), "3.0.0");
                 assert.equal(
                     web3.utils.toAscii(await I_ERC20DividendCheckpointFactory.name.call()).replace(/\u0000/g, ""),
@@ -1287,7 +1287,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
                     "Wrong Module added"
                 );
                 assert.equal(await I_ERC20DividendCheckpointFactory.title.call(), "ERC20 Dividend Checkpoint", "Wrong Module added");
-                let tags = await I_ERC20DividendCheckpointFactory.tags.call();
+                let tags = await I_ERC20DividendCheckpointFactory.getTags.call();
                 assert.equal(tags.length, 3);
             });
         });

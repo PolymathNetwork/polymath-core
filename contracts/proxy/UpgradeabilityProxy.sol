@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "./Proxy.sol";
 import "openzeppelin-solidity/contracts/utils/Address.sol";

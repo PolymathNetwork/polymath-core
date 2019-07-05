@@ -1,4 +1,6 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
+
+import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
 /**
  * @title Contract used to store layout for the USDTieredSTO storage
@@ -6,7 +8,7 @@ pragma solidity ^0.5.0;
 contract USDTieredSTOStorage {
 
     bytes32 internal constant INVESTORSKEY = 0xdf3a8dd24acdd05addfc6aeffef7574d2de3f844535ec91e8e0f3e45dba96731; //keccak256(abi.encodePacked("INVESTORS"))
-
+    
     /////////////
     // Storage //
     /////////////
@@ -42,7 +44,7 @@ contract USDTieredSTOStorage {
     address public treasuryWallet;
 
     // List of stable coin addresses
-    address[] internal usdTokens;
+    IERC20[] internal usdTokens;
 
     // Current tier
     uint256 public currentTier;
@@ -74,4 +76,6 @@ contract USDTieredSTOStorage {
     // Array of Tiers
     Tier[] public tiers;
 
+    // Optional custom Oracles.
+    mapping(bytes32 => mapping(bytes32 => address)) customOracles;
 }

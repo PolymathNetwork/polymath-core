@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "./KYCTransferManager.sol";
 import "./../../ModuleFactory.sol";
@@ -11,11 +11,10 @@ contract KYCTransferManagerFactory is ModuleFactory {
      */
     constructor(
         uint256 _setupCost,
-        uint256 _usageCost,
         address _polymathRegistry,
         bool _isCostInPoly
     )
-        public ModuleFactory(_setupCost, _usageCost, _polymathRegistry, _isCostInPoly)
+        public ModuleFactory(_setupCost, _polymathRegistry, _isCostInPoly)
     {
         initialVersion = "3.0.0";
         name = "KYCTransferManager";
@@ -35,7 +34,7 @@ contract KYCTransferManagerFactory is ModuleFactory {
      * @return address Contract address of the Module
      */
     function deploy(bytes calldata _data) external returns(address) {
-        address kycTransferManager = address(new KYCTransferManager(msg.sender, IPolymathRegistry(polymathRegistry).getAddress("PolyToken")));
+        address kycTransferManager = address(new KYCTransferManager(msg.sender, polymathRegistry.getAddress("PolyToken")));
         _initializeModule(kycTransferManager, _data);
         return kycTransferManager;
     }

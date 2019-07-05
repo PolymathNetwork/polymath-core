@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "../STO.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
@@ -80,8 +80,7 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
      * @notice Function to set allowBeneficialInvestments (allow beneficiary to be different to funder)
      * @param _allowBeneficialInvestments Boolean to allow or disallow beneficial investments
      */
-    function changeAllowBeneficialInvestments(bool _allowBeneficialInvestments) public {
-        _onlySecurityTokenOwner();
+    function changeAllowBeneficialInvestments(bool _allowBeneficialInvestments) public withPerm(OPERATOR) {
         require(_allowBeneficialInvestments != allowBeneficialInvestments, "Does not change value");
         allowBeneficialInvestments = _allowBeneficialInvestments;
         emit SetAllowBeneficialInvestments(allowBeneficialInvestments);
@@ -134,7 +133,8 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
      * @notice Return the permissions flag that are associated with STO
      */
     function getPermissions() public view returns(bytes32[] memory) {
-        bytes32[] memory allPermissions = new bytes32[](0);
+        bytes32[] memory allPermissions = new bytes32[](1);
+        allPermissions[0] = OPERATOR;
         return allPermissions;
     }
 
@@ -204,7 +204,7 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
     * @param _tokenAmount Number of tokens to be emitted
     */
     function _deliverTokens(address _beneficiary, uint256 _tokenAmount) internal {
-        ISecurityToken(securityToken).issue(_beneficiary, _tokenAmount, "");
+        securityToken.issue(_beneficiary, _tokenAmount, "");
     }
 
     /**
@@ -233,7 +233,7 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
         if (totalTokensSold.add(tokens) > cap) {
             tokens = cap.sub(totalTokensSold);
         }
-        uint256 granularity = ISecurityToken(securityToken).granularity();
+        uint256 granularity = securityToken.granularity();
         tokens = tokens.div(granularity);
         tokens = tokens.mul(granularity);
         require(tokens > 0, "Cap reached");

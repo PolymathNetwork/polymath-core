@@ -35,6 +35,8 @@ contract("USDTieredSTO", async (accounts) => {
     let ETH = 0;
     let POLY = 1;
     let DAI = 2;
+    let oldEthRate;
+    let oldPolyRate;
 
     let MESSAGE = "Transaction Should Fail!";
     const GAS_PRICE = 0;
@@ -277,7 +279,7 @@ contract("USDTieredSTO", async (accounts) => {
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.getTokens(REGFEE, ISSUER);
             await I_PolyToken.approve(I_STRProxied.address, REGFEE, { from: ISSUER });
-            let tx = await I_STRProxied.registerTicker(ISSUER, SYMBOL, NAME, { from: ISSUER });
+            let tx = await I_STRProxied.registerNewTicker(ISSUER, SYMBOL, { from: ISSUER });
             assert.equal(tx.logs[0].args._owner, ISSUER);
             assert.equal(tx.logs[0].args._ticker, SYMBOL);
         });
@@ -390,7 +392,7 @@ contract("USDTieredSTO", async (accounts) => {
                 _tokensPerTierTotal[stoId].length,
                 "Incorrect number of tiers"
             );
-            assert.equal((await I_USDTieredSTO_Array[stoId].getPermissions()).length, new BN(0), "Incorrect number of permissions");
+            assert.equal((await I_USDTieredSTO_Array[stoId].getPermissions()).length, new BN(2), "Incorrect number of permissions");
         });
 
         it("Should attach the paid STO factory -- failed because of no tokens", async () => {
@@ -579,7 +581,7 @@ contract("USDTieredSTO", async (accounts) => {
                 _tokensPerTierTotal[stoId].length,
                 "Incorrect number of tiers"
             );
-            assert.equal((await I_USDTieredSTO_Array[stoId].getPermissions()).length, new BN(0), "Incorrect number of permissions");
+            assert.equal((await I_USDTieredSTO_Array[stoId].getPermissions()).length, new BN(2), "Incorrect number of permissions");
         });
 
         it("Should successfully attach the third STO module to the security token", async () => {
@@ -909,6 +911,40 @@ contract("USDTieredSTO", async (accounts) => {
     });
 
     describe("Test modifying configuration", async () => {
+        it("Should not allow unauthorized address to change oracle address", async () => {
+            let stoId = 3;
+            await catchRevert(I_USDTieredSTO_Array[stoId].modifyOracle(ETH, address_zero, { from: ACCREDITED1 }));
+        });
+
+        it("Should not allow to change oracle address for currencies other than ETH and POLY", async () => {
+            let stoId = 3;
+            await catchRevert(I_USDTieredSTO_Array[stoId].modifyOracle(DAI, address_zero, { from: ISSUER }));
+        });
+
+        it("Should allow to change oracle address for ETH", async () => {
+            let stoId = 3;
+            oldEthRate = await I_USDTieredSTO_Array[stoId].getRate.call(ETH);
+            let I_USDOracle2 = await MockOracle.new(address_zero, web3.utils.fromAscii("ETH"), web3.utils.fromAscii("USD"), e18, { from: POLYMATH });
+            await I_USDTieredSTO_Array[stoId].modifyOracle(ETH, I_USDOracle2.address, { from: ISSUER });
+            assert.equal((await I_USDTieredSTO_Array[stoId].getRate.call(ETH)).toString(), e18.toString());
+        });
+
+        it("Should allow to change oracle address for POLY", async () => {
+            let stoId = 3;
+            oldPolyRate = await I_USDTieredSTO_Array[stoId].getRate.call(POLY);
+            let I_POLYOracle2 = await MockOracle.new(I_PolyToken.address, web3.utils.fromAscii("POLY"), web3.utils.fromAscii("USD"), e18, { from: POLYMATH });
+            await I_USDTieredSTO_Array[stoId].modifyOracle(POLY, I_POLYOracle2.address, { from: ISSUER });
+            assert.equal((await I_USDTieredSTO_Array[stoId].getRate.call(POLY)).toString(), e18.toString());
+        });
+
+        it("Should use official oracles when custom oracle is set to 0x0", async () => {
+            let stoId = 3;
+            await I_USDTieredSTO_Array[stoId].modifyOracle(ETH, address_zero, { from: ISSUER });
+            await I_USDTieredSTO_Array[stoId].modifyOracle(POLY, address_zero, { from: ISSUER });
+            assert.equal((await I_USDTieredSTO_Array[stoId].getRate.call(ETH)).toString(), oldEthRate.toString());
+            assert.equal((await I_USDTieredSTO_Array[stoId].getRate.call(POLY)).toString(), oldPolyRate.toString());
+        });
+
         it("Should successfully change config before startTime - funding", async () => {
             let stoId = 3;
             await I_USDTieredSTO_Array[stoId].modifyFunding([0], { from: ISSUER });
@@ -4742,7 +4778,7 @@ contract("USDTieredSTO", async (accounts) => {
     describe("Test cases for the USDTieredSTOFactory", async () => {
         it("should get the exact details of the factory", async () => {
             assert.equal((await I_USDTieredSTOFactory.setupCost.call()).toString(), STOSetupCost);
-            assert.equal((await I_USDTieredSTOFactory.types.call())[0], 3);
+            assert.equal((await I_USDTieredSTOFactory.getTypes.call())[0], 3);
             assert.equal(web3.utils.hexToString(await I_USDTieredSTOFactory.name.call()), "USDTieredSTO", "Wrong Module added");
             assert.equal(
                 await I_USDTieredSTOFactory.description.call(),
@@ -4751,7 +4787,7 @@ contract("USDTieredSTO", async (accounts) => {
             );
             assert.equal(await I_USDTieredSTOFactory.title.call(), "USD Tiered STO", "Wrong Module added");
             assert.equal(await I_USDTieredSTOFactory.version.call(), "3.0.0");
-            let tags = await I_USDTieredSTOFactory.tags.call();
+            let tags = await I_USDTieredSTOFactory.getTags.call();
             assert.equal(web3.utils.hexToString(tags[0]), "Tiered");
             assert.equal(web3.utils.hexToString(tags[1]), "ETH");
             assert.equal(web3.utils.hexToString(tags[2]), "POLY");

@@ -1,4 +1,4 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "../interfaces/IDataStore.sol";
 import "./BokkyPooBahsDateTimeLibrary.sol";
@@ -72,9 +72,9 @@ library VolumeRestrictionLib {
         public
         view
         returns(bool)
-    {   
+    {
         // if restriction is to check whether the current transaction is performed within the 24 hours
-        // span after the last transaction performed by the user 
+        // span after the last transaction performed by the user
         if (BokkyPooBahsDateTimeLibrary.diffSeconds(_lastTradedTimestamp, now) < 86400) {
             (,, uint256 lastTxDay) = BokkyPooBahsDateTimeLibrary.timestampToDate(_lastTradedTimestamp);
             (,, uint256 currentTxDay) = BokkyPooBahsDateTimeLibrary.timestampToDate(now);
@@ -179,7 +179,7 @@ library VolumeRestrictionLib {
         VolumeRestrictionTMStorage.TypeOfPeriod _currentTypeOfPeriod,
         VolumeRestrictionTMStorage.TypeOfPeriod _callFrom,
         uint256 _endTime
-    ) 
+    )
         internal
         pure
         returns(VolumeRestrictionTMStorage.TypeOfPeriod)

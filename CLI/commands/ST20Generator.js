@@ -6,8 +6,9 @@ const tokenManager = require('./token_manager');
 const contracts = require('./helpers/contract_addresses');
 const abis = require('./helpers/contract_abis');
 const common = require('./common/common_functions');
+const input = require('./IO/input');
 
-////////////////////////
+//
 let securityTokenRegistryAddress;
 let tokenSymbol;
 let tokenLaunched;
@@ -16,7 +17,7 @@ let tokenLaunched;
 let securityTokenRegistry;
 let polyToken;
 
-async function executeApp(_ticker, _transferOwnership, _name, _details, _divisible) {
+async function executeApp (_ticker, _transferOwnership, _name, _details, _divisible) {
   common.logAsciiBull();
   console.log("********************************************");
   console.log("Welcome to the Command-Line ST-20 Generator.");
@@ -37,15 +38,14 @@ async function executeApp(_ticker, _transferOwnership, _name, _details, _divisib
     }
   } catch (err) {
     console.log(err);
-    return;
   }
 };
 
-async function setup() {
+async function setup () {
   try {
     securityTokenRegistryAddress = await contracts.securityTokenRegistry();
-    let securityTokenRegistryABI = abis.securityTokenRegistry();
-    securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
+    let iSecurityTokenRegistryABI = abis.iSecurityTokenRegistry();
+    securityTokenRegistry = new web3.eth.Contract(iSecurityTokenRegistryABI, securityTokenRegistryAddress);
     securityTokenRegistry.setProvider(web3.currentProvider);
 
     let polytokenAddress = await contracts.polyToken();
@@ -59,14 +59,16 @@ async function setup() {
   }
 }
 
-async function step_ticker_registration(_ticker) {
+async function step_ticker_registration (_ticker) {
   console.log(chalk.blue('\nToken Symbol Registration'));
 
-  let regFee = web3.utils.fromWei(await securityTokenRegistry.methods.getTickerRegistrationFee().call());
   let available = false;
-
   while (!available) {
-    console.log(chalk.yellow(`\nRegistering the new token symbol requires ${regFee} POLY & deducted from '${Issuer.address}', Current balance is ${(web3.utils.fromWei(await polyToken.methods.balanceOf(Issuer.address).call()))} POLY\n`));
+    const regFee = await securityTokenRegistry.methods.getFees(web3.utils.keccak256('tickerRegFee')).call();
+    const polyFee = web3.utils.fromWei(regFee.polyFee);
+    const usdFee = web3.utils.fromWei(regFee.usdFee);
+
+    console.log(chalk.yellow(`\nRegistering the new token symbol requires ${polyFee} POLY (${usdFee} USD) & deducted from '${Issuer.address}', Current balance is ${(web3.utils.fromWei(await polyToken.methods.balanceOf(Issuer.address).call()))} POLY\n`));
 
     if (typeof _ticker !== 'undefined') {
       tokenSymbol = _ticker;
@@ -76,13 +78,13 @@ async function step_ticker_registration(_ticker) {
     }
 
     let details = await securityTokenRegistry.methods.getTickerDetails(tokenSymbol).call();
-    if (new BigNumber(details[1]).toNumber() == 0) {
+    if (new BigNumber(details[1]).toNumber() === 0) {
       // If it has no registration date, it is available
       available = true;
-      await approvePoly(securityTokenRegistryAddress, regFee);
+      await approvePoly(securityTokenRegistryAddress, polyFee);
       let registerTickerAction = securityTokenRegistry.methods.registerTicker(Issuer.address, tokenSymbol, "");
       await common.sendTransaction(registerTickerAction, { factor: 1.5 });
-    } else if (details[0] == Issuer.address) {
+    } else if (details[0] === Issuer.address) {
       // If it has registration date and its owner is Issuer
       available = true;
       tokenLaunched = details[4];
@@ -93,18 +95,13 @@ async function step_ticker_registration(_ticker) {
   }
 }
 
-async function step_transfer_ticker_ownership(_transferOwnership) {
+async function step_transfer_ticker_ownership (_transferOwnership) {
   let newOwner = null;
-  if (typeof _transferOwnership !== 'undefined' && _transferOwnership != 'false') {
+  if (typeof _transferOwnership !== 'undefined' && _transferOwnership !== 'false') {
     newOwner = _transferOwnership;
     console.log(`Transfer ownership to: ${newOwner}`);
-  } else if (_transferOwnership != 'false' && readlineSync.keyInYNStrict(`Do you want to transfer the ownership of ${tokenSymbol} ticker?`)) {
-    newOwner = readlineSync.question('Enter the address that will be the new owner: ', {
-      limit: function (input) {
-        return web3.utils.isAddress(input);
-      },
-      limitMessage: "Must be a valid address"
-    });
+  } else if (_transferOwnership !== 'false' && readlineSync.keyInYNStrict(`Do you want to transfer the ownership of ${tokenSymbol} ticker?`)) {
+    newOwner = input.readAddress('Enter the address that will be the new owner: ');
   }
 
   if (newOwner) {
@@ -116,11 +113,13 @@ async function step_transfer_ticker_ownership(_transferOwnership) {
   }
 }
 
-async function step_token_deploy(_name, _details, _divisible) {
+async function step_token_deploy (_name, _details, _divisible) {
   console.log(chalk.blue('\nToken Creation - Token Deployment'));
 
-  let launchFee = web3.utils.fromWei(await securityTokenRegistry.methods.getSecurityTokenLaunchFee().call());
-  console.log(chalk.green(`\nToken deployment requires ${launchFee} POLY & deducted from '${Issuer.address}', Current balance is ${(web3.utils.fromWei(await polyToken.methods.balanceOf(Issuer.address).call()))} POLY\n`));
+  const launchFee = await securityTokenRegistry.methods.getFees(web3.utils.keccak256('stLaunchFee')).call();
+  const polyFee = web3.utils.fromWei(launchFee.polyFee);
+  const usdFee = web3.utils.fromWei(launchFee.usdFee);
+  console.log(chalk.yellow(`\nToken deployment requires ${polyFee} POLY (${usdFee} USD) & deducted from '${Issuer.address}', Current balance is ${(web3.utils.fromWei(await polyToken.methods.balanceOf(Issuer.address).call()))} POLY\n`));
 
   let tokenName;
   if (typeof _name !== 'undefined') {
@@ -140,43 +139,41 @@ async function step_token_deploy(_name, _details, _divisible) {
 
   let divisibility;
   if (typeof _divisible !== 'undefined') {
-    divisibility = _divisible.toString() == 'true';
+    divisibility = _divisible.toString() === 'true';
     console.log(`Divisible: ${divisibility.toString()}`)
   } else {
     let divisible = readlineSync.question('Press "N" for Non-divisible type token or hit Enter for divisible type token (Default): ');
-    divisibility = (divisible != 'N' && divisible != 'n');
+    divisibility = (divisible !== 'N' && divisible !== 'n');
   }
 
-  await approvePoly(securityTokenRegistryAddress, launchFee);
-  let generateSecurityTokenAction = securityTokenRegistry.methods.generateSecurityToken(tokenName, tokenSymbol, tokenDetails, divisibility);
+  let treasuryWallet = input.readAddress('Enter the treasury address for the token (' + Issuer.address + '): ', Issuer.address);
+  await approvePoly(securityTokenRegistryAddress, polyFee);
+  let generateSecurityTokenAction = securityTokenRegistry.methods.generateNewSecurityToken(tokenName, tokenSymbol, tokenDetails, divisibility, treasuryWallet, 0);
   let receipt = await common.sendTransaction(generateSecurityTokenAction);
-  let event = common.getEventFromLogs(securityTokenRegistry._jsonInterface, receipt.logs, 'NewSecurityToken');
+  let event = common.getEventFromLogs(securityTokenRegistry._jsonInterface, receipt.logs, 'NewSecurityTokenCreated');
   console.log(chalk.green(`Security Token has been successfully deployed at address ${event._securityTokenAddress}`));
 }
 
-//////////////////////
 // HELPER FUNCTIONS //
-//////////////////////
-async function selectTicker() {
+async function selectTicker () {
   let result;
-  let userTickers = (await securityTokenRegistry.methods.getTickersByOwner(Issuer.address).call()).map(t => web3.utils.hexToAscii(t));
+  let userTickers = (await securityTokenRegistry.methods.getTickersByOwner(Issuer.address).call()).map(t => web3.utils.hexToUtf8(t));
   let options = await Promise.all(userTickers.map(async function (t) {
     let tickerDetails = await securityTokenRegistry.methods.getTickerDetails(t).call();
     let tickerInfo;
     if (tickerDetails[4]) {
-      tickerInfo = `Token launched at ${(await securityTokenRegistry.methods.getSecurityTokenAddress(t).call())}`;
+      tickerInfo = `- Token launched at ${(await securityTokenRegistry.methods.getSecurityTokenAddress(t).call())}`;
     } else {
-      tickerInfo = `Expires at ${moment.unix(tickerDetails[2]).format('MMMM Do YYYY, HH:mm:ss')}`;
+      tickerInfo = `- Expires at ${moment.unix(tickerDetails[2]).format('MMMM Do YYYY, HH:mm:ss')}`;
     }
-    return `${t}
-    ${tickerInfo}`;
+    return `${t} ${tickerInfo}`;
   }));
   options.push('Register a new ticker');
 
   let index = readlineSync.keyInSelect(options, 'Select a ticker:');
-  if (index == -1) {
+  if (index === -1) {
     process.exit(0);
-  } else if (index == options.length - 1) {
+  } else if (index === options.length - 1) {
     result = readlineSync.question('Enter a symbol for your new ticker: ');
   } else {
     result = userTickers[index];
@@ -185,15 +182,15 @@ async function selectTicker() {
   return result;
 }
 
-async function approvePoly(spender, fee) {
+async function approvePoly (spender, fee) {
   polyBalance = await polyToken.methods.balanceOf(Issuer.address).call();
-  let requiredAmount = web3.utils.toWei(fee.toString(), "ether");
+  let requiredAmount = web3.utils.toWei(fee.toString());
   if (parseInt(polyBalance) >= parseInt(requiredAmount)) {
-    let allowance = await polyToken.methods.allowance(spender, Issuer.address).call();
-    if (allowance == web3.utils.toWei(fee.toString(), "ether")) {
+    let allowance = await polyToken.methods.allowance(Issuer.address, spender).call();
+    if (parseInt(allowance) >= parseInt(requiredAmount)) {
       return true;
     } else {
-      let approveAction = polyToken.methods.approve(spender, web3.utils.toWei(fee.toString(), "ether"));
+      let approveAction = polyToken.methods.approve(spender, requiredAmount);
       await common.sendTransaction(approveAction);
     }
   } else {

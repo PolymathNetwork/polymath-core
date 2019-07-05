@@ -216,7 +216,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
     describe("Generate the SecurityToken", async () => {
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let tx = await I_STRProxied.registerTicker(token_owner, symbol, contact, { from: token_owner });
+            let tx = await I_STRProxied.registerNewTicker(token_owner, symbol, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._ticker, symbol.toUpperCase());
         });
@@ -1960,7 +1960,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
         it("Should get the exact details of the factory", async() => {
             assert.equal(await I_VolumeRestrictionTMFactory.setupCost.call(),0);
-            assert.equal((await I_VolumeRestrictionTMFactory.types.call())[0],2);
+            assert.equal((await I_VolumeRestrictionTMFactory.getTypes.call())[0],2);
             assert.equal(web3.utils.toAscii(await I_VolumeRestrictionTMFactory.name.call())
                         .replace(/\u0000/g, ''),
                         "VolumeRestrictionTM",
@@ -1975,7 +1975,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         });
 
         it("Should get the tags of the factory", async() => {
-            let tags = await I_VolumeRestrictionTMFactory.tags.call();
+            let tags = await I_VolumeRestrictionTMFactory.getTags.call();
             assert.equal(tags.length, 3);
             assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ''), "Rolling Period");
         });

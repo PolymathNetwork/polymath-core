@@ -37,8 +37,10 @@ contract("CountTransferManager", async (accounts) => {
     let I_GeneralPermissionManager;
     let I_CountTransferManager;
     let I_CountTransferManager2;
+    let I_CountTransferManager3;
     let I_GeneralTransferManager;
     let I_GeneralTransferManager2;
+    let I_GeneralTransferManager3;
     let I_ExchangeTransferManager;
     let I_ModuleRegistry;
     let I_ModuleRegistryProxy;
@@ -49,17 +51,21 @@ contract("CountTransferManager", async (accounts) => {
     let I_STFactory;
     let I_SecurityToken;
     let I_SecurityToken2;
+    let I_SecurityToken3;
     let I_PolyToken;
     let I_PolymathRegistry;
     let I_STRGetter;
     let I_STGetter;
+    let I_MockCountTransferManagerLogic;
     let stGetter;
     let stGetter2;
+    let stGetter3;
 
     // SecurityToken Details
     const name = "Team";
     const symbol = "sap";
     const symbol2 = "sapp";
+    const symbol3 = "sapp3"
     const tokenDetails = "This is equity type of issuance";
     const decimals = 18;
     const contact = "team@polymath.network";
@@ -135,7 +141,7 @@ contract("CountTransferManager", async (accounts) => {
     describe("Generate the SecurityToken", async () => {
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let tx = await I_STRProxied.registerTicker(token_owner, symbol, contact, { from: token_owner });
+            let tx = await I_STRProxied.registerNewTicker(token_owner, symbol, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._ticker, symbol.toUpperCase());
         });
@@ -361,7 +367,7 @@ contract("CountTransferManager", async (accounts) => {
             it("deploy a new token & auto attach modules", async () => {
                 //register ticker and deploy token
                 await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-                let tx = await I_STRProxied.registerTicker(token_owner, symbol2, contact, { from: token_owner });
+                let tx = await I_STRProxied.registerNewTicker(token_owner, symbol2, { from: token_owner });
 
                 await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
 
@@ -371,6 +377,21 @@ contract("CountTransferManager", async (accounts) => {
                 stGetter2 = await STGetter.at(I_SecurityToken2.address);
                 let moduleData = (await stGetter2.getModulesByType(2))[0];
                 I_GeneralTransferManager2 = await GeneralTransferManager.at(moduleData);
+            });
+
+            it("deploy another new token & auto attach modules", async () => {
+                //register ticker and deploy token
+                await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
+                let tx = await I_STRProxied.registerTicker(token_owner, symbol3, contact, { from: token_owner });
+
+                await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
+
+                let tx2 = await I_STRProxied.generateNewSecurityToken(name, symbol3, tokenDetails, false, token_owner, 0, { from: token_owner });
+
+                I_SecurityToken3 = await SecurityToken.at(tx2.logs[1].args._securityTokenAddress);
+                stGetter3 = await STGetter.at(I_SecurityToken3.address);
+                let moduleData = (await stGetter3.getModulesByType(2))[0];
+                I_GeneralTransferManager3 = await GeneralTransferManager.at(moduleData);
             });
 
             it("add 3 holders to the token", async () => {
@@ -455,8 +476,21 @@ contract("CountTransferManager", async (accounts) => {
                 console.log("current max holder number is " + (await I_CountTransferManager2.maxHolderCount({ from: token_owner })));
             });
 
+            it("Should successfully attach the CountTransferManager with the third security token and set max holder to 2", async () => {
+                const tx = await I_SecurityToken3.addModule(I_CountTransferManagerFactory.address, bytesSTO, new BN(0), new BN(0), false, { from: token_owner });
+                assert.equal(tx.logs[2].args._types[0].toNumber(), transferManagerKey, "CountTransferManager doesn't get deployed");
+                assert.equal(
+                    web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
+                    "CountTransferManager",
+                    "CountTransferManager module was not added"
+                );
+                I_CountTransferManager3 = await CountTransferManager.at(tx.logs[2].args._module);
+                await I_CountTransferManager3.changeHolderCount(2, { from: token_owner });
+                console.log("current max holder number is " + (await I_CountTransferManager3.maxHolderCount({ from: token_owner })));
+            });
+
             it("Should upgrade the CTM", async () => {
-                let I_MockCountTransferManagerLogic = await MockCountTransferManager.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: account_polymath });
+                I_MockCountTransferManagerLogic = await MockCountTransferManager.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: account_polymath });
                 let bytesCM = encodeProxyCall(["uint256"], [11]);
                 await catchRevert(
                     // Fails as no upgrade available
@@ -482,7 +516,37 @@ contract("CountTransferManager", async (accounts) => {
                 let tx = await I_MRProxied.verifyModule(I_CountTransferManagerFactory.address, { from: account_polymath });
                 await I_SecurityToken2.upgradeModule(I_CountTransferManager2.address, { from: token_owner });
                 let I_MockCountTransferManager = await MockCountTransferManager.at(I_CountTransferManager2.address);
+                let newValue = await I_MockCountTransferManager.someValue.call();
+                assert(newValue.toNumber(), 11);
                 await I_MockCountTransferManager.newFunction();
+            });
+
+            it("Should modify the upgrade data and upgrade", async () => {
+                let bytesCM = encodeProxyCall(["uint256"], [12]);
+                await catchRevert(
+                    // Fails due to the same version being used
+                    I_CountTransferManagerFactory.updateLogicContract(1, "3.0.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath })
+                );
+                await catchRevert(
+                    // Fails due to the wrong contract being used
+                    I_CountTransferManagerFactory.updateLogicContract(1, "4.0.0", "0x0000000000000000000000000000000000000000", bytesCM, { from: account_polymath })
+                );
+                await catchRevert(
+                    // Fails due to the wrong owner being used
+                    I_CountTransferManagerFactory.updateLogicContract(1, "4.0.0", "0x0000000000000000000000000000000000000000", bytesCM, { from: token_owner })
+                );
+                await I_CountTransferManagerFactory.updateLogicContract(1, "4.0.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath });
+                await catchRevert(
+                    // Fails as upgraded module has been unverified
+                    I_SecurityToken3.upgradeModule(I_CountTransferManager3.address, { from: token_owner })
+                );
+                let tx = await I_MRProxied.verifyModule(I_CountTransferManagerFactory.address, { from: account_polymath });
+                await I_SecurityToken3.upgradeModule(I_CountTransferManager3.address, { from: token_owner });
+                let I_MockCountTransferManager = await MockCountTransferManager.at(I_CountTransferManager3.address);
+                let newValue = await I_MockCountTransferManager.someValue.call();
+                assert(newValue.toNumber(), 12);
+                await I_MockCountTransferManager.newFunction();
+
             });
 
             it("Should upgrade the CTM again", async () => {
@@ -521,7 +585,7 @@ contract("CountTransferManager", async (accounts) => {
         describe("Test cases for the factory", async () => {
             it("should get the exact details of the factory", async () => {
                 assert.equal(await I_CountTransferManagerFactory.setupCost.call(), 0);
-                assert.equal((await I_CountTransferManagerFactory.types.call())[0], 2);
+                assert.equal((await I_CountTransferManagerFactory.getTypes.call())[0], 2);
                 assert.equal(
                     web3.utils.toAscii(await I_CountTransferManagerFactory.name.call()).replace(/\u0000/g, ""),
                     "CountTransferManager",
@@ -536,7 +600,7 @@ contract("CountTransferManager", async (accounts) => {
             });
 
             it("Should get the tags of the factory", async () => {
-                let tags = await I_CountTransferManagerFactory.tags.call();
+                let tags = await I_CountTransferManagerFactory.getTags.call();
                 assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ""), "Count");
             });
         });
@@ -555,32 +619,18 @@ contract("CountTransferManager", async (accounts) => {
 
             it("Should successfully change the cost type -- fail beacuse of bad owner", async () => {
                 await catchRevert(
-                    I_CountTransferManagerFactory.changeCostsAndType(new BN(web3.utils.toWei("100")), new BN(web3.utils.toWei("500")), true, { from: account_investor3 })
+                    I_CountTransferManagerFactory.changeCostAndType(new BN(web3.utils.toWei("500")), true, { from: account_investor3 })
                 );
             });
 
             it("Should successfully change the cost type", async () => {
                 let snapId = await takeSnapshot();
-                let tx = await I_CountTransferManagerFactory.changeCostsAndType(new BN(web3.utils.toWei("100")), new BN(web3.utils.toWei("500")), true, { from: account_polymath });
-                assert.equal(tx.logs[0].args[1].toString(), new BN(web3.utils.toWei("100")).toString(), "wrong setup fee in event");
-                assert.equal(tx.logs[1].args[1].toString(), new BN(web3.utils.toWei("500")).toString(), "wrong usage fee in event");
-                assert.equal(tx.logs[2].args[1], true, "wrong fee type in event");
-                assert.equal((await I_CountTransferManagerFactory.setupCost.call()).toString(), new BN(web3.utils.toWei("100")).toString());
-                assert.equal((await I_CountTransferManagerFactory.usageCost.call()).toString(), new BN(web3.utils.toWei("500")).toString());
+                let tx = await I_CountTransferManagerFactory.changeCostAndType(new BN(web3.utils.toWei("500")), true, { from: account_polymath });
+                assert.equal(tx.logs[0].args[1].toString(), new BN(web3.utils.toWei("500")).toString(), "wrong setup fee in event");
+                assert.equal(tx.logs[1].args[1], true, "wrong fee type in event");
+                assert.equal((await I_CountTransferManagerFactory.setupCost.call()).toString(), new BN(web3.utils.toWei("500")).toString());
                 assert.equal((await I_CountTransferManagerFactory.setupCost.call()).toString(), (await I_CountTransferManagerFactory.setupCostInPoly.call()).toString());
-                assert.equal((await I_CountTransferManagerFactory.usageCost.call()).toString(), (await I_CountTransferManagerFactory.usageCostInPoly.call()).toString());
                 await revertToSnapshot(snapId);
-            });
-
-            it("Should successfully change the usage fee -- fail beacuse of bad owner", async () => {
-                await catchRevert(
-                    I_CountTransferManagerFactory.changeUsageCost(new BN(web3.utils.toWei("500")), { from: account_investor3 })
-                );
-            });
-
-            it("Should successfully change the usage fee", async () => {
-                await I_CountTransferManagerFactory.changeUsageCost(new BN(web3.utils.toWei("800")), { from: account_polymath });
-                assert.equal((await I_CountTransferManagerFactory.usageCost.call()).toString(), new BN(web3.utils.toWei("800")).toString());
             });
 
         });

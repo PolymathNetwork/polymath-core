@@ -165,7 +165,7 @@ contract("GeneralTransferManager", async (accounts) => {
     describe("Generate the SecurityToken", async () => {
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let tx = await I_STRProxied.registerTicker(token_owner, symbol, contact, { from: token_owner });
+            let tx = await I_STRProxied.registerNewTicker(token_owner, symbol, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._ticker, symbol.toUpperCase());
         });
@@ -1005,38 +1005,10 @@ contract("GeneralTransferManager", async (accounts) => {
             assert.equal(web3.utils.toAscii(perm[0]).replace(/\u0000/g, ""), "ADMIN");
         });
 
-        it("Should set a usage fee for the GTM", async () => {
-            // Fail due to wrong owner
-            await catchRevert(I_GeneralTransferManagerFactory.changeUsageCost(new BN(web3.utils.toWei("1", "ether")), { from: token_owner}));
-            await I_GeneralTransferManagerFactory.changeUsageCost(new BN(web3.utils.toWei("1", "ether")), { from: account_polymath });
-        });
-
-        it("Should fail to pull fees as no budget set", async () => {
-            await catchRevert(I_GeneralTransferManager.takeUsageFee( { from: account_polymath }));
-        });
-
         it("Should set a budget for the GeneralTransferManager", async () => {
             await I_SecurityToken.changeModuleBudget(I_GeneralTransferManager.address, new BN(10).pow(new BN(19)), true, { from: token_owner });
-            await catchRevert(I_GeneralTransferManager.takeUsageFee({ from: token_owner }));
             await I_PolyToken.getTokens(new BN(10).pow(new BN(19)), token_owner);
             await I_PolyToken.transfer(I_SecurityToken.address, new BN(10).pow(new BN(19)), { from: token_owner });
-        });
-
-        it("Factory owner should pull fees - fails as not permissioned by issuer", async () => {
-            await catchRevert(I_GeneralTransferManager.takeUsageFee({ from: account_delegate }));
-        });
-
-        it("Factory owner should pull fees", async () => {
-            let log = await I_GeneralPermissionManager.addDelegate(account_delegate, web3.utils.fromAscii("My details"), { from: token_owner });
-            assert.equal(log.logs[0].args._delegate, account_delegate);
-
-            await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("ADMIN"), true, {
-                from: token_owner
-            });
-            let balanceBefore = await I_PolyToken.balanceOf(account_polymath);
-            await I_GeneralTransferManager.takeUsageFee({ from: account_delegate });
-            let balanceAfter = await I_PolyToken.balanceOf(account_polymath);
-            assert.equal(balanceBefore.add(new BN(web3.utils.toWei("1", "ether"))).toString(), balanceAfter.toString(), "Fee is transferred");
         });
 
         it("should allow authorized people to modify transfer requirements", async () => {
@@ -1062,6 +1034,12 @@ contract("GeneralTransferManager", async (accounts) => {
         });
 
         it("Should change the Issuance address", async () => {
+            let log = await I_GeneralPermissionManager.addDelegate(account_delegate, web3.utils.fromAscii("My details"), { from: token_owner });
+            assert.equal(log.logs[0].args._delegate, account_delegate);
+
+            await I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("ADMIN"), true, {
+                from: token_owner
+            });
             let tx = await I_GeneralTransferManager.changeIssuanceAddress(account_investor2, { from: account_delegate });
             assert.equal(tx.logs[0].args._issuanceAddress, account_investor2);
         });
@@ -1275,7 +1253,7 @@ contract("GeneralTransferManager", async (accounts) => {
     describe("General Transfer Manager Factory test cases", async () => {
         it("Should get the exact details of the factory", async () => {
             assert.equal(await I_GeneralTransferManagerFactory.setupCost.call(), 0);
-            assert.equal((await I_GeneralTransferManagerFactory.types.call())[0], 2);
+            assert.equal((await I_GeneralTransferManagerFactory.getTypes.call())[0], 2);
             assert.equal(
                 web3.utils.toAscii(await I_GeneralTransferManagerFactory.name.call()).replace(/\u0000/g, ""),
                 "GeneralTransferManager",
@@ -1291,7 +1269,7 @@ contract("GeneralTransferManager", async (accounts) => {
         });
 
         it("Should get the tags of the factory", async () => {
-            let tags = await I_GeneralTransferManagerFactory.tags.call();
+            let tags = await I_GeneralTransferManagerFactory.getTags.call();
             assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ""), "General");
         });
     });
@@ -1299,7 +1277,7 @@ contract("GeneralTransferManager", async (accounts) => {
     describe("Dummy STO Factory test cases", async () => {
         it("should get the exact details of the factory", async () => {
             assert.equal(await I_DummySTOFactory.setupCost.call(), 0);
-            assert.equal((await I_DummySTOFactory.types.call())[0], 3);
+            assert.equal((await I_DummySTOFactory.getTypes.call())[0], 3);
             assert.equal(
                 web3.utils.toAscii(await I_DummySTOFactory.name.call()).replace(/\u0000/g, ""),
                 "DummySTO",
@@ -1310,7 +1288,7 @@ contract("GeneralTransferManager", async (accounts) => {
         });
 
         it("Should get the tags of the factory", async () => {
-            let tags = await I_DummySTOFactory.tags.call();
+            let tags = await I_DummySTOFactory.getTags.call();
             assert.equal(web3.utils.toAscii(tags[0]).replace(/\u0000/g, ""), "Dummy");
         });
 

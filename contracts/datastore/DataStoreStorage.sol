@@ -1,8 +1,11 @@
-pragma solidity ^0.5.0;
+pragma solidity 0.5.8;
 
 import "../interfaces/ISecurityToken.sol";
 
 contract DataStoreStorage {
+    // Address of the current implementation
+    address internal __implementation;
+
     ISecurityToken public securityToken;
 
     mapping (bytes32 => uint256) internal uintData;

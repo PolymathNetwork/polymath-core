@@ -25,7 +25,7 @@ function getGasPrice(networkId) {
 }
 
 function providerValidator(url) {
-  var expression = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g;
+  var expression = /^(?:http(s)?:\/\/)?[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$/gm;
   var regex = new RegExp(expression);
   return url.match(regex);
 }
@@ -44,9 +44,9 @@ module.exports = {
           console.log("Invalid remote node")
           process.exit(0)
         }
-        await httpProvider(remoteNetwork, './privKey');
+        await httpProvider(remoteNetwork, `${__dirname}/../../../privKey`);
       } else {
-        await httpProvider("http://localhost:8545", './privKeyLocal');
+        await httpProvider("http://localhost:8545", `${__dirname}/../../../privKeyLocal`);
       }
       defaultGasPrice = getGasPrice(await web3.eth.net.getId());
     }

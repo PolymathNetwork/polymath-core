@@ -39,6 +39,10 @@ contract CountTransferManager is CountTransferManagerStorage, TransferManager {
 
     /**
      * @notice Used to verify the transfer transaction and prevent a transfer if it passes the allowed amount of token holders
+     * @dev module.verifyTransfer is called by SecToken.canTransfer and does not receive the updated holderCount therefore
+     *      verifyTransfer has to manually account for pot. tokenholder changes (by mimicking TokenLib.adjustInvestorCount).
+     *      module.executeTransfer is called by SecToken.transfer|issue|others and receives an updated holderCount 
+     *      as sectoken calls TokenLib.adjustInvestorCount before executeTransfer.
      * @param _from Address of the sender
      * @param _to Address of the receiver
      * @param _amount Amount to send

@@ -10,6 +10,7 @@
     "test": "scripts/test.sh 2> /dev/null",
     "clash-check": "node scripts/clashCheck.js",
     "istr-check": "node scripts/ISTRCheck.js",
+    "ist-check": "node scripts/ISTCheck.js",
     "gas": "scripts/gasUsage.sh",
     "wintest": "scripts\\wintest.cmd",
     "wincov": "scripts\\wincov.cmd",

@@ -42,7 +42,8 @@ interface ISecurityToken {
         bytes32 _label,
         bool _archived
     );
-
+    // Emit when Module get upgraded from the securityToken
+    event ModuleUpgraded(uint8[] _types, address _module);
     // Emit when the token details get updated
     event UpdateTokenDetails(string _oldDetails, string _newDetails);
     // Emit when the token name get updated
@@ -410,7 +411,7 @@ interface ISecurityToken {
      * @param _tokenHolder Whom balance need to queried
      * @return List of partitions
      */
-    function partitionsOf(address _tokenHolder) external view returns (bytes32[] memory partitions);
+    function partitionsOf(address _tokenHolder) external pure returns (bytes32[] memory partitions);
 
     /**
      * @notice Gets data store address
@@ -722,6 +723,13 @@ interface ISecurityToken {
      * @param newOwner The address to transfer ownership to.
      */
     function transferOwnership(address newOwner) external;
+
+    /**
+    * @dev Check if a status code represents success (ie: 0x*1)
+    * @param status Binary ERC-1066 status code
+    * @return successful A boolean representing if the status code represents success
+    */
+    function isSuccess(byte status) external pure returns (bool successful);
 
     /**
      * @return true if `msg.sender` is the owner of the contract.

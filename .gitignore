@@ -25,3 +25,4 @@ extract.py
 extract.zip
 /test-results
 .env
+tokenInfo-*.csv

@@ -725,13 +725,6 @@ interface ISecurityToken {
     function transferOwnership(address newOwner) external;
 
     /**
-    * @dev Check if a status code represents success (ie: 0x*1)
-    * @param status Binary ERC-1066 status code
-    * @return successful A boolean representing if the status code represents success
-    */
-    function isSuccess(byte status) external pure returns (bool successful);
-
-    /**
      * @return true if `msg.sender` is the owner of the contract.
      */
     function isOwner() external view returns (bool);

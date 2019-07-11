@@ -8,18 +8,18 @@ import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 
 contract SecurityTokenStorage {
 
-    uint8 constant PERMISSION_KEY = 1;
-    uint8 constant TRANSFER_KEY = 2;
-    uint8 constant MINT_KEY = 3;
-    uint8 constant CHECKPOINT_KEY = 4;
-    uint8 constant BURN_KEY = 5;
-    uint8 constant DATA_KEY = 6;
-    uint8 constant WALLET_KEY = 7;
+    uint8 internal constant PERMISSION_KEY = 1;
+    uint8 internal constant TRANSFER_KEY = 2;
+    uint8 internal constant MINT_KEY = 3;
+    uint8 internal constant CHECKPOINT_KEY = 4;
+    uint8 internal constant BURN_KEY = 5;
+    uint8 internal constant DATA_KEY = 6;
+    uint8 internal constant WALLET_KEY = 7;
 
     bytes32 internal constant INVESTORSKEY = 0xdf3a8dd24acdd05addfc6aeffef7574d2de3f844535ec91e8e0f3e45dba96731; //keccak256(abi.encodePacked("INVESTORS"))
     bytes32 internal constant TREASURY = 0xaae8817359f3dcb67d050f44f3e49f982e0359d90ca4b5f18569926304aaece6; //keccak256(abi.encodePacked("TREASURY_WALLET"))
-    bytes32 public constant LOCKED = "LOCKED";
-    bytes32 public constant UNLOCKED = "UNLOCKED";
+    bytes32 internal constant LOCKED = "LOCKED";
+    bytes32 internal constant UNLOCKED = "UNLOCKED";
 
     //////////////////////////
     /// Document datastructure
@@ -57,7 +57,7 @@ contract SecurityTokenStorage {
     }
 
     //Naming scheme to match Ownable
-    address public _owner;
+    address internal _owner;
     address public tokenFactory;
     bool public initialized;
 

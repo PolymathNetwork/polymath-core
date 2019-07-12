@@ -205,7 +205,7 @@ contract('VestingEscrowWallet', accounts => {
 
         it("Should change the treasury wallet", async() => {
             await I_VestingEscrowWallet.changeTreasuryWallet(token_owner, {from: token_owner});
-            assert.equal(await I_VestingEscrowWallet.treasuryWallet.call(), token_owner);
+            assert.equal(await I_VestingEscrowWallet.getTreasuryWallet.call(), token_owner);
         });
 
         it("Should Buy the tokens for token_owner", async() => {
@@ -317,7 +317,7 @@ contract('VestingEscrowWallet', accounts => {
 
             assert.equal(tx.logs[0].args._newWallet, account_beneficiary1);
             assert.equal(tx.logs[0].args._oldWallet, token_owner);
-            let treasuryWallet = await I_VestingEscrowWallet.treasuryWallet.call();
+            let treasuryWallet = await I_VestingEscrowWallet.getTreasuryWallet.call();
             assert.equal(treasuryWallet, account_beneficiary1);
 
             await I_VestingEscrowWallet.changeTreasuryWallet(token_owner, {from: token_owner});
@@ -1025,7 +1025,8 @@ contract('VestingEscrowWallet', accounts => {
             await I_SecurityToken.approve(I_VestingEscrowWallet.address, numberOfTokens, { from: token_owner });
             await I_VestingEscrowWallet.depositTokens(numberOfTokens, {from: token_owner});
             const tx = await I_VestingEscrowWallet.addScheduleFromTemplate(account_beneficiary1, templateName, startTime, {from: wallet_admin});
-
+            let scheduleCountByTemplate = await I_VestingEscrowWallet.getSchedulesCountByTemplate.call(templateName);
+            console.log(`Schedule count - ${scheduleCountByTemplate}`);
             checkScheduleLog(tx.logs[0], account_beneficiary1, templateName, startTime);
 
             let scheduleCount = await I_VestingEscrowWallet.getScheduleCount.call(account_beneficiary1);
@@ -1054,12 +1055,29 @@ contract('VestingEscrowWallet', accounts => {
 
         it("Should remove 2 Templates", async () => {
             let templateCount = await I_VestingEscrowWallet.getTemplateCount.call({from: wallet_admin});
-
+            
             await I_VestingEscrowWallet.removeTemplate(web3.utils.toHex("template-4-01"), {from: wallet_admin});
             await I_VestingEscrowWallet.removeTemplate(web3.utils.toHex("template-4-03"), {from: wallet_admin});
 
             let templateCountAfterRemoving = await I_VestingEscrowWallet.getTemplateCount.call({from: wallet_admin});
             assert.equal(templateCount - templateCountAfterRemoving, 2);
+        });
+
+        it("Should get the right number of schedules that are using a given templates", async() => {
+            let scheduleCount = await I_VestingEscrowWallet.getSchedulesCountByTemplate.call(web3.utils.toHex("template-4-01"));
+            let scheduleCount2 = await I_VestingEscrowWallet.getSchedulesCountByTemplate.call(web3.utils.toHex("template-4-02"));
+            let scheduleCount3 = await I_VestingEscrowWallet.getSchedulesCountByTemplate.call(web3.utils.toHex("template-4-03"));
+            let scheduleCount4 = await I_VestingEscrowWallet.getSchedulesCountByTemplate.call(web3.utils.toHex("template-2-01"));
+            let scheduleCount5 = await I_VestingEscrowWallet.getSchedulesCountByTemplate.call(web3.utils.toHex("template-2-02"));
+            let scheduleCount6 = await I_VestingEscrowWallet.getSchedulesCountByTemplate.call(web3.utils.toHex("template-2-03"));
+            let scheduleCount7 = await I_VestingEscrowWallet.getSchedulesCountByTemplate.call(web3.utils.toHex("template-2-04"));
+            assert.equal(scheduleCount , 0);
+            assert.equal(scheduleCount2 , 0);
+            assert.equal(scheduleCount3 , 0);
+            assert.equal(scheduleCount4 , 0);
+            assert.equal(scheduleCount5 , 0);
+            assert.equal(scheduleCount6 , 0);
+            assert.equal(scheduleCount7 , 0);
         });
 
     });

@@ -1,6 +1,13 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# v3.1.0 -Release Candidate
+
+[__3.1.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __11-07-19__
+
+## Modules
+* Add `getSchedulesCountByTemplate()` function in VEW.
+
 # v3.0.0 - Release Candidate
 
 [__3.0.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __10-11-18__

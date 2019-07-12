@@ -394,6 +394,13 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, Wallet {
         return userToTemplates[_beneficiary];
     }
 
+    function getSchedulesCountByTemplate(bytes32 _templateName) external view returns(uint256) {
+        if (_templateName != bytes32(0)) {
+            return templateToUsers[_templateName].length;
+        }
+        return 0;
+    }
+
     /**
      * @notice Returns count of the schedules were created for given beneficiary
      * @param _beneficiary Address of the beneficiary

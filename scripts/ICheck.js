@@ -19,9 +19,6 @@ let strExceptions = [
 
 // These functions/events are allowed to differ. (These are present in ST/STGetter but not used and hence not defined in IST)
 let stExceptions = [
-    "_owner",
-    "UNLOCKED",
-    "LOCKED",
     undefined, // constructor
 ];
 
@@ -50,6 +47,7 @@ async function checkInterfaces() {
     let strMismatch = await interfaceCheck(strABIs, strExceptions, "ISecurityTokenRegistry");
     let stMismatch = await interfaceCheck(stABIs, stExceptions, "ISecurityToken");
     if (strMismatch || stMismatch) {process.exit(1)};
+    console.log(chalk.green("Interface checks finished. No mismatch was found between interfaces and contacts"));
 }
 
 async function interfaceCheck(ABIs, exceptions, interfaceName) {

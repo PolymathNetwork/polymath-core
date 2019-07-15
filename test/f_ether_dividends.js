@@ -350,8 +350,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
 
         it("Should not allow reclaiming withholding tax with incorrect index", async () => {
             await catchRevert(
-                I_EtherDividendCheckpoint.withdrawWithholding(300, { from: token_owner, gasPrice: 0 }),
-                "tx -> failed because dividend index is not valid"
+                I_EtherDividendCheckpoint.withdrawWithholding(300, { from: token_owner, gasPrice: 0 })
             );
         });
 
@@ -580,8 +579,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
                 I_EtherDividendCheckpoint.createDividendWithCheckpointAndExclusions(maturity, expiry, 4, addresses, dividendName, {
                     from: token_owner,
                     value: new BN(web3.utils.toWei("10", "ether"))
-                }),
-                "tx -> failed because too many address excluded"
+                })
             );
         });
 

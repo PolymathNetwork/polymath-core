@@ -22,8 +22,8 @@ async function tryCatch(promise, message) {
 }
 
 module.exports = {
-    catchRevert: async function(promise) {
-        await tryCatch(promise, "revert");
+    catchRevert: async function(promise, message) {
+        await tryCatch(promise, message ? `revert ${message}` : "revert");
     },
     catchPermission: async function(promise) {
         await tryCatch(promise, "revert Permission check failed");

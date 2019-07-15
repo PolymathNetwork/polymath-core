@@ -1929,7 +1929,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await increaseTime(duration.minutes(2));
 
             // sell tokens when user restriction changes from the default restriction to individual restriction
-            await catchRevert (I_SecurityToken.transfer(account_investor1, web3.utils.toWei("5")), {from: account_delegate2});
+            await catchRevert (I_SecurityToken.transfer(account_investor1, web3.utils.toWei("5"), {from: account_delegate2}));
 
             // allow to transact when the day limit is with in the restriction. default allow to transact maximum 5 tokens within
             // a given rolling period. 4 tokens are already sold here user trying to sell 1 more token on the same day

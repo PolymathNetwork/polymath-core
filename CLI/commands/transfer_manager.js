@@ -2680,9 +2680,10 @@ async function initialize(_tokenSymbol) {
   welcome();
   await setup();
   securityToken = await common.selectToken(securityTokenRegistry, _tokenSymbol);
-  tokenSymbol = await securityToken.methods.symbol().call();
   if (securityToken === null) {
     process.exit(0);
+  } else {
+    tokenSymbol = await securityToken.methods.symbol().call();
   }
 }
 

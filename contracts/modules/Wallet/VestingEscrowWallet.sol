@@ -249,6 +249,8 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, Wallet {
             schedules[_beneficiary][index].templateName != _templateName,
             "Already added"
         );
+        if (_startTime == 0)
+            _startTime = now;
         require(_startTime >= now, "Date in the past");
         uint256 numberOfTokens = templates[_templateName].numberOfTokens;
         if (numberOfTokens > unassignedTokens) {
@@ -279,7 +281,9 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, Wallet {
 
     function _modifySchedule(address _beneficiary, bytes32 _templateName, uint256 _startTime) internal {
         _checkSchedule(_beneficiary, _templateName);
-        require(_startTime > now, "Date in the past");
+        if (_startTime == 0)
+            _startTime = now;
+        require(_startTime >= now, "Date in the past");
         uint256 index = userToTemplateIndex[_beneficiary][_templateName];
         Schedule storage schedule = schedules[_beneficiary][index];
         /*solium-disable-next-line security/no-block-members*/
@@ -394,11 +398,36 @@ contract VestingEscrowWallet is VestingEscrowWalletStorage, Wallet {
         return userToTemplates[_beneficiary];
     }
 
+    /**
+     * @notice Returns the schedule count per template
+     * @param _templateName Name of the template
+     * @return count of schedules
+     */
     function getSchedulesCountByTemplate(bytes32 _templateName) external view returns(uint256) {
         if (_templateName != bytes32(0)) {
             return templateToUsers[_templateName].length;
         }
         return 0;
+    }
+
+    /**
+     * @notice Returns the list of all beneficiary 
+     * @return List of addresses
+     */
+    function getAllBeneficiaries() external view returns(address[] memory) {
+        return beneficiaries;
+    }
+
+    /**
+     * @notice Returns the tokens quantity that can be withdrawn from the contract at a moment
+     * @param _beneficiary Address of the beneficiary
+     * @return availableTokens Tokens amount that are available to withdraw
+     */
+    function getAvailableTokens(address _beneficiary) external view returns(uint256 availableTokens) {
+        uint256 scheduleLen = schedules[_beneficiary].length;
+        for (uint256 i = 0; i < scheduleLen; i++) {
+            availableTokens = availableTokens.add(_getAvailableTokens(_beneficiary, i));
+        }
     }
 
     /**

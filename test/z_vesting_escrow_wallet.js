@@ -468,6 +468,9 @@ contract('VestingEscrowWallet', accounts => {
                 I_VestingEscrowWallet.pullAvailableTokens({from: account_beneficiary3})
             );
             await I_VestingEscrowWallet.unpause({from: token_owner});
+            let allowedNoOfTokens = await I_VestingEscrowWallet.getAvailableTokens.call(account_beneficiary3);
+            console.log(`Allowed number of the tokens ${allowedNoOfTokens}`);
+            assert.equal(allowedNoOfTokens.toString(), numberOfTokens);
             const tx = await I_VestingEscrowWallet.pullAvailableTokens({from: account_beneficiary3});
             assert.equal(tx.logs[0].args._beneficiary, account_beneficiary3);
             assert.equal(tx.logs[0].args._numberOfTokens.toString(), numberOfTokens);
@@ -870,7 +873,8 @@ contract('VestingEscrowWallet', accounts => {
                     frequency: new BN(durationUtil.minutes(1))
                 }
             ];
-
+            let beneficiaries1 = await I_VestingEscrowWallet.getAllBeneficiaries.call();
+            console.log(`Beneficiaries accounts -> ${beneficiaries1}`);
             let totalNumberOfTokens = getTotalNumberOfTokens(schedules);
             await I_SecurityToken.approve(I_VestingEscrowWallet.address, totalNumberOfTokens, {from: token_owner});
             await I_VestingEscrowWallet.depositTokens(totalNumberOfTokens, {from: token_owner});
@@ -882,6 +886,10 @@ contract('VestingEscrowWallet', accounts => {
                 let startTime = currentTime.add(new BN(100));
                 await I_VestingEscrowWallet.addSchedule(account_beneficiary3, templateName, numberOfTokens, duration, frequency, startTime, {from: wallet_admin});
             }
+            let beneficiaries = await I_VestingEscrowWallet.getAllBeneficiaries.call();
+            assert.equal(beneficiaries[0], account_beneficiary3);
+            console.log(`Account 3 address -> ${account_beneficiary3}`);
+            console.log(`Beneficiaries accounts -> ${beneficiaries}`);
             let stepCount = 3;
             await increaseTime(durationUtil.minutes(stepCount) + durationUtil.seconds(100));
 

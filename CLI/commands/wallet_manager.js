@@ -6,6 +6,7 @@ const common = require('./common/common_functions');
 const gbl = require('./common/global');
 const contracts = require('./helpers/contract_addresses');
 const abis = require('./helpers/contract_abis');
+const csvParse = require('./helpers/csv');
 const input = require('./IO/input');
 
 // App flow
@@ -15,11 +16,10 @@ let polyToken;
 let tokenSymbol;
 let currentWalletModule;
 
-const SCHEDULE_STATE = {
-  CREATED: '0',
-  STARTED: '1',
-  COMPLETED: '2'
-}
+const ADD_SCHEDULE_CSV = `${__dirname}/../data/Wallet/VEW/add_schedule_data.csv`;
+const ADD_SCHEDULE_FROM_TEMPLATE_CSV = `${__dirname}/../data/Wallet/VEW/add_schedule_from_template_data.csv`;
+const MODIFY_SCHEDULE_CSV = `${__dirname}/../data/Wallet/VEW/modify_schedule_data.csv`;
+const REVOKE_SCHEDULE_CSV = `${__dirname}/../data/Wallet/VEW/revoke_schedule_data.csv`;
 
 async function executeApp() {
   console.log('\n', chalk.blue('Wallet - Main Menu', '\n'));
@@ -96,7 +96,7 @@ async function walletManager() {
   console.log(`- Unassigned Tokens:      ${web3.utils.fromWei(unassignedTokens)}`);
   console.log(`- Templates:              ${templates.length}`);
 
-  let options = ['Change treasury wallet', 'Manage templates', 'Manage schedules', 'Explore account', 'Deposit tokens'];
+  let options = ['Change treasury wallet', 'Manage templates', 'Manage schedules', 'Manage multiple schedules in batch', 'Explore account', 'Deposit tokens'];
   if (parseInt(unassignedTokens) > 0) {
     options.push('Send unassigned tokens to treasury');
   }
@@ -116,6 +116,9 @@ async function walletManager() {
     case 'Manage schedules':
       const beneficiary = input.readAddress('Enter the beneficiary account from which you want to manage schedules: ');
       await manageSchedules(beneficiary, templates);
+      break;
+    case 'Manage multiple schedules in batch':
+      await multipleSchedules();
       break;
     case 'Explore account':
       const account = input.readAddress('Enter the account you want to explore: ');
@@ -455,6 +458,146 @@ async function exploreAccount(account) {
     schedules.map(t => console.log('-', formatScheduleAsString(t), `\n`));
   } else {
     console.log(`Current vesting schedules for ${account}:        None`);
+  }
+}
+
+async function multipleSchedules() {
+  console.log('\n', chalk.blue('Wallet - Schedules in batch', '\n'));
+
+  const options = ['Add multiple schedules', 'Add multiple schedules from template', 'Modify multiple schedules', 'Revoke multiple schedules'];
+  const index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
+  const selected = index != -1 ? options[index] : 'RETURN';
+  console.log('Selected:', selected, '\n');
+  switch (selected) {
+    case 'Add multiple schedules':
+      await addSchedulesInBatch();
+      break;
+    case 'Add multiple schedules from template':
+      await addSchedulesFromTemplateInBatch();
+      break;
+    case 'Modify multiple schedules':
+      await modifySchedulesInBatch();
+      break;
+    case 'Revoke multiple schedules':
+      await revokeSchedulesInBatch();
+      break;
+    case 'RETURN':
+      return;
+  }
+
+  await multipleSchedules();
+}
+
+async function addSchedulesInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${ADD_SCHEDULE_CSV}): `, {
+    defaultInput: ADD_SCHEDULE_CSV
+  });
+  let batchSize = input.readNumberGreaterThan(0, `Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, gbl.constants.DEFAULT_BATCH_SIZE);
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(
+    row => web3.utils.isAddress(row[0]) &&
+      typeof row[1] === 'string' &&
+      (!isNaN(row[2])) &&
+      (!isNaN(row[3] && (parseFloat(row[3]) % 1 === 0))) &&
+      (!isNaN(row[4] && (parseFloat(row[3]) % 1 === 0))) &&
+      moment.unix(row[5]).isValid()
+  );
+
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [beneficiaryArray, templateNameArray, amountArray, durationArray, frequencyArray, startTimeArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to add schedules to the following beneficiaries:\n\n`, beneficiaryArray[batch], '\n');
+    templateNameArray[batch] = templateNameArray[batch].map(n => web3.utils.toHex(n));
+    amountArray[batch] = amountArray[batch].map(n => web3.utils.toWei(n.toString()));
+    let action = currentWalletModule.methods.addScheduleMulti(beneficiaryArray[batch], templateNameArray[batch], amountArray[batch], durationArray[batch], frequencyArray[batch], startTimeArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Add multiple schedules transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
+async function addSchedulesFromTemplateInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${ADD_SCHEDULE_FROM_TEMPLATE_CSV}): `, {
+    defaultInput: ADD_SCHEDULE_FROM_TEMPLATE_CSV
+  });
+  let batchSize = input.readNumberGreaterThan(0, `Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, gbl.constants.DEFAULT_BATCH_SIZE);
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(
+    row => web3.utils.isAddress(row[0]) &&
+      typeof row[1] === 'string' &&
+      moment.unix(row[2]).isValid()
+  );
+
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [beneficiaryArray, templateNameArray, startTimeArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to add schedules from template to the following beneficiaries:\n\n`, beneficiaryArray[batch], '\n');
+    templateNameArray[batch] = templateNameArray[batch].map(n => web3.utils.toHex(n));
+    let action = currentWalletModule.methods.addScheduleFromTemplateMulti(beneficiaryArray[batch], templateNameArray[batch], startTimeArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Add multiple schedules from template transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
+async function modifySchedulesInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${MODIFY_SCHEDULE_CSV}): `, {
+    defaultInput: MODIFY_SCHEDULE_CSV
+  });
+  let batchSize = input.readNumberGreaterThan(0, `Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, gbl.constants.DEFAULT_BATCH_SIZE);
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(
+    row => web3.utils.isAddress(row[0]) &&
+      typeof row[1] === 'string' &&
+      moment.unix(row[2]).isValid()
+  );
+
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [beneficiaryArray, templateNameArray, startTimeArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to modify schedules to the following beneficiaries:\n\n`, beneficiaryArray[batch], '\n');
+    templateNameArray[batch] = templateNameArray[batch].map(n => web3.utils.toHex(n));
+    let action = currentWalletModule.methods.modifyScheduleMulti(beneficiaryArray[batch], templateNameArray[batch], startTimeArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Modify multiple schedules transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
+async function revokeSchedulesInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${REVOKE_SCHEDULE_CSV}): `, {
+    defaultInput: REVOKE_SCHEDULE_CSV
+  });
+  let batchSize = input.readNumberGreaterThan(0, `Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, gbl.constants.DEFAULT_BATCH_SIZE);
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(
+    row => web3.utils.isAddress(row[0])
+  );
+
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [beneficiaryArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to revoke schedules to the following beneficiaries:\n\n`, beneficiaryArray[batch], '\n');
+    let action = currentWalletModule.methods.revokeSchedulesMulti(beneficiaryArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Revoke multiple schedules transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
   }
 }
 

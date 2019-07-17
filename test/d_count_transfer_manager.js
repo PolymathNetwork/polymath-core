@@ -168,12 +168,13 @@ contract("CountTransferManager", async (accounts) => {
             I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
 
-        it("Should successfully attach the CountTransferManager factory with the security token", async () => {
+        it("Should FAIL to attach a CountTransferManager without sufficient tokens", async () => {
             await I_PolyToken.getTokens(new BN(web3.utils.toWei("2000", "ether")), token_owner);
             await catchRevert(
                 I_SecurityToken.addModule(P_CountTransferManagerFactory.address, bytesSTO, new BN(web3.utils.toWei("2000", "ether")), new BN(0), false, {
                     from: token_owner
-                })
+                }),
+                "Insufficient tokens transferable"
             );
         });
 
@@ -310,8 +311,8 @@ contract("CountTransferManager", async (accounts) => {
                 "Failed in adding the investor in whitelist"
             );
 
-            await catchRevert(I_SecurityToken.issue(account_investor3, new BN(web3.utils.toWei("3", "ether")), "0x0", { from: token_owner }));
-            await catchRevert(I_SecurityToken.transfer(account_investor3, new BN(web3.utils.toWei("1", "ether")), { from: account_investor2 }));
+            await catchRevert(I_SecurityToken.issue(account_investor3, new BN(web3.utils.toWei("3", "ether")), "0x0", { from: token_owner }), "Transfer Invalid");
+            await catchRevert(I_SecurityToken.transfer(account_investor3, new BN(web3.utils.toWei("1", "ether")), { from: account_investor2 }), "Transfer Invalid");
             let canTransfer = await I_SecurityToken.canTransfer(account_investor3, new BN(web3.utils.toWei("1", "ether")), "0x0", { from: account_investor2 });
             assert.equal(canTransfer[0], "0x50"); //Transfer failure.
         });
@@ -333,7 +334,7 @@ contract("CountTransferManager", async (accounts) => {
         });
 
         it("Should fail in modifying the holder count", async () => {
-            await catchRevert(I_CountTransferManager.changeHolderCount(1, { from: account_investor1 }));
+            await catchRevert(I_CountTransferManager.changeHolderCount(1, { from: account_investor1 }), "Invalid permission");
         });
 
         it("Modify holder count to 1", async () => {
@@ -354,7 +355,7 @@ contract("CountTransferManager", async (accounts) => {
 
         it("Should not be able to transfer to a new token holder", async () => {
             // await I_CountTransferManager.unpause({from: token_owner});
-            await catchRevert(I_SecurityToken.transfer(account_investor3, new BN(web3.utils.toWei("2", "ether")), { from: account_investor2 }));
+            await catchRevert(I_SecurityToken.transfer(account_investor3, new BN(web3.utils.toWei("2", "ether")), { from: account_investor2 }), "Transfer Invalid");
         });
 
         it("Should be able to consolidate balances", async () => {
@@ -457,16 +458,17 @@ contract("CountTransferManager", async (accounts) => {
                 I_GeneralTransferManager2 = await GeneralTransferManager.at(moduleData);
             });
 
-            it("Should successfully attach the CountTransferManager factory with the security token", async () => {
+            it("Should fail to attach a CountTransferManager because of insufficient tokens", async () => {
                 await I_PolyToken.getTokens(new BN(web3.utils.toWei("2000", "ether")), token_owner);
                 await catchRevert(
                     I_SecurityToken2.addModule(P_CountTransferManagerFactory.address, bytesSTO, new BN(web3.utils.toWei("2000", "ether")), new BN(0), false, {
                         from: token_owner
-                    })
+                    }),
+                    "Insufficient tokens"
                 );
             });
 
-            it("Should successfully attach the CountTransferManager with the security token and set max holder to 2", async () => {
+            it("Token 2: Should successfully attach the CountTransferManager with the security token and set max holder to 2", async () => {
                 const tx = await I_SecurityToken2.addModule(I_CountTransferManagerFactory.address, bytesSTO, new BN(0), new BN(0), false, { from: token_owner });
                 assert.equal(tx.logs[2].args._types[0].toNumber(), transferManagerKey, "CountTransferManager doesn't get deployed");
                 assert.equal(
@@ -479,7 +481,7 @@ contract("CountTransferManager", async (accounts) => {
                 console.log("current max holder number is " + (await I_CountTransferManager2.maxHolderCount({ from: token_owner })));
             });
 
-            it("Should successfully attach the CountTransferManager with the third security token and set max holder to 2", async () => {
+            it("Token 3: Should successfully attach the CountTransferManager with the third security token and set max holder to 2", async () => {
                 const tx = await I_SecurityToken3.addModule(I_CountTransferManagerFactory.address, bytesSTO, new BN(0), new BN(0), false, { from: token_owner });
                 assert.equal(tx.logs[2].args._types[0].toNumber(), transferManagerKey, "CountTransferManager doesn't get deployed");
                 assert.equal(
@@ -497,24 +499,29 @@ contract("CountTransferManager", async (accounts) => {
                 let bytesCM = encodeProxyCall(["uint256"], [11]);
                 await catchRevert(
                     // Fails as no upgrade available
-                    I_SecurityToken2.upgradeModule(I_CountTransferManager2.address, { from: token_owner })
+                    I_SecurityToken2.upgradeModule(I_CountTransferManager2.address, { from: token_owner }),
+                    "Incorrect version"
                 );
                 await catchRevert(
                     // Fails due to the same version being used
-                    I_CountTransferManagerFactory.setLogicContract("3.0.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath })
+                    I_CountTransferManagerFactory.setLogicContract("3.0.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath }),
+                    "Same version"
                 );
                 await catchRevert(
                     // Fails due to the wrong contract being used
-                    I_CountTransferManagerFactory.setLogicContract("4.0.0", "0x0000000000000000000000000000000000000000", bytesCM, { from: account_polymath })
+                    I_CountTransferManagerFactory.setLogicContract("4.0.0", "0x0000000000000000000000000000000000000000", bytesCM, { from: account_polymath }),
+                    "Invalid address"
                 );
                 await catchRevert(
                     // Fails due to the wrong owner being used
-                    I_CountTransferManagerFactory.setLogicContract("4.0.0", "0x0000000000000000000000000000000000000000", bytesCM, { from: token_owner })
+                    I_CountTransferManagerFactory.setLogicContract("4.0.0", "0x0000000000000000000000000000000000000000", bytesCM, { from: token_owner }),
+                    "revert"
                 );
                 await I_CountTransferManagerFactory.setLogicContract("4.0.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath });
                 await catchRevert(
                     // Fails as upgraded module has been unverified
-                    I_SecurityToken2.upgradeModule(I_CountTransferManager2.address, { from: token_owner })
+                    I_SecurityToken2.upgradeModule(I_CountTransferManager2.address, { from: token_owner }),
+                    "ModuleFactory must be verified"
                 );
                 let tx = await I_MRProxied.verifyModule(I_CountTransferManagerFactory.address, { from: account_polymath });
                 await I_SecurityToken2.upgradeModule(I_CountTransferManager2.address, { from: token_owner });
@@ -528,20 +535,24 @@ contract("CountTransferManager", async (accounts) => {
                 let bytesCM = encodeProxyCall(["uint256"], [12]);
                 await catchRevert(
                     // Fails due to the same version being used
-                    I_CountTransferManagerFactory.updateLogicContract(1, "3.0.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath })
+                    I_CountTransferManagerFactory.updateLogicContract(1, "3.0.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath }),
+                    "Same version"
                 );
                 await catchRevert(
                     // Fails due to the wrong contract being used
-                    I_CountTransferManagerFactory.updateLogicContract(1, "4.0.0", "0x0000000000000000000000000000000000000000", bytesCM, { from: account_polymath })
+                    I_CountTransferManagerFactory.updateLogicContract(1, "4.0.0", "0x0000000000000000000000000000000000000000", bytesCM, { from: account_polymath }),
+                    "Invalid address"
                 );
                 await catchRevert(
                     // Fails due to the wrong owner being used
-                    I_CountTransferManagerFactory.updateLogicContract(1, "4.0.0", "0x0000000000000000000000000000000000000000", bytesCM, { from: token_owner })
+                    I_CountTransferManagerFactory.updateLogicContract(1, "4.0.0", "0x0000000000000000000000000000000000000000", bytesCM, { from: token_owner }),
+                    "revert"
                 );
                 await I_CountTransferManagerFactory.updateLogicContract(1, "4.0.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath });
                 await catchRevert(
                     // Fails as upgraded module has been unverified
-                    I_SecurityToken3.upgradeModule(I_CountTransferManager3.address, { from: token_owner })
+                    I_SecurityToken3.upgradeModule(I_CountTransferManager3.address, { from: token_owner }),
+                    "ModuleFactory must be verified"
                 );
                 let tx = await I_MRProxied.verifyModule(I_CountTransferManagerFactory.address, { from: account_polymath });
                 await I_SecurityToken3.upgradeModule(I_CountTransferManager3.address, { from: token_owner });
@@ -557,16 +568,19 @@ contract("CountTransferManager", async (accounts) => {
                 let bytesCM = encodeProxyCall(["uint256"], [11]);
                 await catchRevert(
                     // Fails as no upgrade available
-                    I_SecurityToken2.upgradeModule(I_CountTransferManager2.address, { from: token_owner })
+                    I_SecurityToken2.upgradeModule(I_CountTransferManager2.address, { from: token_owner }), 
+                    "Incorrect version"
                 );
                 await catchRevert(
                     // Fails due to the same version being used
-                    I_CountTransferManagerFactory.setLogicContract("4.0.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath })
+                    I_CountTransferManagerFactory.setLogicContract("4.0.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath }),
+                    "Same version"
                 );
                 await I_CountTransferManagerFactory.setLogicContract("5.0.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath });
                 await catchRevert(
                     // Fails due to the same contract being used
-                    I_CountTransferManagerFactory.setLogicContract("6.0.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath })
+                    I_CountTransferManagerFactory.setLogicContract("6.0.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath }),
+                    "Same version"
                 );
                 I_MockCountTransferManagerLogic = await MockCountTransferManager.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: account_polymath });
                 await I_CountTransferManagerFactory.setLogicContract("6.0.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath });
@@ -611,7 +625,8 @@ contract("CountTransferManager", async (accounts) => {
         describe("Test cases for the ModuleFactory", async () => {
             it("Should successfully change the SetupCost -- fail beacuse of bad owner", async () => {
                 await catchRevert(
-                    I_CountTransferManagerFactory.changeSetupCost(new BN(web3.utils.toWei("500")), { from: account_investor3 })
+                    I_CountTransferManagerFactory.changeSetupCost(new BN(web3.utils.toWei("500")), { from: account_investor3 }),
+                    "revert"
                 );
             });
 
@@ -622,7 +637,8 @@ contract("CountTransferManager", async (accounts) => {
 
             it("Should successfully change the cost type -- fail beacuse of bad owner", async () => {
                 await catchRevert(
-                    I_CountTransferManagerFactory.changeCostAndType(new BN(web3.utils.toWei("500")), true, { from: account_investor3 })
+                    I_CountTransferManagerFactory.changeCostAndType(new BN(web3.utils.toWei("500")), true, { from: account_investor3 }),
+                    "revert"
                 );
             });
 
@@ -640,17 +656,17 @@ contract("CountTransferManager", async (accounts) => {
 
         describe("Test case for the changeSTVersionBounds", async () => {
             it("Should successfully change the version bounds -- failed because of the non permitted bound type", async () => {
-                await catchRevert(I_CountTransferManagerFactory.changeSTVersionBounds("middleType", [1, 2, 3], { from: account_polymath }));
+                await catchRevert(I_CountTransferManagerFactory.changeSTVersionBounds("middleType", [1, 2, 3], { from: account_polymath }), "Invalid bound type");
             });
 
             it("Should successfully change the version bound --failed because the new version length < 3", async () => {
-                await catchRevert(I_CountTransferManagerFactory.changeSTVersionBounds("lowerBound", [1, 2], { from: account_polymath }));
+                await catchRevert(I_CountTransferManagerFactory.changeSTVersionBounds("lowerBound", [1, 2], { from: account_polymath }), "Invalid version");
             });
 
             it("Should successfully change the version bound", async () => {
                 await I_CountTransferManagerFactory.changeSTVersionBounds("lowerBound", [1, 2, 1], { from: account_polymath });
                 await I_CountTransferManagerFactory.changeSTVersionBounds("lowerBound", [1, 0, 9], { from: account_polymath });
-                await catchRevert(I_CountTransferManagerFactory.changeSTVersionBounds("lowerBound", [1, 1, 0], { from: account_polymath }));
+                await catchRevert(I_CountTransferManagerFactory.changeSTVersionBounds("lowerBound", [1, 1, 0], { from: account_polymath }), "Invalid version");
             });
         });
     });

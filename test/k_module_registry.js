@@ -155,8 +155,7 @@ contract("ModuleRegistry", async (accounts) => {
             catchRevert(
                 I_ModuleRegistryProxy.upgradeToAndCall("1.0.0", I_ModuleRegistry.address, bytesProxy, {
                     from: account_polymath
-                }),
-                "tx-> revert because polymathRegistry address is 0x"
+                })
             );
         });
 
@@ -165,8 +164,7 @@ contract("ModuleRegistry", async (accounts) => {
             catchRevert(
                 I_ModuleRegistryProxy.upgradeToAndCall("1.0.0", I_ModuleRegistry.address, bytesProxy, {
                     from: account_polymath
-                }),
-                "tx-> revert because owner address is 0x"
+                })
             );
         });
 
@@ -175,8 +173,7 @@ contract("ModuleRegistry", async (accounts) => {
             catchRevert(
                 I_ModuleRegistryProxy.upgradeToAndCall("1.0.0", I_ModuleRegistry.address, bytesProxy, {
                     from: account_polymath
-                }),
-                "tx-> revert because all params are 0x"
+                })
             );
         });
 

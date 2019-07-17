@@ -494,6 +494,7 @@ contract("CountTransferManager", async (accounts) => {
                 console.log("current max holder number is " + (await I_CountTransferManager3.maxHolderCount({ from: token_owner })));
             });
 
+            // @FIXME 
             it("Should upgrade the CTM", async () => {
                 I_MockCountTransferManagerLogic = await MockCountTransferManager.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: account_polymath });
                 let bytesCM = encodeProxyCall(["uint256"], [11]);
@@ -577,6 +578,8 @@ contract("CountTransferManager", async (accounts) => {
                     "Same version"
                 );
                 await I_CountTransferManagerFactory.setLogicContract("5.0.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath });
+                
+                // @FIXME how is this the same version?
                 await catchRevert(
                     // Fails due to the same contract being used
                     I_CountTransferManagerFactory.setLogicContract("6.0.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath }),

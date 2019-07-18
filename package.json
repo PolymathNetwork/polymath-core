@@ -91,7 +91,7 @@
     "solidity-coverage": "^0.5.11",
     "solidity-docgen": "^0.1.1",
     "solium": "^1.1.8",
-    "truffle": "4.1.14",
+    "truffle": "5.0.28",
     "truffle-hdwallet-provider": "^1.0.3",
     "truffle-wallet-provider": "0.0.5"
   },

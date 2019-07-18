@@ -417,7 +417,8 @@ contract("USDTieredSTO", async (accounts) => {
                 I_SecurityToken.addModule(P_USDTieredSTOFactory.address, bytesSTO, new BN(web3.utils.toWei("2000")), new BN(0), false, {
                     from: ISSUER,
                     gasPrice: GAS_PRICE
-                })
+                }),
+                "Insufficient tokens transferable"
             );
         });
 
@@ -456,13 +457,14 @@ contract("USDTieredSTO", async (accounts) => {
         });
 
         it("Should allow non-matching beneficiary -- failed because it is already active", async () => {
-            await catchRevert(I_USDTieredSTO_Array[0].changeAllowBeneficialInvestments(true, { from: ISSUER }));
+            await catchRevert(I_USDTieredSTO_Array[0].changeAllowBeneficialInvestments(true, { from: ISSUER }), "revert");
             await revertToSnapshot(snapId);
         });
 
         it("Should successfully call the modifyTimes before starting the STO -- fail because of bad owner", async () => {
             await catchRevert(
-                I_USDTieredSTO_Array[0].modifyTimes(new BN(currentTime).add(new BN(duration.days(15))), new BN(currentTime).add(new BN(duration.days(55))), { from: POLYMATH })
+                I_USDTieredSTO_Array[0].modifyTimes(new BN(currentTime).add(new BN(duration.days(15))), new BN(currentTime).add(new BN(duration.days(55))), { from: POLYMATH }),
+                "Invalid permission"
             );
         });
 
@@ -811,7 +813,8 @@ contract("USDTieredSTO", async (accounts) => {
             for (var i = 0; i < config.length; i++) {
                 let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config[i]);
 
-                await catchRevert(I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), false, { from: ISSUER }));
+                await catchRevert(I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), false, { from: ISSUER }),
+                    "Unsuccessful initialization");
             }
         });
 
@@ -835,7 +838,8 @@ contract("USDTieredSTO", async (accounts) => {
             ];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
 
-            await catchRevert(I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), false, { from: ISSUER }));
+            await catchRevert(I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), false, { from: ISSUER }),
+                "Unsuccessful initialization");
         });
 
         it("Should fail because Zero address is not permitted for wallet", async () => {
@@ -858,7 +862,8 @@ contract("USDTieredSTO", async (accounts) => {
             ];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
 
-            await catchRevert(I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), false, { from: ISSUER }));
+            await catchRevert(I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), false, { from: ISSUER }),
+                "Unsuccessful initialization");
         });
 
         it("Should fail because end time before start time", async () => {
@@ -882,7 +887,8 @@ contract("USDTieredSTO", async (accounts) => {
             ];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
 
-            await catchRevert(I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), false, { from: ISSUER }));
+            await catchRevert(I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), false, { from: ISSUER }),
+                "Unsuccessful initialization");
         });
 
         it("Should fail because start time is in the past", async () => {
@@ -906,19 +912,20 @@ contract("USDTieredSTO", async (accounts) => {
             ];
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
 
-            await catchRevert(I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), false, { from: ISSUER }));
+            await catchRevert(I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), false, { from: ISSUER }),
+                "Unsuccessful initialization");
         });
     });
 
     describe("Test modifying configuration", async () => {
         it("Should not allow unauthorized address to change oracle address", async () => {
             let stoId = 3;
-            await catchRevert(I_USDTieredSTO_Array[stoId].modifyOracle(ETH, address_zero, { from: ACCREDITED1 }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].modifyOracle(ETH, address_zero, { from: ACCREDITED1 }), "revert Sender is not owner");
         });
 
         it("Should not allow to change oracle address for currencies other than ETH and POLY", async () => {
             let stoId = 3;
-            await catchRevert(I_USDTieredSTO_Array[stoId].modifyOracle(DAI, address_zero, { from: ISSUER }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].modifyOracle(DAI, address_zero, { from: ISSUER }), "Invalid currency");
         });
 
         it("Should allow to change oracle address for ETH", async () => {
@@ -1041,9 +1048,9 @@ contract("USDTieredSTO", async (accounts) => {
             let snapId = await takeSnapshot();
             await increaseTime(duration.days(1));
 
-            await catchRevert(I_USDTieredSTO_Array[stoId].modifyFunding([0, 1], { from: ISSUER }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].modifyFunding([0, 1], { from: ISSUER }), "Already started");
 
-            await catchRevert(I_USDTieredSTO_Array[stoId].modifyLimits(new BN(15).mul(e18), new BN(1).mul(e18), { from: ISSUER }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].modifyLimits(new BN(15).mul(e18), new BN(1).mul(e18), { from: ISSUER }), "Already started");
 
             await catchRevert(
                 I_USDTieredSTO_Array[stoId].modifyTiers(
@@ -1052,13 +1059,14 @@ contract("USDTieredSTO", async (accounts) => {
                     [new BN(1500).mul(e18)],
                     [new BN(1500).mul(e18)],
                     { from: ISSUER }
-                )
+                ),
+                "Already started"
             );
 
             let tempTime1 = await latestTime() + duration.days(1);
             let tempTime2 = await latestTime() + duration.days(3);
 
-            await catchRevert(I_USDTieredSTO_Array[stoId].modifyTimes(tempTime1, tempTime2, { from: ISSUER }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].modifyTimes(tempTime1, tempTime2, { from: ISSUER }), "Already started");
 
             await revertToSnapshot(snapId);
         });
@@ -1097,17 +1105,17 @@ contract("USDTieredSTO", async (accounts) => {
             await I_DaiToken.getTokens(investment_DAI, ACCREDITED1);
             await I_DaiToken.approve(I_USDTieredSTO_Array[stoId].address, investment_DAI, { from: ACCREDITED1 });
             // NONACCREDITED ETH
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH }), "STO not open");
             // NONACCREDITED POLY
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, { from: NONACCREDITED1 }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, { from: NONACCREDITED1 }), "STO not open");
             // NONACCREDITED DAI
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, I_DaiToken.address, { from: NONACCREDITED1 }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, I_DaiToken.address, { from: NONACCREDITED1 }), "STO not open");
             // ACCREDITED ETH
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH }), "STO not open");
             // ACCREDITED POLY
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, { from: ACCREDITED1 }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, { from: ACCREDITED1 }), "STO not open");
             // ACCREDITED DAI
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(ACCREDITED1, investment_DAI, I_DaiToken.address, { from: ACCREDITED1 }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(ACCREDITED1, investment_DAI, I_DaiToken.address, { from: ACCREDITED1 }), "STO not open");
             await revertToSnapshot(snapId);
         });
 
@@ -1144,22 +1152,22 @@ contract("USDTieredSTO", async (accounts) => {
             await I_DaiToken.approve(I_USDTieredSTO_Array[stoId].address, investment_DAI, { from: ACCREDITED1 });
 
             // NONACCREDITED ETH
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH }), "Transfer Invalid");
 
             // NONACCREDITED POLY
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, { from: NONACCREDITED1 }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, { from: NONACCREDITED1 }), "Transfer Invalid");
 
             // NONACCREDITED DAI
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, I_DaiToken.address, { from: NONACCREDITED1 }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, I_DaiToken.address, { from: NONACCREDITED1 }), "Transfer Invalid");
 
             // ACCREDITED ETH
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH }), "Transfer Invalid");
 
             // ACCREDITED POLY
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, { from: ACCREDITED1 }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, { from: ACCREDITED1 }), "Transfer Invalid");
 
             // ACCREDITED DAI
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(ACCREDITED1, investment_DAI, I_DaiToken.address, { from: ACCREDITED1 }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(ACCREDITED1, investment_DAI, I_DaiToken.address, { from: ACCREDITED1 }), "Transfer Invalid");
 
             await revertToSnapshot(snapId);
         });
@@ -1198,22 +1206,22 @@ contract("USDTieredSTO", async (accounts) => {
             await I_DaiToken.approve(I_USDTieredSTO_Array[stoId].address, investment_DAI, { from: ACCREDITED1 });
 
             // NONACCREDITED ETH
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH }), "Investment < min");
 
             // NONACCREDITED POLY
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, { from: NONACCREDITED1 }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, { from: NONACCREDITED1 }), "Investment < min");
 
             // NONACCREDITED DAI
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, I_DaiToken.address, { from: NONACCREDITED1 }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, I_DaiToken.address, { from: NONACCREDITED1 }), "Investment < min");
 
             // ACCREDITED ETH
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH }), "Investment < min");
 
             // ACCREDITED POLY
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, { from: ACCREDITED1 }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, { from: ACCREDITED1 }), "Investment < min");
 
             // ACCREDITED DAI
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(ACCREDITED1, investment_DAI, I_DaiToken.address, { from: ACCREDITED1 }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(ACCREDITED1, investment_DAI, I_DaiToken.address, { from: ACCREDITED1 }), "Investment < min");
 
             await revertToSnapshot(snapId);
         });
@@ -1254,22 +1262,22 @@ contract("USDTieredSTO", async (accounts) => {
             await I_DaiToken.approve(I_USDTieredSTO_Array[stoId].address, investment_DAI, { from: ACCREDITED1 });
 
             // NONACCREDITED ETH
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH }), "Contract is paused");
 
             // NONACCREDITED POLY
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, { from: NONACCREDITED1 }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, { from: NONACCREDITED1 }), "Contract is paused");
 
             // NONACCREDITED DAI
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, I_DaiToken.address, { from: NONACCREDITED1 }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, I_DaiToken.address, { from: NONACCREDITED1 }), "Contract is paused");
 
             // ACCREDITED ETH
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH }), "Contract is paused");
 
             // ACCREDITED POLY
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, { from: ACCREDITED1 }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, { from: ACCREDITED1 }), "Contract is paused");
 
             // ACCREDITED DAI
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(ACCREDITED1, investment_DAI, I_DaiToken.address, { from: ACCREDITED1 }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(ACCREDITED1, investment_DAI, I_DaiToken.address, { from: ACCREDITED1 }), "Contract is paused");
 
             // Unpause the STO
             await I_USDTieredSTO_Array[stoId].unpause({ from: ISSUER });
@@ -1318,10 +1326,10 @@ contract("USDTieredSTO", async (accounts) => {
             await I_USDTieredSTO_Array[stoId].modifyAddresses(WALLET, TREASURYWALLET, [I_DaiToken2.address], { from: ISSUER });
 
             // NONACCREDITED DAI
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, I_DaiToken.address, { from: NONACCREDITED1 }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, I_DaiToken.address, { from: NONACCREDITED1 }), "USD not allowed");
 
             // ACCREDITED DAI
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(ACCREDITED1, investment_DAI, I_DaiToken.address, { from: ACCREDITED1 }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(ACCREDITED1, investment_DAI, I_DaiToken.address, { from: ACCREDITED1 }), "USD not allowed");
 
             // Revert stable coin address
             await I_USDTieredSTO_Array[stoId].modifyAddresses(WALLET, TREASURYWALLET, [I_DaiToken.address], { from: ISSUER });
@@ -1365,22 +1373,24 @@ contract("USDTieredSTO", async (accounts) => {
             await I_DaiToken.approve(I_USDTieredSTO_Array[stoId].address, investment_DAI, { from: ACCREDITED1 });
 
             // NONACCREDITED ETH
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH }), "STO not open");
 
             // NONACCREDITED POLY
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, { from: NONACCREDITED1 }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, { from: NONACCREDITED1 }), "STO not open");
 
             // NONACCREDITED DAI
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, I_DaiToken.address, { from: NONACCREDITED1 }));
+            // @FIXME is this the expected revert reason?
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, I_DaiToken.address, { from: NONACCREDITED1 }), "USD not allowed");
 
             // ACCREDITED ETH
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH }), "STO not open");
 
             // ACCREDITED POLY
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, { from: ACCREDITED1 }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, { from: ACCREDITED1 }), "STO not open");
 
             // ACCREDITED DAI
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(ACCREDITED1, investment_DAI, I_DaiToken.address, { from: ACCREDITED1 }));
+            // @FIXME is this the expected revert reason?
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(ACCREDITED1, investment_DAI, I_DaiToken.address, { from: ACCREDITED1 }), "USD not allowed");
 
             await revertToSnapshot(snapId);
         });
@@ -1412,7 +1422,7 @@ contract("USDTieredSTO", async (accounts) => {
             assert.equal(await I_USDTieredSTO_Array[stoId].isOpen(), false, "STO is not showing correct status");
 
             // Attempt to call function again
-            await catchRevert(I_USDTieredSTO_Array[stoId].finalize({ from: ISSUER }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].finalize({ from: ISSUER }), "STO is finalized");
 
             // Prep for investments
             let investment_ETH = new BN(web3.utils.toWei("1", "ether")); // Invest 1 ETH
@@ -1428,22 +1438,22 @@ contract("USDTieredSTO", async (accounts) => {
             await I_DaiToken.approve(I_USDTieredSTO_Array[stoId].address, investment_DAI, { from: ACCREDITED1 });
 
             // NONACCREDITED ETH
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH }), "STO not open");
 
             // NONACCREDITED POLY
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, { from: NONACCREDITED1 }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, { from: NONACCREDITED1 }), "STO not open");
 
             // NONACCREDITED DAI
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, I_DaiToken.address, { from: NONACCREDITED1 }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, I_DaiToken.address, { from: NONACCREDITED1 }), "STO not open");
 
             // ACCREDITED ETH
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH }), "STO not open");
 
             // ACCREDITED POLY
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, { from: ACCREDITED1 }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, { from: ACCREDITED1 }), "STO not open");
 
             // ACCREDITED DAI
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(ACCREDITED1, investment_DAI, I_DaiToken.address, { from: ACCREDITED1 }));
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(ACCREDITED1, investment_DAI, I_DaiToken.address, { from: ACCREDITED1 }), "STO not open");
 
             await revertToSnapshot(snapId);
         });
@@ -2423,12 +2433,14 @@ contract("USDTieredSTO", async (accounts) => {
 
             // Buy with ETH NONACCREDITED
             await catchRevert(
-                I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH, gasPrice: GAS_PRICE })
+                I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH, gasPrice: GAS_PRICE }),
+                "Over Non-accredited investor limit"
             );
 
             // Buy with POLY NONACCREDITED
             await catchRevert(
-                I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, { from: NONACCREDITED1, gasPrice: GAS_PRICE })
+                I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, { from: NONACCREDITED1, gasPrice: GAS_PRICE }),
+                "Over Non-accredited investor limit"
             );
         });
 
@@ -2456,19 +2468,21 @@ contract("USDTieredSTO", async (accounts) => {
             await I_POLYOracle.changePrice(high_USDPOLY, { from: POLYMATH });
 
             // Buy with ETH NONACCREDITED
-
+            // @FIXME is this the expected revert reason?
             await catchRevert(
                 I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, {
                     from: NONACCREDITED1,
                     value: investment_ETH_high,
                     gasPrice: GAS_PRICE
-                })
+                }),
+                "No funds sent"
             );
 
             // Buy with POLY NONACCREDITED
 
             await catchRevert(
-                I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY_high, { from: NONACCREDITED1, gasPrice: GAS_PRICE })
+                I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY_high, { from: NONACCREDITED1, gasPrice: GAS_PRICE }),
+                "Over Non-accredited investor limit"
             );
 
             // Change exchange rates down
@@ -2476,19 +2490,21 @@ contract("USDTieredSTO", async (accounts) => {
             await I_POLYOracle.changePrice(low_USDPOLY, { from: POLYMATH });
 
             // Buy with ETH NONACCREDITED
-
+            // @FIXME is this the expected revert reason?    
             await catchRevert(
                 I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, {
                     from: NONACCREDITED1,
                     value: investment_ETH_low,
                     gasPrice: GAS_PRICE
-                })
+                }),
+                "No funds sent"
             );
 
             // Buy with POLY NONACCREDITED
 
             await catchRevert(
-                I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY_low, { from: NONACCREDITED1, gasPrice: GAS_PRICE })
+                I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY_low, { from: NONACCREDITED1, gasPrice: GAS_PRICE }),
+                "Over Non-accredited investor limit"
             );
 
             // Reset exchange rates
@@ -3045,37 +3061,43 @@ contract("USDTieredSTO", async (accounts) => {
             // Buy with ETH NONACCREDITED
 
             await catchRevert(
-                I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH, gasPrice: GAS_PRICE })
+                I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH, gasPrice: GAS_PRICE }),
+                "STO not open"
             );
 
             // Buy with POLY NONACCREDITED
 
             await catchRevert(
-                I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, { from: NONACCREDITED1, gasPrice: GAS_PRICE })
+                I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, { from: NONACCREDITED1, gasPrice: GAS_PRICE }),
+                "STO not open"
             );
 
             // Buy with DAI NONACCREDITED
 
             await catchRevert(
-                I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, I_DaiToken.address, { from: NONACCREDITED1, gasPrice: GAS_PRICE })
+                I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, I_DaiToken.address, { from: NONACCREDITED1, gasPrice: GAS_PRICE }),
+                "STO not open"
             );
 
             // Buy with ETH ACCREDITED
 
             await catchRevert(
-                I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH, gasPrice: GAS_PRICE })
+                I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH, gasPrice: GAS_PRICE }),
+                "STO not open"
             );
 
             // Buy with POLY ACCREDITED
 
             await catchRevert(
-                I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, { from: ACCREDITED1, gasPrice: GAS_PRICE })
+                I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, { from: ACCREDITED1, gasPrice: GAS_PRICE }),
+                "STO not open"
             );
 
             // Buy with DAI ACCREDITED
 
             await catchRevert(
-                I_USDTieredSTO_Array[stoId].buyWithUSD(ACCREDITED1, investment_DAI, I_DaiToken.address, { from: ACCREDITED1, gasPrice: GAS_PRICE })
+                I_USDTieredSTO_Array[stoId].buyWithUSD(ACCREDITED1, investment_DAI, I_DaiToken.address, { from: ACCREDITED1, gasPrice: GAS_PRICE }),
+                "STO not open"
             );
         });
 
@@ -3111,25 +3133,29 @@ contract("USDTieredSTO", async (accounts) => {
                     from: NONACCREDITED1,
                     value: investment_ETH_high,
                     gasPrice: GAS_PRICE
-                })
+                }),
+                "STO not open"
             );
 
             // Buy with POLY NONACCREDITED
 
             await catchRevert(
-                I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY_high, { from: NONACCREDITED1, gasPrice: GAS_PRICE })
+                I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY_high, { from: NONACCREDITED1, gasPrice: GAS_PRICE }),
+                "STO not open"
             );
 
             // Buy with ETH ACCREDITED
 
             await catchRevert(
-                I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH_high, gasPrice: GAS_PRICE })
+                I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH_high, gasPrice: GAS_PRICE }),
+                "STO not open"
             );
 
             // Buy with POLY ACCREDITED
 
             await catchRevert(
-                I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY_high, { from: ACCREDITED1, gasPrice: GAS_PRICE })
+                I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY_high, { from: ACCREDITED1, gasPrice: GAS_PRICE }),
+                "STO not open"
             );
 
             // Change exchange rates down
@@ -3143,25 +3169,29 @@ contract("USDTieredSTO", async (accounts) => {
                     from: NONACCREDITED1,
                     value: investment_ETH_low,
                     gasPrice: GAS_PRICE
-                })
+                }),
+                "STO not open"
             );
 
             // Buy with POLY NONACCREDITED
 
             await catchRevert(
-                I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY_low, { from: NONACCREDITED1, gasPrice: GAS_PRICE })
+                I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY_low, { from: NONACCREDITED1, gasPrice: GAS_PRICE }),
+                "STO not open"
             );
 
             // Buy with ETH ACCREDITED
 
             await catchRevert(
-                I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH_low, gasPrice: GAS_PRICE })
+                I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH_low, gasPrice: GAS_PRICE }),
+                "STO not open"
             );
 
             // Buy with POLY ACCREDITED
 
             await catchRevert(
-                I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY_low, { from: ACCREDITED1, gasPrice: GAS_PRICE })
+                I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY_low, { from: ACCREDITED1, gasPrice: GAS_PRICE }),
+                "STO not open"
             );
 
             // Reset exchange rates
@@ -4179,13 +4209,15 @@ contract("USDTieredSTO", async (accounts) => {
             // Buy with ETH NONACCREDITED
 
             await catchRevert(
-                I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH, gasPrice: GAS_PRICE })
+                I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH, gasPrice: GAS_PRICE }),
+                "Over Non-accredited investor limit"
             );
 
             // Buy with POLY NONACCREDITED
 
             await catchRevert(
-                I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, { from: NONACCREDITED1, gasPrice: GAS_PRICE })
+                I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, { from: NONACCREDITED1, gasPrice: GAS_PRICE }),
+                "Over Non-accredited investor limit"
             );
         });
 
@@ -4205,14 +4237,16 @@ contract("USDTieredSTO", async (accounts) => {
                 I_USDTieredSTO_Array[stoId].buyWithPOLYRateLimited(ACCREDITED1, investment_POLY, minTokens, {
                     from: ACCREDITED1,
                     gasPrice: GAS_PRICE
-                })
+                }),
+                "Insufficient minted"
             );
             await catchRevert(
                 I_USDTieredSTO_Array[stoId].buyWithETHRateLimited(ACCREDITED1, minTokens, {
                     from: ACCREDITED1,
                     gasPrice: GAS_PRICE,
                     value: investment_ETH
-                })
+                }),
+                "Insufficient minted"
             );
         });
 
@@ -4242,19 +4276,21 @@ contract("USDTieredSTO", async (accounts) => {
             await I_POLYOracle.changePrice(high_USDPOLY, { from: POLYMATH });
 
             // Buy with ETH NONACCREDITED
-
+            // @FIXME is this the expected revert reason?
             await catchRevert(
                 I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, {
                     from: NONACCREDITED1,
                     value: investment_ETH_high,
                     gasPrice: GAS_PRICE
-                })
+                }),
+                "No funds sent"
             );
 
             // Buy with POLY NONACCREDITED
 
             await catchRevert(
-                I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY_high, { from: NONACCREDITED1, gasPrice: GAS_PRICE })
+                I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY_high, { from: NONACCREDITED1, gasPrice: GAS_PRICE }),
+                "Over Non-accredited investor limit"
             );
 
             // Change exchange rates down
@@ -4262,19 +4298,21 @@ contract("USDTieredSTO", async (accounts) => {
             await I_POLYOracle.changePrice(low_USDPOLY, { from: POLYMATH });
 
             // Buy with ETH NONACCREDITED
-
+            // @FIXME is this the expected revert reason?
             await catchRevert(
                 I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, {
                     from: NONACCREDITED1,
                     value: investment_ETH_low,
                     gasPrice: GAS_PRICE
-                })
+                }),
+                "No funds sent"
             );
 
             // Buy with POLY NONACCREDITED
 
             await catchRevert(
-                I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY_low, { from: NONACCREDITED1, gasPrice: GAS_PRICE })
+                I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY_low, { from: NONACCREDITED1, gasPrice: GAS_PRICE }),
+                "Over Non-accredited investor limit"
             );
 
             // Reset exchange rates
@@ -4543,25 +4581,29 @@ contract("USDTieredSTO", async (accounts) => {
             // Buy with ETH NONACCREDITED
 
             await catchRevert(
-                I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH, gasPrice: GAS_PRICE })
+                I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH, gasPrice: GAS_PRICE }),
+                "STO not open"
             );
 
             // Buy with POLY NONACCREDITED
 
             await catchRevert(
-                I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, { from: NONACCREDITED1, gasPrice: GAS_PRICE })
+                I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, { from: NONACCREDITED1, gasPrice: GAS_PRICE }),
+                "STO not open"
             );
 
             // Buy with ETH ACCREDITED
 
             await catchRevert(
-                I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH, gasPrice: GAS_PRICE })
+                I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH, gasPrice: GAS_PRICE }),
+                "STO not open"
             );
 
             // Buy with POLY ACCREDITED
 
             await catchRevert(
-                I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, { from: ACCREDITED1, gasPrice: GAS_PRICE })
+                I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, { from: ACCREDITED1, gasPrice: GAS_PRICE }),
+                "STO not open"
             );
         });
 
@@ -4599,25 +4641,29 @@ contract("USDTieredSTO", async (accounts) => {
                     from: NONACCREDITED1,
                     value: investment_ETH_high,
                     gasPrice: GAS_PRICE
-                })
+                }),
+                "STO not open"
             );
 
             // Buy with POLY NONACCREDITED
 
             await catchRevert(
-                I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY_high, { from: NONACCREDITED1, gasPrice: GAS_PRICE })
+                I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY_high, { from: NONACCREDITED1, gasPrice: GAS_PRICE }),
+                "STO not open"
             );
 
             // Buy with ETH ACCREDITED
 
             await catchRevert(
-                I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH_high, gasPrice: GAS_PRICE })
+                I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH_high, gasPrice: GAS_PRICE }),
+                "STO not open"
             );
 
             // Buy with POLY ACCREDITED
 
             await catchRevert(
-                I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY_high, { from: ACCREDITED1, gasPrice: GAS_PRICE })
+                I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY_high, { from: ACCREDITED1, gasPrice: GAS_PRICE }),
+                "STO not open"
             );
 
             // Change exchange rates down
@@ -4631,25 +4677,29 @@ contract("USDTieredSTO", async (accounts) => {
                     from: NONACCREDITED1,
                     value: investment_ETH_low,
                     gasPrice: GAS_PRICE
-                })
+                }),
+                "STO not open"
             );
 
             // Buy with POLY NONACCREDITED
 
             await catchRevert(
-                I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY_low, { from: NONACCREDITED1, gasPrice: GAS_PRICE })
+                I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY_low, { from: NONACCREDITED1, gasPrice: GAS_PRICE }),
+                "STO not open"
             );
 
             // Buy with ETH ACCREDITED
 
             await catchRevert(
-                I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH_low, gasPrice: GAS_PRICE })
+                I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH_low, gasPrice: GAS_PRICE }),
+                "STO not open"
             );
 
             // Buy with POLY ACCREDITED
 
             await catchRevert(
-                I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY_low, { from: ACCREDITED1, gasPrice: GAS_PRICE })
+                I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY_low, { from: ACCREDITED1, gasPrice: GAS_PRICE }),
+                "STO not open"
             );
 
             // Reset exchange rates

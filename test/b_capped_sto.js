@@ -329,7 +329,7 @@ contract("CappedSTO", async (accounts) => {
 
         it("Should be able to whitelist an account, even before attaching an STO", async () => {
             await catchRevert(I_CappedSTO_Array_ETH[0].buyTokens(account_investor1, { from: account_investor1, value: new BN(web3.utils.toWei("1", "ether")) }),
-                "Offering is closed/Not yet started");
+                "Transfer Invalid");
 
             blockNo = await latestBlock();
             fromTime = await latestTime();
@@ -460,7 +460,7 @@ contract("CappedSTO", async (accounts) => {
 
             assert.equal((await I_SecurityToken_ETH.balanceOf(account_investor2)).div(new BN(10).pow(new BN(18))).toNumber(), 9000);
             await catchRevert(I_CappedSTO_Array_ETH[0].buyTokens(account_investor2, { value: new BN(web3.utils.toWei("81")) }),
-                "SEVEN");
+                "Beneficiary address does not match msg.sender");
         });
 
         it("Should fundRaised value equal to the raised value in the funds receiver wallet", async () => {
@@ -575,7 +575,8 @@ contract("CappedSTO", async (accounts) => {
             // Buying on behalf of another user should fail
 
             await catchRevert(
-                I_CappedSTO_Array_ETH[1].buyTokens(account_investor3, { from: account_issuer, value: new BN(web3.utils.toWei("1", "ether")) })
+                I_CappedSTO_Array_ETH[1].buyTokens(account_investor3, { from: account_issuer, value: new BN(web3.utils.toWei("1", "ether")) }),
+                "Beneficiary address does not match msg.sender"
             );
         });
 
@@ -586,7 +587,8 @@ contract("CappedSTO", async (accounts) => {
         });
 
         it("Should allow non-matching beneficiary -- failed because it is already active", async () => {
-            await catchRevert(I_CappedSTO_Array_ETH[1].changeAllowBeneficialInvestments(true, { from: account_issuer }));
+            await catchRevert(I_CappedSTO_Array_ETH[1].changeAllowBeneficialInvestments(true, { from: account_issuer }),
+                "Does not change value");
         });
 
         it("Should invest in second STO", async () => {
@@ -649,7 +651,8 @@ contract("CappedSTO", async (accounts) => {
                 await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
 
                 await catchRevert(
-                    I_STRProxied.generateNewSecurityToken(P_name, P_symbol, P_tokenDetails, false,  "0x0000000000000000000000000000000000000000", 0, { from: token_owner })
+                    I_STRProxied.generateNewSecurityToken(P_name, P_symbol, P_tokenDetails, false,  "0x0000000000000000000000000000000000000000", 0, { from: token_owner }),
+                    "revert 0x0 not allowed"
                 );
             });
 
@@ -775,7 +778,8 @@ contract("CappedSTO", async (accounts) => {
                         to: I_CappedSTO_Array_POLY[0].address,
                         gas: 2100000,
                         value: new BN(web3.utils.toWei("2", "ether"))
-                    })
+                    }),
+                    "Mode of investment is not ETH"
                 );
             });
 
@@ -788,7 +792,8 @@ contract("CappedSTO", async (accounts) => {
                     I_CappedSTO_Array_POLY[0].buyTokensWithPoly(new BN(10).pow(new BN(21)), {
                         from: account_investor1,
                         gas: 6000000
-                    })
+                    }),
+                    "Contract is paused"
                 );
                 await I_CappedSTO_Array_POLY[0].unpause({ from: account_issuer });
             });
@@ -839,14 +844,16 @@ contract("CappedSTO", async (accounts) => {
                     45000
                 );
                 await I_PolyToken.approve(I_CappedSTO_Array_POLY[0].address, new BN(1000).mul(new BN(10).pow(new BN(18))), { from: account_investor1 });
-                await catchRevert(I_CappedSTO_Array_POLY[0].buyTokensWithPoly(new BN(1000).mul(new BN(10).pow(new BN(18))), { from: account_investor1 }));
+                await catchRevert(I_CappedSTO_Array_POLY[0].buyTokensWithPoly(new BN(1000).mul(new BN(10).pow(new BN(18))), { from: account_investor1 }),
+                    "Cap reached");
             });
 
             it("Should failed at the time of buying the tokens -- Because STO get expired", async () => {
                 await increaseTime(duration.days(31)); // increased beyond the end time of the STO
                 await I_PolyToken.approve(I_CappedSTO_Array_POLY[0].address, new BN(1000).mul(new BN(10).pow(new BN(18))), { from: account_investor1 });
                 await catchRevert(
-                    I_CappedSTO_Array_POLY[0].buyTokensWithPoly(new BN(1000).mul(new BN(10).pow(new BN(18))), { from: account_investor1, gas: 6000000 })
+                    I_CappedSTO_Array_POLY[0].buyTokensWithPoly(new BN(1000).mul(new BN(10).pow(new BN(18))), { from: account_investor1, gas: 6000000 }),
+                    "Offering is closed/Not yet started"
                 );
             });
 
@@ -912,8 +919,10 @@ contract("CappedSTO", async (accounts) => {
             it("should reclaim ETH and ERC20 from STO", async () => {
                 let initialIssuerETH = await web3.eth.getBalance(token_owner);
                 let initialIssuerPOLY = await I_PolyToken.balanceOf(token_owner);
-                await catchRevert(I_DummySTO.reclaimERC20(I_PolyToken.address, {from: account_polymath, gasPrice: 0}));
-                await catchRevert(I_DummySTO.reclaimETH( {from: account_polymath, gasPrice: 0}));
+                await catchRevert(I_DummySTO.reclaimERC20(I_PolyToken.address, {from: account_polymath, gasPrice: 0}),
+                    "Sender is not owner");
+                await catchRevert(I_DummySTO.reclaimETH( {from: account_polymath, gasPrice: 0}),
+                    "Sender is not owner");
                 let tx = await I_DummySTO.reclaimERC20(I_PolyToken.address, {from: token_owner, gasPrice: 0});
                 let tx2 = await I_DummySTO.reclaimETH({from: token_owner, gasPrice: 0});
                 let finalIssuerETH = await web3.eth.getBalance(token_owner);
@@ -947,11 +956,12 @@ contract("CappedSTO", async (accounts) => {
             });
 
             it("Should fail to change the title -- bad owner", async () => {
-                await catchRevert(I_CappedSTOFactory.changeTitle("STO Capped", { from: account_investor1 }));
+                await catchRevert(I_CappedSTOFactory.changeTitle("STO Capped", { from: account_investor1 }),
+                    "revert");
             });
 
             it("Should fail to change the title -- zero length", async () => {
-                await catchRevert(I_CappedSTOFactory.changeTitle("", { from: account_polymath }));
+                await catchRevert(I_CappedSTOFactory.changeTitle("", { from: account_polymath }), "Invalid text");
             });
 
             it("Should successfully change the title", async () => {
@@ -960,11 +970,13 @@ contract("CappedSTO", async (accounts) => {
             });
 
             it("Should fail to change the description -- bad owner", async () => {
-                await catchRevert(I_CappedSTOFactory.changeDescription("It is only a STO", { from: account_investor1 }));
+                await catchRevert(I_CappedSTOFactory.changeDescription("It is only a STO", { from: account_investor1 }),
+                    "revert");
             });
 
             it("Should fail to change the description -- zero length", async () => {
-                await catchRevert(I_CappedSTOFactory.changeDescription("", { from: account_polymath }));
+                await catchRevert(I_CappedSTOFactory.changeDescription("", { from: account_polymath }),
+                    "Invalid text");
             });
 
             it("Should successfully change the description", async () => {
@@ -973,11 +985,12 @@ contract("CappedSTO", async (accounts) => {
             });
 
             it("Should fail to change the name -- bad owner", async () => {
-                await catchRevert(I_CappedSTOFactory.changeName(web3.utils.stringToHex("STOCapped"), { from: account_investor1 }));
+                await catchRevert(I_CappedSTOFactory.changeName(web3.utils.stringToHex("STOCapped"), { from: account_investor1 }),
+                    "revert");
             });
 
             it("Should fail to change the name -- zero length", async () => {
-                await catchRevert(I_CappedSTOFactory.changeName(web3.utils.stringToHex(""), { from: account_polymath }));
+                await catchRevert(I_CappedSTOFactory.changeName(web3.utils.stringToHex(""), { from: account_polymath }), "Invalid text");
             });
 
             it("Should successfully change the name", async () => {

@@ -120,6 +120,37 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         _modifyAddresses(_wallet, _treasuryWallet, _usdTokens);
         _modifyLimits(_nonAccreditedLimitUSD, _minimumInvestmentUSD);
     }
+    // ************************* Analysis ******************************//  
+    // Introduce one extra function to toggle isPreMintAllowed flag
+    // *** This should be an second step process because GTM doesn't know about the STO address whether it is a issuer owned module
+    // or not *** 
+    // *** Possible limitations will be contract size may it can cross the 24 KB size we have 2 KB bandwidth ***** //
+    // bool _isPreMintAllowed -- pass one more parameter to make USD contract pre-mintable. Not changable parameter. [PRODUCT QUESTION]
+
+    // function allowPreMint(bool _isPreMintAllowed) external onlyOwner {
+        //if (_isPreMintAllowed) - Check for the boolean value
+            // -- calculate total amount of tokens need to sell from all tiers ~ totalValue
+            // -- Mint to total amounts of token calculated from step 1 securityToken.issue(address(this), totalValue, 0x0) Or
+            // -- Using this isser can send tokens to the contract because we will deal with
+            // securityToken.balanceOf(address(this)) directly not storing on local.
+            // -- stored the isPerMintAllowed value into the storage.
+    //}
+
+    // NB - There is a possibility where we do not need the extra function, We will allow the issuer to directly transfer the tokens to the STO
+
+    /**
+     * @notice This function will allow STO to pre-mint all tokens those will be distributed in sale
+     * @param _isPreMintAllowed Boolean value that will decide whether the STO will opt pre-mint or mint of buying option
+     */
+    function allowPreMinting(bool _isPreMintAllowed) external {
+        _allowPreMinting(_isPreMintAllowed, _getTotalTokensCap());
+    }
+
+    function _getTotalTokensCap() internal view returns(uint256 totalCap) {
+        for(uint256 i = 0; i < tiers.length; i++) {
+            totalCap = totalCap.add(tiers[i].tokenTotal);
+        }
+    }
 
     /**
      * @dev Modifies fund raise types
@@ -231,6 +262,15 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
             require(_ratePerTierDiscountPoly[i] <= _ratePerTier[i], "Invalid discount");
             tiers.push(Tier(_ratePerTier[i], _ratePerTierDiscountPoly[i], _tokensPerTierTotal[i], _tokensPerTierDiscountPoly[i], 0, 0));
         }
+        // ************************* Analysis ******************************//  
+        // -- Check if the new total amount of tokens is greater than the old no. then mint more tokens
+        // -- else send extra amount of tokens to trasuryWallet. or we can keep those tokens in the smart contract [PRODUCT QUESTION]
+        if (preMintAllowed) {
+            uint256 oldCap = securityToken.balanceOf(address(this));
+            uint256 newCap = _getTotalTokensCap();
+            if (oldCap < newCap)
+                securityToken.issue(address(this), (newCap - oldCap), "");
+        }
         emit SetTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
     }
 
@@ -285,13 +325,22 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
                 tiers[i].mintedTotal = tiers[i].tokenTotal;
             }
         }
-        address walletAddress = (treasuryWallet == address(0) ? IDataStore(getDataStore()).getAddress(TREASURY) : treasuryWallet);
+        address walletAddress = getTreasuryWallet();
         require(walletAddress != address(0), "Invalid address");
+         // ************************* Analysis ******************************//  
+        // --check if isPreMintAllowed variable is true then send the remaining tokens to treasury wallet
+        // else 
+        if (preMintAllowed)
+            tempReturned = securityToken.balanceOf(address(this));
         uint256 granularity = securityToken.granularity();
         tempReturned = tempReturned.div(granularity);
         tempReturned = tempReturned.mul(granularity);
-        securityToken.issue(walletAddress, tempReturned, "");
-        emit ReserveTokenMint(msg.sender, walletAddress, tempReturned, currentTier);
+        if (preMintAllowed) {
+            securityToken.transfer(walletAddress, tempReturned);
+        } else {
+            securityToken.issue(walletAddress, tempReturned, "");
+            emit ReserveTokenMint(msg.sender, walletAddress, tempReturned, currentTier);
+        }
         finalAmountReturned = tempReturned;
         totalTokensSold = tempSold;
     }
@@ -567,7 +616,13 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         }
 
         if (purchasedTokens > 0) {
-            securityToken.issue(_beneficiary, purchasedTokens, "");
+            // ************************* Analysis ******************************//  
+            // --check if _isPreMintAllowed is true then call address(this).transfer(_beneficiary, purchasedTokens)
+            // else
+            if (preMintAllowed)
+                securityToken.transfer(_beneficiary, purchasedTokens);
+            else
+                securityToken.issue(_beneficiary, purchasedTokens, "");
             emit TokenPurchase(msg.sender, _beneficiary, purchasedTokens, spentUSD, _tierPrice, _tier);
         }
     }

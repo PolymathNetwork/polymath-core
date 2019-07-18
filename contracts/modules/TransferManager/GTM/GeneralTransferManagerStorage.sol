@@ -9,6 +9,7 @@ contract GeneralTransferManagerStorage {
     bytes32 public constant INVESTORSKEY = 0xdf3a8dd24acdd05addfc6aeffef7574d2de3f844535ec91e8e0f3e45dba96731; //keccak256(abi.encodePacked("INVESTORS"))
     bytes32 public constant INVESTORFLAGS = "INVESTORFLAGS";
     uint256 internal constant ONE = uint256(1);
+    uint256 public constant WHITELISTMODULE = uint256(8);
 
     enum TransferType { GENERAL, ISSUANCE, REDEMPTION }
 

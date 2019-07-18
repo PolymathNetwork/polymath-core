@@ -22,6 +22,8 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
 
     event SetAllowBeneficialInvestments(bool _allowed);
 
+    event ReserveTokenMint(address indexed _owner, address indexed _wallet, uint256 _tokens);
+
     constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
 
     }
@@ -42,6 +44,7 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
      * @param _rate Token units a buyer gets multiplied by 10^18 per wei / base unit of POLY
      * @param _fundRaiseTypes Type of currency used to collect the funds
      * @param _fundsReceiver Ethereum account address to hold the funds
+     * @param _treasuryWallet Ethereum account address to receive unsold tokens
      */
     function configure(
         uint256 _startTime,
@@ -49,7 +52,8 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
         uint256 _cap,
         uint256 _rate,
         FundRaiseType[] memory _fundRaiseTypes,
-        address payable _fundsReceiver
+        address payable _fundsReceiver,
+        address _treasuryWallet
     )
         public
         onlyFactory
@@ -66,6 +70,7 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
         cap = _cap;
         rate = _rate;
         wallet = _fundsReceiver;
+        treasuryWallet = _treasuryWallet;
         _setFundRaiseType(_fundRaiseTypes);
     }
 
@@ -74,6 +79,14 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
      */
     function getInitFunction() public pure returns(bytes4) {
         return this.configure.selector;
+    }
+
+    /**
+     * @notice This function will allow STO to pre-mint all tokens those will be distributed in sale
+     * @param _isPreMintAllowed Boolean value that will decide whether the STO will opt pre-mint or mint of buying option
+     */
+    function allowPreMinting(bool _isPreMintAllowed) external {
+        _allowPreMinting(_isPreMintAllowed, cap);
     }
 
     /**
@@ -204,7 +217,10 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
     * @param _tokenAmount Number of tokens to be emitted
     */
     function _deliverTokens(address _beneficiary, uint256 _tokenAmount) internal {
-        securityToken.issue(_beneficiary, _tokenAmount, "");
+        if (preMintAllowed) 
+            securityToken.transfer(_beneficiary, _tokenAmount);
+        else
+            securityToken.issue(_beneficiary, _tokenAmount, "");
     }
 
     /**
@@ -256,6 +272,28 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
      */
     function _forwardPoly(address _beneficiary, address _to, uint256 _fundsAmount) internal {
         polyToken.transferFrom(_beneficiary, _to, _fundsAmount);
+    }
+
+    /**
+     * @notice Finalizes the STO and mint remaining tokens to treasury address
+     * @notice Treasury wallet address must be whitelisted to successfully finalize
+     */
+    function finalize() external withPerm(ADMIN){
+        require(!isFinalized, "STO is finalized");
+        isFinalized = true;
+        uint256 tempTokens;
+        address walletAddress;
+        if (cap > totalTokensSold) {
+            tempTokens = cap - totalTokensSold;
+            walletAddress = getTreasuryWallet();
+            require(walletAddress != address(0), "Invalid address");
+            if (preMintAllowed)
+                securityToken.transfer(walletAddress, tempTokens);
+            else {
+                securityToken.issue(walletAddress, tempTokens, "");
+                emit ReserveTokenMint(msg.sender, walletAddress, tempTokens);
+            }
+        }   
     }
 
 }

@@ -23,11 +23,11 @@ contract USDTieredSTOStorage {
         // How many token units are available in this tier (relative to totalSupply) at the ratePerTierDiscountPoly rate
         uint256 tokensDiscountPoly;
         // How many tokens have been minted in this tier (relative to totalSupply)
-        uint256 mintedTotal;
+        uint256 mintedTotal; // -- names could be more generalise for pre-mint & mint on demand option
         // How many tokens have been minted in this tier (relative to totalSupply) for each fund raise type
-        mapping(uint8 => uint256) minted;
+        mapping(uint8 => uint256) minted; // -- names could be more generalise for pre-mint & mint on demand option
         // How many tokens have been minted in this tier (relative to totalSupply) at discounted POLY rate
-        uint256 mintedDiscountPoly;
+        uint256 mintedDiscountPoly; // -- names could be more generalise for pre-mint & mint on demand option
     }
 
     mapping(address => uint256) public nonAccreditedLimitUSDOverride;
@@ -36,12 +36,6 @@ contract USDTieredSTOStorage {
 
     // Determine whether users can invest on behalf of a beneficiary
     bool public allowBeneficialInvestments;
-
-    // Whether or not the STO has been finalized
-    bool public isFinalized;
-
-    // Address of issuer treasury wallet for unsold tokens
-    address public treasuryWallet;
 
     // List of stable coin addresses
     IERC20[] internal usdTokens;

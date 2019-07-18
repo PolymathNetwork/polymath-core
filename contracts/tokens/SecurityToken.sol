@@ -931,7 +931,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
      */
     function canTransferFrom(address _from, address _to, uint256 _value, bytes calldata _data) external view returns (byte reasonCode, bytes32 appCode) {
         (reasonCode, appCode) = _canTransfer(_from, _to, _value, _data);
-        if (isSuccess(reasonCode) && _value > allowance(_from, msg.sender)) {
+        if (_isSuccess(reasonCode) && _value > allowance(_from, msg.sender)) {
             return (StatusCodes.code(StatusCodes.Status.InsufficientAllowance), bytes32(0));
         }
     }
@@ -971,7 +971,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     {
         if (_partition == UNLOCKED) {
             (reasonCode, appStatusCode) = _canTransfer(_from, _to, _value, _data);
-            if (isSuccess(reasonCode)) {
+            if (_isSuccess(reasonCode)) {
                 uint256 beforeBalance = _balanceOfByPartition(LOCKED, _to, 0);
                 uint256 afterbalance = _balanceOfByPartition(LOCKED, _to, _value);
                 toPartition = _returnPartition(beforeBalance, afterbalance, _value);
@@ -1103,7 +1103,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
     * @param status Binary ERC-1066 status code
     * @return successful A boolean representing if the status code represents success
     */
-    function isSuccess(byte status) public pure returns (bool successful) {
+    function _isSuccess(byte status) internal pure returns (bool successful) {
         return (status & 0x0F) == 0x01;
     }
 }

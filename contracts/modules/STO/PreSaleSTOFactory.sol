@@ -21,7 +21,7 @@ contract PreSaleSTOFactory is ModuleFactory {
         title = "PreSale STO";
         description = "Allows Issuer to configure pre-sale token allocations";
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
-        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(0), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(2), uint8(9), uint8(9));
     }
 
     /**
@@ -52,7 +52,7 @@ contract PreSaleSTOFactory is ModuleFactory {
         res[0] = 3;
         return res;
     }
-    
+
     /**
      * @notice Returns the instructions associated with the module
      */

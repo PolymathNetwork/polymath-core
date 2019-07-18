@@ -72,7 +72,7 @@ module.exports = function (deployer, network, accounts) {
     PolymathAccount = accounts[0]
     PolyToken = '0xb347b9f5b56b431b2cf4e1d90a5995f7519ca792' // PolyToken Kovan Faucet Address
     POLYOracle = '0x461d98EF2A0c7Ac1416EF065840fF5d4C946206C' // Poly Oracle Kovan Address
-    ETHOracle = '0xCE5551FC9d43E9D2CC255139169FC889352405C8' // ETH Oracle Kovan Address
+    ETHOracle = '0x14542627196c7DaB26eb11ffd8A407fFc476De76' // ETH Oracle Kovan Address
   } else if (network === 'mainnet') {
     web3 = new Web3(new Web3.providers.HttpProvider('https://mainnet.infura.io/g5xfoQ0jFSE9S5LwM1Ei'))
     PolymathAccount = accounts[0]

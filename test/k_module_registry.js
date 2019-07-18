@@ -155,7 +155,8 @@ contract("ModuleRegistry", async (accounts) => {
             catchRevert(
                 I_ModuleRegistryProxy.upgradeToAndCall("1.0.0", I_ModuleRegistry.address, bytesProxy, {
                     from: account_polymath
-                })
+                }),
+                "Fail in executing the function of implementation contract"
             );
         });
 
@@ -164,7 +165,8 @@ contract("ModuleRegistry", async (accounts) => {
             catchRevert(
                 I_ModuleRegistryProxy.upgradeToAndCall("1.0.0", I_ModuleRegistry.address, bytesProxy, {
                     from: account_polymath
-                })
+                }),
+                "Fail in executing the function of implementation contract"
             );
         });
 
@@ -173,7 +175,8 @@ contract("ModuleRegistry", async (accounts) => {
             catchRevert(
                 I_ModuleRegistryProxy.upgradeToAndCall("1.0.0", I_ModuleRegistry.address, bytesProxy, {
                     from: account_polymath
-                })
+                }),
+                "Fail in executing the function of implementation contract"
             );
         });
 
@@ -188,7 +191,8 @@ contract("ModuleRegistry", async (accounts) => {
     describe("Test cases for the ModuleRegistry", async () => {
         describe("Test case for the upgradeFromregistry", async () => {
             it("Should successfully update the registry contract address -- failed because of bad owner", async () => {
-                await catchRevert(I_MRProxied.updateFromRegistry({ from: account_temp }));
+                await catchRevert(I_MRProxied.updateFromRegistry({ from: account_temp }),
+                    "sender must be owner");
             });
 
             it("Should successfully update the registry contract addresses", async () => {
@@ -233,7 +237,8 @@ contract("ModuleRegistry", async (accounts) => {
             it("Should fail to register the module -- when registerModule is paused", async () => {
                 await I_MRProxied.pause({ from: account_polymath });
 
-                await catchRevert(I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: account_delegate }));
+                await catchRevert(I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: account_delegate }),
+                    "Paused");
                 await I_MRProxied.unpause({ from: account_polymath });
             });
 
@@ -251,31 +256,36 @@ contract("ModuleRegistry", async (accounts) => {
             });
 
             it("Should fail the register the module -- Already registered module", async () => {
-                await catchRevert(I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath }));
+                await catchRevert(I_MRProxied.registerModule(I_GeneralTransferManagerFactory.address, { from: account_polymath }),
+                    "Module factory should not be pre-registered");
             });
 
             it("Should fail in registering the module-- type = 0", async () => {
                 I_MockFactory = await MockFactory.new(new BN(0), one_address, I_PolymathRegistry.address, true, { from: account_polymath });
 
-                catchRevert(I_MRProxied.registerModule(I_MockFactory.address, { from: account_polymath }));
+                catchRevert(I_MRProxied.registerModule(I_MockFactory.address, { from: account_polymath }),
+                    "Factory must have type");
             });
 
             it("Should fail to register the new module because msg.sender is not the owner of the module", async() => {
                 I_CappedSTOLogic = await CappedSTO.new(address_zero, address_zero, { from: account_polymath });
                 I_CappedSTOFactory3 = await CappedSTOFactory.new(new BN(0), I_CappedSTOLogic.address, I_PolymathRegistry.address, true, { from: account_temp });
                 console.log(await I_MRProxied.owner());
-                catchRevert(I_MRProxied.registerModule(I_CappedSTOFactory3.address, { from: token_owner }));
+                catchRevert(I_MRProxied.registerModule(I_CappedSTOFactory3.address, { from: token_owner }),
+                    "Only owner allowed to register modules");
             });
 
             it("Should successfully register the module -- fail because no module type uniqueness", async () => {
                 await I_MockFactory.switchTypes({ from: account_polymath });
-                catchRevert(I_MRProxied.registerModule(I_MockFactory.address, { from: account_polymath }));
+                catchRevert(I_MRProxied.registerModule(I_MockFactory.address, { from: account_polymath }),
+                    "revert Type mismatch");
             });
         });
 
         describe("Test case for verifyModule", async () => {
             it("Should fail in calling the verify module. Because msg.sender should be account_polymath", async () => {
-                await catchRevert(I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, { from: account_temp }));
+                await catchRevert(I_MRProxied.verifyModule(I_GeneralTransferManagerFactory.address, { from: account_temp }),
+                    "sender must be owner");
             });
 
             it("Should successfully verify the module -- true", async () => {
@@ -299,7 +309,8 @@ contract("ModuleRegistry", async (accounts) => {
             });
 
             it("Should fail in verifying the module. Because the module is not registered", async () => {
-                await catchRevert(I_MRProxied.verifyModule(I_MockFactory.address, { from: account_polymath }));
+                await catchRevert(I_MRProxied.verifyModule(I_MockFactory.address, { from: account_polymath }),
+                    "Module factory must be registered");
             });
         });
 
@@ -320,7 +331,8 @@ contract("ModuleRegistry", async (accounts) => {
                 endTime = startTime + duration.days(30);
                 let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
 
-                await catchRevert(I_SecurityToken.addModule(I_CappedSTOFactory1.address, bytesSTO, new BN(0), new BN(0), false, { from: token_owner }));
+                await catchRevert(I_SecurityToken.addModule(I_CappedSTOFactory1.address, bytesSTO, new BN(0), new BN(0), false, { from: token_owner }),
+                    "ModuleFactory must be verified");
             });
 
             it("Should fail to register module because custom modules not allowed", async () => {
@@ -328,7 +340,8 @@ contract("ModuleRegistry", async (accounts) => {
 
                 assert.notEqual(I_CappedSTOFactory2.address.valueOf(), address_zero, "CappedSTOFactory contract was not deployed");
 
-                await catchRevert(I_MRProxied.registerModule(I_CappedSTOFactory2.address, { from: token_owner }));
+                await catchRevert(I_MRProxied.registerModule(I_CappedSTOFactory2.address, { from: token_owner }),
+                    "Only owner allowed to register modules");
             });
 
             it("Should switch customModulesAllowed to true", async () => {
@@ -367,7 +380,8 @@ contract("ModuleRegistry", async (accounts) => {
                 startTime = await latestTime() + duration.seconds(5000);
                 endTime = startTime + duration.days(30);
                 let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
-                catchRevert(I_SecurityToken.addModule(I_CappedSTOFactory3.address, bytesSTO, new BN(0), new BN(0), false, { from: token_owner }));
+                catchRevert(I_SecurityToken.addModule(I_CappedSTOFactory3.address, bytesSTO, new BN(0), new BN(0), false, { from: token_owner }),
+                    "ModuleFactory must be verified or SecurityToken owner must be ModuleFactory owner");
             });
 
             it("Should successfully add verified module", async () => {
@@ -398,7 +412,8 @@ contract("ModuleRegistry", async (accounts) => {
                     [await latestTime(), currentTime.add(new BN(duration.days(1))), cap, "Test STO"]
                 );
                 console.log("I_TestSTOFactory:" +I_TestSTOFactory.address);
-                await catchRevert(I_SecurityToken.addModule(I_TestSTOFactory.address, bytesData, new BN(0), new BN(0), false, { from: token_owner }));
+                await catchRevert(I_SecurityToken.addModule(I_TestSTOFactory.address, bytesData, new BN(0), new BN(0), false, { from: token_owner }),
+                    "Incompatible versions");
                 await revertToSnapshot(id);
             });
 
@@ -423,7 +438,8 @@ contract("ModuleRegistry", async (accounts) => {
                     [await latestTime(), currentTime.add(new BN(duration.days(1))), cap, "Test STO"]
                 );
 
-                await catchRevert(I_SecurityToken2.addModule(I_TestSTOFactory.address, bytesData, new BN(0), new BN(0), false, { from: token_owner }));
+                await catchRevert(I_SecurityToken2.addModule(I_TestSTOFactory.address, bytesData, new BN(0), new BN(0), false, { from: token_owner }),
+                    "Incompatible versions");
             });
         });
 
@@ -471,7 +487,8 @@ contract("ModuleRegistry", async (accounts) => {
 
         describe("Test cases for removeModule()", async () => {
             it("Should fail if msg.sender not curator or owner", async () => {
-                await catchRevert(I_MRProxied.removeModule(I_CappedSTOFactory2.address, { from: account_temp }));
+                await catchRevert(I_MRProxied.removeModule(I_CappedSTOFactory2.address, { from: account_temp }),
+                    "msg.sender must be the Module Factory owner or registry curator");
             });
 
             it("Should successfully remove module and delete data if msg.sender is curator", async () => {
@@ -526,7 +543,8 @@ contract("ModuleRegistry", async (accounts) => {
             });
 
             it("Should fail if module already removed", async () => {
-                await catchRevert(I_MRProxied.removeModule(I_CappedSTOFactory2.address, { from: account_polymath }));
+                await catchRevert(I_MRProxied.removeModule(I_CappedSTOFactory2.address, { from: account_polymath }),
+                    "Module factory should be registered");
             });
         });
 
@@ -534,11 +552,11 @@ contract("ModuleRegistry", async (accounts) => {
             describe("Test cases for reclaiming funds", async () => {
                 it("Should successfully reclaim POLY tokens -- fail because token address will be 0x", async () => {
                     await I_PolyToken.transfer(I_MRProxied.address, new BN(web3.utils.toWei("1")), { from: token_owner });
-                    catchRevert(I_MRProxied.reclaimERC20(address_zero, { from: account_polymath }));
+                    catchRevert(I_MRProxied.reclaimERC20(address_zero, { from: account_polymath }), "0x address is invalid");
                 });
 
                 it("Should successfully reclaim POLY tokens -- not authorised", async () => {
-                    catchRevert(I_MRProxied.reclaimERC20(I_PolyToken.address, { from: account_temp }));
+                    catchRevert(I_MRProxied.reclaimERC20(I_PolyToken.address, { from: account_temp }), "sender must be owner");
                 });
 
                 it("Should successfully reclaim POLY tokens", async () => {
@@ -555,7 +573,7 @@ contract("ModuleRegistry", async (accounts) => {
 
             describe("Test cases for pausing the contract", async () => {
                 it("Should fail to pause if msg.sender is not owner", async () => {
-                    await catchRevert(I_MRProxied.pause({ from: account_temp }));
+                    await catchRevert(I_MRProxied.pause({ from: account_temp }), "sender must be owner");
                 });
 
                 it("Should successfully pause the contract", async () => {
@@ -565,7 +583,7 @@ contract("ModuleRegistry", async (accounts) => {
                 });
 
                 it("Should fail to unpause if msg.sender is not owner", async () => {
-                    await catchRevert(I_MRProxied.unpause({ from: account_temp }));
+                    await catchRevert(I_MRProxied.unpause({ from: account_temp }), "sender must be owner");
                 });
 
                 it("Should successfully unpause the contract", async () => {
@@ -579,11 +597,13 @@ contract("ModuleRegistry", async (accounts) => {
                 it("Should successfully reclaim POLY tokens -- fail because token address will be 0x", async () => {
                     I_ReclaimERC20 = await ReclaimTokens.at(I_FeatureRegistry.address);
                     await I_PolyToken.transfer(I_ReclaimERC20.address, new BN(web3.utils.toWei("1")), { from: token_owner });
-                    catchRevert(I_ReclaimERC20.reclaimERC20(address_zero, { from: account_polymath }));
+                    catchRevert(I_ReclaimERC20.reclaimERC20(address_zero, { from: account_polymath }),
+                        "Invalid address");
                 });
 
                 it("Should successfully reclaim POLY tokens -- not authorised", async () => {
-                    catchRevert(I_ReclaimERC20.reclaimERC20(I_PolyToken.address, { from: account_temp }));
+                    catchRevert(I_ReclaimERC20.reclaimERC20(I_PolyToken.address, { from: account_temp }),
+                        "revert");
                 });
 
                 it("Should successfully reclaim POLY tokens", async () => {
@@ -600,7 +620,8 @@ contract("ModuleRegistry", async (accounts) => {
 
             describe("Test case for the PolymathRegistry", async () => {
                 it("Should successfully get the address -- fail because key is not exist", async () => {
-                    catchRevert(I_PolymathRegistry.getAddress("PolyOracle"));
+                    catchRevert(I_PolymathRegistry.getAddress("PolyOracle"),
+                        "Invalid key");
                 });
 
                 it("Should successfully get the address", async () => {
@@ -611,11 +632,13 @@ contract("ModuleRegistry", async (accounts) => {
 
             describe("Test cases for the transferOwnership", async () => {
                 it("Should fail to transfer the ownership -- not authorised", async () => {
-                    catchRevert(I_MRProxied.transferOwnership(account_temp, { from: account_issuer }));
+                    catchRevert(I_MRProxied.transferOwnership(account_temp, { from: account_issuer }),
+                        "sender must be owner");
                 });
 
                 it("Should fail to transfer the ownership -- 0x address is not allowed", async () => {
-                    catchRevert(I_MRProxied.transferOwnership(address_zero, { from: account_polymath }));
+                    catchRevert(I_MRProxied.transferOwnership(address_zero, { from: account_polymath }),
+                        "Invalid address");
                 });
 
                 it("Should successfully transfer the ownership of the STR", async () => {

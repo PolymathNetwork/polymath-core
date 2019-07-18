@@ -764,8 +764,9 @@ contract('BlacklistTransferManager', accounts => {
             );
         });
 
-        // @FIXME this test is ok. However, the revert reason string below should be fixed in the smart contract,
-        // in contains an apostrophe rather than a single quotation.
+        // @FIXME this test is ok. However, the revert reason string below should be fixed in the smart contract.
+        // in contains an apostrophe rather than a single quotation (doesn’t vs doesn't), which is not consistent with
+        // remaining reason strings in BTM.
         it("Should fail in deleting the blacklist type as the blacklist doesnot exist", async() => {
            await catchRevert(
                I_BlacklistTransferManager.deleteBlacklistType(web3.utils.fromAscii("c_blacklist"), {

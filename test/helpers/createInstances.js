@@ -37,11 +37,13 @@ const VolumeRestrictionTMFactory = artifacts.require("./VolumeRestrictionTMFacto
 const VolumeRestrictionTM = artifacts.require("./VolumeRestrictionTM.sol");
 const VestingEscrowWalletFactory = artifacts.require("./VestingEscrowWalletFactory.sol");
 const VestingEscrowWallet = artifacts.require("./VestingEscrowWallet.sol");
+const RestrictedPartialSaleTMFactory = artifacts.require("./RestrictedPartialSaleTMFactory.sol");
 
 const Web3 = require("web3");
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
 // Contract Instance Declaration
+let I_RestrictedPartialSaleTMFactory;
 let I_USDTieredSTOProxyFactory;
 let I_USDTieredSTOFactory;
 let I_TrackedRedemptionFactory;
@@ -310,6 +312,18 @@ export async function deployLockupVolumeRTMAndVerified(accountPolymath, MRProxyI
 
     await registerAndVerifyByMR(I_VolumeRestrictionTransferManagerFactory.address, accountPolymath, MRProxyInstance);
     return new Array(I_VolumeRestrictionTransferManagerFactory);
+}
+
+export async function deployRestrictedPartialSaleTMAndVerifyed(accountPolymath, MRProxyInstance, polyToken, setupCost) {
+    I_RestrictedPartialSaleTMFactory = await RestrictedPartialSaleTMFactory.new(polyToken, setupCost, 0, 0, { from: accountPolymath });
+    assert.notEqual(
+        I_RestrictedPartialSaleTMFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "RestrictedPartialSaleTMFactory contract was not deployed"
+    );
+
+    await registerAndVerifyByMR(I_RestrictedPartialSaleTMFactory.address, accountPolymath, MRProxyInstance);
+    return new Array(I_RestrictedPartialSaleTMFactory);
 }
 
 export async function deployScheduleCheckpointAndVerified(accountPolymath, MRProxyInstance, polyToken, setupCost) {

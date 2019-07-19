@@ -31,6 +31,7 @@ const MODIFY_LOCKUP_DATA_CSV = `${__dirname}/../data/Transfer/LockupTM/modify_lo
 const DELETE_LOCKUP_DATA_CSV = `${__dirname}/../data/Transfer/LockupTM/delete_lockup_data.csv`;
 const ADD_LOCKUP_INVESTOR_DATA_CSV = `${__dirname}/../data/Transfer/LockupTM/add_lockup_investor_data.csv`;
 const REMOVE_LOCKUP_INVESTOR_DATA_CSV = `${__dirname}/../data/Transfer/LockupTM/remove_lockup_investor_data.csv`;
+const CHANGE_EXEMPT_LIST_DATA_CSV = `${__dirname}/../data/Transfer/RPSTM/change_exempt_list_data.csv`;
 
 const RESTRICTION_TYPES = ['Fixed', 'Percentage'];
 
@@ -261,6 +262,11 @@ async function configExistingModules(tmModules) {
       currentTransferManager.setProvider(web3.currentProvider);
       await volumeRestrictionTM();
       break;
+    case 'RestrictedPartialSaleTM':
+      currentTransferManager = new web3.eth.Contract(abis.restrictedPartialSaleTM(), tmModules[index].address);
+      currentTransferManager.setProvider(web3.currentProvider);
+      await restrictedPartialSaleTM();
+      break;
   }
 }
 
@@ -291,6 +297,11 @@ async function addTransferManagerModule() {
         let allowPercentagePrimaryIssuance = readlineSync.keyInYNStrict(`Do you want to ignore transactions which are part of the primary issuance? `);
         let configurePercentageTM = abis.percentageTransferManager().find(o => o.name === 'configure' && o.type === 'function');
         bytes = web3.eth.abi.encodeFunctionCall(configurePercentageTM, [maxHolderPercentage, allowPercentagePrimaryIssuance]);
+        break;
+      case 'RestrictedPartialSaleTM':
+        let treasuryWallet = readlineSync.question('Enter the Ethereum address of the treasury wallet to be exempted: ');
+        let configureRPSTM = abis.restrictedPartialSaleTM().find(o => o.name === 'configure' && o.type === 'function');
+        bytes = web3.eth.abi.encodeFunctionCall(configureRPSTM, [treasuryWallet]);
         break;
     }
     let selectedTMFactoryAddress = await contracts.getModuleFactoryAddressByName(securityToken.options.address, gbl.constants.MODULES_TYPES.TRANSFER, options[index]);
@@ -2201,6 +2212,88 @@ function inputRestrictionData(isDaily) {
   return restriction;
 }
 
+async function restrictedPartialSaleTM() {
+  console.log('\n', chalk.blue(`Restriction Partial Sale Transfer Manager at ${currentTransferManager.options.address}`, '\n'));
+
+  let exemptedAddresses = await currentTransferManager.methods.getExemptAddresses().call();
+  console.log(`- Exempted addresses:            ${exemptedAddresses.length}`);
+
+  let options = [];
+  if (exemptedAddresses.length > 0) {
+    options.push('Show exempted addresses');
+  }
+  options.push(
+    'Change exempt wallet',
+    'Change multiple exemptions',
+    'Check if account is exempted'
+  );
+
+  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
+  let optionSelected = index !== -1 ? options[index] : 'RETURN';
+  console.log('Selected:', optionSelected, '\n');
+  switch (optionSelected) {
+    case 'Show exempted addresses':
+      showExemptedAddresses(exemptedAddresses);
+      break;
+    case 'Change exempt wallet':
+      await changeExemptWallet();
+      break;
+    case 'Change multiple exemptions':
+      await changeExemptWalletsInBatch();
+      break;
+    case 'Check if account is exempted':
+      await checkIfExempted();
+      break;
+    case 'RETURN':
+      return;
+  }
+
+  await restrictedPartialSaleTM();
+}
+
+async function changeExemptWalletsInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${CHANGE_EXEMPT_LIST_DATA_CSV}): `, {
+    defaultInput: CHANGE_EXEMPT_LIST_DATA_CSV
+  });
+  let batchSize = readlineSync.question(`Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, {
+    limit: function (input) {
+      return parseInt(input) > 0;
+    },
+    limitMessage: 'Must be greater than 0',
+    defaultInput: gbl.constants.DEFAULT_BATCH_SIZE
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(row => web3.utils.isAddress(row[0]) && typeof row[1] === 'boolean');
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [holderArray, exemptedArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to change the exempted status to the following accounts: \n\n`, holderArray[batch], '\n');
+    let action = currentTransferManager.methods.changeExemptWalletListMulti(holderArray[batch], exemptedArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Change exempt list transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
+async function checkIfExempted() {
+  let account = readlineSync.question('Enter the account to check: ', {
+    limit: function (input) {
+      return web3.utils.isAddress(input);
+    },
+    limitMessage: "Must be a valid address"
+  });
+
+  let isExempted = await currentTransferManager.methods.exemptIndex(account).call();
+  if (isExempted !== '0') {
+    console.log(chalk.yellow(`${account} is exepmted.`));
+  } else {
+    console.log(chalk.green(`${account} is not exepmted.`));
+  }
+}
 async function lockUpTransferManager() {
   console.log('\n', chalk.blue(`Lockup Transfer Manager at ${currentTransferManager.options.address}`), '\n');
 

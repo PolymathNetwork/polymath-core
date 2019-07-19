@@ -176,7 +176,8 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
 
             it("\t\t Should fail to attach the voting module because allowance is unsufficent \n", async() => {
                 await catchRevert(
-                    I_SecurityToken.addModule(P_PLCRVotingCheckpointFactory.address, "0x0", new BN(web3.utils.toWei("500")), 0, false, {from: token_owner})
+                    I_SecurityToken.addModule(P_PLCRVotingCheckpointFactory.address, "0x0", new BN(web3.utils.toWei("500")), 0, false, {from: token_owner}),
+                    "Invalid cost"
                 );
             });
 
@@ -201,43 +202,50 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
 
             it("\t\t Should fail to create ballot -- bad owner \n", async() => {
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.createBallot(new BN(duration.days(5)), new BN(duration.days(10)), new BN(3), new BN(46.57).mul(new BN(10).pow(new BN(16))), {from: account_polymath})
+                    I_PLCRVotingCheckpoint.createBallot(new BN(duration.days(5)), new BN(duration.days(10)), new BN(3), new BN(46.57).mul(new BN(10).pow(new BN(16))), {from: account_polymath}),
+                    "Invalid permission"
                 );
             });
 
             it("\t\t Should fail to create ballot -- bad commit duration \n", async() => {
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.createBallot(new BN(0), new BN(duration.days(10)), new BN(3), new BN(46.57).mul(new BN(10).pow(new BN(16))), {from: token_owner})
+                    I_PLCRVotingCheckpoint.createBallot(new BN(0), new BN(duration.days(10)), new BN(3), new BN(46.57).mul(new BN(10).pow(new BN(16))), {from: token_owner}),
+                    "Invalid value"
                 );
             });
 
             it("\t\t Should fail to create ballot -- bad reveal duration \n", async() => {
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.createBallot(new BN(duration.days(10)), new BN(0), new BN(3), new BN(46.57).mul(new BN(10).pow(new BN(16))), {from: token_owner})
+                    I_PLCRVotingCheckpoint.createBallot(new BN(duration.days(10)), new BN(0), new BN(3), new BN(46.57).mul(new BN(10).pow(new BN(16))), {from: token_owner}),
+                    "Invalid value"
                 );
             });
 
             it("\t\t Should fail to create ballot -- bad proposed quorum \n", async() => {
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.createBallot(new BN(duration.days(10)), new BN(duration.days(10)), new BN(3), new BN(0).mul(new BN(10).pow(new BN(16))), {from: token_owner})
+                    I_PLCRVotingCheckpoint.createBallot(new BN(duration.days(10)), new BN(duration.days(10)), new BN(3), new BN(0).mul(new BN(10).pow(new BN(16))), {from: token_owner}),
+                    "Invalid value"
                 );
             });
 
             it("\t\t Should fail to create ballot -- bad proposed quorum more than 100 % \n", async() => {
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.createBallot(new BN(duration.days(10)), new BN(duration.days(10)), new BN(3), new BN(46.57).mul(new BN(10).pow(new BN(18))), {from: token_owner})
+                    I_PLCRVotingCheckpoint.createBallot(new BN(duration.days(10)), new BN(duration.days(10)), new BN(3), new BN(46.57).mul(new BN(10).pow(new BN(18))), {from: token_owner}),
+                    "Invalid quorum percentage"
                 );
             });
 
             it("\t\t Should fail to create ballot -- bad no of proposals \n", async() => {
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.createBallot(new BN(duration.days(5)), new BN(duration.days(10)), new BN(0), new BN(46.57).mul(new BN(10).pow(new BN(16))), {from: token_owner})
+                    I_PLCRVotingCheckpoint.createBallot(new BN(duration.days(5)), new BN(duration.days(10)), new BN(0), new BN(46.57).mul(new BN(10).pow(new BN(16))), {from: token_owner}),
+                    "Invalid number of proposals"
                 );
             });
 
             it("\t\t Should fail to create ballot -- bad no of proposals \n", async() => {
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.createBallot(new BN(duration.days(5)), new BN(duration.days(10)), new BN(1), new BN(46.57).mul(new BN(10).pow(new BN(16))), {from: token_owner})
+                    I_PLCRVotingCheckpoint.createBallot(new BN(duration.days(5)), new BN(duration.days(10)), new BN(1), new BN(46.57).mul(new BN(10).pow(new BN(16))), {from: token_owner}),
+                    "Invalid number of proposals"
                 );
             });
 
@@ -275,7 +283,8 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
                 let commitTime = new BN(duration.days(4));
                 let revealTime = new BN(duration.days(5));
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.createCustomBallot(commitTime, revealTime, new BN(3), new BN(50).mul(new BN(10).pow(new BN(16))), new BN(45), startTime, {from: token_owner})
+                    I_PLCRVotingCheckpoint.createCustomBallot(commitTime, revealTime, new BN(3), new BN(50).mul(new BN(10).pow(new BN(16))), new BN(45), startTime, {from: token_owner}),
+                    "Invalid checkpoint Id"
                 );
             });
 
@@ -284,7 +293,8 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
                 let commitTime = new BN(duration.days(4));
                 let revealTime = new BN(duration.days(5));
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.createCustomBallot(commitTime, revealTime, new BN(3), new BN(50).mul(new BN(10).pow(new BN(16))), new BN(0), 0, {from: token_owner})
+                    I_PLCRVotingCheckpoint.createCustomBallot(commitTime, revealTime, new BN(3), new BN(50).mul(new BN(10).pow(new BN(16))), new BN(0), 0, {from: token_owner}),
+                    "Invalid start time"
                 );
             });
 
@@ -313,21 +323,24 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
 
             it("\t\t Should fail to commitVote -- bad ballot id \n", async() => {
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.commitVote(new BN(2), web3.utils.toHex("Some secret"), {from: account_investor1})
+                    I_PLCRVotingCheckpoint.commitVote(new BN(2), web3.utils.toHex("Some secret"), {from: account_investor1}),
+                    "Index out of bound"
                 );
             });
 
             it("\t\t Should fail to commitVote -- not in the commit stage \n", async() => {
                 let salt = getRandom();
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.commitVote(new BN(0), web3.utils.soliditySha3(1, salt), {from: account_investor1})
+                    I_PLCRVotingCheckpoint.commitVote(new BN(0), web3.utils.soliditySha3(1, salt), {from: account_investor1}),
+                    "Not in a valid stage"
                 );
             });
 
             it("\t\t Should fail to commitVote -- secret vote is 0 \n", async() => {
                 await increaseTime(duration.minutes(7)); // Increase time to make it under the commit stage
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.commitVote(new BN(0), "0x0", {from: account_investor1})
+                    I_PLCRVotingCheckpoint.commitVote(new BN(0), "0x0", {from: account_investor1}),
+                    "Invalid vote"
                 );
             });
 
@@ -340,7 +353,8 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
             it("\t\t Should fail to commitVote because ballot is not active \n", async() => {
                 let salt = getRandom();
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.commitVote(new BN(0), web3.utils.soliditySha3(1, salt), {from: account_investor1})
+                    I_PLCRVotingCheckpoint.commitVote(new BN(0), web3.utils.soliditySha3(1, salt), {from: account_investor1}),
+                    "Inactive ballot"
                 );
             });
 
@@ -352,13 +366,15 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
 
             it("\t\t Should fail to add voter in ballot exemption list -- address is zero", async() => {
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.changeBallotExemptedVotersList(new BN(0), "0x0000000000000000000000000000000000000000", true, {from: token_owner})
+                    I_PLCRVotingCheckpoint.changeBallotExemptedVotersList(new BN(0), "0x0000000000000000000000000000000000000000", true, {from: token_owner}),
+                    "Invalid address"
                 );
             });
 
             it("\t\t Should fail to add voter in ballot exemption list -- invalid ballot id", async() => {
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.changeBallotExemptedVotersList(new BN(5), account_investor1, true, {from: token_owner})
+                    I_PLCRVotingCheckpoint.changeBallotExemptedVotersList(new BN(5), account_investor1, true, {from: token_owner}),
+                    "Index out of bound"
                 );
             });
 
@@ -371,26 +387,30 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
 
             it("\t\t Should fail to add voter in ballot exemption list -- doing the same change again", async() => {
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.changeBallotExemptedVotersList(new BN(0), account_investor1, true, {from: token_owner})
+                    I_PLCRVotingCheckpoint.changeBallotExemptedVotersList(new BN(0), account_investor1, true, {from: token_owner}),
+                    "No change"
                 );
             });
 
             it("\t\t Should fail to vote -- voter is present in the exemption list", async() => {
                 let salt = getRandom();
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.commitVote(new BN(0), web3.utils.soliditySha3(2, salt), {from: account_investor1})
+                    I_PLCRVotingCheckpoint.commitVote(new BN(0), web3.utils.soliditySha3(2, salt), {from: account_investor1}),
+                    "Invalid voter"
                 );
             });
 
-            it("\t\t Should add the multiple voter in to the ballot exemption list -- failed ", async() => {
+            it("\t\t Should add the multiple voter in to the ballot exemption list -- failed because of array length mismatch", async() => {
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.changeBallotExemptedVotersListMulti(new BN(0), [account_investor1, account_investor2], [false], {from: token_owner})
+                    I_PLCRVotingCheckpoint.changeBallotExemptedVotersListMulti(new BN(0), [account_investor1, account_investor2], [false], {from: token_owner}),
+                    "Array length mismatch"
                 );
             });
 
             it("\t\t Should add the multiple voter in to the ballot exemption list --failed because of bad msg.sender", async() => {
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.changeBallotExemptedVotersListMulti(new BN(0), [account_investor1], [false], {from: account_polymath})
+                    I_PLCRVotingCheckpoint.changeBallotExemptedVotersListMulti(new BN(0), [account_investor1], [false], {from: account_polymath}),
+                    "Invalid permission"
                 );
             });
 
@@ -416,13 +436,15 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
             it("\t\t Should failed to vote again \n", async() => {
                 let salt = getRandom();
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.commitVote(new BN(0), web3.utils.soliditySha3(1, salt), {from: account_investor1})
+                    I_PLCRVotingCheckpoint.commitVote(new BN(0), web3.utils.soliditySha3(1, salt), {from: account_investor1}),
+                    "Already voted"
                 )
             });
 
             it("\t\t Should fail to add voter in default exemption list -- address is zero", async() => {
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.changeDefaultExemptedVotersList("0x0000000000000000000000000000000000000000", true, {from: token_owner})
+                    I_PLCRVotingCheckpoint.changeDefaultExemptedVotersList("0x0000000000000000000000000000000000000000", true, {from: token_owner}),
+                    "Invalid address"
                 );
             });
 
@@ -434,20 +456,23 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
 
             it("\t\t Should fail to add voter in default exemption list -- doing the same change again", async() => {
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.changeDefaultExemptedVotersList(account_investor3, true, {from: token_owner})
+                    I_PLCRVotingCheckpoint.changeDefaultExemptedVotersList(account_investor3, true, {from: token_owner}),
+                    "revert"
                 );
             });
 
             it("\t\t Should fail to vote -- voter is present in the exemption list", async() => {
                 let salt = getRandom();
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.commitVote(new BN(0), web3.utils.soliditySha3(1, salt), {from: account_investor3})
+                    I_PLCRVotingCheckpoint.commitVote(new BN(0), web3.utils.soliditySha3(1, salt), {from: account_investor3}),
+                    "Invalid voter"
                 );
             });
 
             it("\t\t Should change the deafult exemption list using Multi function -- failed because of mismatch array length", async() => {
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.changeDefaultExemptedVotersListMulti([account_investor3, account_investor1], [false], {from: token_owner})
+                    I_PLCRVotingCheckpoint.changeDefaultExemptedVotersListMulti([account_investor3, account_investor1], [false], {from: token_owner}),
+                    "Array length mismatch"
                 );
             });
 
@@ -536,7 +561,8 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
             it("\t\t Should fail to vote with a zero weight \n", async() => {
                 let salt = getRandom();
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.commitVote(new BN(0),  web3.utils.soliditySha3(2, salt), {from: account_investor5})
+                    I_PLCRVotingCheckpoint.commitVote(new BN(0),  web3.utils.soliditySha3(2, salt), {from: account_investor5}),
+                    "Zero weight is not allowed"
                 );
             });
 
@@ -551,7 +577,8 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
 
             it("\t\t Should reveal the vote -- failed because not a valid stage \n", async() => {
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.revealVote(new BN(0), new BN(0), saltArray[1], {from: account_investor3})
+                    I_PLCRVotingCheckpoint.revealVote(new BN(0), new BN(0), saltArray[1], {from: account_investor3}),
+                    "Not in a valid stage"
                 );
             })
 
@@ -560,31 +587,36 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
                 await increaseTime(duration.days(4));
 
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.commitVote(new BN(0),  web3.utils.soliditySha3(1, salt), {from: account_investor2})
+                    I_PLCRVotingCheckpoint.commitVote(new BN(0),  web3.utils.soliditySha3(1, salt), {from: account_investor2}),
+                    "Not in a valid stage"
                 );
             });
 
             it("\t\t Should fail to reveal vote -- not a valid ballot Id \n", async() => {
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.revealVote(new BN(4), new BN(1), saltArray[1], {from: account_investor3})
+                    I_PLCRVotingCheckpoint.revealVote(new BN(4), new BN(1), saltArray[1], {from: account_investor3}),
+                    "Index out of bound"
                 );
             });
 
             it("\t\t Should fali to reveal the vote -- not have the secret vote \n", async() => {
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.revealVote(new BN(0), new BN(1), saltArray[1], {from: account_investor4})
+                    I_PLCRVotingCheckpoint.revealVote(new BN(0), new BN(1), saltArray[1], {from: account_investor4}),
+                    "Invalid vote"
                 );
             });
 
             it("\t\t Should fail to reveal vote -- not a valid choice of proposal \n", async() => {
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.revealVote(new BN(0), new BN(5), saltArray[1], {from: account_investor3})
+                    I_PLCRVotingCheckpoint.revealVote(new BN(0), new BN(5), saltArray[1], {from: account_investor3}),
+                    "Invalid proposal choice"
                 );
             });
 
             it("\t\t Should fail to reveal vote -- Invalid salt \n", async() => {
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.revealVote(new BN(0), new BN(1), getRandom(), {from: account_investor3})
+                    I_PLCRVotingCheckpoint.revealVote(new BN(0), new BN(1), getRandom(), {from: account_investor3}),
+                    "Invalid vote"
                 );
             });
 
@@ -602,13 +634,15 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
 
             it("\t\t Should fail to change the ballot status-- bad owner \n", async() => {
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.changeBallotStatus(new BN(0), false, {from: account_polymath})
+                    I_PLCRVotingCheckpoint.changeBallotStatus(new BN(0), false, {from: account_polymath}),
+                    "Invalid permission"
                 );
             });
 
             it("\t\t Should fail to change the ballot status-- no change in the state \n", async() => {
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.changeBallotStatus(new BN(0), true, {from: token_owner})
+                    I_PLCRVotingCheckpoint.changeBallotStatus(new BN(0), true, {from: token_owner}),
+                    "Active state unchanged"
                 );
             });
 
@@ -620,7 +654,8 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
 
             it("\t\t Should fail to reveal vote as ballot status is false \n", async() => {
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.revealVote(new BN(0), new BN(2), saltArray[0], {from: account_investor1})
+                    I_PLCRVotingCheckpoint.revealVote(new BN(0), new BN(2), saltArray[0], {from: account_investor1}),
+                    "Inactive ballot"
                 );
             });
 
@@ -642,7 +677,8 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
 
             it("\t\t Should fail to reveal vote again \n", async() => {
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.revealVote(new BN(0), new BN(2), saltArray[0], {from: account_investor1})
+                    I_PLCRVotingCheckpoint.revealVote(new BN(0), new BN(2), saltArray[0], {from: account_investor1}),
+                    "Secret vote not available"
                 );
             });
 
@@ -656,7 +692,8 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
             it("\t\t Should fail to reveal vote when reveal period is over \n", async() => {
                 await increaseTime(duration.days(5));
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.revealVote(new BN(0), new BN(3), saltArray[3], {from: account_investor4})
+                    I_PLCRVotingCheckpoint.revealVote(new BN(0), new BN(3), saltArray[3], {from: account_investor4}),
+                    "Not in a valid stage"
                 );
             });
 
@@ -691,7 +728,8 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
             it("\t\t Should fail to change the ballot status after the ballot ends", async() => {
                 await increaseTime(duration.days(20));
                 await catchRevert(
-                    I_PLCRVotingCheckpoint.changeBallotStatus(new BN(1), false, {from: token_owner})
+                    I_PLCRVotingCheckpoint.changeBallotStatus(new BN(1), false, {from: token_owner}),
+                    "Already ended"
                 );
             });
         });

@@ -83,10 +83,9 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
 
     /**
      * @notice This function will allow STO to pre-mint all tokens those will be distributed in sale
-     * @param _isPreMintAllowed Boolean value that will decide whether the STO will opt pre-mint or mint of buying option
      */
-    function allowPreMinting(bool _isPreMintAllowed) external {
-        _allowPreMinting(_isPreMintAllowed, cap);
+    function allowPreMinting() external withPerm(ADMIN) {
+        _allowPreMinting(cap);
     }
 
     /**
@@ -198,7 +197,7 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
 
     /**
     * @notice Validation of an incoming purchase.
-      Use require statements to revert state when conditions are not met. Use super to concatenate validations.
+    * Use require statements to revert state when conditions are not met. Use super to concatenate validations.
     * @param _beneficiary Address performing the token purchase
     * @param _investedAmount Value in wei involved in the purchase
     */
@@ -212,7 +211,7 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
 
     /**
     * @notice Source of tokens.
-      Override this method to modify the way in which the crowdsale ultimately gets and sends its tokens.
+    * Override this method to modify the way in which the crowdsale ultimately gets and sends its tokens.
     * @param _beneficiary Address performing the token purchase
     * @param _tokenAmount Number of tokens to be emitted
     */

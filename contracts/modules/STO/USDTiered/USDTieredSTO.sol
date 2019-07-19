@@ -120,30 +120,12 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         _modifyAddresses(_wallet, _treasuryWallet, _usdTokens);
         _modifyLimits(_nonAccreditedLimitUSD, _minimumInvestmentUSD);
     }
-    // ************************* Analysis ******************************//  
-    // Introduce one extra function to toggle isPreMintAllowed flag
-    // *** This should be an second step process because GTM doesn't know about the STO address whether it is a issuer owned module
-    // or not *** 
-    // *** Possible limitations will be contract size may it can cross the 24 KB size we have 2 KB bandwidth ***** //
-    // bool _isPreMintAllowed -- pass one more parameter to make USD contract pre-mintable. Not changable parameter. [PRODUCT QUESTION]
-
-    // function allowPreMint(bool _isPreMintAllowed) external onlyOwner {
-        //if (_isPreMintAllowed) - Check for the boolean value
-            // -- calculate total amount of tokens need to sell from all tiers ~ totalValue
-            // -- Mint to total amounts of token calculated from step 1 securityToken.issue(address(this), totalValue, 0x0) Or
-            // -- Using this isser can send tokens to the contract because we will deal with
-            // securityToken.balanceOf(address(this)) directly not storing on local.
-            // -- stored the isPerMintAllowed value into the storage.
-    //}
-
-    // NB - There is a possibility where we do not need the extra function, We will allow the issuer to directly transfer the tokens to the STO
 
     /**
      * @notice This function will allow STO to pre-mint all tokens those will be distributed in sale
-     * @param _isPreMintAllowed Boolean value that will decide whether the STO will opt pre-mint or mint of buying option
      */
-    function allowPreMinting(bool _isPreMintAllowed) external {
-        _allowPreMinting(_isPreMintAllowed, _getTotalTokensCap());
+    function allowPreMinting() external withPerm(ADMIN) {
+        _allowPreMinting(_getTotalTokensCap());
     }
 
     function _getTotalTokensCap() internal view returns(uint256 totalCap) {
@@ -262,9 +244,6 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
             require(_ratePerTierDiscountPoly[i] <= _ratePerTier[i], "Invalid discount");
             tiers.push(Tier(_ratePerTier[i], _ratePerTierDiscountPoly[i], _tokensPerTierTotal[i], _tokensPerTierDiscountPoly[i], 0, 0));
         }
-        // ************************* Analysis ******************************//  
-        // -- Check if the new total amount of tokens is greater than the old no. then mint more tokens
-        // -- else send extra amount of tokens to trasuryWallet. or we can keep those tokens in the smart contract [PRODUCT QUESTION]
         if (preMintAllowed) {
             uint256 oldCap = securityToken.balanceOf(address(this));
             uint256 newCap = _getTotalTokensCap();
@@ -318,18 +297,15 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         uint256 tempSold;
         uint256 remainingTokens;
         for (uint256 i = 0; i < tiers.length; i++) {
-            remainingTokens = tiers[i].tokenTotal.sub(tiers[i].mintedTotal);
+            remainingTokens = tiers[i].tokenTotal.sub(tiers[i].totalTokensSoldInTier);
             tempReturned = tempReturned.add(remainingTokens);
-            tempSold = tempSold.add(tiers[i].mintedTotal);
+            tempSold = tempSold.add(tiers[i].totalTokensSoldInTier);
             if (remainingTokens > 0) {
-                tiers[i].mintedTotal = tiers[i].tokenTotal;
+                tiers[i].totalTokensSoldInTier = tiers[i].tokenTotal;
             }
         }
         address walletAddress = getTreasuryWallet();
         require(walletAddress != address(0), "Invalid address");
-         // ************************* Analysis ******************************//  
-        // --check if isPreMintAllowed variable is true then send the remaining tokens to treasury wallet
-        // else 
         if (preMintAllowed)
             tempReturned = securityToken.balanceOf(address(this));
         uint256 granularity = securityToken.granularity();
@@ -504,7 +480,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
             if (currentTier != i)
                 currentTier = i;
             // If there are tokens remaining, process investment
-            if (tiers[i].mintedTotal < tiers[i].tokenTotal) {
+            if (tiers[i].totalTokensSoldInTier < tiers[i].tokenTotal) {
                 (tempSpentUSD, gotoNextTier) = _calculateTier(_beneficiary, i, allowedUSD.sub(spentUSD), _fundRaiseType);
                 spentUSD = spentUSD.add(tempSpentUSD);
                 // If all funds have been spent, exit the loop
@@ -556,34 +532,40 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
     )
         internal
         returns(uint256 spentUSD, bool gotoNextTier)
-     {
+    {
         // First purchase any discounted tokens if POLY investment
         uint256 tierSpentUSD;
         uint256 tierPurchasedTokens;
         uint256 investedUSD = _investedUSD;
         Tier storage tierData = tiers[_tier];
         // Check whether there are any remaining discounted tokens
-        if ((_fundRaiseType == FundRaiseType.POLY) && (tierData.tokensDiscountPoly > tierData.mintedDiscountPoly)) {
-            uint256 discountRemaining = tierData.tokensDiscountPoly.sub(tierData.mintedDiscountPoly);
-            uint256 totalRemaining = tierData.tokenTotal.sub(tierData.mintedTotal);
+        if ((_fundRaiseType == FundRaiseType.POLY) && (tierData.tokensDiscountPoly > tierData.soldDiscountPoly)) {
+            uint256 discountRemaining = tierData.tokensDiscountPoly.sub(tierData.soldDiscountPoly);
+            uint256 totalRemaining = tierData.tokenTotal.sub(tierData.totalTokensSoldInTier);
             if (totalRemaining < discountRemaining)
                 (spentUSD, tierPurchasedTokens, gotoNextTier) = _purchaseTier(_beneficiary, tierData.rateDiscountPoly, totalRemaining, investedUSD, _tier);
             else
                 (spentUSD, tierPurchasedTokens, gotoNextTier) = _purchaseTier(_beneficiary, tierData.rateDiscountPoly, discountRemaining, investedUSD, _tier);
             investedUSD = investedUSD.sub(spentUSD);
-            tierData.mintedDiscountPoly = tierData.mintedDiscountPoly.add(tierPurchasedTokens);
-            tierData.minted[uint8(_fundRaiseType)] = tierData.minted[uint8(_fundRaiseType)].add(tierPurchasedTokens);
-            tierData.mintedTotal = tierData.mintedTotal.add(tierPurchasedTokens);
+            tierData.soldDiscountPoly = tierData.soldDiscountPoly.add(tierPurchasedTokens);
+            tierData.tokenSoldPerFundType[uint8(_fundRaiseType)] = tierData.tokenSoldPerFundType[uint8(_fundRaiseType)].add(tierPurchasedTokens);
+            tierData.totalTokensSoldInTier = tierData.totalTokensSoldInTier.add(tierPurchasedTokens);
         }
         // Now, if there is any remaining USD to be invested, purchase at non-discounted rate
         if (investedUSD > 0 &&
-            tierData.tokenTotal.sub(tierData.mintedTotal) > 0 &&
-            (_fundRaiseType != FundRaiseType.POLY || tierData.tokensDiscountPoly <= tierData.mintedDiscountPoly)
+            tierData.tokenTotal.sub(tierData.totalTokensSoldInTier) > 0 &&
+            (_fundRaiseType != FundRaiseType.POLY || tierData.tokensDiscountPoly <= tierData.soldDiscountPoly)
         ) {
-            (tierSpentUSD, tierPurchasedTokens, gotoNextTier) = _purchaseTier(_beneficiary, tierData.rate, tierData.tokenTotal.sub(tierData.mintedTotal), investedUSD, _tier);
+            (tierSpentUSD, tierPurchasedTokens, gotoNextTier) = _purchaseTier(
+                _beneficiary,
+                tierData.rate,
+                tierData.tokenTotal.sub(tierData.totalTokensSoldInTier),
+                investedUSD,
+                _tier
+            );
             spentUSD = spentUSD.add(tierSpentUSD);
-            tierData.minted[uint8(_fundRaiseType)] = tierData.minted[uint8(_fundRaiseType)].add(tierPurchasedTokens);
-            tierData.mintedTotal = tierData.mintedTotal.add(tierPurchasedTokens);
+            tierData.tokenSoldPerFundType[uint8(_fundRaiseType)] = tierData.tokenSoldPerFundType[uint8(_fundRaiseType)].add(tierPurchasedTokens);
+            tierData.totalTokensSoldInTier = tierData.totalTokensSoldInTier.add(tierPurchasedTokens);
         }
     }
 
@@ -616,9 +598,6 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         }
 
         if (purchasedTokens > 0) {
-            // ************************* Analysis ******************************//  
-            // --check if _isPreMintAllowed is true then call address(this).transfer(_beneficiary, purchasedTokens)
-            // else
             if (preMintAllowed)
                 securityToken.transfer(_beneficiary, purchasedTokens);
             else
@@ -661,7 +640,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         if (isFinalized) {
             return (finalAmountReturned == 0);
         }
-        return (tiers[tiers.length - 1].mintedTotal == tiers[tiers.length - 1].tokenTotal);
+        return (tiers[tiers.length - 1].totalTokensSoldInTier == tiers[tiers.length - 1].tokenTotal);
     }
 
     /**
@@ -714,7 +693,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      */
     function getTokensMinted() public view returns (uint256 tokensMinted) {
         for (uint256 i = 0; i < tiers.length; i++) {
-            tokensMinted = tokensMinted.add(tiers[i].mintedTotal);
+            tokensMinted = tokensMinted.add(tiers[i].totalTokensSoldInTier);
         }
     }
 
@@ -725,7 +704,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      */
     function getTokensSoldFor(FundRaiseType _fundRaiseType) external view returns (uint256 tokensSold) {
         for (uint256 i = 0; i < tiers.length; i++) {
-            tokensSold = tokensSold.add(tiers[i].minted[uint8(_fundRaiseType)]);
+            tokensSold = tokensSold.add(tiers[i].tokenSoldPerFundType[uint8(_fundRaiseType)]);
         }
     }
 
@@ -736,9 +715,9 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      */
     function getTokensMintedByTier(uint256 _tier) external view returns(uint256[] memory) {
         uint256[] memory tokensMinted = new uint256[](3);
-        tokensMinted[0] = tiers[_tier].minted[uint8(FundRaiseType.ETH)];
-        tokensMinted[1] = tiers[_tier].minted[uint8(FundRaiseType.POLY)];
-        tokensMinted[2] = tiers[_tier].minted[uint8(FundRaiseType.SC)];
+        tokensMinted[0] = tiers[_tier].tokenSoldPerFundType[uint8(FundRaiseType.ETH)];
+        tokensMinted[1] = tiers[_tier].tokenSoldPerFundType[uint8(FundRaiseType.POLY)];
+        tokensMinted[2] = tiers[_tier].tokenSoldPerFundType[uint8(FundRaiseType.SC)];
         return tokensMinted;
     }
 
@@ -749,9 +728,9 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      */
     function getTokensSoldByTier(uint256 _tier) external view returns (uint256) {
         uint256 tokensSold;
-        tokensSold = tokensSold.add(tiers[_tier].minted[uint8(FundRaiseType.ETH)]);
-        tokensSold = tokensSold.add(tiers[_tier].minted[uint8(FundRaiseType.POLY)]);
-        tokensSold = tokensSold.add(tiers[_tier].minted[uint8(FundRaiseType.SC)]);
+        tokensSold = tokensSold.add(tiers[_tier].tokenSoldPerFundType[uint8(FundRaiseType.ETH)]);
+        tokensSold = tokensSold.add(tiers[_tier].tokenSoldPerFundType[uint8(FundRaiseType.POLY)]);
+        tokensSold = tokensSold.add(tiers[_tier].tokenSoldPerFundType[uint8(FundRaiseType.SC)]);
         return tokensSold;
     }
 

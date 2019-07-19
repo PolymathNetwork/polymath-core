@@ -22,12 +22,12 @@ contract USDTieredSTOStorage {
         uint256 tokenTotal;
         // How many token units are available in this tier (relative to totalSupply) at the ratePerTierDiscountPoly rate
         uint256 tokensDiscountPoly;
-        // How many tokens have been minted in this tier (relative to totalSupply)
-        uint256 mintedTotal; // -- names could be more generalise for pre-mint & mint on demand option
-        // How many tokens have been minted in this tier (relative to totalSupply) for each fund raise type
-        mapping(uint8 => uint256) minted; // -- names could be more generalise for pre-mint & mint on demand option
-        // How many tokens have been minted in this tier (relative to totalSupply) at discounted POLY rate
-        uint256 mintedDiscountPoly; // -- names could be more generalise for pre-mint & mint on demand option
+        // How many tokens have been sold in this tier (relative to totalSupply)
+        uint256 totalTokensSoldInTier;
+        // How many tokens have been sold in this tier (relative to totalSupply) for each fund raise type
+        mapping(uint8 => uint256) tokenSoldPerFundType;
+        // How many tokens have been sold in this tier (relative to totalSupply) at discounted POLY rate
+        uint256 soldDiscountPoly;
     }
 
     mapping(address => uint256) public nonAccreditedLimitUSDOverride;

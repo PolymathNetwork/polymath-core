@@ -56,12 +56,10 @@ contract STO is ISTO, STOStorage, Module {
         return bytes32(keccak256(abi.encodePacked(_key1, _key2)));
     }
 
-    function _allowPreMinting(bool _isPreMintingAllowed, uint256 _tokenAmount) internal {
-        _onlySecurityTokenOwner();
+    function _allowPreMinting(uint256 _tokenAmount) internal {
         require(startTime > now, "Not allowed after STO starts");
-        require(!_isPreMintingAllowed, "No change allowed");
         require(_tokenAmount > 0, "Invalid amount of tokens");
-        preMintAllowed = _isPreMintingAllowed;
+        preMintAllowed = true;
         securityToken.issue(address(this), _tokenAmount, "");
     }
 
@@ -69,7 +67,7 @@ contract STO is ISTO, STOStorage, Module {
      * @notice Returns to treasury wallet address
      * @return address of the treasury wallet
      */
-    function getTreasuryWallet() public returns(address wallet) {
+    function getTreasuryWallet() public view returns(address wallet) {
         wallet = (treasuryWallet == address(0) ? IDataStore(getDataStore()).getAddress(TREASURY) : treasuryWallet);
     }
 

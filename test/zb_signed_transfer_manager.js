@@ -204,7 +204,8 @@ contract("SignedTransferManager", accounts => {
         });
 
         it("should fail to transfer because transaction is not verified yet.", async () => {
-            await catchRevert(I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), { from: account_investor1 }));
+            await catchRevert(I_SecurityToken.transfer(account_investor2, web3.utils.toWei("1", "ether"), { from: account_investor1 }),
+                "Transfer Invalid");
         });
 
         it("Should successfully attach the permission manager factory with the security token", async () => {
@@ -279,7 +280,8 @@ contract("SignedTransferManager", accounts => {
             await I_SecurityToken.transferWithData(account_investor2, oneeth, data, {from: account_investor1});
 
             assert.equal(await I_SignedTransferManager.checkSignatureValidity(data), false);
-            await catchRevert(I_SecurityToken.transferWithData(account_investor2, oneeth, data, {from: account_investor1}));
+            await catchRevert(I_SecurityToken.transferWithData(account_investor2, oneeth, data, {from: account_investor1}),
+                "Transfer Invalid");
 
             assert.equal(balance11.sub(oneeth).toString(), (await I_SecurityToken.balanceOf(account_investor1)).toString());
             assert.equal(balance21.add(oneeth).toString(), (await I_SecurityToken.balanceOf(account_investor2)).toString());
@@ -303,7 +305,8 @@ contract("SignedTransferManager", accounts => {
                 signer.privateKey
             );
 
-            await catchRevert(I_SecurityToken.transferWithData(account_investor2, oneeth, data, {from: account_investor1}));
+            await catchRevert(I_SecurityToken.transferWithData(account_investor2, oneeth, data, {from: account_investor1}),
+                "Transfer Invalid");
         });
     });
 });

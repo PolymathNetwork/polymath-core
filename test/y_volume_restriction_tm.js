@@ -329,7 +329,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "revert"
             );
         })
 
@@ -346,7 +347,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "revert"
             );
         })
 
@@ -365,7 +367,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "revert"
             );
         })
 
@@ -419,7 +422,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "revert"
             );
         });
 
@@ -652,7 +656,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "revert"
             );
         });
 
@@ -669,7 +674,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
         it("Should remove the restriction -- failed because restriction not present anymore", async() => {
             await catchRevert(
-                I_VolumeRestrictionTM.removeIndividualRestriction(account_investor2, {from: token_owner})
+                I_VolumeRestrictionTM.removeIndividualRestriction(account_investor2, {from: token_owner}),
+                "revert"
             );
         });
 
@@ -812,7 +818,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "revert"
             );
         })
 
@@ -828,7 +835,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "revert"
             );
         })
 
@@ -1706,7 +1714,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
         it("Should fail to unexempt the same address again", async() => {
             await catchRevert(
-                I_VolumeRestrictionTM.changeExemptWalletList(account_investor1, false, {from: token_owner})
+                I_VolumeRestrictionTM.changeExemptWalletList(account_investor1, false, {from: token_owner}),
+                "revert"
             );
         });
 

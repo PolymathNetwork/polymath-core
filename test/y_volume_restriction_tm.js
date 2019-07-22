@@ -409,7 +409,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
         })
 
         // @FIXME no explicit revert is returned.
-        it("Should add the restriction -- failed because of bad parameters i.e invalid dates", async() => {
+        it("Should add the restriction -- failed because of bad parameters i.e invalid dates (start time > end time)", async() => {
             let newLatestTime = await getLatestTime();
             await catchRevert(
                 I_VolumeRestrictionTM.addIndividualRestriction(

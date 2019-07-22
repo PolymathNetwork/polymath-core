@@ -349,15 +349,15 @@ contract('LockUpTransferManager', accounts => {
                 I_LockUpTransferManager.addNewLockUpToUser(
                     account_investor2,
                     0,
-                    currentTime.add(new BN(duration.seconds(1))),
-                    new BN(duration.seconds(400000)),
+                    0,
+                    new BN(100000),
                     new BN(duration.seconds(100000)),
                     web3.utils.fromAscii("a_lockup"),
                     {
                         from: token_owner
                     }
                 ),
-                "Invalid startTime or expired"
+                "Cannot be zero"
             )
         });
 
@@ -845,13 +845,12 @@ contract('LockUpTransferManager', accounts => {
            )
         })
 
-        // @FIXME bad test or descriotion
-        it("Modify the lockup when startTime is in past -- failed because of invalid index", async() => {
+        it("Should fail to modify non exitant lockup", async() => {
             await catchRevert(
                 // edit the lockup
                I_LockUpTransferManager.modifyLockUpType(
                    web3.utils.toWei("9"),
-                   currentTime.add(new BN(duration.seconds(50))),
+                   0,
                    60,
                    20,
                    web3.utils.fromAscii("m_lockup"),
@@ -859,7 +858,7 @@ contract('LockUpTransferManager', accounts => {
                        from: token_owner
                    }
                ),
-               "Invalid startTime or expired"
+               "Doesn't exist"
            )
         })
 

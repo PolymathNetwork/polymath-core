@@ -346,7 +346,10 @@ async function addSchedule(beneficiary, allTemplateNames) {
       startTime
     );
   }
-  if ((new BigNumber(currentBalance)).isGreaterThanOrEqualTo(new BigNumber(web3.utils.toWei(templateData.amount)))) {
+
+  const unassignedTokens = await currentWalletModule.methods.unassignedTokens().call();
+  const availableTokens = new BigNumber(unassignedTokens).plus(new BigNumber(currentBalance));
+  if (availableTokens.isGreaterThanOrEqualTo(new BigNumber(web3.utils.toWei(templateData.amount)))) {
     await approveTokens(templateData.amount);
     const receipt = await common.sendTransaction(action);
     const event = common.getEventFromLogs(currentWalletModule._jsonInterface, receipt.logs, 'AddSchedule');

@@ -510,13 +510,12 @@ contract("SecurityTokenRegistry", async (accounts) => {
             );
         });
 
-        // @FIXME expected a revert because of the ticket but got "Not authorised"
         it("Should fail to generate the securityToken -- Because ticker length is 0", async () => {
             await I_STRProxied.unpause({ from: account_polymath });
 
             await catchRevert(
-                I_STRProxied.generateNewSecurityToken(name, "0x0", tokenDetails, false, token_owner, 0, { from: token_owner }),
-                "Not authorised"
+                I_STRProxied.generateNewSecurityToken(name, "", tokenDetails, false, token_owner, 0, { from: token_owner }),
+                "Bad ticker"
             );
         });
 

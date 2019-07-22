@@ -167,7 +167,8 @@ contract("GeneralPermissionManager", async (accounts) => {
             await catchRevert(
                 I_SecurityToken.addModule(P_GeneralPermissionManagerFactory.address, "0x", new BN(web3.utils.toWei("2000", "ether")), new BN(0), false, {
                     from: token_owner
-                })
+                }),
+                "Insufficient tokens transferable"
             );
         });
 
@@ -212,19 +213,23 @@ contract("GeneralPermissionManager", async (accounts) => {
 
         it("Should fail in adding the delegate -- msg.sender doesn't have permission", async () => {
             let errorThrown = false;
-            await catchRevert(I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: account_investor1 }));
+            await catchRevert(I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: account_investor1 }),
+                "Invalid permission");
         });
 
         it("Should fail in adding the delegate -- no delegate details provided", async () => {
-            await catchRevert(I_GeneralPermissionManager.addDelegate(account_delegate, "0x0", { from: token_owner }));
+            await catchRevert(I_GeneralPermissionManager.addDelegate(account_delegate, "0x0", { from: token_owner }),
+                "0 value not allowed");
         });
 
         it("Should fail in adding the delegate -- no delegate address provided", async () => {
-            await catchRevert(I_GeneralPermissionManager.addDelegate(address_zero, delegateDetails, { from: token_owner }));
+            await catchRevert(I_GeneralPermissionManager.addDelegate(address_zero, delegateDetails, { from: token_owner }),
+                "Invalid address");
         });
 
         it("Should fail to remove the delegate -- failed because delegate does not exisit", async () => {
-            await catchRevert(I_GeneralPermissionManager.deleteDelegate(account_delegate, { from: token_owner }));
+            await catchRevert(I_GeneralPermissionManager.deleteDelegate(account_delegate, { from: token_owner }),
+                "delegate does not exist");
         });
 
         it("Should successfully add the delegate", async () => {
@@ -233,14 +238,16 @@ contract("GeneralPermissionManager", async (accounts) => {
         });
 
         it("Should successfully add the delegate -- failed because trying to add the already present delegate", async () => {
-            await catchRevert(I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: token_owner }));
+            await catchRevert(I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: token_owner }),
+                "Already present");
         });
 
         it("Should fail to provide the permission -- because msg.sender doesn't have permission", async () => {
             await catchRevert(
                 I_GeneralPermissionManager.changePermission(account_delegate, I_GeneralTransferManager.address, web3.utils.fromAscii("WHITELIST"), true, {
                     from: account_investor1
-                })
+                }),
+                "Invalid permission"
             );
         });
 
@@ -275,7 +282,8 @@ contract("GeneralPermissionManager", async (accounts) => {
         });
 
         it("Should fail to remove the delegate -- failed because unauthorized msg.sender", async () => {
-            await catchRevert(I_GeneralPermissionManager.deleteDelegate(account_delegate, { from: account_delegate }));
+            await catchRevert(I_GeneralPermissionManager.deleteDelegate(account_delegate, { from: account_delegate }),
+                "Invalid permission");
         });
 
         it("Should remove the delegate", async () => {
@@ -368,7 +376,8 @@ contract("GeneralPermissionManager", async (accounts) => {
         });
 
         it("Should check is delegate for 0x address - failed 0x address is not allowed", async () => {
-            await catchRevert(I_GeneralPermissionManager.checkDelegate.call(address_zero));
+            await catchRevert(I_GeneralPermissionManager.checkDelegate.call(address_zero),
+                "Invalid address");
         });
 
         it("Should return false when check is delegate - because user is not a delegate", async () => {
@@ -384,7 +393,8 @@ contract("GeneralPermissionManager", async (accounts) => {
             await catchRevert(
                 I_GeneralPermissionManager.changePermissionMulti(account_delegate3, [], [web3.utils.fromAscii("ADMIN"), web3.utils.fromAscii("ADMIN")], [true, true], {
                     from: token_owner
-                })
+                }),
+                "0 length is not allowed"
             );
         });
 
@@ -396,7 +406,8 @@ contract("GeneralPermissionManager", async (accounts) => {
                     [],
                     [true, true],
                     { from: token_owner }
-                )
+                ),
+                "Array length mismatch"
             );
         });
 
@@ -408,7 +419,8 @@ contract("GeneralPermissionManager", async (accounts) => {
                     [web3.utils.fromAscii("ADMIN"), web3.utils.fromAscii("ADMIN")],
                     [true, true],
                     { from: token_owner }
-                )
+                ),
+                "Array length mismatch"
             );
         });
 
@@ -420,7 +432,8 @@ contract("GeneralPermissionManager", async (accounts) => {
                     [web3.utils.fromAscii("ADMIN"), web3.utils.fromAscii("ADMIN")],
                     [true],
                     { from: token_owner }
-                )
+                ),
+                "Array length mismatch"
             );
         });
 

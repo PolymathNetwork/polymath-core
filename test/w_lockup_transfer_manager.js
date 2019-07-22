@@ -255,7 +255,8 @@ contract('LockUpTransferManager', accounts => {
         it("Should unsuccessfully attach the LockUpTransferManager factory with the security token -- failed because Token is not paid", async () => {
             await I_PolyToken.getTokens(web3.utils.toWei("2000", "ether"), token_owner);
             await catchRevert(
-                 I_SecurityToken.addModule(P_LockUpTransferManagerFactory.address, "0x", new BN(web3.utils.toWei("2000", "ether")), 0, false, { from: token_owner })
+                 I_SecurityToken.addModule(P_LockUpTransferManagerFactory.address, "0x", new BN(web3.utils.toWei("2000", "ether")), 0, false, { from: token_owner }),
+                 "Insufficient tokens transferable"
             )
         });
 
@@ -347,14 +348,15 @@ contract('LockUpTransferManager', accounts => {
                 I_LockUpTransferManager.addNewLockUpToUser(
                     account_investor2,
                     0,
-                    currentTime.add(new BN(duration.seconds(1))),
-                    new BN(duration.seconds(400000)),
+                    0,
+                    new BN(100000),
                     new BN(duration.seconds(100000)),
                     web3.utils.fromAscii("a_lockup"),
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "Cannot be zero"
             )
         });
 
@@ -372,7 +374,8 @@ contract('LockUpTransferManager', accounts => {
                     {
                          from: token_owner
                     }
-                )
+                ),
+                "Invalid startTime or expire"
             );
         });
 
@@ -390,7 +393,8 @@ contract('LockUpTransferManager', accounts => {
                     {
                          from: token_owner
                     }
-                )
+                ),
+                "Invalid startTime or expired"
             );
         });
 
@@ -405,7 +409,8 @@ contract('LockUpTransferManager', accounts => {
                     {
                         from: account_investor1
                     }
-                )
+                ),
+                "Invalid permission"
             );
         })
 
@@ -435,7 +440,8 @@ contract('LockUpTransferManager', accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "Already exist"
             );
         })
 
@@ -495,7 +501,8 @@ contract('LockUpTransferManager', accounts => {
             let tx = await I_LockUpTransferManager.getLockUp.call(web3.utils.fromAscii("b_lockup"));
             console.log("Amount get unlocked:", (tx[4].toString()));
             await catchRevert(
-                I_SecurityToken.transfer(account_investor1, web3.utils.toWei('1', 'ether'), { from: account_investor2 })
+                I_SecurityToken.transfer(account_investor1, web3.utils.toWei('1', 'ether'), { from: account_investor2 }),
+                "Transfer Invalid"
             );
         });
 
@@ -505,7 +512,8 @@ contract('LockUpTransferManager', accounts => {
             let tx = await I_LockUpTransferManager.getLockUp.call(web3.utils.fromAscii("b_lockup"));
             console.log("Amount get unlocked:", (tx[4].toString()));
             await catchRevert(
-                I_SecurityToken.transfer(account_investor1, web3.utils.toWei('4', 'ether'), { from: account_investor2 })
+                I_SecurityToken.transfer(account_investor1, web3.utils.toWei('4', 'ether'), { from: account_investor2 }),
+                "Transfer Invalid"
             );
         });
 
@@ -575,7 +583,8 @@ contract('LockUpTransferManager', accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "Length mismatch"
             );
         })
 
@@ -591,7 +600,8 @@ contract('LockUpTransferManager', accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "Length mismatch"
             );
         })
 
@@ -607,7 +617,8 @@ contract('LockUpTransferManager', accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "Length mismatch"
             );
         })
 
@@ -623,7 +634,8 @@ contract('LockUpTransferManager', accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "Length mismatch"
             );
         })
 
@@ -639,7 +651,8 @@ contract('LockUpTransferManager', accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "Length mismatch"
             );
         });
 
@@ -662,7 +675,8 @@ contract('LockUpTransferManager', accounts => {
             let tx2 = await I_LockUpTransferManager.getLockUp.call(web3.utils.fromAscii("d_lockup"));
             console.log("Total Amount get unlocked:", (tx[4].toString()) + (tx2[4].toString()));
             await catchRevert(
-                I_SecurityToken.transfer(account_investor2, web3.utils.toWei('2', 'ether'), { from: account_investor3 })
+                I_SecurityToken.transfer(account_investor2, web3.utils.toWei('2', 'ether'), { from: account_investor3 }),
+                "Transfer Invalid"
             );
 
         });
@@ -698,7 +712,8 @@ contract('LockUpTransferManager', accounts => {
             await increaseTime(15);
             // first fail because 3 tokens are not in unlocked state
             await catchRevert(
-                I_SecurityToken.transfer(account_investor1, web3.utils.toWei('3'), { from: account_investor3 })
+                I_SecurityToken.transfer(account_investor1, web3.utils.toWei('3'), { from: account_investor3 }),
+                "Transfer Invalid"
             )
             let lockedBalance = web3.utils.fromWei((await I_LockUpTransferManager.getTokensByPartition.call(web3.utils.utf8ToHex(`LOCKED`), account_investor3, new BN(0))).toString());
             let unlockedBalance = web3.utils.fromWei((await I_LockUpTransferManager.getTokensByPartition.call(web3.utils.utf8ToHex(`UNLOCKED`), account_investor3, new BN(0))).toString());
@@ -751,7 +766,8 @@ contract('LockUpTransferManager', accounts => {
                     {
                         from: account_polymath
                     }
-                )
+                ),
+                "Invalid permission"
             );
         });
 
@@ -763,7 +779,8 @@ contract('LockUpTransferManager', accounts => {
                     {
                         from: account_polymath
                     }
-                )
+                ),
+                "Invalid permission"
             );
         })
 
@@ -805,7 +822,8 @@ contract('LockUpTransferManager', accounts => {
                     {
                         from: account_polymath
                     }
-                )
+                ),
+                "Invalid permission"
             )
         })
 
@@ -821,23 +839,25 @@ contract('LockUpTransferManager', accounts => {
                    {
                        from: token_owner
                    }
-               )
+               ),
+               "Invalid startTime or expired"
            )
         })
 
-        it("Modify the lockup when startTime is in past -- failed because of invalid index", async() => {
+        it("Should fail to modify non exitant lockup", async() => {
             await catchRevert(
                 // edit the lockup
                I_LockUpTransferManager.modifyLockUpType(
                    web3.utils.toWei("9"),
-                   currentTime.add(new BN(duration.seconds(50))),
+                   0,
                    60,
                    20,
                    web3.utils.fromAscii("m_lockup"),
                    {
                        from: token_owner
                    }
-               )
+               ),
+               "Doesn't exist"
            )
         })
 
@@ -878,7 +898,8 @@ contract('LockUpTransferManager', accounts => {
             );
 
             await catchRevert(
-                I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), { from: account_investor1 })
+                I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), { from: account_investor1 }),
+                "Transfer Invalid"
             );
 
             let lockUp = await I_LockUpTransferManager.getLockUp(web3.utils.fromAscii("f_lockup"));
@@ -907,7 +928,8 @@ contract('LockUpTransferManager', accounts => {
 
             // attempt a transfer
             await catchRevert(
-                I_SecurityToken.transfer(account_investor2, web3.utils.toWei('6', 'ether'), { from: account_investor1 })
+                I_SecurityToken.transfer(account_investor2, web3.utils.toWei('6', 'ether'), { from: account_investor1 }),
+                "Transfer Invalid"
             );
 
             // wait 20 seconds
@@ -956,12 +978,14 @@ contract('LockUpTransferManager', accounts => {
             await I_LockUpTransferManager.addLockUpByName(account_investor2, web3.utils.fromAscii("l_lockup"), {from: token_owner});
 
             //Should not allow to add a user to a lockup multiple times
-            await catchRevert(I_LockUpTransferManager.addLockUpByName(account_investor2, web3.utils.fromAscii("l_lockup"), {from: token_owner}));
+            await catchRevert(I_LockUpTransferManager.addLockUpByName(account_investor2, web3.utils.fromAscii("l_lockup"), {from: token_owner}),
+                "User already in lockup");
 
             // try to delete the lockup but fail
 
             await catchRevert(
-                I_LockUpTransferManager.removeLockupType(web3.utils.fromAscii("l_lockup"), {from: token_owner})
+                I_LockUpTransferManager.removeLockupType(web3.utils.fromAscii("l_lockup"), {from: token_owner}),
+                "Users attached to lockup"
             );
         })
 

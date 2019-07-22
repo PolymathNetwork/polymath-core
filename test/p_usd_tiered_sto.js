@@ -962,7 +962,7 @@ contract("USDTieredSTO", async (accounts) => {
             assert.equal(await I_USDTieredSTO_Array[stoId].fundRaiseTypes.call(0), false, "STO Configuration doesn't set as expected");
             assert.equal(await I_USDTieredSTO_Array[stoId].fundRaiseTypes.call(1), true, "STO Configuration doesn't set as expected");
 
-            await I_USDTieredSTO_Array[stoId].modifyFunding([0, 1], { from: ISSUER });
+            await I_USDTieredSTO_Array[stoId].modifyFunding([0, 1, 2], { from: ISSUER });
             assert.equal(await I_USDTieredSTO_Array[stoId].fundRaiseTypes.call(0), true, "STO Configuration doesn't set as expected");
             assert.equal(await I_USDTieredSTO_Array[stoId].fundRaiseTypes.call(1), true, "STO Configuration doesn't set as expected");
         });
@@ -1040,6 +1040,12 @@ contract("USDTieredSTO", async (accounts) => {
                 { from: ISSUER }
             );
             assert.equal((await I_USDTieredSTO_Array[stoId].getUsdTokens())[0], accounts[3], "STO Configuration doesn't set as expected");
+            await I_USDTieredSTO_Array[stoId].modifyAddresses(
+                "0x0000000000000000000000000400000000000000",
+                TREASURYWALLET,
+                [I_DaiToken.address],
+                { from: ISSUER }
+            );
         });
 
         it("Should fail to change config after endTime", async () => {
@@ -1379,8 +1385,7 @@ contract("USDTieredSTO", async (accounts) => {
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, { from: NONACCREDITED1 }), "STO not open");
 
             // NONACCREDITED DAI
-            // @FIXME is this the expected revert reason?
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, I_DaiToken.address, { from: NONACCREDITED1 }), "USD not allowed");
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, I_DaiToken.address, { from: NONACCREDITED1 }), "STO not open");
 
             // ACCREDITED ETH
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH }), "STO not open");
@@ -1389,8 +1394,7 @@ contract("USDTieredSTO", async (accounts) => {
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, { from: ACCREDITED1 }), "STO not open");
 
             // ACCREDITED DAI
-            // @FIXME is this the expected revert reason?
-            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(ACCREDITED1, investment_DAI, I_DaiToken.address, { from: ACCREDITED1 }), "USD not allowed");
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(ACCREDITED1, investment_DAI, I_DaiToken.address, { from: ACCREDITED1 }), "STO not open");
 
             await revertToSnapshot(snapId);
         });
@@ -2455,10 +2459,10 @@ contract("USDTieredSTO", async (accounts) => {
             let low_USDPOLY = new BN(20).mul(e16); // 0.2 USD per POLY
 
             let investment_USD = new BN(web3.utils.toWei("50")); // USD
-            let investment_ETH_high = investment_USD.div(high_USDETH).mul(e18); // USD / USD/ETH = ETH
-            let investment_POLY_high = investment_USD.div(high_USDPOLY).mul(e18); // USD / USD/POLY = POLY
-            let investment_ETH_low = investment_USD.div(low_USDETH).mul(e18); // USD / USD/ETH = ETH
-            let investment_POLY_low = investment_USD.div(low_USDPOLY).mul(e18); // USD / USD/POLY = POLY
+            let investment_ETH_high = investment_USD.mul(e18).div(high_USDETH); // USD / USD/ETH = ETH
+            let investment_POLY_high = investment_USD.mul(e18).div(high_USDPOLY); // USD / USD/POLY = POLY
+            let investment_ETH_low = investment_USD.mul(e18).div(low_USDETH); // USD / USD/ETH = ETH
+            let investment_POLY_low = investment_USD.mul(e18).div(low_USDPOLY); // USD / USD/POLY = POLY
 
             await I_PolyToken.getTokens(investment_POLY_low, NONACCREDITED1);
             await I_PolyToken.approve(I_USDTieredSTO_Array[stoId].address, investment_POLY_low, { from: NONACCREDITED1 });
@@ -2468,14 +2472,13 @@ contract("USDTieredSTO", async (accounts) => {
             await I_POLYOracle.changePrice(high_USDPOLY, { from: POLYMATH });
 
             // Buy with ETH NONACCREDITED
-            // @FIXME is this the expected revert reason?
             await catchRevert(
                 I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, {
                     from: NONACCREDITED1,
                     value: investment_ETH_high,
                     gasPrice: GAS_PRICE
                 }),
-                "No funds sent"
+                "Over Non-accredited investor limit"
             );
 
             // Buy with POLY NONACCREDITED
@@ -2490,14 +2493,13 @@ contract("USDTieredSTO", async (accounts) => {
             await I_POLYOracle.changePrice(low_USDPOLY, { from: POLYMATH });
 
             // Buy with ETH NONACCREDITED
-            // @FIXME is this the expected revert reason?    
             await catchRevert(
                 I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, {
                     from: NONACCREDITED1,
                     value: investment_ETH_low,
                     gasPrice: GAS_PRICE
                 }),
-                "No funds sent"
+                "Over Non-accredited investor limit"
             );
 
             // Buy with POLY NONACCREDITED
@@ -3112,10 +3114,10 @@ contract("USDTieredSTO", async (accounts) => {
             let low_USDPOLY = new BN(20).mul(e16); // 0.2 USD per POLY
 
             let investment_USD = new BN(web3.utils.toWei("50")); // USD
-            let investment_ETH_high = investment_USD.div(high_USDETH).mul(e18); // USD / USD/ETH = ETH
-            let investment_POLY_high = investment_USD.div(high_USDPOLY).mul(e18); // USD / USD/POLY = POLY
-            let investment_ETH_low = investment_USD.div(low_USDETH).mul(e18); // USD / USD/ETH = ETH
-            let investment_POLY_low = investment_USD.div(low_USDPOLY).mul(e18); // USD / USD/POLY = POLY
+            let investment_ETH_high = investment_USD.mul(e18).div(high_USDETH); // USD / USD/ETH = ETH
+            let investment_POLY_high = investment_USD.mul(e18).div(high_USDPOLY); // USD / USD/POLY = POLY
+            let investment_ETH_low = investment_USD.mul(e18).div(low_USDETH); // USD / USD/ETH = ETH
+            let investment_POLY_low = investment_USD.mul(e18).div(low_USDPOLY); // USD / USD/POLY = POLY
 
             await I_PolyToken.getTokens(investment_POLY_low, NONACCREDITED1);
             await I_PolyToken.approve(I_USDTieredSTO_Array[stoId].address, investment_POLY_low, { from: NONACCREDITED1 });
@@ -4263,10 +4265,10 @@ contract("USDTieredSTO", async (accounts) => {
             let investment_Token = new BN(5).mul(e18);
             let investment_USD = await convert(stoId, tierId, true, "TOKEN", "USD", investment_Token);
 
-            let investment_ETH_high = investment_USD.div(high_USDETH).mul(e18); // USD / USD/ETH = ETH
-            let investment_POLY_high = investment_USD.div(high_USDPOLY).mul(e18); // USD / USD/POLY = POLY
-            let investment_ETH_low = investment_USD.div(low_USDETH).mul(e18); // USD / USD/ETH = ETH
-            let investment_POLY_low = investment_USD.div(low_USDPOLY).mul(e18); // USD / USD/POLY = POLY
+            let investment_ETH_high = investment_USD.mul(e18).div(high_USDETH); // USD / USD/ETH = ETH
+            let investment_POLY_high = investment_USD.mul(e18).div(high_USDPOLY); // USD / USD/POLY = POLY
+            let investment_ETH_low = investment_USD.mul(e18).div(low_USDETH); // USD / USD/ETH = ETH
+            let investment_POLY_low = investment_USD.mul(e18).div(low_USDPOLY); // USD / USD/POLY = POLY
 
             await I_PolyToken.getTokens(investment_POLY_low, NONACCREDITED1);
             await I_PolyToken.approve(I_USDTieredSTO_Array[stoId].address, investment_POLY_low, { from: NONACCREDITED1 });
@@ -4276,14 +4278,13 @@ contract("USDTieredSTO", async (accounts) => {
             await I_POLYOracle.changePrice(high_USDPOLY, { from: POLYMATH });
 
             // Buy with ETH NONACCREDITED
-            // @FIXME is this the expected revert reason?
             await catchRevert(
                 I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, {
                     from: NONACCREDITED1,
                     value: investment_ETH_high,
                     gasPrice: GAS_PRICE
                 }),
-                "No funds sent"
+                "Over Non-accredited investor limit"
             );
 
             // Buy with POLY NONACCREDITED
@@ -4298,14 +4299,13 @@ contract("USDTieredSTO", async (accounts) => {
             await I_POLYOracle.changePrice(low_USDPOLY, { from: POLYMATH });
 
             // Buy with ETH NONACCREDITED
-            // @FIXME is this the expected revert reason?
             await catchRevert(
                 I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, {
                     from: NONACCREDITED1,
                     value: investment_ETH_low,
                     gasPrice: GAS_PRICE
                 }),
-                "No funds sent"
+                "Over Non-accredited investor limit"
             );
 
             // Buy with POLY NONACCREDITED
@@ -4620,10 +4620,10 @@ contract("USDTieredSTO", async (accounts) => {
             let investment_Token = new BN(5).mul(e18);
             let investment_USD = await convert(stoId, tierId, true, "TOKEN", "USD", investment_Token);
 
-            let investment_ETH_high = investment_USD.div(high_USDETH).mul(e18); // USD / USD/ETH = ETH
-            let investment_POLY_high = investment_USD.div(high_USDPOLY).mul(e18); // USD / USD/POLY = POLY
-            let investment_ETH_low = investment_USD.div(low_USDETH).mul(e18); // USD / USD/ETH = ETH
-            let investment_POLY_low = investment_USD.div(low_USDPOLY).mul(e18); // USD / USD/POLY = POLY
+            let investment_ETH_high = investment_USD.mul(e18).div(high_USDETH); // USD / USD/ETH = ETH
+            let investment_POLY_high = investment_USD.mul(e18).div(high_USDPOLY); // USD / USD/POLY = POLY
+            let investment_ETH_low = investment_USD.mul(e18).div(low_USDETH); // USD / USD/ETH = ETH
+            let investment_POLY_low = investment_USD.mul(e18).div(low_USDPOLY); // USD / USD/POLY = POLY
 
             await I_PolyToken.getTokens(investment_POLY_low, NONACCREDITED1);
             await I_PolyToken.approve(I_USDTieredSTO_Array[stoId].address, investment_POLY_low, { from: NONACCREDITED1 });

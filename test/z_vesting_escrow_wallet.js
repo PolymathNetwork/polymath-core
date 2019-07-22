@@ -637,7 +637,6 @@ contract('VestingEscrowWallet', accounts => {
             );
         });
 
-        // @FIXME Shall we add a reason string to the corresponding require() statement in the smart contract?
         it("Should fail to add vesting schedule to the beneficiary address -- fail because number of tokens can't be divided entirely by period count", async () => {
             await catchRevert(
                 I_VestingEscrowWallet.addSchedule(account_beneficiary1, template_2_01, 5, 4, 1, currentTime.add(new BN(durationUtil.days(1))), {from: wallet_admin}),

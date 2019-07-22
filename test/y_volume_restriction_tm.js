@@ -355,7 +355,6 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Should add the restriction -- failed because of bad parameters i.e Percentage of tokens not within (0,100]", async() => {
             let newLatestTime = await getLatestTime();
 
-            // @FIXME no explicit reason is returned, contrary to the test bellow
             await catchRevert(
                 I_VolumeRestrictionTM.addIndividualRestriction(
                     account_investor1,
@@ -408,7 +407,6 @@ contract('VolumeRestrictionTransferManager', accounts => {
             );
         })
 
-        // @FIXME no explicit revert is returned.
         it("Should add the restriction -- failed because of bad parameters i.e invalid dates (start time > end time)", async() => {
             let newLatestTime = await getLatestTime();
             await catchRevert(

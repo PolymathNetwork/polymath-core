@@ -297,8 +297,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
             await I_EtherDividendCheckpoint.setWithholdingFixed([account_investor2], new BN(web3.utils.toWei("0.2", "ether")), { from: token_owner });
         });
 
-        // @FIXME why does this transaction revert?
-        it("Should fail in creating the dividend", async () => {
+        it("Should fail in creating the dividend - name is empty", async () => {
             let maturity = await latestTime() + duration.days(1);
             let expiry = await latestTime() + duration.days(10);
             await catchRevert(

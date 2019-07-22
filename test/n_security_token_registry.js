@@ -182,7 +182,6 @@ contract("SecurityTokenRegistry", async (accounts) => {
     });
 
     describe("Test the initialize the function", async () => {
-        // @FIXME expected "fail because polymathRegistry address is 0x" but got "Fail in executing the function of implementation contract"
         it("Should successfully update the implementation address -- fail because polymathRegistry address is 0x", async () => {
             let bytesProxy = encodeProxyCall(STRProxyParameters, [
                 address_zero,
@@ -953,14 +952,6 @@ contract("SecurityTokenRegistry", async (accounts) => {
             );
         });
 
-        // @FIXME inaccurate test description.
-        it("Should be able to transfer the ticker ownership -- failed because ticker is of zero length", async () => {
-            await catchRevert(
-                I_STRProxied.transferTickerOwnership(account_temp, "", { from: token_owner }),
-                "Only owner"
-            );
-        });
-
         it("Should be able to transfer the ticker ownership", async () => {
             let tx = await I_STRProxied.transferTickerOwnership(account_temp, symbol2, { from: token_owner, gas: 5000000 });
             assert.equal(tx.logs[0].args._newOwner, account_temp);
@@ -1359,14 +1350,12 @@ contract("SecurityTokenRegistry", async (accounts) => {
                 );
             });
 
-            // @FIXME expected a revert regarding the version, but got "No factory".
-            it("Should successfully change the protocolVersion -- not a valid version", async () => {
+            it("Should fail to change the protocolVersion -- while the version below is legit, there's no attached STOFactory of that version.", async () => {
                 await catchRevert(I_STRProxied.setLatestVersion(new BN(0), new BN(0), new BN(0), { from: account_polymath }),
                     "No factory");
             });
 
-            // @FIXME expected a revert regarding the version, but got "No factory".
-            it("Should successfully change the protocolVersion -- fail in second attempt because of invalid version", async () => {
+            it("Should fail to change the protocolVersion -- while the version below is legit, there's no attached STOFactory of that version (cont.)", async () => {
                 let snap_Id = await takeSnapshot();
                 await I_STRProxied.setProtocolFactory(accounts[8], 3, 1, 1, { from: account_polymath });
                 await catchRevert(I_STRProxied.setLatestVersion(1, 3, 1, { from: account_polymath }),

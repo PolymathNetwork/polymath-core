@@ -430,7 +430,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
                             // under non-accredited cap
                             await invest(NONACCREDITED1, false);
                         // over non-accredited cap
-                        else await investFAIL(NONACCREDITED1);
+                        else await investFAIL(NONACCREDITED1, "Over Non-accredited investor limit");
                         break;
                     case 3: // NONACCREDITED2
                         let usd_NONACCREDITED2 = await I_USDTieredSTO_Array[stoId].investorInvestedUSD.call(NONACCREDITED2);
@@ -438,13 +438,13 @@ contract("USDTieredSTO Sim", async (accounts) => {
                             // under non-accredited cap
                             await invest(NONACCREDITED2, false);
                         // over non-accredited cap
-                        else await investFAIL(NONACCREDITED2);
+                        else await investFAIL(NONACCREDITED2, "Over Non-accredited investor limit");
                         break;
                     case 4: // NOTWHITELISTED
-                        await investFAIL(NOTWHITELISTED);
+                        await investFAIL(NOTWHITELISTED, "Transfer Invalid");
                         break;
                     case 5: // NOTAPPROVED
-                        await investFAIL(NOTAPPROVED);
+                        await investFAIL(NOTAPPROVED, "Unauthorized");
                         break;
                 }
                 console.log("Next round");
@@ -599,7 +599,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
                 );
             }
 
-            async function investFAIL(_investor) {
+            async function investFAIL(_investor, failureReason = "revert") {
                 let isPoly = Math.random() >= 0.3;
                 let isDAI = Math.random() >= 0.3;
                 let investment_POLY = new BN(40).mul(e18); // 10 USD = 40 POLY
@@ -610,17 +610,20 @@ contract("USDTieredSTO Sim", async (accounts) => {
                     await I_PolyToken.getTokens(investment_POLY, _investor);
                     await I_PolyToken.approve(I_USDTieredSTO_Array[stoId].address, investment_POLY, { from: _investor });
                     await catchRevert(
-                        I_USDTieredSTO_Array[stoId].buyWithPOLY(_investor, investment_POLY, { from: _investor, gasPrice: GAS_PRICE })
+                        I_USDTieredSTO_Array[stoId].buyWithPOLY(_investor, investment_POLY, { from: _investor, gasPrice: GAS_PRICE }),
+                        failureReason
                     );
                 } else if (isDAI) {
                     await I_DaiToken.getTokens(investment_DAI, _investor);
                     await I_DaiToken.approve(I_USDTieredSTO_Array[stoId].address, investment_DAI, { from: _investor });
                     await catchRevert(
-                        I_USDTieredSTO_Array[stoId].buyWithUSD(_investor, investment_DAI, I_DaiToken.address, { from: _investor, gasPrice: GAS_PRICE })
+                        I_USDTieredSTO_Array[stoId].buyWithUSD(_investor, investment_DAI, I_DaiToken.address, { from: _investor, gasPrice: GAS_PRICE }),
+                        failureReason
                     );
                 } else
                     await catchRevert(
-                        I_USDTieredSTO_Array[stoId].buyWithETH(_investor, { from: _investor, value: investment_ETH, gasPrice: GAS_PRICE })
+                        I_USDTieredSTO_Array[stoId].buyWithETH(_investor, { from: _investor, value: investment_ETH, gasPrice: GAS_PRICE }),
+                        failureReason
                     );
             }
 

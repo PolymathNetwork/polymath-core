@@ -165,7 +165,8 @@ contract("RestrictedPartialSaleTM", accounts => {
             await catchRevert(
                 I_SecurityToken.addModule(P_RestrictedPartialSaleTMFactory.address, bytesSale, new BN(web3.utils.toWei("500", "ether")), new BN(0), {
                     from: token_owner
-                })
+                }),
+                "revert"
             );
         });
 
@@ -327,7 +328,8 @@ contract("RestrictedPartialSaleTM", accounts => {
 
         it("Should failed to transafer the partial token balance", async() => {
             await catchRevert(
-                I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("10")), {from: account_investor3})
+                I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("10")), {from: account_investor3}),
+                "Transfer Invalid"
             );
         });
 
@@ -377,13 +379,15 @@ contract("RestrictedPartialSaleTM", accounts => {
 
         it("Should fail to add investor in the exemption list -- wallet is zero address", async() => {
             await catchRevert(
-                I_RestrictedPartialSaleTM.changeExemptWalletList("0x0000000000000000000000000000000000000000", true, {from: token_owner})
+                I_RestrictedPartialSaleTM.changeExemptWalletList("0x0000000000000000000000000000000000000000", true, {from: token_owner}),
+                "Invalid address"
             );
         });
 
         it("Should fail to add investor in the exemption list -- invalid msg.sender", async() => {
             await catchRevert(
-                I_RestrictedPartialSaleTM.changeExemptWalletList(account_investor2, true, {from: account_polymath})
+                I_RestrictedPartialSaleTM.changeExemptWalletList(account_investor2, true, {from: account_polymath}),
+                "Invalid permission"
             );
         });
 
@@ -396,7 +400,8 @@ contract("RestrictedPartialSaleTM", accounts => {
 
         it("Should fail to add investor in the exemption list again", async() => {
             await catchRevert(
-                I_RestrictedPartialSaleTM.changeExemptWalletList(account_investor2, true, {from: token_owner})
+                I_RestrictedPartialSaleTM.changeExemptWalletList(account_investor2, true, {from: token_owner}),
+                "Exemption state doesn't change"
             );
         });
 
@@ -410,7 +415,8 @@ contract("RestrictedPartialSaleTM", accounts => {
 
         it("Should add multiple addresses in the exemption list -- length mismatch", async() => {
             await catchRevert( 
-                I_RestrictedPartialSaleTM.changeExemptWalletListMulti([account_investor3], [true, true], {from: token_owner})
+                I_RestrictedPartialSaleTM.changeExemptWalletListMulti([account_investor3], [true, true], {from: token_owner}),
+                "Length mismatch"
             );
         });
 
@@ -438,7 +444,8 @@ contract("RestrictedPartialSaleTM", accounts => {
             let exemptedAddress = await I_RestrictedPartialSaleTM.getExemptAddresses.call();
             assert.equal(exemptedAddress.length, 3);
             await catchRevert(
-                I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1")), {from: account_investor2})
+                I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1")), {from: account_investor2}),
+                "Transfer Invalid"
             );
         });
 
@@ -447,13 +454,15 @@ contract("RestrictedPartialSaleTM", accounts => {
             let exemptedAddress = await I_RestrictedPartialSaleTM.getExemptAddresses.call();
             assert.equal(exemptedAddress.length, 1);
             await catchRevert(
-                I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1")), {from: account_investor3})
+                I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1")), {from: account_investor3}),
+                "Transfer Invalid"
             );
         });
 
         it("Should fail to sale partial balance", async() => {
             await catchRevert(
-                I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("2")), {from: account_investor3})
+                I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("2")), {from: account_investor3}),
+                "Transfer Invalid"
             );
         });
     });

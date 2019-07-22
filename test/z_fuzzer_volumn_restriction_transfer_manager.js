@@ -307,7 +307,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                         console.log("tx should fail");
 
                         await catchRevert(
-                            I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1})
+                            I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1}),
+                            "Transfer Invalid"
                         );
 
                         console.log("tx failed as expected due to over limit");
@@ -393,7 +394,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                         console.log("tx should fail");
 
                         await catchRevert(
-                            I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1})
+                            I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1}),
+                            "Transfer Invalid"
                         );
 
                         console.log("tx failed as expected due to over limit");
@@ -432,7 +434,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     if (accumulatedTxValue > defaultRestrictionAmount) {
                         console.log("tx should fail");
                         await catchRevert(
-                            I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1})
+                            I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1}),
+                            "Transfer Invalid"
                         );
                         console.log("tx failed as expected due to over limit");
                     } else if ( accumulatedTxValue <= defaultRestrictionAmount ) {
@@ -530,7 +533,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                         console.log("tx should fail");
 
                         await catchRevert(
-                            I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1})
+                            I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1}),
+                            "Transfer Invalid"
                         );
 
                         console.log("tx failed as expected due to over limit");
@@ -700,7 +704,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                         console.log("\t\t Tx should fail");
 
                         await catchRevert (
-                            I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1})
+                            I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1}),
+                            "Transfer Invalid"
                         );
 
                         console.log("\t\t Tx failed as expected");

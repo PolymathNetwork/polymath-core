@@ -259,7 +259,8 @@ contract("PercentageTransferManager", async (accounts) => {
             await catchRevert(
                 I_SecurityToken.addModule(P_PercentageTransferManagerFactory.address, bytesSTO, new BN(web3.utils.toWei("2000", "ether")), new BN(0), false, {
                     from: token_owner
-                })
+                }),
+                "Insufficient tokens transferable"
             );
         });
 
@@ -337,11 +338,13 @@ contract("PercentageTransferManager", async (accounts) => {
         });
 
         it("Should not be able to transfer between existing token holders over limit", async () => {
-            await catchRevert(I_SecurityToken.transfer(account_investor3, new BN(web3.utils.toWei("2", "ether")), { from: account_investor1 }));
+            await catchRevert(I_SecurityToken.transfer(account_investor3, new BN(web3.utils.toWei("2", "ether")), { from: account_investor1 }),
+                "Transfer Invalid");
         });
 
         it("Should not be able to issue token amount over limit", async () => {
-            await catchRevert(I_SecurityToken.issue(account_investor3, new BN(web3.utils.toWei("100", "ether")), "0x0", { from: token_owner }));
+            await catchRevert(I_SecurityToken.issue(account_investor3, new BN(web3.utils.toWei("100", "ether")), "0x0", { from: token_owner }),
+                "Transfer Invalid");
         });
 
         it("Allow unlimited primary issuance and remint", async () => {
@@ -349,16 +352,19 @@ contract("PercentageTransferManager", async (accounts) => {
             await I_PercentageTransferManager.setAllowPrimaryIssuance(true, { from: token_owner });
             await I_SecurityToken.issue(account_investor3, new BN(web3.utils.toWei("100", "ether")), "0x0", { from: token_owner });
             // trying to call it again with the same value. should fail
-            await catchRevert(I_PercentageTransferManager.setAllowPrimaryIssuance(true, { from: token_owner }));
+            await catchRevert(I_PercentageTransferManager.setAllowPrimaryIssuance(true, { from: token_owner }),
+                "Must change setting");
             await revertToSnapshot(snapId);
         });
 
         it("Should not be able to transfer between existing token holders over limit", async () => {
-            await catchRevert(I_SecurityToken.transfer(account_investor3, new BN(web3.utils.toWei("2", "ether")), { from: account_investor1 }));
+            await catchRevert(I_SecurityToken.transfer(account_investor3, new BN(web3.utils.toWei("2", "ether")), { from: account_investor1 }),
+                "Transfer Invalid");
         });
 
         it("Should not be able to modify holder percentage to 100 - Unauthorized msg.sender", async () => {
-            await catchRevert(I_PercentageTransferManager.changeHolderPercentage(new BN(10).pow(new BN(18)), { from: account_delegate }));
+            await catchRevert(I_PercentageTransferManager.changeHolderPercentage(new BN(10).pow(new BN(18)), { from: account_delegate }),
+                "Invalid permission");
         });
 
         it("Should successfully add the delegate", async () => {
@@ -393,7 +399,8 @@ contract("PercentageTransferManager", async (accounts) => {
         it("Should whitelist in batch --failed because of mismatch in array lengths", async () => {
             let addressArray = [account_investor3, account_investor4];
             await catchRevert(
-                I_PercentageTransferManager.modifyWhitelistMulti(addressArray, [false], { from: token_owner })
+                I_PercentageTransferManager.modifyWhitelistMulti(addressArray, [false], { from: token_owner }),
+                "Input array length mis-match"
             );
         });
 

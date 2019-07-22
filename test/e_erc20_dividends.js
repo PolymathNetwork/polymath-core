@@ -505,7 +505,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             let addresses = [];
             addresses.push(account_investor3);
             addresses.push(account_investor3);
-            await catchRevert(I_ERC20DividendCheckpoint.setDefaultExcluded(addresses, { from: token_owner }), 
+            await catchRevert(I_ERC20DividendCheckpoint.setDefaultExcluded(addresses, { from: token_owner }),
                 "Duplicate exclude address");
         });
 
@@ -766,11 +766,11 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             assert.equal(tx.logs[0].args._checkpointId.toNumber(), 4, "Dividend should be created at checkpoint 4");
         });
 
-        // @FIXME expected "duplicate exclusion", actual "Insufficient tokens allowable"
         it("Should not create new dividend with duplicate exclusion", async () => {
             let maturity = await latestTime();
             let expiry = await latestTime() + duration.days(10);
             await I_PolyToken.getTokens(new BN(web3.utils.toWei("11", "ether")), token_owner);
+            await I_PolyToken.approve(I_ERC20DividendCheckpoint.address, new BN(web3.utils.toWei("11", "ether")), { from: token_owner });
             //token transfer approved in above test
             await catchRevert(
                 I_ERC20DividendCheckpoint.createDividendWithCheckpointAndExclusions(
@@ -783,11 +783,10 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
                     dividendName,
                     { from: token_owner }
                 ),
-                "Insufficient tokens allowable"
+                "duped exclude address"
             );
         });
 
-        // @FIXME expected "invalid address", actual "Insufficient tokens allowable"
         it("Should not create new dividend with 0x0 address in exclusion", async () => {
             let maturity = await latestTime();
             let expiry = await latestTime() + duration.days(10);
@@ -804,7 +803,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
                     dividendName,
                     { from: token_owner }
                 ),
-                "Insufficient tokens allowable"
+                "Invalid address"
             );
         });
 

@@ -455,14 +455,6 @@ contract('VestingEscrowWallet', accounts => {
             await I_VestingEscrowWallet.sendToTreasury(unassignedTokens, {from: wallet_operator});
         });
 
-        // @FIXME expected "Date in the past" but got "Schedule not found"
-        it("Should fail to modify vesting schedule -- fail because date in the past", async () => {
-            await catchRevert(
-                I_VestingEscrowWallet.modifySchedule(account_beneficiary3, web3.utils.toHex("template-01"), currentTime - 1000, {from: wallet_admin}),
-                "Schedule not found"
-            );
-        });
-
         it("Should withdraw available tokens to the beneficiary address", async () => {
             currentTime = new BN(await latestTime());
             let templateName = web3.utils.toHex("template-02");
@@ -624,11 +616,10 @@ contract('VestingEscrowWallet', accounts => {
             );
         });
 
-        // @FIXME expected failure dure to invalid date, but got "Transfer Invalid"
         it("Should fail to add vesting schedule to the beneficiary address -- fail because start date in the past", async () => {
             await catchRevert(
-                I_VestingEscrowWallet.addSchedule(account_beneficiary1, template_2_01, 100000, 4, 1, currentTime.add(new BN(durationUtil.days(1))), {from: wallet_admin}),
-                "Transfer Invalid"
+                I_VestingEscrowWallet.addSchedule(account_beneficiary1, template_2_01, 100000, 4, 1, 1, {from: wallet_admin}),
+                "Date in the past"
             );
         });
 
@@ -757,6 +748,14 @@ contract('VestingEscrowWallet', accounts => {
             await catchRevert(
                 I_VestingEscrowWallet.modifySchedule(account_beneficiary1, web3.utils.toHex("template-2-01"), currentTime.add(new BN(100)), {from: account_beneficiary1}),
                 "Invalid permission"
+            );
+        });
+
+        it("Should fail to modify vesting schedule -- fail because date in the past", async () => {
+            let templateName = web3.utils.toHex("template-2-01");
+            await catchRevert(
+                I_VestingEscrowWallet.modifySchedule(account_beneficiary1, templateName, new BN(1), {from: wallet_admin}),
+                "Date in the past"
             );
         });
 
@@ -1074,19 +1073,21 @@ contract('VestingEscrowWallet', accounts => {
 
             let schedule = await I_VestingEscrowWallet.getSchedule.call(account_beneficiary1, templateName);
             checkSchedule(schedule, numberOfTokens, duration, frequency, startTime, CREATED);
-
-            await I_VestingEscrowWallet.revokeSchedule(account_beneficiary1, templateName, {from: wallet_admin});
-            let unassignedTokens = await I_VestingEscrowWallet.unassignedTokens.call();
-            await I_VestingEscrowWallet.sendToTreasury(unassignedTokens, {from: wallet_operator});
         });
 
-        // @FIXME Expected "Template added" but got "Transfer Invalid"
         it("Should not be able to add vesting schedule from template -- fail because template already added", async () => {
             let templateName = schedules[2].templateName;
             await catchRevert(
                 I_VestingEscrowWallet.addScheduleFromTemplate(account_beneficiary1, templateName, currentTime.add(new BN(100)), {from: wallet_admin}),
-                "Transfer Invalid"
+                "Already added"
             );
+        });
+
+        it("Should be able to revoke a schedule and send funds to Treasury", async () => {
+            let templateName = schedules[2].templateName;
+            await I_VestingEscrowWallet.revokeSchedule(account_beneficiary1, templateName, {from: wallet_admin});
+            let unassignedTokens = await I_VestingEscrowWallet.unassignedTokens.call();
+            await I_VestingEscrowWallet.sendToTreasury(unassignedTokens, {from: wallet_operator});
         });
 
         it("Should fail to remove template - Template not found", async () => {

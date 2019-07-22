@@ -115,6 +115,10 @@ contract("CappedSTO", async (accounts) => {
 
     let currentTime;
 
+    function convertToNumber(value) {
+        return web3.utils.fromWei(value.toString());
+    }
+
     before(async () => {
         currentTime = new BN(await latestTime());
         account_polymath = accounts[0];
@@ -1022,7 +1026,7 @@ contract("CappedSTO", async (accounts) => {
                 P_rate,
                 [P_fundRaiseType],
                 account_fundsReceiver,
-                account_fundsReceiver
+                token_owner
             ]);
 
             const tx = await I_SecurityToken_POLY.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), false, { from: token_owner });
@@ -1089,7 +1093,21 @@ contract("CappedSTO", async (accounts) => {
                 (await I_SecurityToken_POLY.balanceOf(account_investor3)).div(new BN(10).pow(new BN(18))).toString(),
                 stToReceive.toString()
             );
-       });
+        });
+
+        it("Should successfully finalize the STO", async() => {
+            await I_GeneralTransferManager.modifyKYCData(
+                token_owner,
+                new BN(1),
+                new BN(1),
+                expiryTime,
+                {
+                    from: token_owner
+                }  
+            );
+            await I_CappedSTO_Array_POLY[1].finalize({from: token_owner});
+            assert.isTrue(await I_CappedSTO_Array_POLY[1].isFinalized.call());
+        });
     });
 
     describe("Test cases for the pre-mint option", async() => {
@@ -1127,7 +1145,7 @@ contract("CappedSTO", async (accounts) => {
         it("Should attach the STO module with an pre-mint option", async() => {
             let startTime = await latestTime() + duration.minutes(30);
             let endTime = await latestTime() + duration.days(10);
-            let cap = new BN(web3.utils.toWei("900000"));
+            let cap = new BN(web3.utils.toWei("30000"));
             let rate =  new BN(web3.utils.toWei("1000"));
             let fundsReciever = token_owner;
             let treasuryWallet = treasury_wallet;
@@ -1178,7 +1196,7 @@ contract("CappedSTO", async (accounts) => {
             // Check the balance of the STO
             assert.equal(
                 web3.utils.fromWei((await I_SecurityToken_ETH2.balanceOf.call(I_CappedSTO_ETH.address)).toString()),
-                900000
+                30000
             );
         });
 
@@ -1204,13 +1222,89 @@ contract("CappedSTO", async (accounts) => {
         });
 
         it("Should whitelist the investor before buying the tokens", async() => {
-            await I_GeneralTransferManager.modifyKYCData(
-                
-            )
+            let expiryTime = await latestTime() + duration.years(2);
+            await I_GeneralTransferManager.modifyKYCDataMulti(
+                [account_investor1, account_investor2, treasury_wallet],
+                [new BN(1), new BN(1), new BN(1)],
+                [new BN(1), new BN(1), new BN(1)],
+                [expiryTime, expiryTime, expiryTime],
+                {
+                    from: token_owner
+                }  
+            );
+            let investorData = await I_GeneralTransferManager.getKYCData([account_investor1]);
+            assert.equal(investorData[0][0], 1);
         });
 
         it("Should buy the tokens from the STO", async() => {
+            // Increase time
+            await increaseTime(duration.minutes(32));
+            let STO_BALANCE_BEFORE = convertToNumber(await I_SecurityToken_ETH2.balanceOf.call(I_CappedSTO_ETH.address));
+            await web3.eth.sendTransaction({
+                from: account_investor1,
+                gas: 2100000,
+                to: web3.utils.toChecksumAddress(I_CappedSTO_ETH.address),
+                value: web3.utils.toWei("15")
+            });
+            let STO_BALANCE_AFTER = convertToNumber(await I_SecurityToken_ETH2.balanceOf.call(I_CappedSTO_ETH.address));
+            let STO_RATE = convertToNumber(await I_CappedSTO_ETH.rate.call());
+            assert.equal((parseInt(STO_BALANCE_AFTER) + parseInt((STO_RATE * 15))), STO_BALANCE_BEFORE);
+            assert.equal(
+                convertToNumber(await I_SecurityToken_ETH2.balanceOf.call(account_investor1)),
+                convertToNumber(await I_CappedSTO_ETH.totalTokensSold.call())
+            );
+        });
 
+        it("Should buy more tokens from the STO", async() => {
+            // Increase time
+            await increaseTime(duration.minutes(30));
+            let STO_BALANCE_BEFORE = convertToNumber(await I_SecurityToken_ETH2.balanceOf.call(I_CappedSTO_ETH.address));
+            await I_CappedSTO_ETH.buyTokens(account_investor2, {
+                from: account_investor2,
+                value: web3.utils.toWei("12")
+            });
+            let STO_BALANCE_AFTER = convertToNumber(await I_SecurityToken_ETH2.balanceOf.call(I_CappedSTO_ETH.address));
+            let STO_RATE = convertToNumber(await I_CappedSTO_ETH.rate.call());
+            assert.equal((parseInt(STO_BALANCE_AFTER) + parseInt((STO_RATE * 12))), STO_BALANCE_BEFORE);
+            assert.equal(
+                convertToNumber(await I_SecurityToken_ETH2.balanceOf.call(account_investor2)),
+                convertToNumber(await I_CappedSTO_ETH.investors.call(account_investor2))
+            );
+            assert.equal((await I_CappedSTO_ETH.investorCount.call()).toString(), 2);
+        });
+
+        it("Should fail to call finalize -- bad msg.sender", async() => {
+            await catchRevert(
+                I_CappedSTO_ETH.finalize({from: account_investor1})
+            );
+        });
+
+        it("Should successfully execute the finalize when the cap gets hit", async() => {
+            let snap_id = await takeSnapshot();
+            let STO_BALANCE_BEFORE = convertToNumber(await I_SecurityToken_ETH2.balanceOf.call(I_CappedSTO_ETH.address));
+            await I_CappedSTO_ETH.buyTokens(account_investor2, {
+                from: account_investor2,
+                value: web3.utils.toWei("3")
+            });
+            let STO_BALANCE_AFTER = convertToNumber(await I_SecurityToken_ETH2.balanceOf.call(I_CappedSTO_ETH.address));
+            let STO_RATE = convertToNumber(await I_CappedSTO_ETH.rate.call());
+            assert.equal((parseInt(STO_BALANCE_AFTER) + parseInt((STO_RATE * 3))), STO_BALANCE_BEFORE);
+            assert.equal(
+                convertToNumber(await I_SecurityToken_ETH2.balanceOf.call(account_investor2)),
+                convertToNumber(await I_CappedSTO_ETH.investors.call(account_investor2))
+            );
+            assert.equal((await I_CappedSTO_ETH.investorCount.call()).toString(), 2);
+            assert.isTrue(await I_CappedSTO_ETH.capReached.call());
+            await I_CappedSTO_ETH.finalize({from: token_owner});
+            assert.isTrue(await I_CappedSTO_ETH.isFinalized.call());
+            await revertToSnapshot(snap_id);
         })
+
+        it("Should finalize the STO", async() => {
+            await I_CappedSTO_ETH.finalize({from: token_owner});
+            assert.isTrue(await I_CappedSTO_ETH.isFinalized.call());
+            assert.equal(convertToNumber(await I_SecurityToken_ETH2.balanceOf.call(treasury_wallet)), 3000);
+        });
+
     });
 });

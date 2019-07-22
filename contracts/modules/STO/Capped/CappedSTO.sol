@@ -292,7 +292,7 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
                 securityToken.issue(walletAddress, tempTokens, "");
                 emit ReserveTokenMint(msg.sender, walletAddress, tempTokens);
             }
-        }   
+        }
     }
 
 }

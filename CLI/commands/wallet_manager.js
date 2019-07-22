@@ -256,6 +256,9 @@ async function addTemplate() {
 
 function inputTemplateData() {
   const name = input.readStringNonEmpty('Enter a name for the template: ');
+  console.log(chalk.yellow(`Note: Values must meet this two requirements to be valid`));
+  console.log(chalk.yellow(`1. Frequency must be a factor of duration.`));
+  console.log(chalk.yellow(`2. Period count (Duration / Frequency) must be a factor of number of tokens.`));
   const amount = input.readNumberGreaterThan(0, 'Enter the number of tokens that should be assigned to schedule: ');
   const duration = input.readNumberGreaterThan(0, 'Enter the duration of the vesting schedule in seconds: ');
   const frequency = input.readNumberGreaterThan(0, 'Enter the frequency in seconds at which tokens will be released: ');

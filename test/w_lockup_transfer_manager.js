@@ -344,7 +344,6 @@ contract('LockUpTransferManager', accounts => {
         it("Should prevent the creation of a lockup with bad parameters where the lockupAmount is zero", async() => {
             // create a lockup
             // this will generate an exception because the lockupAmount is zero
-            // @FIXME excpecting revert because lockupAmount is zero but got "Invalid startTime or expired"
             await catchRevert(
                 I_LockUpTransferManager.addNewLockUpToUser(
                     account_investor2,

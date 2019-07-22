@@ -770,10 +770,14 @@ contract("SecurityTokenRegistry", async (accounts) => {
         });
     });
 
-    describe("Generate custom tokens", async () => {
+    describe("Generate custom tokens (Modify exisitng tokens)", async () => {
         it("Should fail if msg.sender is not polymath", async () => {
+            // Register the new ticker -- Fulfiling the TickerStatus.ON condition
+            await I_PolyToken.getTokens(new BN(web3.utils.toWei("1000")), account_temp);
+            await I_PolyToken.approve(I_STRProxied.address, initRegFeePOLY, { from: account_temp });
+            await I_STRProxied.registerNewTicker(account_temp, "LOG", { from: account_temp });
             await catchRevert(
-                I_STRProxied.modifyExistingSecurityToken("LOG", account_temp, dummy_token, "I am custom ST", currentTime, {
+                I_STRProxied.modifyExistingSecurityToken("LOG", account_temp, I_SecurityToken.address, "I am custom ST", currentTime, {
                     from: account_delegate
                 }),
                 "Only owner"
@@ -782,19 +786,10 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should fail to genrate the custom security token -- ticker length is greater than 10 chars", async () => {
             await catchRevert(
-                I_STRProxied.modifyExistingSecurityToken("LOGLOGLOGLOG", account_temp, dummy_token, "I am custom ST", currentTime, {
+                I_STRProxied.modifyExistingSecurityToken("LOGLOGLOGLOG", account_temp, I_SecurityToken.address, "I am custom ST", currentTime, {
                     from: account_polymath
                 }),
                 "Bad ticker"
-            );
-        });
-
-        // @FIXME test description is inaccurate.
-        it("Should fail to generate the custom security token -- name should not be 0 length ", async () => {
-            await catchRevert(
-                I_STRProxied.modifyExistingSecurityToken("LOG", account_temp, dummy_token, "I am custom ST", currentTime, {
-                    from: account_polymath
-                })
             );
         });
 
@@ -807,37 +802,18 @@ contract("SecurityTokenRegistry", async (accounts) => {
             );
         });
 
-        // @FIXME test description is inaccurate.
-        it("Should fail if symbol length is 0", async () => {
-            await catchRevert(
-                I_STRProxied.modifyExistingSecurityToken("0x0", account_temp, dummy_token, "I am custom ST", currentTime, {
-                    from: account_polymath
-                }),
-            );
-        });
-
         it("Should fail to generate the custom ST -- deployedAt param is 0", async () => {
             await catchRevert(
-                I_STRProxied.modifyExistingSecurityToken(symbol2, token_owner, dummy_token, "I am custom ST", new BN(0), { from: account_polymath }),
+                I_STRProxied.modifyExistingSecurityToken(symbol2, token_owner, I_SecurityToken.address, "I am custom ST", new BN(0), { from: account_polymath }),
                 "Bad data"
             );
         });
 
         it("Should successfully generate custom token", async () => {
-            // Register the new ticker -- Fulfiling the TickerStatus.ON condition
-            await I_PolyToken.getTokens(new BN(web3.utils.toWei("1000")), account_temp);
-            await I_PolyToken.approve(I_STRProxied.address, initRegFeePOLY, { from: account_temp });
-            let tickersListArray = await I_Getter.getTickersByOwner.call(account_temp);
-            console.log(tickersListArray);
-            await I_STRProxied.registerNewTicker(account_temp, "LOG", { from: account_temp });
-            tickersListArray = await I_Getter.getTickersByOwner.call(account_temp);
-            console.log(tickersListArray);
             // Generating the ST
             let tx = await I_STRProxied.modifyExistingSecurityToken("LOG", account_temp, I_SecurityToken.address, "I am custom ST", currentTime, {
                 from: account_polymath
             });
-            tickersListArray = await I_Getter.getTickersByOwner.call(account_temp);
-            console.log(tickersListArray);
             assert.equal(tx.logs[1].args._ticker, "LOG", "Symbol should match with the registered symbol");
             assert.equal(
                 tx.logs[1].args._securityTokenAddress,

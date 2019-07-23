@@ -1,6 +1,6 @@
 import latestTime from "./helpers/latestTime";
 import { duration, latestBlock } from "./helpers/utils";
-import { increaseTime } from "./helpers/time";
+import { increaseTime, takeSnapshot, revertToSnapshot } from "./helpers/time";
 import { encodeModuleCall } from "./helpers/encodeCall";
 import { setUpPolymathNetwork, deployGPMAndVerifyed, deployCappedSTOAndVerifyed, deployDummySTOAndVerifyed } from "./helpers/createInstances";
 import { catchRevert } from "./helpers/exceptions";
@@ -1208,14 +1208,16 @@ contract("CappedSTO", async (accounts) => {
             let snap_id = await takeSnapshot();
             await increaseTime(duration.minutes(31));
             await catchRevert(
-                I_CappedSTO_ETH.allowPreMinting({from: token_owner})
+                I_CappedSTO_ETH.allowPreMinting({from: token_owner}),
+                "Not allowed after STO starts"
             );
             await revertToSnapshot(snap_id);
         });
 
         it("Should fail to allow the STO to pre-mint the tokens -- Bad msg.sender",async() => {
             await catchRevert(
-                I_CappedSTO_ETH.allowPreMinting({from: account_investor1})
+                I_CappedSTO_ETH.allowPreMinting({from: account_investor1}),
+                "Invalid permission"
             );
         });
 
@@ -1240,13 +1242,15 @@ contract("CappedSTO", async (accounts) => {
             const tx = await I_SecurityToken_ETH2.addModule(I_DummySTOFactory.address, dummyBytesSig, maxCost, new BN(0), false, { from: token_owner });
             // Should fail to issue tokens for the module
             await catchRevert(
-                I_SecurityToken_ETH2.issue(tx.logs[2].args._module, new BN(web3.utils.toWei("900")), "0x0", {from: token_owner})
+                I_SecurityToken_ETH2.issue(tx.logs[2].args._module, new BN(web3.utils.toWei("900")), "0x0", {from: token_owner}),
+                "Transfer Invalid"
             );
         });
 
         it("Should fail issue tokens to non-kyced address", async() => {
             await catchRevert(
-                I_SecurityToken_ETH2.issue(account_investor1, new BN(web3.utils.toWei("900")), "0x0", {from: token_owner})
+                I_SecurityToken_ETH2.issue(account_investor1, new BN(web3.utils.toWei("900")), "0x0", {from: token_owner}),
+                "Transfer Invalid"
             );
         });
 
@@ -1304,7 +1308,8 @@ contract("CappedSTO", async (accounts) => {
 
         it("Should fail to call finalize -- bad msg.sender", async() => {
             await catchRevert(
-                I_CappedSTO_ETH.finalize({from: account_investor1})
+                I_CappedSTO_ETH.finalize({from: account_investor1}),
+                "Invalid permission"
             );
         });
 

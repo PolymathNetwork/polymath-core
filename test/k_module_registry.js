@@ -96,7 +96,7 @@ contract("ModuleRegistry", async (accounts) => {
     const cap = new BN(web3.utils.toWei("10000"));
     const rate = 1000;
     const fundRaiseType = [0];
-    const STOParameters = ["uint256", "uint256", "uint256", "uint256", "uint8[]", "address"];
+    const STOParameters = ["uint256", "uint256", "uint256", "uint256", "uint8[]", "address", "address"];
     const MRProxyParameters = ["address", "address"];
 
     let currentTime;
@@ -361,7 +361,7 @@ contract("ModuleRegistry", async (accounts) => {
             it("Should successfully add module because custom modules switched on", async () => {
                 startTime = await latestTime() + duration.seconds(5000);
                 endTime = startTime + duration.days(30);
-                let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
+                let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver, account_fundsReceiver]);
                 let tx = await I_MRProxied.registerModule(I_CappedSTOFactory2.address, { from: token_owner });
                 tx = await I_SecurityToken.addModule(I_CappedSTOFactory2.address, bytesSTO, new BN(0), new BN(0), false, { from: token_owner });
 

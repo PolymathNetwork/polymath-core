@@ -223,25 +223,25 @@ contract("USDTieredSTO", async (accounts) => {
         INVESTOR2 = accounts[8];
         INVESTOR3 = accounts[9];
 
-         // Step:1 Create the polymath ecosystem contract instances
-         let instances = await setUpPolymathNetwork(POLYMATH, ISSUER);
+        // Step:1 Create the polymath ecosystem contract instances
+        let instances = await setUpPolymathNetwork(POLYMATH, ISSUER);
 
-         [
-             I_PolymathRegistry,
-             I_PolyToken,
-             I_FeatureRegistry,
-             I_ModuleRegistry,
-             I_ModuleRegistryProxy,
-             I_MRProxied,
-             I_GeneralTransferManagerFactory,
-             I_STFactory,
-             I_SecurityTokenRegistry,
-             I_SecurityTokenRegistryProxy,
-             I_STRProxied,
-             I_STRGetter,
-             I_STGetter,
-             I_STGetter
-         ] = instances;
+        [
+            I_PolymathRegistry,
+            I_PolyToken,
+            I_FeatureRegistry,
+            I_ModuleRegistry,
+            I_ModuleRegistryProxy,
+            I_MRProxied,
+            I_GeneralTransferManagerFactory,
+            I_STFactory,
+            I_SecurityTokenRegistry,
+            I_SecurityTokenRegistryProxy,
+            I_STRProxied,
+            I_STRGetter,
+            I_STGetter,
+            I_STGetter
+        ] = instances;
 
         I_DaiToken = await PolyTokenFaucet.new({from: POLYMATH});
         // STEP 4: Deploy the GeneralDelegateManagerFactory
@@ -382,7 +382,7 @@ contract("USDTieredSTO", async (accounts) => {
             );
             assert.equal(await I_USDTieredSTO_Array[stoId].wallet.call(), _wallet[stoId], "Incorrect _wallet in config");
             assert.equal(
-                await I_USDTieredSTO_Array[stoId].treasuryWallet.call(),
+                await I_USDTieredSTO_Array[stoId].getTreasuryWallet.call(),
                 _treasuryWallet[stoId],
                 "Incorrect _treasuryWallet in config"
             );
@@ -573,7 +573,7 @@ contract("USDTieredSTO", async (accounts) => {
             );
             assert.equal(await I_USDTieredSTO_Array[stoId].wallet.call(), _wallet[stoId], "Incorrect _wallet in config");
             assert.equal(
-                await I_USDTieredSTO_Array[stoId].treasuryWallet.call(),
+                await I_USDTieredSTO_Array[stoId].getTreasuryWallet.call(),
                 _treasuryWallet[stoId],
                 "Incorrect _treasuryWallet in config"
             );
@@ -1029,8 +1029,8 @@ contract("USDTieredSTO", async (accounts) => {
                 "STO Configuration doesn't set as expected"
             );
             assert.equal(
-                await I_USDTieredSTO_Array[stoId].treasuryWallet.call(),
-                "0x0000000000000000000000000000000000000000",
+                await I_USDTieredSTO_Array[stoId].getTreasuryWallet.call(),
+                ISSUER,
                 "STO Configuration doesn't set as expected"
             );
             await I_USDTieredSTO_Array[stoId].modifyAddresses(
@@ -1372,7 +1372,7 @@ contract("USDTieredSTO", async (accounts) => {
             await I_PolyToken.approve(I_USDTieredSTO_Array[stoId].address, investment_POLY, { from: NONACCREDITED1 });
             await I_PolyToken.getTokens(investment_POLY, ACCREDITED1);
             await I_PolyToken.approve(I_USDTieredSTO_Array[stoId].address, investment_POLY, { from: ACCREDITED1 });
-            let investment_DAI = new BN(web3.utils.toWei("500", "ether")); // Invest 10000 POLY
+            let investment_DAI = new BN(web3.utils.toWei("500", "ether")); // Invest 500 DAI
             await I_DaiToken.getTokens(investment_DAI, NONACCREDITED1);
             await I_DaiToken.approve(I_USDTieredSTO_Array[stoId].address, investment_DAI, { from: NONACCREDITED1 });
             await I_DaiToken.getTokens(investment_DAI, ACCREDITED1);
@@ -1386,7 +1386,7 @@ contract("USDTieredSTO", async (accounts) => {
 
             // NONACCREDITED DAI
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, I_DaiToken.address, { from: NONACCREDITED1 }), "STO not open");
-
+ 
             // ACCREDITED ETH
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH }), "STO not open");
 

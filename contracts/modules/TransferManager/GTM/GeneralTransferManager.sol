@@ -175,8 +175,6 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
 
             !_isValidModule(_to) ? (canReceiveAfter, toExpiry) = _getValuesForTo(_to) : (canReceiveAfter, toExpiry) = (uint64(now - 1), uint64(now + 1));                
 
-            //(canSendAfter, fromExpiry, canReceiveAfter, toExpiry) = _getValuesForTransfer(_from, _to);
-
             if ((txReq.fromValidKYC && !_validExpiry(fromExpiry)) || (txReq.toValidKYC && !_validExpiry(toExpiry))) {
                 return (Result.NA, bytes32(0));
             }
@@ -606,12 +604,6 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         //extracts `added` from packed `_whitelistData`
         return uint8(data) == 0 ? false : true;
     }
-
-    // function _getValuesForTransfer(address _from, address _to) internal view returns(uint64 canSendAfter, uint64 fromExpiry, uint64 canReceiveAfter, uint64 toExpiry) {
-    //     IDataStore dataStore = getDataStore();
-    //     (canSendAfter, , fromExpiry, ) = _getKYCValues(_from, dataStore);
-    //     (, canReceiveAfter, toExpiry, ) = _getKYCValues(_to, dataStore);
-    // }
 
     function _getValuesForTo(address _to) internal view returns(uint64 canReceiveAfter, uint64 toExpiry) {
         IDataStore dataStore = getDataStore();

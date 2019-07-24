@@ -10,7 +10,6 @@ const input = require('./IO/input');
 const output = require('./IO/output');
 const { table } = require('table');
 
-///////////////////
 // Constants
 const WHITELIST_DATA_CSV = `${__dirname}/../data/Transfer/GTM/whitelist_data.csv`;
 const FLAG_DATA_CSV = `${__dirname}/../data/Transfer/GTM/flag_data.csv`;
@@ -133,18 +132,18 @@ async function executeApp() {
 async function verifyTransfer(askAmount, askTo) {
   let verifyTotalSupply = web3.utils.fromWei(await securityToken.methods.totalSupply().call());
   await logTotalInvestors();
-  
+
   let verifyTransferFrom = input.readAddress(`Enter the sender account (${Issuer.address}): `, Issuer.address);
   await logBalance(verifyTransferFrom, verifyTotalSupply);
-  
+
   let verifyTransferTo = gbl.constants.ADDRESS_ZERO;
   if (askTo) {
     verifyTransferTo = input.readAddress('Enter the receiver account: ');
     await logBalance(verifyTransferTo, verifyTotalSupply);
   }
-  
+
   let verifyTransferAmount = askAmount ? input.readNumberGreaterThan(0, 'Enter amount of tokens to verify: ') : '0';
-  
+
   let verifyResult = await currentTransferManager.methods.verifyTransfer(verifyTransferFrom, verifyTransferTo, web3.utils.toWei(verifyTransferAmount), web3.utils.fromAscii("")).call();
   switch (verifyResult[0]) {
     case gbl.constants.TRASFER_RESULT.INVALID:
@@ -470,6 +469,7 @@ async function generalTransferManager() {
       break;
     case 'Verify transfer':
       await verifyTransfer(false, true);
+      break;
     case 'Change the default times used when they are zero':
       let fromTimeDefault = readlineSync.questionInt(`Enter the default time (Unix Epoch time) used when fromTime is zero: `);
       let toTimeDefault = readlineSync.questionInt(`Enter the default time (Unix Epoch time) used when toTime is zero: `);
@@ -593,11 +593,10 @@ async function showAllInvestorFlags() {
     }
     flagDataTable.push([
       investorsArray[i],
-      flagNumbers,
+      flagNumbers
     ]);
   }
   console.log(table(flagDataTable));
-
 }
 
 async function transferRequirements() {
@@ -684,7 +683,7 @@ async function transferRequirements() {
   await transferRequirements();
 }
 
-async function modifyTransferRequirements(transferType){
+async function modifyTransferRequirements(transferType) {
   let fromValidKYC = readlineSync.keyInYNStrict('Should the sender require valid KYC?');
   let toValidKYC = readlineSync.keyInYNStrict('Should the recipient require valid KYC?');
   let fromRestricted = readlineSync.keyInYNStrict('Should the sender be restricted by a can transfer date?');
@@ -694,7 +693,7 @@ async function modifyTransferRequirements(transferType){
   console.log(chalk.green("  Transfer Requirements sucessfully modified"));
 }
 
-async function modifyAllTransferRequirements(transferType, fromValidKYC, toValidKYC, fromRestricted, toRestricted){
+async function modifyAllTransferRequirements(transferType, fromValidKYC, toValidKYC, fromRestricted, toRestricted) {
   let modifyAllTransferRequirementsAction = currentTransferManager.methods.modifyTransferRequirementsMulti(transferType, fromValidKYC, toValidKYC, fromRestricted, toRestricted);
   let receipt = await common.sendTransaction(modifyAllTransferRequirementsAction);
   console.log(chalk.green("  Transfer Requirements sucessfully modified"));
@@ -706,20 +705,25 @@ function showWhitelistTable(investorsArray, canSendAfterArray, canReceiveAfterAr
   let canReceiveAfter;
   let expiryTime;
   for (let i = 0; i < investorsArray.length; i++) {
+    if (canSendAfterArray[i] == 0) {
+      canSendAfter = chalk.yellow.bold("     DEFAULT");
+    } else {
+      canSendAfter = canSendAfterArray[i] >= Date.now() / 1000
+      ? chalk.red.bold(moment.unix(canSendAfterArray[i]).format('MM/DD/YYYY HH:mm'))
+      : moment.unix(canSendAfterArray[i]).format('MM/DD/YYYY HH:mm');
+    }
 
-    if (canSendAfterArray[i] == 0) canSendAfter = chalk.yellow.bold("     DEFAULT");
-    else canSendAfter = canSendAfterArray[i] >= Date.now() / 1000 ?
-      chalk.red.bold(moment.unix(canSendAfterArray[i]).format('MM/DD/YYYY HH:mm')) :
-      moment.unix(canSendAfterArray[i]).format('MM/DD/YYYY HH:mm');
+    if (canReceiveAfterArray[i] == 0) {
+      canReceiveAfter = chalk.yellow.bold("     DEFAULT");
+    } else {
+      canReceiveAfter = (canReceiveAfterArray[i] >= Date.now() / 1000)
+      ? chalk.red.bold(moment.unix(canReceiveAfterArray[i]).format('MM/DD/YYYY HH:mm'))
+      : moment.unix(canReceiveAfterArray[i]).format('MM/DD/YYYY HH:mm');
+    }
 
-    if (canReceiveAfterArray[i] == 0) canReceiveAfter = chalk.yellow.bold("     DEFAULT");
-    else canReceiveAfter = (canReceiveAfterArray[i] >= Date.now() / 1000) ?
-      chalk.red.bold(moment.unix(canReceiveAfterArray[i]).format('MM/DD/YYYY HH:mm')) :
-      moment.unix(canReceiveAfterArray[i]).format('MM/DD/YYYY HH:mm');
-
-    expiryTime = (expiryTimeArray[i] <= Date.now() / 1000 ?
-      chalk.red.bold(moment.unix(expiryTimeArray[i]).format('MM/DD/YYYY HH:mm')) :
-      moment.unix(expiryTimeArray[i]).format('MM/DD/YYYY HH:mm'));
+    expiryTime = (expiryTimeArray[i] <= Date.now() / 1000
+      ? chalk.red.bold(moment.unix(expiryTimeArray[i]).format('MM/DD/YYYY HH:mm'))
+      : moment.unix(expiryTimeArray[i]).format('MM/DD/YYYY HH:mm'));
 
     dataTable.push([
       investorsArray[i],
@@ -1008,7 +1012,7 @@ async function matmManageRevoke(selectedApproval) {
 async function getApprovalsArray() {
   let address = input.readAddress('Enter an address to filter or leave empty to get all the approvals: ', gbl.constants.ADDRESS_ZERO);
   if (address == gbl.constants.ADDRESS_ZERO) {
-    return await getApprovals();
+    return getApprovals();
   } else {
     let approvals = await getApprovalsToAnAddress(address);
     if (!approvals.length) {
@@ -1081,7 +1085,6 @@ async function matmGenericCsv(path, f) {
 }
 
 async function addManualApproveInBatch() {
-
   var f = (row) => {
     return (web3.utils.isAddress(row[0]) &&
       web3.utils.isAddress(row[1]) &&
@@ -1106,7 +1109,6 @@ async function addManualApproveInBatch() {
 }
 
 async function revokeManualApproveInBatch() {
-
   var f = (row) => {
     return (web3.utils.isAddress(row[0]) &&
       web3.utils.isAddress(row[1]))
@@ -1125,7 +1127,6 @@ async function revokeManualApproveInBatch() {
 }
 
 async function modifyManualApproveInBatch() {
-
   var f = (row) => {
     return (web3.utils.isAddress(row[0]) &&
       web3.utils.isAddress(row[1]) &&
@@ -1207,6 +1208,7 @@ async function percentageTransferManager() {
   switch (optionSelected) {
     case 'Verify transfer':
       await verifyTransfer(false, true);
+      break;
     case 'Change max holder percentage':
       let maxHolderPercentage = toWeiPercentage(input.readPercentage('Enter the maximum amount of tokens in percentage that an investor can hold'));
       let changeHolderPercentageAction = currentTransferManager.methods.changeHolderPercentage(maxHolderPercentage);
@@ -1292,6 +1294,7 @@ async function blacklistTransferManager() {
   switch (optionSelected) {
     case 'Verify transfer':
       await verifyTransfer(false, false);
+      break;
     case 'Add new blacklist':
       let name = input.readStringNonEmpty(`Enter the name of the blacklist type: `);
       let minuteFromNow = Math.floor(Date.now() / 1000) + 60;
@@ -1718,7 +1721,7 @@ async function volumeRestrictionTM() {
         addressesAndRestrictions.typeOfRestriction,
         addressesAndRestrictions.rollingPeriodInDays,
         addressesAndRestrictions.startTime,
-        addressesAndRestrictions.endTime,
+        addressesAndRestrictions.endTime
       );
       break;
     case 'Show exempted addresses':
@@ -2680,9 +2683,10 @@ async function initialize(_tokenSymbol) {
   welcome();
   await setup();
   securityToken = await common.selectToken(securityTokenRegistry, _tokenSymbol);
-  tokenSymbol = await securityToken.methods.symbol().call();
   if (securityToken === null) {
     process.exit(0);
+  } else {
+    tokenSymbol = await securityToken.methods.symbol().call();
   }
 }
 

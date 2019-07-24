@@ -313,7 +313,7 @@ async function getSchedules(beneficiary, templateNames) {
       duration: scheduleData[1],
       frequency: scheduleData[2],
       startTime: scheduleData[3],
-      claimedTokens: scheduleData[4],
+      claimedTokens: web3.utils.fromWei(scheduleData[4]),
       state: scheduleData[5]
     };
   }));
@@ -452,18 +452,18 @@ async function pullAvailableTokens() {
 }
 
 async function exploreAccount(account) {
-  console.log('\n', chalk.blue('Wallet - Account explorer', '\n'));
+  console.log('\n', chalk.blue(`Wallet - Account explorer for ${account}`, '\n'));
 
-  const currentBalance = await securityToken.methods.balanceOf(Issuer.address).call();
-  console.log(`Current balance:        ${web3.utils.fromWei(currentBalance)} ${tokenSymbol}`);
+  const currentBalance = await securityToken.methods.balanceOf(account).call();
+  console.log(`Current balance:                ${web3.utils.fromWei(currentBalance)} ${tokenSymbol}`);
   const templateNames = await currentWalletModule.methods.getTemplateNames(account).call();
   let schedules = [];
   if (templateNames.length > 0) {
     schedules = await getSchedules(account, templateNames);
-    console.log(`Current vesting schedules for ${account}:        ${schedules.length}`);
+    console.log(`Current vesting schedules:      ${schedules.length}`);
     schedules.map(t => console.log('-', formatScheduleAsString(t), `\n`));
   } else {
-    console.log(`Current vesting schedules for ${account}:        None`);
+    console.log(`Current vesting schedules:      None`);
   }
 }
 

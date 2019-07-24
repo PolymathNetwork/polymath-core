@@ -395,7 +395,7 @@ contract("SecurityToken", async (accounts) => {
         it("Should fail to attach the STO factory because not enough poly in contract", async () => {
             startTime = await latestTime() + duration.seconds(5000);
             endTime = startTime + duration.days(30);
-            let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
+            let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver, account_fundsReceiver]);
             await catchRevert(
                 I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), false, { from: token_owner }),
                 "Insufficient tokens transferable"
@@ -405,7 +405,7 @@ contract("SecurityToken", async (accounts) => {
         it("Should fail to attach the STO factory because max cost too small", async () => {
             startTime = await latestTime() + duration.seconds(5000);
             endTime = startTime + duration.days(30);
-            let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
+            let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver, account_fundsReceiver]);
             await I_PolyToken.getTokens(cappedSTOSetupCostPOLY, token_owner);
             await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCostPOLY, { from: token_owner });
 

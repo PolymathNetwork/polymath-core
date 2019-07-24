@@ -329,7 +329,7 @@ contract("ModuleRegistry", async (accounts) => {
             it("Should fail in adding module. Because module is un-verified", async () => {
                 startTime = await latestTime() + duration.seconds(5000);
                 endTime = startTime + duration.days(30);
-                let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
+                let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver, account_fundsReceiver]);
 
                 await catchRevert(I_SecurityToken.addModule(I_CappedSTOFactory1.address, bytesSTO, new BN(0), new BN(0), false, { from: token_owner }),
                     "ModuleFactory must be verified");
@@ -379,7 +379,7 @@ contract("ModuleRegistry", async (accounts) => {
                 await I_MRProxied.registerModule(I_CappedSTOFactory3.address, { from: account_temp });
                 startTime = await latestTime() + duration.seconds(5000);
                 endTime = startTime + duration.days(30);
-                let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
+                let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver, account_fundsReceiver]);
                 catchRevert(I_SecurityToken.addModule(I_CappedSTOFactory3.address, bytesSTO, new BN(0), new BN(0), false, { from: token_owner }),
                     "ModuleFactory must be verified or SecurityToken owner must be ModuleFactory owner");
             });

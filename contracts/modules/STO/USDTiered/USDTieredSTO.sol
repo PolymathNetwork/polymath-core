@@ -311,11 +311,13 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         uint256 granularity = securityToken.granularity();
         tempReturned = tempReturned.div(granularity);
         tempReturned = tempReturned.mul(granularity);
-        if (preMintAllowed) {
-            securityToken.transfer(walletAddress, tempReturned);
-        } else {
-            securityToken.issue(walletAddress, tempReturned, "");
-            emit ReserveTokenMint(msg.sender, walletAddress, tempReturned, currentTier);
+        if (tempReturned != uint256(0)) {
+            if (preMintAllowed) {
+                securityToken.transfer(walletAddress, tempReturned);
+            } else {
+                securityToken.issue(walletAddress, tempReturned, "");
+                emit ReserveTokenMint(msg.sender, walletAddress, tempReturned, currentTier);
+            }
         }
         finalAmountReturned = tempReturned;
         totalTokensSold = tempSold;

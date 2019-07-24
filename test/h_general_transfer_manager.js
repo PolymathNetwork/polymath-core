@@ -193,7 +193,8 @@ contract("GeneralTransferManager", async (accounts) => {
 
         it("Should attach the paid GTM -- failed because of no tokens", async () => {
             await catchRevert(
-                I_SecurityToken.addModule(P_GeneralTransferManagerFactory.address, "0x0", new BN(web3.utils.toWei("2000")), new BN(0), false, { from: account_issuer })
+                I_SecurityToken.addModule(P_GeneralTransferManagerFactory.address, "0x0", new BN(web3.utils.toWei("2000")), new BN(0), false, { from: account_issuer }),
+                "Insufficient tokens transferable"
             );
         });
 
@@ -308,7 +309,8 @@ contract("GeneralTransferManager", async (accounts) => {
                 someString
             ]);
             await catchRevert(
-                I_SecurityToken.addModule(P_DummySTOFactory.address, bytesSTO, new BN(web3.utils.toWei("2000")), new BN(0), false, { from: token_owner })
+                I_SecurityToken.addModule(P_DummySTOFactory.address, bytesSTO, new BN(web3.utils.toWei("2000")), new BN(0), false, { from: token_owner }),
+                    "Insufficient tokens transferable"
             );
         });
 
@@ -334,9 +336,10 @@ contract("GeneralTransferManager", async (accounts) => {
             await revertToSnapshot(snap_id);
         });
 
-        it("Should successfully attach the STO factory with the security token - invalid data", async () => {
+        it("Should successfully attach the STO factory with the security token - invalid cost", async () => {
             let bytesSTO = encodeModuleCall(["uint256", "string"], [await latestTime() + duration.seconds(1000), someString]);
-            await catchRevert(I_SecurityToken.addModule(P_DummySTOFactory.address, bytesSTO, new BN(0), new BN(0), false, { from: token_owner }));
+            await catchRevert(I_SecurityToken.addModule(P_DummySTOFactory.address, bytesSTO, new BN(0), new BN(0), false, { from: token_owner }),
+                "Invalid cost");
         });
 
         it("Should successfully attach the STO factory with the security token", async () => {
@@ -394,15 +397,18 @@ contract("GeneralTransferManager", async (accounts) => {
                     [false, false, false],
                     [false, false, false],
                     { from: account_investor1 }
-                )
+                ),
+                "Invalid permission"
             );
-            await catchRevert(I_GeneralTransferManager.modifyTransferRequirements(0, false, false, false, false, { from: account_investor1 }));
+            await catchRevert(I_GeneralTransferManager.modifyTransferRequirements(0, false, false, false, false, { from: account_investor1 }),
+                "Invalid permission");
         });
     });
 
     describe("Buy tokens using on-chain whitelist", async () => {
         it("Should buy the tokens -- Failed due to investor is not in the whitelist", async () => {
-            await catchRevert(I_DummySTO.generateTokens(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner }));
+            await catchRevert(I_DummySTO.generateTokens(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner }),
+                "Transfer Invalid");
         });
 
         it("Should Buy the tokens", async () => {
@@ -438,16 +444,19 @@ contract("GeneralTransferManager", async (accounts) => {
         });
 
         it("Should fail in buying the token from the STO", async () => {
-            await catchRevert(I_DummySTO.generateTokens(account_affiliates1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner }));
+            await catchRevert(I_DummySTO.generateTokens(account_affiliates1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner }),
+                "Unauthorized");
         });
 
         it("Should fail in buying the tokens from the STO -- because amount is 0", async () => {
-            await catchRevert(I_DummySTO.generateTokens(account_investor1, new BN(0), { from: token_owner }));
+            await catchRevert(I_DummySTO.generateTokens(account_investor1, new BN(0), { from: token_owner }),
+                "Amount should be greater than 0");
         });
 
         it("Should fail in buying the tokens from the STO -- because STO is paused", async () => {
             await I_DummySTO.pause({ from: account_issuer });
-            await catchRevert(I_DummySTO.generateTokens(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner }));
+            await catchRevert(I_DummySTO.generateTokens(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner }),
+                "Should not be paused");
             // Reverting the changes releated to pause
             await I_DummySTO.unpause({ from: account_issuer });
         });
@@ -460,7 +469,8 @@ contract("GeneralTransferManager", async (accounts) => {
         it("Should fail in investing the money in STO -- expiry limit reached", async () => {
             await increaseTime(duration.days(10));
 
-            await catchRevert(I_DummySTO.generateTokens(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner }));
+            await catchRevert(I_DummySTO.generateTokens(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: token_owner }),
+                "Transfer Invalid");
         });
     });
 
@@ -510,14 +520,16 @@ contract("GeneralTransferManager", async (accounts) => {
         it("Add a from default and check transfers are disabled then enabled in the future", async () => {
             let tx = await I_GeneralTransferManager.changeDefaults(currentTime.add(new BN(duration.days(12))), new BN(0), { from: token_owner });
             await I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: account_investor2 });
-            await catchRevert(I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 }));
+            await catchRevert(I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 }),
+                "Transfer Invalid");
             await increaseTime(duration.days(5));
             await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 });
         });
 
         it("Add a to default and check transfers are disabled then enabled in the future", async () => {
             let tx = await I_GeneralTransferManager.changeDefaults(0, currentTime.add(new BN(duration.days(16))), { from: token_owner });
-            await catchRevert(I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: account_investor2 }));
+            await catchRevert(I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: account_investor2 }),
+                "Transfer Invalid");
             await I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: account_investor1 });
             await increaseTime(duration.days(2));
             await I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("2", "ether")), { from: account_investor2 });
@@ -532,7 +544,8 @@ contract("GeneralTransferManager", async (accounts) => {
 
     describe("Buy tokens using off-chain whitelist", async () => {
         it("Should buy the tokens -- Failed due to investor is not in the whitelist", async () => {
-            await catchRevert(I_DummySTO.generateTokens(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: token_owner }));
+            await catchRevert(I_DummySTO.generateTokens(account_investor2, new BN(web3.utils.toWei("1", "ether")), { from: token_owner }),
+                "Transfer Invalid");
         });
 
         it("Should provide the permission and change the signing address", async () => {
@@ -581,7 +594,8 @@ contract("GeneralTransferManager", async (accounts) => {
                         from: account_investor2,
                         gas: 6000000
                     }
-                )
+                ),
+                "Invalid signature or data"
             );
         });
 
@@ -617,7 +631,8 @@ contract("GeneralTransferManager", async (accounts) => {
                         from: account_investor2,
                         gas: 6000000
                     }
-                )
+                ),
+                "Invalid signature or data"
             );
         });
 
@@ -665,7 +680,8 @@ contract("GeneralTransferManager", async (accounts) => {
                         from: account_investor2,
                         gas: 6000000
                     }
-                )
+                ),
+                "Invalid signature or data"
             );
 
             await catchRevert(
@@ -682,7 +698,8 @@ contract("GeneralTransferManager", async (accounts) => {
                         from: account_investor2,
                         gas: 6000000
                     }
-                )
+                ),
+                "Invalid signature or data"
             );
         });
 
@@ -702,8 +719,10 @@ contract("GeneralTransferManager", async (accounts) => {
 
             // Jump time
             await increaseTime(10000);
-            await catchRevert(I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), {from: account_investor1}));
-            await catchRevert(I_SecurityToken.transferWithData(account_investor2, new BN(web3.utils.toWei("1", "ether")), sig, {from: account_investor1}));
+            await catchRevert(I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), {from: account_investor1}),
+                "Transfer Invalid");
+            await catchRevert(I_SecurityToken.transferWithData(account_investor2, new BN(web3.utils.toWei("1", "ether")), sig, {from: account_investor1}),
+                "Transfer Invalid");
         });
 
         it("Should Transfer with Signed KYC data", async () => {
@@ -727,7 +746,8 @@ contract("GeneralTransferManager", async (accounts) => {
 
             // Jump time
             await increaseTime(10000);
-            await catchRevert(I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), {from: account_investor1}));
+            await catchRevert(I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1", "ether")), {from: account_investor1}),
+                "Transfer Invalid");
             await I_SecurityToken.transferWithData(account_investor2, new BN(web3.utils.toWei("1", "ether")), sig, {from: account_investor1});
             assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toString(), new BN(web3.utils.toWei("1", "ether")).toString());
             //Should transfer even with invalid sig data when kyc not required
@@ -785,7 +805,8 @@ contract("GeneralTransferManager", async (accounts) => {
                         from: account_investor2,
                         gas: 6000000
                     }
-                )
+                ),
+                "Invalid signature or data"
             );
 
             kycData = await I_GeneralTransferManager.getKYCData([account_investor1, account_investor2]);
@@ -829,7 +850,8 @@ contract("GeneralTransferManager", async (accounts) => {
                         from: account_investor2,
                         gas: 6000000
                     }
-                )
+                ),
+                "Invalid signature or data"
             );
 
             let kycData = await I_GeneralTransferManager.getKYCData([account_investor1, account_investor2]);
@@ -961,7 +983,8 @@ contract("GeneralTransferManager", async (accounts) => {
                         from: account_investor2,
                         gas: 6000000
                     }
-                )
+                ),
+                "Invalid signature or data"
             );
         });
 
@@ -1030,7 +1053,8 @@ contract("GeneralTransferManager", async (accounts) => {
                 { from: token_owner }
             );
             await I_GeneralTransferManager.pause({ from: token_owner });
-            await catchRevert(I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("2", "ether")), { from: account_investor2 }));
+            await catchRevert(I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("2", "ether")), { from: account_investor2 }),
+                "Transfer Invalid");
         });
 
         it("Should change the Issuance address", async () => {
@@ -1072,7 +1096,8 @@ contract("GeneralTransferManager", async (accounts) => {
                         from: account_investor1,
                         gas: 6000000
                     }
-                )
+                ),
+                "Invalid permission"
             );
         });
 
@@ -1091,7 +1116,8 @@ contract("GeneralTransferManager", async (accounts) => {
                         from: account_delegate,
                         gas: 6000000
                     }
-                )
+                ),
+                "Mismatched input lengths"
             );
         });
 
@@ -1110,7 +1136,8 @@ contract("GeneralTransferManager", async (accounts) => {
                         from: account_delegate,
                         gas: 6000000
                     }
-                )
+                ),
+                "Mismatched input lengths"
             );
         });
 
@@ -1129,7 +1156,8 @@ contract("GeneralTransferManager", async (accounts) => {
                         from: account_delegate,
                         gas: 6000000
                     }
-                )
+                ),
+                "Mismatched input lengths"
             );
         });
 

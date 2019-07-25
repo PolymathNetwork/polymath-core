@@ -21,6 +21,7 @@ let cappedSTOFactoryABI;
 let usdTieredSTOFactoryABI;
 let erc20DividendCheckpointABI;
 let etherDividendCheckpointABI;
+let vestingEscrowWalletABI;
 let moduleInterfaceABI;
 let ownableABI;
 let stoABI;
@@ -53,6 +54,7 @@ try {
     usdTieredSTOFactoryABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/USDTieredSTOFactory.json`).toString()).abi;
     erc20DividendCheckpointABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/ERC20DividendCheckpoint.json`).toString()).abi;
     etherDividendCheckpointABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/EtherDividendCheckpoint.json`).toString()).abi;
+    vestingEscrowWalletABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/VestingEscrowWallet.json`).toString()).abi;
     moduleInterfaceABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/IModule.json`).toString()).abi;
     ownableABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/Ownable.json`).toString()).abi;
     stoABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/STO.json`).toString()).abi
@@ -135,6 +137,9 @@ module.exports = {
     },
     etherDividendCheckpoint: function () {
         return etherDividendCheckpointABI;
+    },
+    vestingEscrowWallet: function () {
+        return vestingEscrowWalletABI;
     },
     moduleInterface: function () {
         return moduleInterfaceABI;

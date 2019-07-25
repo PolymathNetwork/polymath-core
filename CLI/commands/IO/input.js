@@ -99,6 +99,17 @@ function readStringNonEmptyWithMaxBinarySize(maxBinarySize, message, defaultValu
   });
 }
 
+function readDateInTheFuture(message, defaultValue) {
+  const now = Math.floor(Date.now() / 1000);
+  return readlineSync.question(message, {
+    limit: function (input) {
+      return parseInt(input) >= now;
+    },
+    limitMessage: `Must be a future date`,
+    defaultInput: defaultValue
+  });
+}
+
 module.exports = {
   readAddress,
   readMultipleAddresses,
@@ -109,5 +120,6 @@ module.exports = {
   readNumberLessThanOrEqual,
   readNumberBetween,
   readStringNonEmpty,
-  readStringNonEmptyWithMaxBinarySize
+  readStringNonEmptyWithMaxBinarySize,
+  readDateInTheFuture
 }

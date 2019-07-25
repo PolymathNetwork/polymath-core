@@ -89,6 +89,7 @@ All notable changes to this project will be documented in this file.
 * Remove `takeUsageFee()` function from evey module.   
 * Remove `changeUsageCost()` & `usageCostInPoly()` from every module factory. 
 * Remove `takeFee()` function.
+* `getTreasuryWallet()` function added to `DividendCheckpoint.sol`.
 
 ## Generalize
 * Removed `_polyAddress` parameter from constructors of all modules and module factories.

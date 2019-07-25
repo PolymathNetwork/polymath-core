@@ -641,6 +641,8 @@ module.exports = function(deployer, network, accounts) {
     ERC20DividendCheckpointFactory:       ${ERC20DividendCheckpointFactory.address}
     VolumeRestrictionTMFactory:           ${VolumeRestrictionTMFactory.address}
     VolumeRestrictionTMLogic:             ${VolumeRestrictionTMLogic.address}
+    RestrictedPartialSaleTMFactory:       ${RestrictedPartialSaleTMFactory.address}
+    RestrictedPartialSaleTMLogic:         ${RestrictedPartialSaleTMLogic.address}
     VestingEscrowWalletFactory:           ${VestingEscrowWalletFactory.address}
     VestingEscrowWalletLogic:             ${VestingEscrowWalletLogic.address}
     ---------------------------------------------------------------------------------

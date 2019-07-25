@@ -200,7 +200,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert (
                 I_SecurityToken.addModule(P_BlacklistTransferManagerFactory.address, bytesSTO, web3.utils.toWei("2000", "ether"), 0, false, {
                     from: token_owner
-                })
+                }),
+                "Insufficient tokens transferable"
             );
         });
 
@@ -366,7 +367,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_BlacklistTransferManager.addBlacklistType(currentTime.add(new BN(1000)), currentTime.add(new BN(3000)), web3.utils.fromAscii("a_blacklist"), 20, {
                     from: token_owner
-                })
+                }),
+                "Blacklist type already exist"
             );
         });
 
@@ -374,7 +376,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_BlacklistTransferManager.addBlacklistType(currentTime.add(new BN(1000)), currentTime.add(new BN(3000)), web3.utils.fromAscii(""), 20, {
                     from: token_owner
-                })
+                }),
+                "Invalid blacklist name"
             );
         });
 
@@ -382,7 +385,8 @@ contract('BlacklistTransferManager', accounts => {
            await catchRevert(
                I_BlacklistTransferManager.addBlacklistType(0, currentTime.add(new BN(3000)), web3.utils.fromAscii("b_blacklist"), 20, {
                    from: token_owner
-                })
+                }),
+                "Invalid start or end date"
             );
         });
 
@@ -390,7 +394,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_BlacklistTransferManager.addBlacklistType(currentTime.add(new BN(4000)), currentTime.add(new BN(3000)), web3.utils.fromAscii("b_blacklist"), 20, {
                     from: token_owner
-                })
+                }),
+                "Invalid start or end date"
             );
         });
 
@@ -398,7 +403,8 @@ contract('BlacklistTransferManager', accounts => {
            await catchRevert(
                I_BlacklistTransferManager.addBlacklistType(currentTime.add(new BN(1000)), currentTime.add(new BN(3000)), web3.utils.fromAscii("b_blacklist"), 20, {
                    from: account_investor1
-                })
+                }),
+                "Invalid permission"
             );
         });
 
@@ -435,6 +441,7 @@ contract('BlacklistTransferManager', accounts => {
                 I_BlacklistTransferManager.addBlacklistTypeMulti(startTime, endTime, name, repeatTime, {
                     from: account_investor1
                 })
+                ,"Invalid permission"
             );
         });
 
@@ -447,7 +454,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_BlacklistTransferManager.addBlacklistTypeMulti(startTime, endTime, name, repeatTime, {
                     from: token_owner
-                })
+                }),
+                "Input array's length mismatch"
             );
         });
 
@@ -462,7 +470,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_BlacklistTransferManager.modifyBlacklistType(currentTime.add(new BN(2000)), currentTime.add(new BN(3000)), web3.utils.fromAscii(""), 20, {
                     from: token_owner
-                })
+                }),
+                "Blacklist type doesn't exist"
             );
         });
 
@@ -470,7 +479,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_BlacklistTransferManager.modifyBlacklistType(currentTime.add(new BN(4000)), currentTime.add(new BN(3000)), web3.utils.fromAscii("b_blacklist"), 20, {
                     from: token_owner
-                })
+                }),
+                "Blacklist type doesn't exist"
             );
         });
 
@@ -478,7 +488,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_BlacklistTransferManager.modifyBlacklistType(currentTime.add(new BN(2000)), currentTime.add(new BN(3000)), web3.utils.fromAscii("b_blacklist"), 0, {
                     from: token_owner
-                })
+                }),
+                "Blacklist type doesn't exist"
             );
         });
 
@@ -487,7 +498,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_BlacklistTransferManager.modifyBlacklistType(currentTime.add(new BN(1000)), currentTime.add(new BN(3000)), web3.utils.fromAscii("a_blacklist"), 20, {
                     from: account_investor1
-                })
+                }),
+                "Invalid permission"
             );
         });
 
@@ -495,7 +507,8 @@ contract('BlacklistTransferManager', accounts => {
            await catchRevert(
                I_BlacklistTransferManager.modifyBlacklistType(currentTime.add(new BN(1000)), currentTime.add(new BN(3000)), web3.utils.fromAscii("b_blacklist"), 20, {
                    from: token_owner
-                })
+                }),
+                "Blacklist type doesn't exist"
             );
         });
 
@@ -523,7 +536,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_BlacklistTransferManager.modifyBlacklistTypeMulti(startTime, endTime, name, repeatTime, {
                     from: account_investor1
-                })
+                }),
+                "Invalid permission"
             );
         });
 
@@ -536,7 +550,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_BlacklistTransferManager.modifyBlacklistTypeMulti(startTime, endTime, name, repeatTime, {
                     from: token_owner
-                })
+                }),
+                "Input array's length mismatch"
             );
         });
 
@@ -551,7 +566,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_BlacklistTransferManager.addInvestorToBlacklist(account_investor2, web3.utils.fromAscii("a_blacklist"), {
                     from: account_investor1
-                })
+                }),
+                "Invalid permission"
             );
         });
 
@@ -559,7 +575,8 @@ contract('BlacklistTransferManager', accounts => {
            await catchRevert(
                I_BlacklistTransferManager.addInvestorToBlacklist("0x0000000000000000000000000000000000000000", web3.utils.fromAscii("a_blacklist"), {
                    from: token_owner
-                })
+                }),
+                "Invalid investor address"
             );
         });
 
@@ -568,7 +585,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_BlacklistTransferManager.addInvestorToBlacklist(account_investor2, web3.utils.fromAscii("b_blacklist"), {
                     from: token_owner
-                })
+                }),
+                "Blacklist type doesn't exist"
             );
         });
 
@@ -579,7 +597,8 @@ contract('BlacklistTransferManager', accounts => {
 
         it("Should fail in getting the list of investors from the non existing blacklist", async() => {
             await catchRevert(
-                I_BlacklistTransferManager.getListOfAddresses.call(web3.utils.fromAscii("b_blacklist"))
+                I_BlacklistTransferManager.getListOfAddresses.call(web3.utils.fromAscii("b_blacklist")),
+                "Blacklist type doesn't exist"
             );
         });
 
@@ -612,7 +631,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_SecurityToken.transfer(account_investor2, web3.utils.toWei('1', 'ether'), {
                     from: account_investor1
-                })
+                }),
+                "Transfer Invalid"
             );
         });
 
@@ -643,7 +663,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_SecurityToken.transfer(account_investor3, web3.utils.toWei('1', 'ether'), {
                     from: account_investor2
-                })
+                }),
+                "Transfer Invalid"
             )
         });
 
@@ -667,7 +688,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_SecurityToken.transfer(account_investor3, web3.utils.toWei('1', 'ether'), {
                     from: account_investor2
-                })
+                }),
+                "Transfer Invalid"
             );
         });
 
@@ -683,7 +705,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_SecurityToken.transfer(account_investor4, web3.utils.toWei('1', 'ether'), {
                     from: account_investor3
-                })
+                }),
+                "Transfer Invalid"
             );
         });
 
@@ -707,7 +730,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                  I_SecurityToken.transfer(account_investor4, web3.utils.toWei('1', 'ether'), {
                     from: account_investor3
-                })
+                }),
+                "Transfer Invalid"
             );
         });
 
@@ -726,7 +750,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_BlacklistTransferManager.deleteBlacklistType(web3.utils.fromAscii("b_blacklist"), {
                     from: account_investor1
-                })
+                }),
+                "Invalid permission"
             );
         });
 
@@ -734,7 +759,8 @@ contract('BlacklistTransferManager', accounts => {
           await catchRevert(
                 I_BlacklistTransferManager.deleteBlacklistType(web3.utils.fromAscii("a_blacklist"), {
                   from: token_owner
-                })
+                }),
+                "Investors are associated with the blacklist"
             );
         });
 
@@ -742,7 +768,8 @@ contract('BlacklistTransferManager', accounts => {
            await catchRevert(
                I_BlacklistTransferManager.deleteBlacklistType(web3.utils.fromAscii("c_blacklist"), {
                    from: token_owner
-                })
+                }),
+                "Blacklist type doesn’t exist"
             );
         });
 
@@ -763,7 +790,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_BlacklistTransferManager.deleteBlacklistTypeMulti(name, {
                     from: account_investor1
-                })
+                }),
+                "Invalid permission"
             );
         });
 
@@ -781,7 +809,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_BlacklistTransferManager.deleteInvestorFromAllBlacklist(account_investor1, {
                     from: account_investor2
-                })
+                }),
+                "Invalid permission"
             )
         });
 
@@ -789,7 +818,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_BlacklistTransferManager.deleteInvestorFromAllBlacklist("0x0000000000000000000000000000000000000000", {
                     from: token_owner
-                })
+                }),
+                "Invalid investor address"
             );
         });
 
@@ -797,7 +827,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_BlacklistTransferManager.deleteInvestorFromAllBlacklist(account_investor5, {
                     from: token_owner
-                })
+                }),
+                "Investor is not present in the blacklist"
             );
         });
 
@@ -819,7 +850,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_BlacklistTransferManager.deleteInvestorFromAllBlacklistMulti(investor, {
                     from: account_investor1
-                })
+                }),
+                "Invalid permission"
             );
         });
 
@@ -845,7 +877,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_BlacklistTransferManager.deleteMultiInvestorsFromBlacklistMulti(investor,blacklistName, {
                     from: account_investor1
-                })
+                }),
+                "Invalid permission"
             );
         });
 
@@ -855,7 +888,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_BlacklistTransferManager.deleteMultiInvestorsFromBlacklistMulti(investor,blacklistName, {
                     from: token_owner
-                })
+                }),
+                "Input array's length mismatch"
             );
         });
 
@@ -875,7 +909,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_BlacklistTransferManager.deleteInvestorFromBlacklist(account_investor1, web3.utils.fromAscii("f_blacklist"), {
                     from: account_investor2
-                })
+                }),
+                "Invalid permission"
             );
         });
 
@@ -883,7 +918,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_BlacklistTransferManager.deleteInvestorFromBlacklist("0x0000000000000000000000000000000000000000", web3.utils.fromAscii("f_blacklist"), {
                     from: token_owner
-                })
+                }),
+                "Invalid investor address"
             );
         });
 
@@ -892,7 +928,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_BlacklistTransferManager.deleteInvestorFromBlacklist(account_investor1, web3.utils.fromAscii("f_blacklist"), {
                     from: token_owner
-                })
+                }),
+                "Investor not associated to the blacklist"
             );
         });
 
@@ -900,7 +937,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_BlacklistTransferManager.deleteInvestorFromBlacklist(account_investor1, web3.utils.fromAscii(""), {
                     from: token_owner
-                })
+                }),
+                "Invalid blacklist name"
             );
         });
 
@@ -915,7 +953,8 @@ contract('BlacklistTransferManager', accounts => {
           await catchRevert(
               I_BlacklistTransferManager.addInvestorToNewBlacklist(currentTime.add(new BN(1000)), currentTime.add(new BN(3000)), web3.utils.fromAscii("c_blacklist"), 20, account_investor3, {
                   from: account_investor2
-                })
+                }),
+                "Invalid permission"
             );
         });
 
@@ -936,7 +975,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_BlacklistTransferManager.addInvestorToBlacklistMulti([account_investor4,account_investor5], web3.utils.fromAscii("b_blacklist"), {
                     from: account_investor1
-                })
+                }),
+                "Invalid permission"
             );
         });
 
@@ -964,7 +1004,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_BlacklistTransferManager.addMultiInvestorToBlacklistMulti(investor, blacklistName, {
                     from: account_investor1
-                })
+                }),
+                "Invalid permission"
             );
         });
 
@@ -974,7 +1015,8 @@ contract('BlacklistTransferManager', accounts => {
             await catchRevert(
                 I_BlacklistTransferManager.addMultiInvestorToBlacklistMulti(investor, blacklistName, {
                     from: token_owner
-                })
+                }),
+                "Input array's length mismatch"
             );
         });
 
@@ -1002,7 +1044,8 @@ contract('BlacklistTransferManager', accounts => {
                 { from: token_owner}
             );
             await increaseTime(200);
-            await catchRevert(I_SecurityToken.transfer(account_investor4, web3.utils.toWei('1', 'ether'), { from: account_investor3 }));
+            await catchRevert(I_SecurityToken.transfer(account_investor4, web3.utils.toWei('1', 'ether'), { from: account_investor3 }),
+                "Transfer Invalid");
         });
 
         it("Should allow transfer after blacklist end time", async() => {

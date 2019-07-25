@@ -216,7 +216,8 @@ contract('GeneralPermissionManager', accounts => {
             let errorThrown = false;
             await I_PolyToken.getTokens(web3.utils.toWei("2000", "ether"), token_owner);
             await catchRevert(
-                I_SecurityToken.addModule(P_GeneralPermissionManagerFactory.address, "0x0", web3.utils.toWei("2000", "ether"), 0, false, { from: token_owner })
+                I_SecurityToken.addModule(P_GeneralPermissionManagerFactory.address, "0x0", web3.utils.toWei("2000", "ether"), 0, false, { from: token_owner }),
+                "Insufficient tokens transferable"
             );
         });
 

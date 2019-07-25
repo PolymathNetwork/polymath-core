@@ -4,7 +4,8 @@ module.exports = Object.freeze({
         TRANSFER: 2,
         STO: 3,
         DIVIDENDS: 4,
-        BURN: 5
+        BURN: 5,
+        WALLET: 7
     },
     DURATION: {
         seconds: function (val) {
@@ -32,5 +33,22 @@ module.exports = Object.freeze({
         STABLE: 2
     },
     DEFAULT_BATCH_SIZE: 75,
-    ADDRESS_ZERO: '0x0000000000000000000000000000000000000000'
+    ADDRESS_ZERO: '0x0000000000000000000000000000000000000000',
+    TRASFER_RESULT: {
+        INVALID: '0',
+        NA: '1',
+        VALID: '2',
+        FORCE_VALID: '3'
+    },
+    TRANSFER_STATUS_CODES: {
+        TransferFailure: '0x50',
+        TransferSuccess: '0x51',
+        InsufficientBalance: '0x52',
+        InsufficientAllowance: '0x53',
+        TransfersHalted: '0x54',
+        FundsLocked: '0x55',
+        InvalidSender: '0x56',
+        InvalidReceiver: '0x57',
+        InvalidOperator: '0x58'
+    }
 });

@@ -388,7 +388,7 @@ contract("SecurityToken", async (accounts) => {
             let id = await takeSnapshot();
             await I_SecurityToken.freezeIssuance(freezeIssuanceAckHash, { from: token_owner });
             assert.isFalse(await stGetter.isIssuable.call());
-            await catchRevert(I_SecurityToken.issue(account_affiliate1, new BN(100).mul(new BN(10).pow(new BN(18))), "0x0", { from: token_owner, gas: 500000 }));
+            await catchRevert(I_SecurityToken.issue(account_affiliate1, new BN(100).mul(new BN(10).pow(new BN(18))), "0x0", { from: token_owner, gas: 500000 }), "Issuance frozen");
             await revertToSnapshot(id);
         });
 
@@ -396,7 +396,10 @@ contract("SecurityToken", async (accounts) => {
             startTime = await latestTime() + duration.seconds(5000);
             endTime = startTime + duration.days(30);
             let bytesSTO = encodeModuleCall(STOParameters, [startTime, endTime, cap, rate, fundRaiseType, account_fundsReceiver]);
-            await catchRevert(I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), false, { from: token_owner }));
+            await catchRevert(
+                I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, maxCost, new BN(0), false, { from: token_owner }),
+                "Insufficient tokens transferable"
+            );
         });
 
         it("Should fail to attach the STO factory because max cost too small", async () => {
@@ -407,7 +410,8 @@ contract("SecurityToken", async (accounts) => {
             await I_PolyToken.transfer(I_SecurityToken.address, cappedSTOSetupCostPOLY, { from: token_owner });
 
             await catchRevert(
-                I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, new BN(web3.utils.toWei("1000", "ether")), new BN(0), false, { from: token_owner })
+                I_SecurityToken.addModule(I_CappedSTOFactory.address, bytesSTO, new BN(web3.utils.toWei("1000", "ether")), new BN(0), false, { from: token_owner }),
+                "Invalid cost"
             );
         });
 
@@ -511,12 +515,20 @@ contract("SecurityToken", async (accounts) => {
             await catchRevert(I_SecurityToken.removeModule(I_GeneralTransferManager.address, { from: account_delegate }));
         });
 
-        it("Should fail to remove the module - module not archived", async () => {
+
+        it("Should fail to remove the module - only owner", async () => {
             await catchRevert(I_SecurityToken.removeModule(I_GeneralTransferManager.address, { from: account_temp }));
         });
 
         it("Should fail to remove the module - incorrect address", async () => {
-            await catchRevert(I_SecurityToken.removeModule(address_zero, { from: token_owner }));
+            await catchRevert(I_SecurityToken.removeModule(address_zero, { from: token_owner }), "Not archived");
+        });
+
+        it("Should fail to remove the module - not archived", async () => {
+            await catchRevert(
+                I_SecurityToken.removeModule(I_GeneralTransferManager.address, { from: token_owner }),
+                "Not archived"
+            );
         });
 
         it("Should successfully remove the general transfer manager module from the securityToken", async () => {
@@ -557,7 +569,7 @@ contract("SecurityToken", async (accounts) => {
         it("Should successfully archive the module first and fail during achiving the module again", async () => {
             let key = await takeSnapshot();
             await I_SecurityToken.archiveModule(I_GeneralTransferManager.address, { from: token_owner });
-            await catchRevert(I_SecurityToken.archiveModule(I_GeneralTransferManager.address, { from: token_owner }));
+            await catchRevert(I_SecurityToken.archiveModule(I_GeneralTransferManager.address, { from: token_owner }), "Module archived");
             await revertToSnapshot(key);
         });
 
@@ -578,8 +590,8 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(moduleData[3], true);
         });
 
-        it("Should fail to issue (or transfer) tokens while all TM are archived archived", async () => {
-            await catchRevert(I_SecurityToken.issue(one_address, new BN(100).mul(new BN(10).pow(new BN(18))), "0x0", { from: token_owner }));
+        it("Should fail to issue (or transfer) tokens while all TM are archived", async () => {
+            await catchRevert(I_SecurityToken.issue(one_address, new BN(100).mul(new BN(10).pow(new BN(18))), "0x0", { from: token_owner }), "Transfer Invalid");
         });
 
         it("Should successfully unarchive the general transfer manager module from the securityToken", async () => {
@@ -594,19 +606,19 @@ contract("SecurityToken", async (accounts) => {
         });
 
         it("Should successfully unarchive the general transfer manager module from the securityToken -- fail because module is already unarchived", async () => {
-            await catchRevert(I_SecurityToken.unarchiveModule(I_GeneralTransferManager.address, { from: token_owner }));
+            await catchRevert(I_SecurityToken.unarchiveModule(I_GeneralTransferManager.address, { from: token_owner }), "Module unarchived");
         });
 
         it("Should successfully archive the module -- fail because module is not existed", async () => {
-            await catchRevert(I_SecurityToken.archiveModule(I_GeneralPermissionManagerFactory.address, { from: token_owner }));
+            await catchRevert(I_SecurityToken.archiveModule(I_GeneralPermissionManagerFactory.address, { from: token_owner }), "Module missing");
         });
 
         it("Should fail to issue tokens while GTM unarchived", async () => {
-            await catchRevert(I_SecurityToken.issue(one_address, new BN(100).mul(new BN(10).pow(new BN(18))), "0x0", { from: token_owner, gas: 500000 }));
+            await catchRevert(I_SecurityToken.issue(one_address, new BN(100).mul(new BN(10).pow(new BN(18))), "0x0", { from: token_owner, gas: 500000 }), "Transfer Invalid");
         });
 
         it("Should change the budget of the module - fail incorrect address", async () => {
-            await catchRevert(I_SecurityToken.changeModuleBudget(address_zero, new BN(100).mul(new BN(10).pow(new BN(18))), true, { from: token_owner }));
+            await catchRevert(I_SecurityToken.changeModuleBudget(address_zero, new BN(100).mul(new BN(10).pow(new BN(18))), true, { from: token_owner }), "Module missing");
         });
 
         it("Should change the budget of the module", async () => {
@@ -669,19 +681,20 @@ contract("SecurityToken", async (accounts) => {
 
             assert.equal(_canTransfer[0], 0x50);
 
-            await catchRevert(I_SecurityToken.transfer(account_investor2, new BN(10).mul(new BN(10).pow(new BN(18))), { from: account_investor1 }));
+            await catchRevert(I_SecurityToken.transfer(account_investor2, new BN(10).mul(new BN(10).pow(new BN(18))), { from: account_investor1 }),
+                "Transfer Invalid");
         });
 
-        it("Should fail to provide the permission to the delegate to change the transfer bools -- Bad owner", async () => {
+        it("Should fail to provide the permission to the delegate to change the transfer bools -- invalid permission", async () => {
             // Add permission to the deletgate (A regesteration process)
             await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x0", new BN(0), new BN(0), false, { from: token_owner });
             let moduleData = (await stGetter.getModulesByType(permissionManagerKey))[0];
             I_GeneralPermissionManager = await GeneralPermissionManager.at(moduleData);
-            await catchRevert(I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: account_temp }));
+            await catchRevert(I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: account_temp }), "Invalid permission");
         });
 
         it("Should provide the permission to the delegate to change the transfer bools", async () => {
-            // Add permission to the deletgate (A regesteration process)
+            // Add permission to the deletgate (A registeration process)
             await I_GeneralPermissionManager.addDelegate(account_delegate, delegateDetails, { from: token_owner });
             assert.isTrue(await I_GeneralPermissionManager.checkDelegate.call(account_delegate));
             // Providing the permission to the delegate
@@ -710,11 +723,11 @@ contract("SecurityToken", async (accounts) => {
         });
 
         it("Should fail to send tokens with the wrong granularity", async () => {
-            await catchRevert(I_SecurityToken.transfer(accounts[7], new BN(10).pow(new BN(17)), { from: account_investor1 }));
+            await catchRevert(I_SecurityToken.transfer(accounts[7], new BN(10).pow(new BN(17)), { from: account_investor1 }), "Invalid granularity");
         });
 
         it("Should not allow 0 granularity", async () => {
-            await catchRevert(I_SecurityToken.changeGranularity(0, { from: token_owner }));
+            await catchRevert(I_SecurityToken.changeGranularity(0, { from: token_owner }), "Invalid granularity");
         });
 
         it("Should adjust granularity", async () => {
@@ -728,7 +741,7 @@ contract("SecurityToken", async (accounts) => {
         });
 
         it("Should not allow 0x0 address as data store", async () => {
-            await catchRevert(I_SecurityToken.changeDataStore(address_zero, { from: token_owner }));
+            await catchRevert(I_SecurityToken.changeDataStore(address_zero, { from: token_owner }), "Invalid address");
         });
 
         it("Should change data store", async () => {
@@ -757,7 +770,7 @@ contract("SecurityToken", async (accounts) => {
             await revertToSnapshot(ID_snap);
         });
 
-        it("Should activate allow All Whitelist Transfers", async () => {
+        it("Should activate Allow All Whitelist Transfers", async () => {
             ID_snap = await takeSnapshot();
             await I_GeneralTransferManager.modifyTransferRequirementsMulti(
                 [0, 1, 2],
@@ -929,7 +942,7 @@ contract("SecurityToken", async (accounts) => {
         });
 
         it("Should Fail in trasferring from whitelist investor1 to non-whitelist investor", async () => {
-            await catchRevert(I_SecurityToken.transfer(account_temp, new BN(10).mul(new BN(10).pow(new BN(18))), { from: account_investor1, gas: 2500000 }));
+            await catchRevert(I_SecurityToken.transfer(account_temp, new BN(10).mul(new BN(10).pow(new BN(18))), { from: account_investor1, gas: 2500000 }), "Transfer Invalid");
             await revertToSnapshot(ID_snap);
         });
 
@@ -997,7 +1010,8 @@ contract("SecurityToken", async (accounts) => {
                     to: I_CappedSTO.address,
                     gas: 2100000,
                     value: new BN(web3.utils.toWei("1", "ether"))
-                })
+                }),
+                "Issuance frozen"
             );
             await revertToSnapshot(id);
         });
@@ -1018,7 +1032,8 @@ contract("SecurityToken", async (accounts) => {
                     to: I_CappedSTO.address,
                     gas: 2100000,
                     value: new BN(web3.utils.toWei("1", "ether"))
-                })
+                }),
+                "Transfer Invalid"
             );
         });
 
@@ -1027,7 +1042,7 @@ contract("SecurityToken", async (accounts) => {
             assert.isTrue(tx.logs[0].args._status);
         });
 
-        it("Should fail to freeze the transfers", async () => {
+        it("Should fail to freeze already frozen transfers", async () => {
             await catchRevert(I_SecurityToken.freezeTransfers({ from: token_owner }));
         });
 
@@ -1045,12 +1060,13 @@ contract("SecurityToken", async (accounts) => {
                     to: I_CappedSTO.address,
                     gas: 2100000,
                     value: new BN(web3.utils.toWei("1", "ether"))
-                })
+                }),
+                "Transfer Invalid"
             );
         });
 
         it("Should fail in trasfering the tokens from one user to another", async () => {
-            await catchRevert(I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: account_temp }));
+            await catchRevert(I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: account_temp }), "Transfer Invalid");
         });
 
         it("Should unfreeze all the transfers", async () => {
@@ -1058,7 +1074,7 @@ contract("SecurityToken", async (accounts) => {
             assert.isFalse(tx.logs[0].args._status);
         });
 
-        it("Should freeze the transfers", async () => {
+        it("Should fail to ufreeze the already unfrozen transfers", async () => {
             await catchRevert(I_SecurityToken.unfreezeTransfers({ from: token_owner }));
         });
 
@@ -1123,7 +1139,7 @@ contract("SecurityToken", async (accounts) => {
             await catchRevert(
                 I_SecurityToken.controllerRedeem(account_temp, currentBalance + new BN(web3.utils.toWei("500", "ether")), "0x0", "0x0", {
                     from: account_controller
-                })
+                }),
             );
         });
         it("Should force burn the tokens - wrong caller", async () => {
@@ -1133,13 +1149,12 @@ contract("SecurityToken", async (accounts) => {
                 console.log(investors[i]);
                 console.log(web3.utils.fromWei((await I_SecurityToken.balanceOf(investors[i])).toString()));
             }
-            await catchRevert(I_SecurityToken.controllerRedeem(account_temp, currentBalance, "0x0", "0x0", { from: token_owner }));
+            await catchRevert(I_SecurityToken.controllerRedeem(account_temp, currentBalance, "0x0", "0x0", { from: token_owner }), "Not Authorised");
         });
 
         it("Should burn the tokens", async () => {
             let currentInvestorCount = await I_SecurityToken.holderCount.call();
             let currentBalance = await I_SecurityToken.balanceOf(account_temp);
-            let investors = await stGetter.getInvestors.call();
             let tx = await I_SecurityToken.controllerRedeem(account_temp, currentBalance, "0x0", "0x0", { from: account_controller });
             // console.log(tx.logs[1].args._value.toNumber(), currentBalance.toNumber());
             assert.equal(tx.logs[1].args._value.toString(), currentBalance.toString());
@@ -1204,7 +1219,7 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(filteredInvestors.length, 4);
         });
 
-        it("Should check the balance of investor at checkpoint", async () => {
+        it("Should fail to check the balance of investor at a non-existent checkpoint", async () => {
             await catchRevert(stGetter.balanceOfAt(account_investor1, 5));
         });
 
@@ -1272,7 +1287,7 @@ contract("SecurityToken", async (accounts) => {
                 }
             );
             assert.equal(tx.logs[0].args._investor, I_MockRedemptionManagerWrong.address, "Failed in adding the investor in whitelist");
-            // Provide approval to trnafer the tokens to Module
+            // Provide approval to transfer the tokens to Module
             await I_SecurityToken.approve(I_MockRedemptionManagerWrong.address, new BN(web3.utils.toWei("500")), { from: account_investor1 });
             // Transfer the tokens to module (Burn)
             await I_MockRedemptionManagerWrong.transferToRedeem(new BN(web3.utils.toWei("500")), { from: account_investor1 });
@@ -1293,7 +1308,7 @@ contract("SecurityToken", async (accounts) => {
             );
         });
 
-        it("Should successfully withdraw the poly", async () => {
+        it("Should fail to withdraw the poly - only owner", async () => {
             await catchRevert(
                 I_SecurityToken.withdrawERC20(I_PolyToken.address, new BN(web3.utils.toWei("20000", "ether")), { from: account_temp })
             );
@@ -1312,8 +1327,10 @@ contract("SecurityToken", async (accounts) => {
             );
         });
 
-        it("Should successfully withdraw the poly", async () => {
-            await catchRevert(I_SecurityToken.withdrawERC20(I_PolyToken.address, new BN(web3.utils.toWei("10", "ether")), { from: token_owner }));
+        it("Should fail to withdraw the poly - not enough Poly balance", async () => {
+            await catchRevert(
+                I_SecurityToken.withdrawERC20(I_PolyToken.address, new BN(web3.utils.toWei("10", "ether")), { from: token_owner })
+            );
         });
     });
 
@@ -1496,7 +1513,8 @@ contract("SecurityToken", async (accounts) => {
                     {
                         from: account_investor1
                     }
-                )
+                ),
+                "Invalid partition"
             )
 
             assert.equal(
@@ -1556,7 +1574,8 @@ contract("SecurityToken", async (accounts) => {
                     {
                         from: account_delegate
                     }
-                )
+                ),
+                "Invalid partition"
             );
         });
 
@@ -1572,7 +1591,8 @@ contract("SecurityToken", async (accounts) => {
                     {
                         from: account_affiliate1
                     }
-                )
+                ),
+                "Not Authorised"
             );
         });
 
@@ -1634,7 +1654,8 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should fail to execute authorizeOperatorByPartition successfully for invalid partition", async() => {
             await catchRevert(
-                I_SecurityToken.authorizeOperatorByPartition(web3.utils.toHex("LOCKED"), account_delegate, {from: account_investor1})
+                I_SecurityToken.authorizeOperatorByPartition(web3.utils.toHex("LOCKED"), account_delegate, {from: account_investor1}),
+                "Invalid partition"
             );
         });
 
@@ -1677,7 +1698,8 @@ contract("SecurityToken", async (accounts) => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "Invalid partition"
             );
         });
 
@@ -1737,7 +1759,8 @@ contract("SecurityToken", async (accounts) => {
         it("Should failed to redeem tokens by partition -- because not sufficient allowance", async() => {
             await I_SecurityToken.unarchiveModule(I_MockRedemptionManager.address, {from: token_owner});
             await catchRevert(
-                I_MockRedemptionManager.redeemTokensByPartition(new BN(web3.utils.toWei("10")), web3.utils.toHex("LOCKED"), "0x0", {from: account_investor1})
+                I_MockRedemptionManager.redeemTokensByPartition(new BN(web3.utils.toWei("10")), web3.utils.toHex("LOCKED"), "0x0", {from: account_investor1}),
+                "Invalid partition"
             );
         })
 
@@ -1747,7 +1770,8 @@ contract("SecurityToken", async (accounts) => {
 
             // failed because of invalid partition
             await catchRevert(
-                I_MockRedemptionManager.redeemTokensByPartition(new BN(web3.utils.toWei("10")), web3.utils.toHex("LOCKED"), "0x0", {from: account_investor1})
+                I_MockRedemptionManager.redeemTokensByPartition(new BN(web3.utils.toWei("10")), web3.utils.toHex("LOCKED"), "0x0", {from: account_investor1}),
+                "Invalid partition"
             );
         });
 
@@ -1799,7 +1823,8 @@ contract("SecurityToken", async (accounts) => {
                     {
                         from: account_investor1
                     }
-                )
+                ),
+                "Invalid partition"
             );
         });
 
@@ -2043,13 +2068,15 @@ contract("SecurityToken", async (accounts) => {
 
             it("\tShould failed to set a document details as name is empty\n", async() => {
                 await catchRevert(
-                    I_SecurityToken.setDocument(web3.utils.utf8ToHex(""), "https://www.gogl.bts.fly", "0x0", {from: token_owner})
+                    I_SecurityToken.setDocument(web3.utils.utf8ToHex(""), "https://www.gogl.bts.fly", "0x0", {from: token_owner}),
+                    "Bad name"
                 );
             });
 
             it("\tShould failed to set a document details as URI is empty\n", async() => {
                 await catchRevert(
-                    I_SecurityToken.setDocument(web3.utils.utf8ToHex("doc1"), "", "0x0", {from: token_owner})
+                    I_SecurityToken.setDocument(web3.utils.utf8ToHex("doc1"), "", "0x0", {from: token_owner}),
+                    "Bad uri"
                 );
             });
 
@@ -2079,7 +2106,7 @@ contract("SecurityToken", async (accounts) => {
 
         describe("Test cases for the getters functions\n", async()=> {
 
-                it("\tShould get the details of existed document\n", async() => {
+                it("\tShould get the details of an existing document\n", async() => {
                     let doc1Details = await stGetter.getDocument.call(web3.utils.utf8ToHex("doc1"));
                     assert.equal(doc1Details[0], uri);
                     assert.equal(web3.utils.toUtf8(doc1Details[1]), web3.utils.toUtf8(docHash));
@@ -2091,7 +2118,7 @@ contract("SecurityToken", async (accounts) => {
                     assert.closeTo(doc2Details[2].toNumber(), await latestTime(), 2);
                 });
 
-                it("\tShould get the details of the non-existed document it means every value should be zero\n", async() => {
+                it("\tShould get the details of the non-existent document it means every value should be zero\n", async() => {
                     let doc3Details = await stGetter.getDocument.call(web3.utils.utf8ToHex("doc3"));
                     assert.equal(doc3Details[0], "");
                     assert.equal(web3.utils.toUtf8(doc3Details[1]), "");
@@ -2109,15 +2136,16 @@ contract("SecurityToken", async (accounts) => {
 
         describe("Test cases for the removeDocument()\n", async() => {
 
-            it("\tShould failed to remove document because msg.sender is not authorised\n", async() => {
+            it("\tShould fail to remove document because msg.sender is not authorised\n", async() => {
                 await catchRevert(
                     I_SecurityToken.removeDocument(web3.utils.utf8ToHex("doc2"), {from: account_temp})
                 );
             });
 
-            it("\tShould failed to remove the document that is not existed in the contract\n", async() => {
+            it("\tShould fail to remove the document that doesn't exist in the contract\n", async() => {
                 await catchRevert(
-                    I_SecurityToken.removeDocument(web3.utils.utf8ToHex("doc3"), {from: token_owner})
+                    I_SecurityToken.removeDocument(web3.utils.utf8ToHex("doc3"), {from: token_owner}),
+                    "Not existed"
                 );
             });
 

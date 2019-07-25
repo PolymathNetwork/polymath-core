@@ -165,7 +165,8 @@ contract("PreSaleSTO", async (accounts) => {
         it("Should fail to launch the STO due to endTime is 0", async () => {
             let bytesSTO = encodeModuleCall(STOParameters, [0]);
 
-            await catchRevert(I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, new BN(0), new BN(0), false, { from: token_owner }));
+            await catchRevert(I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, new BN(0), new BN(0), false, { from: token_owner }),
+                "Unsuccessful initialization");
         });
 
         it("Should successfully attach the Paid STO factory (archived) with the security token", async () => {
@@ -190,7 +191,8 @@ contract("PreSaleSTO", async (accounts) => {
         it("Should successfully attach the STO factory with the security token -- fail because signature is different", async () => {
             endTime = await latestTime() + duration.days(30); // Start time will be 5000 seconds more than the latest time
             let bytesSTO = encodeModuleCall(["string"], ["hey"]);
-            await catchRevert(I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, new BN(0), new BN(0), false, { from: token_owner }));
+            await catchRevert(I_SecurityToken.addModule(I_PreSaleSTOFactory.address, bytesSTO, new BN(0), new BN(0), false, { from: token_owner }),
+                "Provided data is not valid");
         });
 
         it("Should successfully attach the STO factory (archived) with the security token", async () => {
@@ -261,14 +263,16 @@ contract("PreSaleSTO", async (accounts) => {
             await catchRevert(
                 I_PreSaleSTO.allocateTokens(account_investor1, new BN(web3.utils.toWei("1", "ether")), new BN(web3.utils.toWei("1", "ether")), new BN(0), {
                     from: account_issuer
-                })
+                }),
+                "revert"
             );
             await I_SecurityToken.unarchiveModule(I_PreSaleSTO.address, {from: token_owner});
             let info = await stGetter.getModule.call(I_PreSaleSTO.address);
             assert.equal(info[3], false);
 
             //Fail as investor is not on whitelist
-            await catchRevert(I_PreSaleSTO.allocateTokens(account_investor2, 1000, new BN(web3.utils.toWei("1", "ether")), 0));
+            await catchRevert(I_PreSaleSTO.allocateTokens(account_investor2, 1000, new BN(web3.utils.toWei("1", "ether")), 0),
+                "Invalid permission");
             await I_PreSaleSTO.allocateTokens(account_investor1, new BN(web3.utils.toWei("1", "ether")), new BN(web3.utils.toWei("1", "ether")), new BN(0), {
                 from: account_issuer
             });
@@ -281,7 +285,8 @@ contract("PreSaleSTO", async (accounts) => {
             await catchRevert(
                 I_PreSaleSTO.allocateTokens(account_investor1, new BN(0), new BN(web3.utils.toWei("1", "ether")), new BN(0), {
                     from: account_issuer
-                })
+                }),
+                "No. of tokens provided should be greater the zero"
             );
         });
 
@@ -289,7 +294,8 @@ contract("PreSaleSTO", async (accounts) => {
             await catchRevert(
                 I_PreSaleSTO.allocateTokens(account_investor1, new BN(web3.utils.toWei("1", "ether")), new BN(web3.utils.toWei("1", "ether")), new BN(0), {
                     from: account_fundsReceiver
-                })
+                }),
+                "Invalid permission"
             );
         });
 
@@ -334,7 +340,8 @@ contract("PreSaleSTO", async (accounts) => {
                     [0, 0],
                     [new BN(web3.utils.toWei("1000", "ether")), new BN(web3.utils.toWei("1000", "ether"))],
                     { from: account_issuer }
-                )
+                ),
+                "Mis-match in length of the arrays"
             );
         });
 
@@ -346,7 +353,8 @@ contract("PreSaleSTO", async (accounts) => {
                     [0],
                     [new BN(web3.utils.toWei("1000", "ether")), new BN(web3.utils.toWei("1000", "ether"))],
                     { from: account_issuer }
-                )
+                ),
+                "Mis-match in length of the arrays"
             );
         });
 
@@ -358,7 +366,8 @@ contract("PreSaleSTO", async (accounts) => {
                     [0, 0],
                     [new BN(web3.utils.toWei("1000", "ether"))],
                     { from: account_issuer }
-                )
+                ),
+                "Mis-match in length of the arrays"
             );
         });
 
@@ -370,7 +379,8 @@ contract("PreSaleSTO", async (accounts) => {
                     [0],
                     [new BN(web3.utils.toWei("1000", "ether")), new BN(web3.utils.toWei("1000", "ether"))],
                     { from: account_issuer }
-                )
+                ),
+                "Mis-match in length of the arrays"
             );
         });
 
@@ -386,7 +396,8 @@ contract("PreSaleSTO", async (accounts) => {
             await increaseTime(duration.days(100)); // increased beyond the end time of the STO
 
             await catchRevert(
-                I_PreSaleSTO.allocateTokens(account_investor1, 1000, new BN(web3.utils.toWei("1", "ether")), new BN(0), { from: account_issuer })
+                I_PreSaleSTO.allocateTokens(account_investor1, 1000, new BN(web3.utils.toWei("1", "ether")), new BN(0), { from: account_issuer }),
+                "Already passed Endtime"
             );
         });
     });
@@ -397,7 +408,8 @@ contract("PreSaleSTO", async (accounts) => {
             await I_PolyToken.getTokens(value, account_investor1);
             await I_PolyToken.transfer(I_PreSaleSTO.address, value, { from: account_investor1 });
 
-            await catchRevert(I_PreSaleSTO.reclaimERC20(address_zero, { from: token_owner }));
+            await catchRevert(I_PreSaleSTO.reclaimERC20(address_zero, { from: token_owner }),
+                "Invalid address");
         });
 
         it("Should successfully reclaim POLY", async () => {

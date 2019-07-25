@@ -63,6 +63,7 @@ async function displayTokenData() {
   let displayTokenName = await securityToken.methods.name().call();
   let displayTokenDetails = await securityToken.methods.tokenDetails().call();
   let displayVersion = await securityToken.methods.getVersion().call();
+  let displayGranularity = await securityToken.methods.granularity().call();
   let displayTokenSupply = await securityToken.methods.totalSupply().call();
   let displayHolderCount = await securityToken.methods.holderCount().call();
   let displayInvestorsCount = await securityToken.methods.getInvestorCount().call();
@@ -80,6 +81,7 @@ async function displayTokenData() {
 - Token name:           ${displayTokenName}
 - Token details:        ${displayTokenDetails}
 - Token version:        ${displayVersion[0]}.${displayVersion[1]}.${displayVersion[2]}
+- Granularity:          ${displayGranularity}
 - Total supply:         ${web3.utils.fromWei(displayTokenSupply)} ${displayTokenSymbol.toUpperCase()}
 - Holders count:        ${displayHolderCount}
 - Investors count:      ${displayInvestorsCount}
@@ -98,6 +100,7 @@ async function displayModules() {
   let stoModules = allModules.filter(m => m.type == gbl.constants.MODULES_TYPES.STO);
   let cpModules = allModules.filter(m => m.type == gbl.constants.MODULES_TYPES.DIVIDENDS);
   let burnModules = allModules.filter(m => m.type == gbl.constants.MODULES_TYPES.BURN);
+  let walletModules = allModules.filter(m => m.type == gbl.constants.MODULES_TYPES.WALLET);
 
   // Module Counts
   let numPM = pmModules.length;
@@ -105,6 +108,7 @@ async function displayModules() {
   let numSTO = stoModules.length;
   let numCP = cpModules.length;
   let numBURN = burnModules.length;
+  let numW = walletModules.length;
 
   console.log(`
 *******************    Module Information    ********************
@@ -113,6 +117,7 @@ async function displayModules() {
 - STO:                  ${(numSTO > 0) ? numSTO : 'None'}
 - Checkpoint:           ${(numCP > 0) ? numCP : 'None'}
 - Burn:                 ${(numBURN > 0) ? numBURN : 'None'}
+- Wallet:               ${(numW > 0) ? numW : 'None'}
   `);
 
   if (numPM) {
@@ -136,13 +141,18 @@ async function displayModules() {
   }
 
   if (numBURN) {
-    console.log(` Burn Modules:`);
+    console.log(`Burn Modules:`);
     burnModules.map(m => console.log(`- ${m.label}: ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
+  }
+
+  if (numW) {
+    console.log(`Wallet Modules:`);
+    walletModules.map(m => console.log(`- ${m.label}: ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
   }
 }
 
 async function selectAction() {
-  let options = ['Change token name', 'Update token details', 'Change treasury wallet', 'Manage documents']; // 'Change granularity'
+  let options = ['Change token name', 'Update token details', 'Change treasury wallet', 'Manage documents', 'Change granularity'];
 
   let transferFrozen = await securityToken.methods.transfersFrozen().call();
   if (transferFrozen) {
@@ -194,8 +204,8 @@ async function selectAction() {
       await changeTreasuryWallet(newTreasuryWallet);
       break;
     case 'Change granularity':
-      // let granularity = readlineSync.questionInt('Enter ')
-      // await changeGranularity();
+      let granularity = input.readNumberBetween(1, 18, 'Enter the granularity you want to set: ');
+      await changeGranularity(granularity);
       break;
     case 'Manage documents':
       await manageDocuments();
@@ -284,6 +294,12 @@ async function changeTreasuryWallet(newTreasuryWallet) {
   let changeTreasuryWalletAction = securityToken.methods.changeTreasuryWallet(newTreasuryWallet);
   await common.sendTransaction(changeTreasuryWalletAction);
   console.log(chalk.green(`Treasury wallet has been updated successfully!`));
+}
+
+async function changeGranularity(granularity) {
+  let changeGranularityAction = securityToken.methods.changeGranularity(granularity);
+  await common.sendTransaction(changeGranularityAction);
+  console.log(chalk.green(`Granularity has been updated successfully!`));
 }
 
 async function manageDocuments() {
@@ -556,7 +572,7 @@ async function listModuleOptions() {
 
 // Modules a actions
 async function addModule() {
-  let options = ['Permission Manager', 'Transfer Manager', 'Security Token Offering', 'Dividends', 'Burn'];
+  let options = ['Permission Manager', 'Transfer Manager', 'Security Token Offering', 'Dividends', 'Burn', 'Wallet'];
   let index = readlineSync.keyInSelect(options, 'What type of module would you like to add?', { cancel: 'Return' });
   switch (options[index]) {
     case 'Permission Manager':
@@ -578,6 +594,12 @@ async function addModule() {
     *********************************`));
       break;
     case 'Burn':
+      console.log(chalk.red(`
+    *********************************
+    This option is not yet available.
+    *********************************`));
+      break;
+    case 'Wallet':
       console.log(chalk.red(`
     *********************************
     This option is not yet available.
@@ -691,7 +713,7 @@ async function showUserInfo(_user) {
 async function getAllModules() {
   let allModules = [];
   // Iterate over all module types
-  for (let type = 1; type <= 5; type++) {
+  for (let type = 1; type <= 8; type++) {
     let modules = await common.getAllModulesByType(securityToken, type);
     modules.forEach(m => allModules.push(m));
   }

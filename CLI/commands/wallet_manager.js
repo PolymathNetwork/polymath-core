@@ -90,17 +90,17 @@ async function walletManager() {
   const treasuryWallet = await currentWalletModule.methods.getTreasuryWallet().call();
   const unassignedTokens = await currentWalletModule.methods.unassignedTokens().call();
   const templates = await currentWalletModule.methods.getAllTemplateNames().call();
-  const schedulesForCurrentUser = await currentWalletModule.methods.getScheduleCount(Issuer.address).call();
+  const availableTokensForCurrentUser = await currentWalletModule.methods.getAvailableTokens(Issuer.address).call();
 
   console.log(`- Treasury wallet:        ${treasuryWallet}`);
   console.log(`- Unassigned Tokens:      ${web3.utils.fromWei(unassignedTokens)}`);
   console.log(`- Templates:              ${templates.length}`);
 
   let options = ['Change treasury wallet', 'Manage templates', 'Manage schedules', 'Manage multiple schedules in batch', 'Explore account', 'Deposit tokens'];
-  if (parseInt(unassignedTokens) > 0) {
+  if (parseFloat(unassignedTokens) > 0) {
     options.push('Send unassigned tokens to treasury');
   }
-  if (parseInt(schedulesForCurrentUser) > 0) {
+  if (parseFloat(availableTokensForCurrentUser) > 0) {
     options.push('Pull available tokens');
   }
   let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
@@ -455,6 +455,8 @@ async function exploreAccount(account) {
   } else {
     console.log(`Current vesting schedules:      None`);
   }
+  const availableTokens = await currentWalletModule.methods.getAvailableTokens(account).call();
+  console.log(`Available tokens:               ${web3.utils.fromWei(availableTokens)}`);
 }
 
 async function multipleSchedules() {

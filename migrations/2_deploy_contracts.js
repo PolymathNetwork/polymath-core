@@ -39,6 +39,8 @@ const VolumeRestrictionTMLogic = artifacts.require('./VolumeRestrictionTM.sol');
 const VolumeRestrictionLib = artifacts.require('./VolumeRestrictionLib.sol');
 const RestrictedPartialSaleTMFactory = artifacts.require('./RestrictedPartialSaleTMFactory.sol')
 const RestrictedPartialSaleTMLogic = artifacts.require('./RestrictedPartialSaleTM.sol');
+const VestingEscrowWalletFactory = artifacts.require('./VestingEscrowWalletFactory.sol')
+const VestingEscrowWalletLogic = artifacts.require('./VestingEscrowWallet.sol');
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -307,6 +309,11 @@ module.exports = function(deployer, network, accounts) {
             return deployer.deploy(CappedSTOLogic, nullAddress, nullAddress, { from: PolymathAccount });
         })
         .then(() => {
+            // B) Deploy the VestingEscrowWalletLogic Contract (Factory used to generate the VestingEscrowWallet contract and this
+            // manager attach with the securityToken contract at the time of deployment)
+            return deployer.deploy(VestingEscrowWalletLogic, nullAddress, nullAddress, { from: PolymathAccount });
+        })
+        .then(() => {
             // B) Deploy the DataStoreLogic Contract
             return deployer.deploy(DataStoreLogic, { from: PolymathAccount });
         })
@@ -374,6 +381,13 @@ module.exports = function(deployer, network, accounts) {
             // D) Deploy the ManualApprovalTransferManagerFactory Contract (Factory used to generate the ManualApprovalTransferManager contract use
             // to manual approve the transfer that will overcome the other transfer restrictions)
             return deployer.deploy(ManualApprovalTransferManagerFactory, new BN(0), ManualApprovalTransferManagerLogic.address, polymathRegistry.address, {
+                from: PolymathAccount
+            });
+        })
+        .then(() => {
+            // D) Deploy the VestingEscrowWalletFactory Contract (Factory used to generate the ManualApprovalTransferManager contract use
+            // to manual approve the transfer that will overcome the other transfer restrictions)
+            return deployer.deploy(VestingEscrowWalletFactory, new BN(0), VestingEscrowWalletLogic.address, polymathRegistry.address, {
                 from: PolymathAccount
             });
         })
@@ -485,6 +499,11 @@ module.exports = function(deployer, network, accounts) {
             return moduleRegistry.registerModule(ERC20DividendCheckpointFactory.address, { from: PolymathAccount });
         })
         .then(() => {
+            // E) Register the VestingEscrowWalletFactory in the ModuleRegistry to make the factory available at the protocol level.
+            // So any securityToken can use that factory to generate the VestingEscrowWallet contract.
+            return moduleRegistry.registerModule(VestingEscrowWalletFactory.address, { from: PolymathAccount });
+        })
+        .then(() => {
             // F) Once the GeneralTransferManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
             // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
             // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
@@ -537,6 +556,12 @@ module.exports = function(deployer, network, accounts) {
             // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
             // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
             return moduleRegistry.verifyModule(ManualApprovalTransferManagerFactory.address, { from: PolymathAccount });
+        })
+        .then(() => {
+            // G) Once the VestingEscrowWalletFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
+            // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
+            // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
+            return moduleRegistry.verifyModule(VestingEscrowWalletFactory.address, { from: PolymathAccount });
         })
         .then(() => {
             // M) Deploy the CappedSTOFactory (Use to generate the CappedSTO contract which will used to collect the funds ).
@@ -616,8 +641,8 @@ module.exports = function(deployer, network, accounts) {
     ERC20DividendCheckpointFactory:       ${ERC20DividendCheckpointFactory.address}
     VolumeRestrictionTMFactory:           ${VolumeRestrictionTMFactory.address}
     VolumeRestrictionTMLogic:             ${VolumeRestrictionTMLogic.address}
-    RestrictedPartialSaleTMFactory:       ${RestrictedPartialSaleTMFactory.address}
-    RestrictedPartialSaleTMLogic:         ${RestrictedPartialSaleTMLogic.address}
+    VestingEscrowWalletFactory:           ${VestingEscrowWalletFactory.address}
+    VestingEscrowWalletLogic:             ${VestingEscrowWalletLogic.address}
     ---------------------------------------------------------------------------------
     `);
             console.log("\n");

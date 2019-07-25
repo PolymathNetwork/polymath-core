@@ -152,11 +152,11 @@ async function manageTemplates(templateNames) {
   console.log('\n', chalk.blue('Wallet - Template manager', '\n'));
 
   const allTemplates = await getTemplates(templateNames);
-
+  const templatesAbleToRemove = allTemplates.filter(t => t.scheduleCount == 0);
   allTemplates.map(t => console.log(formatTemplateAsString(t), '\n'));
 
   const options = ['Add template'];
-  if (templateNames.length > 0) {
+  if (templatesAbleToRemove.length > 0) {
     options.push('Remove template');
   }
   const index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
@@ -167,7 +167,7 @@ async function manageTemplates(templateNames) {
       await addTemplate();
       break;
     case 'Remove template':
-      const templateToDelete = (selectTemplate(allTemplates)).name;
+      const templateToDelete = (selectTemplate(templatesAbleToRemove)).name;
       await removeTemplate(templateToDelete);
       break;
   }
@@ -226,7 +226,8 @@ function formatTemplateAsString(template) {
   return `- ${template.name}
   Amount: ${template.amount} ${tokenSymbol}
   Duration: ${template.duration} seconds
-  Frequency: ${template.frequency} seconds`;
+  Frequency: ${template.frequency} seconds
+  Schedule count: ${template.scheduleCount}`;
 }
 
 function formatScheduleAsString(schedule) {
@@ -278,27 +279,18 @@ async function removeTemplate(templateName) {
 }
 
 async function getTemplates(templateNames) {
-  // const templateList = await Promise.all(templateNames.map(async function (t) {
-  //   const templateName = web3.utils.hexToUtf8(t);
-  //   const templateData = await currentWalletModule.methods.templates(t).call();
-  //   return {
-  //     name: templateName,
-  //     amount: web3.utils.fromWei(templateData.numberOfTokens),
-  //     duration: templateData.duration,
-  //     frequency: templateData.frequency
-  //    };
-  // }));
-
-  const templateEvents = await currentWalletModule.getPastEvents('AddTemplate', { fromBlock: 0});
-  const templateList = templateEvents.map(function (t) {
-    const templateName = web3.utils.hexToUtf8(t.returnValues._name);
+  const templateList = await Promise.all(templateNames.map(async function (t) {
+    const templateName = web3.utils.hexToUtf8(t);
+    const templateData = await currentWalletModule.methods.templates(t).call();
+    const scheduleCount = await currentWalletModule.methods.getSchedulesCountByTemplate(t).call();
     return {
       name: templateName,
-      amount: web3.utils.fromWei(t.returnValues._numberOfTokens),
-      duration: t.returnValues._duration,
-      frequency: t.returnValues._frequency
-      };
-  });
+      amount: web3.utils.fromWei(templateData.numberOfTokens),
+      duration: templateData.duration,
+      frequency: templateData.frequency,
+      scheduleCount: parseInt(scheduleCount)
+     };
+  }));
 
   return templateList;
 }

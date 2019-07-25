@@ -301,6 +301,66 @@ contract("GeneralPermissionManager", async (accounts) => {
             assert.equal(tx.logs[0].args._delegate, account_delegate);
         });
 
+        it("Should fail to add add the delegate in batch -- Bad msg.sender", async() => {
+            await catchRevert(
+                I_GeneralPermissionManager.addDelegateMulti(
+                [account_delegate2, account_delegate3],
+                [delegateDetails, delegateDetails],
+                {
+                    from: account_investor1
+                }),
+                "Invalid permission"
+            );
+        });
+
+        it("Should fail to add the delegate in batch -- Array length mismatch", async() => {
+            await catchRevert(
+                I_GeneralPermissionManager.addDelegateMulti(
+                [account_delegate2],
+                [delegateDetails, delegateDetails],
+                {
+                    from: token_owner
+                }),
+                "Length mismatch"
+            );
+        });
+
+        it("Should successfully add the delegate in batch", async() => {
+            await I_GeneralPermissionManager.addDelegateMulti(
+                [account_delegate2, account_delegate3],
+                [delegateDetails, delegateDetails],
+                {
+                    from: token_owner
+                });
+            assert.equal(
+                web3.utils.toAscii(await I_GeneralPermissionManager.delegateDetails.call(account_delegate2)).replace(/\u0000/g, ""),
+                web3.utils.toAscii(delegateDetails)
+            );
+            assert.equal(
+                web3.utils.toAscii(await I_GeneralPermissionManager.delegateDetails.call(account_delegate3)).replace(/\u0000/g, ""),
+                web3.utils.toAscii(delegateDetails)
+            );
+        });
+
+        it("Should fail to delete the delgate successfully -- bad msg.sender", async() => {
+            await catchRevert(
+                I_GeneralPermissionManager.deleteDelegateMulti([account_delegate2, account_delegate3], {from: account_investor1}),
+                "Invalid permission"
+            );
+        });
+
+        it("Should successfully delete the delegate", async() => {
+            await I_GeneralPermissionManager.deleteDelegateMulti([account_delegate2, account_delegate3], {from: token_owner});
+            assert.equal(
+                web3.utils.toAscii(await I_GeneralPermissionManager.delegateDetails.call(account_delegate3)).replace(/\u0000/g, ""),
+                ""
+            );
+            assert.equal(
+                web3.utils.toAscii(await I_GeneralPermissionManager.delegateDetails.call(account_delegate3)).replace(/\u0000/g, ""),
+                ""
+            );
+        });
+
         it("Should check the delegate details", async () => {
             assert.equal(
                 web3.utils.toAscii(await I_GeneralPermissionManager.delegateDetails.call(account_delegate)).replace(/\u0000/g, ""),

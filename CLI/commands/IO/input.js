@@ -110,6 +110,17 @@ function readDateInTheFuture(message, defaultValue) {
   });
 }
 
+function readDateInTheFutureOrZero(message, defaultValue) {
+  const now = Math.floor(Date.now() / 1000);
+  return readlineSync.question(message, {
+    limit: function (input) {
+      return parseInt(input) === 0 || parseInt(input) >= now;
+    },
+    limitMessage: `Must be a future date or zero`,
+    defaultInput: defaultValue
+  });
+}
+
 module.exports = {
   readAddress,
   readMultipleAddresses,
@@ -121,5 +132,6 @@ module.exports = {
   readNumberBetween,
   readStringNonEmpty,
   readStringNonEmptyWithMaxBinarySize,
-  readDateInTheFuture
+  readDateInTheFuture,
+  readDateInTheFutureOrZero
 }

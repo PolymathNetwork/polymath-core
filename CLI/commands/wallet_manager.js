@@ -322,8 +322,7 @@ async function getSchedules(beneficiary, templateNames) {
 }
 
 async function addSchedule(beneficiary, allTemplateNames) {
-  const minuteFromNow = Math.floor(Date.now() / 1000) + 60;
-  const startTime = input.readDateInTheFuture(`Enter the start date (Unix Epoch time) of the vesting schedule (a minute from now = ${minuteFromNow}): `, minuteFromNow);
+  const startTime = input.readDateInTheFutureOrZero(`Enter the start date (Unix Epoch time) of the vesting schedule (now = 0): `, 0);
   
   const currentBalance = await securityToken.methods.balanceOf(Issuer.address).call();
   console.log(chalk.yellow(`Your current balance is ${web3.utils.fromWei(currentBalance)} ${tokenSymbol}`));
@@ -379,8 +378,7 @@ function selectSchedule(schedules, onlyCreated) {
 }
 
 async function modifySchedule(beneficiary, templateName) {
-  const minuteFromNow = Math.floor(Date.now() / 1000) + 60;
-  const startTime = input.readDateInTheFuture(`Enter the new start date (Unix Epoch time) of the vesting schedule (a minute from now = ${minuteFromNow}): `, minuteFromNow);
+  const startTime = input.readDateInTheFutureOrZero(`Enter the start date (Unix Epoch time) of the vesting schedule (now = 0): `, 0);
   const action = currentWalletModule.methods.modifySchedule(beneficiary, web3.utils.toHex(templateName), startTime);
   const receipt = await common.sendTransaction(action);
   const event = common.getEventFromLogs(currentWalletModule._jsonInterface, receipt.logs, 'ModifySchedule');

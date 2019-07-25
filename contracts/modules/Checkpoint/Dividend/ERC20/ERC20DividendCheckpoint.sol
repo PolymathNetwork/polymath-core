@@ -189,9 +189,10 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
             dividends[dividendIndex].dividendExcluded[_excluded[j]] = true;
         }
         require(currentSupply > excludedSupply, "Invalid supply");
-        dividends[dividendIndex].totalSupply = currentSupply - excludedSupply;
+        uint256 supplyForDividend = currentSupply - excludedSupply;
+        dividends[dividendIndex].totalSupply = supplyForDividend;
         dividendTokens[dividendIndex] = _token;
-        _emitERC20DividendDepositedEvent(_checkpointId, _maturity, _expiry, _token, _amount, currentSupply, dividendIndex, _name);
+        _emitERC20DividendDepositedEvent(_checkpointId, _maturity, _expiry, _token, _amount, supplyForDividend, dividendIndex, _name);
     }
 
     /**

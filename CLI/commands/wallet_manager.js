@@ -90,13 +90,18 @@ async function walletManager() {
   const treasuryWallet = await currentWalletModule.methods.getTreasuryWallet().call();
   const unassignedTokens = await currentWalletModule.methods.unassignedTokens().call();
   const templates = await currentWalletModule.methods.getAllTemplateNames().call();
+  const currentBeneficiaries = await currentWalletModule.methods.getAllBeneficiaries().call();
   const availableTokensForCurrentUser = await currentWalletModule.methods.getAvailableTokens(Issuer.address).call();
 
-  console.log(`- Treasury wallet:        ${treasuryWallet}`);
-  console.log(`- Unassigned Tokens:      ${web3.utils.fromWei(unassignedTokens)}`);
-  console.log(`- Templates:              ${templates.length}`);
+  console.log(`- Treasury wallet:           ${treasuryWallet}`);
+  console.log(`- Unassigned Tokens:         ${web3.utils.fromWei(unassignedTokens)}`);
+  console.log(`- Current beneficiaries:     ${currentBeneficiaries.length}`);
+  console.log(`- Templates:                 ${templates.length}`);
 
   let options = ['Change treasury wallet', 'Manage templates', 'Manage schedules', 'Manage multiple schedules in batch', 'Explore account', 'Deposit tokens'];
+  if (currentBeneficiaries.length > 0) {
+    options.push('Show all beneficiaries');
+  }
   if (parseFloat(unassignedTokens) > 0) {
     options.push('Send unassigned tokens to treasury');
   }
@@ -126,6 +131,9 @@ async function walletManager() {
       break;
     case 'Deposit tokens':
       await depositTokens();
+      break;
+    case 'Show all beneficiaries':
+      await showBeneficiaries(currentBeneficiaries);
       break;
     case 'Send unassigned tokens to treasury':
       await sendToTreasury(unassignedTokens);
@@ -597,6 +605,12 @@ async function revokeSchedulesInBatch() {
     console.log(chalk.green('Revoke multiple schedules transaction was successful.'));
     console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
   }
+}
+
+async function showBeneficiaries(beneficiaries) {
+  console.log('********* Current benefeciaries **********');
+  beneficiaries.map(address => console.log(address));
+  console.log();
 }
 
 async function initialize(_tokenSymbol) {

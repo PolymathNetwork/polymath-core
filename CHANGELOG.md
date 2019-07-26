@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 
 ## Modules
 * Add `getSchedulesCountByTemplate()` function in VEW.
+* Add `addDelegateMulti()`, `deleteDelegateMulti()` batch functions in `GeneralPermissionManager` module.
 
 # v3.0.0 - Release Candidate
 

@@ -566,14 +566,16 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
 
         (isVerifiedSig, signer) = _checkSigView(hash, _signature, _nonce);
         if (isVerifiedSig) {
-            if (_isReadOnlyCall) {
-                for (uint256 i = 0; i < _investor.length; i++) {
-                    if (uint64(_canSendAfter[i]) == _canSendAfter[i] &&
-                        uint64(_canReceiveAfter[i]) == _canReceiveAfter[i] &&
-                        uint64(_expiryTime[i]) == _expiryTime[i]
-                    )
-                        if (_investor[i] == address(0))
-                            return (false, address(0));
+            for (uint256 i = 0; i < _investor.length; i++) {
+                if (uint64(_canSendAfter[i]) == _canSendAfter[i] &&
+                    uint64(_canReceiveAfter[i]) == _canReceiveAfter[i] &&
+                    uint64(_expiryTime[i]) == _expiryTime[i]
+                ) {
+                    if (_isReadOnlyCall && _investor[i] == address(0))
+                        return (false, address(0));
+                        
+                } else {
+                    return (false, address(0));
                 }
             }
             return (true, signer);

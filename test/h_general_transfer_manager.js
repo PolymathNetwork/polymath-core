@@ -1313,10 +1313,10 @@ contract("GeneralTransferManager", async (accounts) => {
             console.log(`Get the balance:${web3.utils.fromWei((await I_SecurityToken.balanceOf.call(account_investor1)).toString())}`);
 
             let isTransfer = await I_GeneralTransferManager.verifyTransfer.call(account_investor1, account_investor3, new BN(web3.utils.toWei("1")), sig);
-            assert.equal(isTransfer[0], 2);
+            assert.equal((isTransfer[0]).toString(), 2);
 
             let canTransferResult = await I_SecurityToken.canTransfer.call(account_investor3, new BN(web3.utils.toWei("1")), sig, {from: account_investor1});
-            assert.equal(canTransferResult[0], 0x51);
+            assert.equal((canTransferResult[0]).toString(), 0x51);
         });
 
         it("Successfully transfer the tokens by using dynamic whitelisting", async() => {

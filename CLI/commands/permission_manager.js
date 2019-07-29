@@ -15,6 +15,7 @@ let currentPermissionManager;
 
 const ADD_DELEGATES_DATA_CSV = `${__dirname}/../data/Permission/add_delegates_data.csv`;
 const DELETE_DELEGATES_DATA_CSV = `${__dirname}/../data/Permission/delete_delegates_data.csv`;
+const CHANGE_PERMISSIONS_DATA_CSV = `${__dirname}/../data/Permission/change_permissions_data.csv`;
 
 async function executeApp() {
   console.log('\n', chalk.blue('Permission Manager - Main Menu', '\n'));
@@ -81,7 +82,7 @@ async function permissionManager() {
 
   let options = ['Manage delegates'];
   if (parseInt(delegates) > 0) {
-    options.push('Explore account', 'Change permission');
+    options.push('Explore account', 'Change permission', 'Change multiple permission in batches');
   }
 
   let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
@@ -96,6 +97,9 @@ async function permissionManager() {
       break;
     case 'Change permission':
       await changePermission();
+      break
+    case 'Change multiple permission in batches':
+      await changeMultiplePermissionsInBatches();
       break
     case 'RETURN':
       return;
@@ -192,6 +196,34 @@ async function deleteDelegatesInBatches() {
     let action = currentPermissionManager.methods.deleteDelegateMulti(delegateArray[batch]);
     let receipt = await common.sendTransaction(action);
     console.log(chalk.green('Delete multiple delegates transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
+async function changeMultiplePermissionsInBatches() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${CHANGE_PERMISSIONS_DATA_CSV}): `, {
+    defaultInput: CHANGE_PERMISSIONS_DATA_CSV
+  });
+  let batchSize = input.readNumberGreaterThan(0, `Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, gbl.constants.DEFAULT_BATCH_SIZE);
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(
+    row => web3.utils.isAddress(row[0]) &&
+      web3.utils.isAddress(row[1]) &&
+      (row[2] === 'ADMIN' || row[2] === 'OPERATOR') &&
+      typeof row[3] === 'boolean'
+    );
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [delegateArray, moduleArray, permArray, validArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to change permissions for the following delegates:\n\n`, delegateArray[batch], '\n');
+    permArray[batch] = permArray[batch].map(n => web3.utils.toHex(n));
+    let action = currentPermissionManager.methods.changePermissionMulti(delegateArray[batch][0], moduleArray[batch], permArray[batch], validArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Change multiple permissions transaction was successful.'));
     console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
   }
 }

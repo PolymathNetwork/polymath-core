@@ -11,7 +11,6 @@ let securityTokenRegistry;
 let securityToken;
 let polyToken;
 let currentPermissionManager;
-let isNewDelegate = false;
 
 async function executeApp() {
   console.log('\n', chalk.blue('Permission Manager - Main Menu', '\n'));

@@ -1,6 +1,14 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# v3.1.0 -Release Candidate
+
+[__3.1.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __11-07-19__
+
+## Modules
+* Add `getSchedulesCountByTemplate()` function in VEW.
+* Add `addDelegateMulti()`, `deleteDelegateMulti()` batch functions in `GeneralPermissionManager` module.
+
 # v3.0.0 - Release Candidate
 
 [__3.0.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __10-11-18__
@@ -77,6 +85,7 @@ All notable changes to this project will be documented in this file.
 ## Modules   
 * Introduced BTM, LTM and VEW modules.   
 * Remove `takeFee()` function.
+* `getTreasuryWallet()` function added to `DividendCheckpoint.sol`.
 
 ## Generalize
 * Removed `_polyAddress` parameter from constructors of all modules and module factories.

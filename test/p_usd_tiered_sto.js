@@ -85,6 +85,10 @@ contract("USDTieredSTO", async (accounts) => {
     let REGFEE;
     const STOSetupCost = 0;
 
+    const STOs = {
+        usdRaiseOnly: 6
+    }
+
     // MockOracle USD prices
     let USDETH; // 500 USD/ETH
     let USDPOLY; // 0.25 USD/POLY
@@ -715,6 +719,53 @@ contract("USDTieredSTO", async (accounts) => {
             _nonAccreditedLimitUSD.push(new BN(25).mul(e18)); // [ 25 USD ]
             _minimumInvestmentUSD.push(new BN(5));
             _fundRaiseTypes.push([0, 1, 2]);
+            _wallet.push(WALLET);
+            _treasuryWallet.push(TREASURYWALLET);
+            _usdToken.push([I_DaiToken.address]);
+
+            let config = [
+                _startTime[stoId],
+                _endTime[stoId],
+                _ratePerTier[stoId],
+                _ratePerTierDiscountPoly[stoId],
+                _tokensPerTierTotal[stoId],
+                _tokensPerTierDiscountPoly[stoId],
+                _nonAccreditedLimitUSD[stoId],
+                _minimumInvestmentUSD[stoId],
+                _fundRaiseTypes[stoId],
+                _wallet[stoId],
+                _treasuryWallet[stoId],
+                _usdToken[stoId]
+            ];
+
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
+            let tx = await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, 0, 0, false, { from: ISSUER, gasPrice: GAS_PRICE });
+            console.log("          Gas addModule: ".grey + tx.receipt.gasUsed.toString().grey);
+            assert.equal(tx.logs[2].args._types[0], STOKEY, "USDTieredSTO doesn't get deployed");
+            assert.equal(web3.utils.hexToString(tx.logs[2].args._name), "USDTieredSTO", "USDTieredSTOFactory module was not added");
+            I_USDTieredSTO_Array.push(await USDTieredSTO.at(tx.logs[2].args._module));
+            // console.log(I_USDTieredSTO_Array[I_USDTieredSTO_Array.length - 1]);
+            let tokens = await I_USDTieredSTO_Array[I_USDTieredSTO_Array.length - 1].getUsdTokens.call();
+            assert.equal(tokens[0], I_DaiToken.address, "USD Tokens should match");
+        });
+
+        it("Should successfully an STO that accepts funds in ETH only.", async () => {
+            let stoId = STOs.usdRaiseOnly;
+
+            _startTime.push(new BN(currentTime).add(new BN(duration.days(2))));
+            _endTime.push(new BN(_startTime[stoId]).add(new BN(currentTime).add(new BN(duration.days(100)))));
+            _ratePerTier.push([new BN(1).mul(e18), new BN(1).mul(e18)]); // [ 1 USD/Token, 1 USD/Token ]
+            _ratePerTierDiscountPoly.push([new BN(1).mul(e18), new BN(1).mul(e18)]); // [ 1 USD/Token, 1 USD/Token ]
+            _tokensPerTierTotal.push([new BN(10010).mul(e16), new BN(50).mul(e18)]); // [ 100.1 Token, 50 Token ]
+            _tokensPerTierDiscountPoly.push([new BN(0), new BN(0)]); // [ 0 Token, 0 Token ]
+            _nonAccreditedLimitUSD.push(new BN(25).mul(e18)); // [ 25 USD ]
+            _minimumInvestmentUSD.push(new BN(5));
+
+            /**
+             * USD only.
+             */
+            _fundRaiseTypes.push([2]);
+
             _wallet.push(WALLET);
             _treasuryWallet.push(TREASURYWALLET);
             _usdToken.push([I_DaiToken.address]);
@@ -1395,6 +1446,58 @@ contract("USDTieredSTO", async (accounts) => {
 
             // ACCREDITED DAI
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(ACCREDITED1, investment_DAI, I_DaiToken.address, { from: ACCREDITED1 }), "STO not open");
+
+            await revertToSnapshot(snapId);
+        });
+
+        it("should enforce fund raising types (e.g. SC only) ", async () => {
+            let stoId = STOs.usdRaiseOnly;
+            let snapId = await takeSnapshot();
+
+            // Whitelist
+            let fromTime = await latestTime();
+            let toTime = await latestTime() + duration.days(15);
+            let expiryTime = toTime + duration.days(100);
+            let whitelisted = true;
+
+            await I_GeneralTransferManager.modifyKYCData(ACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyInvestorFlag(ACCREDITED1, 0, true, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(NONACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
+
+            // Advance time to after STO start
+            await increaseTime(duration.days(3));
+
+            // Prep for investments
+            let investment_ETH = new BN(web3.utils.toWei("1", "ether")); // Invest 1 ETH
+            let investment_POLY = new BN(web3.utils.toWei("10000", "ether")); // Invest 10000 POLY
+            await I_PolyToken.getTokens(investment_POLY, NONACCREDITED1);
+            await I_PolyToken.approve(I_USDTieredSTO_Array[stoId].address, investment_POLY, { from: NONACCREDITED1 });
+            await I_PolyToken.getTokens(investment_POLY, ACCREDITED1);
+            await I_PolyToken.approve(I_USDTieredSTO_Array[stoId].address, investment_POLY, { from: ACCREDITED1 });
+
+            let investment_DAI = new BN(web3.utils.toWei("500", "ether")); // Invest 10000 POLY
+            await I_DaiToken.getTokens(investment_DAI, NONACCREDITED1);
+            await I_DaiToken.approve(I_USDTieredSTO_Array[stoId].address, investment_DAI, { from: NONACCREDITED1 });
+            await I_DaiToken.getTokens(investment_DAI, ACCREDITED1);
+            await I_DaiToken.approve(I_USDTieredSTO_Array[stoId].address, investment_DAI, { from: ACCREDITED1 });
+
+            // NONACCREDITED ETH
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH }),
+                "ETH not allowed");
+            // NONACCREDITED POLY
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, { from: NONACCREDITED1 }),
+                "POLY not allowed");
+            // NONACCREDITED DAI
+            await I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, I_DaiToken.address, { from: NONACCREDITED1 });
+
+            // ACCREDITED ETH
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH }),
+                "ETH not allowed");
+            // ACCREDITED POLY
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, { from: ACCREDITED1 }),
+                "POLY not allowed");
+            // ACCREDITED DAI
+            await I_USDTieredSTO_Array[stoId].buyWithUSD(ACCREDITED1, investment_DAI, I_DaiToken.address, { from: ACCREDITED1 });
 
             await revertToSnapshot(snapId);
         });

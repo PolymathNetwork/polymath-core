@@ -24,6 +24,8 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
 
     event ReserveTokenMint(address indexed _owner, address indexed _wallet, uint256 _tokens);
 
+    event ReserveTokenTransfer(address indexed _from, address indexed _wallet, uint256 _tokens);
+
     constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
 
     }
@@ -160,11 +162,12 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
      * @return Number of individual investors this STO have.
      * @return Amount of tokens get sold.
      * @return Boolean value to justify whether the fund raise type is POLY or not, i.e true for POLY.
+     * @return Boolean value to know the nature of the STO Whether it is pre-mint or mint on buying type sto.
      */
-    function getSTODetails() public view returns(uint256, uint256, uint256, uint256, uint256, uint256, uint256, bool) {
+    function getSTODetails() public view returns(uint256, uint256, uint256, uint256, uint256, uint256, uint256, bool, bool) {
         return (startTime, endTime, cap, rate, (fundRaiseTypes[uint8(FundRaiseType.POLY)]) ? fundsRaised[uint8(
             FundRaiseType.POLY
-        )] : fundsRaised[uint8(FundRaiseType.ETH)], investorCount, totalTokensSold, (fundRaiseTypes[uint8(FundRaiseType.POLY)]));
+        )] : fundsRaised[uint8(FundRaiseType.ETH)], investorCount, totalTokensSold, (fundRaiseTypes[uint8(FundRaiseType.POLY)]), preMintAllowed);
     }
 
     // -----------------------------------------
@@ -202,6 +205,7 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
     * @param _investedAmount Value in wei involved in the purchase
     */
     function _preValidatePurchase(address _beneficiary, uint256 _investedAmount) internal view {
+        require(!isFinalized, "STO is finalized");
         require(_beneficiary != address(0), "Beneficiary address should not be 0x");
         require(_investedAmount != 0, "Amount invested should not be equal to 0");
         require(_canBuy(_beneficiary), "Unauthorized");
@@ -286,9 +290,10 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
             tempTokens = cap - totalTokensSold;
             walletAddress = getTreasuryWallet();
             require(walletAddress != address(0), "Invalid address");
-            if (preMintAllowed)
+            if (preMintAllowed) {
                 securityToken.transfer(walletAddress, tempTokens);
-            else {
+                emit ReserveTokenTransfer(address(this), walletAddress, tempTokens);
+            } else {
                 securityToken.issue(walletAddress, tempTokens, "");
                 emit ReserveTokenMint(msg.sender, walletAddress, tempTokens);
             }

@@ -171,9 +171,9 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
                 txReq = transferRequirements[uint8(TransferType.GENERAL)];
             }
 
-            !_isValidModule(_from) ? (canSendAfter, fromExpiry) = _getValuesForFrom(_from) : (canSendAfter, fromExpiry) = (uint64(now - 1), uint64(now + 1));
+            !_isWhitelistModule(_from) ? (canSendAfter, fromExpiry) = _getValuesForFrom(_from) : (canSendAfter, fromExpiry) = (uint64(now - 1), uint64(now + 1));
 
-            !_isValidModule(_to) ? (canReceiveAfter, toExpiry) = _getValuesForTo(_to) : (canReceiveAfter, toExpiry) = (uint64(now - 1), uint64(now + 1));                
+            !_isWhitelistModule(_to) ? (canReceiveAfter, toExpiry) = _getValuesForTo(_to) : (canReceiveAfter, toExpiry) = (uint64(now - 1), uint64(now + 1));                
 
             if ((txReq.fromValidKYC && !_validExpiry(fromExpiry)) || (txReq.toValidKYC && !_validExpiry(toExpiry))) {
                 return (Result.NA, bytes32(0));
@@ -190,7 +190,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         return (Result.NA, bytes32(0));
     }
 
-    function _isValidModule(address _holder) internal view returns(bool) {
+    function _isWhitelistModule(address _holder) internal view returns(bool) {
         uint8[] memory types;
         bool isArchived;
         bytes32 name;

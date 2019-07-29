@@ -40,6 +40,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         uint256 _rate
     );
     event ReserveTokenMint(address indexed _owner, address indexed _wallet, uint256 _tokens, uint256 _latestTier);
+    event ReserveTokenTransfer(address indexed _from, address indexed _wallet, uint256 _tokens);
     event SetAddresses(address indexed _wallet, IERC20[] _usdTokens);
     event SetLimits(uint256 _nonAccreditedLimitUSD, uint256 _minimumInvestmentUSD);
     event SetTimes(uint256 _startTime, uint256 _endTime);
@@ -314,6 +315,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         if (tempReturned != uint256(0)) {
             if (preMintAllowed) {
                 securityToken.transfer(walletAddress, tempReturned);
+                emit ReserveTokenTransfer(address(this), walletAddress, tempReturned);
             } else {
                 securityToken.issue(walletAddress, tempReturned, "");
                 emit ReserveTokenMint(msg.sender, walletAddress, tempReturned, currentTier);
@@ -772,9 +774,10 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @return Amount of funds raised
      * @return Number of individual investors this STO have.
      * @return Amount of tokens sold.
-     * @return Array of bools to show if funding is allowed in ETH, POLY, SC respectively
+     * @return Array of bools to show if funding is allowed in ETH, POLY, SC respectively.
+     * @return Boolean value to know the nature of the STO Whether it is pre-mint or mint on buying type sto.
      */
-    function getSTODetails() external view returns(uint256, uint256, uint256, uint256[] memory, uint256[] memory, uint256, uint256, uint256, bool[] memory) {
+    function getSTODetails() external view returns(uint256, uint256, uint256, uint256[] memory, uint256[] memory, uint256, uint256, uint256, bool[] memory, bool) {
         uint256[] memory cap = new uint256[](tiers.length);
         uint256[] memory rate = new uint256[](tiers.length);
         for(uint256 i = 0; i < tiers.length; i++) {
@@ -794,7 +797,8 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
             fundsRaisedUSD,
             investorCount,
             getTokensSold(),
-            _fundRaiseTypes
+            _fundRaiseTypes,
+            preMintAllowed
         );
     }
 

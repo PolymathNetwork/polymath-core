@@ -38,7 +38,7 @@ contract IST20 {
 # The Polymath Core Architecture
 The diagram below depicts a high-level view of the various modules, registries, and contracts implemented within Polymath Core 2.0.0:
 
-![Polymath Core architecture](https://github.com/PolymathNetwork/polymath-core/blob/master/docs/images/Core%20Architecture%202.0.0%20%20Diagram.png)
+![Polymath Core architecture](https://github.com/PolymathNetwork/polymath-core/blob/dev-3.0.0/docs/images/Polymath%20Core%20v3.png)
 
 ## Components
 ### Polymath Registries

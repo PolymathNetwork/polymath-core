@@ -193,11 +193,11 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     function _isWhitelistModule(address _holder) internal view returns(bool) {
         uint8[] memory types;
         bool isArchived;
-        bytes32 name;
+        address module;
         // Use getModule() function to avoid the malicious module change its factory type after adding
         // into the securityToken 
-        (name,,,isArchived,types,)= securityToken.getModule(_holder);
-        if (name != bytes32(0) && !isArchived) {
+        (,module,,isArchived,types,)= securityToken.getModule(_holder);
+        if (module != address(0) && !isArchived) {
             for (uint256 i = 0; i < types.length; i++) {
                 if (types[i] == WHITELISTMODULE)  // Validating the module type to allow the non whitelist address(module)
                     return true;

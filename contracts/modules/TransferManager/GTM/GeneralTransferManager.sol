@@ -165,23 +165,24 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
                 ) = _processTransferSignatureView(data, validFrom, validTo, nonce);
                 if (success) {
                     // Reusing the variable to avoid stack too deep error
-                    (validFrom, validTo) = (uint256(0), uint256(0));
+                    (validFrom, validTo) = (MAX, MAX);
                     for (nonce = 0; nonce < investor.length; nonce++) {
                         // Searching the _to & _from token holder to get the required details for _verifyTransfer validation 
                         if (investor[nonce] == _to)
                             validTo = nonce;
                         else if (investor[nonce] == _from)
                             validFrom = nonce;
-                        if (validFrom != 0 && validTo != 0)
+                        if (validFrom != MAX && validTo != MAX)
                             break;   
                     }
-                    validFrom == 0 ? (uint64(canSendAfter[0]), uint64(nonce)) = _getKYCValuesFrom(target) : (uint64(canSendAfter[0]), uint64(nonce)) = (uint64(canSendAfter[validFrom]), uint64(expiryTime[validFrom]));
+                    validFrom == MAX ? (validFrom, nonce) = _getKYCValuesFrom(target) : (validFrom, nonce) = (canSendAfter[validFrom], expiryTime[validFrom]);
+                    if (validTo != MAX) { 
                         return _verifyTransfer(
                             _to,
                             target,
-                            uint64(canSendAfter[validFrom]),
+                            uint64(validFrom),
                             uint64(canRecieveAfter[validTo]),
-                            uint64(expiryTime[validFrom]),
+                            uint64(nonce),
                             uint64(expiryTime[validTo])
                         );
                     } else {

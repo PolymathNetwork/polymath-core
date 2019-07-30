@@ -1301,8 +1301,8 @@ contract("GeneralTransferManager", async (accounts) => {
             const sig = getSignGTMTransferData(
                 I_GeneralTransferManager.address,
                 [account_investor3],
-                [currentTime.toNumber()],
-                [currentTime.toNumber()],
+                [validFrom],
+                [validFrom],
                 [expiryTime + duration.days(200)],
                 validFrom,
                 validTo,
@@ -1334,12 +1334,20 @@ contract("GeneralTransferManager", async (accounts) => {
                 nonce,
                 "0x" + token_owner_pk
             );
-
+            
+            // Check when the _to is not in the whitelist while _from is 
             let isTransfer = await I_GeneralTransferManager.verifyTransfer.call(account_investor1, account_investor4, new BN(web3.utils.toWei("1")), sig);
             assert.equal(isTransfer[0], 2);
-
+            // Check when the _to is not in the whitelist while _from is 
             let canTransferResult = await I_SecurityToken.canTransfer.call(account_investor4, new BN(web3.utils.toWei("1")), sig, {from: account_investor1});
             assert.equal(canTransferResult[0], 0x51);
+
+            // Check when the _to & _from is not in the whitelist
+            isTransfer = await I_GeneralTransferManager.verifyTransfer.call(account_investor3, account_investor4, new BN(web3.utils.toWei("1")), sig);
+            assert.equal(isTransfer[0], 2);
+            // Check when the _to & _from is not in the whitelist -- it get falied because account_investor3 does not posses any balance
+            canTransferResult = await I_SecurityToken.canTransfer.call(account_investor4, new BN(web3.utils.toWei("1")), sig, {from: account_investor3});
+            assert.equal(canTransferResult[0], '0x52');
         });
     });
 

@@ -100,6 +100,7 @@ async function displayModules() {
   let stoModules = allModules.filter(m => m.type == gbl.constants.MODULES_TYPES.STO);
   let cpModules = allModules.filter(m => m.type == gbl.constants.MODULES_TYPES.DIVIDENDS);
   let burnModules = allModules.filter(m => m.type == gbl.constants.MODULES_TYPES.BURN);
+  let walletModules = allModules.filter(m => m.type == gbl.constants.MODULES_TYPES.WALLET);
 
   // Module Counts
   let numPM = pmModules.length;
@@ -107,6 +108,7 @@ async function displayModules() {
   let numSTO = stoModules.length;
   let numCP = cpModules.length;
   let numBURN = burnModules.length;
+  let numW = walletModules.length;
 
   console.log(`
 *******************    Module Information    ********************
@@ -115,6 +117,7 @@ async function displayModules() {
 - STO:                  ${(numSTO > 0) ? numSTO : 'None'}
 - Checkpoint:           ${(numCP > 0) ? numCP : 'None'}
 - Burn:                 ${(numBURN > 0) ? numBURN : 'None'}
+- Wallet:               ${(numW > 0) ? numW : 'None'}
   `);
 
   if (numPM) {
@@ -138,8 +141,13 @@ async function displayModules() {
   }
 
   if (numBURN) {
-    console.log(` Burn Modules:`);
+    console.log(`Burn Modules:`);
     burnModules.map(m => console.log(`- ${m.label}: ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
+  }
+
+  if (numW) {
+    console.log(`Wallet Modules:`);
+    walletModules.map(m => console.log(`- ${m.label}: ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
   }
 }
 
@@ -564,7 +572,7 @@ async function listModuleOptions() {
 
 // Modules a actions
 async function addModule() {
-  let options = ['Permission Manager', 'Transfer Manager', 'Security Token Offering', 'Dividends', 'Burn'];
+  let options = ['Permission Manager', 'Transfer Manager', 'Security Token Offering', 'Dividends', 'Burn', 'Wallet'];
   let index = readlineSync.keyInSelect(options, 'What type of module would you like to add?', { cancel: 'Return' });
   switch (options[index]) {
     case 'Permission Manager':
@@ -586,6 +594,12 @@ async function addModule() {
     *********************************`));
       break;
     case 'Burn':
+      console.log(chalk.red(`
+    *********************************
+    This option is not yet available.
+    *********************************`));
+      break;
+    case 'Wallet':
       console.log(chalk.red(`
     *********************************
     This option is not yet available.
@@ -699,7 +713,7 @@ async function showUserInfo(_user) {
 async function getAllModules() {
   let allModules = [];
   // Iterate over all module types
-  for (let type = 1; type <= 5; type++) {
+  for (let type = 1; type <= 8; type++) {
     let modules = await common.getAllModulesByType(securityToken, type);
     modules.forEach(m => allModules.push(m));
   }

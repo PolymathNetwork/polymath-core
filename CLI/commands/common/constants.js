@@ -4,7 +4,8 @@ module.exports = Object.freeze({
         TRANSFER: 2,
         STO: 3,
         DIVIDENDS: 4,
-        BURN: 5
+        BURN: 5,
+        WALLET: 7
     },
     DURATION: {
         seconds: function (val) {

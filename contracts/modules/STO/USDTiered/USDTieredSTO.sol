@@ -56,12 +56,16 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
     ///////////////
 
     modifier validETH() {
+        // @dev "Else" branch is unreachable. In case of 0x0 custom oracle, _getOracle() will return the
+        // default one from polymathRegistry.
         require(_getOracle(bytes32("ETH"), bytes32("USD")) != address(0), "Invalid Oracle");
         require(fundRaiseTypes[uint8(FundRaiseType.ETH)], "ETH not allowed");
         _;
     }
 
     modifier validPOLY() {
+         // @dev "Else" branch is unreachable. In case of 0x0 custom oracle, _getOracle() will return the
+        // default one from polymathRegistry.
         require(_getOracle(bytes32("POLY"), bytes32("USD")) != address(0), "Invalid Oracle");
         require(fundRaiseTypes[uint8(FundRaiseType.POLY)], "POLY not allowed");
         _;
@@ -112,6 +116,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
     {
         oracleKeys[bytes32("ETH")][bytes32("USD")] = ETH_ORACLE;
         oracleKeys[bytes32("POLY")][bytes32("USD")] = POLY_ORACLE;
+        // @dev "else" branch is unreachable.
         require(endTime == 0, "Already configured");
         _modifyTimes(_startTime, _endTime);
         _modifyTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
@@ -286,6 +291,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
             }
         }
         address walletAddress = (treasuryWallet == address(0) ? IDataStore(getDataStore()).getAddress(TREASURY) : treasuryWallet);
+        // @dev "else" branch is unreachable.
         require(walletAddress != address(0), "Invalid address");
         uint256 granularity = securityToken.granularity();
         tempReturned = tempReturned.div(granularity);

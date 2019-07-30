@@ -426,7 +426,7 @@ contract("USDTieredSTO", async (accounts) => {
             );
         });
 
-        it("Should attach the paid STO factory", async () => {
+        it("Should attach the paid STO - but will fail to reconfigure", async () => {
             let snapId = await takeSnapshot();
             let stoId = 0; // No discount
             let config = [
@@ -538,7 +538,7 @@ contract("USDTieredSTO", async (accounts) => {
             let tx = await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), false, { from: ISSUER, gasPrice: GAS_PRICE });
             console.log("          Gas addModule: ".grey + tx.receipt.gasUsed.toString().grey);
             assert.equal(tx.logs[2].args._types[0], STOKEY, "USDTieredSTO doesn't get deployed");
-            assert.equal(web3.utils.hexToString(tx.logs[2].args._name), "USDTieredSTO", "USDTieredSTOFactory module was not added");
+            assert.equal(web3.utils.hexToString(tx.logs[2].args._name), "USDTieredSTO", "USDTieredSTO module was not added");
             I_USDTieredSTO_Array.push(await USDTieredSTO.at(tx.logs[2].args._module));
 
             assert.equal((await I_USDTieredSTO_Array[stoId].startTime.call()).toString(), _startTime[stoId].toString(), "Incorrect _startTime in config");
@@ -749,7 +749,7 @@ contract("USDTieredSTO", async (accounts) => {
             assert.equal(tokens[0], I_DaiToken.address, "USD Tokens should match");
         });
 
-        it("Should successfully an STO that accepts funds in ETH only.", async () => {
+        it("Should successfully an STO that accepts funds in USD only.", async () => {
             let stoId = STOs.usdRaiseOnly;
 
             _startTime.push(new BN(currentTime).add(new BN(duration.days(2))));
@@ -1032,7 +1032,6 @@ contract("USDTieredSTO", async (accounts) => {
                 new BN(1).mul(e18).toString(),
                 "STO Configuration doesn't set as expected"
             );
-
             await I_USDTieredSTO_Array[stoId].modifyTiers(
                 [new BN(15).mul(e18)],
                 [new BN(13).mul(e18)],
@@ -1067,7 +1066,7 @@ contract("USDTieredSTO", async (accounts) => {
             await I_USDTieredSTO_Array[stoId].modifyTimes(new BN(tempTime1), new BN(tempTime2), { from: ISSUER });
             assert.equal((await I_USDTieredSTO_Array[stoId].startTime.call()).toString(), tempTime1.toString(), "STO Configuration doesn't set as expected");
             assert.equal((await I_USDTieredSTO_Array[stoId].endTime.call()).toString(), tempTime2.toString(), "STO Configuration doesn't set as expected");
-            console.log("HERE");
+
             await I_USDTieredSTO_Array[stoId].modifyAddresses(
                 "0x0000000000000000000000000400000000000000",
                 "0x0000000000000000000000000000000000000000",
@@ -1097,6 +1096,52 @@ contract("USDTieredSTO", async (accounts) => {
                 [I_DaiToken.address],
                 { from: ISSUER }
             );
+        });
+
+        it("Should fail to set USD token address to 0x0", async () => {
+            let stoId = 3;
+
+            await catchRevert(I_USDTieredSTO_Array[stoId].modifyAddresses(
+                "0x0000000000000000000000000400000000000000",
+                TREASURYWALLET,
+                [address_zero],
+                { from: ISSUER }
+            ), "Invalid USD token");
+        });
+
+        it("Should fail to set USD token address to Poly token address", async () => {
+            let stoId = 3;
+
+            await catchRevert(I_USDTieredSTO_Array[stoId].modifyAddresses(
+                "0x0000000000000000000000000400000000000000",
+                TREASURYWALLET,
+                [I_PolyToken.address],
+                { from: ISSUER }
+            ), "Invalid USD token");
+        });
+
+        it("Should fail to configure too many discounted tokens", async () => {
+            let stoId = 3;
+
+            await catchRevert(I_USDTieredSTO_Array[stoId].modifyTiers(
+                [new BN(15).mul(e18)],
+                [new BN(13).mul(e18)],
+                [new BN(900).mul(e18)],
+                [new BN(1500).mul(e18)],
+                { from: ISSUER }
+            ), "Too many discounted tokens");
+        });
+
+        it("Should prevent invalid discount", async () => {
+            let stoId = 3;
+
+            await catchRevert(I_USDTieredSTO_Array[stoId].modifyTiers(
+                [new BN(15).mul(e18)],
+                [new BN(130).mul(e18)],
+                [new BN(1500).mul(e18)],
+                [new BN(1500).mul(e18)],
+                { from: ISSUER }
+            ), "Invalid discount");
         });
 
         it("Should fail to change config after endTime", async () => {
@@ -2318,6 +2363,18 @@ contract("USDTieredSTO", async (accounts) => {
             assert.equal(totalStatus[1][1], true, "Account match");
             assert.equal(totalStatus[2][0].toString(), _nonAccreditedLimitUSD[stoId].div(new BN(2)), "override match");
             assert.equal(totalStatus[2][1].toString(), 0, "override match");
+        });
+
+        it("shoud fail to modify NONACCREDDITED limit if array lengths mismatch", async () => {
+            let stoId = 0;
+            catchRevert(I_USDTieredSTO_Array[stoId].changeNonAccreditedLimit(
+                [NONACCREDITED1],
+                [
+                    _nonAccreditedLimitUSD[stoId].div(new BN(2)),
+                    _nonAccreditedLimitUSD[stoId].div(new BN(2))
+                ], {
+                from: ISSUER
+            }), "Length mismatch");
         });
 
         it("should successfully buy a partial amount and refund balance when reaching NONACCREDITED cap", async () => {

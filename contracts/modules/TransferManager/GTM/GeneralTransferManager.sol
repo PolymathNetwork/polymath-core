@@ -115,7 +115,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
             if (target == address(this))
                 _processTransferSignature(nonce, validFrom, validTo, data);
         }
-        (Result success,) = _verifyTransfer(_from, _to, 0, 0);
+        (Result success,) = _verifyTransfer(_to, _from, 0, 0, 0, 0);
         return success;
     }
 
@@ -154,23 +154,43 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
             bytes memory data;
             (target, nonce, validFrom, validTo, data) = abi.decode(_data, (address, uint256, uint256, uint256, bytes));
             if (target == address(this)) {
+                // Reusing the variable to avoid stack too deep error
+                target = _from;
                 (
                     bool success, 
                     address[] memory investor,
-                    ,
+                    uint256[] memory canSendAfter,
                     uint256[] memory canRecieveAfter,
                     uint256[] memory expiryTime
                 ) = _processTransferSignatureView(data, validFrom, validTo, nonce);
                 if (success) {
+                    // Reusing the variable to avoid stack too deep error
+                    (validFrom, validTo) = (uint256(0), uint256(0));
                     for (nonce = 0; nonce < investor.length; nonce++) {
-                        // Searching the _to token holder to get the required details for _verifyTransfer validation 
+                        // Searching the _to & _from token holder to get the required details for _verifyTransfer validation 
                         if (investor[nonce] == _to)
-                            return _verifyTransfer(_from, _to, uint64(canRecieveAfter[nonce]), uint64(expiryTime[nonce]));
+                            validTo = nonce;
+                        else if (investor[nonce] == _from)
+                            validFrom = nonce;
+                        if (validFrom != 0 && validTo != 0)
+                            break;   
+                    }
+                    validFrom == 0 ? (uint64(canSendAfter[0]), uint64(nonce)) = _getKYCValuesFrom(target) : (uint64(canSendAfter[0]), uint64(nonce)) = (uint64(canSendAfter[validFrom]), uint64(expiryTime[validFrom]));
+                        return _verifyTransfer(
+                            _to,
+                            target,
+                            uint64(canSendAfter[validFrom]),
+                            uint64(canRecieveAfter[validTo]),
+                            uint64(expiryTime[validFrom]),
+                            uint64(expiryTime[validTo])
+                        );
+                    } else {
+                        return (Result.NA, getAddressBytes32());
                     }
                 }
             }
         }
-        return _verifyTransfer(_from, _to, 0, 0);
+        return _verifyTransfer(_to, _from, 0, 0, 0, 0);
     }
 
     function _processTransferSignatureView(
@@ -200,10 +220,12 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     }
 
     function _verifyTransfer(
-        address _from,
         address _to,
+        address _from,
+        uint64 _canSendAfter,
         uint64 _canReceiveAfter,
-        uint64 _toExpiry
+        uint64 _toExpiry,
+        uint64 _fromExpiry
     )
         internal
         view
@@ -211,8 +233,6 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     {
         if (!paused) {
             TransferRequirements memory txReq;
-            uint64 fromExpiry;
-            uint64 canSendAfter;
 
             if (_from == issuanceAddress) {
                 txReq = transferRequirements[uint8(TransferType.ISSUANCE)];
@@ -223,17 +243,15 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
             }
             // This if condition use to differentiate the read-only call & write call
             if (_toExpiry == 0)
-                (canSendAfter, fromExpiry, _canReceiveAfter, _toExpiry) = _getValuesForTransfer(_from, _to);
-            else
-                (canSendAfter,fromExpiry,,) = _getValuesForTransfer(_from, _to);
+                (_canSendAfter, _fromExpiry, _canReceiveAfter, _toExpiry) = _getValuesForTransfer(_from, _to);
 
-            if ((txReq.fromValidKYC && !_validExpiry(fromExpiry)) || (txReq.toValidKYC && !_validExpiry(_toExpiry))) {
+            if ((txReq.fromValidKYC && !_validExpiry(_fromExpiry)) || (txReq.toValidKYC && !_validExpiry(_toExpiry))) {
                 return (Result.NA, bytes32(0));
             }
 
-            (canSendAfter, _canReceiveAfter) = _adjustTimes(canSendAfter, _canReceiveAfter);
+            (_canSendAfter, _canReceiveAfter) = _adjustTimes(_canSendAfter, _canReceiveAfter);
 
-            if ((txReq.fromRestricted && !_validLockTime(canSendAfter)) || (txReq.toRestricted && !_validLockTime(_canReceiveAfter))) {
+            if ((txReq.fromRestricted && !_validLockTime(_canSendAfter)) || (txReq.toRestricted && !_validLockTime(_canReceiveAfter))) {
                 return (Result.NA, bytes32(0));
             }
 
@@ -686,6 +704,11 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         IDataStore dataStore = getDataStore();
         (canSendAfter, , fromExpiry, ) = _getKYCValues(_from, dataStore);
         (, canReceiveAfter, toExpiry, ) = _getKYCValues(_to, dataStore);
+    }
+
+    function _getKYCValuesFrom(address _from) internal view returns(uint64 canSendAfter, uint64 fromExpiry) {
+        IDataStore dataStore = getDataStore();
+        (canSendAfter, , fromExpiry, ) = _getKYCValues(_from, dataStore);
     }
 
     /**

@@ -1,6 +1,6 @@
 {
   "name": "polymath-core",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "description": "Polymath Network Core Smart Contracts",
   "main": "truffle.js",
   "directories": {
@@ -8,7 +8,9 @@
   },
   "scripts": {
     "test": "scripts/test.sh 2> /dev/null",
-    "deploy-kovan": "scripts/deploy.sh",
+    "clash-check": "node scripts/clashCheck.js",
+    "istr-check": "node scripts/ISTRCheck.js",
+    "gas": "scripts/gasUsage.sh",
     "wintest": "scripts\\wintest.cmd",
     "wincov": "scripts\\wincov.cmd",
     "docs": "scripts/docs.sh",
@@ -35,7 +37,8 @@
     "flatten-all": "npm run flatten-modules && npm run flatten-token && npm run flatten-mocks && npm run flatten-oracles && npm run flatten-proxies && npm run flatten && npm run flatten-proxyFactories",
     "ethereum-bridge": "node_modules/.bin/ethereum-bridge -H localhost:8545 -a 9 --dev",
     "st20generator": "node demo/ST20Generator",
-    "pretty": "prettier --write --print-width 140 --tab-width 4 \"**/*.js\""
+    "pretty": "prettier --write --print-width 140 --tab-width 4 \"**/*.js\"",
+    "st-storage-layout-check": "node scripts/compareStorageLayout.js SecurityToken STGetter"
   },
   "repository": {
     "type": "git",
@@ -51,56 +54,54 @@
     "ST20"
   ],
   "author": "Polymath Inc",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/PolymathNetwork/polymath-core/issues"
   },
   "homepage": "https://github.com/PolymathNetwork/polymath-core#readme",
   "dependencies": {
+    "dotenv": "^8.0.0",
+    "openzeppelin-solidity": "2.2.0",
+    "truffle": "^5.0.4",
+    "truffle-hdwallet-provider": "^1.0.4",
+    "web3-provider-engine": "^14.1.0"
+  },
+  "devDependencies": {
     "babel-polyfill": "6.26.0",
     "babel-preset-es2015": "6.24.1",
     "babel-preset-stage-2": "6.24.1",
     "babel-preset-stage-3": "6.24.1",
     "babel-register": "6.26.0",
-    "bignumber.js": "5.0.0",
-    "chalk": "^2.4.1",
-    "coveralls": "^3.0.2",
-    "csv-parse": "^4.2.0",
-    "ethers": "^4.0.20",
-    "fs": "0.0.2",
-    "openzeppelin-solidity": "1.10.0",
-    "prompt": "^1.0.0",
-    "truffle-hdwallet-provider-privkey": "^0.3.0",
-    "web3": "1.0.0-beta.34"
-  },
-  "devDependencies": {
-    "eslint": "^5.10.0",
+    "chalk": "^2.4.2",
+    "coveralls": "^3.0.1",
+    "eslint": "^5.8.0",
     "eslint-config-standard": "^12.0.0",
-    "eslint-plugin-import": "^2.14.0",
+    "eslint-plugin-import": "^2.10.0",
     "eslint-plugin-node": "^8.0.0",
     "eslint-plugin-promise": "^4.0.1",
     "eslint-plugin-standard": "^4.0.0",
+    "eth-gas-reporter": "^0.1.12",
     "ethereum-bridge": "^0.6.1",
     "ethereumjs-abi": "^0.6.5",
-    "ganache-cli": "^6.2.5",
+    "fs": "0.0.2",
+    "ganache-cli": "6.1.8",
     "mocha-junit-reporter": "^1.18.0",
     "prettier": "^1.15.3",
     "request": "^2.88.0",
     "request-promise": "^4.2.2",
-    "sol-merger": "^0.1.3",
+    "sol-merger": "^0.1.2",
     "solidity-coverage": "^0.5.11",
     "solidity-docgen": "^0.1.1",
-    "solium": "^1.1.8",
-    "truffle": "4.1.14",
-    "truffle-hdwallet-provider": "^1.0.3",
-    "truffle-wallet-provider": "0.0.5"
+    "solium": "^1.1.6",
+    "table": "^5.2.3",
+    "web3": "1.0.0-beta.35"
   },
   "greenkeeper": {
     "ignore": [
       "openzeppelin-solidity",
       "web3",
-      "bignumber.js",
-      "truffle-hdwallet-provider-privkey"
+      "truffle-hdwallet-provider",
+      "ganache-cli"
     ]
   }
 }

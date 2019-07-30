@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: maxsam4/solidity-kit:0.4.24
+      - image: maxsam4/solidity-kit
     steps:
       - checkout
       - restore_cache:
@@ -17,7 +17,7 @@ jobs:
             - node_modules
   test:
     docker:
-      - image: maxsam4/solidity-kit:0.4.24
+      - image: maxsam4/solidity-kit
     parallelism: 2
     steps:
       - checkout
@@ -37,7 +37,7 @@ jobs:
           path: ./test-results/mocha/results.xml
   coverage:
     docker:
-      - image: maxsam4/solidity-kit:0.4.24
+      - image: maxsam4/solidity-kit
     steps:
       - checkout
       - restore_cache:
@@ -45,9 +45,8 @@ jobs:
       - run: yarn install
       - run: node --version
       - run: truffle version
-      - run: node_modules/.bin/truffle version
-      - run: 
-          command: scripts/coverage.sh
+      - run:
+          command: npm run coverage
           no_output_timeout: 1h
       - save_cache:
           key: dependency-cache-{{ checksum "package.json" }}
@@ -55,9 +54,9 @@ jobs:
             - node_modules
       - store_artifacts:
           path: ./coverage/lcov.info
-  deploy_kovan:
+  clash-check:
     docker:
-      - image: maxsam4/solidity-kit:0.4.24
+      - image: maxsam4/solidity-kit
     steps:
       - checkout
       - restore_cache:
@@ -65,26 +64,49 @@ jobs:
       - run: yarn install
       - run: node --version
       - run: truffle version
-      - run: mv truffle-ci.js truffle-config.js
-      - run: npm run deploy-kovan
+      - run: npm run clash-check
+      - run: npm run istr-check
+      - save_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+          paths:
+            - node_modules
+  st-storage-layout-check:
+    docker:
+      - image: maxsam4/solidity-kit
+    steps:
+      - checkout
+      - restore_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+      - run: yarn install
+      - run: node --version
+      - run: truffle version
+      - run: npm run st-storage-layout-check
       - save_cache:
           key: dependency-cache-{{ checksum "package.json" }}
           paths:
             - node_modules
   docs:
     docker:
-      - image: maxsam4/solidity-kit:0.4.24
+      - image: maxsam4/solidity-kit
     steps:
       - checkout
+      - restore_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
       - run: yarn install
       - run: node --version
       - run: truffle version
       - run: npm run docs
+      - save_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+          paths:
+            - node_modules
 workflows:
   version: 2
   commit:
     jobs:
       - coverage
+      - clash-check
+      - st-storage-layout-check
   daily-builds:
     triggers:
       - schedule:
@@ -105,13 +127,3 @@ workflows:
             branches:
               only:
                 - master
-  deploy:
-    jobs:
-      - deploy_kovan:
-          filters:
-            branches:
-              only:
-                - master
-                - dev-2.1.0
-                - dev-2.2.0
-                - dev-3.0.0

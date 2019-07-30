@@ -1,12 +1,11 @@
-pragma solidity ^0.4.24;
+pragma solidity 0.5.8;
 
 /**
  * @title Utility contract to allow pausing and unpausing of certain functions
  */
 contract Pausable {
-
-    event Pause(uint256 _timestammp);
-    event Unpause(uint256 _timestamp);
+    event Pause(address account);
+    event Unpause(address account);
 
     bool public paused = false;
 
@@ -26,13 +25,13 @@ contract Pausable {
         _;
     }
 
-   /**
+    /**
     * @notice Called by the owner to pause, triggers stopped state
     */
     function _pause() internal whenNotPaused {
         paused = true;
         /*solium-disable-next-line security/no-block-members*/
-        emit Pause(now);
+        emit Pause(msg.sender);
     }
 
     /**
@@ -41,7 +40,7 @@ contract Pausable {
     function _unpause() internal whenPaused {
         paused = false;
         /*solium-disable-next-line security/no-block-members*/
-        emit Unpause(now);
+        emit Unpause(msg.sender);
     }
 
 }

@@ -1,9 +1,17 @@
 require('babel-register');
 require('babel-polyfill');
+require('dotenv').config();
 const fs = require('fs');
 const NonceTrackerSubprovider = require("web3-provider-engine/subproviders/nonce-tracker")
 
-const HDWalletProvider = require("truffle-hdwallet-provider-privkey");
+const HDWalletProvider = require("truffle-hdwallet-provider");
+
+let ver;
+if (process.env.POLYMATH_NATIVE_SOLC) {
+  ver = "native";
+} else {
+  ver = "0.5.8";
+}
 
 module.exports = {
   networks: {
@@ -53,15 +61,20 @@ module.exports = {
       host: "localhost",
       network_id: "*",
       port: 8545,         // <-- If you change this, also set the port option in .solcover.js.
-      gas: 0xfffffffffff, // <-- Use this high gas value
+      gas: 0xfffffffff  , // <-- Use this high gas value
       gasPrice: 0x01      // <-- Use this low gas price
     }
   },
-  solc: {
-    optimizer: {
-      enabled: true,
-      runs: 200,
-    },
+  compilers: {
+    solc: {
+      version: ver,
+      settings: {
+        optimizer: {
+          enabled: true,
+          runs: 200
+        }
+      }
+    }
   },
   mocha: {
     enableTimeouts: false

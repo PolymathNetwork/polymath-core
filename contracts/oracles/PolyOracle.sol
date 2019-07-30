@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity 0.5.8;
 
 import "../external/oraclizeAPI.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
@@ -11,38 +11,39 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     /*solium-disable-next-line max-len*/
     string public oracleURL = "[URL] json(https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?id=2496&convert=USD&CMC_PRO_API_KEY=${[decrypt] BCA0Bqxmn3jkSENepaHxQv09Z/vGdEO9apO+B9RplHyV3qOL/dw5Indlei3hoXrGk9G14My8MFpHJycB7UoVnl+4mlzEsjTlS2UBAYVrl0fAepfiSyM30/GMZAoJmDagY+0YyNZvpkgXn86Q/59Bi48PWEet}).data.\"2496\".quote.USD.price";
     string public oracleQueryType = "nested";
-    uint256 public sanityBounds = 20*10**16;
+    uint256 public sanityBounds = 20 * 10 ** 16;
     uint256 public gasLimit = 100000;
     uint256 public oraclizeTimeTolerance = 5 minutes;
     uint256 public staleTime = 6 hours;
 
+    // POLYUSD poly units = 1 * 10^18 USD units (1 USD)
     uint256 private POLYUSD;
     uint256 public latestUpdate;
     uint256 public latestScheduledUpdate;
 
-    mapping (bytes32 => uint256) public requestIds;
-    mapping (bytes32 => bool) public ignoreRequestIds;
+    mapping(bytes32 => uint256) public requestIds;
+    mapping(bytes32 => bool) public ignoreRequestIds;
 
-    mapping (address => bool) public admin;
+    mapping(address => bool) public admin;
 
     bool public freezeOracle;
 
     event PriceUpdated(uint256 _price, uint256 _oldPrice, bytes32 _queryId, uint256 _time);
     event NewOraclizeQuery(uint256 _time, bytes32 _queryId, string _query);
-    event AdminSet(address _admin, bool _valid, uint256 _time);
+    event AdminSet(address _admin, bool _valid);
     event StalePriceUpdate(bytes32 _queryId, uint256 _time, string _result);
 
-    modifier isAdminOrOwner {
-        require(admin[msg.sender] || msg.sender == owner, "Address is not admin or owner");
+    modifier isAdminOrOwner() {
+        require(admin[msg.sender] || msg.sender == owner(), "Address is not admin or owner");
         _;
     }
 
     /**
     * @notice Constructor - accepts ETH to initialise a balance for subsequent Oraclize queries
     */
-    constructor() payable public {
+    constructor() public payable {
         // Use 50 gwei for now
-        oraclize_setCustomGasPrice(50*10**9);
+        oraclize_setCustomGasPrice(50 * 10 ** 9);
     }
 
     /**
@@ -50,7 +51,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     * @param _requestId requestId corresponding to Oraclize query
     * @param _result data returned by Oraclize URL query
     */
-    function __callback(bytes32 _requestId, string _result) public {
+    function __callback(bytes32 _requestId, string memory _result) public {
         require(msg.sender == oraclize_cbAddress(), "Only Oraclize can access this method");
         require(!freezeOracle, "Oracle is frozen");
         require(!ignoreRequestIds[_requestId], "Ignoring requestId");
@@ -63,7 +64,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
         /*solium-disable-next-line security/no-block-members*/
         require(requestIds[_requestId] <= now + oraclizeTimeTolerance, "Result is early");
         uint256 newPOLYUSD = parseInt(_result, 18);
-        uint256 bound = POLYUSD.mul(sanityBounds).div(10**18);
+        uint256 bound = POLYUSD.mul(sanityBounds).div(10 ** 18);
         if (latestUpdate != 0) {
             require(newPOLYUSD <= POLYUSD.add(bound), "Result is too large");
             require(newPOLYUSD >= POLYUSD.sub(bound), "Result is too small");
@@ -77,7 +78,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     * @notice Allows owner to schedule future Oraclize calls
     * @param _times UNIX timestamps to schedule Oraclize calls as of. Empty list means trigger an immediate query.
     */
-    function schedulePriceUpdatesFixed(uint256[] _times) public payable isAdminOrOwner {
+    function schedulePriceUpdatesFixed(uint256[] memory _times) public payable isAdminOrOwner {
         bytes32 requestId;
         uint256 maximumScheduledUpdated;
         if (_times.length == 0) {
@@ -155,7 +156,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     * @notice Allows owner to set URL used in Oraclize queries
     * @param _oracleURL URL to use
     */
-    function setOracleURL(string _oracleURL) public onlyOwner {
+    function setOracleURL(string memory _oracleURL) public onlyOwner {
         oracleURL = _oracleURL;
     }
 
@@ -163,7 +164,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     * @notice Allows owner to set type used in Oraclize queries
     * @param _oracleQueryType to use
     */
-    function setOracleQueryType(string _oracleQueryType) public onlyOwner {
+    function setOracleQueryType(string memory _oracleQueryType) public onlyOwner {
         oracleQueryType = _oracleQueryType;
     }
 
@@ -215,7 +216,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     * @param _requestIds Oraclize queryIds (as logged out when Oraclize query is scheduled)
     * @param _ignore whether or not they should be ignored
     */
-    function setIgnoreRequestIds(bytes32[] _requestIds, bool[] _ignore) public onlyOwner {
+    function setIgnoreRequestIds(bytes32[] memory _requestIds, bool[] memory _ignore) public onlyOwner {
         require(_requestIds.length == _ignore.length, "Incorrect parameter lengths");
         for (uint256 i = 0; i < _requestIds.length; i++) {
             ignoreRequestIds[_requestIds[i]] = _ignore[i];
@@ -230,7 +231,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     function setAdmin(address _admin, bool _valid) public onlyOwner {
         admin[_admin] = _valid;
         /*solium-disable-next-line security/no-block-members*/
-        emit AdminSet(_admin, _valid, now);
+        emit AdminSet(_admin, _valid);
     }
 
     /**
@@ -265,7 +266,7 @@ contract PolyOracle is usingOraclize, IOracle, Ownable {
     /**
     * @notice Returns price - should throw if not valid
     */
-    function getPrice() external view returns(uint256) {
+    function getPrice() external returns(uint256) {
         /*solium-disable-next-line security/no-block-members*/
         require(latestUpdate >= now - staleTime, "Invalid price");
         return POLYUSD;

@@ -1,12 +1,11 @@
-pragma solidity ^0.4.24;
+pragma solidity 0.5.8;
 
 import "../interfaces/IOracle.sol";
 import "../external/IMedianizer.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 contract MakerDAOOracle is IOracle, Ownable {
-
-    address public medianizer;
+    IMedianizer public medianizer;
     address public currencyAddress;
     bytes32 public currencySymbol;
 
@@ -14,9 +13,9 @@ contract MakerDAOOracle is IOracle, Ownable {
     uint256 public manualPrice;
 
     /*solium-disable-next-line security/no-block-members*/
-    event ChangeMedianizer(address _newMedianizer, address _oldMedianizer, uint256 _now);
-    event SetManualPrice(uint256 _oldPrice, uint256 _newPrice, uint256 _time);
-    event SetManualOverride(bool _override, uint256 _time);
+    event ChangeMedianizer(address _newMedianizer, address _oldMedianizer);
+    event SetManualPrice(uint256 _oldPrice, uint256 _newPrice);
+    event SetManualOverride(bool _override);
 
     /**
       * @notice Creates a new Maker based oracle
@@ -24,8 +23,8 @@ contract MakerDAOOracle is IOracle, Ownable {
       * @param _currencyAddress Address of currency (0x0 for ETH)
       * @param _currencySymbol Symbol of currency
       */
-    constructor (address _medianizer, address _currencyAddress, bytes32 _currencySymbol) public {
-        medianizer = _medianizer;
+    constructor(address _medianizer, address _currencyAddress, bytes32 _currencySymbol) public {
+        medianizer = IMedianizer(_medianizer);
         currencyAddress = _currencyAddress;
         currencySymbol = _currencySymbol;
     }
@@ -37,8 +36,8 @@ contract MakerDAOOracle is IOracle, Ownable {
     function changeMedianier(address _medianizer) public onlyOwner {
         require(_medianizer != address(0), "0x not allowed");
         /*solium-disable-next-line security/no-block-members*/
-        emit ChangeMedianizer(_medianizer, medianizer, now);
-        medianizer = _medianizer;
+        emit ChangeMedianizer(_medianizer, address(medianizer));
+        medianizer = IMedianizer(_medianizer);
     }
 
     /**
@@ -66,11 +65,11 @@ contract MakerDAOOracle is IOracle, Ownable {
     /**
     * @notice Returns price - should throw if not valid
     */
-    function getPrice() external view returns(uint256) {
+    function getPrice() external returns(uint256) {
         if (manualOverride) {
             return manualPrice;
         }
-        (bytes32 price, bool valid) = IMedianizer(medianizer).peek();
+        (bytes32 price, bool valid) = medianizer.peek();
         require(valid, "MakerDAO Oracle returning invalid value");
         return uint256(price);
     }
@@ -81,7 +80,7 @@ contract MakerDAOOracle is IOracle, Ownable {
       */
     function setManualPrice(uint256 _price) public onlyOwner {
         /*solium-disable-next-line security/no-block-members*/
-        emit SetManualPrice(manualPrice, _price, now);
+        emit SetManualPrice(manualPrice, _price);
         manualPrice = _price;
     }
 
@@ -92,7 +91,7 @@ contract MakerDAOOracle is IOracle, Ownable {
     function setManualOverride(bool _override) public onlyOwner {
         manualOverride = _override;
         /*solium-disable-next-line security/no-block-members*/
-        emit SetManualOverride(_override, now);
+        emit SetManualOverride(_override);
     }
 
 }

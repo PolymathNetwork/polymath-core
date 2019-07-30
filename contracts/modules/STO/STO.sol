@@ -1,47 +1,40 @@
-pragma solidity ^0.4.24;
+pragma solidity 0.5.8;
 
-import "../../Pausable.sol";
 import "../Module.sol";
-import "../../interfaces/IERC20.sol";
-import "../../interfaces/ISTO.sol";
-import "./STOStorage.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
+import "../../storage/modules/STO/STOStorage.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "../../interfaces/ISTO.sol";
 
 /**
- * @title Interface to be implemented by all STO modules
+ * @title Base abstract contract to be extended by all STO modules
  */
-contract STO is ISTO, STOStorage, Module, Pausable  {
+contract STO is ISTO, STOStorage, Module {
     using SafeMath for uint256;
-
-    enum FundRaiseType { ETH, POLY, SC }
-
-    // Event
-    event SetFundRaiseTypes(FundRaiseType[] _fundRaiseTypes);
 
     /**
      * @notice Returns funds raised by the STO
      */
-    function getRaised(FundRaiseType _fundRaiseType) public view returns (uint256) {
+    function getRaised(FundRaiseType _fundRaiseType) public view returns(uint256) {
         return fundsRaised[uint8(_fundRaiseType)];
     }
 
     /**
-     * @notice Pause (overridden function)
+     * @notice Returns the total no. of tokens sold
      */
-    function pause() public onlyOwner {
-        /*solium-disable-next-line security/no-block-members*/
-        require(now < endTime, "STO has been finalized");
-        super._pause();
-    }
+    function getTokensSold() external view returns (uint256);
 
     /**
-     * @notice Unpause (overridden function)
+     * @notice Pause (overridden function)
+     * @dev Only securityToken owner restriction applied on the super function
      */
-    function unpause() public onlyOwner {
-        super._unpause();
+    function pause() public {
+        /*solium-disable-next-line security/no-block-members*/
+        require(now < endTime, "STO has been finalized");
+        super.pause();
     }
 
-    function _setFundRaiseType(FundRaiseType[] _fundRaiseTypes) internal {
+    function _setFundRaiseType(FundRaiseType[] memory _fundRaiseTypes) internal {
         // FundRaiseType[] parameter type ensures only valid values for _fundRaiseTypes
         require(_fundRaiseTypes.length > 0 && _fundRaiseTypes.length <= 3, "Raise type is not specified");
         fundRaiseTypes[uint8(FundRaiseType.ETH)] = false;
@@ -53,24 +46,13 @@ contract STO is ISTO, STOStorage, Module, Pausable  {
         emit SetFundRaiseTypes(_fundRaiseTypes);
     }
 
-    /**
-    * @notice Reclaims ERC20Basic compatible tokens
-    * @dev We duplicate here due to the overriden owner & onlyOwner
-    * @param _tokenContract The address of the token contract
-    */
-    function reclaimERC20(address _tokenContract) external onlyOwner {
-        require(_tokenContract != address(0), "Invalid address");
-        IERC20 token = IERC20(_tokenContract);
-        uint256 balance = token.balanceOf(address(this));
-        require(token.transfer(msg.sender, balance), "Transfer failed");
+    function _canBuy(address _investor) internal view returns(bool) {
+        IDataStore dataStore = getDataStore();
+        uint256 flags = dataStore.getUint256(_getKey(INVESTORFLAGS, _investor));
+        return(flags & (uint256(1) << 1) == 0);
     }
 
-    /**
-    * @notice Reclaims ETH
-    * @dev We duplicate here due to the overriden owner & onlyOwner
-    */
-    function reclaimETH() external onlyOwner {
-        msg.sender.transfer(address(this).balance);
+    function _getKey(bytes32 _key1, address _key2) internal pure returns(bytes32) {
+        return bytes32(keccak256(abi.encodePacked(_key1, _key2)));
     }
-
 }

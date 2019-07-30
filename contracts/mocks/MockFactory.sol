@@ -1,31 +1,38 @@
-pragma solidity ^0.4.24;
+pragma solidity 0.5.8;
 
-import "./DummySTOFactory.sol";
+import "./Dummy/DummySTOFactory.sol";
 
 /**
  * @title Mock Contract Not fit for production environment
  */
 
 contract MockFactory is DummySTOFactory {
+    bool public typesSwitch = false;
 
-    bool public switchTypes = false;
-     /**
+    /**
      * @notice Constructor
-     * @param _polyAddress Address of the polytoken
+     * @param _setupCost Setup cost of the module
+      * @param _logicContract Contract address that contains the logic related to `description`
+     * @param _polymathRegistry Address of the Polymath Registry
      */
-    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public
-      DummySTOFactory(_polyAddress, _setupCost, _usageCost, _subscriptionCost)
+    constructor(
+        uint256 _setupCost,
+        address _logicContract,
+        address _polymathRegistry,
+        bool _isFeeInPoly
+    )
+        public
+        DummySTOFactory(_setupCost, _logicContract, _polymathRegistry, _isFeeInPoly)
     {
-
     }
 
     /**
      * @notice Type of the Module factory
      */
-    function getTypes() external view returns(uint8[]) {
-        if (!switchTypes) {
-            uint8[] memory types = new uint8[](0);
-            return types;
+    function getTypes() external view returns(uint8[] memory) {
+        if (!typesSwitch) {
+            uint8[] memory res = new uint8[](0);
+            return res;
         } else {
             uint8[] memory res = new uint8[](2);
             res[0] = 1;
@@ -35,8 +42,8 @@ contract MockFactory is DummySTOFactory {
 
     }
 
-    function changeTypes() external onlyOwner {
-        switchTypes = !switchTypes;
+    function switchTypes() external onlyOwner {
+        typesSwitch = !typesSwitch;
     }
 
 }

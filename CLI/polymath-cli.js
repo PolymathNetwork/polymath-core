@@ -9,12 +9,13 @@ const transfer = require('./commands/transfer');
 const transfer_ownership = require('./commands/transfer_ownership');
 const dividends_manager = require('./commands/dividends_manager');
 const transfer_manager = require('./commands/transfer_manager');
+const wallet_manager = require('./commands/wallet_manager');
 const contract_manager = require('./commands/contract_manager');
 const strMigrator = require('./commands/strMigrator');
 const permission_manager = require('./commands/permission_manager');
 const time = require('./commands/helpers/time');
 const gbl = require('./commands/common/global');
-const program = require('commander');	
+const program = require('commander');
 const moment = require('moment');
 const yaml = require('js-yaml');
 const fs = require('fs');
@@ -133,6 +134,16 @@ program
     }
   });
 
+  program
+  .command('wallet_manager')
+  .alias('w')
+  .option('-t, --securityToken <tokenSymbol>', 'Selects a ST to manage transfer modules')
+  .description('Runs wallet_manager')
+  .action(async function (cmd) {
+    await gbl.initialize(program.remoteNode);
+    await wallet_manager.executeApp(cmd.securityToken);
+  });
+
 program
   .command('contract_manager')
   .alias('cm')
@@ -162,22 +173,22 @@ program
     await permission_manager.executeApp();
   });
 
-  program	
-  .command('time_travel')	
-  .alias('tt')	
-  .option('-p, --period <seconds>', 'Period of time in seconds to increase')	
-  .option('-d, --toDate <date>', 'Human readable date ("MM/DD/YY [HH:mm:ss]") to travel to')	
-  .option('-e, --toEpochTime <epochTime>', 'Unix Epoch time to travel to')	
-  .description('Increases time on EVM according to given value.')	
-  .action(async function (cmd) {	
-    await gbl.initialize(program.remoteNode);	
-    if (cmd.period) {	
-      await time.increaseTimeByDuration(parseInt(cmd.period));	
-    } else if (cmd.toDate) {	
-      await time.increaseTimeToDate(cmd.toDate);	
-    } else if (cmd.toEpochTime) {	
-      await time.increaseTimeToEpochDate(cmd.toEpochTime);	
-    }	
+  program
+  .command('time_travel')
+  .alias('tt')
+  .option('-p, --period <seconds>', 'Period of time in seconds to increase')
+  .option('-d, --toDate <date>', 'Human readable date ("MM/DD/YY [HH:mm:ss]") to travel to')
+  .option('-e, --toEpochTime <epochTime>', 'Unix Epoch time to travel to')
+  .description('Increases time on EVM according to given value.')
+  .action(async function (cmd) {
+    await gbl.initialize(program.remoteNode);
+    if (cmd.period) {
+      await time.increaseTimeByDuration(parseInt(cmd.period));
+    } else if (cmd.toDate) {
+      await time.increaseTimeToDate(cmd.toDate);
+    } else if (cmd.toEpochTime) {
+      await time.increaseTimeToEpochDate(cmd.toEpochTime);
+    }
   });
 program.parse(process.argv);
 

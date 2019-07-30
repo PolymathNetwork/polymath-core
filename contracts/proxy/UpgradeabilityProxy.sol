@@ -1,14 +1,13 @@
-pragma solidity ^0.4.24;
+pragma solidity 0.5.8;
 
 import "./Proxy.sol";
-import "openzeppelin-solidity/contracts/AddressUtils.sol";
+import "openzeppelin-solidity/contracts/utils/Address.sol";
 
 /**
  * @title UpgradeabilityProxy
  * @dev This contract represents a proxy where the implementation address to which it will delegate can be upgraded
  */
 contract UpgradeabilityProxy is Proxy {
-
     // Version name of the current implementation
     string internal __version;
 
@@ -27,12 +26,12 @@ contract UpgradeabilityProxy is Proxy {
     * @param _newVersion representing the version name of the new implementation to be set
     * @param _newImplementation representing the address of the new implementation to be set
     */
-    function _upgradeTo(string _newVersion, address _newImplementation) internal {
+    function _upgradeTo(string memory _newVersion, address _newImplementation) internal {
         require(
             __implementation != _newImplementation && _newImplementation != address(0),
             "Old address is not allowed and implementation address should not be 0x"
         );
-        require(AddressUtils.isContract(_newImplementation), "Cannot set a proxy implementation to a non-contract address");
+        require(Address.isContract(_newImplementation), "Cannot set a proxy implementation to a non-contract address");
         require(bytes(_newVersion).length > 0, "Version should not be empty string");
         require(keccak256(abi.encodePacked(__version)) != keccak256(abi.encodePacked(_newVersion)), "New version equals to current");
         __version = _newVersion;

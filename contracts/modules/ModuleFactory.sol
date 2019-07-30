@@ -1,9 +1,14 @@
-pragma solidity ^0.4.24;
+pragma solidity 0.5.8;
 
-import "../interfaces/IERC20.sol";
-import "../interfaces/IModuleFactory.sol";
-import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "../libraries/VersionUtils.sol";
+import "../libraries/Util.sol";
+import "../interfaces/IModule.sol";
+import "../interfaces/IOracle.sol";
+import "../interfaces/IPolymathRegistry.sol";
+import "../interfaces/IModuleFactory.sol";
+import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
+import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "../libraries/DecimalMath.sol";
 
 /**
  * @title Interface that any module factory contract should implement
@@ -11,96 +16,113 @@ import "../libraries/VersionUtils.sol";
  */
 contract ModuleFactory is IModuleFactory, Ownable {
 
-    IERC20 public polyToken;
-    uint256 public usageCost;
-    uint256 public monthlySubscriptionCost;
+    IPolymathRegistry public polymathRegistry;
 
-    uint256 public setupCost;
-    string public description;
-    string public version;
+    string initialVersion;
     bytes32 public name;
     string public title;
+    string public description;
+
+    uint8[] typesData;
+    bytes32[] tagsData;
+
+    bool public isCostInPoly;
+    uint256 public setupCost;
+
+    string constant POLY_ORACLE = "StablePolyUsdOracle";
 
     // @notice Allow only two variables to be stored
-    // 1. lowerBound 
+    // 1. lowerBound
     // 2. upperBound
-    // @dev (0.0.0 will act as the wildcard) 
+    // @dev (0.0.0 will act as the wildcard)
     // @dev uint24 consists packed value of uint8 _major, uint8 _minor, uint8 _patch
     mapping(string => uint24) compatibleSTVersionRange;
 
     /**
      * @notice Constructor
-     * @param _polyAddress Address of the polytoken
      */
-    constructor (address _polyAddress, uint256 _setupCost, uint256 _usageCost, uint256 _subscriptionCost) public {
-        polyToken = IERC20(_polyAddress);
+    constructor(uint256 _setupCost, address _polymathRegistry, bool _isCostInPoly) public {
         setupCost = _setupCost;
-        usageCost = _usageCost;
-        monthlySubscriptionCost = _subscriptionCost;
+        polymathRegistry = IPolymathRegistry(_polymathRegistry);
+        isCostInPoly = _isCostInPoly;
+    }
+
+    /**
+     * @notice Type of the Module factory
+     */
+    function getTypes() external view returns(uint8[] memory) {
+        return typesData;
+    }
+
+    /**
+     * @notice Get the tags related to the module factory
+     */
+    function getTags() external view returns(bytes32[] memory) {
+        return tagsData;
+    }
+
+    /**
+     * @notice Get the version related to the module factory
+     */
+    function version() external view returns(string memory) {
+        return initialVersion;
     }
 
     /**
      * @notice Used to change the fee of the setup cost
-     * @param _newSetupCost new setup cost
+     * @param _setupCost new setup cost
      */
-    function changeFactorySetupFee(uint256 _newSetupCost) public onlyOwner {
-        emit ChangeFactorySetupFee(setupCost, _newSetupCost, address(this));
-        setupCost = _newSetupCost;
+    function changeSetupCost(uint256 _setupCost) public onlyOwner {
+        emit ChangeSetupCost(setupCost, _setupCost);
+        setupCost = _setupCost;
     }
 
     /**
-     * @notice Used to change the fee of the usage cost
-     * @param _newUsageCost new usage cost
+     * @notice Used to change the currency and amount of setup cost
+     * @param _setupCost new setup cost
+     * @param _isCostInPoly new setup cost currency. USD or POLY
      */
-    function changeFactoryUsageFee(uint256 _newUsageCost) public onlyOwner {
-        emit ChangeFactoryUsageFee(usageCost, _newUsageCost, address(this));
-        usageCost = _newUsageCost;
-    }
-
-    /**
-     * @notice Used to change the fee of the subscription cost
-     * @param _newSubscriptionCost new subscription cost
-     */
-    function changeFactorySubscriptionFee(uint256 _newSubscriptionCost) public onlyOwner {
-        emit ChangeFactorySubscriptionFee(monthlySubscriptionCost, _newSubscriptionCost, address(this));
-        monthlySubscriptionCost = _newSubscriptionCost;
-
+    function changeCostAndType(uint256 _setupCost, bool _isCostInPoly) public onlyOwner {
+        emit ChangeSetupCost(setupCost, _setupCost);
+        emit ChangeCostType(isCostInPoly, _isCostInPoly);
+        setupCost = _setupCost;
+        isCostInPoly = _isCostInPoly;
     }
 
     /**
      * @notice Updates the title of the ModuleFactory
-     * @param _newTitle New Title that will replace the old one.
+     * @param _title New Title that will replace the old one.
      */
-    function changeTitle(string _newTitle) public onlyOwner {
-        require(bytes(_newTitle).length > 0, "Invalid title");
-        title = _newTitle;
+    function changeTitle(string memory _title) public onlyOwner {
+        require(bytes(_title).length > 0, "Invalid text");
+        title = _title;
     }
 
     /**
      * @notice Updates the description of the ModuleFactory
-     * @param _newDesc New description that will replace the old one.
+     * @param _description New description that will replace the old one.
      */
-    function changeDescription(string _newDesc) public onlyOwner {
-        require(bytes(_newDesc).length > 0, "Invalid description");
-        description = _newDesc;
+    function changeDescription(string memory _description) public onlyOwner {
+        require(bytes(_description).length > 0, "Invalid text");
+        description = _description;
     }
 
     /**
      * @notice Updates the name of the ModuleFactory
-     * @param _newName New name that will replace the old one.
+     * @param _name New name that will replace the old one.
      */
-    function changeName(bytes32 _newName) public onlyOwner {
-        require(_newName != bytes32(0),"Invalid name");
-        name = _newName;
+    function changeName(bytes32 _name) public onlyOwner {
+        require(_name != bytes32(0), "Invalid text");
+        name = _name;
     }
 
     /**
-     * @notice Updates the version of the ModuleFactory
-     * @param _newVersion New name that will replace the old one.
+     * @notice Updates the tags of the ModuleFactory
+     * @param _tagsData New list of tags
      */
-    function changeVersion(string _newVersion) public onlyOwner {
-        require(bytes(_newVersion).length > 0, "Invalid version");
-        version = _newVersion;
+    function changeTags(bytes32[] memory _tagsData) public onlyOwner {
+        require(_tagsData.length > 0, "Invalid text");
+        tagsData = _tagsData;
     }
 
     /**
@@ -108,16 +130,21 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @param _boundType Type of bound
      * @param _newVersion new version array
      */
-    function changeSTVersionBounds(string _boundType, uint8[] _newVersion) external onlyOwner {
+    function changeSTVersionBounds(string calldata _boundType, uint8[] calldata _newVersion) external onlyOwner {
         require(
-            keccak256(abi.encodePacked(_boundType)) == keccak256(abi.encodePacked("lowerBound")) ||
-            keccak256(abi.encodePacked(_boundType)) == keccak256(abi.encodePacked("upperBound")),
-            "Must be a valid bound type"
+            keccak256(abi.encodePacked(_boundType)) == keccak256(abi.encodePacked("lowerBound")) || keccak256(
+                abi.encodePacked(_boundType)
+            ) == keccak256(abi.encodePacked("upperBound")),
+            "Invalid bound type"
         );
-        require(_newVersion.length == 3);
-        if (compatibleSTVersionRange[_boundType] != uint24(0)) { 
+        require(_newVersion.length == 3, "Invalid version");
+        if (compatibleSTVersionRange[_boundType] != uint24(0)) {
             uint8[] memory _currentVersion = VersionUtils.unpack(compatibleSTVersionRange[_boundType]);
-            require(VersionUtils.isValidVersion(_currentVersion, _newVersion), "Failed because of in-valid version");
+            if (keccak256(abi.encodePacked(_boundType)) == keccak256(abi.encodePacked("lowerBound"))) {
+                require(VersionUtils.lessThanOrEqual(_newVersion, _currentVersion), "Invalid version");
+            } else {
+                require(VersionUtils.greaterThanOrEqual(_newVersion, _currentVersion), "Invalid version");
+            }
         }
         compatibleSTVersionRange[_boundType] = VersionUtils.pack(_newVersion[0], _newVersion[1], _newVersion[2]);
         emit ChangeSTVersionBound(_boundType, _newVersion[0], _newVersion[1], _newVersion[2]);
@@ -127,7 +154,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @notice Used to get the lower bound
      * @return lower bound
      */
-    function getLowerSTVersionBounds() external view returns(uint8[]) {
+    function getLowerSTVersionBounds() external view returns(uint8[] memory) {
         return VersionUtils.unpack(compatibleSTVersionRange["lowerBound"]);
     }
 
@@ -135,22 +162,48 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @notice Used to get the upper bound
      * @return upper bound
      */
-    function getUpperSTVersionBounds() external view returns(uint8[]) {
+    function getUpperSTVersionBounds() external view returns(uint8[] memory) {
         return VersionUtils.unpack(compatibleSTVersionRange["upperBound"]);
     }
 
     /**
      * @notice Get the setup cost of the module
      */
-    function getSetupCost() external view returns (uint256) {
-        return setupCost;
+    function setupCostInPoly() public returns (uint256) {
+        if (isCostInPoly)
+            return setupCost;
+        uint256 polyRate = IOracle(polymathRegistry.getAddress(POLY_ORACLE)).getPrice();
+        return DecimalMath.div(setupCost, polyRate);
     }
 
-   /**
-    * @notice Get the name of the Module
-    */
-    function getName() public view returns(bytes32) {
-        return name;
+    /**
+     * @notice Calculates fee in POLY
+     */
+    function _takeFee() internal returns(uint256) {
+        uint256 polySetupCost = setupCostInPoly();
+        address polyToken = polymathRegistry.getAddress("PolyToken");
+        if (polySetupCost > 0) {
+            require(IERC20(polyToken).transferFrom(msg.sender, owner(), polySetupCost), "Insufficient allowance for module fee");
+        }
+        return polySetupCost;
+    }
+
+    /**
+     * @notice Used to initialize the module
+     * @param _module Address of module
+     * @param _data Data used for the intialization of the module factory variables
+     */
+    function _initializeModule(address _module, bytes memory _data) internal {
+        uint256 polySetupCost = _takeFee();
+        bytes4 initFunction = IModule(_module).getInitFunction();
+        if (initFunction != bytes4(0)) {
+            require(Util.getSig(_data) == initFunction, "Provided data is not valid");
+            /*solium-disable-next-line security/no-low-level-calls*/
+            (bool success, ) = _module.call(_data);
+            require(success, "Unsuccessful initialization");
+        }
+        /*solium-disable-next-line security/no-block-members*/
+        emit GenerateModuleFromFactory(_module, name, address(this), msg.sender, setupCost, polySetupCost);
     }
 
 }

@@ -20,8 +20,8 @@ async function startScript(tokenSymbol, transferTo, transferAmount) {
 
   try {
     let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
-    let securityTokenRegistryABI = abis.securityTokenRegistry();
-    securityTokenRegistry = new web3.eth.Contract(securityTokenRegistryABI, securityTokenRegistryAddress);
+    let iSecurityTokenRegistryABI = abis.iSecurityTokenRegistry();
+    securityTokenRegistry = new web3.eth.Contract(iSecurityTokenRegistryABI, securityTokenRegistryAddress);
     securityTokenRegistry.setProvider(web3.currentProvider);
     transfer();
   } catch (err) {
@@ -45,14 +45,14 @@ async function transfer() {
     let transferAction = securityToken.methods.transfer(_transferTo,web3.utils.toWei(_transferAmount,"ether"));
     let receipt = await common.sendTransaction(transferAction);
     let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'Transfer');
-    console.log(`
+    console.log('\x1b[32m%s\x1b[0m', `
   Account ${event.from}
   transferred ${web3.utils.fromWei(event.value,"ether")} tokens
   to account ${event.to}`
     );
   } catch (err){
     console.log(err);
-    console.log("There was an error processing the transfer transaction. \n The most probable cause for this error is one of the involved accounts not being in the whitelist or under a lockup period.")
+    console.log('\x1b[31m%s\x1b[0m', "\nThere was an error processing the transfer transaction. \nThe most probable cause for this error is one of the involved accounts not being in the whitelist or under a lockup period.");
     return;
   }
 };

@@ -54,7 +54,7 @@ async function step_instance_toSTR(toStrAddress) {
     //       return web3.utils.isAddress(input);
     //     },
     //     limitMessage: "Must be a valid address"
-    // }); 
+    // });
     _toStrAddress = "0x240f9f86b1465bf1b8eb29bc88cbf65573dfdd97";
   }
 
@@ -81,7 +81,7 @@ async function step_instance_fromTR(fromTrAddress) {
     //       return web3.utils.isAddress(input);
     //     },
     //     limitMessage: "Must be a valid address"
-    // }); 
+    // });
     _fromTrAddress = "0xc31714e6759a1ee26db1d06af1ed276340cd4233";
   }
 
@@ -192,7 +192,7 @@ async function step_instance_fromSTR(fromStrAddress) {
     //       return web3.utils.isAddress(input);
     //     },
     //     limitMessage: "Must be a valid address"
-    // }); 
+    // });
     _fromStrAddress = "0xef58491224958d978facf55d2120c55a24516b98";
   }
 
@@ -232,7 +232,7 @@ async function step_get_deployed_tokens(securityTokenRegistry, singleTicker) {
         let gmtAddress = (await token.methods.getModule(2, 0).call())[1];
         let gtmABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../data/GeneralTransferManager1-4-0.json`).toString()).abi;
         let gmt = new web3.eth.Contract(gtmABI, gmtAddress);
-        //let gtmEvents = await gmt.getPastEvents('LogModifyWhitelist', { fromBlock: event.blockNumber}); 
+        //let gtmEvents = await gmt.getPastEvents('LogModifyWhitelist', { fromBlock: event.blockNumber});
         let gtmLogs = await getLogsFromEtherscan(gmt.options.address, 0, 'latest', 'LogModifyWhitelist(address,uint256,address,uint256,uint256,uint256,bool)');
         let gtmEvents = common.getMultipleEventsFromLogs(gmt._jsonInterface, gtmLogs, 'LogModifyWhitelist');
 

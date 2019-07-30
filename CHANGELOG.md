@@ -1,6 +1,101 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# v3.0.0 - Release Candidate
+
+[__3.0.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __10-11-18__
+
+## SecurityToken
+* Added new function `addModuleWithLabel()` which takes an extra param `_label` that used for giving the customize label to the module for display purpose. #428
+* Changed the first three params in Security Token `event ModuleAdded()` to be indexed for search. Params are `unit8[] types`, `bytes32 _name` and `address _moduleFactory`
+* Fixed `addModule` function to be backwards compatible and call the new `addModuleWithLabel` function with an empty label.
+* Fixed event `ModuleAdded` to also emit `_label`.    
+* Fixed function `getModule` to also return the respective module label.
+* Added datastore that is used to store data like investor list that is shared among modules.
+* `getInvestorCount()` now returns length of investor array that is everyone who ever held some st or has kyc data attached.
+* `holderCount()` returns the number of current st holders.
+* Added flags for Investors. Accredited and canbuyfromsto are now flags.
+* Add `_archived` flag in `addModule()` to allow issuers to add archived modules into the ST.    
+* Add `upgradeModule()` function to upgrade the already attached module. It can only be called by owner of the token.   
+* Add `upgradeToken()` function to upgrade the token to the latest version. Can only be executed by the owner of the token.    
+* Add `changeDataStore()` function to change the dataStore contract address attached with the ST.    
+* Issuer is allowed to change the name of the token using the `changeName()` function.   
+* Add `changeTreasuryWallet()` funtion to change the treasury wallet of the token.     
+* `transferWithData()` & `transferFromWithData()` function doesn't return the bool anymore.    
+* Introduced `balanceOfByPartition()` function to read the balance of the token holder according to the given partition.  
+* Add `transferByPartition()` function to transfer the tokens as per the given partition.   
+* Removed `verifyTransfer()` function.   
+* Add `authorizeOperator`, `revokeOperator`, `authorizeOperatorByPartition`, `revokeOperatorByPartition`, `operatorTransferByPartition` as the operator functions.   
+* Remove `freezeMinting()` and introduced `freezeIssuance()`.      
+* Rename the `mintWithData()` function to `issue()` function and `mintMulti()` to `issueMulti()`, remove `mint` function.          
+* Rename the `burnWithData()` function to `redeem()` function and `burnFromWithData()` to `redeemFrom()`, remove `burn` function.
+* Add `redeemByPartition()` & `operatorRedeemByPartition()` function.   
+* Add `issueByPartition()` to issue the tokens as per given partition.     
+* `disableController()` now takes the sender signature to confirm the operation.    
+* Introduce `canTransfer()`, `canTransferFrom()` & `canTransferByPartition()` to validate the transfer before actually executing it.  
+* Add document specific functions `setDocument()`, `removeDocument()`.   
+* Rename `forceTransfer()` to `controllerTransfer()` similarly `forceBurn()` to `controllerRedeem()`.   
+* Add `isControllable()` to know whether the controller functions are allowed to execute or not.    
+* Add `isIssuable()`, `getInvestorsSubsetAt()`, `getTreasuryWallet()`, `isOperator()`, `isOperatorForPartition()`, `partitionsOf()`, `getDocument()`, `getAllDocument()` functions as getters to support ST functionality.   
+* Remove the `bool` return parameter from the `canTransfer` & `canTransferFrom` function.
+* Rename `increaseApproval()` & `decreaseApproval()` to `increaseAllowance()` & `decreaseAllowance()` respectively.   
+
+## STR
+* Introduce new contract `STRGetter.sol`. It only contains the getter functions of the STR.
+* Replaced `updatePolyTokenAddress()` function with `updateFromRegistry()` in `SecurityTokenRegistry`.  
+* Migrate all the getters of `SecurityTokenRegistry.sol` to `STRGetter.sol` contract.
+* Removed `_polyToken` parameter from `initialize` function in `SecurityTokenRegistry`.
+* Allows an explicit token factory version to be used during creation of securityToken.
+* Rename the `getProtocolVersion()` to `getLatestProtocolVersion()`.
+* Add `generateNewSecurityToken()` function to generate the 3.0 tokens.    
+* Add `refreshSecurityToken()` function to update the 2.x tokens to 3.0 tokens.   
+* Add `changeFeesAmountAndCurrency()` function to sets the ticker registration and ST launch fee amount and currency.     
+* Rename `setProtocolVersion()` to `setProtocolFactory()`, Add `removeProtocolFactory()`.   
+* Add `getTokensByDelegate()`, `getSTFactoryAddressOfVersion()`, `getLatestProtocolVersion()`, `getIsFeeInPoly()` some getters.  
+* Add `RegisterTicker` event with two new parameters `_registrationFeePoly` & `_registrationFeeUsd`. (Note- there is 2 events with the same name to maintain the backwards compatibility).   
+* Add `NewSecurityToken` event with three new parameters `_usdFee`, `_polyFee` & `_protocolVersion`. (Note- there is 2 events with the same name to maintain the backwards compatibility). 
+* Add `registerNewTicker()` function to register the ticker for `3.0.0` release. NB- `registerTicker()` is also present in the code to maintain the backwards compatibility.  
+* Add `modifyExistingTicker()` to modify the ticker & `modifyExistingSecurityToken()` to modify the ST.  
+* Add `tickerAvailable()` to get the status of ticker availability.  
+
+## MR   
+* Add `_isUpgrade` param in function `useModule()`. NB - `useModule()` function exists with the same arguments to maintain the backwards compatibility.    
+* Add `isCompatibleModule()` to check whether the given module and ST is compatible or not.   
+* Remove `_isVerified` param from the `verifyModule()` function and introduced `unverifyModule()` function to unverify module.     
+* Removed `getReputationByFactory()`.
+* `getFactoryDetails()` is now return one extra parameter i.e address of the factory owner.
+* `getAllModulesByType()` add new function to return array that contains the list of addresses of module factory contracts.   
+
+## GeneralTransferManager
+* `modifyWhitelist()` function renamed to `modifyKYCData()`.
+* Added functions to modify and get flags
+* `canBuyFromSto` is now `canNotBuyFromSto` and it is the flag `1`
+* GTM logic reworked. Now, instead of flags like allowAllTransfers, there is a matrix of transfer requirements that must be fulfilled based on type of transfer.
+* Remove `changeSigningAddress()`, `changeAllowAllTransfers()`, `changeAllowAllWhitelistTransfers()`, `changeAllowAllWhitelistIssuances()`, `changeAllowAllBurnTransfers`.   
+* Introduced `modifyTransferRequirements()` & `modifyTransferRequirementsMulti()` to modify the transfer requirements.   
+* Add `modifyInvestorFlag()` & `modifyInvestorFlagMulti()` function to modify the flag.   
+* `modifyWhitelistSigned()` rename to `modifyKYCDataSigned()`. Add `modifyKYCDataSignedMulti`.    
+* Add `getAllInvestorFlags()`, `getInvestorFlag()`,`getInvestorFlags()`, `getAllKYCData()`, `getKYCData()` & `getTokensByPartition()`. 
+
+## USDTiererdSTO
+* Removed `changeAccredited()` function.    
+* `buyWithETH()`, `buyWithPOLY()`, `buyWithUSD()`, `buyWithETHRateLimited()`, `buyWithPOLYRateLimited()` & `buyWithUSDRateLimited()` will return spentUSD, spentValue & amount of mint tokens.   
+* Remove `buyTokensView()` function.  
+* Add `modifyOracle()` function allow issuer to add their personalize oracles.   
+
+## Modules   
+* Introduced BTM, LTM, Voting and VEW modules.  
+* Remove the  `_usageCost` variable when deploying any module factory.  
+* Remove `takeUsageFee()` function from evey module.   
+* Remove `changeUsageCost()` & `usageCostInPoly()` from every module factory. 
+* Remove `takeFee()` function.
+* `getTreasuryWallet()` function added to `DividendCheckpoint.sol`.
+
+## Generalize
+* Removed `_polyAddress` parameter from constructors of all modules and module factories.
+* All modules are upgradeable now. 
+* Permission types are only `ADMIN` and `OPERATOR` now.      
+
 # v2.1.0 - Release Candidate    
 
 [__2.1.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __13-09-18__
@@ -113,13 +208,15 @@ volume traded in a given rolling period.
 * Add `getReputationOfFactory()` & `getModuleListOfType()` functions to get the array type data from the ModuleRegistry contract.   
 * Add `_setupCost` in `LogGenerateModuleFromFactory` event.   
 * Add new function `getAllModulesByName()`, To get the list of modules having the same name. #198.  
-* Add new function `modifyTickerDetails()`, To modify the details of undeployed ticker. #230     
+* Add new function `modifyTickerDetails()`, To modify the details of undeployed ticker. #230
+
+
 
 ## Fixed
 * 0x0 and duplicate address in exclusions are no longer allowed in dividend modules.
 * All permissions are denied if no permission manager is active.
 * Generalize the STO varaible names and added them in `ISTO.sol` to use the common standard in all STOs.
-* Generalize the event when any new token get registered with the polymath ecosystem. `LogNewSecurityToken` should emit _ticker, _name, _securityTokenAddress, _owner, _addedAt, _registrant respectively. #230  
+* Generalize the event when any new token get registered with the polymath ecosystem. `LogNewSecurityToken` should emit _ticker_, _name_, _securityTokenAddress_, _owner_, _addedAt_, _registrant_ respectively. #230  
 * Change the function name of `withdraPoly` to `withdrawERC20` and make the function generalize to extract tokens from the ST contract. parmeters are contract address and the value need to extract from the securityToken.     
 
 ## Removed
@@ -351,7 +448,7 @@ allowed)
 * __buyTokensWithPoly__ has only one argument called `_investedPoly` only. Beneficiary Address should be its msg.sender.    
 * __getRaiseEther()__ function name changed to __getRaisedEther()__.   
 * __getRaisePoly()__ function name changed to __getRaisedPoly()__.   
-* `LogModuleAdded` emit one more variable called ___budget__.   
+* `LogModuleAdded` emit one more variable called __budget__.   
 * `modules` mapping in the securityToken contract now returns __the array of ModuleData__.    
 
 ## Removed
@@ -363,7 +460,7 @@ allowed)
 
 ## Added      
 * ModuleRegistry contract will provide the list of modules by there types.  
-* `SecurityTokenRegistry` is now working on the basis of the proxy version of the securitytoken contract. For that SecurityTokenRegistry has one more variable in the constructor called _STVersionProxy .   
+* `SecurityTokenRegistry` is now working on the basis of the proxy version of the securitytoken contract. For that SecurityTokenRegistry has one more variable in the constructor called _STVersionProxy_ .   
 * `setProtocolVersion` new function added in the SecurityTokenRegistry to set the protocol version followed to generate the securityToken. Only be called by the `polymath admin`.   
 * `SecurityToken` now have the integration with polyToken. At the time of `addModule()` SecurityToken approve the cost of the module to moduleFactory as the spender.   
 * New function `withdrawPoly(uint256 _amount)` is added to withdrawal the unused POLY from the securityToken contract. Called only by the owner of the contract.   
@@ -390,7 +487,7 @@ allowed)
 * Deployment of the securityToken is now performed by the proxy contracts and call being generated form the SecurityTokenRegistry.
 * `TickerRegistrar` renamed as `TickerRegistry`.   
 * TickerRegistry is now Ownable contract.
-* `setTokenRegistrar` functio of TickerRegistry renamed to `setTokenRegistry`.   
+* `setTokenRegistrar` function of TickerRegistry renamed to `setTokenRegistry`.   
 * SecurityToken constructor has one change in the variable. i.e `_moduleRegistry` contract address is replaced by the `_owner` address.   
 * Their is no `_perm` parameter in the `addModule()` function of the securityToken contract. Now only 4 parameters left.
 * Type of Mudules changed    

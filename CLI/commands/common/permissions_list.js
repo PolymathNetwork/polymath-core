@@ -1,70 +1,79 @@
 function getPermissionList() {
     return {
         ERC20DividendCheckpoint: {
-            pushDividendPayment: "DISTRIBUTE",
-            pushDividendPaymentToAddresses: "DISTRIBUTE",
-            setDefaultExcluded: "MANAGE",
-            setWithholding: "MANAGE",
-            setWithholdingFixed: "MANAGE",
-            createDividend: "MANAGE",
-            createDividendWithCheckpoint: "MANAGE",
-            createDividendWithExclusions: "MANAGE",
-            createDividendWithCheckpointAndExclusions: "MANAGE",
-            reclaimDividend: "MANAGE",
-            withdrawWithholding: "MANAGE",
-            createCheckpoint: "CHECKPOINT"
+            pushDividendPayment: "OPERATOR",
+            pushDividendPaymentToAddresses: "OPERATOR",
+            createCheckpoint: "OPERATOR",
+            reclaimDividend: "OPERATOR",
+            withdrawWithholding: "OPERATOR",
+            setDefaultExcluded: "ADMIN",
+            setWithholding: "ADMIN",
+            setWithholdingFixed: "ADMIN",
+            createDividend: "ADMIN",
+            createDividendWithCheckpoint: "ADMIN",
+            createDividendWithExclusions: "ADMIN",
+            createDividendWithCheckpointAndExclusions: "ADMIN"
         },
         EtherDividendCheckpoint: {
-            pushDividendPayment: "DISTRIBUTE",
-            pushDividendPaymentToAddresses: "DISTRIBUTE",
-            setDefaultExcluded: "MANAGE",
-            setWithholding: "MANAGE",
-            setWithholdingFixed: "MANAGE",
-            createDividend: "MANAGE",
-            createDividendWithCheckpoint: "MANAGE",
-            createDividendWithExclusions: "MANAGE",
-            createDividendWithCheckpointAndExclusions: "MANAGE",
-            reclaimDividend: "MANAGE",
-            withdrawWithholding: "MANAGE",
-            createCheckpoint: "CHECKPOINT"
+            pushDividendPayment: "OPERATOR",
+            pushDividendPaymentToAddresses: "OPERATOR",
+            createCheckpoint: "OPERATOR",
+            reclaimDividend: "OPERATOR",
+            withdrawWithholding: "OPERATOR",
+            setDefaultExcluded: "ADMIN",
+            setWithholding: "ADMIN",
+            setWithholdingFixed: "ADMIN",
+            createDividend: "ADMIN",
+            createDividendWithCheckpoint: "ADMIN",
+            createDividendWithExclusions: "ADMIN",
+            createDividendWithCheckpointAndExclusions: "ADMIN"
         },
         GeneralPermissionManager: {
-            addDelegate: "CHANGE_PERMISSION",
-            changePermission: "CHANGE_PERMISSION",
-            changePermissionMulti: "CHANGE_PERMISSION"
+            addDelegate: "ADMIN",
+            deleteDelegate: "ADMIN",
+            changePermission: "ADMIN",
+            changePermissionMulti: "ADMIN"
         },
         USDTieredSTO: {
             modifyFunding: "ONLY_OWNER",
             modifyLimits: "ONLY_OWNER",
             modifyTiers: "ONLY_OWNER",
+            modifyTimes: "ONLY_OWNER",
             modifyAddresses: "ONLY_OWNER",
             finalize: "ONLY_OWNER",
-            changeAccredited: "ONLY_OWNER"
+            changeNonAccreditedLimit: "ONLY_OWNER",
+            changeAllowBeneficialInvestments: "ONLY_OWNER"
         },
         PreSaleSTO: {
-            allocateTokens: "PRE_SALE_ADMIN",
-            allocateTokensMulti: "PRE_SALE_ADMIN"
+            allocateTokens: "ADMIN",
+            allocateTokensMulti: "ADMIN"
         },
         CountTransferManager: {
             changeHolderCount: "ADMIN"
         },
         GeneralTransferManager: {
-            changeIssuanceAddress: "FLAGS",
-            changeSigningAddress: "FLAGS",
-            changeAllowAllTransfers: "FLAGS",
-            changeAllowAllWhitelistTransfers: "FLAGS",
-            changeAllowAllWhitelistIssuances: "FLAGS",
-            changeAllowAllBurnTransfers: "FLAGS",
-            modifyWhitelist: "WHITELIST",
-            modifyWhitelistMulti: "WHITELIST"
+            changeIssuanceAddress: "ADMIN",
+            changeSigningAddress: "ADMIN",
+            changeAllowAllTransfers: "ADMIN",
+            changeAllowAllWhitelistTransfers: "ADMIN",
+            changeAllowAllWhitelistIssuances: "ADMIN",
+            changeAllowAllBurnTransfers: "ADMIN",
+            modifyKYCData: "ADMIN",
+            modifyKYCDataMulti: "ADMIN",
+            modifyInvestorFlag: "ADMIN",
+            modifyInvestorFlagMulti: "ADMIN"
         },
         ManualApprovalTransferManager: {
-            addManualApproval: "TRANSFER_APPROVAL",
-            revokeManualApproval: "TRANSFER_APPROVAL",
+            addManualApproval: "ADMIN",
+            addManualApprovalMulti: "ADMIN",
+            modifyManualApproval: "ADMIN",
+            modifyManualApprovalMulti: "ADMIN",
+            revokeManualApproval: "ADMIN",
+            revokeManualApprovalMulti: "ADMIN"
         },
         PercentageTransferManager: {
-            modifyWhitelist: "WHITELIST",
-            modifyWhitelistMulti: "WHITELIST",
+            modifyWhitelist: "ADMIN",
+            modifyWhitelistMulti: "ADMIN",
             setAllowPrimaryIssuance: "ADMIN",
             changeHolderPercentage: "ADMIN"
         },
@@ -101,9 +110,10 @@ function getPermissionList() {
         },
         VestingEscrowWallet: {
             changeTreasuryWallet: "ONLY_OWNER",
+            sendToTreasury: "OPERATOR",
+            pushAvailableTokens: "OPERATOR",
+            pushAvailableTokensMulti: "OPERATOR",
             depositTokens: "ADMIN",
-            sendToTreasury: "ADMIN",
-            pushAvailableTokens: "ADMIN",
             addTemplate: "ADMIN",
             removeTemplate: "ADMIN",
             addSchedule: "ADMIN",
@@ -111,7 +121,6 @@ function getPermissionList() {
             modifySchedule: "ADMIN",
             revokeSchedule: "ADMIN",
             revokeAllSchedules: "ADMIN",
-            pushAvailableTokensMulti: "ADMIN",
             addScheduleMulti: "ADMIN",
             addScheduleFromTemplateMulti: "ADMIN",
             revokeSchedulesMulti: "ADMIN",

@@ -7,8 +7,7 @@ import {
     deployDummySTOAndVerifyed,
     deployCappedSTOAndVerifyed,
     deployPresaleSTOAndVerified
-    } from "./helpers/createInstances";
-
+} from "./helpers/createInstances";
 
 // Import contract ABIs
 const CappedSTO = artifacts.require("./CappedSTO.sol");
@@ -16,12 +15,13 @@ const DummySTO = artifacts.require("./DummySTO.sol");
 const PreSaleSTO = artifacts.require("./PreSaleSTO.sol");
 const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
+const STGetter = artifacts.require("./STGetter.sol");
 
 const Web3 = require("web3");
-const BigNumber = require("bignumber.js");
+let BN = Web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
 
-contract("Concurrent STO", accounts => {
+contract("Concurrent STO", async (accounts) => {
     // Accounts variable declaration
     let account_polymath;
     let account_issuer;
@@ -45,6 +45,9 @@ contract("Concurrent STO", accounts => {
     let I_SecurityToken;
     let I_PolyToken;
     let I_PolymathRegistry;
+    let I_STRGetter;
+    let I_STGetter;
+    let stGetter;
 
     // STO instance declaration
     let I_CappedSTOFactory;
@@ -56,8 +59,9 @@ contract("Concurrent STO", accounts => {
     let message = "Transaction Should Fail!";
 
     // Initial fees
-    const initRegFee = web3.utils.toWei("250");
-    const STOSetupCost = 200 * Math.pow(10, 18);
+    const initRegFee = new BN(web3.utils.toWei("1000"));
+    const STOSetupCost = web3.utils.toHex(200 * Math.pow(10, 18));
+    const STOSetupCostPOLY = web3.utils.toHex(800 * Math.pow(10, 18));
 
     // Module keys
     const transferManagerKey = 2;
@@ -69,8 +73,12 @@ contract("Concurrent STO", accounts => {
     const DummySTOParameters = ["uint256", "uint256", "uint256", "string"];
     const PresaleSTOParameters = ["uint256"];
 
+    let currentTime;
+    const address_zero = "0x0000000000000000000000000000000000000000";
+    const one_address = "0x0000000000000000000000000000000000000001";
+
     before(async () => {
-        // Accounts setup
+        currentTime = new BN(await latestTime());
         account_polymath = accounts[0];
         account_issuer = accounts[1];
         account_fundsReceiver = accounts[2];
@@ -92,14 +100,16 @@ contract("Concurrent STO", accounts => {
            I_STFactory,
            I_SecurityTokenRegistry,
            I_SecurityTokenRegistryProxy,
-           I_STRProxied
+           I_STRProxied,
+           I_STRGetter,
+           I_STGetter
        ] = instances;
 
         // STEP 2: Deploy the STO Factories
 
-        [I_CappedSTOFactory] = await deployCappedSTOAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, STOSetupCost);
-        [I_DummySTOFactory] = await deployDummySTOAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, STOSetupCost);
-        [I_PreSaleSTOFactory] = await deployPresaleSTOAndVerified(account_polymath, I_MRProxied, I_PolyToken.address, STOSetupCost);
+        [I_CappedSTOFactory] = await deployCappedSTOAndVerifyed(account_polymath, I_MRProxied, STOSetupCost);
+        [I_DummySTOFactory] = await deployDummySTOAndVerifyed(account_polymath, I_MRProxied, STOSetupCost);
+        [I_PreSaleSTOFactory] = await deployPresaleSTOAndVerified(account_polymath, I_MRProxied, STOSetupCost);
 
         // Printing all the contract addresses
         console.log(`
@@ -129,7 +139,7 @@ contract("Concurrent STO", accounts => {
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.getTokens(initRegFee, account_issuer);
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: account_issuer });
-            let tx = await I_STRProxied.registerTicker(account_issuer, symbol, name, { from: account_issuer });
+            let tx = await I_STRProxied.registerNewTicker(account_issuer, symbol, { from: account_issuer });
             assert.equal(tx.logs[0].args._owner, account_issuer);
             assert.equal(tx.logs[0].args._ticker, symbol);
         });
@@ -137,31 +147,32 @@ contract("Concurrent STO", accounts => {
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.getTokens(initRegFee, account_issuer);
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: account_issuer });
-            let _blockNo = latestBlock();
-            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: account_issuer });
+
+            let tx = await I_STRProxied.generateNewSecurityToken(name, symbol, tokenDetails, false, account_issuer, 0, { from: account_issuer });
             assert.equal(tx.logs[1].args._ticker, symbol, "SecurityToken doesn't get deployed");
 
-            I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
-
-            const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({ from: _blockNo }), 1);
+            I_SecurityToken = await SecurityToken.at(tx.logs[1].args._securityTokenAddress);
+            stGetter = await STGetter.at(I_SecurityToken.address);
+            assert.equal(await stGetter.getTreasuryWallet.call(), account_issuer, "Incorrect wallet set");
+            const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTransferManager module get added successfully or not
             assert.equal(log.args._types[0].toNumber(), transferManagerKey);
             assert.equal(web3.utils.hexToString(log.args._name), "GeneralTransferManager");
         });
 
-        it("Should intialize the auto attached modules", async () => {
-            let moduleData = (await I_SecurityToken.getModulesByType(transferManagerKey))[0];
-            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
+        it("Should initialize the auto attached modules", async () => {
+            let moduleData = (await stGetter.getModulesByType(transferManagerKey))[0];
+            I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
 
         it("Should whitelist account_investor1", async () => {
-            let fromTime = latestTime();
-            let toTime = latestTime() + duration.days(15);
+            let fromTime = await latestTime();
+            let toTime = await latestTime() + duration.days(15);
             let expiryTime = toTime + duration.days(100);
             let canBuyFromSTO = true;
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(account_investor1, fromTime, toTime, expiryTime, canBuyFromSTO, {
+            let tx = await I_GeneralTransferManager.modifyKYCData(account_investor1, fromTime, toTime, expiryTime, {
                 from: account_issuer,
                 gas: 500000
             });
@@ -173,13 +184,13 @@ contract("Concurrent STO", accounts => {
     describe("Add STO and verify transfer", async () => {
         it("Should attach STO modules up to the max number, then fail", async () => {
             const MAX_MODULES = 10;
-            const startTime = latestTime() + duration.days(1);
-            const endTime = latestTime() + duration.days(90);
-            const cap = web3.utils.toWei("10000");
-            const rate = web3.utils.toWei("1000");
+            const startTime = await latestTime() + duration.days(1);
+            const endTime = await latestTime() + duration.days(90);
+            const cap = new BN(web3.utils.toWei("10000"));
+            const rate = new BN(web3.utils.toWei("1000"));
             const fundRaiseType = [0];
             const budget = 0;
-            const maxCost = STOSetupCost;
+            const maxCost = STOSetupCostPOLY;
             const cappedBytesSig = encodeModuleCall(CappedSTOParameters, [
                 startTime,
                 endTime,
@@ -192,12 +203,12 @@ contract("Concurrent STO", accounts => {
             const presaleBytesSig = encodeModuleCall(PresaleSTOParameters, [endTime]);
 
             for (var STOIndex = 0; STOIndex < MAX_MODULES; STOIndex++) {
-                await I_PolyToken.getTokens(STOSetupCost, account_issuer);
-                await I_PolyToken.transfer(I_SecurityToken.address, STOSetupCost, { from: account_issuer });
+                await I_PolyToken.getTokens(STOSetupCostPOLY, account_issuer);
+                await I_PolyToken.transfer(I_SecurityToken.address, STOSetupCostPOLY, { from: account_issuer });
                 switch (STOIndex % 3) {
                     case 0:
                         // Capped STO
-                        let tx1 = await I_SecurityToken.addModule(I_CappedSTOFactory.address, cappedBytesSig, maxCost, budget, {
+                        let tx1 = await I_SecurityToken.addModule(I_CappedSTOFactory.address, cappedBytesSig, maxCost, budget, false, {
                             from: account_issuer
                         });
                         assert.equal(tx1.logs[3].args._types[0], stoKey, `Wrong module type added at index ${STOIndex}`);
@@ -206,11 +217,11 @@ contract("Concurrent STO", accounts => {
                             "CappedSTO",
                             `Wrong STO module added at index ${STOIndex}`
                         );
-                        I_STO_Array.push(CappedSTO.at(tx1.logs[3].args._module));
+                        I_STO_Array.push(await CappedSTO.at(tx1.logs[3].args._module));
                         break;
                     case 1:
                         // Dummy STO
-                        let tx2 = await I_SecurityToken.addModule(I_DummySTOFactory.address, dummyBytesSig, maxCost, budget, {
+                        let tx2 = await I_SecurityToken.addModule(I_DummySTOFactory.address, dummyBytesSig, maxCost, budget, false, {
                             from: account_issuer
                         });
                         assert.equal(tx2.logs[3].args._types[0], stoKey, `Wrong module type added at index ${STOIndex}`);
@@ -219,11 +230,11 @@ contract("Concurrent STO", accounts => {
                             "DummySTO",
                             `Wrong STO module added at index ${STOIndex}`
                         );
-                        I_STO_Array.push(DummySTO.at(tx2.logs[3].args._module));
+                        I_STO_Array.push(await DummySTO.at(tx2.logs[3].args._module));
                         break;
                     case 2:
                         // Pre Sale STO
-                        let tx3 = await I_SecurityToken.addModule(I_PreSaleSTOFactory.address, presaleBytesSig, maxCost, budget, {
+                        let tx3 = await I_SecurityToken.addModule(I_PreSaleSTOFactory.address, presaleBytesSig, maxCost, budget, false, {
                             from: account_issuer
                         });
                         assert.equal(tx3.logs[3].args._types[0], stoKey, `Wrong module type added at index ${STOIndex}`);
@@ -232,7 +243,7 @@ contract("Concurrent STO", accounts => {
                             "PreSaleSTO",
                             `Wrong STO module added at index ${STOIndex}`
                         );
-                        I_STO_Array.push(PreSaleSTO.at(tx3.logs[3].args._module));
+                        I_STO_Array.push(await PreSaleSTO.at(tx3.logs[3].args._module));
                         break;
                 }
             }
@@ -247,30 +258,34 @@ contract("Concurrent STO", accounts => {
                         // Capped STO ETH
                         await I_STO_Array[STOIndex].buyTokens(account_investor1, {
                             from: account_investor1,
-                            value: web3.utils.toWei("1", "ether")
+                            value: new BN(web3.utils.toWei("1", "ether"))
                         });
                         assert.equal(web3.utils.fromWei((await I_STO_Array[STOIndex].getRaised.call(0)).toString()), 1);
                         assert.equal(await I_STO_Array[STOIndex].investorCount.call(), 1);
                         break;
                     case 1:
                         // Dummy STO
-                        await I_STO_Array[STOIndex].generateTokens(account_investor1, web3.utils.toWei("1000"), { from: account_issuer });
+                        await I_STO_Array[STOIndex].generateTokens(account_investor1, new BN(web3.utils.toWei("1000")), { from: account_issuer });
                         assert.equal(await I_STO_Array[STOIndex].investorCount.call(), 1);
                         assert.equal(
-                            (await I_STO_Array[STOIndex].investors.call(account_investor1)).dividedBy(new BigNumber(10).pow(18)).toNumber(),
+                            (await I_STO_Array[STOIndex].investors.call(account_investor1))
+                                .div(new BN(10).pow(new BN(18)))
+                                .toNumber(),
                             1000
                         );
                         break;
                     case 2:
                         // Pre Sale STO
-                        await I_STO_Array[STOIndex].allocateTokens(account_investor1, web3.utils.toWei("1000"), web3.utils.toWei("1"), 0, {
+                        await I_STO_Array[STOIndex].allocateTokens(account_investor1, new BN(web3.utils.toWei("1000")), new BN(web3.utils.toWei("1")), new BN(0), {
                             from: account_issuer
                         });
                         assert.equal(web3.utils.fromWei((await I_STO_Array[STOIndex].getRaised.call(0)).toString()), 1);
                         assert.equal(web3.utils.fromWei((await I_STO_Array[STOIndex].getRaised.call(1)).toString()), 0);
                         assert.equal(await I_STO_Array[STOIndex].investorCount.call(), 1);
                         assert.equal(
-                            (await I_STO_Array[STOIndex].investors.call(account_investor1)).dividedBy(new BigNumber(10).pow(18)).toNumber(),
+                            (await I_STO_Array[STOIndex].investors.call(account_investor1))
+                                .div(new BN(10).pow(new BN(18)))
+                                .toNumber(),
                             1000
                         );
                         break;

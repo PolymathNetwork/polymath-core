@@ -1,6 +1,6 @@
 import latestTime from "./helpers/latestTime";
 import { duration, ensureException, promisifyLogWatch, latestBlock } from "./helpers/utils";
-import takeSnapshot, { increaseTime, revertToSnapshot } from "./helpers/time";
+import { takeSnapshot, increaseTime, revertToSnapshot } from "./helpers/time";
 import { encodeProxyCall } from "./helpers/encodeCall";
 import { catchRevert } from "./helpers/exceptions";
 import { setUpPolymathNetwork, deployManualApprovalTMAndVerifyed, deployGPMAndVerifyed, deployCountTMAndVerifyed } from "./helpers/createInstances";
@@ -10,10 +10,15 @@ const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 const ManualApprovalTransferManager = artifacts.require("./ManualApprovalTransferManager");
 const CountTransferManager = artifacts.require("./CountTransferManager");
 const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager");
+const STGetter = artifacts.require("./STGetter.sol");
 
 const Web3 = require("web3");
-const BigNumber = require("bignumber.js");
+let BN = Web3.utils.BN;
 const web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545")); // Hardcoded development port
+
+const SUCCESS_CODE = 0x51;
+const FAILURE_CODE = 0x50;
+
 
 contract("ManualApprovalTransferManager", accounts => {
     // Accounts Variable declaration
@@ -55,6 +60,9 @@ contract("ManualApprovalTransferManager", accounts => {
     let I_SecurityToken;
     let I_PolyToken;
     let I_PolymathRegistry;
+    let I_STRGetter;
+    let I_STGetter;
+    let stGetter;
 
     // SecurityToken Details
     const name = "Team";
@@ -72,11 +80,12 @@ contract("ManualApprovalTransferManager", accounts => {
     let approvalTime;
 
     // Initial fee for ticker registry and security token registry
-    const initRegFee = web3.utils.toWei("250");
+    const initRegFee = web3.utils.toWei("1000");
 
     const STOParameters = ["uint256", "uint256", "uint256", "uint256", "uint8[]", "address"];
-
+    let currentTime;
     before(async () => {
+        currentTime = new BN(await latestTime());
         // Accounts setup
         account_polymath = accounts[0];
         account_issuer = accounts[1];
@@ -103,17 +112,19 @@ contract("ManualApprovalTransferManager", accounts => {
             I_STFactory,
             I_SecurityTokenRegistry,
             I_SecurityTokenRegistryProxy,
-            I_STRProxied
+            I_STRProxied,
+            I_STRGetter,
+            I_STGetter
         ] = instances;
 
         // STEP 2: Deploy the GeneralDelegateManagerFactory
-        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
+        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
         // STEP 3: Deploy the ManualApprovalTransferManagerFactory
-        [I_ManualApprovalTransferManagerFactory] = await deployManualApprovalTMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
+        [I_ManualApprovalTransferManagerFactory] = await deployManualApprovalTMAndVerifyed(account_polymath, I_MRProxied, 0);
         // STEP 4: Deploy the Paid ManualApprovalTransferManagerFactory
-        [P_ManualApprovalTransferManagerFactory] = await deployManualApprovalTMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, web3.utils.toWei("500", "ether"));
+        [P_ManualApprovalTransferManagerFactory] = await deployManualApprovalTMAndVerifyed(account_polymath, I_MRProxied, web3.utils.toWei("500", "ether"));
         // STEP 5: Deploy the CountTransferManagerFactory
-        [I_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, I_PolyToken.address, 0);
+        [I_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, 0);
 
         // Printing all the contract addresses
         console.log(`
@@ -137,31 +148,32 @@ contract("ManualApprovalTransferManager", accounts => {
     describe("Generate the SecurityToken", async () => {
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let tx = await I_STRProxied.registerTicker(token_owner, symbol, contact, { from: token_owner });
+            let tx = await I_STRProxied.registerNewTicker(token_owner, symbol, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
             assert.equal(tx.logs[0].args._ticker, symbol.toUpperCase());
         });
 
         it("Should generate the new security token with the same symbol as registered above", async () => {
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            let _blockNo = latestBlock();
-            let tx = await I_STRProxied.generateSecurityToken(name, symbol, tokenDetails, false, { from: token_owner });
+
+            let tx = await I_STRProxied.generateNewSecurityToken(name, symbol, tokenDetails, false, token_owner, 0, { from: token_owner });
 
             // Verify the successful generation of the security token
             assert.equal(tx.logs[1].args._ticker, symbol.toUpperCase(), "SecurityToken doesn't get deployed");
 
-            I_SecurityToken = SecurityToken.at(tx.logs[1].args._securityTokenAddress);
-
-            const log = await promisifyLogWatch(I_SecurityToken.ModuleAdded({ from: _blockNo }), 1);
+            I_SecurityToken = await SecurityToken.at(tx.logs[1].args._securityTokenAddress);
+            stGetter = await STGetter.at(I_SecurityToken.address);
+            assert.equal(await stGetter.getTreasuryWallet.call(), token_owner, "Incorrect wallet set");
+            const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
 
             // Verify that GeneralTransferManager module get added successfully or not
-            assert.equal(log.args._types[0].toNumber(), 2);
+            assert.equal(log.args._types[0].toString(), 2);
             assert.equal(web3.utils.toUtf8(log.args._name), "GeneralTransferManager");
         });
 
-        it("Should intialize the auto attached modules", async () => {
-            let moduleData = (await I_SecurityToken.getModulesByType(2))[0];
-            I_GeneralTransferManager = GeneralTransferManager.at(moduleData);
+        it("Should initialize the auto attached modules", async () => {
+            let moduleData = (await stGetter.getModulesByType(2))[0];
+            I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
         });
     });
 
@@ -169,12 +181,11 @@ contract("ManualApprovalTransferManager", accounts => {
         it("Should Buy the tokens", async () => {
             // Add the Investor in to the whitelist
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
+            let tx = await I_GeneralTransferManager.modifyKYCData(
                 account_investor1,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(30),
-                true,
+                currentTime,
+                currentTime,
+                currentTime.add(new BN(duration.days(30))),
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -189,22 +200,21 @@ contract("ManualApprovalTransferManager", accounts => {
 
             // Jump time
             await increaseTime(5000);
-
+            currentTime = new BN(await latestTime());
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor1, web3.utils.toWei("30", "ether"), { from: token_owner });
+            await I_SecurityToken.issue(account_investor1, new BN(web3.utils.toWei("30", "ether")), "0x0", { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), web3.utils.toWei("30", "ether"));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), web3.utils.toWei("30", "ether"));
         });
 
         it("Should Buy some more tokens", async () => {
             // Add the Investor in to the whitelist
 
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
+            let tx = await I_GeneralTransferManager.modifyKYCData(
                 account_investor2,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(30),
-                true,
+                currentTime,
+                currentTime,
+                currentTime.add(new BN(duration.days(30))),
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -218,15 +228,15 @@ contract("ManualApprovalTransferManager", accounts => {
             );
 
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor2, web3.utils.toWei("10", "ether"), { from: token_owner });
+            await I_SecurityToken.issue(account_investor2, new BN(web3.utils.toWei("10", "ether")), "0x0", { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toNumber(), web3.utils.toWei("10", "ether"));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toString(), web3.utils.toWei("10", "ether"));
         });
 
         it("Should successfully attach the ManualApprovalTransferManager with the security token", async () => {
-            await I_PolyToken.getTokens(web3.utils.toWei("500", "ether"), token_owner);
+            await I_PolyToken.getTokens(web3.utils.toWei("2000", "ether"), token_owner);
             await catchRevert(
-                I_SecurityToken.addModule(P_ManualApprovalTransferManagerFactory.address, "0x", web3.utils.toWei("500", "ether"), 0, {
+                I_SecurityToken.addModule(P_ManualApprovalTransferManagerFactory.address, "0x0", web3.utils.toWei("2000", "ether"), 0, false, {
                     from: token_owner
                 })
             );
@@ -234,43 +244,43 @@ contract("ManualApprovalTransferManager", accounts => {
 
         it("Should successfully attach the General permission manager factory with the security token", async () => {
             let snapId = await takeSnapshot();
-            await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("500", "ether"), { from: token_owner });
+            await I_PolyToken.transfer(I_SecurityToken.address, web3.utils.toWei("2000", "ether"), { from: token_owner });
             const tx = await I_SecurityToken.addModule(
                 P_ManualApprovalTransferManagerFactory.address,
-                "0x",
-                web3.utils.toWei("500", "ether"),
+                "0x0",
+                web3.utils.toWei("2000", "ether"),
                 0,
+                false,
                 { from: token_owner }
             );
-            assert.equal(tx.logs[3].args._types[0].toNumber(), transferManagerKey, "Manual Approval Transfer Manager doesn't get deployed");
+            assert.equal(tx.logs[3].args._types[0].toString(), transferManagerKey, "Manual Approval Transfer Manager doesn't get deployed");
             assert.equal(
                 web3.utils.toAscii(tx.logs[3].args._name).replace(/\u0000/g, ""),
                 "ManualApprovalTransferManager",
                 "ManualApprovalTransferManagerFactory module was not added"
             );
-            P_ManualApprovalTransferManagerFactory = ManualApprovalTransferManager.at(tx.logs[3].args._module);
+            P_ManualApprovalTransferManagerFactory = await ManualApprovalTransferManager.at(tx.logs[3].args._module);
             await revertToSnapshot(snapId);
         });
 
         it("Should successfully attach the ManualApprovalTransferManager with the security token", async () => {
-            const tx = await I_SecurityToken.addModule(I_ManualApprovalTransferManagerFactory.address, "", 0, 0, { from: token_owner });
-            assert.equal(tx.logs[2].args._types[0].toNumber(), transferManagerKey, "ManualApprovalTransferManager doesn't get deployed");
+            const tx = await I_SecurityToken.addModule(I_ManualApprovalTransferManagerFactory.address, "0x0", 0, 0, false, { from: token_owner });
+            assert.equal(tx.logs[2].args._types[0].toString(), transferManagerKey, "ManualApprovalTransferManager doesn't get deployed");
             assert.equal(
                 web3.utils.toUtf8(tx.logs[2].args._name),
                 "ManualApprovalTransferManager",
                 "ManualApprovalTransferManager module was not added"
             );
-            I_ManualApprovalTransferManager = ManualApprovalTransferManager.at(tx.logs[2].args._module);
+            I_ManualApprovalTransferManager = await ManualApprovalTransferManager.at(tx.logs[2].args._module);
         });
-        //function verifyTransfer(address _from, address _to, uint256 _amount, bool _isTransfer) public returns(Result) {
-        it("Cannot call verifyTransfer on the TM directly if _isTransfer == true", async () => {
+
+        it("Cannot call executeTransfer on the TM directly", async () => {
             await catchRevert(
-                I_ManualApprovalTransferManager.verifyTransfer(
+                I_ManualApprovalTransferManager.executeTransfer(
                     account_investor4,
                     account_investor4,
                     web3.utils.toWei("2", "ether"),
-                    "",
-                    true,
+                    "0x0",
                     { from: token_owner }
                 )
             );
@@ -281,19 +291,17 @@ contract("ManualApprovalTransferManager", accounts => {
                 account_investor4,
                 account_investor4,
                 web3.utils.toWei("2", "ether"),
-                "",
-                false,
+                "0x0",
                 { from: token_owner }
             );
         });
 
         it("Add a new token holder", async () => {
-            let tx = await I_GeneralTransferManager.modifyWhitelist(
+            let tx = await I_GeneralTransferManager.modifyKYCData(
                 account_investor3,
-                latestTime(),
-                latestTime(),
-                latestTime() + duration.days(10),
-                true,
+                currentTime,
+                currentTime,
+                currentTime.add(new BN(duration.days(10))),
                 {
                     from: account_issuer,
                     gas: 6000000
@@ -309,9 +317,9 @@ contract("ManualApprovalTransferManager", accounts => {
             await I_ManualApprovalTransferManager.pause({from: token_owner});
             // Add the Investor in to the whitelist
             // Mint some tokens
-            await I_SecurityToken.mint(account_investor3, web3.utils.toWei("10", "ether"), { from: token_owner });
+            await I_SecurityToken.issue(account_investor3, new BN(web3.utils.toWei("10", "ether")),"0x0", { from: token_owner });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor3)).toNumber(), web3.utils.toWei("10", "ether"));
+            assert.equal((await I_SecurityToken.balanceOf(account_investor3)).toString(), web3.utils.toWei("10", "ether"));
             // Unpause at the transferManager level
             await I_ManualApprovalTransferManager.unpause({from: token_owner});
         });
@@ -321,20 +329,7 @@ contract("ManualApprovalTransferManager", accounts => {
             // Mint some tokens
             await I_SecurityToken.transfer(account_investor1, web3.utils.toWei("1", "ether"), { from: account_investor2 });
 
-            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toNumber(), web3.utils.toWei("31", "ether"));
-        });
-
-        it("Should fail to add a manual approval because invalid _to address", async () => {
-            await catchRevert(
-                I_ManualApprovalTransferManager.addManualApproval(
-                    account_investor1,
-                    "",
-                    web3.utils.toWei("2", "ether"),
-                    latestTime() + duration.days(1),
-                    "DESCRIPTION",
-                    { from: token_owner }
-                )
-            );
+            assert.equal((await I_SecurityToken.balanceOf(account_investor1)).toString(), web3.utils.toWei("31", "ether"));
         });
 
         it("Should fail to add a manual approval because invalid expiry time", async () => {
@@ -344,30 +339,30 @@ contract("ManualApprovalTransferManager", accounts => {
                     account_investor4,
                     web3.utils.toWei("2", "ether"),
                     99999,
-                    "DESCRIPTION",
+                    web3.utils.fromAscii("DESCRIPTION"),
                     { from: token_owner }
                 )
             );
         });
 
         it("Add a manual approval for a 4th investor & return correct length", async () => {
-            approvalTime = latestTime() + duration.days(1);
+            approvalTime = currentTime.add(new BN(duration.days(1)));
             await I_ManualApprovalTransferManager.addManualApproval(
                 account_investor1,
                 account_investor4,
                 web3.utils.toWei("3", "ether"),
                 approvalTime,
-                "DESCRIPTION",
-                { 
+                web3.utils.fromAscii("DESCRIPTION"),
+                {
                     from: token_owner
                 }
             );
-            assert.equal((await I_ManualApprovalTransferManager.getTotalApprovalsLength.call()).toNumber(), 1);
+            assert.equal((await I_ManualApprovalTransferManager.getTotalApprovalsLength.call()).toString(), 1);
         });
 
         it("Should return all approvals correctly", async () => {
 
-            console.log("current approval length is " + (await I_ManualApprovalTransferManager.getTotalApprovalsLength.call()).toNumber());
+            console.log("current approval length is " + (await I_ManualApprovalTransferManager.getTotalApprovalsLength.call()).toString());
 
             let tx = await I_ManualApprovalTransferManager.getAllApprovals({from: token_owner });
             assert.equal(tx[0][0], account_investor1);
@@ -376,7 +371,7 @@ contract("ManualApprovalTransferManager", accounts => {
             console.log("2");
             assert.equal(tx[2][0], web3.utils.toWei("3"));
             console.log("3");
-            assert.equal(tx[3][0].toNumber(), approvalTime);
+            assert.equal(tx[3][0].toString(), approvalTime);
             console.log("4");
             assert.equal(web3.utils.toUtf8(tx[4][0]), "DESCRIPTION");
         })
@@ -387,9 +382,9 @@ contract("ManualApprovalTransferManager", accounts => {
                     account_investor1,
                     account_investor4,
                     web3.utils.toWei("5", "ether"),
-                    latestTime() + duration.days(1),
-                    "DESCRIPTION",
-                    { 
+                    currentTime.add(new BN(duration.days(1))),
+                    web3.utils.fromAscii("DESCRIPTION"),
+                    {
                         from: token_owner
                     }
                 )
@@ -397,20 +392,28 @@ contract("ManualApprovalTransferManager", accounts => {
         })
 
         it("Check verifyTransfer without actually transferring", async () => {
-            let verified = await I_SecurityToken.verifyTransfer.call(
-                account_investor1,
+            let verified = await I_SecurityToken.canTransfer.call(
                 account_investor4,
                 web3.utils.toWei("2", "ether"),
-                ""
+                "0x0",
+                {
+                    from: account_investor1
+                }
             );
-            console.log(JSON.stringify(verified));
-            assert.equal(verified, true);
+            // console.log(JSON.stringify(verified[0]));
+            assert.equal(verified[0], SUCCESS_CODE);
 
-            verified = await I_SecurityToken.verifyTransfer.call(account_investor1, account_investor4, web3.utils.toWei("4", "ether"), "");
-            assert.equal(verified, false);
+            verified = await I_SecurityToken.canTransfer.call(account_investor4, web3.utils.toWei("4", "ether"), "0x0", {
+                from: account_investor1
+            });
+            // console.log(JSON.stringify(verified[0]));
+            assert.equal(verified[0], FAILURE_CODE);
 
-            verified = await I_SecurityToken.verifyTransfer.call(account_investor1, account_investor4, web3.utils.toWei("1", "ether"), "");
-            assert.equal(verified, true);
+            verified = await I_SecurityToken.canTransfer.call(account_investor4, web3.utils.toWei("1", "ether"), "0x0", {
+                from: account_investor1
+            });
+            // console.log(JSON.stringify(verified[0]));
+            assert.equal(verified[0], SUCCESS_CODE);
         });
 
         it("Should fail to sell the tokens more than the allowance", async() => {
@@ -427,14 +430,14 @@ contract("ManualApprovalTransferManager", accounts => {
             let oldBal4 = await I_SecurityToken.balanceOf.call(account_investor4);
             await I_SecurityToken.transfer(account_investor4, web3.utils.toWei("1"), {from: account_investor1});
             let newBal4 = await I_SecurityToken.balanceOf.call(account_investor4);
-            assert.equal((newBal4.minus(oldBal4)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 1);
+            assert.equal((newBal4.sub(oldBal4)).div(new BN(10).pow(new BN(18))).toString(), 1);
         });
 
         it("Should sell more tokens to investor 4 with in the same day(GTM will give INVALID as investor 4 not in the whitelist)", async() => {
             let oldBal4 = await I_SecurityToken.balanceOf.call(account_investor4);
             await I_SecurityToken.transfer(account_investor4, web3.utils.toWei("1"), {from: account_investor1});
             let newBal4 = await I_SecurityToken.balanceOf.call(account_investor4);
-            assert.equal((newBal4.minus(oldBal4)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 1);
+            assert.equal((newBal4.sub(oldBal4)).div(new BN(10).pow(new BN(18))).toString(), 1);
 
 
             let tx = await I_ManualApprovalTransferManager.getActiveApprovalsToUser.call(account_investor1);
@@ -446,6 +449,7 @@ contract("ManualApprovalTransferManager", accounts => {
 
         it("Should fail to transact after the approval get expired", async() => {
             await increaseTime(duration.days(1));
+            currentTime = new BN(await latestTime());
             await catchRevert(
                 I_SecurityToken.transfer(account_investor4, web3.utils.toWei("1"), {from: account_investor1})
             );
@@ -456,11 +460,11 @@ contract("ManualApprovalTransferManager", accounts => {
                 I_ManualApprovalTransferManager.modifyManualApproval(
                     account_investor1,
                     account_investor4,
-                    latestTime() + duration.days(2),
+                    currentTime.add(new BN(duration.days(2))),
                     web3.utils.toWei("5"),
-                    "New Description",
+                    web3.utils.fromAscii("New Description"),
                     false,
-                    { 
+                    {
                         from: token_owner
                     }
                 )
@@ -469,17 +473,18 @@ contract("ManualApprovalTransferManager", accounts => {
 
         it("Should attach the manual approval for the investor4 again", async() => {
             assert.equal((await I_ManualApprovalTransferManager.getActiveApprovalsToUser.call(account_investor4))[0].length, 0);
+            currentTime = new BN(await latestTime());
             await I_ManualApprovalTransferManager.addManualApproval(
                 account_investor1,
                 account_investor4,
                 web3.utils.toWei("2", "ether"),
-                latestTime() + duration.days(1),
-                "DESCRIPTION",
-                { 
+                currentTime.add(new BN(duration.days(1))),
+                web3.utils.fromAscii("DESCRIPTION"),
+                {
                     from: token_owner
                 }
             );
-            assert.equal((await I_ManualApprovalTransferManager.getTotalApprovalsLength.call()).toNumber(), 1);
+            assert.equal((await I_ManualApprovalTransferManager.getTotalApprovalsLength.call()).toString(), 1);
             let data = await I_ManualApprovalTransferManager.approvals.call(0);
             assert.equal(data[0], account_investor1);
             assert.equal(data[1], account_investor4);
@@ -488,15 +493,16 @@ contract("ManualApprovalTransferManager", accounts => {
         });
 
         it("Should modify the manual approval expiry time for 4th investor", async () => {
-            expiryTimeMA = latestTime() + duration.days(3);
+            currentTime = new BN(await latestTime());
+            expiryTimeMA = currentTime.add(new BN(duration.days(3)));
             let tx = await I_ManualApprovalTransferManager.modifyManualApproval(
                     account_investor1,
                     account_investor4,
                     expiryTimeMA,
                     0,
-                    "New Description",
+                    web3.utils.fromAscii("New Description"),
                     true,
-                    { 
+                    {
                         from: token_owner
                     }
                 );
@@ -505,32 +511,34 @@ contract("ManualApprovalTransferManager", accounts => {
             assert.equal(data[0], account_investor1);
             assert.equal(data[1], account_investor4);
             assert.equal(data[2], web3.utils.toWei("2"));
-            assert.equal(data[3].toNumber(), expiryTimeMA);
+            assert.equal(data[3].toString(), expiryTimeMA);
             assert.equal(web3.utils.toUtf8(data[4]), "New Description");
             assert.equal(tx.logs[0].args._from, account_investor1);
             assert.equal(tx.logs[0].args._to, account_investor4);
-            assert.equal((tx.logs[0].args._expiryTime).toNumber(), expiryTimeMA);
-            assert.equal((tx.logs[0].args._allowance).toNumber(), web3.utils.toWei("2"));
+            assert.equal((tx.logs[0].args._expiryTime).toString(), expiryTimeMA);
+            assert.equal((tx.logs[0].args._allowance).toString(), web3.utils.toWei("2"));
             assert.equal(web3.utils.toUtf8(tx.logs[0].args._description), "New Description");
         });
 
         it("Should transact after two days", async() => {
             await increaseTime(2);
+            currentTime = new BN(await latestTime());
             let oldBal4 = await I_SecurityToken.balanceOf.call(account_investor4);
             await I_SecurityToken.transfer(account_investor4, web3.utils.toWei("1"), {from: account_investor1});
             let newBal4 = await I_SecurityToken.balanceOf.call(account_investor4);
-            assert.equal((newBal4.minus(oldBal4)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 1);
+            assert.equal((newBal4.sub(oldBal4)).div(new BN(10).pow(new BN(18))).toString(), 1);
         });
 
         it("Should modify the allowance of the manual approval (increase)", async() => {
+            currentTime = new BN(await latestTime());
             await I_ManualApprovalTransferManager.modifyManualApproval(
                 account_investor1,
                 account_investor4,
                 expiryTimeMA,
                 web3.utils.toWei("4"),
-                "New Description",
+                web3.utils.fromAscii("New Description"),
                 true,
-                { 
+                {
                     from: token_owner
                 }
             );
@@ -538,27 +546,29 @@ contract("ManualApprovalTransferManager", accounts => {
             let data = await I_ManualApprovalTransferManager.approvals.call(0);
             assert.equal(data[0], account_investor1);
             assert.equal(data[1], account_investor4);
-            assert.equal(data[2].toNumber(), web3.utils.toWei("5"));
-            assert.equal(data[3].toNumber(), expiryTimeMA);
+            assert.equal(data[2].toString(), web3.utils.toWei("5"));
+            assert.equal(data[3].toString(), expiryTimeMA);
             assert.equal(web3.utils.toUtf8(data[4]), "New Description");
         });
 
         it("Should transact according to new allowance", async() => {
+            currentTime = new BN(await latestTime());
             let oldBal4 = await I_SecurityToken.balanceOf.call(account_investor4);
             await I_SecurityToken.transfer(account_investor4, web3.utils.toWei("3"), {from: account_investor1});
             let newBal4 = await I_SecurityToken.balanceOf.call(account_investor4);
-            assert.equal((newBal4.minus(oldBal4)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 3);
+            assert.equal((newBal4.sub(oldBal4)).div(new BN(10).pow(new BN(18))).toString(), 3);
         });
 
         it("Should decrease the allowance", async() => {
+            currentTime = new BN(await latestTime());
             await I_ManualApprovalTransferManager.modifyManualApproval(
                 account_investor1,
                 account_investor4,
                 expiryTimeMA,
                 web3.utils.toWei("1"),
-                "New Description",
+                web3.utils.fromAscii("New Description"),
                 false,
-                { 
+                {
                     from: token_owner
                 }
             );
@@ -566,8 +576,8 @@ contract("ManualApprovalTransferManager", accounts => {
             let data = await I_ManualApprovalTransferManager.approvals.call(0);
             assert.equal(data[0], account_investor1);
             assert.equal(data[1], account_investor4);
-            assert.equal(data[2].toNumber(), web3.utils.toWei("1"));
-            assert.equal(data[3].toNumber(), expiryTimeMA);
+            assert.equal(data[2].toString(), web3.utils.toWei("1"));
+            assert.equal(data[3].toString(), expiryTimeMA);
             assert.equal(web3.utils.toUtf8(data[4]), "New Description");
         });
 
@@ -578,10 +588,11 @@ contract("ManualApprovalTransferManager", accounts => {
         });
 
         it("Should successfully transfer the tokens within the allowance limit", async() => {
+            currentTime = new BN(await latestTime());
             let oldBal4 = await I_SecurityToken.balanceOf.call(account_investor4);
             await I_SecurityToken.transfer(account_investor4, web3.utils.toWei("1"), {from: account_investor1});
             let newBal4 = await I_SecurityToken.balanceOf.call(account_investor4);
-            assert.equal((newBal4.minus(oldBal4)).dividedBy(new BigNumber(10).pow(18)).toNumber(), 1);
+            assert.equal((newBal4.sub(oldBal4)).div(new BN(10).pow(new BN(18))).toString(), 1);
         });
 
         it("Should fail to modify because allowance is zero", async() => {
@@ -591,9 +602,9 @@ contract("ManualApprovalTransferManager", accounts => {
                     account_investor4,
                     expiryTimeMA,
                     web3.utils.toWei("5"),
-                    "New Description",
+                    web3.utils.fromAscii("New Description"),
                     false,
-                    { 
+                    {
                         from: token_owner
                     }
                 )
@@ -624,9 +635,9 @@ contract("ManualApprovalTransferManager", accounts => {
                     [account_investor2,account_investor3],
                     [account_investor3,account_investor4],
                     [web3.utils.toWei("2", "ether"), web3.utils.toWei("2", "ether")],
-                    [latestTime() + duration.days(1),latestTime() + duration.days(1)],
-                    ["DESCRIPTION_1", "DESCRIPTION_2"],
-                    { 
+                    [currentTime.add(new BN(duration.days(1))),currentTime.add(new BN(duration.days(1)))],
+                    [web3.utils.fromAscii("DESCRIPTION_1"), web3.utils.fromAscii("DESCRIPTION_2")],
+                    {
                         from: account_investor5
                     }
                 )
@@ -639,9 +650,9 @@ contract("ManualApprovalTransferManager", accounts => {
                     [account_investor2],
                     [account_investor3,account_investor4],
                     [web3.utils.toWei("2", "ether"), web3.utils.toWei("2", "ether")],
-                    [latestTime() + duration.days(1),latestTime() + duration.days(1)],
-                    ["DESCRIPTION_1", "DESCRIPTION_2"],
-                    { 
+                    [currentTime.add(new BN(duration.days(1))),currentTime.add(new BN(duration.days(1)))],
+                    [web3.utils.fromAscii("DESCRIPTION_1"), web3.utils.fromAscii("DESCRIPTION_2")],
+                    {
                         from: token_owner
                     }
                 )
@@ -654,9 +665,9 @@ contract("ManualApprovalTransferManager", accounts => {
                     [account_investor2,account_investor3],
                     [account_investor3,account_investor4],
                     [web3.utils.toWei("2", "ether"), web3.utils.toWei("2", "ether")],
-                    [latestTime() + duration.days(1)],
-                    ["DESCRIPTION_1", "DESCRIPTION_2"],
-                    { 
+                    [currentTime.add(new BN(duration.days(1)))],
+                    [web3.utils.fromAscii("DESCRIPTION_1"), web3.utils.fromAscii("DESCRIPTION_2")],
+                    {
                         from: token_owner
                     }
                 )
@@ -669,9 +680,9 @@ contract("ManualApprovalTransferManager", accounts => {
                     [account_investor2,account_investor3],
                     [account_investor3,account_investor4],
                     [web3.utils.toWei("2", "ether")],
-                    [latestTime() + duration.days(1),latestTime() + duration.days(1)],
-                    ["DESCRIPTION_1", "DESCRIPTION_2"],
-                    { 
+                    [currentTime.add(new BN(duration.days(1))),currentTime.add(new BN(duration.days(1)))],
+                    [web3.utils.fromAscii("DESCRIPTION_1"), web3.utils.fromAscii("DESCRIPTION_2")],
+                    {
                         from: token_owner
                     }
                 )
@@ -684,9 +695,9 @@ contract("ManualApprovalTransferManager", accounts => {
                     [account_investor2,account_investor3],
                     [account_investor3,account_investor4],
                     [web3.utils.toWei("2", "ether"), web3.utils.toWei("2", "ether")],
-                    [latestTime() + duration.days(1),latestTime() + duration.days(1)],
-                    ["DESCRIPTION_1"],
-                    { 
+                    [currentTime.add(new BN(duration.days(1))),currentTime.add(new BN(duration.days(1)))],
+                    [web3.utils.fromAscii("DESCRIPTION_1")],
+                    {
                         from: token_owner
                     }
                 )
@@ -694,14 +705,14 @@ contract("ManualApprovalTransferManager", accounts => {
         });
 
         it("Add multiple manual approvals", async () => {
-            let time = latestTime() + duration.days(1);
+            let time = currentTime.add(new BN(duration.days(1)));
             await I_ManualApprovalTransferManager.addManualApprovalMulti(
                 [account_investor2,account_investor3],
                 [account_investor3,account_investor4],
                 [web3.utils.toWei("2", "ether"), web3.utils.toWei("2", "ether")],
-                [time,latestTime() + duration.days(1)],
-                ["DESCRIPTION_1", "DESCRIPTION_2"],
-                { 
+                [time,currentTime.add(new BN(duration.days(1)))],
+                [web3.utils.fromAscii("DESCRIPTION_1"), web3.utils.fromAscii("DESCRIPTION_2")],
+                {
                     from: token_owner
                 }
             );
@@ -711,8 +722,8 @@ contract("ManualApprovalTransferManager", accounts => {
             assert.equal((await I_ManualApprovalTransferManager.getActiveApprovalsToUser.call(account_investor3))[0][1], account_investor3);
             assert.equal((await I_ManualApprovalTransferManager.getActiveApprovalsToUser.call(account_investor3))[1][0], account_investor3);
             let approvalDetail = await I_ManualApprovalTransferManager.getApprovalDetails.call(account_investor2, account_investor3);
-            assert.equal(approvalDetail[0].toNumber(), time);
-            assert.equal(approvalDetail[1].toNumber(), web3.utils.toWei("2", "ether"));
+            assert.equal(approvalDetail[0].toString(), time);
+            assert.equal(approvalDetail[1].toString(), web3.utils.toWei("2", "ether"));
             assert.equal(web3.utils.toUtf8(approvalDetail[2]), "DESCRIPTION_1");
         });
 
@@ -721,7 +732,7 @@ contract("ManualApprovalTransferManager", accounts => {
                 I_ManualApprovalTransferManager.revokeManualApprovalMulti(
                     [account_investor2,account_investor3],
                     [account_investor3,account_investor4],
-                    { 
+                    {
                         from: account_investor5
                     }
                 )
@@ -733,7 +744,7 @@ contract("ManualApprovalTransferManager", accounts => {
                 I_ManualApprovalTransferManager.revokeManualApprovalMulti(
                     [account_investor2,account_investor3],
                     [account_investor3],
-                    { 
+                    {
                         from: token_owner
                     }
                 )
@@ -744,7 +755,7 @@ contract("ManualApprovalTransferManager", accounts => {
             await I_ManualApprovalTransferManager.revokeManualApprovalMulti(
                 [account_investor2,account_investor3],
                 [account_investor3,account_investor4],
-                { 
+                {
                     from: token_owner
                 }
             );
@@ -753,12 +764,12 @@ contract("ManualApprovalTransferManager", accounts => {
 
         it("Add a manual approval for a 5th investor from issuance", async () => {
             await I_ManualApprovalTransferManager.addManualApproval(
-                "",
+                "0x0000000000000000000000000000000000000000",
                 account_investor5,
                 web3.utils.toWei("2", "ether"),
-                latestTime() + duration.days(1),
-                "DESCRIPTION",
-                { 
+                currentTime.add(new BN(duration.days(1))),
+                web3.utils.fromAscii("DESCRIPTION"),
+                {
                     from: token_owner
                 }
             );
@@ -779,11 +790,11 @@ contract("ManualApprovalTransferManager", accounts => {
                 [1]
             );
 
-            const tx = await I_SecurityToken.addModule(I_CountTransferManagerFactory.address, bytesCountTM, 0, 0, { from: token_owner });
-            assert.equal(tx.logs[2].args._types[0].toNumber(), transferManagerKey, "CountTransferManager doesn't get deployed");
+            const tx = await I_SecurityToken.addModule(I_CountTransferManagerFactory.address, bytesCountTM, 0, 0, false, { from: token_owner });
+            assert.equal(tx.logs[2].args._types[0].toString(), transferManagerKey, "CountTransferManager doesn't get deployed");
             let name = web3.utils.toUtf8(tx.logs[2].args._name);
             assert.equal(name, "CountTransferManager", "CountTransferManager module was not added");
-            I_CountTransferManager = CountTransferManager.at(tx.logs[2].args._module);
+            I_CountTransferManager = await CountTransferManager.at(tx.logs[2].args._module);
         });
 
         it("Should get the permission list", async () => {
@@ -799,26 +810,21 @@ contract("ManualApprovalTransferManager", accounts => {
 
     describe("ManualApproval Transfer Manager Factory test cases", async () => {
         it("Should get the exact details of the factory", async () => {
-            assert.equal(await I_ManualApprovalTransferManagerFactory.getSetupCost.call(), 0);
+            assert.equal(await I_ManualApprovalTransferManagerFactory.setupCost.call(), 0);
             assert.equal((await I_ManualApprovalTransferManagerFactory.getTypes.call())[0], 2);
-            let name = web3.utils.toUtf8(await I_ManualApprovalTransferManagerFactory.getName.call());
+            let name = web3.utils.toUtf8(await I_ManualApprovalTransferManagerFactory.name.call());
             assert.equal(name, "ManualApprovalTransferManager", "Wrong Module added");
             let desc = await I_ManualApprovalTransferManagerFactory.description.call();
             assert.equal(desc, "Manage transfers using single approvals", "Wrong Module added");
             let title = await I_ManualApprovalTransferManagerFactory.title.call();
             assert.equal(title, "Manual Approval Transfer Manager", "Wrong Module added");
-            let inst = await I_ManualApprovalTransferManagerFactory.getInstructions.call();
-            assert.equal(
-                inst,
-                "Allows an issuer to set manual approvals for specific pairs of addresses and amounts. Init function takes no parameters.",
-                "Wrong Module added"
-            );
-            assert.equal(await I_ManualApprovalTransferManagerFactory.version.call(), "2.1.0");
+            assert.equal(await I_ManualApprovalTransferManagerFactory.version.call(), "3.0.0");
         });
 
         it("Should get the tags of the factory", async () => {
             let tags = await I_ManualApprovalTransferManagerFactory.getTags.call();
-            assert.equal(web3.utils.toUtf8(tags[0]), "ManualApproval");
+            assert.equal(web3.utils.toUtf8(tags[0]), "Manual Approval");
+            assert.equal(web3.utils.toUtf8(tags[1]), "Transfer Restriction");
         });
     });
 });

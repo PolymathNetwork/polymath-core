@@ -1,7 +1,6 @@
-pragma solidity ^0.4.24;
+pragma solidity 0.5.8;
 
 contract EternalStorage {
-
     /// @notice Internal mappings used to store all kinds on data into the contract
     mapping(bytes32 => uint256) internal uintStorage;
     mapping(bytes32 => string) internal stringStorage;
@@ -53,8 +52,12 @@ contract EternalStorage {
         bytes32Storage[_key] = _value;
     }
 
-    function set(bytes32 _key, string _value) internal {
+    function set(bytes32 _key, string memory _value) internal {
         stringStorage[_key] = _value;
+    }
+
+    function set(bytes32 _key, bytes memory _value) internal {
+        bytesStorage[_key] = _value;
     }
 
     ////////////////////////////
@@ -65,7 +68,6 @@ contract EternalStorage {
     /// For deleting the item from array developers needs to create a funtion for that similarly
     /// in this case we have the helper function deleteArrayBytes32() which will do it for us
     /// deleteArrayBytes32(keccak256(abi.encodePacked("tokensOwnedByOwner", 0x1), 3); -- it will delete the index 3
-
 
     //Deletes from mapping (bytes32 => array[]) at index _index
     function deleteArrayAddress(bytes32 _key, uint256 _index) internal {
@@ -118,7 +120,7 @@ contract EternalStorage {
         bytes32ArrayStorage[_key].push(_value);
     }
 
-    function pushArray(bytes32 _key, string _value) internal {
+    function pushArray(bytes32 _key, string memory _value) internal {
         stringArrayStorage[_key].push(_value);
     }
 
@@ -132,21 +134,21 @@ contract EternalStorage {
     /// @notice used to intialize the array
     /// Ex1- mapping (address => address[]) public reputation;
     /// reputation[0x1] = new address[](0); It can be replaced as
-    /// setArray(hash('reputation', 0x1), new address[](0)); 
-    
-    function setArray(bytes32 _key, address[] _value) internal {
+    /// setArray(hash('reputation', 0x1), new address[](0));
+
+    function setArray(bytes32 _key, address[] memory _value) internal {
         addressArrayStorage[_key] = _value;
     }
 
-    function setArray(bytes32 _key, uint256[] _value) internal {
+    function setArray(bytes32 _key, uint256[] memory _value) internal {
         uintArrayStorage[_key] = _value;
     }
 
-    function setArray(bytes32 _key, bytes32[] _value) internal {
+    function setArray(bytes32 _key, bytes32[] memory _value) internal {
         bytes32ArrayStorage[_key] = _value;
     }
 
-    function setArray(bytes32 _key, string[] _value) internal {
+    function setArray(bytes32 _key, string[] memory _value) internal {
         stringArrayStorage[_key] = _value;
     }
 
@@ -159,15 +161,15 @@ contract EternalStorage {
     /// Ex2- uint256 _len =  tokensOwnedByOwner[0x1].length; replace with
     /// getArrayBytes32(keccak256(abi.encodePacked("tokensOwnedByOwner", 0x1)).length;
 
-    function getArrayAddress(bytes32 _key) public view returns(address[]) {
+    function getArrayAddress(bytes32 _key) public view returns(address[] memory) {
         return addressArrayStorage[_key];
     }
 
-    function getArrayBytes32(bytes32 _key) public view returns(bytes32[]) {
+    function getArrayBytes32(bytes32 _key) public view returns(bytes32[] memory) {
         return bytes32ArrayStorage[_key];
     }
 
-    function getArrayUint(bytes32 _key) public view returns(uint[]) {
+    function getArrayUint(bytes32 _key) public view returns(uint[] memory) {
         return uintArrayStorage[_key];
     }
 
@@ -176,8 +178,8 @@ contract EternalStorage {
     ///////////////////////////////////
     /// @notice set the value of particular index of the address array
     /// Ex1- mapping(bytes32 => address[]) moduleList;
-    /// general way is -- moduleList[moduleType][index] = temp; 
-    /// It can be re-write as -- setArrayIndexValue(keccak256(abi.encodePacked('moduleList', moduleType)), index, temp); 
+    /// general way is -- moduleList[moduleType][index] = temp;
+    /// It can be re-write as -- setArrayIndexValue(keccak256(abi.encodePacked('moduleList', moduleType)), index, temp);
 
     function setArrayIndexValue(bytes32 _key, uint256 _index, address _value) internal {
         addressArrayStorage[_key][_index] = _value;
@@ -191,13 +193,12 @@ contract EternalStorage {
         bytes32ArrayStorage[_key][_index] = _value;
     }
 
-    function setArrayIndexValue(bytes32 _key, uint256 _index, string _value) internal {
+    function setArrayIndexValue(bytes32 _key, uint256 _index, string memory _value) internal {
         stringArrayStorage[_key][_index] = _value;
     }
 
     /// Public getters functions
-    ////////////////////
-    /// @notice Get function use to get the value of the singleton state variables
+    /////////////////////// @notice Get function use to get the value of the singleton state variables
     /// Ex1- string public version = "0.0.1";
     /// string _version = getString(keccak256(abi.encodePacked("version"));
     /// Ex2 - assert(temp1 == temp2); replace to
@@ -214,7 +215,7 @@ contract EternalStorage {
         return boolStorage[_variable];
     }
 
-    function getStringValue(bytes32 _variable) public view returns(string) {
+    function getStringValue(bytes32 _variable) public view returns(string memory) {
         return stringStorage[_variable];
     }
 
@@ -226,7 +227,7 @@ contract EternalStorage {
         return bytes32Storage[_variable];
     }
 
-    function getBytesValue(bytes32 _variable) public view returns(bytes) {
+    function getBytesValue(bytes32 _variable) public view returns(bytes memory) {
         return bytesStorage[_variable];
     }
 

@@ -69,7 +69,7 @@ async function configExistingModules(permissionModules) {
 }
 
 async function permissionManager() {
-  console.log(chalk.blue('\n', 3`Permission module at ${currentPermissionManager.options.address}`), '\n');
+  console.log(chalk.blue('\n', `Permission module at ${currentPermissionManager.options.address}`), '\n');
 
   let delegates = await currentPermissionManager.methods.getAllDelegates().call();
 

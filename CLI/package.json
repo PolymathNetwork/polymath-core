@@ -18,7 +18,7 @@
     "readline-sync": "^1.4.9",
     "request": "^2.88.0",
     "request-promise": "^4.2.2",
-    "table": "^5.1.1",
+    "table": "^5.4.5",
     "web3": "1.0.0-beta.35"
   }
 }

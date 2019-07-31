@@ -1,6 +1,5 @@
 const fs = require("fs");
 const _ = require("underscore");
-const solc = require("solc");
 const path = require("path");
 const util = require("util");
 const exec = util.promisify(require("child_process").exec);
@@ -24,7 +23,7 @@ async function compareStorage() {
         let temp;
         let contractAPath = `./flat/${path.basename(paths[0])}`;
         let contractBPath = `./flat/${path.basename(paths[1])}`;
-        
+
         if (path.basename(paths[0]) === contractA) {
             temp = contractAPath;
             contractAPath = contractBPath;

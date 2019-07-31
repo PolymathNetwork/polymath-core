@@ -416,6 +416,8 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         if(address(_token) != address(polyToken))
             stableCoinsRaised[address(_token)] = stableCoinsRaised[address(_token)].add(spentValue);
         // Forward coins to issuer wallet
+        // @dev "else" branch is unreachable, because transaction `transferFrom` will revert with
+        // reason "Transfer Invalid", instead of returning.
         require(_token.transferFrom(msg.sender, wallet, spentValue), "Transfer failed");
         emit FundsReceived(msg.sender, _beneficiary, spentUSD, _fundRaiseType, _tokenAmount, spentValue, rate);
         return (spentUSD, spentValue, getTokensMinted().sub(initialMinted));

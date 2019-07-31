@@ -28,6 +28,7 @@ contract("USDTieredSTO", async (accounts) => {
     let INVESTOR2;
     let INVESTOR3;
     let INVESTOR4;
+    let BENEFICIARY1;
     let ACCREDITED1;
     let ACCREDITED2;
     let NONACCREDITED1;
@@ -220,7 +221,7 @@ contract("USDTieredSTO", async (accounts) => {
         WALLET = accounts[2];
         TREASURYWALLET = WALLET;
         ACCREDITED1 = accounts[3];
-        ACCREDITED2 = accounts[4];
+        BENEFICIARY1 = accounts[4];
         NONACCREDITED1 = accounts[5];
         NONACCREDITED2 = accounts[6];
         INVESTOR1 = accounts[7];
@@ -1003,6 +1004,11 @@ contract("USDTieredSTO", async (accounts) => {
             assert.equal((await I_USDTieredSTO_Array[stoId].getRate.call(POLY)).toString(), oldPolyRate.toString());
         });
 
+        it("Should fail to retrieve oracle rate if fundRaiseTypes is unrecognised", async () => {
+            let stoId = 3;
+            await catchRevert(I_USDTieredSTO_Array[stoId].getRate.call(5), "revert");
+        });
+
         it("Should successfully change config before startTime - funding", async () => {
             let stoId = 3;
             await I_USDTieredSTO_Array[stoId].modifyFunding([0], { from: ISSUER });
@@ -1270,6 +1276,84 @@ contract("USDTieredSTO", async (accounts) => {
 
             // ACCREDITED DAI
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(ACCREDITED1, investment_DAI, I_DaiToken.address, { from: ACCREDITED1 }), "Transfer Invalid");
+
+            await revertToSnapshot(snapId);
+        });
+
+        it("should fail to buy for a benificiary by default - until allowBeneficialInvestments is activated", async () => {
+            let stoId = 0;
+            let snapId = await takeSnapshot();
+
+            // Whitelist
+            let fromTime = await latestTime();
+            let toTime = await latestTime() + duration.days(15);
+            let expiryTime = toTime + duration.days(100);
+
+            await I_GeneralTransferManager.modifyKYCData(BENEFICIARY1, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyKYCData(NONACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
+
+            // Advance time to after STO start
+            await increaseTime(duration.days(3));
+
+            // Prep for investments
+            let investment_ETH = new BN(web3.utils.toWei("1", "ether")); // Invest 1 ETH
+            let investment_POLY = new BN(web3.utils.toWei("10000", "ether")); // Invest 10000 POLY
+            await I_PolyToken.getTokens(investment_POLY, NONACCREDITED1);
+            await I_PolyToken.approve(I_USDTieredSTO_Array[stoId].address, investment_POLY, { from: NONACCREDITED1 });
+            let investment_DAI = new BN(web3.utils.toWei("500", "ether")); // Invest 10000 POLY
+            await I_DaiToken.getTokens(investment_DAI, NONACCREDITED1);
+            await I_DaiToken.approve(I_USDTieredSTO_Array[stoId].address, investment_DAI, { from: NONACCREDITED1 });
+
+            // NONACCREDITED ETH
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(BENEFICIARY1, { from: NONACCREDITED1, value: investment_ETH }),
+                "Beneficiary != funder");
+
+            // NONACCREDITED POLY
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(BENEFICIARY1, investment_POLY, { from: NONACCREDITED1 }),
+                "Beneficiary != funder");
+
+            // NONACCREDITED DAI
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(BENEFICIARY1, investment_DAI, I_DaiToken.address, { from: NONACCREDITED1 }),
+                "Beneficiary != funder");
+
+            ////////////////////////////////////////////////////
+            // Activate allowBeneficialInvestments and try again
+            ////////////////////////////////////////////////////
+            await I_USDTieredSTO_Array[0].changeAllowBeneficialInvestments(true, { from: ISSUER });
+            
+            // NONACCREDITED ETH
+            await I_USDTieredSTO_Array[stoId].buyWithETH(BENEFICIARY1, { from: NONACCREDITED1, value: investment_ETH });
+
+            // NONACCREDITED POLY
+            await I_USDTieredSTO_Array[stoId].buyWithPOLY(BENEFICIARY1, investment_POLY, { from: NONACCREDITED1 });
+
+            // NONACCREDITED DAI
+            await I_USDTieredSTO_Array[stoId].buyWithUSD(BENEFICIARY1, investment_DAI, I_DaiToken.address, { from: NONACCREDITED1 });
+
+            await revertToSnapshot(snapId);
+        });
+
+        it("should prevent investments if investor is flagged as canNotBuyFromSto", async () => {
+            let stoId = 0;
+            let snapId = await takeSnapshot();
+
+            // Whitelist
+            let fromTime = await latestTime();
+            let toTime = await latestTime() + duration.days(15);
+            let expiryTime = toTime + duration.days(100);
+
+            await I_GeneralTransferManager.modifyKYCData(NONACCREDITED1, fromTime, toTime, expiryTime, { from: ISSUER });
+            await I_GeneralTransferManager.modifyInvestorFlag(NONACCREDITED1, 1, true, { from: ISSUER });
+
+            // Advance time to after STO start
+            await increaseTime(duration.days(3));
+
+            // Prep for investments
+            let investment_ETH = new BN(web3.utils.toWei("1", "ether")); // Invest 1 ETH
+
+            // NONACCREDITED ETH
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH }),
+                "Unauthorized");
 
             await revertToSnapshot(snapId);
         });
@@ -1568,10 +1652,12 @@ contract("USDTieredSTO", async (accounts) => {
             // Finalize STO
             let preBalance = await I_SecurityToken.balanceOf.call(TREASURYWALLET);
             await I_USDTieredSTO_Array[stoId].finalize({ from: ISSUER });
+            assert.equal(await I_USDTieredSTO_Array[stoId].capReached(), false, "cap reached");
             let postBalance = await I_SecurityToken.balanceOf.call(TREASURYWALLET);
             assert.isAbove(parseInt(postBalance.toString()), parseInt(preBalance.toString()));
             assert.equal(await I_USDTieredSTO_Array[stoId].isFinalized.call(), true, "STO has not been finalized");
             assert.equal(await I_USDTieredSTO_Array[stoId].isOpen(), false, "STO is not showing correct status");
+            assert.equal((await I_USDTieredSTO_Array[stoId].getTokensSold()).toString(), "0", "Not the expected amount of sold tokens");
 
             // Attempt to call function again
             await catchRevert(I_USDTieredSTO_Array[stoId].finalize({ from: ISSUER }), "STO is finalized");
@@ -1651,6 +1737,12 @@ contract("USDTieredSTO", async (accounts) => {
     });
 
     describe("Buy Tokens with no discount", async () => {
+        it("Should prevent buying 0 amount", async () => {
+            let stoId = 0;
+            await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, 0, I_DaiToken.address, { from: NONACCREDITED1 }),
+                "No funds sent");
+        });
+
         it("should successfully buy using fallback at tier 0 for NONACCREDITED1", async () => {
             let stoId = 0;
             let tierId = 0;

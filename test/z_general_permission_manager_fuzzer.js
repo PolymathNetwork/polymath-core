@@ -410,7 +410,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
 
     describe("fuzz test for percentage transfer manager", async () => {
         // PercentageTransferManager details
-        const holderPercentage = 70 * 10 ** 16; // Maximum number of token holders
+        const holderPercentage = new BN(web3.utils.toWei("0.7")); // Maximum number of token holders
 
         let bytesSTO = web3.eth.abi.encodeFunctionCall(
             {
@@ -427,7 +427,7 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                     }
                 ]
             },
-            [holderPercentage, false]
+            [holderPercentage.toString(), false]
         );
 
         it("Should successfully attach the percentage transfer manager with the security token", async () => {

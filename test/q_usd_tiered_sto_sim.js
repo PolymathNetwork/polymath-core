@@ -282,14 +282,14 @@ contract("USDTieredSTO Sim", async (accounts) => {
         it("Should successfully attach the first STO module to the security token", async () => {
             let stoId = 0;
 
-            _startTime.push(new BN(currentTime).add(new BN(duration.days(2))));
-            _endTime.push(new BN(_startTime[stoId]).add(new BN(currentTime).add(new BN(duration.days(100)))));
-            _ratePerTier.push([new BN(50).mul(e16), new BN(130).mul(e16), new BN(170).mul(e16)]); // [ 0.05 USD/Token, 0.10 USD/Token, 0.15 USD/Token ]
-            _ratePerTierDiscountPoly.push([new BN(50).mul(e16), new BN(80).mul(e16), new BN(130).mul(e16)]); // [ 0.05 USD/Token, 0.08 USD/Token, 0.13 USD/Token ]
-            _tokensPerTierTotal.push([new BN(200).mul(e18), new BN(500).mul(e18), new BN(300).mul(e18)]); // [ 1000 Token, 2000 Token, 1500 Token ]
-            _tokensPerTierDiscountPoly.push([new BN(0), new BN(50).mul(e18), new BN(300).mul(e18)]); // [ 0 Token, 1000 Token, 1500 Token ]
-            _nonAccreditedLimitUSD.push(new BN(10).mul(e18)); // 20 USD
-            _minimumInvestmentUSD.push(new BN(0)); // 1 wei USD
+            _startTime.push(new BN(currentTime).add(new BN(duration.days(2))).toString());
+            _endTime.push(new BN(_startTime[stoId]).add(new BN(currentTime).add(new BN(duration.days(100)))).toString());
+            _ratePerTier.push([new BN(50).mul(e16).toString(), new BN(130).mul(e16).toString(), new BN(170).mul(e16).toString()]); // [ 0.05 USD/Token, 0.10 USD/Token, 0.15 USD/Token ]
+            _ratePerTierDiscountPoly.push([new BN(50).mul(e16).toString(), new BN(80).mul(e16).toString(), new BN(130).mul(e16).toString()]); // [ 0.05 USD/Token, 0.08 USD/Token, 0.13 USD/Token ]
+            _tokensPerTierTotal.push([new BN(200).mul(e18).toString(), new BN(500).mul(e18).toString(), new BN(300).mul(e18).toString()]); // [ 1000 Token, 2000 Token, 1500 Token ]
+            _tokensPerTierDiscountPoly.push([new BN(0).toString(), new BN(50).mul(e18).toString(), new BN(300).mul(e18).toString()]); // [ 0 Token, 1000 Token, 1500 Token ]
+            _nonAccreditedLimitUSD.push(new BN(10).mul(e18).toString()); // 20 USD
+            _minimumInvestmentUSD.push(new BN(0).toString()); // 1 wei USD
             _fundRaiseTypes.push([0, 1, 2]);
             _wallet.push(WALLET);
             _treasuryWallet.push(TREASURYWALLET);

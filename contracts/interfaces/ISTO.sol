@@ -10,6 +10,10 @@ interface ISTO {
     // Event
     event SetFundRaiseTypes(FundRaiseType[] _fundRaiseTypes);
 
+    event RevokePreMintFlag(address indexed _owner, uint256 _tokens, bool _preMint);
+
+    event AllowPreMintFlag(address indexed _owner, uint256 _tokens, bool _preMint);
+
     /**
      * @notice Returns the total no. of tokens sold
      */

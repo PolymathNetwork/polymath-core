@@ -129,6 +129,13 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         _allowPreMinting(_getTotalTokensCap());
     }
 
+    /**
+     * @notice This function will revoke the pre-mint flag of the STO
+     */
+    function revokePreMintFlag() external withPerm(ADMIN) {
+        _revokePreMintFlag(_getTotalTokensCap());
+    }
+
     function _getTotalTokensCap() internal view returns(uint256 totalCap) {
         for(uint256 i = 0; i < tiers.length; i++) {
             totalCap = totalCap.add(tiers[i].tokenTotal);
@@ -182,11 +189,6 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
     function modifyTimes(uint256 _startTime, uint256 _endTime) external withPerm(OPERATOR) {
         _isSTOStarted();
         _modifyTimes(_startTime, _endTime);
-    }
-
-    function _isSTOStarted() internal view {
-        /*solium-disable-next-line security/no-block-members*/
-        require(now < startTime, "Already started");
     }
 
     /**
@@ -248,8 +250,12 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         if (preMintAllowed) {
             uint256 oldCap = securityToken.balanceOf(address(this));
             uint256 newCap = _getTotalTokensCap();
-            if (oldCap < newCap)
+            if (oldCap < newCap) {
                 securityToken.issue(address(this), (newCap - oldCap), "");
+            } 
+            else if (oldCap > newCap) {
+                securityToken.redeem((oldCap - newCap), "");
+            }
         }
         emit SetTiers(_ratePerTier, _ratePerTierDiscountPoly, _tokensPerTierTotal, _tokensPerTierDiscountPoly);
     }
@@ -307,8 +313,10 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         }
         address walletAddress = getTreasuryWallet();
         require(walletAddress != address(0), "Invalid address");
-        if (preMintAllowed)
-            tempReturned = securityToken.balanceOf(address(this));
+        if (preMintAllowed) {
+            if (tempReturned == securityToken.balanceOf(address(this)))
+                tempReturned = securityToken.balanceOf(address(this));
+        }
         uint256 granularity = securityToken.granularity();
         tempReturned = tempReturned.div(granularity);
         tempReturned = tempReturned.mul(granularity);

@@ -4952,7 +4952,7 @@ contract("USDTieredSTO", async (accounts) => {
             await increaseTime(duration.days(2.1));
             await catchRevert(
                 I_USDTieredSTO.allowPreMinting({from: ISSUER}),
-                "Not allowed after STO starts"
+                "Already started"
             );
             revertToSnapshot(snapId);
         });
@@ -4980,6 +4980,7 @@ contract("USDTieredSTO", async (accounts) => {
             // check the balance of the STO before changing the tiers
             let oldBalance = convertToNumber(await I_SecurityToken.balanceOf.call(I_USDTieredSTO.address));
             console.log(`Balance of STO: - ${oldBalance}`);
+            // Increasing the cap
             let tx = await I_USDTieredSTO.modifyTiers(
                 [new BN(15).mul(e18), new BN(20).mul(e18)],
                 [new BN(10).mul(e18), new BN(15).mul(e18)],
@@ -5012,10 +5013,11 @@ contract("USDTieredSTO", async (accounts) => {
             assert.equal((parseInt(newBalance) - parseInt(oldBalance)), 200000000);
         });
 
-        it("Should allow to change the tiers value - No change the in the balance of the STO", async() => {
+        it("Should allow to change the tiers value - cap gets decreased", async() => {
             let stoId = 0;
             // check the balance of the STO before changing the tiers
             let previousBalance = convertToNumber(await I_SecurityToken.balanceOf.call(I_USDTieredSTO.address));
+            // When cap gets decreased
             let tx = await I_USDTieredSTO.modifyTiers(
                 [new BN(15).mul(e18), new BN(20).mul(e18)],
                 [new BN(10).mul(e18), new BN(15).mul(e18)],
@@ -5044,7 +5046,7 @@ contract("USDTieredSTO", async (accounts) => {
                 "STO Configuration doesn't set as expected"
             );
             let newBalance = convertToNumber(await I_SecurityToken.balanceOf.call(I_USDTieredSTO.address));
-            assert.equal(previousBalance, newBalance);
+            assert.equal(newBalance, 1750);
             console.log(`Balance of STO: - ${convertToNumber(await I_SecurityToken.balanceOf.call(I_USDTieredSTO.address))}`);
         });
 
@@ -5064,6 +5066,36 @@ contract("USDTieredSTO", async (accounts) => {
             assert.equal(investorData[0][0], 1);
             await I_GeneralTransferManager.modifyInvestorFlag(INVESTOR1, 0, true, { from: ISSUER });
             await I_GeneralTransferManager.modifyInvestorFlag(INVESTOR2, 0, true, { from: ISSUER });
+        });
+
+        it("Should fail to revoke preMint -- STO is already started", async() => {
+            let snap_id = await takeSnapshot();
+            await increaseTime(duration.days(2.1));
+            await catchRevert(
+                I_USDTieredSTO.revokePreMintFlag({from: ISSUER}),
+                "Already started"
+            );
+            await revertToSnapshot(snap_id);
+        });
+
+        it("Should fail to revoke preMint -- bad owner", async() => {
+            await catchRevert(
+                I_USDTieredSTO.revokePreMintFlag({from: INVESTOR1}),
+                "Invalid permission"
+            );
+        });
+
+        it("Should successfully revoke the preMint", async() => {
+            let snap_id = await takeSnapshot();
+            let tx = await I_USDTieredSTO.revokePreMintFlag({from: ISSUER});
+            assert.equal(tx.logs[0].args._owner, ISSUER);
+            assert.isFalse(tx.logs[0].args._preMint);
+            assert.equal(web3.utils.fromWei(tx.logs[0].args._tokens), 1750);
+            assert.equal(
+                (await I_SecurityToken.balanceOf.call(I_USDTieredSTO.address)).toString(),
+                0
+            );
+            await revertToSnapshot(snap_id);
         });
 
         it("Should successfully buy the token from the STO using ETH as an investment currency", async() => {

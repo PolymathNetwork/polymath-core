@@ -57,10 +57,23 @@ contract STO is ISTO, STOStorage, Module {
     }
 
     function _allowPreMinting(uint256 _tokenAmount) internal {
-        require(startTime > now, "Not allowed after STO starts");
-        require(_tokenAmount > 0, "Invalid amount of tokens");
+        _isSTOStarted();
+        require(_tokenAmount > 0, "Invalid amount");
         preMintAllowed = true;
         securityToken.issue(address(this), _tokenAmount, "");
+        emit AllowPreMintFlag(msg.sender, _tokenAmount, preMintAllowed);
+    }
+
+    function _revokePreMintFlag(uint256 _tokenAmount) internal {
+        _isSTOStarted();
+        preMintAllowed = false;
+        securityToken.redeem(_tokenAmount, "");
+        emit RevokePreMintFlag(msg.sender, _tokenAmount, preMintAllowed);
+    }
+
+    function _isSTOStarted() internal view {
+        /*solium-disable-next-line security/no-block-members*/
+        require(now < startTime, "Already started");
     }
 
     /**

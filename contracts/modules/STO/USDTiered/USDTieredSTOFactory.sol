@@ -30,6 +30,7 @@ contract USDTieredSTOFactory is UpgradableModuleFactory {
         description = "It allows both accredited and non-accredited investors to contribute into the STO. Non-accredited investors will be capped at a maximum investment limit (as a default or specific to their jurisdiction). Tokens will be sold according to tiers sequentially & each tier has its own price and volume of tokens to sell. Upon receipt of funds (ETH, POLY or DAI), security tokens will automatically transfer to investor’s wallet address";
         typesData.push(3);
         typesData.push(8); // Extra type which will allow module to hold and send securityTokens without being added in KYC data
+        typesData.push(5); // Allow burn type 
         tagsData.push("Tiered");
         tagsData.push("ETH");
         tagsData.push("POLY");

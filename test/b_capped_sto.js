@@ -1209,7 +1209,7 @@ contract("CappedSTO", async (accounts) => {
             await increaseTime(duration.minutes(31));
             await catchRevert(
                 I_CappedSTO_ETH.allowPreMinting({from: token_owner}),
-                "Not allowed after STO starts"
+                "Already started"
             );
             await revertToSnapshot(snap_id);
         });
@@ -1267,6 +1267,36 @@ contract("CappedSTO", async (accounts) => {
             );
             let investorData = await I_GeneralTransferManager.getKYCData([account_investor1]);
             assert.equal(investorData[0][0], 1);
+        });
+
+        it("Should fail to revoke preMint -- STO is already started", async() => {
+            let snap_id = await takeSnapshot();
+            await increaseTime(duration.days(2.1));
+            await catchRevert(
+                I_CappedSTO_ETH.revokePreMintFlag({from: token_owner}),
+                "Already started"
+            );
+            await revertToSnapshot(snap_id);
+        });
+
+        it("Should fail to revoke preMint -- bad owner", async() => {
+            await catchRevert(
+                I_CappedSTO_ETH.revokePreMintFlag({from: account_investor1}),
+                "Invalid permission"
+            );
+        });
+
+        it("Should successfully revoke the preMint", async() => {
+            let snap_id = await takeSnapshot();
+            let tx = await I_CappedSTO_ETH.revokePreMintFlag({from: token_owner});
+            assert.equal(tx.logs[0].args._owner, token_owner);
+            assert.isFalse(tx.logs[0].args._preMint);
+            assert.equal(web3.utils.fromWei(tx.logs[0].args._tokens), 30000);
+            assert.equal(
+                (await I_SecurityToken_ETH.balanceOf.call(I_CappedSTO_ETH.address)).toString(),
+                0
+            );
+            await revertToSnapshot(snap_id);
         });
 
         it("Should buy the tokens from the STO", async() => {

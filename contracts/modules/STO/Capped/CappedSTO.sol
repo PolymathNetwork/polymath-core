@@ -91,6 +91,13 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
     }
 
     /**
+     * @notice This function will revoke the pre-mint flag of the STO
+     */
+    function revokePreMintFlag() external withPerm(ADMIN) {
+        _revokePreMintFlag(cap);
+    }
+
+    /**
      * @notice Function to set allowBeneficialInvestments (allow beneficiary to be different to funder)
      * @param _allowBeneficialInvestments Boolean to allow or disallow beneficial investments
      */

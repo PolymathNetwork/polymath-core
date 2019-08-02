@@ -90,7 +90,7 @@
     "request": "^2.88.0",
     "request-promise": "^4.2.2",
     "sol-merger": "^0.1.2",
-    "solidity-coverage": "^0.5.11",
+    "solidity-coverage": "^0.6.4",
     "solidity-docgen": "^0.1.1",
     "solium": "^1.1.6",
     "table": "^5.2.3",

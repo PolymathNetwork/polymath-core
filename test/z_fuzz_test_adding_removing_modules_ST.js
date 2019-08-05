@@ -278,7 +278,7 @@ contract('GeneralPermissionManager', accounts => {
                     bytesSTO = encodeModuleCall(["uint256"], [holderCount]);
                 } else if (random.module == 'PercentageTransferManager'){
                     console.log("PTM 01");
-                    const holderPercentage = 70 * 10**16;
+                    const holderPercentage = new BN(web3.utils.toWei("0.7"));
                     bytesSTO = web3.eth.abi.encodeFunctionCall({
                         name: 'configure',
                         type: 'function',
@@ -290,7 +290,7 @@ contract('GeneralPermissionManager', accounts => {
                             name: '_allowPrimaryIssuance'
                         }
                         ]
-                    }, [holderPercentage, false]);
+                    }, [holderPercentage.toString(), false]);
                     console.log("encoded.");
                 } else {
                     console.log("no data defined for choosen module "+random.module);

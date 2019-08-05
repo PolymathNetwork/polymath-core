@@ -284,10 +284,10 @@ contract("USDTieredSTO Sim", async (accounts) => {
 
             _startTime.push(new BN(currentTime).add(new BN(duration.days(2))));
             _endTime.push(new BN(_startTime[stoId]).add(new BN(currentTime).add(new BN(duration.days(100)))));
-            _ratePerTier.push([new BN(50).mul(e16), new BN(130).mul(e16), new BN(170).mul(e16)]); // [ 0.05 USD/Token, 0.10 USD/Token, 0.15 USD/Token ]
-            _ratePerTierDiscountPoly.push([new BN(50).mul(e16), new BN(80).mul(e16), new BN(130).mul(e16)]); // [ 0.05 USD/Token, 0.08 USD/Token, 0.13 USD/Token ]
-            _tokensPerTierTotal.push([new BN(200).mul(e18), new BN(500).mul(e18), new BN(300).mul(e18)]); // [ 1000 Token, 2000 Token, 1500 Token ]
-            _tokensPerTierDiscountPoly.push([new BN(0), new BN(50).mul(e18), new BN(300).mul(e18)]); // [ 0 Token, 1000 Token, 1500 Token ]
+            _ratePerTier.push([new BN(50).mul(e16).toString(), new BN(130).mul(e16).toString(), new BN(170).mul(e16).toString()]); // [ 0.05 USD/Token, 0.10 USD/Token, 0.15 USD/Token ]
+            _ratePerTierDiscountPoly.push([new BN(50).mul(e16).toString(), new BN(80).mul(e16).toString(), new BN(130).mul(e16).toString()]); // [ 0.05 USD/Token, 0.08 USD/Token, 0.13 USD/Token ]
+            _tokensPerTierTotal.push([new BN(200).mul(e18).toString(), new BN(500).mul(e18).toString(), new BN(300).mul(e18).toString()]); // [ 1000 Token, 2000 Token, 1500 Token ]
+            _tokensPerTierDiscountPoly.push([new BN(0).toString(), new BN(50).mul(e18).toString(), new BN(300).mul(e18).toString()]); // [ 0 Token, 1000 Token, 1500 Token ]
             _nonAccreditedLimitUSD.push(new BN(10).mul(e18)); // 20 USD
             _minimumInvestmentUSD.push(new BN(0)); // 1 wei USD
             _fundRaiseTypes.push([0, 1, 2]);
@@ -296,19 +296,29 @@ contract("USDTieredSTO Sim", async (accounts) => {
             _usdToken.push(I_DaiToken.address);
 
             let config = [
-                _startTime[stoId],
-                _endTime[stoId],
+                _startTime[stoId].toString(),
+                _endTime[stoId].toString(),
                 _ratePerTier[stoId],
                 _ratePerTierDiscountPoly[stoId],
                 _tokensPerTierTotal[stoId],
                 _tokensPerTierDiscountPoly[stoId],
-                _nonAccreditedLimitUSD[stoId],
-                _minimumInvestmentUSD[stoId],
+                _nonAccreditedLimitUSD[stoId].toString(),
+                _minimumInvestmentUSD[stoId].toString(),
                 _fundRaiseTypes[stoId],
                 _wallet[stoId],
                 _treasuryWallet[stoId],
                 [_usdToken[stoId]]
             ];
+
+            _ratePerTier = [];
+            _ratePerTierDiscountPoly = [];
+            _tokensPerTierTotal = [];
+            _tokensPerTierDiscountPoly = [];
+            _ratePerTier.push([new BN(50).mul(e16), new BN(130).mul(e16), new BN(170).mul(e16)]); // [ 0.05 USD/Token, 0.10 USD/Token, 0.15 USD/Token ]
+            _ratePerTierDiscountPoly.push([new BN(50).mul(e16), new BN(80).mul(e16), new BN(130).mul(e16)]); // [ 0.05 USD/Token, 0.08 USD/Token, 0.13 USD/Token ]
+            _tokensPerTierTotal.push([new BN(200).mul(e18), new BN(500).mul(e18), new BN(300).mul(e18)]); // [ 1000 Token, 2000 Token, 1500 Token ]
+            _tokensPerTierDiscountPoly.push([new BN(0), new BN(50).mul(e18), new BN(300).mul(e18)]); // [ 0 Token, 1000 Token, 1500 Token ]
+
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
             let tx = await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), false, { from: ISSUER, gasPrice: GAS_PRICE });
@@ -411,7 +421,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
 
             let totalTokens = new BN(0);
             for (var i = 0; i < _tokensPerTierTotal[stoId].length; i++) {
-                totalTokens = totalTokens.add(_tokensPerTierTotal[stoId][i]);
+                totalTokens = totalTokens.add(new BN(_tokensPerTierTotal[stoId][i]));
             }
             let tokensSold = new BN(0);
             while (true) {

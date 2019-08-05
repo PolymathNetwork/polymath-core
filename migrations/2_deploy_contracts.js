@@ -412,8 +412,8 @@ module.exports = function(deployer, network, accounts) {
         .then((securityTokenRegistryProxy) => {
             let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignatureProxy, [
                 PolymathRegistry.address,
-                initRegFee,
-                initRegFee,
+                initRegFee.toString(),
+                initRegFee.toString(),
                 PolymathAccount,
                 STRGetter.address
             ]);

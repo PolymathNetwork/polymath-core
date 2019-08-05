@@ -2,4 +2,4 @@
 
 rm -rf flat
 
-COVERAGE=true scripts/test.sh
+COVERAGE=true POLYMATH_NATIVE_SOLC=true scripts/test.sh

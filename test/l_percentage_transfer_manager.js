@@ -69,7 +69,7 @@ contract("PercentageTransferManager", async (accounts) => {
     const initRegFee = new BN(web3.utils.toWei("1000"));
 
     // PercentageTransferManager details
-    const holderPercentage = 70 * 10 ** 16; // Maximum number of token holders
+    const holderPercentage = new BN(web3.utils.toWei("0.7")); // Maximum number of token holders
 
     let bytesSTO = web3.eth.abi.encodeFunctionCall(
         {
@@ -86,7 +86,7 @@ contract("PercentageTransferManager", async (accounts) => {
                 }
             ]
         },
-        [holderPercentage, false]
+        [holderPercentage.toString(), false]
     );
 
     let currentTime;

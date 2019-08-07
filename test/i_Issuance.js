@@ -239,12 +239,6 @@ contract("Issuance", async (accounts) => {
                     await I_GeneralPermissionManager.checkPermission(account_delegate, I_GeneralTransferManager.address, TM_Perm)
                 );
             });
-
-            it("POLYMATH: Should change the ownership of the SecurityToken", async () => {
-                await I_SecurityToken.transferOwnership(token_owner, { from: account_polymath });
-
-                assert.equal(await I_SecurityToken.owner.call(), token_owner);
-            });
         });
 
         describe("Operations on the STO", async () => {

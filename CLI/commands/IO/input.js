@@ -13,10 +13,10 @@ function readAddress(message, defaultValue) {
 function readMultipleAddresses(message) {
   return readlineSync.question(message, {
     limit: function (input) {
-      return input === '' || input.split(",").every(a => web3.utils.isAddress(a));
+      return input === '' || input.split(',').every(a => web3.utils.isAddress(a));
     },
     limitMessage: `All addresses must be valid`
-  });
+  }).split(',');
 }
 
 function readPercentage(message, defaultValue) {

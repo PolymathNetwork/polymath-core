@@ -11,7 +11,7 @@
   "dependencies": {
     "bignumber.js": "^8.1.1",
     "chalk": "^2.4.1",
-    "commander": "^2.16.0",
+    "commander": "^3.0.0",
     "csv-parse": "^4.0.1",
     "ethers": "^4.0.7",
     "moment": "^2.22.2",

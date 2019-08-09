@@ -30,7 +30,7 @@ contract STO is ISTO, STOStorage, Module {
      */
     function pause() public {
         /*solium-disable-next-line security/no-block-members*/
-        require(now < endTime, "STO has been finalized");
+        require(!isFinalized, "STO has been finalized");
         super.pause();
     }
 

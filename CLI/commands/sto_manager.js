@@ -8,6 +8,8 @@ const csvParse = require('./helpers/csv');
 const input = require('./IO/input');
 const { table } = require('table');
 const STABLE = 'STABLE';
+const POLY = 'POLY';
+const ETH = 'ETH';
 
 // Constants
 const ACCREDIT_DATA_CSV = `${__dirname}/../data/STO/USDTieredSTO/accredited_data.csv`;
@@ -253,7 +255,7 @@ async function cappedSTO_status (currentSTO) {
   - Contract Balance:           ${contractBalance} ${displayTokenSymbol}
 
   -----------------------------------------------------------
-  - ${timeTitle}    ${timeRemaining}
+  - ${timeTitle}    ${displayIsFinalized ? timeRemaining : 'Finalized'}
   - Is Finalized:         ${displayIsFinalized ? chalk.red('YES') : 'NO'}
   - Is paused:            ${paused ? chalk.red('YES') : 'NO'}
   - Funds raised:         ${web3.utils.fromWei(displayFundsRaised)} ${displayRaiseType}
@@ -499,10 +501,13 @@ async function usdTieredSTO_status (currentSTO) {
       let soldPerTier = soldPerTierPerRaiseType[gbl.constants.FUND_RAISE_TYPES[type]];
       if ((type === STABLE) && (stableSymbols.length)) {
         displaySoldPerTierPerType += `
-        Sold for stable coin(s): ${web3.utils.fromWei(soldPerTier)} ${displayTokenSymbol} ${displayDiscountSold}`;
-      } else {
-        displaySoldPerTierPerType += `
+        Sold for stable coin(s): ${web3.utils.fromWei(soldPerTier)} ${displayTokenSymbol}`;
+      } else if (type === POLY) {
+          displaySoldPerTierPerType += `
         Sold for ${type}:\t\t ${web3.utils.fromWei(soldPerTier)} ${displayTokenSymbol} ${displayDiscountSold}`;
+      } else if (type === ETH) {
+          displaySoldPerTierPerType += `
+        Sold for ${type}:\t\t ${web3.utils.fromWei(soldPerTier)} ${displayTokenSymbol}`;
       }
     }
 

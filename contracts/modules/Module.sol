@@ -73,7 +73,7 @@ contract Module is IModule, ModuleStorage, Pausable {
     * @dev We duplicate here due to the overriden owner & onlyOwner
     * @param _tokenContract The address of the token contract
     */
-    function reclaimERC20(address _tokenContract) external {
+    function reclaimERC20(address _tokenContract) public {
         _onlySecurityTokenOwner();
         require(_tokenContract != address(0), "Invalid address");
         IERC20 token = IERC20(_tokenContract);

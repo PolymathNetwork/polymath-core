@@ -5005,8 +5005,8 @@ contract("USDTieredSTO", async (accounts) => {
             });
 
             it("should return minted tokens in a tier", async () => {
-                let totalMinted = (await I_USDTieredSTO_Array[0].getTokensSoldByTier.call(0)).toString();
-                let individualMinted = await I_USDTieredSTO_Array[0].getTokensMintedByTier.call(0);
+                let totalMinted = (await I_USDTieredSTO_Array[0].getTotalTokensSoldByTier.call(0)).toString();
+                let individualMinted = await I_USDTieredSTO_Array[0].getTokensSoldByTier.call(0);
                 assert.equal(
                     totalMinted,
                     individualMinted[0]
@@ -5518,7 +5518,7 @@ contract("USDTieredSTO", async (accounts) => {
                 "Wrong Module added"
             );
             assert.equal(await I_USDTieredSTOFactory.title.call(), "USD Tiered STO", "Wrong Module added");
-            assert.equal(await I_USDTieredSTOFactory.version.call(), "3.0.0");
+            assert.equal(await I_USDTieredSTOFactory.version.call(), "3.1.0");
             let tags = await I_USDTieredSTOFactory.getTags.call();
             assert.equal(web3.utils.hexToString(tags[0]), "Tiered");
             assert.equal(web3.utils.hexToString(tags[1]), "ETH");

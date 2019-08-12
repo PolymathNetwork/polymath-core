@@ -959,7 +959,7 @@ contract("CappedSTO", async (accounts) => {
                 assert.equal(await I_CappedSTOFactory.title.call(), "Capped STO", "Wrong Module added");
                 let tags = await I_CappedSTOFactory.getTags.call();
                 assert.equal(web3.utils.hexToString(tags[0]), "Capped");
-                assert.equal(await I_CappedSTOFactory.version.call(), "3.0.0");
+                assert.equal(await I_CappedSTOFactory.version.call(), "3.1.0");
             });
 
             it("Should fail to change the title -- bad owner", async () => {
@@ -1228,6 +1228,12 @@ contract("CappedSTO", async (accounts) => {
             assert.equal(
                 web3.utils.fromWei((await I_SecurityToken_ETH2.balanceOf.call(I_CappedSTO_ETH.address)).toString()),
                 30000
+            );
+        });
+
+        it("Should fail in reclaiming the ST - STO is not finalized", async() => {
+            await catchRevert (
+                I_CappedSTO_ETH.reclaimERC20(I_SecurityToken_ETH2.address, {from: token_owner})
             );
         });
 

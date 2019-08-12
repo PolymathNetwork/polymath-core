@@ -84,4 +84,16 @@ contract STO is ISTO, STOStorage, Module {
         wallet = (treasuryWallet == address(0) ? IDataStore(getDataStore()).getAddress(TREASURY) : treasuryWallet);
     }
 
+    /**
+    * @notice Reclaims ERC20Basic compatible tokens
+    * @dev We duplicate here due to the overriden owner & onlyOwner
+    * @param _tokenContract The address of the token contract
+    */
+    function reclaimERC20(address _tokenContract) public {
+        if (_tokenContract == address(securityToken)) {
+            require(isFinalized);
+        }
+        super.reclaimERC20(_tokenContract);
+    }
+
 }

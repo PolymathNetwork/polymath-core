@@ -725,7 +725,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * param _tier The tier to return minted tokens for
      * @return uint256[] array of minted tokens in each fund raise type
      */
-    function getTokensMintedByTier(uint256 _tier) external view returns(uint256[] memory) {
+    function getTokensSoldByTier(uint256 _tier) external view returns(uint256[] memory) {
         uint256[] memory tokensMinted = new uint256[](3);
         tokensMinted[0] = tiers[_tier].tokenSoldPerFundType[uint8(FundRaiseType.ETH)];
         tokensMinted[1] = tiers[_tier].tokenSoldPerFundType[uint8(FundRaiseType.POLY)];
@@ -738,7 +738,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * param _tier The tier to calculate sold tokens for
      * @return uint256 Total number of tokens sold in the tier
      */
-    function getTokensSoldByTier(uint256 _tier) external view returns (uint256) {
+    function getTotalTokensSoldByTier(uint256 _tier) external view returns (uint256) {
         uint256 tokensSold;
         tokensSold = tokensSold.add(tiers[_tier].tokenSoldPerFundType[uint8(FundRaiseType.ETH)]);
         tokensSold = tokensSold.add(tiers[_tier].tokenSoldPerFundType[uint8(FundRaiseType.POLY)]);

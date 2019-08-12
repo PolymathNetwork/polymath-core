@@ -32,7 +32,7 @@ async function addModule (securityToken, polyToken, factoryAddress, moduleABI, g
     bytes = await getInitializeData(moduleABI, configFile);
   }
   const addModuleArchived = readlineSync.keyInYNStrict('Do you want to add this module archived?');
-  const moduleLabel = web3.utils.asciiToHex(readlineSync.question('Enter a label to help you to identify this module: '));
+  const moduleLabel = web3.utils.asciiToHex(input.readStringNonEmpty('Enter a label to help you to identify this module: '));
 
   if (transferAmount.gt(new web3.utils.BN(0))) {
     let transferAction = polyToken.methods.transfer(securityToken._address, transferAmount);

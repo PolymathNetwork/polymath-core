@@ -255,7 +255,7 @@ async function cappedSTO_status (currentSTO) {
   - Contract Balance:           ${contractBalance} ${displayTokenSymbol}
 
   -----------------------------------------------------------
-  - ${timeTitle}    ${displayIsFinalized ? timeRemaining : 'Finalized'}
+  - ${timeTitle}    ${displayIsFinalized ? 'Finalized' : timeRemaining}
   - Is Finalized:         ${displayIsFinalized ? chalk.red('YES') : 'NO'}
   - Is paused:            ${paused ? chalk.red('YES') : 'NO'}
   - Funds raised:         ${web3.utils.fromWei(displayFundsRaised)} ${displayRaiseType}
@@ -459,7 +459,7 @@ async function usdTieredSTO_status (currentSTO) {
   let tiersLength = await currentSTO.methods.getNumberOfTiers().call();
   let listOfStableCoins = await currentSTO.methods.getUsdTokens().call();
   let preMintAllowed = await currentSTO.methods.preMintAllowed().call();
-  let contractBalance = web3.utils.fromWei(await securityToken.methods.balanceOf(currentSTO.address).call());
+  let contractBalance = web3.utils.fromWei(await securityToken.methods.balanceOf(currentSTO.options.address).call());
   let beneficialInvestmentsAllowed = await currentSTO.methods.allowBeneficialInvestments().call();
   let paused = await currentSTO.methods.paused().call();
   let raiseTypes = [];
@@ -481,7 +481,7 @@ async function usdTieredSTO_status (currentSTO) {
     let ratePerTier = tier.rate;
     let tokensPerTierTotal = tier.tokenTotal;
     let soldPerTierTotal = tier.totalTokensSoldInTier;
-    let soldPerTierPerRaiseType = await currentSTO.methods.getTokensMintedByTier(t).call();
+    let soldPerTierPerRaiseType = await currentSTO.methods.getTokensSoldByTier(t).call();
 
     let displaySoldPerTierPerType = "";
     let displayDiscountTokens = "";
@@ -618,7 +618,7 @@ async function usdTieredSTO_status (currentSTO) {
   - Contract Balance:            ${contractBalance} ${displayTokenSymbol}
 
   ---------------------------------------------------------------
-  - ${timeTitle}              ${timeRemaining}
+  - ${timeTitle}    ${displayIsFinalized ? 'Finalized' : timeRemaining}
   - Is Finalized:                ${displayIsFinalized ? chalk.red('YES') : 'NO'}
   - Is Paused:                   ${paused ? chalk.red('YES') : 'NO'}
   - Tokens Sold:                 ${displayTokensSold} ${displayTokenSymbol}` +
@@ -1020,6 +1020,10 @@ async function reclaimFromContract (currentSTO) {
       break;
     case 'ERC20':
       let erc20Address = input.readAddress('Enter the ERC20 token address to reclaim (POLY = ' + polyToken.options.address + '): ', polyToken.options.address);
+      if (erc20Address === securityToken.options.address && !await currentSTO.methods.isFinalized().call()) {
+        console.log(chalk.red(`\nThe Security Token balance can't be reclaimed until the STO is finalized\n`));
+        return;
+      }
       let reclaimERC20Action = currentSTO.methods.reclaimERC20(erc20Address);
       await common.sendTransaction(reclaimERC20Action);
       console.log(chalk.green('ERC20 has been reclaimed succesfully!'));

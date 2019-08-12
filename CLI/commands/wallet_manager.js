@@ -152,7 +152,7 @@ async function changeTreasuryWallet() {
   let newTreasuryWallet = input.readAddress('Enter the new account address for treasury wallet: ');
   let action = currentWalletModule.methods.changeTreasuryWallet(newTreasuryWallet);
   let receipt = await common.sendTransaction(action);
-  let event = common.getEventFromLogs(currentDividendsModule._jsonInterface, receipt.logs, 'TreasuryWalletChanged');
+  let event = common.getEventFromLogs(currentWalletModule._jsonInterface, receipt.logs, 'TreasuryWalletChanged');
   console.log(chalk.green(`The treasury wallet has been changed successfully to ${event._newWallet}!`));
 }
 

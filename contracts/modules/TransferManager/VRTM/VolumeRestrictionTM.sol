@@ -457,7 +457,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         require(_holder != address(0));
         require(individualRestrictions.individualRestriction[_holder].endTime != 0);
         individualRestrictions.individualRestriction[_holder] = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
-        VolumeRestrictionLib.deleteHolderFromList(holderToRestrictionType, _holder, getDataStore(), TypeOfPeriod.OneDay);
+        VolumeRestrictionLib.deleteHolderFromList(holderToRestrictionType, _holder, TypeOfPeriod.OneDay);
         bucketData.userToBucket[_holder].lastTradedDayTime = 0;
         bucketData.userToBucket[_holder].sumOfLastPeriod = 0;
         bucketData.userToBucket[_holder].daysCovered = 0;
@@ -486,7 +486,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         require(_holder != address(0));
         require(individualRestrictions.individualDailyRestriction[_holder].endTime != 0);
         individualRestrictions.individualDailyRestriction[_holder] = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
-        VolumeRestrictionLib.deleteHolderFromList(holderToRestrictionType, _holder, getDataStore(), TypeOfPeriod.MultipleDays);
+        VolumeRestrictionLib.deleteHolderFromList(holderToRestrictionType, _holder, TypeOfPeriod.MultipleDays);
         bucketData.userToBucket[_holder].dailyLastTradedDayTime = 0;
         emit IndividualDailyRestrictionRemoved(_holder);
     }
@@ -1225,7 +1225,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         uint256[] memory endTime,
         RestrictionType[] memory typeOfRestriction
     ) {
-        return VolumeRestrictionLib.getRestrictionData(holderToRestrictionType, individualRestrictions, getDataStore());
+        return VolumeRestrictionLib.getRestrictionData(holderToRestrictionType, individualRestrictions, exemptions, getDataStore());
     }
 
     function _checkLengthOfArray(

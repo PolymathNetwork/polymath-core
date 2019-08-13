@@ -793,7 +793,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 I_VolumeRestrictionTM.addIndividualDailyRestriction(
                     account_investor3,
                     new BN(web3.utils.toWei("6")),
-                    newLatestTime.add(new BN(duration.seconds(1))),
+                    newLatestTime.add(new BN(duration.seconds(5))),
                     newLatestTime.add(new BN(duration.days(4))),
                     1,
                     {

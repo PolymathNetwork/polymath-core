@@ -82,7 +82,7 @@ contract("Issuance", async (accounts) => {
     const cappedSTOSetupCost = new BN(web3.utils.toWei("20000", "ether"));
     const cappedSTOSetupCostPOLY = new BN(web3.utils.toWei("80000", "ether"));
     const maxCost = cappedSTOSetupCostPOLY;
-    const STOParameters = ["uint256", "uint256", "uint256", "uint256", "uint8[]", "address"];
+    const STOParameters = ["uint256", "uint256", "uint256", "uint256", "uint8[]", "address", "address"];
     const STRProxyParameters = ["address", "address", "uint256", "uint256", "address", "address"];
     const MRProxyParameters = ["address", "address"];
 
@@ -187,6 +187,7 @@ contract("Issuance", async (accounts) => {
                     cap,
                     rate,
                     fundRaiseType,
+                    account_fundsReceiver,
                     account_fundsReceiver
                 ]);
 

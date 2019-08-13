@@ -24,6 +24,7 @@ contract VestingEscrowWalletFactory is UpgradableModuleFactory {
         title = "Vesting Escrow Wallet";
         description = "Manage vesting schedules to employees / affiliates";
         typesData.push(7);
+        typesData.push(8); // Extra type which will allow module to hold and send securityTokens without being added in KYC data
         tagsData.push("Vesting");
         tagsData.push("Escrow");
         tagsData.push("Transfer Restriction");

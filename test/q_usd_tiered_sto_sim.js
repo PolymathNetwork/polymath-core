@@ -353,7 +353,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
             );
             assert.equal(await I_USDTieredSTO_Array[stoId].wallet.call(), _wallet[stoId], "Incorrect _wallet in config");
             assert.equal(
-                await I_USDTieredSTO_Array[stoId].treasuryWallet.call(),
+                await I_USDTieredSTO_Array[stoId].getTreasuryWallet.call(),
                 _treasuryWallet[stoId],
                 "Incorrect _reserveWallet in config"
             );

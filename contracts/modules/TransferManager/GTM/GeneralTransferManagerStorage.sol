@@ -10,6 +10,7 @@ contract GeneralTransferManagerStorage {
     bytes32 public constant INVESTORFLAGS = "INVESTORFLAGS";
     uint256 internal constant ONE = uint256(1);
     uint256 internal constant MAX = uint256(-1);   //Assigning a random and large value which can't be possible to run a loop in a single transaction
+    uint256 public constant WHITELISTMODULE = uint256(8);
 
     enum TransferType { GENERAL, ISSUANCE, REDEMPTION }
 

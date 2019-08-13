@@ -243,9 +243,11 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
                 txReq = transferRequirements[uint8(TransferType.GENERAL)];
             }
             // This if condition use to differentiate the read-only call & write call
-            if (_toExpiry == 0)
-                (_canSendAfter, _fromExpiry, _canReceiveAfter, _toExpiry) = _getValuesForTransfer(_from, _to);
+            if (_toExpiry == 0) {
+                !_isWhitelistModule(_from) ? (_canSendAfter, _fromExpiry) = _getKYCValuesFrom(_from) : (_canSendAfter, _fromExpiry) = (uint64(now - 1), uint64(now + 1));
 
+                !_isWhitelistModule(_to) ? (_canReceiveAfter, _toExpiry) = _getKYCValuesTo(_to) : (_canReceiveAfter, _toExpiry) = (uint64(now - 1), uint64(now + 1));                
+            }
             if ((txReq.fromValidKYC && !_validExpiry(_fromExpiry)) || (txReq.toValidKYC && !_validExpiry(_toExpiry))) {
                 return (Result.NA, bytes32(0));
             }
@@ -259,6 +261,22 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
             return (Result.VALID, getAddressBytes32());
         }
         return (Result.NA, bytes32(0));
+    }
+
+    function _isWhitelistModule(address _holder) internal view returns(bool) {
+        uint8[] memory types;
+        bool isArchived;
+        address module;
+        // Use getModule() function to avoid the malicious module change its factory type after adding
+        // into the securityToken 
+        (,module,,isArchived,types,)= securityToken.getModule(_holder);
+        if (module != address(0) && !isArchived) {
+            for (uint256 i = 0; i < types.length; i++) {
+                if (types[i] == WHITELISTMODULE)  // Validating the module type to allow the non whitelist address(module)
+                    return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -701,9 +719,8 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         return uint8(data) == 0 ? false : true;
     }
 
-    function _getValuesForTransfer(address _from, address _to) internal view returns(uint64 canSendAfter, uint64 fromExpiry, uint64 canReceiveAfter, uint64 toExpiry) {
+    function _getKYCValuesTo(address _to) internal view returns(uint64 canReceiveAfter, uint64 toExpiry) {
         IDataStore dataStore = getDataStore();
-        (canSendAfter, , fromExpiry, ) = _getKYCValues(_from, dataStore);
         (, canReceiveAfter, toExpiry, ) = _getKYCValues(_to, dataStore);
     }
 

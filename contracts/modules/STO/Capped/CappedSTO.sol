@@ -22,6 +22,10 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
 
     event SetAllowBeneficialInvestments(bool _allowed);
 
+    event ReserveTokenMint(address indexed _owner, address indexed _wallet, uint256 _tokens);
+
+    event ReserveTokenTransfer(address indexed _from, address indexed _wallet, uint256 _tokens);
+
     constructor(address _securityToken, address _polyToken) public Module(_securityToken, _polyToken) {
 
     }
@@ -42,6 +46,7 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
      * @param _rate Token units a buyer gets multiplied by 10^18 per wei / base unit of POLY
      * @param _fundRaiseTypes Type of currency used to collect the funds
      * @param _fundsReceiver Ethereum account address to hold the funds
+     * @param _treasuryWallet Ethereum account address to receive unsold tokens
      */
     function configure(
         uint256 _startTime,
@@ -49,7 +54,8 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
         uint256 _cap,
         uint256 _rate,
         FundRaiseType[] memory _fundRaiseTypes,
-        address payable _fundsReceiver
+        address payable _fundsReceiver,
+        address _treasuryWallet
     )
         public
         onlyFactory
@@ -66,6 +72,7 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
         cap = _cap;
         rate = _rate;
         wallet = _fundsReceiver;
+        treasuryWallet = _treasuryWallet;
         _setFundRaiseType(_fundRaiseTypes);
     }
 
@@ -74,6 +81,20 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
      */
     function getInitFunction() public pure returns(bytes4) {
         return this.configure.selector;
+    }
+
+    /**
+     * @notice This function will allow STO to pre-mint all tokens those will be distributed in sale
+     */
+    function allowPreMinting() external withPerm(ADMIN) {
+        _allowPreMinting(cap);
+    }
+
+    /**
+     * @notice This function will revoke the pre-mint flag of the STO
+     */
+    function revokePreMintFlag() external withPerm(ADMIN) {
+        _revokePreMintFlag(cap);
     }
 
     /**
@@ -148,11 +169,12 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
      * @return Number of individual investors this STO have.
      * @return Amount of tokens get sold.
      * @return Boolean value to justify whether the fund raise type is POLY or not, i.e true for POLY.
+     * @return Boolean value to know the nature of the STO Whether it is pre-mint or mint on buying type sto.
      */
-    function getSTODetails() public view returns(uint256, uint256, uint256, uint256, uint256, uint256, uint256, bool) {
+    function getSTODetails() public view returns(uint256, uint256, uint256, uint256, uint256, uint256, uint256, bool, bool) {
         return (startTime, endTime, cap, rate, (fundRaiseTypes[uint8(FundRaiseType.POLY)]) ? fundsRaised[uint8(
             FundRaiseType.POLY
-        )] : fundsRaised[uint8(FundRaiseType.ETH)], investorCount, totalTokensSold, (fundRaiseTypes[uint8(FundRaiseType.POLY)]));
+        )] : fundsRaised[uint8(FundRaiseType.ETH)], investorCount, totalTokensSold, (fundRaiseTypes[uint8(FundRaiseType.POLY)]), preMintAllowed);
     }
 
     // -----------------------------------------
@@ -185,11 +207,12 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
 
     /**
     * @notice Validation of an incoming purchase.
-      Use require statements to revert state when conditions are not met. Use super to concatenate validations.
+    * Use require statements to revert state when conditions are not met. Use super to concatenate validations.
     * @param _beneficiary Address performing the token purchase
     * @param _investedAmount Value in wei involved in the purchase
     */
     function _preValidatePurchase(address _beneficiary, uint256 _investedAmount) internal view {
+        require(!isFinalized, "STO is finalized");
         require(_beneficiary != address(0), "Beneficiary address should not be 0x");
         require(_investedAmount != 0, "Amount invested should not be equal to 0");
         require(_canBuy(_beneficiary), "Unauthorized");
@@ -199,12 +222,15 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
 
     /**
     * @notice Source of tokens.
-      Override this method to modify the way in which the crowdsale ultimately gets and sends its tokens.
+    * Override this method to modify the way in which the crowdsale ultimately gets and sends its tokens.
     * @param _beneficiary Address performing the token purchase
     * @param _tokenAmount Number of tokens to be emitted
     */
     function _deliverTokens(address _beneficiary, uint256 _tokenAmount) internal {
-        securityToken.issue(_beneficiary, _tokenAmount, "");
+        if (preMintAllowed) 
+            securityToken.transfer(_beneficiary, _tokenAmount);
+        else
+            securityToken.issue(_beneficiary, _tokenAmount, "");
     }
 
     /**
@@ -256,6 +282,29 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
      */
     function _forwardPoly(address _beneficiary, address _to, uint256 _fundsAmount) internal {
         polyToken.transferFrom(_beneficiary, _to, _fundsAmount);
+    }
+
+    /**
+     * @notice Finalizes the STO and mint remaining tokens to treasury address
+     * @notice Treasury wallet address must be whitelisted to successfully finalize
+     */
+    function finalize() external withPerm(ADMIN){
+        require(!isFinalized, "STO is finalized");
+        isFinalized = true;
+        uint256 tempTokens;
+        address walletAddress;
+        if (cap > totalTokensSold) {
+            tempTokens = cap - totalTokensSold;
+            walletAddress = getTreasuryWallet();
+            require(walletAddress != address(0), "Invalid address");
+            if (preMintAllowed) {
+                securityToken.transfer(walletAddress, tempTokens);
+                emit ReserveTokenTransfer(address(this), walletAddress, tempTokens);
+            } else {
+                securityToken.issue(walletAddress, tempTokens, "");
+                emit ReserveTokenMint(msg.sender, walletAddress, tempTokens);
+            }
+        }
     }
 
 }

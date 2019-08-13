@@ -69,7 +69,7 @@ contract("Concurrent STO", async (accounts) => {
 
     // Configure function signature for STO deployment
 
-    const CappedSTOParameters = ["uint256", "uint256", "uint256", "uint256", "uint8[]", "address"];
+    const CappedSTOParameters = ["uint256", "uint256", "uint256", "uint256", "uint8[]", "address", "address"];
     const DummySTOParameters = ["uint256", "uint256", "uint256", "string"];
     const PresaleSTOParameters = ["uint256"];
 
@@ -197,6 +197,7 @@ contract("Concurrent STO", async (accounts) => {
                 cap,
                 rate,
                 fundRaiseType,
+                account_fundsReceiver,
                 account_fundsReceiver
             ]);
             const dummyBytesSig = encodeModuleCall(DummySTOParameters, [startTime, endTime, cap, "Hello"]);

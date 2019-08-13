@@ -479,9 +479,8 @@ async function generalTransferManager() {
         let whitelistData = await currentTransferManager.methods.getAllKYCData().call();
         showWhitelistTable(whitelistData[0], whitelistData[1], whitelistData[2], whitelistData[3]);
       } else {
-        let investorsArray = investorsToShow.split(',');
-        let whitelistData = await currentTransferManager.methods.getKYCData(investorsArray).call();
-        showWhitelistTable(investorsArray, whitelistData[0], whitelistData[1], whitelistData[2]);
+        let whitelistData = await currentTransferManager.methods.getKYCData(investorsToShow).call();
+        showWhitelistTable(investorsToShow, whitelistData[0], whitelistData[1], whitelistData[2]);
       }
       break;
     case 'Verify transfer':

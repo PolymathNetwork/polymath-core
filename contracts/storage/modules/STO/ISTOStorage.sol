@@ -20,5 +20,9 @@ contract ISTOStorage {
     address public wallet;
      // Final amount of tokens sold
     uint256 public totalTokensSold;
+    // Flag to know the minting status
+    bool public preMintAllowed;
+    // Whether or not the STO has been finalized
+    bool public isFinalized;
 
 }

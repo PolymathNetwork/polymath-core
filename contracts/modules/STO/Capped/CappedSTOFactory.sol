@@ -22,12 +22,14 @@ contract CappedSTOFactory is UpgradableModuleFactory {
         bool _isCostInPoly
     )
         public
-        UpgradableModuleFactory("3.0.0", _setupCost, _logicContract, _polymathRegistry, _isCostInPoly)
+        UpgradableModuleFactory("3.1.0", _setupCost, _logicContract, _polymathRegistry, _isCostInPoly)
     {
         name = "CappedSTO";
         title = "Capped STO";
         description = "This smart contract creates a maximum number of tokens (i.e. hard cap) which the total aggregate of tokens acquired by all investors cannot exceed. Security tokens are sent to the investor upon reception of the funds (ETH or POLY), and any security tokens left upon termination of the offering will not be minted.";
         typesData.push(3);
+        typesData.push(8); // Extra type which will allow module to hold and send securityTokens without being added in KYC data
+        typesData.push(5); // Allow burn type 
         tagsData.push("Capped");
         tagsData.push("ETH");
         tagsData.push("POLY");

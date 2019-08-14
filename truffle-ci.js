@@ -19,19 +19,11 @@ module.exports = {
   },
   compilers: {
     solc: {
-<<<<<<< HEAD
-      version: "native",  
-      settings: {
-        optimizer: {
-          enabled: true, 
-          runs: 200    
-=======
       version: "native",
       settings: {
         optimizer: {
           enabled: true,
           runs: 200
->>>>>>> master
         }
       }
     }

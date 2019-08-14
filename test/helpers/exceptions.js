@@ -18,6 +18,9 @@ module.exports = {
     catchPermission: async function(promise) {
         await tryCatch(promise, "revert Permission check failed");
     },
+    catchPermission: async function(promise) {
+        await tryCatch(promise, "revert Permission check failed");
+    },
     catchOutOfGas: async function(promise) {
         await tryCatch(promise, "out of gas");
     },

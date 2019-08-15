@@ -97,7 +97,7 @@
     "sol-merger": "^1.0.0",
     "solidity-docgen": "^0.1.1",
     "solium": "^1.2.4",
-    "table": "^5.4.4"
+    "table": "^5.4.6"
   },
   "greenkeeper": {
     "ignore": [

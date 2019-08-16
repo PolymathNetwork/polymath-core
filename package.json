@@ -63,10 +63,10 @@
     "dotenv": "^8.0.0",
     "openzeppelin-solidity": "2.2.0",
     "solc": "0.5.8",
-    "solidity-coverage": "^0.6.3",
-    "truffle": "^5.0.29",
-    "truffle-hdwallet-provider": "^1.0.15",
-    "web3": "^1.2.0",
+    "solidity-coverage": "^0.6.4",
+    "truffle": "^5.0.32",
+    "truffle-hdwallet-provider": "^1.0.16",
+    "web3": "^1.2.1",
     "web3-provider-engine": "^15.0.0"
   },
   "devDependencies": {
@@ -77,18 +77,18 @@
     "babel-preset-stage-3": "6.24.1",
     "babel-register": "6.26.0",
     "chalk": "^2.4.2",
-    "coveralls": "^3.0.5",
+    "coveralls": "^3.0.6",
     "eslint": "^6.1.0",
     "eslint-config-standard": "^13.0.1",
     "eslint-plugin-import": "^2.18.2",
     "eslint-plugin-node": "^9.1.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.0",
-    "eth-gas-reporter": "^0.2.9",
+    "eth-gas-reporter": "^0.2.10",
     "ethereum-bridge": "^0.6.2",
-    "ethereumjs-abi": "^0.6.7",
+    "ethereumjs-abi": "^0.6.8",
     "fs": "0.0.2",
-    "ganache-cli": "6.5.0",
+    "ganache-cli": "6.6.0",
     "mocha": "^6.2.0",
     "mocha-junit-reporter": "^1.23.1",
     "prettier": "^1.18.2",
@@ -97,7 +97,7 @@
     "sol-merger": "^1.0.0",
     "solidity-docgen": "^0.1.1",
     "solium": "^1.2.4",
-    "table": "^5.4.4"
+    "table": "^5.4.6"
   },
   "greenkeeper": {
     "ignore": [

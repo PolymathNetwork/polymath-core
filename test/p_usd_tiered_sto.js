@@ -759,14 +759,14 @@ contract("USDTieredSTO", async (accounts) => {
         it("Should successfully an STO that accepts funds in USD only.", async () => {
             let stoId = STOs.usdRaiseOnly;
 
-            _startTime.push(new BN(currentTime).add(new BN(duration.days(2))));
-            _endTime.push(new BN(_startTime[stoId]).add(new BN(currentTime).add(new BN(duration.days(100)))));
-            _ratePerTier.push([new BN(1).mul(e18), new BN(1).mul(e18)]); // [ 1 USD/Token, 1 USD/Token ]
-            _ratePerTierDiscountPoly.push([new BN(1).mul(e18), new BN(1).mul(e18)]); // [ 1 USD/Token, 1 USD/Token ]
-            _tokensPerTierTotal.push([new BN(10010).mul(e16), new BN(50).mul(e18)]); // [ 100.1 Token, 50 Token ]
-            _tokensPerTierDiscountPoly.push([new BN(0), new BN(0)]); // [ 0 Token, 0 Token ]
-            _nonAccreditedLimitUSD.push(new BN(25).mul(e18)); // [ 25 USD ]
-            _minimumInvestmentUSD.push(new BN(5));
+            _startTime.push(new BN(currentTime).add(new BN(duration.days(2))).toString());
+            _endTime.push(new BN(currentTime).add(new BN(duration.days(2))).add(new BN(currentTime).add(new BN(duration.days(100)))).toString());
+            _ratePerTier.push([new BN(1).mul(e18).toString(), new BN(1).mul(e18).toString()]); // [ 1 USD/Token, 1 USD/Token ]
+            _ratePerTierDiscountPoly.push([new BN(1).mul(e18).toString(), new BN(1).mul(e18).toString()]); // [ 1 USD/Token, 1 USD/Token ]
+            _tokensPerTierTotal.push([new BN(10010).mul(e16).toString(), new BN(50).mul(e18).toString()]); // [ 100.1 Token, 50 Token ]
+            _tokensPerTierDiscountPoly.push([new BN(0).toString(), new BN(0).toString()]); // [ 0 Token, 0 Token ]
+            _nonAccreditedLimitUSD.push(new BN(25).mul(e18).toString()); // [ 25 USD ]
+            _minimumInvestmentUSD.push(new BN(5).toString());
 
             /**
              * USD only.
@@ -1326,7 +1326,7 @@ contract("USDTieredSTO", async (accounts) => {
             // Activate allowBeneficialInvestments and try again
             ////////////////////////////////////////////////////
             await I_USDTieredSTO_Array[0].changeAllowBeneficialInvestments(true, { from: ISSUER });
-            
+
             // NONACCREDITED ETH
             await I_USDTieredSTO_Array[stoId].buyWithETH(BENEFICIARY1, { from: NONACCREDITED1, value: investment_ETH });
 
@@ -1572,7 +1572,7 @@ contract("USDTieredSTO", async (accounts) => {
 
             // NONACCREDITED DAI
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, I_DaiToken.address, { from: NONACCREDITED1 }), "STO not open");
- 
+
             // ACCREDITED ETH
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH }), "STO not open");
 
@@ -2468,8 +2468,8 @@ contract("USDTieredSTO", async (accounts) => {
             catchRevert(I_USDTieredSTO_Array[stoId].changeNonAccreditedLimit(
                 [NONACCREDITED1],
                 [
-                    _nonAccreditedLimitUSD[stoId].div(new BN(2)),
-                    _nonAccreditedLimitUSD[stoId].div(new BN(2))
+                    new BN(_nonAccreditedLimitUSD[stoId]).div(new BN(2)),
+                    new BN(_nonAccreditedLimitUSD[stoId]).div(new BN(2))
                 ], {
                 from: ISSUER
             }), "Length mismatch");
@@ -5083,7 +5083,7 @@ contract("USDTieredSTO", async (accounts) => {
         });
     });
 
-    describe("Test cases for the pre-pint", async() => {
+    describe("Test cases for pre-mint", async() => {
         it("Should register the ticker before the generation of the new security token for pre-mint STO", async () => {
             await I_PolyToken.approve(I_STRProxied.address, REGFEE, { from: ISSUER });
             let tx = await I_STRProxied.registerNewTicker(ISSUER, "PREST", { from: ISSUER });
@@ -5115,19 +5115,28 @@ contract("USDTieredSTO", async (accounts) => {
 
         it("Should attach the USDTieredSTO successfully", async() => {
             let nowTime = await latestTime();
-            let _startTime = new BN(nowTime).add(new BN(duration.days(2)));
-            let _endTime = _startTime.add(new BN(duration.days(100)));
-            let _ratePerTier = [new BN(10).mul(e16), new BN(15).mul(e16)]; // [ 0.10 USD/Token, 0.15 USD/Token ]
-            let _ratePerTierDiscountPoly = [new BN(10).mul(e16), new BN(15).mul(e16)]; // [ 0.10 USD/Token, 0.15 USD/Token ]
-            let _tokensPerTierTotal = [new BN(100000000).mul(new BN(e18)), new BN(200000000).mul(new BN(e18))]; // [ 100m Token, 200m Token ]
-            let _tokensPerTierDiscountPoly = [new BN(0), new BN(0)]; // [ new BN(0), 0 ]
-            let _nonAccreditedLimitUSD = new BN(10000).mul(new BN(e18)); // 10k USD
-            let _minimumInvestmentUSD = new BN(5).mul(e18); // 5 USD
+            let _startTime = new BN(nowTime).add(new BN(duration.days(2))).toString();
+            let _endTime = new BN(_startTime).add(new BN(duration.days(100))).toString();
+            let _ratePerTier = [new BN(10).mul(e16).toString(), new BN(15).mul(e16).toString()]; // [ 0.10 USD/Token, 0.15 USD/Token ]
+            let _ratePerTierDiscountPoly = [new BN(10).mul(e16).toString(), new BN(15).mul(e16).toString()]; // [ 0.10 USD/Token, 0.15 USD/Token ]
+            let _tokensPerTierTotal = [new BN(100000000).mul(new BN(e18)).toString(), new BN(200000000).mul(new BN(e18)).toString()]; // [ 100m Token, 200m Token ]
+            let _tokensPerTierDiscountPoly = [new BN(0).toString(), new BN(0).toString()]; // [ new BN(0), 0 ]
+            let _nonAccreditedLimitUSD = new BN(10000).mul(new BN(e18)).toString(); // 10k USD
+            let _minimumInvestmentUSD = new BN(5).mul(e18).toString(); // 5 USD
             let _fundRaiseTypes = [0, 1, 2];
             let _wallet = WALLET;
             let _treasuryWallet = TREASURYWALLET;
             let _usdToken = [I_DaiToken.address];
-            
+
+            // _startTime.push(new BN(currentTime).add(new BN(duration.days(2))).toString());
+            // _endTime.push(new BN(currentTime).add(new BN(duration.days(2))).add(new BN(duration.days(100))).toString());
+            // _ratePerTier.push([new BN(10).mul(e16).toString(), new BN(15).mul(e16).toString()]); // [ 0.10 USD/Token, 0.15 USD/Token ]
+            // _ratePerTierDiscountPoly.push([new BN(10).mul(e16).toString(), new BN(15).mul(e16).toString()]); // [ 0.10 USD/Token, 0.15 USD/Token ]
+            // _tokensPerTierTotal.push([new BN(100000000).mul(new BN(e18)).toString(), new BN(200000000).mul(new BN(e18)).toString()]); // [ 100m Token, 200m Token ]
+            // _tokensPerTierDiscountPoly.push([new BN(0).toString(), new BN(0).toString()]); // [ new BN(0), 0 ]
+            // _nonAccreditedLimitUSD.push(new BN(10000).mul(new BN(e18)).toString()); // 10k USD
+            // _minimumInvestmentUSD.push(new BN(5).mul(e18).toString()); // 5 USD
+
             let config = [
                 _startTime,
                 _endTime,
@@ -5142,7 +5151,7 @@ contract("USDTieredSTO", async (accounts) => {
                 _treasuryWallet,
                 _usdToken
             ];
-            
+
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
             let tx = await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), false, { from: ISSUER, gasPrice: GAS_PRICE });
             console.log("          Gas addModule: ".grey + tx.receipt.gasUsed.toString().grey);
@@ -5312,7 +5321,7 @@ contract("USDTieredSTO", async (accounts) => {
                 [expiryTime, expiryTime, expiryTime],
                 {
                     from: ISSUER
-                }  
+                }
             );
             let investorData = await I_GeneralTransferManager.getKYCData([INVESTOR1]);
             assert.equal(investorData[0][0], 1);

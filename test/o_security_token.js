@@ -378,13 +378,13 @@ contract("SecurityToken", async (accounts) => {
         });
 
         // solidity-coverage uses an older version of testrpc that does not support eth_signTypedData. It is required to signt he acknowledgement
-        process.env.COVERAGE ? it.skip : it("Should finish the minting -- fail because msg.sender is not the owner", async () => {
+        it("Should finish the minting -- fail because msg.sender is not the owner", async () => {
             freezeIssuanceAckHash = await getFreezeIssuanceAck(I_SecurityToken.address, token_owner);
             await catchRevert(I_SecurityToken.freezeIssuance(freezeIssuanceAckHash, { from: account_temp }));
         });
 
         // solidity-coverage uses an older version of testrpc that does not support eth_signTypedData. It is required to signt he acknowledgement
-        process.env.COVERAGE ? it.skip : it("Should finish minting & restrict the further minting", async () => {
+        it("Should finish minting & restrict the further minting", async () => {
             let id = await takeSnapshot();
             await I_SecurityToken.freezeIssuance(freezeIssuanceAckHash, { from: token_owner });
             assert.isFalse(await stGetter.isIssuable.call());
@@ -458,7 +458,7 @@ contract("SecurityToken", async (accounts) => {
         });
 
         // solidity-coverage uses an older version of testrpc that does not support eth_signTypedData. It is required to signt he acknowledgement
-        process.env.COVERAGE ? it.skip : it("Should fail to issue tokens while STO attached after freezeMinting called", async () => {
+        it("Should fail to issue tokens while STO attached after freezeMinting called", async () => {
             let id = await takeSnapshot();
             await I_SecurityToken.freezeIssuance(freezeIssuanceAckHash, { from: token_owner });
 
@@ -1000,7 +1000,7 @@ contract("SecurityToken", async (accounts) => {
         });
 
         // solidity-coverage uses an older version of testrpc that does not support eth_signTypedData. It is required to signt he acknowledgement
-        process.env.COVERAGE ? it.skip : it("STO should fail to issue tokens after minting is frozen", async () => {
+        it("STO should fail to issue tokens after minting is frozen", async () => {
             let id = await takeSnapshot();
             await I_SecurityToken.freezeIssuance(freezeIssuanceAckHash, { from: token_owner });
 
@@ -1411,13 +1411,13 @@ contract("SecurityToken", async (accounts) => {
         });
 
         // solidity-coverage uses an old version of testrpc that does not support eth_signTypedData. It is required to sign he acknowledgement
-        process.env.COVERAGE ? it.skip : it("Should fail to freeze controller functionality because not owner", async () => {
+        it("Should fail to freeze controller functionality because not owner", async () => {
             disableControllerAckHash = await getDisableControllerAck(I_SecurityToken.address, token_owner);
             await catchRevert(I_SecurityToken.disableController(disableControllerAckHash, { from: account_investor1 }));
         });
 
         // solidity-coverage uses an old version of testrpc that does not support eth_signTypedData. It is required to sign he acknowledgement
-        process.env.COVERAGE ? it.skip : it("Should successfully freeze controller functionality", async () => {
+        it("Should successfully freeze controller functionality", async () => {
             await I_SecurityToken.disableController(disableControllerAckHash, { from: token_owner });
             // check state
             assert.equal(address_zero, await I_SecurityToken.controller.call(), "State not changed");
@@ -1426,17 +1426,17 @@ contract("SecurityToken", async (accounts) => {
         });
 
         // solidity-coverage uses an old version of testrpc that does not support eth_signTypedData. It is required to sign he acknowledgement
-        process.env.COVERAGE ? it.skip : it("Should fail to freeze controller functionality because already frozen", async () => {
+        it("Should fail to freeze controller functionality because already frozen", async () => {
             await catchRevert(I_SecurityToken.disableController(disableControllerAckHash, { from: token_owner }));
         });
 
         // solidity-coverage uses an old version of testrpc that does not support eth_signTypedData. It is required to sign he acknowledgement
-        process.env.COVERAGE ? it.skip : it("Should fail to set controller because controller functionality frozen", async () => {
+        it("Should fail to set controller because controller functionality frozen", async () => {
             await catchRevert(I_SecurityToken.setController(account_controller, { from: token_owner }));
         });
 
         // solidity-coverage uses an old version of testrpc that does not support eth_signTypedData. It is required to sign he acknowledgement
-        process.env.COVERAGE ? it.skip : it("Should fail to controllerTransfer because controller functionality frozen", async () => {
+        it("Should fail to controllerTransfer because controller functionality frozen", async () => {
             await catchRevert(
                 I_SecurityToken.controllerTransfer(account_investor1, account_investor2, new BN(web3.utils.toWei("10", "ether")), "0x0", web3.utils.fromAscii("reason"), {
                     from: account_controller

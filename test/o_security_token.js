@@ -377,14 +377,12 @@ contract("SecurityToken", async (accounts) => {
             await catchRevert(I_SecurityToken.freezeIssuance(trueButOutOfPlaceAcknowledegement, { from: token_owner }));
         });
 
-        // solidity-coverage uses an older version of testrpc that does not support eth_signTypedData. It is required to signt he acknowledgement
-        process.env.COVERAGE ? it.skip : it("Should finish the minting -- fail because msg.sender is not the owner", async () => {
+        it("Should finish the minting -- fail because msg.sender is not the owner", async () => {
             freezeIssuanceAckHash = await getFreezeIssuanceAck(I_SecurityToken.address, token_owner);
             await catchRevert(I_SecurityToken.freezeIssuance(freezeIssuanceAckHash, { from: account_temp }));
         });
 
-        // solidity-coverage uses an older version of testrpc that does not support eth_signTypedData. It is required to signt he acknowledgement
-        process.env.COVERAGE ? it.skip : it("Should finish minting & restrict the further minting", async () => {
+        it("Should finish minting & restrict the further minting", async () => {
             let id = await takeSnapshot();
             await I_SecurityToken.freezeIssuance(freezeIssuanceAckHash, { from: token_owner });
             assert.isFalse(await stGetter.isIssuable.call());
@@ -457,8 +455,7 @@ contract("SecurityToken", async (accounts) => {
             assert.equal(balance.div(new BN(10).pow(new BN(18))).toNumber(), 300);
         });
 
-        // solidity-coverage uses an older version of testrpc that does not support eth_signTypedData. It is required to signt he acknowledgement
-        process.env.COVERAGE ? it.skip : it("Should fail to issue tokens while STO attached after freezeMinting called", async () => {
+        it("Should fail to issue tokens while STO attached after freezeMinting called", async () => {
             let id = await takeSnapshot();
             await I_SecurityToken.freezeIssuance(freezeIssuanceAckHash, { from: token_owner });
 
@@ -736,6 +733,18 @@ contract("SecurityToken", async (accounts) => {
             await I_SecurityToken.transfer(account_investor1, new BN(10).pow(new BN(17)), { from: accounts[7], gas: 2500000 });
         });
 
+        it("Should fail to transfer if transfer value % granularity != 0. i.e there's a reminder amount", async () => {
+            let data = await I_SecurityToken.canTransferByPartition.call(
+                account_investor1,
+                account_investor2,
+                web3.utils.toHex("UNLOCKED"),
+                new BN("15000000000000000001"),
+                "0x0"
+            );
+    
+            assert.equal(data[0], 0x50);
+        })
+
         it("Should not allow unauthorized address to change data store", async () => {
             await catchRevert(I_SecurityToken.changeDataStore(one_address, { from: account_polymath }));
         });
@@ -939,6 +948,10 @@ contract("SecurityToken", async (accounts) => {
                 from: account_investor1
             });
             assert.equal(log.logs[0].args.value.toString(), new BN(2).mul(new BN(10).pow(new BN(18))).toString());
+
+            await catchRevert(I_SecurityToken.transferFrom(account_investor2, account_investor3, new BN(2).mul(new BN(10).pow(new BN(18))), {
+                from: account_investor1
+            }));
         });
 
         it("Should Fail in trasferring from whitelist investor1 to non-whitelist investor", async () => {
@@ -999,8 +1012,7 @@ contract("SecurityToken", async (accounts) => {
             assert.equal((await I_SecurityToken.balanceOf(account_investor1)).div(new BN(10).pow(new BN(18))).toNumber(), 1000);
         });
 
-        // solidity-coverage uses an older version of testrpc that does not support eth_signTypedData. It is required to signt he acknowledgement
-        process.env.COVERAGE ? it.skip : it("STO should fail to issue tokens after minting is frozen", async () => {
+        it("STO should fail to issue tokens after minting is frozen", async () => {
             let id = await takeSnapshot();
             await I_SecurityToken.freezeIssuance(freezeIssuanceAckHash, { from: token_owner });
 
@@ -1065,7 +1077,7 @@ contract("SecurityToken", async (accounts) => {
             );
         });
 
-        it("Should fail in trasfering the tokens from one user to another", async () => {
+        it("Should fail in transfering the tokens from one user to another", async () => {
             await catchRevert(I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1", "ether")), { from: account_temp }), "Transfer Invalid");
         });
 
@@ -1226,6 +1238,20 @@ contract("SecurityToken", async (accounts) => {
         it("Should check the balance of investor at checkpoint", async () => {
             let balance = await stGetter.balanceOfAt(account_investor1, 0);
             assert.equal(balance.toNumber(), 0);
+        });
+
+        it("Should allow transfering its ownership, unless the new address is 0x0", async () => {
+            // Bad
+            await catchRevert(I_SecurityToken.transferOwnership(address_zero, { from: token_owner }),
+                "revert");
+
+            // Good
+            await I_SecurityToken.transferOwnership(account_temp, { from: token_owner });
+            assert.equal(await I_SecurityToken.owner.call(), account_temp);
+
+            // Transfer ownership back
+            await I_SecurityToken.transferOwnership(token_owner, { from: account_temp });
+            assert.equal(await I_SecurityToken.owner.call(), token_owner);
         });
     });
 
@@ -1410,14 +1436,12 @@ contract("SecurityToken", async (accounts) => {
             await catchRevert(I_SecurityToken.disableController(trueButOutOfPlaceAcknowledegement, { from: token_owner }));
         });
 
-        // solidity-coverage uses an old version of testrpc that does not support eth_signTypedData. It is required to sign he acknowledgement
-        process.env.COVERAGE ? it.skip : it("Should fail to freeze controller functionality because not owner", async () => {
+        it("Should fail to freeze controller functionality because not owner", async () => {
             disableControllerAckHash = await getDisableControllerAck(I_SecurityToken.address, token_owner);
             await catchRevert(I_SecurityToken.disableController(disableControllerAckHash, { from: account_investor1 }));
         });
 
-        // solidity-coverage uses an old version of testrpc that does not support eth_signTypedData. It is required to sign he acknowledgement
-        process.env.COVERAGE ? it.skip : it("Should successfully freeze controller functionality", async () => {
+        it("Should successfully freeze controller functionality", async () => {
             await I_SecurityToken.disableController(disableControllerAckHash, { from: token_owner });
             // check state
             assert.equal(address_zero, await I_SecurityToken.controller.call(), "State not changed");
@@ -1425,18 +1449,15 @@ contract("SecurityToken", async (accounts) => {
             assert.isFalse(await I_SecurityToken.isControllable.call());
         });
 
-        // solidity-coverage uses an old version of testrpc that does not support eth_signTypedData. It is required to sign he acknowledgement
-        process.env.COVERAGE ? it.skip : it("Should fail to freeze controller functionality because already frozen", async () => {
+        it("Should fail to freeze controller functionality because already frozen", async () => {
             await catchRevert(I_SecurityToken.disableController(disableControllerAckHash, { from: token_owner }));
         });
 
-        // solidity-coverage uses an old version of testrpc that does not support eth_signTypedData. It is required to sign he acknowledgement
-        process.env.COVERAGE ? it.skip : it("Should fail to set controller because controller functionality frozen", async () => {
+        it("Should fail to set controller because controller functionality frozen", async () => {
             await catchRevert(I_SecurityToken.setController(account_controller, { from: token_owner }));
         });
 
-        // solidity-coverage uses an old version of testrpc that does not support eth_signTypedData. It is required to sign he acknowledgement
-        process.env.COVERAGE ? it.skip : it("Should fail to controllerTransfer because controller functionality frozen", async () => {
+        it("Should fail to controllerTransfer because controller functionality frozen", async () => {
             await catchRevert(
                 I_SecurityToken.controllerTransfer(account_investor1, account_investor2, new BN(web3.utils.toWei("10", "ether")), "0x0", web3.utils.fromAscii("reason"), {
                     from: account_controller
@@ -1554,7 +1575,7 @@ contract("SecurityToken", async (accounts) => {
                         }
                     );
             assert.equal(web3.utils.hexToUtf8(tx.logs[1].args._fromPartition), "UNLOCKED");
-            assert.equal(tx.logs[1].args._operator, "0x0000000000000000000000000000000000000000");
+            assert.equal(tx.logs[1].args._operator, address_zero);
         });
 
         it("Should authorize the operator", async() => {
@@ -1780,7 +1801,7 @@ contract("SecurityToken", async (accounts) => {
 
             let tx = await I_MockRedemptionManager.redeemTokensByPartition(new BN(web3.utils.toWei("10")), web3.utils.toHex("UNLOCKED"), "0x0", {from: account_investor1});
             assert.equal(web3.utils.hexToUtf8(tx.logs[0].args._partition), "UNLOCKED");
-            assert.equal(tx.logs[0].args._operator, "0x0000000000000000000000000000000000000000");
+            assert.equal(tx.logs[0].args._operator, address_zero);
             assert.equal(tx.logs[0].args._investor, account_investor1);
 
             let afterTotalSupply = await I_SecurityToken.totalSupply.call();
@@ -1854,6 +1875,47 @@ contract("SecurityToken", async (accounts) => {
             assert.equal("LOCKED", web3.utils.hexToUtf8(partitions[1]));
             partitions = await I_STGetter.partitionsOf.call(account_investor2);
             console.log(`Partitions of the investor 2: ${web3.utils.hexToUtf8(partitions[0])}`);
+        });
+
+
+        it("Should fail to call operatorRedeemByPartition -- operatorData is empty", async() => {
+            await I_MockRedemptionManager.operatorTransferToRedeem(
+                web3.utils.toWei("10"),
+                web3.utils.toHex("UNLOCKED"),
+                "0x0",
+                web3.utils.toHex("Valid call from the operator"),
+                {
+                    from: account_investor1
+                }
+            );
+
+            await catchRevert(
+                I_MockRedemptionManager.operatorRedeemTokensByPartition(
+                    web3.utils.toWei("10"),
+                    web3.utils.toHex("LOCKED"),
+                    "0x0",
+                    web3.utils.toHex(""),
+                    {
+                        from: account_investor1
+                    }
+                ), "revert"
+            );
+        });
+
+        it("Should fail to call operatorTransferByPartition -- operatorData is empty", async() => {
+            await catchRevert(
+                I_SecurityToken.operatorTransferByPartition(
+                    web3.utils.toHex("UNLOCKED"),
+                    account_investor1,
+                    account_investor2,
+                    web3.utils.toWei("10"),
+                    "0x0",
+                    web3.utils.toHex(""),
+                    {
+                        from: account_delegate
+                    }
+                ), "revert"
+            );
         });
     });
 

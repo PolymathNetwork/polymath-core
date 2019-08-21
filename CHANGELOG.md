@@ -45,6 +45,9 @@ All notable changes to this project will be documented in this file.
 * Rename `forceTransfer()` to `controllerTransfer()` similarly `forceBurn()` to `controllerRedeem()`.   
 * Add `isControllable()` to know whether the controller functions are allowed to execute or not.    
 * Add `isIssuable()`, `getInvestorsSubsetAt()`, `getTreasuryWallet()`, `isOperator()`, `isOperatorForPartition()`, `partitionsOf()`, `getDocument()`, `getAllDocument()` functions as getters to support ST functionality.    
+* Add `isIssuable()`, `getInvestorsSubsetAt()`, `getTreasuryWallet()`, `isOperator()`, `isOperatorForPartition()`, `partitionsOf()`, `getDocument()`, `getAllDocument()` functions as getters to support ST functionality.   
+* Remove the `bool` return parameter from the `canTransfer` & `canTransferFrom` function.
+* Rename `increaseApproval()` & `decreaseApproval()` to `increaseAllowance()` & `decreaseAllowance()` respectively.   
 
 ## STR
 * Introduce new contract `STRGetter.sol`. It only contains the getter functions of the STR.
@@ -58,13 +61,20 @@ All notable changes to this project will be documented in this file.
 * Add `refreshSecurityToken()` function to update the 2.x tokens to 3.0 tokens.   
 * Add `changeFeesAmountAndCurrency()` function to sets the ticker registration and ST launch fee amount and currency.     
 * Rename `setProtocolVersion()` to `setProtocolFactory()`, Add `removeProtocolFactory()`.   
-* Add `getTokensByDelegate()`, `getSTFactoryAddressOfVersion()`, `getLatestProtocolVersion()`, `getIsFeeInPoly()` some getters.   
+* Add `getTokensByDelegate()`, `getSTFactoryAddressOfVersion()`, `getLatestProtocolVersion()`, `getIsFeeInPoly()` some getters.  
+* Add `RegisterTicker` event with two new parameters `_registrationFeePoly` & `_registrationFeeUsd`. (Note- there is 2 events with the same name to maintain the backwards compatibility).   
+* Add `NewSecurityToken` event with three new parameters `_usdFee`, `_polyFee` & `_protocolVersion`. (Note- there is 2 events with the same name to maintain the backwards compatibility).
+* Add `registerNewTicker()` function to register the ticker for `3.0.0` release. NB- `registerTicker()` is also present in the code to maintain the backwards compatibility.  
+* Add `modifyExistingTicker()` to modify the ticker & `modifyExistingSecurityToken()` to modify the ST.  
+* Add `tickerAvailable()` to get the status of ticker availability.  
 
 ## MR   
-* Add `_isUpgrade` param in function `useModule()`.   
+* Add `_isUpgrade` param in function `useModule()`. NB - `useModule()` function exists with the same arguments to maintain the backwards compatibility.    
 * Add `isCompatibleModule()` to check whether the given module and ST is compatible or not.   
 * Remove `_isVerified` param from the `verifyModule()` function and introduced `unverifyModule()` function to unverify module.     
-* Removed `getReputationByFactory()`.   
+* Removed `getReputationByFactory()`.
+* `getFactoryDetails()` is now return one extra parameter i.e address of the factory owner.
+* `getAllModulesByType()` add new function to return array that contains the list of addresses of module factory contracts.   
 
 ## GeneralTransferManager
 * `modifyWhitelist()` function renamed to `modifyKYCData()`.
@@ -75,23 +85,30 @@ All notable changes to this project will be documented in this file.
 * Introduced `modifyTransferRequirements()` & `modifyTransferRequirementsMulti()` to modify the transfer requirements.   
 * Add `modifyInvestorFlag()` & `modifyInvestorFlagMulti()` function to modify the flag.   
 * `modifyWhitelistSigned()` rename to `modifyKYCDataSigned()`. Add `modifyKYCDataSignedMulti`.    
-* Add `getAllInvestorFlags()`, `getInvestorFlag()`,`getInvestorFlags()`, `getAllKYCData()`, `getKYCData()` & `getTokensByPartition()`. 
+* Add `getAllInvestorFlags()`, `getInvestorFlag()`,`getInvestorFlags()`, `getAllKYCData()`, `getKYCData()` & `getTokensByPartition()`.
 
-## USDTiererdSTO
+## USDTieredSTO
 * Removed `changeAccredited()` function.    
 * `buyWithETH()`, `buyWithPOLY()`, `buyWithUSD()`, `buyWithETHRateLimited()`, `buyWithPOLYRateLimited()` & `buyWithUSDRateLimited()` will return spentUSD, spentValue & amount of mint tokens.   
 * Remove `buyTokensView()` function.  
 
 ## Modules   
 * Introduced BTM, LTM and VEW modules.   
+=======
+* Add `modifyOracle()` function allow issuer to add their personalize oracles.   
+
+## Modules   
+* Introduced BTM, LTM, Voting and VEW modules.  
+* Remove the  `_usageCost` variable when deploying any module factory.  
+* Remove `takeUsageFee()` function from evey module.   
+* Remove `changeUsageCost()` & `usageCostInPoly()` from every module factory.
 * Remove `takeFee()` function.
 * `getTreasuryWallet()` function added to `DividendCheckpoint.sol`.
 
 ## Generalize
 * Removed `_polyAddress` parameter from constructors of all modules and module factories.
-* All modules are upgradeable now. 
+* All modules are upgradeable now.
 * Permission types are only `ADMIN` and `OPERATOR` now.      
-
 
 # v2.1.0 - Release Candidate    
 

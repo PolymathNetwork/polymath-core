@@ -17,7 +17,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         uint256 _revealDuration,
         bytes32 _details,
         uint256 _noOfChoices,
-        bytes32 _proposalTitle,
+        string _proposalTitle,
         string _choices
     );
 
@@ -28,7 +28,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         uint256 _revealDuration,
         bytes32[] _details,
         uint256[] _noOfChoices,
-        bytes32[] _proposalTitle,
+        string _proposalTitle,
         string _choices
     );
 
@@ -68,7 +68,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         uint256 _startTime,
         uint256 _commitDuration,
         uint256 _revealDuration,
-        bytes32 _proposalTitle,
+        string memory _proposalTitle,
         bytes32 _details,
         string memory _choices,
         uint256 _noOfChoices
@@ -95,7 +95,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         uint256 _startTime,
         uint256 _commitDuration,
         uint256 _revealDuration,
-        bytes32 _proposalTitle,
+        string memory _proposalTitle,
         bytes32 _details,
         string memory _choices,
         uint256 _noOfChoices,
@@ -112,7 +112,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         uint256 _startTime,
         uint256 _commitDuration,
         uint256 _revealDuration,
-        bytes32 _proposalTitle,
+        string memory _proposalTitle,
         bytes32 _details,
         string memory _choices,
         uint256 _noOfChoices,
@@ -131,14 +131,13 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
             _checkpointId, uint64(_commitDuration), uint64(_revealDuration), uint64(startTime), uint24(1), uint32(0), true
         ));
         Ballot storage currentBallot = ballots[ballotId];
-        _addProposal(_proposalTitle, _details, _noOfChoices, currentBallot, 0);
+        _addProposal(_details, _noOfChoices, currentBallot, 0);
         emit StatuaryBallotCreated(
             _checkpointId, startTime, _commitDuration, _revealDuration, _details, _noOfChoices, _proposalTitle, _choices
         );
     }
 
     function _addProposal(
-        bytes32 _proposalTitle,
         bytes32 _details,
         uint256 _noOfChoices,
         Ballot storage _ballot,
@@ -146,7 +145,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
     ) 
     internal 
     {
-        _ballot.proposals[_proposalNo] = Proposal(_proposalTitle, _details, _noOfChoices);
+        _ballot.proposals[_proposalNo] = Proposal(_details, _noOfChoices);
     }
 
     /**
@@ -154,9 +153,9 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
      * @param _startTime startTime of the ballot
      * @param _commitDuration Unix time period till the voters commit there vote
      * @param _revealDuration Unix time period till the voters reveal there vote starts when commit duration ends
-     * @param _proposalTitles Title of proposal
+     * @param _proposalTitles Title of proposals (In a comma seperated string)
      * @param _details Off-chain details related to the proposal
-     * @param _choices Choices of proposals
+     * @param _choices Choices of proposals (In a comma seperated string)
      * @param _noOfChoices Array of No. of choices (If it is 0 then it means NAY/YAY ballot type is choosen).
      * @param _checkpointId Valid checkpoint Id
      */
@@ -164,7 +163,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         uint256 _startTime,
         uint256 _commitDuration,
         uint256 _revealDuration,
-        bytes32[] memory _proposalTitles,
+        string memory _proposalTitles,
         bytes32[] memory _details,
         string memory _choices,
         uint256[] memory _noOfChoices,
@@ -184,16 +183,16 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
      * @param _startTime startTime of the ballot
      * @param _commitDuration Unix time period till the voters commit there vote
      * @param _revealDuration Unix time period till the voters reveal there vote starts when commit duration ends
-     * @param _proposalTitles Title of proposal
+     * @param _proposalTitles Title of proposal (In a comma seperated string)
      * @param _details Off-chain details related to the proposal
-     * @param _choices Choices of proposals
+     * @param _choices Choices of proposals (In a comma seperated string)
      * @param _noOfChoices Array of No. of choices (If it is 0 then it means NAY/YAY ballot type is choosen).
      */
     function createCumulativeBallot(
         uint256 _startTime,
         uint256 _commitDuration,
         uint256 _revealDuration,
-        bytes32[] memory _proposalTitles,
+        string memory _proposalTitles,
         bytes32[] memory _details,
         string memory _choices,
         uint256[] memory _noOfChoices
@@ -211,7 +210,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         uint256 _startTime,
         uint256 _commitDuration,
         uint256 _revealDuration,
-        bytes32[] memory _proposalTitles,
+        string memory _proposalTitles,
         bytes32[] memory _details,
         string memory _choices,
         uint256[] memory _noOfChoices,
@@ -222,14 +221,14 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         //TODO: Charging Usage cost
         uint256 startTime = _getStartTime(_startTime);
         _isGreaterThanZero(_commitDuration, _revealDuration);
-        _isValidLength(_proposalTitles.length, _noOfChoices.length, _details.length);
+        _isValidLength(_noOfChoices.length, _details.length);
         uint256 ballotId = ballots.length;
         ballots.push(Ballot(
-            _checkpointId, uint64(_commitDuration), uint64(_revealDuration), uint64(startTime), uint24(_proposalTitles.length), uint32(0), true
+            _checkpointId, uint64(_commitDuration), uint64(_revealDuration), uint64(startTime), uint24(_noOfChoices.length), uint32(0), true
         ));
         Ballot storage currentBallot = ballots[ballotId];
-        for (uint256 i = 0; i < _proposalTitles.length; i++) {
-            _addProposal(_proposalTitles[i], _details[i], _noOfChoices[i], currentBallot, i);
+        for (uint256 i = 0; i < _noOfChoices.length; i++) {
+            _addProposal(_details[i], _noOfChoices[i], currentBallot, i);
         }
         emit CumulativeBallotCreated(
             _checkpointId, startTime, _commitDuration, _revealDuration, _details, _noOfChoices, _proposalTitles, _choices
@@ -241,9 +240,9 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
      * @param _startTime startTime of the ballot
      * @param _commitDuration Unix time period till the voters commit there vote
      * @param _revealDuration Unix time period till the voters reveal there vote starts when commit duration ends
-     * @param _proposalTitles Title of proposal
+     * @param _proposalTitles Title of proposal (Comma seperated values)
      * @param _details Off-chain details related to the proposal
-     * @param _choices Choices of proposals
+     * @param _choices Choices of proposals (Comma seperated values)
      * @param _noOfChoices Array of No. of choices (If it is 0 then it means NAY/YAY ballot type is choosen).
      * @param _checkpointId Valid checkpoint Id
      * @param _exemptedAddresses List of addresses not allowed to vote
@@ -252,7 +251,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         uint256 _startTime,
         uint256 _commitDuration,
         uint256 _revealDuration,
-        bytes32[] calldata _proposalTitles,
+        string calldata _proposalTitles,
         bytes32[] calldata _details,
         string calldata _choices,
         uint256[] calldata _noOfChoices,
@@ -288,9 +287,9 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
      * @param _startTime startTime of the ballot
      * @param _commitDuration Unix time period till the voters commit there vote
      * @param _revealDuration Unix time period till the voters reveal there vote starts when commit duration ends
-     * @param _proposalTitles Title of proposal
+     * @param _proposalTitles Title of proposal (Comma seperated values)
      * @param _details Off-chain details related to the proposal
-     * @param _choices Choices of proposals
+     * @param _choices Choices of proposals (Comma seperated values)
      * @param _noOfChoices Array of No. of choices (If it is 0 then it means NAY/YAY ballot type is choosen).
      * @param _exemptedAddresses List of addresses not allowed to vote
      */
@@ -298,7 +297,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         uint256 _startTime,
         uint256 _commitDuration,
         uint256 _revealDuration,
-        bytes32[] calldata _proposalTitles,
+        string calldata _proposalTitles,
         bytes32[] calldata _details,
         string calldata _choices,
         uint256[] calldata _noOfChoices,
@@ -325,7 +324,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
      * @param _revealDuration Unix time period till the voters reveal there vote starts when commit duration ends
      * @param _proposalTitle Title of proposal
      * @param _details Off-chain details related to the proposal
-     * @param _choices Choices of proposals
+     * @param _choices Choices of proposals (Comma seperated values)
      * @param _noOfChoices No. of choices (If it is 0 then it means NAY/YAY ballot type is choosen).
      * @param _exemptedAddresses List of addresses not allowed to vote
      */
@@ -333,7 +332,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         uint256 _startTime,
         uint256 _commitDuration,
         uint256 _revealDuration,
-        bytes32 _proposalTitle,
+        string calldata _proposalTitle,
         bytes32 _details,
         string calldata _choices,
         uint256 _noOfChoices,
@@ -360,7 +359,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
      * @param _revealDuration Unix time period till the voters reveal there vote starts when commit duration ends
      * @param _proposalTitle Title of proposal
      * @param _details Off-chain details related to the proposal
-     * @param _choices Choices of proposals
+     * @param _choices Choices of proposals (Comma seperated values)
      * @param _noOfChoices No. of choices (If it is 0 then it means NAY/YAY ballot type is choosen).
      * @param _checkpointId Valid checkpoint Id
      * @param _exemptedAddresses List of addresses not allowed to vote
@@ -369,7 +368,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         uint256 _startTime,
         uint256 _commitDuration,
         uint256 _revealDuration,
-        bytes32 _proposalTitle,
+        string calldata _proposalTitle,
         bytes32 _details,
         string calldata _choices,
         uint256 _noOfChoices,
@@ -489,10 +488,11 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
 
     /**
      * @notice Get eligible voters list for the given ballot
+     * @dev should be called off-chain
      * @param  _ballotId The index of the target ballot
      * @return voters Addresses of the voters
      */
-    function getAllowedVotersByBallot(uint256 _ballotId) external view returns (address[] memory voters) {
+    function getAllowedVotersByBallot(uint256 _ballotId) public view returns (address[] memory voters) {
         if (_ballotId >= ballots.length) {
             return voters;
         } else {
@@ -609,36 +609,122 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         }
     }
 
-    // /**
-    //  * @notice Queries the result of a given ballot
-    //  * @param _ballotId Id of the target ballot
-    //  * @return uint256 voteWeighting
-    //  * @return uint256 choices
-    //  * @return uint256 proposals
-    //  * @return uint256 totalVoters
-    //  */
-    // function getBallotResults(uint256 _ballotId) external view returns(
-    //     uint256[] memory voteWeighting,
-    //     uint256[] memory choices,
-    //     uint256[] memory proposals,
-    //     uint256 totalVoters
-    // )
-    // {
-    // }
+    /**
+     * @notice Queries the result of a given ballot
+     * @dev should be called off-chain
+     * @param _ballotId Id of the target ballot
+     * @return uint256 choicesWeighting
+     * @return uint256 noOfChoicesInProposal
+     * @return address voters
+     * @return uint256 remainingTime (Time left in the completion of voting)
+     */
+    function getBallotResults(uint256 _ballotId) external view returns(
+        uint256[] memory choicesWeighting,
+        uint256[] memory noOfChoicesInProposal,
+        address[] memory voters,
+        uint256 remainingTime
+    )
+    {
+        if (_ballotId >= ballots.length)
+            return (choicesWeighting, noOfChoicesInProposal, voters, remainingTime);
+        else {
+            address[] memory allowedVoters = getAllowedVotersByBallot(_ballotId);
+            Ballot storage ballot = ballots[_ballotId];
+            remainingTime = ((
+                uint256(ballot.startTime)
+                .add(uint256(ballot.commitDuration)))
+                .add(uint256(ballot.revealDuration))
+                );
+            if (remainingTime > now)
+                remainingTime = remainingTime - now;
+            else 
+                remainingTime = 0;
+            voters = new address[](ballot.totalVoters);
+            (uint256 i, uint256 j, uint256 k, uint256 count) = (0, 0, 0, 0);
+            // Filtering the actual voters address from the allowed voters address list
+            for (i = 0; i < allowedVoters.length; i++) {
+                if (ballot.voteDetails[allowedVoters[i]].voteOptions[0].length > 0) {
+                    voters[count] = allowedVoters[i];
+                    count++;
+                } 
+            }
+            count = 0;
+            // calculating the length of the choicesWeighting array it should be equal
+            // to the aggregation of ∑(proposalᵢ * noOfChoicesᵢ) where i = 0 ...totalProposal-1 
+            for (i = 0; i < ballot.totalProposals; i++) {
+                uint256 _noOfChoice = ballot.proposals[i].noOfChoices;
+                _noOfChoice = _noOfChoice == 0 ? 3 : _noOfChoice;
+                count = count.add(_noOfChoice);
+            }
+            choicesWeighting = new uint256[](count);
+            noOfChoicesInProposal = new uint256[](ballot.totalProposals);
+            count = 0;
+            for (i = 0; i < ballot.totalProposals; i++) {
+                uint256 _noOfChoices = ballot.proposals[i].noOfChoices;
+                _noOfChoices = _noOfChoices == 0 ? 3 : _noOfChoices;
+                noOfChoicesInProposal[i] = _noOfChoices;
+                uint256 nextProposalChoiceLen = count + _noOfChoices;
+                for (j = 0; j < ballot.totalVoters; j++) {
+                    uint256[] storage choiceWeight = ballot.voteDetails[voters[j]].voteOptions[i];
+                    uint256 l = 0;
+                    for (k = count; k < nextProposalChoiceLen; k++) {
+                        choicesWeighting[count] = choicesWeighting[count].add(choiceWeight[l]);
+                        l++;
+                    }
+                }
+                count = nextProposalChoiceLen;
+            }
+        }
+    }
 
-    // /**
-    //  * @notice Get the details of the ballot
-    //  * @param _ballotId The index of the target ballot
-    //  * @return uint256 totalSupplyAtCheckpoint
-    //  * @return uint256 checkpointId
-    //  * @return uint256 startTime
-    //  * @return uint256 endTime
-    //  * @return uint256 totalProposals
-    //  * @return uint256 totalVoters
-    //  * @return bool isActive
-    //  */
-    // function getBallotDetails(uint256 _ballotId) external view returns(uint256, uint256, uint256, uint256, uint256, uint256, bool) {}
-
+    /**
+     * @notice Get the details of the ballot
+     * @param _ballotId The index of the target ballot
+     * @return uint256 totalSupplyAtCheckpoint
+     * @return uint256 checkpointId
+     * @return uint256 startTime
+     * @return uint256 commitDuration
+     * @return uint256 revealDuration
+     * @return uint256 totalProposals
+     * @return uint256 totalVoters
+     * @return bytes32 proposalDetails
+     * @return uint256 proposalChoicesCount
+     * @return bool isActive
+     */
+    function getBallotDetails(uint256 _ballotId) external view returns(
+        uint256 totalSupplyAtCheckpoint,
+        uint256 checkpointId,
+        uint256 startTime,
+        uint256 commitDuration,
+        uint256 revealDuration,
+        uint256 totalProposals,
+        uint256 totalVoters,
+        bytes32[] memory proposalDetails,
+        uint256[] memory proposalChoicesCount,
+        bool isActive
+    ) {
+        Ballot memory ballot = ballots[_ballotId];
+        proposalDetails = new bytes32[](ballot.totalProposals);
+        proposalChoicesCount = new uint256[](ballot.totalProposals);
+        for (uint256 i = 0; i < ballot.totalProposals; i++) { 
+            bytes32 _details = ballot.proposals[i].details;
+            proposalDetails[i] = _details;
+            uint256 _noOfChoices = ballot.proposals[i].noOfChoices; // if noOfChoices == 0 then it means the type of ballot is NAY/YAY
+            proposalChoicesCount[i] = 
+        }
+        return (
+            securityToken.totalSupplyAt(ballot.checkpointId),
+            ballot.checkpointId,
+            ballot.startTime,
+            ballot.commitDuration,
+            ballot.revealDuration,
+            ballot.totalProposals,
+            ballot.totalVoters,
+            proposalDetails,
+            proposalChoicesCount,
+            ballot.isActive
+        );
+    }
 
     /**
      * Use to check whether the voter is allowed to vote or not
@@ -661,12 +747,12 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         require(_commitDuration > 0 && _revealDuration > 0, "Invalid duration");
     }
 
-    function _isEmptyTitle(bytes32 _title) internal pure {
-        require(_title != bytes32(0), "Empty title");
+    function _isEmptyTitle(string memory _title) internal pure {
+        require(keccak256(abi.encodePacked(_title)) != keccak256(abi.encodePacked("")), "Empty title");
     }
 
-    function _isValidLength(uint256 _length1, uint256 _length2, uint256 _length3) internal pure {
-        require(_length1 == _length2 && _length3 == _length1, "Invalid length");
+    function _isValidLength(uint256 _length1, uint256 _length2) internal pure {
+        require(_length1 == _length2, "Invalid length");
     }
 
     function _checkIndexOutOfBound(uint256 _ballotId) internal view {

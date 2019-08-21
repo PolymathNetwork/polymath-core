@@ -703,14 +703,12 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         uint256[] memory proposalChoicesCount,
         bool isActive
     ) {
-        Ballot memory ballot = ballots[_ballotId];
+        Ballot storage ballot = ballots[_ballotId];
         proposalDetails = new bytes32[](ballot.totalProposals);
         proposalChoicesCount = new uint256[](ballot.totalProposals);
         for (uint256 i = 0; i < ballot.totalProposals; i++) { 
-            bytes32 _details = ballot.proposals[i].details;
-            proposalDetails[i] = _details;
-            uint256 _noOfChoices = ballot.proposals[i].noOfChoices; // if noOfChoices == 0 then it means the type of ballot is NAY/YAY
-            proposalChoicesCount[i] = 
+            proposalDetails[i] = ballot.proposals[i].details;
+            proposalChoicesCount[i] = ballot.proposals[i].noOfChoices; // if noOfChoices == 0 then it means the type of ballot is NAY/YAY
         }
         return (
             securityToken.totalSupplyAt(ballot.checkpointId),

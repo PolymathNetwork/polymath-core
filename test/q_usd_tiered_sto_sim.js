@@ -284,10 +284,10 @@ contract("USDTieredSTO Sim", async (accounts) => {
 
             _startTime.push(new BN(currentTime).add(new BN(duration.days(2))));
             _endTime.push(new BN(_startTime[stoId]).add(new BN(currentTime).add(new BN(duration.days(100)))));
-            _ratePerTier.push([new BN(50).mul(e16), new BN(130).mul(e16), new BN(170).mul(e16)]); // [ 0.05 USD/Token, 0.10 USD/Token, 0.15 USD/Token ]
-            _ratePerTierDiscountPoly.push([new BN(50).mul(e16), new BN(80).mul(e16), new BN(130).mul(e16)]); // [ 0.05 USD/Token, 0.08 USD/Token, 0.13 USD/Token ]
-            _tokensPerTierTotal.push([new BN(200).mul(e18), new BN(500).mul(e18), new BN(300).mul(e18)]); // [ 1000 Token, 2000 Token, 1500 Token ]
-            _tokensPerTierDiscountPoly.push([new BN(0), new BN(50).mul(e18), new BN(300).mul(e18)]); // [ 0 Token, 1000 Token, 1500 Token ]
+            _ratePerTier.push([new BN(50).mul(e16).toString(), new BN(130).mul(e16).toString(), new BN(170).mul(e16).toString()]); // [ 0.05 USD/Token, 0.10 USD/Token, 0.15 USD/Token ]
+            _ratePerTierDiscountPoly.push([new BN(50).mul(e16).toString(), new BN(80).mul(e16).toString(), new BN(130).mul(e16).toString()]); // [ 0.05 USD/Token, 0.08 USD/Token, 0.13 USD/Token ]
+            _tokensPerTierTotal.push([new BN(200).mul(e18).toString(), new BN(500).mul(e18).toString(), new BN(300).mul(e18).toString()]); // [ 1000 Token, 2000 Token, 1500 Token ]
+            _tokensPerTierDiscountPoly.push([new BN(0).toString(), new BN(50).mul(e18).toString(), new BN(300).mul(e18).toString()]); // [ 0 Token, 1000 Token, 1500 Token ]
             _nonAccreditedLimitUSD.push(new BN(10).mul(e18)); // 20 USD
             _minimumInvestmentUSD.push(new BN(0)); // 1 wei USD
             _fundRaiseTypes.push([0, 1, 2]);
@@ -296,19 +296,29 @@ contract("USDTieredSTO Sim", async (accounts) => {
             _usdToken.push(I_DaiToken.address);
 
             let config = [
-                _startTime[stoId],
-                _endTime[stoId],
+                _startTime[stoId].toString(),
+                _endTime[stoId].toString(),
                 _ratePerTier[stoId],
                 _ratePerTierDiscountPoly[stoId],
                 _tokensPerTierTotal[stoId],
                 _tokensPerTierDiscountPoly[stoId],
-                _nonAccreditedLimitUSD[stoId],
-                _minimumInvestmentUSD[stoId],
+                _nonAccreditedLimitUSD[stoId].toString(),
+                _minimumInvestmentUSD[stoId].toString(),
                 _fundRaiseTypes[stoId],
                 _wallet[stoId],
                 _treasuryWallet[stoId],
                 [_usdToken[stoId]]
             ];
+
+            _ratePerTier = [];
+            _ratePerTierDiscountPoly = [];
+            _tokensPerTierTotal = [];
+            _tokensPerTierDiscountPoly = [];
+            _ratePerTier.push([new BN(50).mul(e16), new BN(130).mul(e16), new BN(170).mul(e16)]); // [ 0.05 USD/Token, 0.10 USD/Token, 0.15 USD/Token ]
+            _ratePerTierDiscountPoly.push([new BN(50).mul(e16), new BN(80).mul(e16), new BN(130).mul(e16)]); // [ 0.05 USD/Token, 0.08 USD/Token, 0.13 USD/Token ]
+            _tokensPerTierTotal.push([new BN(200).mul(e18), new BN(500).mul(e18), new BN(300).mul(e18)]); // [ 1000 Token, 2000 Token, 1500 Token ]
+            _tokensPerTierDiscountPoly.push([new BN(0), new BN(50).mul(e18), new BN(300).mul(e18)]); // [ 0 Token, 1000 Token, 1500 Token ]
+
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
             let tx = await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), false, { from: ISSUER, gasPrice: GAS_PRICE });
@@ -353,7 +363,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
             );
             assert.equal(await I_USDTieredSTO_Array[stoId].wallet.call(), _wallet[stoId], "Incorrect _wallet in config");
             assert.equal(
-                await I_USDTieredSTO_Array[stoId].treasuryWallet.call(),
+                await I_USDTieredSTO_Array[stoId].getTreasuryWallet.call(),
                 _treasuryWallet[stoId],
                 "Incorrect _reserveWallet in config"
             );
@@ -411,7 +421,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
 
             let totalTokens = new BN(0);
             for (var i = 0; i < _tokensPerTierTotal[stoId].length; i++) {
-                totalTokens = totalTokens.add(_tokensPerTierTotal[stoId][i]);
+                totalTokens = totalTokens.add(new BN(_tokensPerTierTotal[stoId][i]));
             }
             let tokensSold = new BN(0);
             while (true) {
@@ -430,7 +440,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
                             // under non-accredited cap
                             await invest(NONACCREDITED1, false);
                         // over non-accredited cap
-                        else await investFAIL(NONACCREDITED1);
+                        else await investFAIL(NONACCREDITED1, "Over Non-accredited investor limit");
                         break;
                     case 3: // NONACCREDITED2
                         let usd_NONACCREDITED2 = await I_USDTieredSTO_Array[stoId].investorInvestedUSD.call(NONACCREDITED2);
@@ -438,13 +448,13 @@ contract("USDTieredSTO Sim", async (accounts) => {
                             // under non-accredited cap
                             await invest(NONACCREDITED2, false);
                         // over non-accredited cap
-                        else await investFAIL(NONACCREDITED2);
+                        else await investFAIL(NONACCREDITED2, "Over Non-accredited investor limit");
                         break;
                     case 4: // NOTWHITELISTED
-                        await investFAIL(NOTWHITELISTED);
+                        await investFAIL(NOTWHITELISTED, "Transfer Invalid");
                         break;
                     case 5: // NOTAPPROVED
-                        await investFAIL(NOTAPPROVED);
+                        await investFAIL(NOTAPPROVED, "Unauthorized");
                         break;
                 }
                 console.log("Next round");
@@ -599,7 +609,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
                 );
             }
 
-            async function investFAIL(_investor) {
+            async function investFAIL(_investor, failureReason = "revert") {
                 let isPoly = Math.random() >= 0.3;
                 let isDAI = Math.random() >= 0.3;
                 let investment_POLY = new BN(40).mul(e18); // 10 USD = 40 POLY
@@ -610,17 +620,20 @@ contract("USDTieredSTO Sim", async (accounts) => {
                     await I_PolyToken.getTokens(investment_POLY, _investor);
                     await I_PolyToken.approve(I_USDTieredSTO_Array[stoId].address, investment_POLY, { from: _investor });
                     await catchRevert(
-                        I_USDTieredSTO_Array[stoId].buyWithPOLY(_investor, investment_POLY, { from: _investor, gasPrice: GAS_PRICE })
+                        I_USDTieredSTO_Array[stoId].buyWithPOLY(_investor, investment_POLY, { from: _investor, gasPrice: GAS_PRICE }),
+                        failureReason
                     );
                 } else if (isDAI) {
                     await I_DaiToken.getTokens(investment_DAI, _investor);
                     await I_DaiToken.approve(I_USDTieredSTO_Array[stoId].address, investment_DAI, { from: _investor });
                     await catchRevert(
-                        I_USDTieredSTO_Array[stoId].buyWithUSD(_investor, investment_DAI, I_DaiToken.address, { from: _investor, gasPrice: GAS_PRICE })
+                        I_USDTieredSTO_Array[stoId].buyWithUSD(_investor, investment_DAI, I_DaiToken.address, { from: _investor, gasPrice: GAS_PRICE }),
+                        failureReason
                     );
                 } else
                     await catchRevert(
-                        I_USDTieredSTO_Array[stoId].buyWithETH(_investor, { from: _investor, value: investment_ETH, gasPrice: GAS_PRICE })
+                        I_USDTieredSTO_Array[stoId].buyWithETH(_investor, { from: _investor, value: investment_ETH, gasPrice: GAS_PRICE }),
+                        failureReason
                     );
             }
 

@@ -216,7 +216,8 @@ contract('GeneralPermissionManager', accounts => {
             let errorThrown = false;
             await I_PolyToken.getTokens(web3.utils.toWei("2000", "ether"), token_owner);
             await catchRevert(
-                I_SecurityToken.addModule(P_GeneralPermissionManagerFactory.address, "0x0", web3.utils.toWei("2000", "ether"), 0, false, { from: token_owner })
+                I_SecurityToken.addModule(P_GeneralPermissionManagerFactory.address, "0x0", web3.utils.toWei("2000", "ether"), 0, false, { from: token_owner }),
+                "Insufficient tokens transferable"
             );
         });
 
@@ -278,7 +279,7 @@ contract('GeneralPermissionManager', accounts => {
                     bytesSTO = encodeModuleCall(["uint256"], [holderCount]);
                 } else if (random.module == 'PercentageTransferManager'){
                     console.log("PTM 01");
-                    const holderPercentage = 70 * 10**16;
+                    const holderPercentage = new BN(web3.utils.toWei("0.7"));
                     bytesSTO = web3.eth.abi.encodeFunctionCall({
                         name: 'configure',
                         type: 'function',
@@ -290,7 +291,7 @@ contract('GeneralPermissionManager', accounts => {
                             name: '_allowPrimaryIssuance'
                         }
                         ]
-                    }, [holderPercentage, false]);
+                    }, [holderPercentage.toString(), false]);
                     console.log("encoded.");
                 } else {
                     console.log("no data defined for choosen module "+random.module);

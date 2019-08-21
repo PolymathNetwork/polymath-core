@@ -164,7 +164,8 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
 
             it("\t\t Should fail to attach the voting module because allowance is unsufficent \n", async() => {
                 await catchRevert(
-                    I_SecurityToken.addModule(P_WeightedVoteCheckpointFactory.address, "0x0", new BN(web3.utils.toWei("500")), 0, false, {from: token_owner})
+                    I_SecurityToken.addModule(P_WeightedVoteCheckpointFactory.address, "0x0", new BN(web3.utils.toWei("500")), 0, false, {from: token_owner}),
+                    "Invalid cost"
                 );
             });
 
@@ -182,31 +183,36 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
 
             it("\t\t Should fail to create ballot -- bad owner \n", async() => {
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.createBallot(new BN(duration.days(5)), new BN(5), new BN(51).mul(new BN(10).pow(new BN(16))), {from: account_polymath})
+                    I_WeightedVoteCheckpoint.createBallot(new BN(duration.days(5)), new BN(5), new BN(51).mul(new BN(10).pow(new BN(16))), {from: account_polymath}),
+                    "Invalid permission"
                 );
             });
 
             it("\t\t Should fail to create ballot -- bad duration \n", async() => {
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.createBallot(new BN(0), new BN(5), new BN(51).mul(new BN(10).pow(new BN(16))), {from: token_owner})
+                    I_WeightedVoteCheckpoint.createBallot(new BN(0), new BN(5), new BN(51).mul(new BN(10).pow(new BN(16))), {from: token_owner}),
+                    "ballot duration"
                 );
             });
 
             it("\t\t Should fail to create ballot -- bad no of proposals \n", async() => {
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.createBallot(new BN(duration.days(5)), new BN(1), new BN(51).mul(new BN(10).pow(new BN(16))), {from: token_owner})
+                    I_WeightedVoteCheckpoint.createBallot(new BN(duration.days(5)), new BN(1), new BN(51).mul(new BN(10).pow(new BN(16))), {from: token_owner}),
+                    "Incorrect proposals no"
                 );
             });
 
             it("\t\t Should fail to create ballot -- zero value of quorum \n", async() => {
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.createBallot(new BN(duration.days(5)), new BN(1), new BN(0), {from: token_owner})
+                    I_WeightedVoteCheckpoint.createBallot(new BN(duration.days(5)), new BN(1), new BN(0), {from: token_owner}),
+                    "Incorrect proposals no"
                 );
             });
 
             it("\t\t Should fail to create ballot -- value of quorum is more than the limit\n", async() => {
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.createBallot(new BN(duration.days(5)), new BN(1), new BN(51).mul(new BN(10).pow(new BN(17))), {from: token_owner})
+                    I_WeightedVoteCheckpoint.createBallot(new BN(duration.days(5)), new BN(1), new BN(51).mul(new BN(10).pow(new BN(17))), {from: token_owner}),
+                    "Incorrect proposals no"
                 );
             });
 
@@ -242,7 +248,8 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
                 let startTime = new BN(await latestTime());
                 let endTime = new BN(await latestTime() + duration.days(4));
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.createCustomBallot(new BN(5), new BN(51).mul(new BN(10).pow(new BN(17))), startTime, endTime, new BN(100), {from: token_owner})
+                    I_WeightedVoteCheckpoint.createCustomBallot(new BN(5), new BN(51).mul(new BN(10).pow(new BN(17))), startTime, endTime, new BN(100), {from: token_owner}),
+                    "Invalid checkpoint Id"
                 );
             });
 
@@ -252,7 +259,8 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
                 await I_SecurityToken.createCheckpoint({from: token_owner});
                 let checkpointId = await I_SecurityToken.currentCheckpointId.call();
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.createCustomBallot(checkpointId, new BN(51).mul(new BN(10).pow(new BN(16))), 0, endTime, new BN(3), {from: token_owner})
+                    I_WeightedVoteCheckpoint.createCustomBallot(checkpointId, new BN(51).mul(new BN(10).pow(new BN(16))), 0, endTime, new BN(3), {from: token_owner}),
+                    "Invalid startTime"
                 );
             });
 
@@ -260,7 +268,8 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
                 let startTime = new BN(await latestTime() + duration.days(10));
                 let endTime = new BN(await latestTime() + duration.days(4));
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.createCustomBallot(new BN(1), new BN(51).mul(new BN(10).pow(new BN(16))), startTime, endTime, new BN(3), {from: token_owner})
+                    I_WeightedVoteCheckpoint.createCustomBallot(new BN(1), new BN(51).mul(new BN(10).pow(new BN(16))), startTime, endTime, new BN(3), {from: token_owner}),
+                    "Times are not valid"
                 );
             });
 
@@ -276,31 +285,36 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
 
             it("\t\t Should fail to caste vote -- bad ballot id \n", async() => {
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.castVote(new BN(2), new BN(1), {from: account_investor1})
+                    I_WeightedVoteCheckpoint.castVote(new BN(2), new BN(1), {from: account_investor1}),
+                    "Index out of bound"
                 );
             });
 
             it("\t\t Should fail to caste vote -- bad proposal id \n", async() => {
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.castVote(new BN(0), new BN(4), {from: account_investor1})
+                    I_WeightedVoteCheckpoint.castVote(new BN(0), new BN(4), {from: account_investor1}),
+                    "Incorrect proposals Id"
                 );
             });
 
             it("\t\t Should fail to caste vote -- weight is 0 \n", async() => {
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.castVote(new BN(0), new BN(1), {from: account_investor4})
+                    I_WeightedVoteCheckpoint.castVote(new BN(0), new BN(1), {from: account_investor4}),
+                    "weight should be > 0"
                 );
             });
 
             it("\t\t Should fail to add voter in ballot exemption list -- address is zero", async() => {
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.changeBallotExemptedVotersList(new BN(0), "0x0000000000000000000000000000000000000000", true, {from: token_owner})
+                    I_WeightedVoteCheckpoint.changeBallotExemptedVotersList(new BN(0), "0x0000000000000000000000000000000000000000", true, {from: token_owner}),
+                    "Invalid address"
                 );
             });
 
             it("\t\t Should fail to add voter in ballot exemption list -- invalid ballot id", async() => {
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.changeBallotExemptedVotersList(new BN(5), account_investor2, true, {from: token_owner})
+                    I_WeightedVoteCheckpoint.changeBallotExemptedVotersList(new BN(5), account_investor2, true, {from: token_owner}),
+                    "Index out of bound"
                 );
             });
 
@@ -313,19 +327,22 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
 
             it("\t\t Should fail to add voter in ballot exemption list -- doing the same change again", async() => {
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.changeBallotExemptedVotersList(new BN(0), account_investor2, true, {from: token_owner})
+                    I_WeightedVoteCheckpoint.changeBallotExemptedVotersList(new BN(0), account_investor2, true, {from: token_owner}),
+                    "No change"
                 );
             });
 
             it("\t\t Should fail to vote -- voter is present in the exemption list", async() => {
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.castVote(new BN(0), new BN(2), {from: account_investor2})
+                    I_WeightedVoteCheckpoint.castVote(new BN(0), new BN(2), {from: account_investor2}),
+                    "Invalid voter"
                 );
             });
 
-            it("\t\t Should add the multiple voter in to the ballot exemption list -- failed ", async() => {
+            it("\t\t Should add the multiple voter in to the ballot exemption list -- failed due to array length mismatch", async() => {
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.changeBallotExemptedVotersListMulti(new BN(0), [account_investor2, account_investor1], [false], {from: token_owner})
+                    I_WeightedVoteCheckpoint.changeBallotExemptedVotersListMulti(new BN(0), [account_investor2, account_investor1], [false], {from: token_owner}),
+                    "Array length mismatch"
                 );
             });
 
@@ -348,7 +365,8 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
 
             it("\t\t Should fail to add voter in default exemption list -- address is zero", async() => {
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.changeDefaultExemptedVotersList("0x0000000000000000000000000000000000000000", true, {from: token_owner})
+                    I_WeightedVoteCheckpoint.changeDefaultExemptedVotersList("0x0000000000000000000000000000000000000000", true, {from: token_owner}),
+                    "Invalid address"
                 );
             });
 
@@ -360,13 +378,15 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
 
             it("\t\t Should fail to add voter in default exemption list -- doing the same change again", async() => {
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.changeDefaultExemptedVotersList(account_investor1, true, {from: token_owner})
+                    I_WeightedVoteCheckpoint.changeDefaultExemptedVotersList(account_investor1, true, {from: token_owner}),
+                    "revert"
                 );
             });
 
             it("\t\t Should fail to vote -- voter is present in the exemption list", async() => {
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.castVote(new BN(0), new BN(1), {from: account_investor1})
+                    I_WeightedVoteCheckpoint.castVote(new BN(0), new BN(1), {from: account_investor1}),
+                    "Invalid voter"
                 );
             });
 
@@ -389,19 +409,22 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
 
             it("\t\t Should fail to vote again \n", async() => {
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.castVote(new BN(0), new BN(2), {from: account_investor2})
+                    I_WeightedVoteCheckpoint.castVote(new BN(0), new BN(2), {from: account_investor2}),
+                    "Token holder has already voted"
                 );
             });
 
             it("\t\t Should fail to change the ballot status-- bad owner \n", async() => {
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.changeBallotStatus(new BN(0), false, {from: account_polymath})
+                    I_WeightedVoteCheckpoint.changeBallotStatus(new BN(0), false, {from: account_polymath}),
+                    "Invalid permission"
                 );
             });
 
             it("\t\t Should fail to change the ballot status-- no change in the state \n", async() => {
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.changeBallotStatus(new BN(0), true, {from: account_polymath})
+                    I_WeightedVoteCheckpoint.changeBallotStatus(new BN(0), true, {from: account_polymath}),
+                    "Invalid permission"
                 );
             });
 
@@ -413,7 +436,8 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
 
             it("\t\t Should fail to vote because ballot is disabled \n", async() => {
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.castVote(new BN(0), new BN(2), {from: account_investor3})
+                    I_WeightedVoteCheckpoint.castVote(new BN(0), new BN(2), {from: account_investor3}),
+                    "Ballot is not active"
                 );
             });
 
@@ -449,13 +473,15 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
                     }
                 );
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.castVote(new BN(0), new BN(2), {from: account_investor4})
+                    I_WeightedVoteCheckpoint.castVote(new BN(0), new BN(2), {from: account_investor4}),
+                    "weight should be > 0"
                 );
             });
 
             it("\t\t Should fail to change the status of the ballot -- already ended \n", async() => {
                 await catchRevert(
-                    I_WeightedVoteCheckpoint.changeBallotStatus(new BN(0), false, {from: token_owner})
+                    I_WeightedVoteCheckpoint.changeBallotStatus(new BN(0), false, {from: token_owner}),
+                    "Already ended"
                 );
             });
 

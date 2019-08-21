@@ -37,6 +37,8 @@ const DataStoreFactory = artifacts.require('./DataStoreFactory.sol');
 const VolumeRestrictionTMFactory = artifacts.require('./VolumeRestrictionTMFactory.sol')
 const VolumeRestrictionTMLogic = artifacts.require('./VolumeRestrictionTM.sol');
 const VolumeRestrictionLib = artifacts.require('./VolumeRestrictionLib.sol');
+const RestrictedPartialSaleTMFactory = artifacts.require('./RestrictedPartialSaleTMFactory.sol')
+const RestrictedPartialSaleTMLogic = artifacts.require('./RestrictedPartialSaleTM.sol');
 const VestingEscrowWalletFactory = artifacts.require('./VestingEscrowWalletFactory.sol')
 const VestingEscrowWalletLogic = artifacts.require('./VestingEscrowWallet.sol');
 
@@ -297,6 +299,11 @@ module.exports = function(deployer, network, accounts) {
             return deployer.deploy(VolumeRestrictionTMLogic, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: PolymathAccount });
         })
         .then(() => {
+            // B) Deploy the RestrictedPartialSaleTMLogic Contract (Factory used to generate the RestrictedPartialSaleTM contract and this
+            // manager attach with the securityToken contract at the time of deployment)
+            return deployer.deploy(RestrictedPartialSaleTMLogic, nullAddress, nullAddress, { from: PolymathAccount });
+        })
+        .then(() => {
             // B) Deploy the CappedSTOLogic Contract (Factory used to generate the CappedSTO contract and this
             // manager attach with the securityToken contract at the time of deployment)
             return deployer.deploy(CappedSTOLogic, nullAddress, nullAddress, { from: PolymathAccount });
@@ -366,6 +373,11 @@ module.exports = function(deployer, network, accounts) {
             return deployer.deploy(VolumeRestrictionTMFactory, new BN(0), VolumeRestrictionTMLogic.address, polymathRegistry.address, { from: PolymathAccount });
         })
         .then(() => {
+            // D) Deploy the RestrictedPartialSaleTMFactory Contract (Factory used to generate the RestrictedPartialSaleTM contract use
+            // to provide the functionality of restricting the token sales)
+            return deployer.deploy(RestrictedPartialSaleTMFactory, new BN(0), RestrictedPartialSaleTMLogic.address, polymathRegistry.address, { from: PolymathAccount });
+        })
+        .then(() => {
             // D) Deploy the ManualApprovalTransferManagerFactory Contract (Factory used to generate the ManualApprovalTransferManager contract use
             // to manual approve the transfer that will overcome the other transfer restrictions)
             return deployer.deploy(ManualApprovalTransferManagerFactory, new BN(0), ManualApprovalTransferManagerLogic.address, polymathRegistry.address, {
@@ -412,8 +424,8 @@ module.exports = function(deployer, network, accounts) {
         .then((securityTokenRegistryProxy) => {
             let bytesProxy = web3.eth.abi.encodeFunctionCall(functionSignatureProxy, [
                 PolymathRegistry.address,
-                initRegFee,
-                initRegFee,
+                initRegFee.toString(),
+                initRegFee.toString(),
                 PolymathAccount,
                 STRGetter.address
             ]);
@@ -472,6 +484,11 @@ module.exports = function(deployer, network, accounts) {
             return moduleRegistry.registerModule(VolumeRestrictionTMFactory.address, { from: PolymathAccount });
         })
         .then(() => {
+            // D) Register the RestrictedPartialSaleTMFactory in the ModuleRegistry to make the factory available at the protocol level.
+            // So any securityToken can use that factory to generate the RestrictedPartialSaleTM contract.
+            return moduleRegistry.registerModule(RestrictedPartialSaleTMFactory.address, { from: PolymathAccount });
+        })
+        .then(() => {
             // D) Register the ManualApprovalTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
             // So any securityToken can use that factory to generate the ManualApprovalTransferManager contract.
             return moduleRegistry.registerModule(ManualApprovalTransferManagerFactory.address, { from: PolymathAccount });
@@ -527,6 +544,12 @@ module.exports = function(deployer, network, accounts) {
             // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
             // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
             return moduleRegistry.verifyModule(VolumeRestrictionTMFactory.address, { from: PolymathAccount });
+        })
+        .then(() => {
+            // G) Once the RestrictedPartialSaleTMFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
+            // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
+            // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
+            return moduleRegistry.verifyModule(RestrictedPartialSaleTMFactory.address, { from: PolymathAccount });
         })
         .then(() => {
             // G) Once the ManualApprovalTransferManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
@@ -618,6 +641,8 @@ module.exports = function(deployer, network, accounts) {
     ERC20DividendCheckpointFactory:       ${ERC20DividendCheckpointFactory.address}
     VolumeRestrictionTMFactory:           ${VolumeRestrictionTMFactory.address}
     VolumeRestrictionTMLogic:             ${VolumeRestrictionTMLogic.address}
+    RestrictedPartialSaleTMFactory:       ${RestrictedPartialSaleTMFactory.address}
+    RestrictedPartialSaleTMLogic:         ${RestrictedPartialSaleTMLogic.address}
     VestingEscrowWalletFactory:           ${VestingEscrowWalletFactory.address}
     VestingEscrowWalletLogic:             ${VestingEscrowWalletLogic.address}
     ---------------------------------------------------------------------------------

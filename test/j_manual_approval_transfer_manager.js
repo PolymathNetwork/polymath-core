@@ -1,7 +1,6 @@
 import latestTime from "./helpers/latestTime";
-import { duration, ensureException, promisifyLogWatch, latestBlock } from "./helpers/utils";
+import { duration } from "./helpers/utils";
 import { takeSnapshot, increaseTime, revertToSnapshot } from "./helpers/time";
-import { encodeProxyCall } from "./helpers/encodeCall";
 import { catchRevert } from "./helpers/exceptions";
 import { setUpPolymathNetwork, deployManualApprovalTMAndVerifyed, deployGPMAndVerifyed, deployCountTMAndVerifyed } from "./helpers/createInstances";
 
@@ -9,7 +8,6 @@ const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 const ManualApprovalTransferManager = artifacts.require("./ManualApprovalTransferManager");
 const CountTransferManager = artifacts.require("./CountTransferManager");
-const GeneralPermissionManager = artifacts.require("./GeneralPermissionManager");
 const STGetter = artifacts.require("./STGetter.sol");
 
 const Web3 = require("web3");
@@ -233,12 +231,13 @@ contract("ManualApprovalTransferManager", accounts => {
             assert.equal((await I_SecurityToken.balanceOf(account_investor2)).toString(), web3.utils.toWei("10", "ether"));
         });
 
-        it("Should successfully attach the ManualApprovalTransferManager with the security token", async () => {
+        it("Should fail to attach the ManualApprovalTransferManager without sufficient tokens", async () => {
             await I_PolyToken.getTokens(web3.utils.toWei("2000", "ether"), token_owner);
             await catchRevert(
                 I_SecurityToken.addModule(P_ManualApprovalTransferManagerFactory.address, "0x0", web3.utils.toWei("2000", "ether"), 0, false, {
                     from: token_owner
-                })
+                }),
+                "Insufficient tokens transferable"
             );
         });
 
@@ -282,7 +281,8 @@ contract("ManualApprovalTransferManager", accounts => {
                     web3.utils.toWei("2", "ether"),
                     "0x0",
                     { from: token_owner }
-                )
+                ),
+                "Sender is not owner"
             );
         });
 
@@ -341,7 +341,8 @@ contract("ManualApprovalTransferManager", accounts => {
                     99999,
                     web3.utils.fromAscii("DESCRIPTION"),
                     { from: token_owner }
-                )
+                ),
+                "Invalid expiry time"
             );
         });
 
@@ -376,7 +377,7 @@ contract("ManualApprovalTransferManager", accounts => {
             assert.equal(web3.utils.toUtf8(tx[4][0]), "DESCRIPTION");
         })
 
-        it("Should try to add the same manual approval for the same `_from` & `_to` address", async() => {
+        it("Should fail to add the same manual approval for the same `_from` & `_to` address", async() => {
             await catchRevert(
                 I_ManualApprovalTransferManager.addManualApproval(
                     account_investor1,
@@ -387,7 +388,8 @@ contract("ManualApprovalTransferManager", accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "Approval already exists"
             );
         })
 
@@ -418,12 +420,14 @@ contract("ManualApprovalTransferManager", accounts => {
 
         it("Should fail to sell the tokens more than the allowance", async() => {
             await catchRevert(
-                I_SecurityToken.transfer(account_investor4, web3.utils.toWei("4"), {from: account_investor1})
+                I_SecurityToken.transfer(account_investor4, web3.utils.toWei("4"), {from: account_investor1}),
+                "Transfer Invalid"
             );
         })
 
         it("Approval fails with wrong from to address", async () => {
-            await catchRevert(I_SecurityToken.transfer(account_investor5, web3.utils.toWei("1", "ether"), { from: account_investor1 }));
+            await catchRevert(I_SecurityToken.transfer(account_investor5, web3.utils.toWei("1", "ether"), { from: account_investor1 }),
+                "Transfer Invalid");
         });
 
         it("Should sell the tokens to investor 4 (GTM will give INVALID as investor 4 not in the whitelist)", async() => {
@@ -451,7 +455,8 @@ contract("ManualApprovalTransferManager", accounts => {
             await increaseTime(duration.days(1));
             currentTime = new BN(await latestTime());
             await catchRevert(
-                I_SecurityToken.transfer(account_investor4, web3.utils.toWei("1"), {from: account_investor1})
+                I_SecurityToken.transfer(account_investor4, web3.utils.toWei("1"), {from: account_investor1}),
+                "Transfer Invalid"
             );
         });
 
@@ -467,7 +472,8 @@ contract("ManualApprovalTransferManager", accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "Not allowed"
             );
         });
 
@@ -583,7 +589,8 @@ contract("ManualApprovalTransferManager", accounts => {
 
         it("Should fail to transfer the tokens because allowance get changed", async() => {
             await catchRevert(
-                I_SecurityToken.transfer(account_investor4, web3.utils.toWei("2"), {from: account_investor1})
+                I_SecurityToken.transfer(account_investor4, web3.utils.toWei("2"), {from: account_investor1}),
+                "Transfer Invalid"
             );
         });
 
@@ -607,13 +614,15 @@ contract("ManualApprovalTransferManager", accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "Not allowed"
             );
         });
 
         it("Should fail to revoke the manual Approval -- bad owner", async() => {
             await catchRevert(
-                I_ManualApprovalTransferManager.revokeManualApproval(account_investor1, account_investor4, {from: account_investor5})
+                I_ManualApprovalTransferManager.revokeManualApproval(account_investor1, account_investor4, {from: account_investor5}),
+                "Invalid permission"
             );
         })
 
@@ -625,12 +634,13 @@ contract("ManualApprovalTransferManager", accounts => {
 
         it("Should fail to revoke the same manual approval again", async() => {
             await catchRevert(
-                I_ManualApprovalTransferManager.revokeManualApproval(account_investor1, account_investor4, {from: token_owner})
+                I_ManualApprovalTransferManager.revokeManualApproval(account_investor1, account_investor4, {from: token_owner}),
+                "Approval not exist"
             );
         });
 
         it("Should fail to add multiple manual approvals -- failed because of bad owner", async () => {
-            await catchRevert (
+            await catchRevert(
                     I_ManualApprovalTransferManager.addManualApprovalMulti(
                     [account_investor2,account_investor3],
                     [account_investor3,account_investor4],
@@ -640,12 +650,13 @@ contract("ManualApprovalTransferManager", accounts => {
                     {
                         from: account_investor5
                     }
-                )
+                ),
+                "Invalid permission"
             )
         });
 
         it("Should fail to add multiple manual approvals -- failed because of length mismatch", async () => {
-            await catchRevert (
+            await catchRevert(
                     I_ManualApprovalTransferManager.addManualApprovalMulti(
                     [account_investor2],
                     [account_investor3,account_investor4],
@@ -655,12 +666,13 @@ contract("ManualApprovalTransferManager", accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "Input array length mismatch"
             )
         });
 
         it("Should fail to add multiple manual approvals -- failed because of length mismatch", async () => {
-            await catchRevert (
+            await catchRevert(
                     I_ManualApprovalTransferManager.addManualApprovalMulti(
                     [account_investor2,account_investor3],
                     [account_investor3,account_investor4],
@@ -670,7 +682,8 @@ contract("ManualApprovalTransferManager", accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "Input array length mismatch"
             )
         });
 
@@ -685,12 +698,13 @@ contract("ManualApprovalTransferManager", accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "Input array length mismatch"
             )
         });
 
         it("Should fail to add multiple manual approvals -- failed because of length mismatch", async () => {
-            await catchRevert (
+            await catchRevert(
                     I_ManualApprovalTransferManager.addManualApprovalMulti(
                     [account_investor2,account_investor3],
                     [account_investor3,account_investor4],
@@ -700,7 +714,8 @@ contract("ManualApprovalTransferManager", accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "Input array length mismatch"
             )
         });
 
@@ -735,7 +750,8 @@ contract("ManualApprovalTransferManager", accounts => {
                     {
                         from: account_investor5
                     }
-                )
+                ),
+                "Invalid permission"
             );
         })
 
@@ -747,7 +763,8 @@ contract("ManualApprovalTransferManager", accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "array length mismatch"
             );
         })
 

@@ -28,7 +28,7 @@ contract VestingEscrowWalletStorage {
     // Number of tokens that are hold by the `this` contract but are unassigned to any schedule
     uint256 public unassignedTokens;
     // Address of the Treasury wallet. All of the unassigned token will transfer to that address.
-    address public treasuryWallet;
+    address internal treasuryWallet;
     // List of all beneficiaries who have the schedules running/completed/created
     address[] public beneficiaries;
     // Flag whether beneficiary has been already added or not
@@ -47,7 +47,7 @@ contract VestingEscrowWalletStorage {
     // template name => affiliate/employee address => index
     mapping(bytes32 => mapping(address => uint256)) internal templateToUserIndex;
     // Store the template details corresponds to the template name
-    mapping(bytes32 => Template) templates;
+    mapping(bytes32 => Template) public templates;
 
     // List of all template names
     bytes32[] public templateNames;

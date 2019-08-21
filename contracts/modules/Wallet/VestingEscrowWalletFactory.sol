@@ -18,17 +18,18 @@ contract VestingEscrowWalletFactory is UpgradableModuleFactory {
         bool _isCostInPoly
     )
         public
-        UpgradableModuleFactory("3.0.0", _setupCost, _logicContract, _polymathRegistry, _isCostInPoly)
+        UpgradableModuleFactory("3.1.0", _setupCost, _logicContract, _polymathRegistry, _isCostInPoly)
     {
         name = "VestingEscrowWallet";
         title = "Vesting Escrow Wallet";
         description = "Manage vesting schedules to employees / affiliates";
         typesData.push(7);
+        typesData.push(8); // Extra type which will allow module to hold and send securityTokens without being added in KYC data
         tagsData.push("Vesting");
         tagsData.push("Escrow");
         tagsData.push("Transfer Restriction");
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
-        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(3), uint8(1), uint8(0));
     }
 
     /**

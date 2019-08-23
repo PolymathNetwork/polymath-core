@@ -4,8 +4,6 @@ contract AdvancedPLCRVotingCheckpointStorage {
 
     enum Stage { PREP, COMMIT, REVEAL, RESOLVED }
 
-    enum Options {NAY, YAY, ABSTAIN }
-
     struct Ballot {
         uint256 checkpointId; // Checkpoint At which ballot created
         uint64 commitDuration; // no. of seconds the commit stage will live

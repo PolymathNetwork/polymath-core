@@ -11,6 +11,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
     // Declared Events
 
     event StatuaryBallotCreated(
+        uint256 indexed _ballotId,
         uint256 indexed _checkpointId,
         uint256 _startTime,
         uint256 _commitDuration,
@@ -88,7 +89,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
      * @param _proposalTitle Title of proposal
      * @param _details Off-chain details related to the proposal
      * @param _choices Choices of proposals
-     * @param _noOfChoices No. of choices (If it is 0 then it means NAY/YAY ballot type is choosen).
+     * @param _noOfChoices No. of choices (If it is 0 then it means NAY/YAY/ABSTAIN ballot type is choosen).
      * @param _checkpointId Valid checkpoint Id
      */
     function createCustomStatutoryBallot(
@@ -124,8 +125,6 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         uint256 startTime = _getStartTime(_startTime);
         _isEmptyTitle(_proposalTitle);
         _isGreaterThanZero(_commitDuration, _revealDuration);
-        if (keccak256(abi.encodePacked(_choices)) != keccak256(abi.encodePacked('')))
-            require(_noOfChoices == uint256(0), "Invalid choices count");
         uint256 ballotId = ballots.length;
         ballots.push(Ballot(
             _checkpointId, uint64(_commitDuration), uint64(_revealDuration), uint64(startTime), uint24(1), uint32(0), true
@@ -133,7 +132,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         Ballot storage currentBallot = ballots[ballotId];
         _addProposal(_details, _noOfChoices, currentBallot, 0);
         emit StatuaryBallotCreated(
-            _checkpointId, startTime, _commitDuration, _revealDuration, _details, _noOfChoices, _proposalTitle, _choices
+            ballotId, _checkpointId, startTime, _commitDuration, _revealDuration, _details, _noOfChoices, _proposalTitle, _choices
         );
     }
 
@@ -733,6 +732,22 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
     function isVoterAllowed(uint256 _ballotId, address _voter) public view returns(bool) {
         bool allowed = (ballots[_ballotId].exemptedVoters[_voter] || (defaultExemptIndex[_voter] != 0));
         return !allowed;
+    }
+
+    /**
+     * @notice This function returns the signature of configure function
+     */
+    function getInitFunction() external pure returns(bytes4 initFunction) {
+        return bytes4(0);
+    }
+
+    /**
+     * @notice Return the permission flags that are associated with a module
+     */
+    function getPermissions() external view returns(bytes32[] memory permissions) {
+        permissions = new bytes32[](1);
+        permissions[0] = ADMIN;
+        return permissions;
     }
 
     ////// Internal functions //////

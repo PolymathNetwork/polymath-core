@@ -405,6 +405,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
 
     /**
      * @notice Checks whether an address is excluded from claiming a dividend
+     * @param _investor Investor address being checked
      * @param _dividendIndex Dividend to withdraw from
      * @return bool whether the address is excluded
      */
@@ -415,6 +416,7 @@ contract DividendCheckpoint is DividendCheckpointStorage, ICheckpoint, Module {
 
     /**
      * @notice Checks whether an address has claimed a dividend
+     * @param _investor Investor address being checked
      * @param _dividendIndex Dividend to withdraw from
      * @return bool whether the address has claimed
      */

@@ -56,7 +56,6 @@ All notable changes to this project will be documented in this file.
 * Removed `_polyToken` parameter from `initialize` function in `SecurityTokenRegistry`.
 * Allows an explicit token factory version to be used during creation of securityToken.
 * Rename the `getProtocolVersion()` to `getLatestProtocolVersion()`.
-* Return SecurityToken version in the `getSecurityTokenData()` function.
 * Add `generateNewSecurityToken()` function to generate the 3.0 tokens.    
 * Add `refreshSecurityToken()` function to update the 2.x tokens to 3.0 tokens.   
 * Add `changeFeesAmountAndCurrency()` function to sets the ticker registration and ST launch fee amount and currency.     
@@ -91,10 +90,6 @@ All notable changes to this project will be documented in this file.
 * Removed `changeAccredited()` function.    
 * `buyWithETH()`, `buyWithPOLY()`, `buyWithUSD()`, `buyWithETHRateLimited()`, `buyWithPOLYRateLimited()` & `buyWithUSDRateLimited()` will return spentUSD, spentValue & amount of mint tokens.   
 * Remove `buyTokensView()` function.  
-
-## Modules   
-* Introduced BTM, LTM and VEW modules.   
-=======
 * Add `modifyOracle()` function allow issuer to add their personalize oracles.   
 
 ## Modules   

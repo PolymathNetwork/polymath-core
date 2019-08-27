@@ -418,7 +418,7 @@ contract BlacklistTransferManager is BlacklistTransferManagerStorage, TransferMa
     }
 
     /**
-    * @notice get the list of the investors of a blacklist type
+    * @notice get the list of blacklists associated with a particular investor
     * @param _user Address of the user
     * @return bytes32 List of blacklist names associated with the given address
     */

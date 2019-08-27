@@ -337,8 +337,8 @@ async function manageExistingDividend(dividendIndex) {
 }
 
 async function taxWithholding() {
-  let addresses = input.readMultipleAddresses(`Enter addresses to set tax withholding to(ex - add1, add2, add3, ...) or leave empty to read from 'tax_withholding_data.csv': `).split(',');
-  if (addresses[0] !== '') {
+  let addresses = input.readMultipleAddresses(`Enter addresses to set tax withholding to(ex - add1, add2, add3, ...) or leave empty to read from 'tax_withholding_data.csv': `);
+  if (addresses.length > 0) {
     let percentage = input.readPercentage('Enter the percentage of dividends to withhold');
     let percentageWei = web3.utils.toWei((percentage / 100).toString());
     let setWithHoldingFixedAction = currentDividendsModule.methods.setWithholdingFixed(addresses, percentageWei);
@@ -528,8 +528,8 @@ function showReport(_name, _tokenSymbol, _tokenDecimals, _amount, _witthheld, _c
 }
 
 async function pushDividends(dividendIndex, checkpointId) {
-  let accounts = input.readMultipleAddresses('Enter addresses to push dividends to (ex- add1,add2,add3,...) or leave empty to push to all addresses: ').split(',');
-  if (accounts[0] !== '') {
+  let accounts = input.readMultipleAddresses('Enter addresses to push dividends to (ex- add1,add2,add3,...) or leave empty to push to all addresses: ');
+  if (accounts.length > 0) {
     let action = currentDividendsModule.methods.pushDividendPaymentToAddresses(dividendIndex, accounts);
     let receipt = await common.sendTransaction(action);
     logPushResults(receipt);

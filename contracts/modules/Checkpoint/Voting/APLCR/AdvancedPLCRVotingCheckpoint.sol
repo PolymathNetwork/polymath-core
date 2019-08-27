@@ -33,7 +33,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         string _choices
     );
 
-    event VotersExempted(uint256 indexed ballotId, address[] _exemptedAddresses);
+    event VotersExempted(uint256 indexed _ballotId, address[] _exemptedAddresses);
 
     event VoteCommit(address indexed _voter, uint256 _weight, uint256 _ballotId, bytes32 _secretHash);
 
@@ -54,6 +54,35 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
     {
 
     }
+
+    // 4 way to create the statutory ballot - 
+    // 1- createStatutoryBallot (Dynamic creation of checkpoint)
+    // 2- createCustomStatutoryBallot (Pass the checkpoint)
+    // 3- createStatutoryBallotWithExemption (Pass the exemption)
+    // 4- createCustomStatutoryBallotWithExemption (Pass the exemption list + pass the checkpoint)
+
+
+    // 4 way to create the Cumulative ballot - 
+    // 1- createCumulativeBallot (Dynamic creation of checkpoint)
+    // 2- createCustomCumulativeBallot (Pass the checkpoint)
+    // 3- createCumulativeBallotWithExemption (Pass the exemption)
+    // 4- createCustomCumulativeBallotWithExemption (Pass the exemption list + pass the checkpoint)
+
+    // passing the choices in comma seperated value
+    // A,B,C,D -- noOfChoices = 4
+    // if noOfChoices == 0 then it means ballot is NAY/YAY type
+
+    // Smart contract is not storing the choices because choices are string & expected length is more than 32 bytes so
+    // we are just emmiting the choices list to help dApp developers to know about the choices
+
+    // If one proposal with choices A,B,C,D & investor balance is 100 then it means voting token count = 100
+    // secretVote = hash([20, 50, 30, 0], salt), where salt is the unique for every investor
+
+    // revaling process will be something like below for above use case
+    // pass choices [20,50,30,0] & unique salt
+
+    // if 3 proposal with choices [a,b,c],[d,e,f,g],[h,i,j,k,l] & investor balance is 100 then voting token count = 3 * 100
+    // secretVote = hash([10, 30,0,50,10,100,0,20,0,0,0,80], salt)
 
     /**
      * @notice Use to create the ballot
@@ -409,7 +438,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         // Get the balance of the voter (i.e `msg.sender`) at the checkpoint on which ballot was created.
         uint256 weight = securityToken.balanceOfAt(msg.sender, ballot.checkpointId);
         require(weight > 0, "Zero weight is not allowed");
-        // Update the storage value. Assigned `0` as vote option it will be updated when voter reveals its vote.
+        // Update the storage value.
         ballot.voteDetails[msg.sender] = Vote(_secretVote);
         emit VoteCommit(msg.sender, weight, _ballotId, _secretVote);
     }
@@ -624,7 +653,11 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         uint256 remainingTime
     )
     {
-        if (_ballotId >= ballots.length)
+        if (_ballotId >= ballots.length 
+            || getCurrentBallotStage(_ballotId) == Stage.COMMIT
+            || getCurrentBallotStage(_ballotId) == Stage.PREP
+            || !ballots[_ballotId].isActive
+        )
             return (choicesWeighting, noOfChoicesInProposal, voters, remainingTime);
         else {
             address[] memory allowedVoters = getAllowedVotersByBallot(_ballotId);
@@ -668,8 +701,10 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
                     uint256 l = 0;
                     for (k = count; k < nextProposalChoiceLen; k++) {
                         choicesWeighting[count] = choicesWeighting[count].add(choiceWeight[l]);
+                        count++;
                         l++;
                     }
+                    count = 0;
                 }
                 count = nextProposalChoiceLen;
             }
@@ -721,6 +756,45 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
             proposalChoicesCount,
             ballot.isActive
         );
+    }
+
+    /**
+     * @notice Use to get the ballots Id which are in COMMIT & REVEAL phase
+     * @return uint256 commitBallotList Array of the ballot ids which are in the commit stage.
+     * @return uint256 revealBallotList Array of the ballot ids which are in the reveal stage.
+     */
+    function getCommitAndRevealBallots() external view returns(uint256[] memory commitBallotList, uint256[] memory revealBallotList) {
+        uint256 len = getBallotsArrayLength();
+        uint256 commitCount = 0;
+        uint256 revealCount = 0;
+        uint256 i;
+        for (i = 0; i < len; i++) {
+            if (getCurrentBallotStage(i) == Stage.COMMIT)
+                commitCount++;
+            else if (getCurrentBallotStage(i) == Stage.REVEAL)
+                revealCount++;
+        }
+        commitBallotList = new uint256[](commitCount);
+        revealBallotList = new uint256[](revealCount);
+        (commitCount, revealCount) = (0, 0);
+        for (i = 0; i < len; i++) {
+            if (getCurrentBallotStage(i) == Stage.COMMIT) {
+                commitBallotList[commitCount] = i;
+                commitCount++;
+            }
+            else if (getCurrentBallotStage(i) == Stage.REVEAL) {
+                revealBallotList[revealCount] = i;
+                revealCount++;
+            }
+        }
+    }
+
+    /**
+     * @notice Get the length of the ballots array
+     * @return uint256 Length of the ballots array
+     */
+    function getBallotsArrayLength() public view returns(uint256 length) {
+        return ballots.length;
     }
 
     /**

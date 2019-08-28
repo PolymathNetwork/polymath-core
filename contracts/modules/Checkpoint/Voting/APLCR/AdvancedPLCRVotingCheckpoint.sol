@@ -515,6 +515,99 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
     }
 
     /**
+     * Change the given ballot exempted list
+     * @param _ballotId Given ballot Id
+     * @param _exemptedAddress Address of the voter
+     * @param _exempt Whether it is exempted or not
+     */
+    function changeBallotExemptedVotersList(uint256 _ballotId, address _exemptedAddress, bool _exempt) external withPerm(ADMIN) {
+        // Check for the ballots array out of bound
+        _checkIndexOutOfBound(_ballotId);
+        _changeBallotExemptedVotersList(_ballotId, _exemptedAddress, _exempt);
+    }
+
+    /**
+     * Change the given ballot exempted list (Multi)
+     * @param _ballotId Given ballot Id
+     * @param _exemptedAddresses Address of the voters
+     * @param _exempts Whether it is exempted or not
+     */
+    function changeBallotExemptedVotersListMulti(uint256 _ballotId, address[] calldata _exemptedAddresses, bool[] calldata _exempts) external withPerm(ADMIN) {
+        require(_exemptedAddresses.length == _exempts.length, "Length mismatch");
+        // Check for the ballots array out of bound
+        _checkIndexOutOfBound(_ballotId);
+        for (uint256 i = 0; i < _exemptedAddresses.length; i++) {
+            _changeBallotExemptedVotersList(_ballotId, _exemptedAddresses[i], _exempts[i]);
+        }
+    }
+
+    function _changeBallotExemptedVotersList(uint256 _ballotId, address _exemptedAddress, bool _exempt) internal {
+        require(_exemptedAddress != address(0), "Invalid address");
+        require(ballots[_ballotId].exemptedVoters[_exemptedAddress] != _exempt, "No change");
+        ballots[_ballotId].exemptedVoters[_exemptedAddress] = _exempt;
+        emit ChangedBallotExemptedVotersList(_ballotId, _exemptedAddress, _exempt);
+    }
+
+    /**
+     * @notice Retrieves list of investors, their balances
+     * @param _checkpointId Checkpoint Id to query for
+     * @return address[] list of investors
+     * @return uint256[] investor balances
+     */
+    function getCheckpointData(uint256 _checkpointId) external view returns (address[] memory investors, uint256[] memory balances) {
+        require(_checkpointId <= securityToken.currentCheckpointId(), "Invalid checkpoint");
+        investors = securityToken.getInvestorsAt(_checkpointId);
+        balances = new uint256[](investors.length);
+        for (uint256 i; i < investors.length; i++) {
+            balances[i] = securityToken.balanceOfAt(investors[i], _checkpointId);
+        }
+    }
+
+    /**
+     * @notice Retrives the list of investors who are remain to vote
+     * @param _ballotId Id of the ballot
+     * @return address[] list of invesotrs who are remain to vote
+     */
+    function getPendingInvestorToVote(uint256 _ballotId) external view returns(address[] memory pendingInvestors) {
+        if (_ballotId >= ballots.length)
+            return pendingInvestors;
+        else {
+            Ballot storage ballot = ballots[_ballotId];
+            address[] memory allowedVoters = getAllowedVotersByBallot(_ballotId);
+            uint256 count = 0;
+            uint256 i;
+            for (i = 0; i < allowedVoters.length ; i++) {
+                if (getCurrentBallotStage(_ballotId) == Stage.COMMIT) {
+                    if (ballot.voteDetails[allowedVoters[i]].secretVote == bytes3(0)) {
+                        count++;
+                    }
+                }
+                else if (getCurrentBallotStage(_ballotId) == Stage.REVEAL) {
+                    if (ballot.voteDetails[allowedVoters[i]].voteOptions[0].length == 0) {
+                        count++;
+                    }
+                }
+            }
+            pendingInvestors = new address[](count);
+            count = 0;
+            for (i = 0; i < allowedVoters.length ; i++) {
+                if (getCurrentBallotStage(_ballotId) == Stage.COMMIT) {
+                    if (ballot.voteDetails[allowedVoters[i]].secretVote == bytes3(0)) {
+                        pendingInvestors[count] = allowedVoters[i];
+                        count++;
+                    }
+                }
+                else if (getCurrentBallotStage(_ballotId) == Stage.REVEAL) {
+                    if (ballot.voteDetails[allowedVoters[i]].voteOptions[0].length == 0) {
+                        pendingInvestors[count] = allowedVoters[i];
+                        count++;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * @notice Get eligible voters list for the given ballot
      * @dev should be called off-chain
      * @param  _ballotId The index of the target ballot
@@ -566,40 +659,6 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
     }
 
     /**
-     * Change the given ballot exempted list
-     * @param _ballotId Given ballot Id
-     * @param _exemptedAddress Address of the voter
-     * @param _exempt Whether it is exempted or not
-     */
-    function changeBallotExemptedVotersList(uint256 _ballotId, address _exemptedAddress, bool _exempt) external withPerm(ADMIN) {
-        // Check for the ballots array out of bound
-        _checkIndexOutOfBound(_ballotId);
-        _changeBallotExemptedVotersList(_ballotId, _exemptedAddress, _exempt);
-    }
-
-    /**
-     * Change the given ballot exempted list (Multi)
-     * @param _ballotId Given ballot Id
-     * @param _exemptedAddresses Address of the voters
-     * @param _exempts Whether it is exempted or not
-     */
-    function changeBallotExemptedVotersListMulti(uint256 _ballotId, address[] calldata _exemptedAddresses, bool[] calldata _exempts) external withPerm(ADMIN) {
-        require(_exemptedAddresses.length == _exempts.length, "Length mismatch");
-        // Check for the ballots array out of bound
-        _checkIndexOutOfBound(_ballotId);
-        for (uint256 i = 0; i < _exemptedAddresses.length; i++) {
-            _changeBallotExemptedVotersList(_ballotId, _exemptedAddresses[i], _exempts[i]);
-        }
-    }
-
-    function _changeBallotExemptedVotersList(uint256 _ballotId, address _exemptedAddress, bool _exempt) internal {
-        require(_exemptedAddress != address(0), "Invalid address");
-        require(ballots[_ballotId].exemptedVoters[_exemptedAddress] != _exempt, "No change");
-        ballots[_ballotId].exemptedVoters[_exemptedAddress] = _exempt;
-        emit ChangedBallotExemptedVotersList(_ballotId, _exemptedAddress, _exempt);
-    }
-
-    /**
      * @notice Used to get the current stage of the ballot
      * @param _ballotId Given ballot Id
      */
@@ -627,7 +686,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         _checkIndexOutOfBound(_ballotId);
         Ballot storage ballot = ballots[_ballotId];
         if (ballot.voteDetails[_voter].secretVote == bytes32(0) && 
-            (getCurrentBallotStage(_ballotId) != Stage.REVEAL || getCurrentBallotStage(_ballotId) != Stage.RESOLVED) &&
+            (getCurrentBallotStage(_ballotId) != Stage.REVEAL && getCurrentBallotStage(_ballotId) != Stage.RESOLVED) &&
             isVoterAllowed(_ballotId, _voter)
         ) {
             return (ballot.totalProposals * securityToken.balanceOfAt(_voter, ballot.checkpointId));

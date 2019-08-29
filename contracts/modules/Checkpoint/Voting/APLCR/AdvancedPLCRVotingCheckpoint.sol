@@ -8,8 +8,8 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
 
     using SafeMath for uint256;
 
-    // Emits when the statuary ballot is created
-    event StatuaryBallotCreated(
+    // Emits when the statutory ballot is created
+    event StatutoryBallotCreated(
         uint256 indexed _ballotId,
         uint256 indexed _checkpointId,
         bytes32 indexed _name,
@@ -139,7 +139,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
             _checkpointId, uint64(_commitDuration), uint64(_revealDuration), uint64(_startTime), uint24(1), uint32(0), false, _name
         ));
         _addProposal(_details, _noOfChoices, ballots[ballotId], 0);
-        emit StatuaryBallotCreated(
+        emit StatutoryBallotCreated(
             ballotId, _checkpointId, _name, _startTime, _commitDuration, _revealDuration, _details, _noOfChoices, _proposalTitle, _choices
         );
     }

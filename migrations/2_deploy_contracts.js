@@ -41,6 +41,8 @@ const RestrictedPartialSaleTMFactory = artifacts.require('./RestrictedPartialSal
 const RestrictedPartialSaleTMLogic = artifacts.require('./RestrictedPartialSaleTM.sol');
 const VestingEscrowWalletFactory = artifacts.require('./VestingEscrowWalletFactory.sol')
 const VestingEscrowWalletLogic = artifacts.require('./VestingEscrowWallet.sol');
+const AdvancedPLCRVotingCheckpointFactory = artifacts.require("./AdvancedPLCRVotingCheckpointFactory.sol");
+const AdvancedPLCRVotingCheckpointLogic = artifacts.require("./AdvancedPLCRVotingCheckpoint.sol");
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -314,6 +316,11 @@ module.exports = function(deployer, network, accounts) {
             return deployer.deploy(VestingEscrowWalletLogic, nullAddress, nullAddress, { from: PolymathAccount });
         })
         .then(() => {
+            // B) Deploy the AdvancedPLCRVotingCheckpointLogic Contract (Factory used to generate the AdvancedPLCRVotingCheckpoint contract and this
+            // manager attach with the securityToken contract at the time of deployment)
+            return deployer.deploy(AdvancedPLCRVotingCheckpointLogic, nullAddress, nullAddress, { from: PolymathAccount });
+        })
+        .then(() => {
             // B) Deploy the DataStoreLogic Contract
             return deployer.deploy(DataStoreLogic, { from: PolymathAccount });
         })
@@ -388,6 +395,13 @@ module.exports = function(deployer, network, accounts) {
             // D) Deploy the VestingEscrowWalletFactory Contract (Factory used to generate the ManualApprovalTransferManager contract use
             // to manual approve the transfer that will overcome the other transfer restrictions)
             return deployer.deploy(VestingEscrowWalletFactory, new BN(0), VestingEscrowWalletLogic.address, polymathRegistry.address, {
+                from: PolymathAccount
+            });
+        })
+        .then(() => {
+            // D) Deploy the AdvancedPLCRVotingCheckpoint Contract (Factory used to generate the AdvancedPLCRVotingCheckpoint contract use
+            // to governance purpose for a company)
+            return deployer.deploy(AdvancedPLCRVotingCheckpointFactory, new BN(0), AdvancedPLCRVotingCheckpointLogic.address, polymathRegistry.address, {
                 from: PolymathAccount
             });
         })
@@ -504,6 +518,11 @@ module.exports = function(deployer, network, accounts) {
             return moduleRegistry.registerModule(VestingEscrowWalletFactory.address, { from: PolymathAccount });
         })
         .then(() => {
+            // E) Register the AdvancedPLCRVotingCheckpointFactory in the ModuleRegistry to make the factory available at the protocol level.
+            // So any securityToken can use that factory to generate the AdvancedPLCRVotingCheckpoint contract.
+            return moduleRegistry.registerModule(AdvancedPLCRVotingCheckpointFactory.address, { from: PolymathAccount });
+        })
+        .then(() => {
             // F) Once the GeneralTransferManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
             // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
             // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
@@ -562,6 +581,12 @@ module.exports = function(deployer, network, accounts) {
             // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
             // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
             return moduleRegistry.verifyModule(VestingEscrowWalletFactory.address, { from: PolymathAccount });
+        })
+        .then(() => {
+            // G) Once the AdvancedPLCRVotingCheckpointFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
+            // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
+            // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
+            return moduleRegistry.verifyModule(AdvancedPLCRVotingCheckpointFactory.address, { from: PolymathAccount });
         })
         .then(() => {
             // M) Deploy the CappedSTOFactory (Use to generate the CappedSTO contract which will used to collect the funds ).
@@ -645,6 +670,8 @@ module.exports = function(deployer, network, accounts) {
     RestrictedPartialSaleTMLogic:         ${RestrictedPartialSaleTMLogic.address}
     VestingEscrowWalletFactory:           ${VestingEscrowWalletFactory.address}
     VestingEscrowWalletLogic:             ${VestingEscrowWalletLogic.address}
+    AdvancedPLCRVotingCheckpointFactory:  ${AdvancedPLCRVotingCheckpointFactory.address}
+    AdvancedPLCRVotingCheckpointLogic:    ${AdvancedPLCRVotingCheckpointLogic.address}
     ---------------------------------------------------------------------------------
     `);
             console.log("\n");

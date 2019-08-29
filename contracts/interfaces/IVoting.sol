@@ -2,13 +2,13 @@ pragma solidity 0.5.8;
 
 interface IVoting {
 
-    /**
-     * @notice Allows the token issuer to set the active stats of a ballot
-     * @param _ballotId The index of the target ballot
-     * @param _isActive The bool value of the active stats of the ballot
-     * @return bool success
-     */
-    function changeBallotStatus(uint256 _ballotId, bool _isActive) external;
+    // /**
+    //  * @notice Allows the token issuer to set the active stats of a ballot
+    //  * @param _ballotId The index of the target ballot
+    //  * @param _isActive The bool value of the active stats of the ballot
+    //  * @return bool success
+    //  */
+    // function changeBallotStatus(uint256 _ballotId, bool _isActive) external;
 
     // /**
     //  * @notice Queries the result of a given ballot

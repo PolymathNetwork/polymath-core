@@ -60,6 +60,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
     const initRegFee = web3.utils.toWei("1000");
     const address_zero = "0x0000000000000000000000000000000000000000";
     let secrets = new Array(20);
+    let snap_id;
     
     async function currentTime() {
         return new BN(await latestTime());
@@ -233,6 +234,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
     describe("Creation of the Statutory ballot", async() => {
 
         it("Should fail to create the statutory wallet -- Empty title", async() => {
+            let name = web3.utils.toHex("Ballot 1");
             let startTime = await currentTime();
             let commitDuration = new BN(duration.seconds(5000));
             let revealDuration = new BN(duration.seconds(4000));
@@ -241,6 +243,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             let choices = "";
             let noOfChoices = 0;
             await catchRevert(I_AdvancedPLCRVotingCheckpoint.createStatutoryBallot(
+                name,
                 startTime,
                 commitDuration,
                 revealDuration,
@@ -255,6 +258,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
         });
 
         it("Should fail to create the statutory wallet -- Invalid duration (commitDuration)", async() => {
+            let name = web3.utils.toHex("Ballot 1");
             let startTime = await currentTime();
             let commitDuration = new BN(0);
             let revealDuration = new BN(duration.seconds(4000));
@@ -263,6 +267,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             let choices = "";
             let noOfChoices = 0;
             await catchRevert(I_AdvancedPLCRVotingCheckpoint.createStatutoryBallot(
+                name,
                 startTime,
                 commitDuration,
                 revealDuration,
@@ -277,6 +282,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
         });
 
         it("Should fail to create the statutory ballot - Invalid permission", async() => {
+            let name = web3.utils.toHex("Ballot 1");
             let startTime = (await currentTime()).add(new BN(duration.days(1)));
             let commitDuration = new BN(duration.hours(5));
             let revealDuration = new BN(duration.hours(4));
@@ -286,6 +292,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             let noOfChoices = 0;
             await catchRevert(
              I_AdvancedPLCRVotingCheckpoint.createStatutoryBallot(
+                name,
                 startTime,
                 commitDuration,
                 revealDuration,
@@ -300,6 +307,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
         });
 
         it("Should create the statutory ballot successfully", async() => {
+            let name = web3.utils.toHex("Ballot 1");
             let startTime = (await currentTime()).add(new BN(duration.days(1)));
             let commitDuration = new BN(duration.hours(5));
             let revealDuration = new BN(duration.hours(4));
@@ -308,6 +316,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             let choices = "";
             let noOfChoices = 0;
             let tx = await I_AdvancedPLCRVotingCheckpoint.createStatutoryBallot(
+                name,
                 startTime,
                 commitDuration,
                 revealDuration,
@@ -320,6 +329,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                 }
             );
             assert.equal(await I_SecurityToken.currentCheckpointId.call(), 1);
+            assert.equal(web3.utils.toAscii(tx.logs[0].args._name).replace(/\u0000/g, ""), "Ballot 1");
             assert.equal(tx.logs[0].args._checkpointId, 1);
             assert.equal(tx.logs[0].args._ballotId, 0);
             assert.equal(tx.logs[0].args._startTime, startTime.toString());
@@ -332,8 +342,9 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             assert.equal(ballotDetails[1], 1);
             assert.equal(ballotDetails[2].toString(), startTime.toString());
             assert.equal(ballotDetails[5].toString(), 1);
-            assert.equal(ballotDetails[8][0], 0);
-            assert.isTrue(ballotDetails[9]);
+            assert.equal(ballotDetails[11][0], 0);
+            assert.equal(ballotDetails[9], 0);
+            assert.isFalse(ballotDetails[8]);
         });
 
         it("Should fail to commit the vote -- Incorrect stage", async() => {
@@ -548,7 +559,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
         it("Should fail to reveal the vote -- Inactive ballot", async() => {
             let ballotId = new BN(0);
             let snap_id = await takeSnapshot();
-            await I_AdvancedPLCRVotingCheckpoint.changeBallotStatus(ballotId, false, {from: token_owner});
+            await I_AdvancedPLCRVotingCheckpoint.cancelBallot(ballotId, {from: token_owner});
             await catchRevert(
                 I_AdvancedPLCRVotingCheckpoint.revealVote(
                     ballotId,
@@ -558,7 +569,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                         from: account_investor1
                     }
                 ),
-                "Inactive ballot"
+                "Cancelled ballot"
             );
             await revertToSnapshot(snap_id);
         });
@@ -638,43 +649,44 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             assert.equal((tx.logs[0].args._salt).toString(), secrets[2]);
         });
 
-        it("Should fail to change the ballot status -- Index out of bound", async() => {
+        it("Should fail to cancel the ballot -- Index out of bound", async() => {
             let ballotId = new BN(5);
             await catchRevert(
-                I_AdvancedPLCRVotingCheckpoint.changeBallotStatus(ballotId, false, {from: token_owner}),
+                I_AdvancedPLCRVotingCheckpoint.cancelBallot(ballotId, {from: token_owner}),
                 "Index out of bound"
             );
         });
 
-        it("Should successfully change the ballot status", async() => {
+        it("Should successfully cancel the ballot", async() => {
+            snap_id = await takeSnapshot();
             let ballotId = new BN(0);
-            let tx = await I_AdvancedPLCRVotingCheckpoint.changeBallotStatus(ballotId, false, {from: token_owner});
+            let tx = await I_AdvancedPLCRVotingCheckpoint.cancelBallot(ballotId, {from: token_owner});
             assert.equal(tx.logs[0].args._ballotId, 0);
-            assert.equal(tx.logs[0].args._newStatus, false);
-            assert.isFalse((await I_AdvancedPLCRVotingCheckpoint.getBallotDetails.call(ballotId))[9]);
+            assert.isTrue((await I_AdvancedPLCRVotingCheckpoint.getBallotDetails.call(ballotId))[8]);
         });
 
-        it("Should fail to change the ballot status again -- Active state unchanged", async() => {
+        it("Should fail to cancel the ballot again -- Already cancelled", async() => {
             let ballotId = new BN(0);
             await catchRevert(
-                I_AdvancedPLCRVotingCheckpoint.changeBallotStatus(ballotId, false, {from: token_owner}),
-                "Active state unchanged"
+                I_AdvancedPLCRVotingCheckpoint.cancelBallot(ballotId, {from: token_owner}),
+                "Already cancelled"
             );
         });
 
-        it("Should get the zero result of the ballot because ballot is inActive", async() => {
+        it("Should get the zero result of the ballot because ballot is cancelled", async() => {
             let ballotId = new BN(0);
             let result = await I_AdvancedPLCRVotingCheckpoint.getBallotResults.call(ballotId);
             assert.equal(result[0].length, 0);
             assert.equal(result[1].length, 0);
             assert.equal(result[2].length, 0);
-            assert.equal(result[3], 0);
+            await revertToSnapshot(snap_id);
         });
 
         it("Should get the the result successfully", async() => {
             let ballotId = new BN(0);
-            await I_AdvancedPLCRVotingCheckpoint.changeBallotStatus(ballotId, true, {from: token_owner});
+            await increaseTime(duration.hours(7));
             let result = await I_AdvancedPLCRVotingCheckpoint.getBallotResults.call(ballotId);
+            let data = await I_AdvancedPLCRVotingCheckpoint.getBallotDetails.call(ballotId);
             assert.equal(convertToNumber(result.choicesWeighting[0]), 5500);
             assert.equal(convertToNumber(result.choicesWeighting[1]), 7000);
             assert.equal(convertToNumber(result.choicesWeighting[2]), 3500);
@@ -687,7 +699,6 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                 Weight of choice YAY - ${convertToNumber(result.choicesWeighting[1])}
                 Weight of choice ABSTAIN - ${convertToNumber(result.choicesWeighting[2])}
                 No of choices in a proposal - ${result.noOfChoicesInProposal}
-                Remaining Time - ${(result.remainingTime).toString()}
                 Winner is - YAY
             `);
         });
@@ -702,6 +713,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             await I_SecurityToken.transfer(account_investor2, bn(2000), {from: account_investor1});
             // Create checkpoint
             await I_SecurityToken.createCheckpoint({from: token_owner});
+            let name = web3.utils.toHex("Ballot 2");
             let latestCheckpointId = await I_SecurityToken.currentCheckpointId.call();
             let startTime = (await currentTime()).add(new BN(duration.days(1)));
             let commitDuration = new BN(duration.hours(6));
@@ -713,6 +725,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             // Fail to create if the checkpoint is greater than the latest one
             await catchRevert(
                 I_AdvancedPLCRVotingCheckpoint.createCustomStatutoryBallot(
+                    name,
                     startTime,
                     commitDuration,
                     revealDuration,
@@ -729,6 +742,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             );
             // Create successfully ballot
             let tx = await I_AdvancedPLCRVotingCheckpoint.createCustomStatutoryBallot(
+                name,
                 startTime,
                 commitDuration,
                 revealDuration,
@@ -742,6 +756,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                 }
             );
             assert.equal(await I_SecurityToken.currentCheckpointId.call(), 2);
+            assert.equal(web3.utils.toAscii(tx.logs[0].args._name).replace(/\u0000/g, ""), "Ballot 2");
             assert.equal(tx.logs[0].args._checkpointId, 2);
             assert.equal(tx.logs[0].args._ballotId, 1);
             assert.equal(tx.logs[0].args._startTime, startTime.toString());
@@ -754,8 +769,9 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             assert.equal(ballotDetails[1], 2);
             assert.equal(ballotDetails[2].toString(), startTime.toString());
             assert.equal(ballotDetails[5].toString(), 1);
-            assert.equal(ballotDetails[8][0], noOfChoices);
-            assert.isTrue(ballotDetails[9]);
+            assert.equal(ballotDetails[11][0], noOfChoices);
+            assert.equal(ballotDetails[9], 0);
+            assert.isFalse(ballotDetails[8]);
         });
 
         it("Should create the ballot using the exemption list & custom checkpoint Id as well", async() => {
@@ -765,6 +781,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
 
             // Create checkpoint
             await I_SecurityToken.createCheckpoint({from: token_owner});
+            let name = web3.utils.toHex("Ballot 3");
             let latestCheckpointId = await I_SecurityToken.currentCheckpointId.call();
             let startTime = (await currentTime()).add(new BN(duration.days(1)));
             let commitDuration = new BN(duration.hours(8));
@@ -775,6 +792,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             let noOfChoices = 2;
 
             let tx = await I_AdvancedPLCRVotingCheckpoint.createCustomStatutoryBallotWithExemption(
+                name,
                 startTime,
                 commitDuration,
                 revealDuration,
@@ -789,6 +807,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                 }
             );
             assert.equal(await I_SecurityToken.currentCheckpointId.call(), 3);
+            assert.equal(web3.utils.toAscii(tx.logs[0].args._name).replace(/\u0000/g, ""), "Ballot 3");
             assert.equal(tx.logs[0].args._checkpointId, 3);
             assert.equal(tx.logs[0].args._ballotId, 2);
             assert.equal(tx.logs[0].args._startTime, startTime.toString());
@@ -801,11 +820,13 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             assert.equal(ballotDetails[1], 3);
             assert.equal(ballotDetails[2].toString(), startTime.toString());
             assert.equal(ballotDetails[5].toString(), 1);
-            assert.equal(ballotDetails[8][0], noOfChoices);
-            assert.isTrue(ballotDetails[9]);
+            assert.equal(ballotDetails[11][0], noOfChoices);
+            assert.equal(ballotDetails[9], 0);
+            assert.isFalse(ballotDetails[8]);
         });
 
         it("Should create statutory ballot with exemption list", async() => {
+            let name = web3.utils.toHex("Ballot 4");
             let startTime = (await currentTime()).add(new BN(duration.days(1)));
             let commitDuration = new BN(duration.hours(9));
             let revealDuration = new BN(duration.hours(9));
@@ -815,6 +836,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             let noOfChoices = 5;
 
             let tx = await I_AdvancedPLCRVotingCheckpoint.createStatutoryBallotWithExemption(
+                name,
                 startTime,
                 commitDuration,
                 revealDuration,
@@ -828,6 +850,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                 }
             );
             assert.equal(await I_SecurityToken.currentCheckpointId.call(), 4);
+            assert.equal(web3.utils.toAscii(tx.logs[0].args._name).replace(/\u0000/g, ""), "Ballot 4");
             assert.equal(tx.logs[0].args._checkpointId, 4);
             assert.equal(tx.logs[0].args._ballotId, 3);
             assert.equal(tx.logs[0].args._startTime, startTime.toString());
@@ -840,8 +863,9 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             assert.equal(ballotDetails[1], 4);
             assert.equal(ballotDetails[2].toString(), startTime.toString());
             assert.equal(ballotDetails[5].toString(), 1);
-            assert.equal(ballotDetails[8][0], noOfChoices);
-            assert.isTrue(ballotDetails[9]);
+            assert.equal(ballotDetails[11][0], noOfChoices);
+            assert.equal(ballotDetails[9], 0);
+            assert.isFalse(ballotDetails[8]);
         });
 
         it("Should check the right value from getters", async() => {
@@ -907,6 +931,133 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             ballots = await I_AdvancedPLCRVotingCheckpoint.pendingBallots.call(account_investor5);
             assert.equal(ballots.length, 2);
             assert.notInclude(ballots, 3);
+        });
+    });
+
+    describe("Test case for cumulative voting", async() => {
+
+        it("Should fail to create the custom cumulative type voting with exemption -- Invalid duration", async() => {
+            await I_SecurityToken.transfer(account_investor3, bn(3670), {from: account_investor5});
+            await I_SecurityToken.transfer(account_investor2, bn(2000), {from: account_investor1});
+            await I_SecurityToken.transfer(account_investor4, bn(1500), {from: account_investor3});
+
+            // Create checkpoint
+            await I_SecurityToken.createCheckpoint({from: token_owner});
+            let name = web3.utils.toHex("Ballot 5");
+            let latestCheckpointId = await I_SecurityToken.currentCheckpointId.call();
+            let startTime = (await currentTime()).add(new BN(duration.days(2)));
+            let commitDuration = new BN(0);
+            let revealDuration = new BN(0);
+            let proposalTitle = "Titile 5, Title 6, Title 7";
+            let details = [web3.utils.toHex("Offchain detaiils 5"), web3.utils.toHex("Offchain detaiils 6"), web3.utils.toHex("Offchain detaiils 7")];
+            let choices = "Choice A, Choice B, Choice C, Choice X, Choice Y, Choice Z, Choice L";
+            let noOfChoices = [3,0,4];
+
+            await catchRevert(
+                I_AdvancedPLCRVotingCheckpoint.createCustomCumulativeBallotWithExemption(
+                    name,
+                    startTime,
+                    commitDuration,
+                    revealDuration,
+                    proposalTitle,
+                    details,
+                    choices,
+                    noOfChoices,
+                    latestCheckpointId,
+                    [account_investor1, account_investor2],
+                    {
+                        from: token_owner
+                    }
+                ),
+                "Invalid duration"
+            );
+        });
+
+        it("Should fail to create the custom cumulative type voting with exemption -- Invalid length", async() => {
+            let name = web3.utils.toHex("Ballot 5");
+            let latestCheckpointId = await I_SecurityToken.currentCheckpointId.call();
+            let startTime = (await currentTime()).add(new BN(duration.days(2)));
+            let commitDuration = new BN(duration.hours(8));
+            let revealDuration = new BN(duration.hours(8));
+            let proposalTitle = "Titile 5, Title 6, Title 7";
+            let details = [web3.utils.toHex("Offchain detaiils 5"), web3.utils.toHex("Offchain detaiils 6")];
+            let choices = "Choice A, Choice B, Choice C, Choice X, Choice Y, Choice Z, Choice L";
+            let noOfChoices = [3,0,4];
+
+            await catchRevert(
+                I_AdvancedPLCRVotingCheckpoint.createCustomCumulativeBallotWithExemption(
+                    name,
+                    startTime,
+                    commitDuration,
+                    revealDuration,
+                    proposalTitle,
+                    details,
+                    choices,
+                    noOfChoices,
+                    latestCheckpointId,
+                    [account_investor1, account_investor2],
+                    {
+                        from: token_owner
+                    }
+                ),
+                "Length mismatch"
+            );
+        });
+
+        it("Should successfully create the custom cumulative type voting with exemption", async() => {
+            let name = web3.utils.toHex("Ballot 5");
+            let latestCheckpointId = await I_SecurityToken.currentCheckpointId.call();
+            let startTime = (await currentTime()).add(new BN(duration.days(2)));
+            let commitDuration = new BN(duration.hours(8));
+            let revealDuration = new BN(duration.hours(8));
+            let proposalTitle = "Titile 5, Title 6, Title 7";
+            let details = [web3.utils.toHex("Offchain detaiils 5"), web3.utils.toHex("Offchain detaiils 6"), web3.utils.toHex("Offchain detaiils 7")];
+            let choices = "Choice A, Choice B, Choice C, Choice X, Choice Y, Choice Z, Choice L";
+            let noOfChoices = [3,0,4];
+
+            let tx = await I_AdvancedPLCRVotingCheckpoint.createCustomCumulativeBallotWithExemption(
+                name,
+                startTime,
+                commitDuration,
+                revealDuration,
+                proposalTitle,
+                details,
+                choices,
+                noOfChoices,
+                latestCheckpointId,
+                [account_investor1, account_investor2],
+                {
+                    from: token_owner
+                }
+            );
+            assert.equal(await I_SecurityToken.currentCheckpointId.call(), 5);
+            assert.equal(web3.utils.toAscii(tx.logs[0].args._name).replace(/\u0000/g, ""), "Ballot 5");
+            assert.equal(tx.logs[0].args._checkpointId, 5);
+            assert.equal(tx.logs[0].args._ballotId, 4);
+            assert.equal(tx.logs[0].args._startTime, startTime.toString());
+            assert.equal(tx.logs[0].args._commitDuration, commitDuration.toString());
+            assert.equal(tx.logs[0].args._revealDuration, revealDuration.toString());
+            assert.equal(web3.utils.toAscii(tx.logs[0].args._details[0]).replace(/\u0000/g, ""), "Offchain detaiils 5");
+
+            let ballotDetails = await I_AdvancedPLCRVotingCheckpoint.getBallotDetails.call(tx.logs[0].args._ballotId);
+            assert.equal(convertToNumber(ballotDetails[0]), convertToNumber(await I_SecurityToken.totalSupply.call()));
+            assert.equal(ballotDetails[1], 5);
+            assert.equal(ballotDetails[2].toString(), startTime.toString());
+            assert.equal(ballotDetails[5].toString(), 3);
+            assert.equal(ballotDetails[11][0], noOfChoices[0]);
+            assert.equal(ballotDetails[11][1], noOfChoices[1]);
+            assert.equal(ballotDetails[11][2], noOfChoices[2]);
+            assert.equal(ballotDetails[9], 0);
+            assert.isFalse(ballotDetails[8]);
+        });
+
+        it("Should check the list of investor to vote", async() => {
+            await increaseTime(Math.floor(duration.days(1.65)));
+
+            // Verify the commit stage and ballot stage ballots
+            let ballotList = await I_AdvancedPLCRVotingCheckpoint.getCommitAndRevealBallots.call();
+            console.log(ballotList.commitBallotList);
+            console.log(ballotList.revealBallotList);
         });
     });
 

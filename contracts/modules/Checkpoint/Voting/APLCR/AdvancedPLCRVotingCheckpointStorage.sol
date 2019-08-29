@@ -11,7 +11,8 @@ contract AdvancedPLCRVotingCheckpointStorage {
         uint64 startTime;       // Timestamp at which ballot will come into effect
         uint24 totalProposals;  // Count of proposals allowed for a given ballot
         uint32 totalVoters;     // Count of voters who vote for the given ballot
-        bool isActive;          // flag used to turn off/on the ballot
+        bool isCancelled;       // flag used to cancel the ballot
+        bytes32 name;           // Name of the ballot
         mapping(uint256 => Proposal) proposals;
         mapping(address => Vote) voteDetails; // mapping for storing vote details of a voter
         mapping(address => bool) exemptedVoters; // Mapping for blacklist voters

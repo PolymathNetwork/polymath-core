@@ -684,12 +684,9 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
 
         it("Should get the the result successfully", async() => {
             let ballotId = new BN(0);
-            let result = await I_AdvancedPLCRVotingCheckpoint.getBallotResults.call(ballotId);
             await increaseTime(duration.hours(7));
+            let result = await I_AdvancedPLCRVotingCheckpoint.getBallotResults.call(ballotId);
             let data = await I_AdvancedPLCRVotingCheckpoint.getBallotDetails.call(ballotId);
-            console.log(data.isCancelled);
-            console.log(data.currentStage);
-            console.log(result);
             assert.equal(convertToNumber(result.choicesWeighting[0]), 5500);
             assert.equal(convertToNumber(result.choicesWeighting[1]), 7000);
             assert.equal(convertToNumber(result.choicesWeighting[2]), 3500);

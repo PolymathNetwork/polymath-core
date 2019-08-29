@@ -475,7 +475,7 @@ async function generalTransferManager() {
       break;
     case `Show whitelist data`:
       let investorsToShow = input.readMultipleAddresses(`Enter the addresses of the investors you want to show (i.e: addr1,addr2,addr3) or leave empty to show them all: `);
-      if (investorsToShow.length === 0) {
+      if (investorsToShow === '') {
         let whitelistData = await currentTransferManager.methods.getAllKYCData().call();
         showWhitelistTable(whitelistData[0], whitelistData[1], whitelistData[2], whitelistData[3]);
       } else {
@@ -1361,7 +1361,7 @@ async function blacklistTransferManager() {
       console.log();
       break;
     case 'Delete investors from all blacklists':
-      let investorsToRemove = input.readMultipleAddresses(`Enter the addresses of the investors separated by comma (i.e. addr1,addr2,addr3): `);
+      let investorsToRemove = input.readMultipleAddresses(`Enter the addresses of the investors separated by comma (i.e. addr1,addr2,addr3): `).split(',');
       let deleteInvestorFromAllBlacklistAction;
       if (investorsToRemove.length === 1) {
         deleteInvestorFromAllBlacklistAction = currentTransferManager.methods.deleteInvestorFromAllBlacklist(investorsToRemove[0]);
@@ -1433,7 +1433,7 @@ async function manageExistingBlacklist(blacklistName) {
       }
       break;
     case 'Add investors':
-      let investorsToAdd = input.readMultipleAddresses(`Enter the addresses of the investors separated by comma (i.e. addr1,addr2,addr3): `);
+      let investorsToAdd = input.readMultipleAddresses(`Enter the addresses of the investors separated by comma (i.e. addr1,addr2,addr3): `).split(",");
       let addInvestorToBlacklistAction;
       if (investorsToAdd.length === 1) {
         addInvestorToBlacklistAction = currentTransferManager.methods.addInvestorToBlacklist(investorsToAdd[0], blacklistName);
@@ -2452,7 +2452,7 @@ async function manageExistingLockups(lockupName) {
       }
       break;
     case 'Add this lockup to investors':
-      let investorsToAdd = input.readMultipleAddresses(`Enter the addresses of the investors separated by comma (i.e.addr1, addr2, addr3): `);
+      let investorsToAdd = input.readMultipleAddresses(`Enter the addresses of the investors separated by comma (i.e.addr1, addr2, addr3): `).split(",");
       let addInvestorToLockupAction;
       if (investorsToAdd.length === 1) {
         addInvestorToLockupAction = currentTransferManager.methods.addLockUpByName(investorsToAdd[0], lockupName);
@@ -2464,7 +2464,7 @@ async function manageExistingLockups(lockupName) {
       addInvestorToLockupEvents.map(e => console.log(chalk.green(`${e._userAddress} has been added to ${web3.utils.hexToUtf8(e._lockupName)} successfully!`)));
       break;
     case 'Remove this lockup from investors':
-      let investorsToRemove = input.readMultipleAddresses(`Enter the addresses of the investors separated by comma (i.e.addr1, addr2, addr3): `);
+      let investorsToRemove = input.readMultipleAddresses(`Enter the addresses of the investors separated by comma (i.e.addr1, addr2, addr3): `).split(",");
       let removeLockupFromInvestorAction;
       if (investorsToRemove.length === 1) {
         removeLockupFromInvestorAction = currentTransferManager.methods.removeLockUpFromUser(investorsToRemove[0], lockupName);

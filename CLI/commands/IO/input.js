@@ -79,6 +79,12 @@ function readNumberBetween(minValue, maxValue, message, defaultValue) {
   });
 }
 
+function readString(message, defaultValue) {
+  return readlineSync.question(message, {
+    defaultInput: defaultValue
+  });
+}
+
 function readStringNonEmpty(message, defaultValue) {
   return readlineSync.question(message, {
     limit: function (input) {
@@ -130,6 +136,7 @@ module.exports = {
   readNumberLessThan,
   readNumberLessThanOrEqual,
   readNumberBetween,
+  readString,
   readStringNonEmpty,
   readStringNonEmptyWithMaxBinarySize,
   readDateInTheFuture,

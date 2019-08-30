@@ -326,9 +326,6 @@ async function manageExistingDividend(dividendIndex) {
     case 'Reclaim expired dividends':
       await reclaimedDividend(dividendIndex, dividendTokenSymbol, dividendTokenDecimals);
       return;
-    case 'Reclaim ETH or ERC20 tokens from contract':
-      await reclaim
-      break;
     case 'RETURN':
       return;
   }

@@ -2,6 +2,7 @@
 
 # Exit script as soon as a command fails.
 set -o errexit
+# set -x
 
 # Global variables
 DIRECTORY=polymath-developer-portal
@@ -33,10 +34,11 @@ create_docs() {
     fi
 
     echo "Generating the API documentation in branch $latestTag"
-    # Command to generate the documentation using the solidity-docgen
 
-    migrate=$(SOLC_ARGS="openzeppelin-solidity="$CORE_ROUTE"/node_modules/openzeppelin-solidity" \
-solidity-docgen -x external/oraclizeAPI.sol,mocks/MockPolyOracle.sol,oracles/PolyOracle.sol $CORE_ROUTE $CORE_ROUTE/contracts $CORE_ROUTE/polymath-developer-portal/)
+    # Command to generate the documentation using the solidity-docgen
+    # migrate=$(SOLC_ARGS="openzeppelin-solidity="$CORE_ROUTE"/node_modules/openzeppelin-solidity" \
+    # solidity-docgen -x external/oraclizeAPI.sol,mocks/MockPolyOracle.sol,oracles/PolyOracle.sol $CORE_ROUTE $CORE_ROUTE/contracts $CORE_ROUTE/polymath-developer-portal/)
+    $CORE_ROUTE/node_modules/solidoc/cli.js $CORE_ROUTE . true en "$latestTag"
 
     echo "Successfully docs are generated..."
 
@@ -46,22 +48,26 @@ solidity-docgen -x external/oraclizeAPI.sol,mocks/MockPolyOracle.sol,oracles/Pol
     echo "Gererate versioning docs..."
     yarn run version $versionNo
 
-    git config --global user.email "contact@mudit.blog"
-    git config --global user.name "polydocs"
 
-    # Commit the changes
-    echo "Commiting the new changes..."
-    git add .
-    #git commit -m "create new api docs for $latestTag" > /dev/null 2>&1
-    #git push origin $latestTag > /dev/null 2>&1
-    git commit -m "create new api docs for $latestTag"
-    git push origin $latestTag
+    if [[ $DOCS_PUBLISH = true ]]; then
+        echo "Publishing..."
+        git config --global user.email "contact@mudit.blog"
+        git config --global user.name "polydocs"
 
-    # Remove the repository
-    echo "Removing the repository from the system...."
-    cd ../../../
-    rm -rf polymath-developer-portal
-    exit 0
+        # Commit the changes
+        echo "Commiting the new changes..."
+        git add .
+        #git commit -m "create new api docs for $latestTag" > /dev/null 2>&1
+        #git push origin $latestTag > /dev/null 2>&1
+        git commit -m "create new api docs for $latestTag"
+        git push origin $latestTag
+
+        # Remove the repository
+        echo "Removing the repository from the system...."
+        cd ../../../
+        rm -rf polymath-developer-portal
+        exit 0
+    fi
 }
 
 reject_docs() {
@@ -82,7 +88,7 @@ versionNo=$(echo "$latestTag" | cut -b 2-6)
 echo "Latest tag is: $latestTag"
 
 # Fetch patched solidity docgen
-curl -o node_modules/solidity-docgen/lib/index.js https://raw.githubusercontent.com/maxsam4/solidity-docgen/build/lib/index.js
+# curl -o node_modules/solidity-docgen/lib/index.js https://raw.githubusercontent.com/maxsam4/solidity-docgen/build/lib/index.js
 
 # clone the polymath-developer-portal
 
@@ -96,16 +102,19 @@ git pull origin master > /dev/null 2>&1
 fi
 
 cd website
+pwd
 
 if [ ! -d $WEBSITE_DIRECTORY ]; then
-echo "Created: versioned_docs directory"
-create_docs
+    echo "Created: versioned_docs directory"
+    create_docs
 else
     for dir in $WEBSITE_DIRECTORY/*;
     do
+        echo "In dir: $dir"
+
         if [ "$(basename "$dir")" == "*" ]; then
-        echo "There is no version specific folders"
-        create_docs
+            echo "There is no version specific folders"
+            create_docs
         else
             reponame=$(echo $(basename "$dir") | cut -d '-' -f2)
             echo $reponame

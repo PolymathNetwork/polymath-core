@@ -240,7 +240,6 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         ballots.push(Ballot(
             _checkpointId, uint64(_commitDuration), uint64(_revealDuration), uint64(_startTime), uint24(_noOfChoices.length), uint32(0), false, _name
         ));
-        //Ballot storage currentBallot = ballots[ballotId];
         for (uint256 i = 0; i < _noOfChoices.length; i++) {
             _addProposal(_details[i], _noOfChoices[i], ballots[ballotId], i);
         }
@@ -434,7 +433,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         require(ballot.voteDetails[msg.sender].secretVote == bytes32(0), "Already voted");
         require(!ballot.isCancelled, "Cancelled ballot");
         // Get the balance of the voter (i.e `msg.sender`) at the checkpoint on which ballot was created.
-        uint256 weight = securityToken.balanceOfAt(msg.sender, ballot.checkpointId);
+        uint256 weight = uint256(ballot.totalProposals).mul(securityToken.balanceOfAt(msg.sender, ballot.checkpointId));
         require(weight > 0, "Zero weight is not allowed");
         // Update the storage value.
         ballot.voteDetails[msg.sender] = Vote(_secretVote);
@@ -705,7 +704,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
      * @param _ballotId BallotId for which exempted voters are queried.
      * @return exemptedVoters List of the exempted voters.
      */
-    function getExemptedVoters(uint256 _ballotId) external view returns(address[] memory exemptedVoters) {
+    function getExemptedVotersByBallot(uint256 _ballotId) external view returns(address[] memory exemptedVoters) {
         if (_ballotId >= ballots.length) {
             return exemptedVoters;
         } else {
@@ -853,6 +852,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
     /**
      * @notice Get the details of the ballot
      * @param _ballotId The index of the target ballot
+     * @return name of the ballot
      * @return uint256 totalSupplyAtCheckpoint
      * @return uint256 checkpointId
      * @return uint256 startTime
@@ -867,6 +867,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
      * @return uint256 proposalChoicesCount
      */
     function getBallotDetails(uint256 _ballotId) public view returns(
+        bytes32 name,
         uint256 totalSupplyAtCheckpoint,
         uint256 checkpointId,
         uint256 startTime,
@@ -890,6 +891,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
             proposalChoicesCounts[totalProposals] = ballot.proposals[totalProposals].noOfChoices; // if noOfChoices == 0 then it means the type of ballot is NAY/YAY
         }
         return (
+            ballot.name,
             securityToken.totalSupplyAt(ballot.checkpointId),
             ballot.checkpointId,
             ballot.startTime,

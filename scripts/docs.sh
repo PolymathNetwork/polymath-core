@@ -36,8 +36,6 @@ create_docs() {
     echo "Generating the API documentation in branch $latestTag"
 
     # Command to generate the documentation using the solidity-docgen
-    # migrate=$(SOLC_ARGS="openzeppelin-solidity="$CORE_ROUTE"/node_modules/openzeppelin-solidity" \
-    # solidity-docgen -x external/oraclizeAPI.sol,mocks/MockPolyOracle.sol,oracles/PolyOracle.sol $CORE_ROUTE $CORE_ROUTE/contracts $CORE_ROUTE/polymath-developer-portal/)
     $CORE_ROUTE/node_modules/solidoc/cli.js $CORE_ROUTE . true en "$latestTag"
 
     echo "Successfully docs are generated..."
@@ -86,9 +84,6 @@ versionNo=$(echo "$latestTag" | cut -b 2-6)
 
 #print the tag
 echo "Latest tag is: $latestTag"
-
-# Fetch patched solidity docgen
-# curl -o node_modules/solidity-docgen/lib/index.js https://raw.githubusercontent.com/maxsam4/solidity-docgen/build/lib/index.js
 
 # clone the polymath-developer-portal
 

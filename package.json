@@ -65,7 +65,7 @@
     "openzeppelin-solidity": "2.2.0",
     "solc": "0.5.8",
     "solidity-coverage": "^0.6.3",
-    "solidoc": "PolymathNetwork/solidoc",
+    "solidoc": "PolymathNetwork/solidoc#8bbf51e",
     "truffle": "^5.0.29",
     "truffle-hdwallet-provider": "^1.0.15",
     "web3": "^1.2.0",

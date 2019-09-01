@@ -34,9 +34,8 @@ create_docs() {
     fi
 
     echo "Generating the API documentation in branch $latestTag"
-
-    # Command to generate the documentation using the solidity-docgen
-    "$CORE_ROUTE"/node_modules/solidoc/cli.js "$CORE_ROUTE" . true en "$latestTag"
+    # Command to generate the documentation.
+    "$CORE_ROUTE"/node_modules/solidoc/cli.js "$CORE_ROUTE" $versionNo true en "$versionNo" '**/PolyOracle.json'
 
     echo "Successfully docs are generated..."
 

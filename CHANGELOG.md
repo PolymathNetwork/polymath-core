@@ -6,8 +6,31 @@ All notable changes to this project will be documented in this file.
 [__3.1.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __11-07-19__
 
 ## Modules
+* Add new module `RestrictedPartialSaleTM`
 * Add `getSchedulesCountByTemplate()` function in VEW.
+* Add `getAllBeneficiaries()` function in VEW.
+* Add `getAvailableTokens()` function in VEW.
+* Add `getAvailableTokens()` function in VEW.
+* Make variable `treasuryWallet` internal in VEW.
+* Make variable `templates` public in VEW.
+* In VEW, ModifySchedule now requires that startTime >= current time. Previously this required startTime > current time.
 * Add `addDelegateMulti()`, `deleteDelegateMulti()` batch functions in `GeneralPermissionManager` module.
+* Add `WHITELISTMODULE` constant to `GeneralTransferManager` module.
+* STO interface now includes new events `AllowPreMintFlag` and `RevokePreMintFlag`.
+* STO module `pause` function now requires `!isFinalized`.
+* Add `getTreasuryWallet()` and `reclaimERC20()` functions in STO.
+* Add `preMintAllowed` and `isFinalized` public accessible booleans in STO.
+* Treasury wallet is added as a new argument of `configure()` in CappedSTO.
+* `allowPreMinting()`, `revokePreMintFlag()`, and `finalize()` added in CappedSTO.
+* BuyTokens' internal `prevalidatePurchase` method now has assertion `require(!isFinalized, "STO is finalized")` in CappedSTO.
+* Add `ReserveTokenMint` and `ReserveTokenTransfer` events in CappedSTO.
+* `getSTODetails` now includes another boolean (`preMintAllowed`) in CappedSTO.
+* Add `ReserveTokenTransfer` event in USDTieredSTO.
+* Add `allowPreMinting` and `revokePreMintFlag` functions in USDTieredSTO.
+* Change last 2 parameters in struct `Tier`, now called `tokensSoldInTier` and `tokensSoldPerFundType` in USDTieredSTO.
+* Add another parameter to `Tier` called `soldDiscountPoly` in USDTieredSTO.
+* Removed `isFinalized` and `treasuryWallet` public variables in USDTieredSTOStorage.
+
 
 # v3.0.0 - Release Candidate
 

@@ -471,7 +471,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
             "Invalid vote"
         );
         // Get the balance of the voter (i.e `msg.sender`) at the checkpoint on which ballot was created.
-        uint256 weight = securityToken.balanceOfAt(msg.sender, ballot.checkpointId);
+        uint256 weight = uint256(ballot.totalProposals).mul(securityToken.balanceOfAt(msg.sender, ballot.checkpointId));
         choiceCount = 0;
         uint256 totalChoiceWeight = 0;
         for (i = 0; i < ballot.totalProposals; i++) {
@@ -485,7 +485,6 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
             choiceCount = temp;
         }
         require(totalChoiceWeight == weight, "Invalid distribution of vote token");
-
         // update the storage values
         ballot.totalVoters = ballot.totalVoters + 1;
         ballot.voteDetails[msg.sender] = Vote(bytes32(0));
@@ -838,11 +837,9 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
                     uint256[] storage choiceWeight = ballot.voteDetails[voters[j]].voteOptions[i];
                     uint256 l = 0;
                     for (k = count; k < nextProposalChoiceLen; k++) {
-                        choicesWeighting[count] = choicesWeighting[count].add(choiceWeight[l]);
-                        count++;
+                        choicesWeighting[k] = choicesWeighting[k].add(choiceWeight[l]);
                         l++;
                     }
-                    count = 0;
                 }
                 count = nextProposalChoiceLen;
             }

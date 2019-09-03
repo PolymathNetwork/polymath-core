@@ -25,3 +25,5 @@ extract.py
 extract.zip
 /test-results
 .env
+yarn-error.log
+polymath-developer-portal

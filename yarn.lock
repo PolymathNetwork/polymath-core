@@ -9817,9 +9817,9 @@ solidity-parser-antlr@^0.4.2, solidity-parser-antlr@^0.4.7:
   dependencies:
     npm-check-updates "^3.1.11"
 
-solidoc@PolymathNetwork/solidoc#8bbf51e:
-  version "1.0.4"
-  resolved "https://codeload.github.com/PolymathNetwork/solidoc/tar.gz/8bbf51e44f813cfdb543ddfeba78e54ec428a10b"
+solidoc@PolymathNetwork/solidoc:
+  version "1.0.5"
+  resolved "https://codeload.github.com/PolymathNetwork/solidoc/tar.gz/e76b1bdecc66b1339cf54f6658f450c21f9d6217"
   dependencies:
     fs-extra "^7.0.0"
     glob "^7.1.3"

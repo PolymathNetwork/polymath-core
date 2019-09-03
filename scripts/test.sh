@@ -57,7 +57,7 @@ start_testrpc() {
   )
 
   if [ "$COVERAGE" = true ]; then
-    node --max-old-space-size=3500 node_modules/.bin/testrpc-sc --gasLimit 0xfffffffff --port "$testrpc_port" "${accounts[@]}" > /dev/null &
+    node --max-old-space-size=8192 node_modules/.bin/testrpc-sc --gasLimit 0xfffffffff --port "$testrpc_port" "${accounts[@]}" > /dev/null &
   else
     node_modules/.bin/ganache-cli --gasLimit 8000000 "${accounts[@]}" > /dev/null &
   fi
@@ -89,7 +89,7 @@ else
 fi
 
 if [ "$COVERAGE" = true ]; then
-  node --max_old_space_size=3500 node_modules/.bin/solidity-coverage
+  node --max_old_space_size=8192 node_modules/.bin/solidity-coverage
   if [ "$CIRCLECI" = true ]; then
     cat coverage/lcov.info | node_modules/.bin/coveralls || echo 'Failed to report coverage to Coveralls'
   fi
@@ -101,11 +101,11 @@ else
     mv truffle-ci.js truffle-config.js
     # only run poly oracle and upgrade tests if cron job by CI
     if [ "$CIRCLE_CI_CRON" = true ]; then
-      node_modules/.bin/truffle test `ls test/*.js | circleci tests split --split-by=timings`
+      node --max-old-space-size=8192 node_modules/.bin/truffle test `ls test/*.js | circleci tests split --split-by=timings`
     else
-      node_modules/.bin/truffle test `find test/*.js ! -name a_poly_oracle.js | circleci tests split --split-by=timings`
+      node --max-old-space-size=8192 node_modules/.bin/truffle test `find test/*.js ! -name a_poly_oracle.js | circleci tests split --split-by=timings`
     fi
   else
-    node_modules/.bin/truffle test `find test/*.js ! -name a_poly_oracle.js`
+    node --max-old-space-size=8192 node_modules/.bin/truffle test `find test/*.js ! -name a_poly_oracle.js`
   fi
 fi

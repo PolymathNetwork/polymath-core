@@ -81,8 +81,12 @@ contract("ScheduledCheckpoint", async (accounts) => {
         account_investor1 = accounts[7];
         account_investor2 = accounts[8];
         account_investor3 = accounts[9];
-        //await jumpToTime(Math.floor((new Date().getTime())/1000));
-        await jumpToTime(1553040000); // 03/20/2019 @ 12:00am (UTC)
+
+        // Move to the last second of August 31st.
+        const time = Date.parse('08/31/2019 23:59:59') / 1000
+        assert.equal(time, 1567310399)
+        await jumpToTime(time)
+
         currentTime = new BN(await latestTime());
 
         // Step 1: Deploy the genral PM ecosystem

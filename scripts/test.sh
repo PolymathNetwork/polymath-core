@@ -106,6 +106,6 @@ else
       node_modules/.bin/truffle test `find test/*.js ! -name a_poly_oracle.js | circleci tests split --split-by=timings`
     fi
   else
-    node_modules/.bin/truffle test `find test/*.js ! -name a_poly_oracle.js`
+    node_modules/.bin/truffle test test/x_scheduled_checkpoints.js
   fi
 fi

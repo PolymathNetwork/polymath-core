@@ -83,7 +83,7 @@ contract("ScheduledCheckpoint", async (accounts) => {
         account_investor3 = accounts[9];
 
         // Move to the last second of August 31st.
-        const time = Date.parse('08/31/2019 23:59:59') / 1000
+        const time = Date.parse('2019-08-31 23:59:59') / 1000
         assert.equal(time, 1567310399)
         await jumpToTime(time)
 

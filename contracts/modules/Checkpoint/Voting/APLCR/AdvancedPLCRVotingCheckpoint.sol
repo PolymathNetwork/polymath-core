@@ -434,7 +434,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         require(!ballot.isCancelled, "Cancelled ballot");
         // Get the balance of the voter (i.e `msg.sender`) at the checkpoint on which ballot was created.
         uint256 weight = uint256(ballot.totalProposals).mul(securityToken.balanceOfAt(msg.sender, ballot.checkpointId));
-        require(weight > 0, "Zero weight is not allowed");
+        require(weight > 0, "Invalid weight");
         // Update the storage value.
         ballot.voteDetails[msg.sender] = Vote(_secretVote);
         emit VoteCommit(msg.sender, weight, _ballotId, _secretVote);
@@ -475,8 +475,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         choiceCount = 0;
         uint256 totalChoiceWeight = 0;
         for (i = 0; i < ballot.totalProposals; i++) {
-            uint256 _noOfChoice = ballot.proposals[i].noOfChoices;
-            _noOfChoice = _noOfChoice == 0 ? 3 : _noOfChoice;
+            uint256 _noOfChoice = _getNoOfChoice(ballot.proposals[i].noOfChoices);
             uint256 temp = (choiceCount + _noOfChoice);
             for (uint256 j = choiceCount; j < temp; j++) {
                 ballot.voteDetails[msg.sender].voteOptions[i].push(_choices[j]);
@@ -484,7 +483,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
             }
             choiceCount = temp;
         }
-        require(totalChoiceWeight == weight, "Invalid distribution of vote token");
+        require(totalChoiceWeight == weight, "Invalid distribution");
         // update the storage values
         ballot.totalVoters = ballot.totalVoters + 1;
         ballot.voteDetails[msg.sender] = Vote(bytes32(0));
@@ -716,13 +715,17 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
                 if (ballot.exemptedVoters[investorAtCheckpoint[i]])
                     count++;
             }
-            exemptedVoters = new address[](count);
+            exemptedVoters = new address[](count.add(defaultExemptedVoters.length));
             count = 0;
             for (i = 0; i < length; i++) {
                 if (ballot.exemptedVoters[investorAtCheckpoint[i]]) {
                     exemptedVoters[count] = investorAtCheckpoint[i];
                     count++;
                 }
+            }
+            for (i = 0; i < defaultExemptedVoters.length; i++) {
+                exemptedVoters[count] = defaultExemptedVoters[i];
+                count++;
             }
         }
     }
@@ -821,16 +824,14 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
             // calculating the length of the choicesWeighting array it should be equal
             // to the aggregation of ∑(proposalᵢ * noOfChoicesᵢ) where i = 0 ...totalProposal-1 
             for (i = 0; i < ballot.totalProposals; i++) {
-                uint256 _noOfChoice = ballot.proposals[i].noOfChoices;
-                _noOfChoice = _noOfChoice == 0 ? 3 : _noOfChoice;
+                uint256 _noOfChoice = _getNoOfChoice(ballot.proposals[i].noOfChoices);
                 count = count.add(_noOfChoice);
             }
             choicesWeighting = new uint256[](count);
             noOfChoicesInProposal = new uint256[](ballot.totalProposals);
             count = 0;
             for (i = 0; i < ballot.totalProposals; i++) {
-                uint256 _noOfChoices = ballot.proposals[i].noOfChoices;
-                _noOfChoices = _noOfChoices == 0 ? 3 : _noOfChoices;
+                uint256 _noOfChoices = _getNoOfChoice(ballot.proposals[i].noOfChoices);
                 noOfChoicesInProposal[i] = _noOfChoices;
                 uint256 nextProposalChoiceLen = count + _noOfChoices;
                 for (j = 0; j < ballot.totalVoters; j++) {
@@ -905,37 +906,6 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
     }
 
     /**
-     * @notice Use to get the ballots Id which are in COMMIT & REVEAL phase
-     * @return uint256 commitBallotList Array of the ballot ids which are in the commit stage.
-     * @return uint256 revealBallotList Array of the ballot ids which are in the reveal stage.
-     */
-    function getCommitAndRevealBallots() external view returns(uint256[] memory commitBallotList, uint256[] memory revealBallotList) {
-        uint256 len = getBallotsArrayLength();
-        uint256 commitCount = 0;
-        uint256 revealCount = 0;
-        uint256 i;
-        for (i = 0; i < len; i++) {
-            if (getCurrentBallotStage(i) == Stage.COMMIT)
-                commitCount++;
-            else if (getCurrentBallotStage(i) == Stage.REVEAL)
-                revealCount++;
-        }
-        commitBallotList = new uint256[](commitCount);
-        revealBallotList = new uint256[](revealCount);
-        (commitCount, revealCount) = (0, 0);
-        for (i = 0; i < len; i++) {
-            if (getCurrentBallotStage(i) == Stage.COMMIT) {
-                commitBallotList[commitCount] = i;
-                commitCount++;
-            }
-            else if (getCurrentBallotStage(i) == Stage.REVEAL) {
-                revealBallotList[revealCount] = i;
-                revealCount++;
-            }
-        }
-    }
-
-    /**
      * @notice Get the length of the ballots array
      * @return uint256 Length of the ballots array
      */
@@ -950,8 +920,8 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
      * @return bool
      */
     function isVoterAllowed(uint256 _ballotId, address _voter) public view returns(bool) {
-        bool allowed = (ballots[_ballotId].exemptedVoters[_voter] || (defaultExemptIndex[_voter] != 0));
-        return !allowed;
+        bool notAllowed = (ballots[_ballotId].exemptedVoters[_voter] || (defaultExemptIndex[_voter] != 0));
+        return !notAllowed;
     }
 
     /**
@@ -993,11 +963,15 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
     }
 
     function _checkValidStage(uint256 _ballotId, Stage _stage) internal view {
-        require(getCurrentBallotStage(_ballotId) == _stage, "Not in a valid stage");
+        require(getCurrentBallotStage(_ballotId) == _stage, "Invalid stage");
     }
 
     function _isEmptyBytes32(bytes32 _name) internal pure {
         require(_name != bytes32(0), "Invalid name");
+    }
+
+    function _getNoOfChoice(uint256 _noOfChoice) internal pure returns(uint256 noOfChoice) {
+        noOfChoice = _noOfChoice == 0 ? DEFAULTCHOICE : _noOfChoice;
     }
 
 }

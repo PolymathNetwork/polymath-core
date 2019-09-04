@@ -26,7 +26,7 @@ contract AdvancedPLCRVotingCheckpointFactory is UpgradableModuleFactory {
     {
         initialVersion = "3.1.0";
         name = "AdvancedPLCRVotingCheckpoint";
-        title = "Advanced PLCR Voting Checkpoint";
+        title = "CorporateVoting";
         description = "Commit & reveal technique used for voting";
         typesData.push(4);
         tagsData.push("Vote");

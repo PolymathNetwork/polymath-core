@@ -131,7 +131,7 @@ contract RestrictedPartialSaleTM is RestrictedPartialSaleTMStorage, TransferMana
     }
 
     /**
-     * @notice Return the permissions flag that are associated with Restricted partial trnasfer manager
+     * @notice Return the permissions flag that are associated with Restricted partial transfer manager
      * @return bytes32 array
      */
     function getPermissions() public view returns(bytes32[] memory) {

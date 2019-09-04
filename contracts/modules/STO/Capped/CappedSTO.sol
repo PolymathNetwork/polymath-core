@@ -3,6 +3,7 @@ pragma solidity 0.5.8;
 import "../STO.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "../../../interfaces/IGTM.sol";
 import "./CappedSTOStorage.sol";
 
 /**
@@ -297,6 +298,18 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
             tempTokens = cap - totalTokensSold;
             walletAddress = getTreasuryWallet();
             require(walletAddress != address(0), "Invalid address");
+            address[] memory gtmAddress = securityToken.getModulesByName("GeneralTransferManager");
+            for (uint256 i = 0; i < gtmAddress.length; i++) {
+                (,,,bool isArchived,,) = securityToken.getModule(gtmAddress[i]);
+                if (!isArchived) {
+                    if (!IGTM(gtmAddress[i]).isAddressWhitelisted(walletAddress)) {
+                        IGTM(gtmAddress[i]).modifyKYCDataByModules(walletAddress, uint64(now - 1), uint64(now - 1), uint64(now.add(EXPIRYTIME)));
+                        break;
+                    } else {
+                        break;
+                    }
+                }
+            }
             if (preMintAllowed) {
                 securityToken.transfer(walletAddress, tempTokens);
                 emit ReserveTokenTransfer(address(this), walletAddress, tempTokens);

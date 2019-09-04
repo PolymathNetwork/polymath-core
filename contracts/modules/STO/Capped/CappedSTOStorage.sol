@@ -5,6 +5,8 @@ pragma solidity 0.5.8;
  */
 contract CappedSTOStorage {
 
+    uint256 internal constant EXPIRYTIME = 3153600000; //100 years;
+
     // Determine whether users can invest on behalf of a beneficiary
     bool public allowBeneficialInvestments = false;
     // How many token units a buyer gets (multiplied by 10^18) per wei / base unit of POLY

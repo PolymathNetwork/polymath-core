@@ -478,9 +478,12 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @return bool
      */
     function tickerAvailable(string memory _ticker) public view returns(bool) {
-        if (_tickerOwner(_ticker) != address(0)) {
+        // Validate ticker to avoid confusions where a ticker IS available YET cannot be registered.
+        require(bytes(_ticker).length > 0 && bytes(_ticker).length <= 10, "Bad ticker");
+        string memory ticker = Util.upper(_ticker);
+        if (_tickerOwner(ticker) != address(0)) {
             /*solium-disable-next-line security/no-block-members*/
-            if ((now > getUintValue(Encoder.getKey("registeredTickers_expiryDate", _ticker))) && !_tickerStatus(_ticker)) {
+            if ((now > getUintValue(Encoder.getKey("registeredTickers_expiryDate", ticker))) && !_tickerStatus(ticker)) {
                 return true;
             } else return false;
         }

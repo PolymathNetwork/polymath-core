@@ -3,6 +3,7 @@ const chalk = require('chalk');
 const moment = require('moment');
 const BigNumber = require('bignumber.js');
 const { table } = require('table');
+const fs = require('fs').promises;
 const common = require('./common/common_functions');
 const gbl = require('./common/global');
 const contracts = require('./helpers/contract_addresses');
@@ -102,7 +103,7 @@ async function advancedPLCRVotingManager() {
   const prepareBallots = allBalotsToShow.filter(b => b.stage === 'Prepare');
   const commitBallots = allBalotsToShow.filter(b => b.stage === 'Commit');
   const revealBallots = allBalotsToShow.filter(b => b.stage === 'Reveal');
-  const pendingBallots = await currentVotingModule.methods.pendingBallots(Issuer.address).call();
+  const pendingBallotIds = await currentVotingModule.methods.pendingBallots(Issuer.address).call();
   const defaultExemptedVoters = await currentVotingModule.methods.getDefaultExemptionVotersList().call();
 
   console.log(`- Current ST checkpoint:         ${currentCheckpointId > 0 ? currentCheckpointId : 'None'}`);
@@ -113,7 +114,7 @@ async function advancedPLCRVotingManager() {
   console.log(`    Commit satage:               ${commitBallots.length}`);
   console.log(`    Reveal satage:               ${revealBallots.length}`);
   console.log();
-  console.log(`- Pending ballots:               ${pendingBallots.length}`);
+  console.log(`- Pending ballots:               ${pendingBallotIds.length}`);
 
   const options = ['Create checkpoint'];
   if (currentCheckpointId > 0) {
@@ -126,7 +127,11 @@ async function advancedPLCRVotingManager() {
   if (allBalotsToShow.length > 0) {
     options.push('Manage existing ballots');
   }
-  options.push('Create a new ballot', 'Reclaim ETH or ERC20 tokens from contract');
+  options.push('Create a new ballot');
+  if (pendingBallotIds.length > 0) {
+    options.push('Commit vote');
+  }
+  options.push('Reclaim ETH or ERC20 tokens from contract');
 
   let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
   let selected = index !== -1 ? options[index] : 'RETURN';
@@ -146,13 +151,20 @@ async function advancedPLCRVotingManager() {
       await addOrRemoveExemptedVoters();
       break;
     case 'Manage existing ballots':
-      let selectedBallot = await selectBallot(allBalotsToShow);
+      const selectedBallot = await selectBallot(allBalotsToShow);
       if (selectedBallot) {
         await manageExistingBallot(selectedBallot.id);
       }
       break;
     case 'Create a new ballot':
       await createBallot();
+      break;
+    case 'Commit vote':
+      const pendingBallots = allBalotsToShow.filter(b => pendingBallotIds.includes(b.id));
+      const selectedBallotForVote = await selectBallot(pendingBallots);
+      if (selectedBallotForVote) {
+        await commitVote(selectedBallotForVote.id);
+      }
       break;
     case 'Reclaim ETH or ERC20 tokens from contract':
       await reclaimFromContract();
@@ -256,7 +268,7 @@ async function createBallot() {
   const useDefaultExemptions = readlineSync.keyInYNStrict(`Do you want to use the default exemption voters list for this ballot?`);
   const exemptions = useDefaultExemptions ? undefined : input.readMultipleAddresses(`Enter addresses to exempt from this ballot (ex - add1, add2, add3, ...): `);
 
-  const ballot = Ballot(startTime, commitDuration, revealDuration, proposals, checkpointId, useDefaultExemptions, exemptions);
+  const ballot = Ballot(startTime, commitDuration, revealDuration, proposals, checkpointId, exemptions);
 
   if (ballot.proposalDetails.length === 1) {
     // Statutory ballot
@@ -266,12 +278,12 @@ async function createBallot() {
       if (exemptions) {
         // With exemptions
         action = currentVotingModule.methods.createStatutoryBallotWithExemption(
-          web3.utils.toHex(name),
+          web3.utils.asciiToHex(name),
           ballot.startTime,
           ballot.commitDuration,
           ballot.revealDuration,
           ballot.proposalTitles.join(','),
-          web3.utils.toHex(ballot.proposalDetails[0]),
+          web3.utils.asciiToHex(ballot.proposalDetails[0]),
           ballot.choices.join(','),
           ballot.choicesCounts[0],
           ballot.exemptions
@@ -279,12 +291,12 @@ async function createBallot() {
       } else {
         // Standard
         action = currentVotingModule.methods.createStatutoryBallot(
-          web3.utils.toHex(name),
+          web3.utils.asciiToHex(name),
           ballot.startTime,
           ballot.commitDuration,
           ballot.revealDuration,
           ballot.proposalTitles.join(','),
-          web3.utils.toHex(ballot.proposalDetails[0]),
+          web3.utils.asciiToHex(ballot.proposalDetails[0]),
           ballot.choices.join(','),
           ballot.choicesCounts[0]
         )
@@ -294,12 +306,12 @@ async function createBallot() {
       if (exemptions) {
         // With exemptions
         action = currentVotingModule.methods.createCustomStatutoryBallotWithExemption(
-          web3.utils.toHex(name),
+          web3.utils.asciiToHex(name),
           ballot.startTime,
           ballot.commitDuration,
           ballot.revealDuration,
           ballot.proposalTitles.join(','),
-          web3.utils.toHex(ballot.proposalDetails[0]),
+          web3.utils.asciiToHex(ballot.proposalDetails[0]),
           ballot.choices.join(','),
           ballot.choicesCounts[0],
           ballot.checkpointId,
@@ -308,12 +320,12 @@ async function createBallot() {
       } else {
         // Standard
         action = currentVotingModule.methods.createCustomStatutoryBallot(
-          web3.utils.toHex(name),
+          web3.utils.asciiToHex(name),
           ballot.startTime,
           ballot.commitDuration,
           ballot.revealDuration,
           ballot.proposalTitles.join(','),
-          web3.utils.toHex(ballot.proposalDetails[0]),
+          web3.utils.asciiToHex(ballot.proposalDetails[0]),
           ballot.choices.join(','),
           ballot.choicesCounts[0],
           ballot.checkpointId
@@ -331,12 +343,12 @@ async function createBallot() {
       if (exemptions) {
         // With exemptions
         action = currentVotingModule.methods.createCumulativeBallotWithExemption(
-          web3.utils.toHex(name),
+          web3.utils.asciiToHex(name),
           ballot.startTime,
           ballot.commitDuration,
           ballot.revealDuration,
           ballot.proposalTitles.join(','),
-          ballot.proposalDetails.map(pd => web3.utils.toHex(pd)),
+          ballot.proposalDetails.map(pd => web3.utils.asciiToHex(pd)),
           ballot.choices.join(','),
           ballot.choicesCounts,
           ballot.exemptions
@@ -344,12 +356,12 @@ async function createBallot() {
       } else {
         // Standard
         action = currentVotingModule.methods.createCumulativeBallot(
-          web3.utils.toHex(name),
+          web3.utils.asciiToHex(name),
           ballot.startTime,
           ballot.commitDuration,
           ballot.revealDuration,
           ballot.proposalTitles.join(','),
-          ballot.proposalDetails.map(pd => web3.utils.toHex(pd)),
+          ballot.proposalDetails.map(pd => web3.utils.asciiToHex(pd)),
           ballot.choices.join(','),
           ballot.choicesCounts
         )
@@ -359,12 +371,12 @@ async function createBallot() {
       if (exemptions) {
         // With exemptions
         action = currentVotingModule.methods.createCustomCumulativeBallotWithExemption(
-          web3.utils.toHex(name),
+          web3.utils.asciiToHex(name),
           ballot.startTime,
           ballot.commitDuration,
           ballot.revealDuration,
           ballot.proposalTitles.join(','),
-          ballot.proposalDetails.map(pd => web3.utils.toHex(pd)),
+          ballot.proposalDetails.map(pd => web3.utils.asciiToHex(pd)),
           ballot.choices.join(','),
           ballot.choicesCounts,
           ballot.checkpointId,
@@ -373,12 +385,12 @@ async function createBallot() {
       } else {
         // Standard
         action = currentVotingModule.methods.createCustomCumulativeBallot(
-          web3.utils.toHex(name),
+          web3.utils.asciiToHex(name),
           ballot.startTime,
           ballot.commitDuration,
           ballot.revealDuration,
           ballot.proposalTitles.join(','),
-          ballot.proposalDetails.map(pd => web3.utils.toHex(pd)),
+          ballot.proposalDetails.map(pd => web3.utils.asciiToHex(pd)),
           ballot.choices.join(','),
           ballot.choicesCounts,
           ballot.checkpointId
@@ -392,24 +404,26 @@ async function createBallot() {
 }
 
 async function manageExistingBallot(ballotId) {
+  console.log('\n', chalk.blue('Voting manager - Ballot details', '\n'));
   // Show current data
   const details = await currentVotingModule.methods.getBallotDetails(ballotId).call();
-  const type = details.totalProposals > 1 ? 'Cumulative' : 'Statutory';
+  const type = parseInt(details.totalProposals) > 1 ? 'Cumulative' : 'Statutory';
   const allowedVoters = await currentVotingModule.methods.getAllowedVotersByBallot(ballotId).call();
-  const exemptedVoters = await currentVotingModule.methods.getExemptedVoters(ballotId).call();
+  const exemptedVoters = await currentVotingModule.methods.getExemptedVotersByBallot(ballotId).call();
+  const pendingVoters = await currentVotingModule.methods.getPendingInvestorToVote(ballotId).call();
   const proposals = type === 'Statutory' ? await getStatutoryBallotProposal(ballotId) : await getCumulativeBallotProposals(ballotId);
   const results = details.currentStage === 3 ? await currentVotingModule.methods.getBallotResults(ballotId) : undefined;
 
-  console.log(`- Name:                            ${details.name}`);
+  console.log(`- Name:                            ${web3.utils.hexToUtf8(details.name)}`);
   if (details.isCancelled) {
     console.log(`- Cancelled:                       ${chalk.red('YES')}`);
   } else {
-    console.log(`- Current stage:                   ${details.currentStage}`);
+    console.log(`- Current stage:                   ${Stage(details.currentStage)}`);
   }
   console.log(`- Type:                            ${type}`);
   console.log(`- Checkpoint:                      ${details.checkpointId}`);
   console.log(`- Total supply at checkpoint:      ${details.totalSupplyAtCheckpoint}`);
-  console.log(`- Start time:                      ${details.startTime}`);
+  console.log(`- Start time:                      ${moment.unix(details.startTime).format('MMMM Do YYYY, HH:mm:ss')}`);
   console.log(`- Commit duration:                 ${details.commitDuration}`);
   console.log(`- Reveal duration:                 ${details.revealDuration}`);
   console.log(`- Allowed voters:                  ${allowedVoters.length}`);
@@ -429,6 +443,9 @@ async function manageExistingBallot(ballotId) {
   if (details.currentStage === 3) {
     options.push('Show results')
   } else {
+    if (pendingVoters.length > 0) {
+      options.push('Show pending voters');
+    }
     options.push('Change exempted voters', 'Cancel ballot');
   }
 
@@ -445,17 +462,131 @@ async function manageExistingBallot(ballotId) {
     case 'Show results':
       // TODO
       break;
+    case 'Show pending voters':
+      showAddresses(`Current pending voters for ${details.name} ballot:`, pendingVoters);
+      break;
     case 'Change exempted voters':
-      // TODO
+      await changeExemptedVotersByBallot(ballotId);
       break;
     case 'Cancel ballot':
-      // TODO
+      await cancelBallot(ballotId);
       break;
     case 'RETURN':
       return;
   }
 
   await manageExistingBallot(ballotId);
+}
+
+async function changeExemptedVotersByBallot(ballotId) {
+  const voters = input.readMultipleAddresses(`Enter addresses to add or remove from exempted voters (ex - add1, add2, add3, ...) or leave empty to read from 'exempted_voters.csv': `);
+  const exempts = voters.map(a => readlineSync.keyInYNStrict(`Do you want to exempt ${a}?`));
+  if (voters[0] === '') {
+    const parsedData = csvParse(EXEMPTED_VOTERS_DATA_CSV);
+    const validData = parsedData.filter(row =>
+      web3.utils.isAddress(row[0]) &&
+      typeof row[1] === "boolean"
+    );
+    const invalidRows = parsedData.filter(row => !validData.includes(row));
+    if (invalidRows.length > 0) {
+      console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+    }
+    const batches = common.splitIntoBatches(validData, 100);
+    const [voterArray, exemptArray] = common.transposeBatches(batches);
+    for (let batch = 0; batch < batches.length; batch++) {
+      console.log(`Batch ${batch + 1} - Attempting to change multiple exemptions for: \n\n`, voterArray[batch], '\n');
+      const action = await currentVotingModule.methods.changeBallotExemptedVotersListMulti(ballotId, voterArray[batch], exemptArray[batch]);
+      const receipt = await common.sendTransaction(action);
+      console.log(chalk.green('Multiple exemptions have benn changed successfully!'));
+      console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+    }
+  } else if (voters.length === 1) {
+    const action = currentVotingModule.methods.changeBallotExemptedVotersList(ballotId, voters[0], exempts[0]);
+    const receipt = await common.sendTransaction(action);
+    const event = common.getEventFromLogs(currentVotingModule._jsonInterface, receipt.logs, 'ChangedDefaultExemptedVotersList');
+    if (exempts[0]) {
+      console.log(chalk.green(`${voters[0]} has been added to exempted voters list successfully!`));
+    } else {
+      console.log(chalk.green(`${voters[0]} has been removed from exempted voters list successfully!`))
+    }
+  } else {
+    const action = await currentVotingModule.methods.changeBallotExemptedVotersListMulti(ballotId, voters, exempts);
+    const receipt = await common.sendTransaction(action);
+    const event = common.getMultipleEventsFromLogs(currentVotingModule._jsonInterface, receipt.logs, 'ChangedDefaultExemptedVotersList');
+    console.log(chalk.green('Multiple exemptions have benn changed successfully!'));
+  }
+}
+
+async function cancelBallot(ballotId) {
+  const action = currentVotingModule.methods.cancelBallot(ballotId);
+  const receipt = await common.sendTransaction(action);
+  const event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'BallotCancelled');
+  console.log(chalk.green(`The ballot has been cancelled successfully!`));
+}
+
+async function commitVote(ballotId) {
+  console.log('\n', chalk.blue('Voting manager - Commit vote', '\n'));
+
+  const details = await currentVotingModule.methods.getBallotDetails(ballotId).call();
+  const type = parseInt(details.totalProposals) > 1 ? 'Cumulative' : 'Statutory';
+  const proposals = type === 'Statutory' ? await getStatutoryBallotProposal(ballotId) : await getCumulativeBallotProposals(ballotId);
+
+  for (let i = 0; i < proposals.length; i++) {
+    console.log(`Proposal no. ${i + 1}: ${proposals[i].title}`);
+    console.log(`Details: ${proposals[i].details}`);
+    console.log('Choices:');
+    const choices = proposals[i].choices;
+    for (let j = 0; j < proposals[i].choicesCount; j++) {
+      console.log(`  ${String.fromCharCode(65 + j)}) ${choices[j]}`);
+    }
+    console.log();
+  }
+
+  const votingPower = new BigNumber(web3.utils.fromWei(await currentVotingModule.methods.getVoteTokenCount(Issuer.address, ballotId).call()));
+  console.log(`Your voting power is ${votingPower}.`);
+  console.log(`You can distribute it over the different choices as you want.`);
+  console.log('Please enter the amount of votes you want to assign to each choice.', '\n')
+
+  let remaining = votingPower;
+  const proposalVotes = [];
+  for (let i = 0; i < proposals.length; i++) {
+    const choicesVotes = [];
+    for (let j = 0; j < proposals[i].choicesCount; j++) {
+      const vote = input.readNumberBetween(0, remaining.toNumber(), `Enter how many votes you want to assign for choice ${String.fromCharCode(65 + j)} at proposal no. ${i + 1}: `, 0);
+      remaining = remaining.minus(new BigNumber(vote));
+      choicesVotes.push(vote);
+    }
+    proposalVotes.push(choicesVotes);
+  }
+  if (remaining.toNumber() !== 0) {
+    console.log(chalk.red(`You have not assigned all your votes. Please try again and make sure to assign 100% of your votes.`));
+    await commitVote(ballotId);
+  } else {
+    for (let i = 0; i < proposals.length; i++) {
+      console.log('\n', chalk.yellow('Please review your votes'), '\n')
+      console.log(`Proposal no. ${i + 1}: ${proposals[i].title}`);
+      console.log(`Details: ${proposals[i].details}`);
+      const choices = proposals[i].choices;
+      for (let j = 0; j < proposals[i].choicesCount; j++) {
+        console.log(`  ${String.fromCharCode(65 + j)}) ${choices[j]}:\t\t ${proposalVotes[i][j]}`);
+      }
+      console.log();
+    }
+    if (!readlineSync.keyInYNStrict(`Do you confirm it is OK?`)) {
+      await commitVote(ballotId);
+    } else {
+      const defaultSalt = Math.floor(Math.random() * 100000000);
+      const salt = input.readNumberBetween(10000000, 99999999, `Enter an 8-digit number to encode your votes (or leave it empty to generate one randomly): `, defaultSalt);
+      console.log(`The salt is ${salt}`);
+      const flatVotes = proposalVotes.reduce((acc, val) => acc.concat(val), []).map(v => web3.utils.toWei(v));
+      const data = [...flatVotes, salt];
+      const action = currentVotingModule.methods.commitVote(ballotId, web3.utils.soliditySha3(...data));
+      const receipt = await common.sendTransaction(action);
+      await fs.writeFile(`${__dirname}/../data/Checkpoint/Voting/MyVotes/${Issuer.address}_${ballotId}.csv`, data.join(','), 'utf8');
+      const event = common.getEventFromLogs(currentVotingModule._jsonInterface, receipt.logs, 'VoteCommit');
+      console.log(chalk.green(`Your vote has been sent successfully!`));
+    }
+  }
 }
 
 async function reclaimFromContract() {
@@ -519,7 +650,7 @@ async function getAllBallots() {
     return {
       id,
       name: web3.utils.hexToUtf8(name),
-      type: totalProposals === 1 ? 'Statutory' : 'Cumulative',
+      type: parseInt(totalProposals) === 1 ? 'Statutory' : 'Cumulative',
       stage: Stage(stage),
       isCancelled
     }
@@ -563,6 +694,7 @@ async function getCumulativeBallotProposals(ballotId) {
   const event = (await currentVotingModule.getPastEvents('CumulativeBallotCreated', { fromBlock: 0, filter: { _ballotId: [ballotId] } }))[0];
   const proposalsCount = event.returnValues._noOfChoices.length;
   const titles = event.returnValues._proposalTitle.split(',');
+  const choicesCounts = event.returnValues._noOfChoices.map(c => parseInt(c));
   const choices = event.returnValues._choices.split(',');
   const proposals = [];
   let startChoiceIndex = 0;
@@ -570,9 +702,9 @@ async function getCumulativeBallotProposals(ballotId) {
     const proposal = Proposal(
       titles[i],
       web3.utils.hexToUtf8(event.returnValues._details[i]),
-      choices.slice(startChoiceIndex, startChoiceIndex + choices[i] - 1)
+      choices.slice(startChoiceIndex, startChoiceIndex + choicesCounts[i])
     );
-    startChoiceIndex = choices[i];
+    startChoiceIndex += choicesCounts[i];
     proposals.push(proposal);
   }
   return proposals;
@@ -607,16 +739,17 @@ function Ballot(startTime, commitDuration, revealDuration, proposals, checkpoint
     choices: proposals.map(p => p.choices).reduce((acc, val) => acc.concat(val), []), // To flat the array
     choicesCounts: proposals.map(p => p.choicesCount),
     checkpointId,
-    exemptions
+    exemptions: exemptions ? [] : exemptions
   }
 }
 
 function Stage(stage) {
-  if (stage === 0) {
+  const intStage = parseInt(stage);
+  if (intStage === 0) {
     return 'Prepare';
-  } else if (stage === 1) {
+  } else if (intStage === 1) {
     return 'Commit';
-  } else if (stage === 2) {
+  } else if (intStage === 2) {
     return 'Reveal';
   } else {
     return 'Resolved';

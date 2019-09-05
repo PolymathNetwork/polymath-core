@@ -21,9 +21,6 @@ let tokenSymbol;
 let currentVotingModule;
 
 const EXEMPTED_VOTERS_DATA_CSV = `${__dirname}/../data/Checkpoint/Voting/exempted_voters_data.csv`;
-const ADD_SCHEDULE_FROM_TEMPLATE_CSV = `${__dirname}/../data/Wallet/VEW/add_schedule_from_template_data.csv`;
-const MODIFY_SCHEDULE_CSV = `${__dirname}/../data/Wallet/VEW/modify_schedule_data.csv`;
-const REVOKE_SCHEDULE_CSV = `${__dirname}/../data/Wallet/VEW/revoke_schedule_data.csv`;
 
 async function executeApp() {
   console.log('\n', chalk.blue('Voting manager - Main Menu', '\n'));
@@ -131,6 +128,7 @@ async function advancedPLCRVotingManager() {
   if (pendingBallotIds.length > 0) {
     options.push('Commit vote');
   }
+  options.push('Reveal vote');
   options.push('Reclaim ETH or ERC20 tokens from contract');
 
   let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
@@ -160,10 +158,17 @@ async function advancedPLCRVotingManager() {
       await createBallot();
       break;
     case 'Commit vote':
-      const pendingBallots = allBalotsToShow.filter(b => pendingBallotIds.includes(b.id));
-      const selectedBallotForVote = await selectBallot(pendingBallots);
+      const pendingCommitBallots = allBalotsToShow.filter(b => pendingBallotIds.includes(b.id));
+      const selectedBallotForVote = await selectBallot(pendingCommitBallots);
       if (selectedBallotForVote) {
         await commitVote(selectedBallotForVote.id);
+      }
+      break;
+    case 'Reveal vote':
+      const pendingRevealBallots = allBalotsToShow.filter(b => pendingBallotIds.includes(b.id));
+      const selectedBallotForReveal = {id: '3'} // await selectBallot(pendingRevealBallots);
+      if (selectedBallotForReveal) {
+        await revealVote(selectedBallotForReveal.id);
       }
       break;
     case 'Reclaim ETH or ERC20 tokens from contract':
@@ -412,7 +417,7 @@ async function manageExistingBallot(ballotId) {
   const exemptedVoters = await currentVotingModule.methods.getExemptedVotersByBallot(ballotId).call();
   const pendingVoters = await currentVotingModule.methods.getPendingInvestorToVote(ballotId).call();
   const proposals = type === 'Statutory' ? await getStatutoryBallotProposal(ballotId) : await getCumulativeBallotProposals(ballotId);
-  const results = details.currentStage === 3 ? await currentVotingModule.methods.getBallotResults(ballotId) : undefined;
+  const results = await currentVotingModule.methods.getBallotResults(ballotId).call();
 
   console.log(`- Name:                            ${web3.utils.hexToUtf8(details.name)}`);
   if (details.isCancelled) {
@@ -422,26 +427,43 @@ async function manageExistingBallot(ballotId) {
   }
   console.log(`- Type:                            ${type}`);
   console.log(`- Checkpoint:                      ${details.checkpointId}`);
-  console.log(`- Total supply at checkpoint:      ${details.totalSupplyAtCheckpoint}`);
+  console.log(`- Total supply at checkpoint:      ${web3.utils.fromWei(details.totalSupplyAtCheckpoint)} ${tokenSymbol}`);
   console.log(`- Start time:                      ${moment.unix(details.startTime).format('MMMM Do YYYY, HH:mm:ss')}`);
-  console.log(`- Commit duration:                 ${details.commitDuration}`);
-  console.log(`- Reveal duration:                 ${details.revealDuration}`);
+  console.log(`- Commit duration:                 ${details.commitDuration} seconds - ${moment.unix(details.startTime).add(details.commitDuration, 's').format('MMMM Do YYYY, HH:mm:ss')}`);
+  console.log(`- Reveal duration:                 ${details.revealDuration} seconds - ${moment.unix(details.startTime).add(details.commitDuration, 's').add(details.revealDuration, 's').format('MMMM Do YYYY, HH:mm:ss')}`);
   console.log(`- Allowed voters:                  ${allowedVoters.length}`);
   console.log(`- Exempted voters:                 ${exemptedVoters.length}`);
   console.log(`- Total commited votes:            ${details.commitedVoteCount}`);
   console.log(`- Total revealed votes:            ${details.totalVoters}`);
   console.log(`- Proposals:`);
+  let k = 0;
   for (let i = 0; i < details.totalProposals; i++) {
     console.log(`  - ${proposals[i].title}:         ${proposals[i].details}`);
-    const choices = proposals[i].choices;
-    for (let j = 0; j < proposals[i].choicesCount; j++) {
-      console.log(`    - ${choices[j]}`);
+    if (proposals[i].choicesCount === 0) {
+      if (details.currentStage !== '3') {
+        console.log(`    A) YES`);
+        console.log(`    B) NO`);
+        console.log(`    C) ABSTAIN`);
+      } else {
+        console.log(`    A) YES:     \t\t ${web3.utils.fromWei(results.choicesWeighting[k++])}`);
+        console.log(`    B) NO:      \t\t ${web3.utils.fromWei(results.choicesWeighting[k++])}`);
+        console.log(`    C) ABSTAIN: \t\t ${web3.utils.fromWei(results.choicesWeighting[k++])}`);
+      }
+    } else {
+      const choices = proposals[i].choices;
+      for (let j = 0; j < proposals[i].choicesCount; j++) {
+        if (details.currentStage !== '3') {
+          console.log(`    ${String.fromCharCode(65 + j)}) ${choices[j]}`);
+        } else {
+          console.log(`    ${String.fromCharCode(65 + j)}) ${choices[j]}: \t\t\t ${web3.utils.fromWei(results.choicesWeighting[k++])}`);
+        }
+      }
     }
   }
 
   let options = ['Show allowed voters', 'Show exempted voters'];
-  if (details.currentStage === 3) {
-    options.push('Show results')
+  if (details.currentStage === '3') {
+    options.push('Show results', 'Show voters');
   } else {
     if (pendingVoters.length > 0) {
       options.push('Show pending voters');
@@ -460,7 +482,10 @@ async function manageExistingBallot(ballotId) {
       showAddresses(`Current exempted voters for ${details.name} ballot:`, exemptedVoters);
       break;
     case 'Show results':
-      // TODO
+      showBallotResults(details.name, proposals, results);
+      break;
+    case 'Show voters':
+      showAddresses(`Voters list for ${web3.utils.hexToUtf8(details.name)} ballot:`, results.voters);
       break;
     case 'Show pending voters':
       showAddresses(`Current pending voters for ${details.name} ballot:`, pendingVoters);
@@ -535,9 +560,15 @@ async function commitVote(ballotId) {
     console.log(`Proposal no. ${i + 1}: ${proposals[i].title}`);
     console.log(`Details: ${proposals[i].details}`);
     console.log('Choices:');
-    const choices = proposals[i].choices;
-    for (let j = 0; j < proposals[i].choicesCount; j++) {
-      console.log(`  ${String.fromCharCode(65 + j)}) ${choices[j]}`);
+    if (proposals[i].choicesCount === 0) {
+      console.log(`    A) YES`);
+      console.log(`    B) NO`);
+      console.log(`    C) ABSTAIN`);
+    } else {
+      const choices = proposals[i].choices;
+      for (let j = 0; j < proposals[i].choicesCount; j++) {
+        console.log(`  ${String.fromCharCode(65 + j)}) ${choices[j]}`);
+      }
     }
     console.log();
   }
@@ -551,7 +582,8 @@ async function commitVote(ballotId) {
   const proposalVotes = [];
   for (let i = 0; i < proposals.length; i++) {
     const choicesVotes = [];
-    for (let j = 0; j < proposals[i].choicesCount; j++) {
+    const choicesCount = proposals[i].choicesCount > 0 ? proposals[i].choicesCount : 3;
+    for (let j = 0; j < choicesCount; j++) {
       const vote = input.readNumberBetween(0, remaining.toNumber(), `Enter how many votes you want to assign for choice ${String.fromCharCode(65 + j)} at proposal no. ${i + 1}: `, 0);
       remaining = remaining.minus(new BigNumber(vote));
       choicesVotes.push(vote);
@@ -566,9 +598,15 @@ async function commitVote(ballotId) {
       console.log('\n', chalk.yellow('Please review your votes'), '\n')
       console.log(`Proposal no. ${i + 1}: ${proposals[i].title}`);
       console.log(`Details: ${proposals[i].details}`);
-      const choices = proposals[i].choices;
-      for (let j = 0; j < proposals[i].choicesCount; j++) {
-        console.log(`  ${String.fromCharCode(65 + j)}) ${choices[j]}:\t\t ${proposalVotes[i][j]}`);
+      if (proposals[i].choicesCount === 0) {
+        console.log(`    A) YES:     \t\t ${proposalVotes[i][0]}`);
+        console.log(`    B) NO:      \t\t ${proposalVotes[i][1]}`);
+        console.log(`    C) ABSTAIN: \t\t ${proposalVotes[i][2]}`);
+      } else {
+        const choices = proposals[i].choices;
+        for (let j = 0; j < proposals[i].choicesCount; j++) {
+          console.log(`  ${String.fromCharCode(65 + j)}) ${choices[j]}:\t\t ${proposalVotes[i][j]}`);
+        }
       }
       console.log();
     }
@@ -586,6 +624,44 @@ async function commitVote(ballotId) {
       const event = common.getEventFromLogs(currentVotingModule._jsonInterface, receipt.logs, 'VoteCommit');
       console.log(chalk.green(`Your vote has been sent successfully!`));
     }
+  }
+}
+
+async function revealVote(ballotId) {
+  console.log('\n', chalk.blue('Voting manager - Reveal vote', '\n'));
+
+  const csvFilePath = readlineSync.question(`Enter the path for csv data file containing your votes and salt (or leave it empty to use the default path): `, {
+    defaultInput: `${__dirname}/../data/Checkpoint/Voting/MyVotes/${Issuer.address}_${ballotId}.csv`
+  });
+  const fileData = await fs.readFile(csvFilePath, 'utf8').split(',');
+  const votes = fileData.slice(0, fileData.length - 1).map(d => new BigNumber(d));
+  const salt = fileData[fileData.length - 1]
+  const action = currentVotingModule.methods.revealVote(ballotId, votes, salt);
+  const receipt = await common.sendTransaction(action);
+  await fs.unlink(`${__dirname}/../data/Checkpoint/Voting/MyVotes/${Issuer.address}_${ballotId}.csv`);
+  const event = common.getEventFromLogs(currentVotingModule._jsonInterface, receipt.logs, 'VoteRevealed');
+  console.log(chalk.green(`Your vote has been revealed successfully!`));
+}
+
+function showBallotResults(ballotName, proposals, results) {
+  console.log('\n', chalk.blue(`Voting manager - ${web3.utils.hexToUtf8(ballotName)} results`, '\n'));
+
+  let k = 0;
+  for (let i = 0; i < proposals.length; i++) {
+    console.log(`Proposal no. ${i + 1}: ${proposals[i].title}`);
+    console.log(`Details: ${proposals[i].details}`);
+    console.log('Choices:');
+    if (proposals[i].choicesCount === 0) {
+      console.log(`    A) YES:     \t\t ${web3.utils.fromWei(results.choicesWeighting[k++])}`);
+      console.log(`    B) NO:      \t\t ${web3.utils.fromWei(results.choicesWeighting[k++])}`);
+      console.log(`    C) ABSTAIN: \t\t ${web3.utils.fromWei(results.choicesWeighting[k++])}`);
+    } else {
+      const choices = proposals[i].choices;
+      for (let j = 0; j < proposals[i].choicesCount; j++) {
+        console.log(`  ${String.fromCharCode(65 + j)}) ${choices[j]}: \t\t\t ${web3.utils.fromWei(results.choicesWeighting[k++])}`);
+      }
+    }
+    console.log();
   }
 }
 

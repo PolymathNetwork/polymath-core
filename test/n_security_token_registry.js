@@ -441,6 +441,53 @@ contract("SecurityTokenRegistry", async (accounts) => {
         });
     });
 
+    describe("Ticker availability", async () => {
+        const ticker_uppercase = 'ACME';
+        const ticker_lowercase = 'acme';
+        const ticker_invalid = "0123456789a";
+        let snapId;
+
+        before(async () => {
+           snapId = await takeSnapshot();
+        })
+
+        it("Should determine that ticker IS available IF it hasn't been registered, yet", async () => {
+            const is_available = await I_STRProxied.tickerAvailable.call(ticker_uppercase);
+            assert.equal(is_available, true, 'Ticker is unexpectedly unavailable');
+        });
+
+        it("Should determine that ticker IS NOT available IF it has been registered before", async () => {
+            await I_PolyToken.approve(I_STRProxied.address, initRegFeePOLY, { from: token_owner });
+            await I_STRProxied.registerNewTicker(token_owner, ticker_uppercase, { from: token_owner });
+            const is_available = await I_STRProxied.tickerAvailable.call(ticker_uppercase);
+            assert.equal(is_available, false, 'Ticker is unexpectedly available');
+        });
+
+        it("Should capitalize ticker before checking for availability", async () => {
+            const is_available = await I_STRProxied.tickerAvailable.call(ticker_lowercase);
+            assert.equal(is_available, false, 'Ticker is unexpectedly available');
+        });
+
+        it("Should determine that ticker IS available IF it had been registered but has expired since then", async () => {
+            const is_available = await I_STRProxied.tickerAvailable.call(ticker_uppercase);
+            assert.equal(is_available, false, 'Ticker is unexpectedly available');
+
+            const validity_duration = await I_STRProxied.getUintValue.call(web3.utils.soliditySha3("expiryLimit"));
+            await increaseTime(validity_duration.toNumber() + 3600);
+            const is_available_postexpiry = await I_STRProxied.tickerAvailable.call(ticker_uppercase);
+            assert.equal(is_available_postexpiry, true, 'Ticker is unexpectedly unavailable');
+        });
+
+        it("Should revert if ticker is invalid", async () => {
+            await catchRevert(I_STRProxied.tickerAvailable.call(ticker_invalid), "Bad ticker");
+            await catchRevert(I_STRProxied.tickerAvailable.call(""), "Bad ticker");
+        });
+
+        after(() => {
+            revertToSnapshot(snapId);
+        });
+    })
+
     describe("Test cases for the expiry limit", async () => {
         it("Should fail to set the expiry limit because msg.sender is not owner", async () => {
             await catchRevert(I_STRProxied.changeExpiryLimit(duration.days(10), { from: account_temp }), "Only owner");

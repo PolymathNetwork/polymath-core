@@ -362,6 +362,13 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             );
         });
 
+        it("Should exempt the invesotr", async() => {
+            await I_AdvancedPLCRVotingCheckpoint.changeBallotExemptedVotersList(new BN(0), account_investor4, true, {from: token_owner}); 
+            let exemptedVoters = await I_AdvancedPLCRVotingCheckpoint.getExemptedVotersByBallot.call(new BN(0));
+            assert.equal(exemptedVoters.length, 1);
+            assert.equal(exemptedVoters[0], account_investor4);
+        });
+
         it("Should fail to commit the vote -- Bad ballot id", async() => {
             await increaseTime(Math.floor(duration.days(1.1)));
             let ballotId = new BN(2);   // Bad ballot Id
@@ -391,19 +398,16 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
         });
 
         it("Should fail to commit vote -- Invalid voter", async() => {
-            let snap_id = await takeSnapshot();
             let ballotId = new BN(0);
-            await I_AdvancedPLCRVotingCheckpoint.changeBallotExemptedVotersList(new BN(0), account_investor1, true, {from: token_owner}); 
             await catchRevert(
                 I_AdvancedPLCRVotingCheckpoint.commitVote(
                 ballotId, 
                 web3.utils.soliditySha3(bn("3500"), new BN(0), bn("1500"), new BN(secrets[0])), 
                 {
-                    from : account_investor1
+                    from : account_investor4
                 }),
                 "Invalid voter"
             );
-            await revertToSnapshot(snap_id);
         });
 
         it("Should successfully commit the vote in commit duration", async() => {
@@ -413,6 +417,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             await I_SecurityToken.transfer(account_investor1, new BN(web3.utils.toWei("1000")), {from: account_investor4});
             // Checking the pending ballot list for the investor1
             let pendingListBefore = await I_AdvancedPLCRVotingCheckpoint.pendingBallots.call(account_investor1);
+            pendingListBefore = pendingListBefore.commitBallots;
             assert.equal(pendingListBefore.length, 1);
             assert.equal(pendingListBefore[0], 0);
             let tx = await I_AdvancedPLCRVotingCheckpoint.commitVote(
@@ -427,6 +432,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             assert.notInclude(pendingInvestorsToVote, account_investor1);
             // Checking the pending ballot list for the investor1
             let pendingListAfter = await I_AdvancedPLCRVotingCheckpoint.pendingBallots.call(account_investor1);
+            pendingListAfter = pendingListAfter.commitBallots;
             let ballotDetails = await I_AdvancedPLCRVotingCheckpoint.getBallotDetails.call(ballotId);
             assert.equal(pendingListAfter.length, 0);
             assert.equal(
@@ -496,6 +502,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             );
             // Checking the pending ballot list for the investor1
             let pendingListAfter = await I_AdvancedPLCRVotingCheckpoint.pendingBallots.call(account_investor2);
+            pendingListAfter = pendingListAfter.commitBallots;
             let ballotDetails = await I_AdvancedPLCRVotingCheckpoint.getBallotDetails.call(ballotId);
             assert.equal(pendingListAfter.length, 0);
             assert.equal(
@@ -930,18 +937,18 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                 convertToNumber(await stGetter.balanceOfAt.call(account_investor5, new BN(3)))
             );
             // Pending ballots
-            let ballots = await I_AdvancedPLCRVotingCheckpoint.pendingBallots.call(account_investor1);
+            let ballots = (await I_AdvancedPLCRVotingCheckpoint.pendingBallots.call(account_investor1))[0];
             assert.notInclude(ballots, 2);
             assert.equal(ballots.length, 2);
-            ballots = await I_AdvancedPLCRVotingCheckpoint.pendingBallots.call(account_investor2);
+            ballots = (await I_AdvancedPLCRVotingCheckpoint.pendingBallots.call(account_investor2))[0];
             assert.equal(ballots.length, 2);
             assert.notInclude(ballots, 2);
-            ballots = await I_AdvancedPLCRVotingCheckpoint.pendingBallots.call(account_investor3);
+            ballots = (await I_AdvancedPLCRVotingCheckpoint.pendingBallots.call(account_investor3))[0];
             assert.equal(ballots.length, 3);
-            ballots = await I_AdvancedPLCRVotingCheckpoint.pendingBallots.call(account_investor4);
+            ballots = (await I_AdvancedPLCRVotingCheckpoint.pendingBallots.call(account_investor4))[0];
             assert.equal(ballots.length, 2);
             assert.notInclude(ballots, 3);
-            ballots = await I_AdvancedPLCRVotingCheckpoint.pendingBallots.call(account_investor5);
+            ballots = (await I_AdvancedPLCRVotingCheckpoint.pendingBallots.call(account_investor5))[0];
             assert.equal(ballots.length, 2);
             assert.notInclude(ballots, 3);
         });
@@ -1207,7 +1214,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                 }
             );
             // Checking the pending ballot list for the investor1
-            let pendingListAfter = await I_AdvancedPLCRVotingCheckpoint.pendingBallots.call(account_investor3);
+            let pendingListAfter = (await I_AdvancedPLCRVotingCheckpoint.pendingBallots.call(account_investor3))[0];
             assert.equal(pendingListAfter.length, 1);
             assert.equal(pendingListAfter[0], 5);
             assert.equal(
@@ -1236,7 +1243,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                 }
             );
             // Checking the pending ballot list for the investor1
-            let pendingListAfter = await I_AdvancedPLCRVotingCheckpoint.pendingBallots.call(account_investor4);
+            let pendingListAfter = (await I_AdvancedPLCRVotingCheckpoint.pendingBallots.call(account_investor4))[0];
             assert.equal(pendingListAfter.length, 1);
             assert.notInclude(pendingListAfter, 4);
             assert.equal(
@@ -1266,7 +1273,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                 }
             );
             // Checking the pending ballot list for the investor1
-            let pendingListAfter = await I_AdvancedPLCRVotingCheckpoint.pendingBallots.call(account_investor5);
+            let pendingListAfter = (await I_AdvancedPLCRVotingCheckpoint.pendingBallots.call(account_investor5))[0];
             assert.equal(pendingListAfter.length, 1);
             assert.notInclude(pendingListAfter, 4);
             assert.equal(

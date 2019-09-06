@@ -1,7 +1,7 @@
 /node_modules
 /CLI/node_modules
+/CLI/data/Checkpoint/Voting/MyVotes
 /build
-/CLI/node_modules
 .npm-debug.log
 *.DS_Store
 privKey

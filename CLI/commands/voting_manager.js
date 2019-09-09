@@ -70,7 +70,7 @@ async function createCheckpointFromST() {
 
 async function addVotingModule() {
   const moduleList = await common.getAvailableModules(moduleRegistry, gbl.constants.MODULES_TYPES.DIVIDENDS, securityToken.options.address);
-  const options = moduleList.map(m => `${m.name} - ${m.version} (${m.factoryAddress})`);
+  const options = moduleList.filter(m => m.name.includes('Voting')).map(m => `${m.name} - ${m.version} (${m.factoryAddress})`);
 
   const index = readlineSync.keyInSelect(options, 'Which voting module do you want to add? ', { cancel: 'RETURN' });
   if (index !== -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]}? `)) {

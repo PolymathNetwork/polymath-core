@@ -102,7 +102,7 @@ async function advancedPLCRVotingManager() {
   const revealBallots = allBalotsToShow.filter(b => b.stage === 'Reveal');
   const pendingBallots = await currentVotingModule.methods.pendingBallots(Issuer.address).call();
   const pendingCommitBallots = commitBallots.filter(b => pendingBallots.commitBallots.includes(b.id))
-  const pendingRevealBallots = revealBallots.filter(b => pendingBallots.revaleBallots.includes(b.id))
+  const pendingRevealBallots = revealBallots.filter(b => pendingBallots.revealBallots.includes(b.id))
   const defaultExemptedVoters = await currentVotingModule.methods.getDefaultExemptionVotersList().call();
 
 
@@ -116,7 +116,7 @@ async function advancedPLCRVotingManager() {
   console.log();
   console.log(`- My pending ballots:`);
   console.log(`    Commit:                      ${pendingBallots.commitBallots.length}`);
-  console.log(`    Reveal:                      ${pendingBallots.revaleBallots.length}`);
+  console.log(`    Reveal:                      ${pendingBallots.revealBallots.length}`);
 
   const options = ['Create checkpoint'];
   if (currentCheckpointId > 0) {

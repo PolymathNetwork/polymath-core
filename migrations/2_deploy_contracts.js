@@ -34,13 +34,17 @@ const STGetter = artifacts.require('./STGetter.sol');
 const MockSTGetter = artifacts.require('./MockSTGetter.sol');
 const DataStoreLogic = artifacts.require('./DataStore.sol');
 const DataStoreFactory = artifacts.require('./DataStoreFactory.sol');
-const VolumeRestrictionTMFactory = artifacts.require('./VolumeRestrictionTMFactory.sol')
 const VolumeRestrictionTMLogic = artifacts.require('./VolumeRestrictionTM.sol');
+const VolumeRestrictionTMFactory = artifacts.require('./VolumeRestrictionTMFactory.sol');
 const VolumeRestrictionLib = artifacts.require('./VolumeRestrictionLib.sol');
-const RestrictedPartialSaleTMFactory = artifacts.require('./RestrictedPartialSaleTMFactory.sol')
 const RestrictedPartialSaleTMLogic = artifacts.require('./RestrictedPartialSaleTM.sol');
-const VestingEscrowWalletFactory = artifacts.require('./VestingEscrowWalletFactory.sol')
+const RestrictedPartialSaleTMFactory = artifacts.require('./RestrictedPartialSaleTMFactory.sol');
+const BlacklistTransferManagerLogic = artifacts.require('./BlacklistTransferManager.sol');
+const BlacklistTransferManagerFactory = artifacts.require('./BlacklistTransferManagerFactory.sol');
+const LockUpTransferManagerLogic = artifacts.require('./LockUpTransferManager.sol');
+const LockUpTransferManagerFactory = artifacts.require('./LockUpTransferManagerFactory.sol');
 const VestingEscrowWalletLogic = artifacts.require('./VestingEscrowWallet.sol');
+const VestingEscrowWalletFactory = artifacts.require('./VestingEscrowWalletFactory.sol');
 const AdvancedPLCRVotingCheckpointFactory = artifacts.require("./AdvancedPLCRVotingCheckpointFactory.sol");
 const AdvancedPLCRVotingCheckpointLogic = artifacts.require("./AdvancedPLCRVotingCheckpoint.sol");
 
@@ -301,6 +305,16 @@ module.exports = function(deployer, network, accounts) {
             return deployer.deploy(VolumeRestrictionTMLogic, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: PolymathAccount });
         })
         .then(() => {
+            // B) Deploy the BlacklistTransferManagerLogic Contract (Factory used to generate the BlacklistTransferManager contract and this
+            // manager attach with the securityToken contract at the time of deployment)
+           return deployer.deploy(BlacklistTransferManagerLogic, nullAddress, nullAddress, { from: PolymathAccount });
+        })
+        .then(() => {
+            // B) Deploy the LockUpTransferManagerLogic Contract (Factory used to generate the LockUpTransferManager contract and this
+           // manager attach with the securityToken contract at the time of deployment)
+            return deployer.deploy(LockUpTransferManagerLogic, nullAddress, nullAddress, { from: PolymathAccount });
+        })
+        .then(() => {
             // B) Deploy the RestrictedPartialSaleTMLogic Contract (Factory used to generate the RestrictedPartialSaleTM contract and this
             // manager attach with the securityToken contract at the time of deployment)
             return deployer.deploy(RestrictedPartialSaleTMLogic, nullAddress, nullAddress, { from: PolymathAccount });
@@ -378,6 +392,16 @@ module.exports = function(deployer, network, accounts) {
             // D) Deploy the VolumeRestrictionTMFactory Contract (Factory used to generate the VolumeRestrictionTM contract use
             // to provide the functionality of restricting the token volume)
             return deployer.deploy(VolumeRestrictionTMFactory, new BN(0), VolumeRestrictionTMLogic.address, polymathRegistry.address, { from: PolymathAccount });
+        })
+        .then(() => {
+            // D) Deploy the BlacklistTransferManagerFactory Contract (Factory used to generate the BlacklistTransferManager contract use
+            // to provide the functionality of restricting the token sales)
+            return deployer.deploy(BlacklistTransferManagerFactory, new BN(0), BlacklistTransferManagerLogic.address, polymathRegistry.address, { from: PolymathAccount });
+        })
+        .then(() => {
+            // D) Deploy the LockUpTransferManagerFactory Contract (Factory used to generate the LockUpTransferManager contract use
+            // to provide the functionality of restricting the token sales)
+            return deployer.deploy(LockUpTransferManagerFactory, new BN(0), LockUpTransferManagerLogic.address, polymathRegistry.address, { from: PolymathAccount });
         })
         .then(() => {
             // D) Deploy the RestrictedPartialSaleTMFactory Contract (Factory used to generate the RestrictedPartialSaleTM contract use
@@ -498,6 +522,16 @@ module.exports = function(deployer, network, accounts) {
             return moduleRegistry.registerModule(VolumeRestrictionTMFactory.address, { from: PolymathAccount });
         })
         .then(() => {
+            // D) Register the BlacklistTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
+            // So any securityToken can use that factory to generate the BlacklistTransferManager contract.
+        return moduleRegistry.registerModule(BlacklistTransferManagerFactory.address, { from: PolymathAccount });
+        })
+        .then(() => {
+            // D) Register the LockUpTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
+            // So any securityToken can use that factory to generate the LockUpTransferManager contract.
+            return moduleRegistry.registerModule(LockUpTransferManagerFactory.address, { from: PolymathAccount });
+        })
+        .then(() => {
             // D) Register the RestrictedPartialSaleTMFactory in the ModuleRegistry to make the factory available at the protocol level.
             // So any securityToken can use that factory to generate the RestrictedPartialSaleTM contract.
             return moduleRegistry.registerModule(RestrictedPartialSaleTMFactory.address, { from: PolymathAccount });
@@ -563,6 +597,18 @@ module.exports = function(deployer, network, accounts) {
             // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
             // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
             return moduleRegistry.verifyModule(VolumeRestrictionTMFactory.address, { from: PolymathAccount });
+        })
+         .then(() => {
+            // G) Once the BlacklistTransferManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
+            // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
+            // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
+            return moduleRegistry.verifyModule(BlacklistTransferManagerFactory.address, { from: PolymathAccount });
+        })
+        .then(() => {
+            // G) Once the LockUpTransferManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
+            // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
+            // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
+            return moduleRegistry.verifyModule(LockUpTransferManagerFactory.address, { from: PolymathAccount });
         })
         .then(() => {
             // G) Once the RestrictedPartialSaleTMFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
@@ -666,6 +712,10 @@ module.exports = function(deployer, network, accounts) {
     ERC20DividendCheckpointFactory:       ${ERC20DividendCheckpointFactory.address}
     VolumeRestrictionTMFactory:           ${VolumeRestrictionTMFactory.address}
     VolumeRestrictionTMLogic:             ${VolumeRestrictionTMLogic.address}
+    LockUpTransferManagerFactory:         ${LockUpTransferManagerFactory.address}
+    LockUpTransferManagerLogic:           ${LockUpTransferManagerLogic.address}
+    BlacklistTransferManagerFactory:      ${BlacklistTransferManagerFactory.address}
+    BlacklistTransferManagerLogic:        ${BlacklistTransferManagerLogic.address}
     RestrictedPartialSaleTMFactory:       ${RestrictedPartialSaleTMFactory.address}
     RestrictedPartialSaleTMLogic:         ${RestrictedPartialSaleTMLogic.address}
     VestingEscrowWalletFactory:           ${VestingEscrowWalletFactory.address}

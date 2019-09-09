@@ -1009,7 +1009,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 account_investor3,
                 new BN(1536).mul(new BN(10).pow(new BN(14))), // 15.36 tokens as totalsupply is 1000
                 newLatestTime.add(new BN(duration.seconds(2))),
-                6,
+                6,                                              // 6 days rolling period
                 newLatestTime.add(new BN(duration.days(15))),
                 1,
                 {
@@ -1065,7 +1065,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal(amt, 4);
         });
 
-        it("Should fail during transferring more tokens by investor3 -- Voilating the daily Limit", async() => {
+        it("Should fail during transferring more tokens by investor3 -- Violating the daily Limit", async() => {
             await catchRevert(
                 I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1")), {from: account_investor3}),
                 "Transfer Invalid"
@@ -1305,7 +1305,6 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
         it("Should successfully to transact tokens in the second rolling period", async() => {
             // Should transact freely tokens daily limit is also ended
-
             let startTime = (await I_VolumeRestrictionTM.getIndividualRestriction.call(account_investor3))[1].toString();
             let startTimedaily = (await I_VolumeRestrictionTM.getIndividualDailyRestriction.call(account_investor3))[1].toString();
             let rollingPeriod = (await I_VolumeRestrictionTM.getIndividualRestriction.call(account_investor3))[2].toString();

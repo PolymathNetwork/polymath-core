@@ -29,6 +29,7 @@ contract WeightedVoteCheckpointFactory is UpgradableModuleFactory {
         title = "Weighted Vote Checkpoint";
         description = "Weighted votes based on token amount";
         typesData.push(4);
+        typesData.push(9); // Auto whitelist treasury wallet
         tagsData.push("Vote");
         tagsData.push("Transparent");
         tagsData.push("Checkpoint");

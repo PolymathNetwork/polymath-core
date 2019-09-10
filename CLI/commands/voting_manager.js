@@ -584,9 +584,9 @@ async function commitVote(ballotId) {
   }
 
   const votingPower = new BigNumber(web3.utils.fromWei(await currentVotingModule.methods.getVoteTokenCount(Issuer.address, ballotId).call()));
-  console.log(`Your voting power is ${votingPower}.`);
+  console.log(`You have ${votingPower} votes that can be allocated.`);
   console.log(`You can distribute it over the different choices as you want.`);
-  console.log('Please enter the amount of votes you want to assign to each choice.', '\n')
+  console.log('Please enter the amount of votes you want to assign to each choice:', '\n')
 
   let remaining = votingPower;
   const proposalVotes = [];

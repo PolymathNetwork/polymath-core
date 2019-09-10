@@ -168,7 +168,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             );
         });
 
-        it("Should successfully attach the paid version of AdvancedPLCRVotingCheckpoint factory with the security token", async () => {
+        it("Paid APLCR - Should successfully attach the paid version of AdvancedPLCRVotingCheckpoint factory with the security token", async () => {
             let snapId = await takeSnapshot();
             await I_PolyToken.transfer(I_SecurityToken.address, new BN(web3.utils.toWei("5000", "ether")), { from: token_owner });
             const tx = await I_SecurityToken.addModule(
@@ -183,18 +183,18 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             );
             assert.equal(tx.logs[3].args._types[0].toNumber(), CHECKPOINT_KEY, "AdvancedPLCRVotingCheckpoint factory doesn't get deployed");
             assert.equal(
-                web3.utils.toAscii(tx.logs[3].args._name).replace(/\u0000/g, ""),
+                web3.utils.toUtf8(tx.logs[3].args._name),
                 "AdvancedPLCRVotingCheckpoint",
                 "AdvancedPLCRVotingCheckpoint module was not added"
             );
             await revertToSnapshot(snapId);
         });
 
-        it("Should successfully attach the AdvancedPLCRVotingCheckpoint with the security token", async () => {
+        it("Free APLCR - Should successfully attach the AdvancedPLCRVotingCheckpoint with the security token", async () => {
             const tx = await I_SecurityToken.addModule(I_AdvancedPLCRVotingCheckpointFactory.address, "0x0", new BN(0), new BN(0), false, { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), CHECKPOINT_KEY, "AdvancedPLCRVotingCheckpointFactory doesn't get deployed");
             assert.equal(
-                web3.utils.toAscii(tx.logs[2].args._name).replace(/\u0000/g, ""),
+                web3.utils.toUtf8(tx.logs[2].args._name),
                 "AdvancedPLCRVotingCheckpoint",
                 "AdvancedPLCRVotingCheckpoint module was not added"
             );
@@ -329,17 +329,17 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                 }
             );
             assert.equal(await I_SecurityToken.currentCheckpointId.call(), 1);
-            assert.equal(web3.utils.toAscii(tx.logs[0].args._name).replace(/\u0000/g, ""), "Ballot 1");
+            assert.equal(web3.utils.toUtf8(tx.logs[0].args._name), "Ballot 1");
             assert.equal(tx.logs[0].args._checkpointId, 1);
             assert.equal(tx.logs[0].args._ballotId, 0);
             assert.equal(tx.logs[0].args._startTime, startTime.toString());
             assert.equal(tx.logs[0].args._commitDuration, commitDuration.toString());
             assert.equal(tx.logs[0].args._revealDuration, revealDuration.toString());
-            assert.equal(web3.utils.toAscii(tx.logs[0].args._details).replace(/\u0000/g, ""), "Offchain detaiils");
+            assert.equal(web3.utils.toUtf8(tx.logs[0].args._details), "Offchain detaiils");
 
             let ballotDetails = await I_AdvancedPLCRVotingCheckpoint.getBallotDetails.call(tx.logs[0].args._ballotId);
             assert.equal(convertToNumber(ballotDetails[1]), convertToNumber(await I_SecurityToken.totalSupply.call()));
-            assert.equal(web3.utils.toAscii(ballotDetails[0]).replace(/\u0000/g, ""), "Ballot 1");
+            assert.equal(web3.utils.toUtf8(ballotDetails[0]), "Ballot 1");
             assert.equal(ballotDetails[2], 1);
             assert.equal(ballotDetails[3].toString(), startTime.toString());
             assert.equal(ballotDetails[6].toString(), 1);
@@ -362,7 +362,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             );
         });
 
-        it("Should exempt the invesotr", async() => {
+        it("Should exempt the investor", async() => {
             await I_AdvancedPLCRVotingCheckpoint.changeBallotExemptedVotersList(new BN(0), account_investor4, true, {from: token_owner}); 
             let exemptedVoters = await I_AdvancedPLCRVotingCheckpoint.getExemptedVotersByBallot.call(new BN(0));
             assert.equal(exemptedVoters.length, 1);
@@ -525,7 +525,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             assert.equal(commitVoteCount, 3);
         });
 
-        it("Should fail to reveal the vote in the reveal phase -- Invalid stage", async() => {
+        it("Should fail to reveal the vote in the commit phase -- Invalid stage", async() => {
             let ballotId = new BN(0);
             assert.equal((await I_AdvancedPLCRVotingCheckpoint.getCurrentBallotStage.call(ballotId)).toString(), 1);
             // try to reveal in the commit phase
@@ -558,7 +558,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             );
         });
 
-        it("Should fail to reveal the vote -- Invalid choices", async() => {
+        it("Should fail to reveal the vote -- choices count mismatch", async() => {
             let ballotId = new BN(0);
             await catchRevert(
                 I_AdvancedPLCRVotingCheckpoint.revealVote(
@@ -569,11 +569,11 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                         from: account_investor1
                     }
                 ),
-                "Invalid choices"
+                "choices count mismatch"
             );
         });
 
-        it("Should fail to reveal the vote -- Inactive ballot", async() => {
+        it("Should fail to reveal the vote -- Cancelled ballot", async() => {
             let ballotId = new BN(0);
             let snap_id = await takeSnapshot();
             await I_AdvancedPLCRVotingCheckpoint.cancelBallot(ballotId, {from: token_owner});
@@ -776,13 +776,13 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                 }
             );
             assert.equal(await I_SecurityToken.currentCheckpointId.call(), 2);
-            assert.equal(web3.utils.toAscii(tx.logs[0].args._name).replace(/\u0000/g, ""), "Ballot 2");
+            assert.equal(web3.utils.toUtf8(tx.logs[0].args._name), "Ballot 2");
             assert.equal(tx.logs[0].args._checkpointId, 2);
             assert.equal(tx.logs[0].args._ballotId, 1);
             assert.equal(tx.logs[0].args._startTime, startTime.toString());
             assert.equal(tx.logs[0].args._commitDuration, commitDuration.toString());
             assert.equal(tx.logs[0].args._revealDuration, revealDuration.toString());
-            assert.equal(web3.utils.toAscii(tx.logs[0].args._details).replace(/\u0000/g, ""), "Offchain detaiils");
+            assert.equal(web3.utils.toUtf8(tx.logs[0].args._details), "Offchain detaiils");
 
             let ballotDetails = await I_AdvancedPLCRVotingCheckpoint.getBallotDetails.call(tx.logs[0].args._ballotId);
             assert.equal(convertToNumber(ballotDetails[1]), convertToNumber(await I_SecurityToken.totalSupply.call()));
@@ -827,13 +827,13 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                 }
             );
             assert.equal(await I_SecurityToken.currentCheckpointId.call(), 3);
-            assert.equal(web3.utils.toAscii(tx.logs[0].args._name).replace(/\u0000/g, ""), "Ballot 3");
+            assert.equal(web3.utils.toUtf8(tx.logs[0].args._name), "Ballot 3");
             assert.equal(tx.logs[0].args._checkpointId, 3);
             assert.equal(tx.logs[0].args._ballotId, 2);
             assert.equal(tx.logs[0].args._startTime, startTime.toString());
             assert.equal(tx.logs[0].args._commitDuration, commitDuration.toString());
             assert.equal(tx.logs[0].args._revealDuration, revealDuration.toString());
-            assert.equal(web3.utils.toAscii(tx.logs[0].args._details).replace(/\u0000/g, ""), "Offchain detaiils");
+            assert.equal(web3.utils.toUtf8(tx.logs[0].args._details), "Offchain detaiils");
 
             let ballotDetails = await I_AdvancedPLCRVotingCheckpoint.getBallotDetails.call(tx.logs[0].args._ballotId);
             assert.equal(convertToNumber(ballotDetails[1]), convertToNumber(await I_SecurityToken.totalSupply.call()));
@@ -870,13 +870,13 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                 }
             );
             assert.equal(await I_SecurityToken.currentCheckpointId.call(), 4);
-            assert.equal(web3.utils.toAscii(tx.logs[0].args._name).replace(/\u0000/g, ""), "Ballot 4");
+            assert.equal(web3.utils.toUtf8(tx.logs[0].args._name), "Ballot 4");
             assert.equal(tx.logs[0].args._checkpointId, 4);
             assert.equal(tx.logs[0].args._ballotId, 3);
             assert.equal(tx.logs[0].args._startTime, startTime.toString());
             assert.equal(tx.logs[0].args._commitDuration, commitDuration.toString());
             assert.equal(tx.logs[0].args._revealDuration, revealDuration.toString());
-            assert.equal(web3.utils.toAscii(tx.logs[0].args._details).replace(/\u0000/g, ""), "Offchain detaiils");
+            assert.equal(web3.utils.toUtf8(tx.logs[0].args._details), "Offchain detaiils");
 
             let ballotDetails = await I_AdvancedPLCRVotingCheckpoint.getBallotDetails.call(tx.logs[0].args._ballotId);
             assert.equal(convertToNumber(ballotDetails[1]), convertToNumber(await I_SecurityToken.totalSupply.call()));
@@ -1113,13 +1113,13 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                 }
             );
             assert.equal(await I_SecurityToken.currentCheckpointId.call(), 5);
-            assert.equal(web3.utils.toAscii(tx.logs[0].args._name).replace(/\u0000/g, ""), "Ballot 5");
+            assert.equal(web3.utils.toUtf8(tx.logs[0].args._name), "Ballot 5");
             assert.equal(tx.logs[0].args._checkpointId, 5);
             assert.equal(tx.logs[0].args._ballotId, 4);
             assert.equal(tx.logs[0].args._startTime, startTime.toString());
             assert.equal(tx.logs[0].args._commitDuration, commitDuration.toString());
             assert.equal(tx.logs[0].args._revealDuration, revealDuration.toString());
-            assert.equal(web3.utils.toAscii(tx.logs[0].args._details[0]).replace(/\u0000/g, ""), "Offchain detaiils 5");
+            assert.equal(web3.utils.toUtf8(tx.logs[0].args._details[0]), "Offchain detaiils 5");
 
             let ballotDetails = await I_AdvancedPLCRVotingCheckpoint.getBallotDetails.call(tx.logs[0].args._ballotId);
             assert.equal(convertToNumber(ballotDetails[1]), convertToNumber(await I_SecurityToken.totalSupply.call()));
@@ -1160,13 +1160,13 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                 }
             );
             assert.equal(await I_SecurityToken.currentCheckpointId.call(), 6);
-            assert.equal(web3.utils.toAscii(tx.logs[0].args._name).replace(/\u0000/g, ""), "Ballot 6");
+            assert.equal(web3.utils.toUtf8(tx.logs[0].args._name), "Ballot 6");
             assert.equal(tx.logs[0].args._checkpointId, 6);
             assert.equal(tx.logs[0].args._ballotId, 5);
             assert.equal(tx.logs[0].args._startTime, startTime.toString());
             assert.equal(tx.logs[0].args._commitDuration, commitDuration.toString());
             assert.equal(tx.logs[0].args._revealDuration, revealDuration.toString());
-            assert.equal(web3.utils.toAscii(tx.logs[0].args._details[0]).replace(/\u0000/g, ""), "Offchain detaiils 8");
+            assert.equal(web3.utils.toUtf8(tx.logs[0].args._details[0]), "Offchain detaiils 8");
 
             let ballotDetails = await I_AdvancedPLCRVotingCheckpoint.getBallotDetails.call(tx.logs[0].args._ballotId);
             assert.equal(convertToNumber(ballotDetails[1]), convertToNumber(await I_SecurityToken.totalSupply.call()));

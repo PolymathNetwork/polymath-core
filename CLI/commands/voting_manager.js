@@ -110,9 +110,9 @@ async function advancedPLCRVotingManager() {
   console.log(`- Exempted voters by default:    ${defaultExemptedVoters.length}`);
   console.log(`- Total ballot count:            ${allBalotsToShow.length}`);
   console.log(`- Current ballots:               ${prepareBallots.length + commitBallots.length + revealBallots.length}`);
-  console.log(`    Preparation satage:          ${prepareBallots.length}`);
-  console.log(`    Commit satage:               ${commitBallots.length}`);
-  console.log(`    Reveal satage:               ${revealBallots.length}`);
+  console.log(`    Preparation stage:           ${prepareBallots.length}`);
+  console.log(`    Commit stage:                ${commitBallots.length}`);
+  console.log(`    Reveal stage:                ${revealBallots.length}`);
   console.log();
   console.log(`- My pending ballots:`);
   console.log(`    Commit:                      ${pendingBallots.commitBallots.length}`);

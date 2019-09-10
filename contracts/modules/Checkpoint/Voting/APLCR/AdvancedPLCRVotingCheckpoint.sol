@@ -565,8 +565,8 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
     function _isAnyBallotRunning() internal view returns (bool isAnyBallotActive) {
         uint256 length = ballots.length;
         isAnyBallotActive = false;
-        for (uint256 i = 0; i < length; i++) {
-            if (getCurrentBallotStage(i) != Stage.PREP || getCurrentBallotStage(i) != Stage.RESOLVED) {
+        for (uint256 i = length - 1; i >= 0; i--) {
+            if (getCurrentBallotStage(i) == Stage.COMMIT && getCurrentBallotStage(i) == Stage.REVEAL && !ballots[i].isCancelled) {
                 isAnyBallotActive = true;
                 break;
             }

@@ -1135,25 +1135,6 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             assert.equal(exemptedVoters[0], account_investor2);
         });
 
-        it.skip("Should check outputs of getCommitAndRevealBallots & getAllBallots", async() => {
-            await increaseTime(Math.floor(duration.days(1.65)));
-            // Verify the commit stage and ballot stage ballots
-            let ballotList = await I_AdvancedPLCRVotingCheckpoint.getCommitAndRevealBallots.call();
-            let ballotsData = await I_AdvancedPLCRVotingCheckpoint.getAllBallots.call();
-            let count = 0;
-            let commitStageCount = 0;
-            for (let i = 0; i < ballotsData.length; i++) {
-                if (ballotsData.ballotIds[i] == ballotList.revealBallotList[count]) {
-                    assert.equal(ballotsData.currentStages[i], 2);
-                    count++;
-                }
-                if (ballotsData.currentStages[i] == 1) {
-                    commitStageCount++;
-                }
-            }
-            assert.equal(commitStageCount, ballotList.commitBallotList.length);
-        });
-
         it("Should successfully create the cummulative ballot", async() => {
             await increaseTime(Math.floor(duration.days(1.65)));
             let name = web3.utils.toHex("Ballot 6");

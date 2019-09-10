@@ -463,7 +463,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
             _noOfChoice = _noOfChoice == 0 ? 3 : _noOfChoice;
             choiceCount = choiceCount.add(_noOfChoice);
         }
-        require(choiceCount == _choices.length, "Invalid choices");
+        require(choiceCount == _choices.length, "choices count mismatch");
 
         // validate the secret vote
         require(

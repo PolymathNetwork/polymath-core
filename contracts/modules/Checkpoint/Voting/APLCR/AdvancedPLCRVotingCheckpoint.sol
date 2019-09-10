@@ -760,7 +760,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
      * @return ballots list of indexes of ballots on which given voter has to commit
      * @return ballots list of indexes of ballots on which given voter has to reveal
      */
-    function pendingBallots(address _voter) external view returns (uint256[] memory commitBallots, uint256[] memory revaleBallots) {
+    function pendingBallots(address _voter) external view returns (uint256[] memory commitBallots, uint256[] memory revealBallots) {
         uint256 revealCount = 0;
         uint256 commitCount = 0;
         for (uint256 i = 0; i < ballots.length; i ++) {
@@ -773,7 +773,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
             }
         }
         commitBallots = new uint256[](commitCount);
-        revaleBallots = new uint256[](revealCount);
+        revealBallots = new uint256[](revealCount);
         commitCount = 0;
         revealCount = 0;
         for (uint256 i = 0; i < ballots.length; i ++) {
@@ -783,7 +783,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
             }
             else if (getCurrentBallotStage(i) == Stage.REVEAL && !ballots[i].isCancelled) {
                 if (ballots[i].voteDetails[_voter].voteOptions[0].length == 0) {
-                    revaleBallots[revealCount] = i;
+                    revealBallots[revealCount] = i;
                     revealCount++;
                 }
             }

@@ -14,7 +14,6 @@ contract GeneralTransferManagerStorage {
     uint8 internal constant WHITELISTTREASURY = uint8(9);
 
     enum TransferType { GENERAL, ISSUANCE, REDEMPTION }
-    enum AddressType { FROM, TO, ANY}
 
     //Address from which issuances come
     address public issuanceAddress;

@@ -233,6 +233,46 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
 
     describe("Creation of the Statutory ballot", async() => {
 
+        it.skip("Should check the limit of the no of ballots running", async() => {
+            let snapId = await takeSnapshot();
+            let name = web3.utils.toHex("Ballot 1");
+            let startTime = await latestTime();
+            let commitDuration = new BN(duration.seconds(1));
+            let revealDuration = new BN(duration.seconds(1));
+            let proposalTitle = "Titile 1";
+            let details = web3.utils.toHex("Offchain detaiils");
+            let choices = "";
+            let noOfChoices = 0;
+
+            for (let i = 0; i < 2000; i++) {
+                await I_AdvancedPLCRVotingCheckpoint.createStatutoryBallot(
+                    name,
+                    startTime,
+                    commitDuration,
+                    revealDuration,
+                    proposalTitle,
+                    details,
+                    choices,
+                    noOfChoices,
+                    {
+                        from: token_owner
+                    }
+                );
+            }
+            let mockInvestors = [];
+            let mockExempt = [];
+            for (let i = 0; i < 100; i++) {
+                mockInvestors.push("0x1000000000000000000000000000000000000000".substring(0, 42 - i.toString().length) + i.toString());
+                mockExempt.push(true);
+            }
+            await increaseTime(duration.days(1));
+            console.log(`Calculate gas used - ${await I_AdvancedPLCRVotingCheckpoint.changeDefaultExemptedVotersListMulti.estimateGas(mockInvestors, mockExempt, {from: token_owner})}`);
+            let tx = await I_AdvancedPLCRVotingCheckpoint.changeDefaultExemptedVotersListMulti(mockInvestors, mockExempt, {from: token_owner});
+            console.log((await I_AdvancedPLCRVotingCheckpoint.getBallotsArrayLength.call()).toString());
+            console.log(tx.receipt.gasUsed);
+            await revertToSnapshot(snapId);
+        });
+
         it("Should fail to create the statutory wallet -- Empty title", async() => {
             let name = web3.utils.toHex("Ballot 1");
             let startTime = await currentTime();

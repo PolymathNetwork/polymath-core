@@ -483,11 +483,10 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
             }
             choiceCount = temp;
         }
-        require(totalChoiceWeight == weight, "Invalid distribution");
         // update the storage values
         ballot.totalVoters = ballot.totalVoters + 1;
         ballot.voteDetails[msg.sender] = Vote(bytes32(0));
-        emit VoteRevealed(msg.sender, weight, _ballotId, _choices, _salt);
+        emit VoteRevealed(msg.sender, totalChoiceWeight, _ballotId, _choices, _salt);
     }
 
     /**
@@ -565,10 +564,14 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
     function _isAnyBallotRunning() internal view returns (bool isAnyBallotActive) {
         uint256 length = ballots.length;
         isAnyBallotActive = false;
-        for (uint256 i = length - 1; i >= 0; i--) {
-            if (getCurrentBallotStage(i) == Stage.COMMIT && getCurrentBallotStage(i) == Stage.REVEAL && !ballots[i].isCancelled) {
-                isAnyBallotActive = true;
-                break;
+        if (length != 0) {
+            uint256 count = length -1;
+            for (uint256 i = count; i >= 0 && i < count; i--) {
+                Stage currentStage = getCurrentBallotStage(i);
+                if (currentStage == Stage.COMMIT && currentStage == Stage.REVEAL && !ballots[i].isCancelled) {
+                    isAnyBallotActive = true;
+                    break;
+                }
             }
         }
     }

@@ -586,8 +586,8 @@ to account ${ event._claimer} `
 }
 
 async function addDividendsModule() {
-  let moduleList = await common.getAvailableModules(moduleRegistry, gbl.constants.MODULES_TYPES.DIVIDENDS, securityToken.options.address);
-  let options = moduleList.filter(m => m.name.includes('Dividend')).map(m => `${m.name} - ${m.version} (${m.factoryAddress})`);
+  let moduleList = (await common.getAvailableModules(moduleRegistry, gbl.constants.MODULES_TYPES.DIVIDENDS, securityToken.options.address)).filter(m => m.name.includes('Dividend'));
+  let options = moduleList.map(m => `${m.name} - ${m.version} (${m.factoryAddress})`);
 
   let index = readlineSync.keyInSelect(options, 'Which dividends module do you want to add? ', { cancel: 'Return' });
   if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]}? `)) {

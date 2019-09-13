@@ -69,8 +69,8 @@ async function createCheckpointFromST() {
 }
 
 async function addVotingModule() {
-  const moduleList = await common.getAvailableModules(moduleRegistry, gbl.constants.MODULES_TYPES.DIVIDENDS, securityToken.options.address);
-  const options = moduleList.filter(m => m.name.includes('Voting')).map(m => `${m.name} - ${m.version} (${m.factoryAddress})`);
+  const moduleList = (await common.getAvailableModules(moduleRegistry, gbl.constants.MODULES_TYPES.DIVIDENDS, securityToken.options.address)).filter(m => m.name.includes('Voting'));
+  const options = moduleList.map(m => `${m.name} - ${m.version} (${m.factoryAddress})`);
 
   const index = readlineSync.keyInSelect(options, 'Which voting module do you want to add? ', { cancel: 'RETURN' });
   if (index !== -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]}? `)) {
@@ -110,9 +110,9 @@ async function advancedPLCRVotingManager() {
   console.log(`- Exempted voters by default:    ${defaultExemptedVoters.length}`);
   console.log(`- Total ballot count:            ${allBalotsToShow.length}`);
   console.log(`- Current ballots:               ${prepareBallots.length + commitBallots.length + revealBallots.length}`);
-  console.log(`    Preparation satage:          ${prepareBallots.length}`);
-  console.log(`    Commit satage:               ${commitBallots.length}`);
-  console.log(`    Reveal satage:               ${revealBallots.length}`);
+  console.log(`    Preparation stage:           ${prepareBallots.length}`);
+  console.log(`    Commit stage:                ${commitBallots.length}`);
+  console.log(`    Reveal stage:                ${revealBallots.length}`);
   console.log();
   console.log(`- My pending ballots:`);
   console.log(`    Commit:                      ${pendingBallots.commitBallots.length}`);
@@ -584,9 +584,9 @@ async function commitVote(ballotId) {
   }
 
   const votingPower = new BigNumber(web3.utils.fromWei(await currentVotingModule.methods.getVoteTokenCount(Issuer.address, ballotId).call()));
-  console.log(`Your voting power is ${votingPower}.`);
+  console.log(`You have ${votingPower} votes that can be allocated.`);
   console.log(`You can distribute it over the different choices as you want.`);
-  console.log('Please enter the amount of votes you want to assign to each choice.', '\n')
+  console.log('Please enter the amount of votes you want to assign to each choice:', '\n')
 
   let remaining = votingPower;
   const proposalVotes = [];

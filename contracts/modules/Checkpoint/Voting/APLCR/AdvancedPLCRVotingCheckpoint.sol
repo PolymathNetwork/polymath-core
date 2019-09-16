@@ -130,6 +130,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
     internal
     {
         //TODO: Charging Usage cost
+        _validateMaximumLimitCount();
         _startTime = _getStartTime(_startTime);
         _isEmptyBytes32(_name);
         _isEmptyString(_proposalTitle);
@@ -231,6 +232,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
     internal
     {
         //TODO: Charging Usage cost
+        _validateMaximumLimitCount();
         _startTime = _getStartTime(_startTime);
         _isEmptyBytes32(_name);
         _isEmptyString(_proposalTitles);
@@ -1010,6 +1012,10 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
 
     function _isEmptyBytes32(bytes32 _name) internal pure {
         require(_name != bytes32(0), "Invalid name");
+    }
+
+    function _validateMaximumLimitCount() internal view {
+        require(ballots.length < MAXLIMIT, "Max Limit Reached");
     }
 
     function _getNoOfChoice(uint256 _noOfChoice) internal pure returns(uint256 noOfChoice) {

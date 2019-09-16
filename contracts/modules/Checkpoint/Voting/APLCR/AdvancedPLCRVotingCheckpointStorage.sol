@@ -5,6 +5,7 @@ contract AdvancedPLCRVotingCheckpointStorage {
     enum Stage { PREP, COMMIT, REVEAL, RESOLVED }
 
     uint256 internal constant DEFAULTCHOICE = uint256(3);
+    uint256 internal constant MAXLIMIT = uint256(500);
 
     struct Ballot {
         uint256 checkpointId; // Checkpoint At which ballot created

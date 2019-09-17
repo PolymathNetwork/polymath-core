@@ -57,6 +57,8 @@ const PLCRVotingCheckpoint = artifacts.require("./PLCRVotingCheckpoint.sol");
 const WeightedVoteCheckpoint = artifacts.require("./WeightedVoteCheckpoint.sol");
 const RestrictedPartialSaleTMFactory = artifacts.require("./RestrictedPartialSaleTMFactory.sol");
 const RestrictedPartialSaleTM = artifacts.require("./RestrictedPartialSaleTM.sol");
+const AdvancedPLCRVotingCheckpointFactory = artifacts.require("./AdvancedPLCRVotingCheckpointFactory");
+const AdvancedPLCRVotingCheckpoint = artifacts.require("./AdvancedPLCRVotingCheckpoint");
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -122,6 +124,8 @@ let I_PLCRVotingCheckpointFactory;
 let I_WeightedVoteCheckpointLogic;
 let I_PLCRVotingCheckpointLogic;
 let I_RestrictedPartialSaleTMLogic;
+let I_AdvancedPLCRVotingCheckpointFactory;
+let I_AdvancedPLCRVotingCheckpointLogic;
 
 // Initial fee for ticker registry and security token registry
 const initRegFee = new BN(web3.utils.toWei("250"));
@@ -660,4 +664,18 @@ export async function deployWeightedVoteCheckpoint(accountPolymath, MRProxyInsta
 
     await registerAndVerifyByMR(I_WeightedVoteCheckpointFactory.address, accountPolymath, MRProxyInstance);
     return new Array(I_WeightedVoteCheckpointFactory);
+}
+
+
+export async function deployAdvancedPLCRVotingCheckpointAndVerifyed(accountPolymath, MRProxyInstance, setupCost, feeInPoly = false) {
+    I_AdvancedPLCRVotingCheckpointLogic = await AdvancedPLCRVotingCheckpoint.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
+    I_AdvancedPLCRVotingCheckpointFactory = await AdvancedPLCRVotingCheckpointFactory.new(setupCost, I_AdvancedPLCRVotingCheckpointLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
+    assert.notEqual(
+        I_AdvancedPLCRVotingCheckpointFactory.address.valueOf(),
+        "0x0000000000000000000000000000000000000000",
+        "WeightedVoteCheckpointFactory contract was not deployed"
+    );
+
+    await registerAndVerifyByMR(I_AdvancedPLCRVotingCheckpointFactory.address, accountPolymath, MRProxyInstance);
+    return new Array(I_AdvancedPLCRVotingCheckpointFactory);
 }

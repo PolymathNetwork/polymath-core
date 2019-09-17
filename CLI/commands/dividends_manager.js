@@ -326,9 +326,6 @@ async function manageExistingDividend(dividendIndex) {
     case 'Reclaim expired dividends':
       await reclaimedDividend(dividendIndex, dividendTokenSymbol, dividendTokenDecimals);
       return;
-    case 'Reclaim ETH or ERC20 tokens from contract':
-      await reclaim
-      break;
     case 'RETURN':
       return;
   }
@@ -589,7 +586,7 @@ to account ${ event._claimer} `
 }
 
 async function addDividendsModule() {
-  let moduleList = await common.getAvailableModules(moduleRegistry, gbl.constants.MODULES_TYPES.DIVIDENDS, securityToken.options.address);
+  let moduleList = (await common.getAvailableModules(moduleRegistry, gbl.constants.MODULES_TYPES.DIVIDENDS, securityToken.options.address)).filter(m => m.name.includes('Dividend'));
   let options = moduleList.map(m => `${m.name} - ${m.version} (${m.factoryAddress})`);
 
   let index = readlineSync.keyInSelect(options, 'Which dividends module do you want to add? ', { cancel: 'Return' });

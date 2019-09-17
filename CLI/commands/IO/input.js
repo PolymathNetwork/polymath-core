@@ -34,7 +34,7 @@ function readNumberGreaterThan(minValue, message, defaultValue) {
     limit: function (input) {
       return parseFloat(input) > minValue;
     },
-    limitMessage: `Must be greater than ${minValue}`,
+    limitMessage: `Must be a number greater than ${minValue}`,
     defaultInput: defaultValue
   });
 }
@@ -44,7 +44,7 @@ function readNumberGreaterThanOrEqual(minValue, message, defaultValue) {
     limit: function (input) {
       return parseFloat(input) >= minValue;
     },
-    limitMessage: `Must be greater than or equal ${minValue}`,
+    limitMessage: `Must be a number greater than or equal ${minValue}`,
     defaultInput: defaultValue
   });
 }
@@ -54,7 +54,7 @@ function readNumberLessThan(maxValue, message, defaultValue) {
     limit: function (input) {
       return parseFloat(input) < maxValue;
     },
-    limitMessage: `Must be less than ${maxValue}`,
+    limitMessage: `Must be a number less than ${maxValue}`,
     defaultInput: defaultValue
   });
 }
@@ -64,7 +64,7 @@ function readNumberLessThanOrEqual(maxValue, message, defaultValue) {
     limit: function (input) {
       return parseFloat(input) < maxValue;
     },
-    limitMessage: `Must be less than or equal ${maxValue}`,
+    limitMessage: `Must be a number less than or equal ${maxValue}`,
     defaultInput: defaultValue
   });
 }
@@ -74,7 +74,13 @@ function readNumberBetween(minValue, maxValue, message, defaultValue) {
     limit: function (input) {
       return parseFloat(input) >= minValue && parseFloat(input) <= maxValue;
     },
-    limitMessage: `Must be betwwen ${minValue} and ${maxValue}`,
+    limitMessage: `Must be a number betwwen ${minValue} and ${maxValue}`,
+    defaultInput: defaultValue
+  });
+}
+
+function readString(message, defaultValue) {
+  return readlineSync.question(message, {
     defaultInput: defaultValue
   });
 }
@@ -130,6 +136,7 @@ module.exports = {
   readNumberLessThan,
   readNumberLessThanOrEqual,
   readNumberBetween,
+  readString,
   readStringNonEmpty,
   readStringNonEmptyWithMaxBinarySize,
   readDateInTheFuture,

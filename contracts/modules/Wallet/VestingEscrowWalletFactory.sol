@@ -25,6 +25,7 @@ contract VestingEscrowWalletFactory is UpgradableModuleFactory {
         description = "Manage vesting schedules to employees / affiliates";
         typesData.push(7);
         typesData.push(8); // Extra type which will allow module to hold and send securityTokens without being added in KYC data
+        typesData.push(9); // Auto whitelist treasury wallet
         tagsData.push("Vesting");
         tagsData.push("Escrow");
         tagsData.push("Transfer Restriction");

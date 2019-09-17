@@ -31,6 +31,7 @@ contract USDTieredSTOFactory is UpgradableModuleFactory {
         typesData.push(3);
         typesData.push(8); // Extra type which will allow module to hold and send securityTokens without being added in KYC data
         typesData.push(5); // Allow burn type 
+        typesData.push(9); // Auto whitelist treasury wallet
         tagsData.push("Tiered");
         tagsData.push("ETH");
         tagsData.push("POLY");

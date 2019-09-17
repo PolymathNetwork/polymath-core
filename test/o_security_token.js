@@ -332,7 +332,7 @@ contract("SecurityToken", async (accounts) => {
             let id2 = await takeSnapshot();
             let mockInvestors = [];
             let mockAmount = [];
-            for (let i = 0; i < 40; i++) {
+            for (let i = 0; i < 38; i++) {
                 mockInvestors.push("0x1000000000000000000000000000000000000000".substring(0, 42 - i.toString().length) + i.toString());
                 mockAmount.push(new BN(10).pow(new BN(18)));
             }
@@ -341,7 +341,7 @@ contract("SecurityToken", async (accounts) => {
                 from: token_owner
             });
 
-            console.log("Cost for issuing to 40 addresses without checkpoint: " + tx.receipt.gasUsed);
+            console.log("Cost for issuing to 38 addresses without checkpoint: " + tx.receipt.gasUsed);
             await revertToSnapshot(id2);
 
             await I_SecurityToken.createCheckpoint({ from: token_owner });
@@ -350,7 +350,7 @@ contract("SecurityToken", async (accounts) => {
                 from: token_owner
             });
 
-            console.log("Cost for issuing to 40 addresses with checkpoint: " + tx.receipt.gasUsed);
+            console.log("Cost for issuing to 38 addresses with checkpoint: " + tx.receipt.gasUsed);
             await revertToSnapshot(id);
         });
 

@@ -475,7 +475,7 @@ async function generalTransferManager() {
       break;
     case `Show whitelist data`:
       let investorsToShow = input.readMultipleAddresses(`Enter the addresses of the investors you want to show (i.e: addr1,addr2,addr3) or leave empty to show them all: `);
-      if (investorsToShow === '') {
+      if (investorsToShow[0] === '') {
         let whitelistData = await currentTransferManager.methods.getAllKYCData().call();
         showWhitelistTable(whitelistData[0], whitelistData[1], whitelistData[2], whitelistData[3]);
       } else {

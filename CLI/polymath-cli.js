@@ -8,6 +8,7 @@ const sto_manager = require('./commands/sto_manager');
 const transfer = require('./commands/transfer');
 const transfer_ownership = require('./commands/transfer_ownership');
 const dividends_manager = require('./commands/dividends_manager');
+const voting_manager = require('./commands/voting_manager');
 const transfer_manager = require('./commands/transfer_manager');
 const wallet_manager = require('./commands/wallet_manager');
 const contract_manager = require('./commands/contract_manager');
@@ -115,6 +116,15 @@ program
   .action(async function (dividendsType) {
     await gbl.initialize(program.remoteNode);
     await dividends_manager.executeApp(dividendsType);
+  });
+
+program
+  .command('voting_manager')
+  .alias('vm')
+  .description('Runs voting_manager')
+  .action(async function () {
+    await gbl.initialize(program.remoteNode);
+    await voting_manager.executeApp();
   });
 
 program

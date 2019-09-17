@@ -14,7 +14,7 @@ contract VotingCheckpoint is VotingCheckpointStorage, ICheckpoint, IVoting, Modu
      * @param _voter Address of the voter
      * @param _exempt Whether it is exempted or not
      */
-    function changeDefaultExemptedVotersList(address _voter, bool _exempt) external withPerm(ADMIN) {
+    function changeDefaultExemptedVotersList(address _voter, bool _exempt) public withPerm(ADMIN) {
         _changeDefaultExemptedVotersList(_voter, _exempt);
     }
 
@@ -23,7 +23,7 @@ contract VotingCheckpoint is VotingCheckpointStorage, ICheckpoint, IVoting, Modu
      * @param _voters Address of the voter
      * @param _exempts Whether it is exempted or not
      */
-    function changeDefaultExemptedVotersListMulti(address[] calldata _voters, bool[] calldata _exempts) external withPerm(ADMIN) {
+    function changeDefaultExemptedVotersListMulti(address[] memory _voters, bool[] memory _exempts) public withPerm(ADMIN) {
         require(_voters.length == _exempts.length, "Array length mismatch");
         for (uint256 i = 0; i < _voters.length; i++) {
             _changeDefaultExemptedVotersList(_voters[i], _exempts[i]);

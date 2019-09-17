@@ -1,5 +1,6 @@
 pragma solidity 0.5.8;
 
+import "../../../interfaces/ITreasuryModule.sol";
 import "../TransferManager.sol";
 import "../../../libraries/Encoder.sol";
 import "../../../libraries/VersionUtils.sol";
@@ -175,7 +176,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
                         if (validFrom != MAX && validTo != MAX)
                             break;   
                     }
-                    validFrom == MAX ? (validFrom, nonce) = _getKYCValuesFrom(target) : (validFrom, nonce) = (canSendAfter[validFrom], expiryTime[validFrom]);
+                    validFrom == MAX ? (validFrom, nonce) = _getKYCDataValues(target) : (validFrom, nonce) = (canSendAfter[validFrom], expiryTime[validFrom]);
                     if (validTo != MAX) { 
                         return _verifyTransfer(
                             _to,
@@ -192,6 +193,14 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
             }
         }
         return _verifyTransfer(_to, _from, 0, 0, 0, 0);
+    }
+
+    function _getKYCDataValues(address _target) internal view returns (uint64 canSendAfter, uint64 fromExpiry) {
+        if (_isValidTreasuryWallet(_target)) {
+            (canSendAfter, fromExpiry) = (uint64(now - 1), uint64(now + 1));
+        } else {
+            (canSendAfter, fromExpiry) = _getKYCValuesFrom(_target);
+        }
     }
 
     function _processTransferSignatureView(
@@ -234,7 +243,6 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     {
         if (!paused) {
             TransferRequirements memory txReq;
-
             if (_from == issuanceAddress) {
                 txReq = transferRequirements[uint8(TransferType.ISSUANCE)];
             } else if (_to == address(0)) {
@@ -243,11 +251,28 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
                 txReq = transferRequirements[uint8(TransferType.GENERAL)];
             }
             // This if condition use to differentiate the read-only call & write call
+            // Transaction will fall into the `if` only when the call is write type
             if (_toExpiry == 0) {
-                !_isWhitelistModule(_from) ? (_canSendAfter, _fromExpiry) = _getKYCValuesFrom(_from) : (_canSendAfter, _fromExpiry) = (uint64(now - 1), uint64(now + 1));
 
-                !_isWhitelistModule(_to) ? (_canReceiveAfter, _toExpiry) = _getKYCValuesTo(_to) : (_canReceiveAfter, _toExpiry) = (uint64(now - 1), uint64(now + 1));                
+                (_canSendAfter, _fromExpiry) = _getKYCValuesFrom(_from);
+
+                (_canReceiveAfter, _toExpiry) = _getKYCValuesTo(_to);  
+
+                // Below block of code is used to know whether from or to address is treasury wallet/module address or not
+                // is any of the address is comes under the treasury wallet/module address list then we will skip the GTM restriction on
+                // that address.
+                if (_fromExpiry == 0 && _from != issuanceAddress) {
+                    if (_isWhitelistModule(_from))
+                        (_canSendAfter, _fromExpiry) = (uint64(now - 1), uint64(now + 1));
+                    else if (_isValidTreasuryWallet(_from))
+                        (_canSendAfter, _fromExpiry) = (uint64(now - 1), uint64(now + 1));
+                }
+                if (_toExpiry == 0) {
+                    if (_isWhitelistModule(_to) || _isValidTreasuryWallet(_to))
+                        (_canReceiveAfter, _toExpiry) = (uint64(now - 1), uint64(now + 1));
+                }
             }
+
             if ((txReq.fromValidKYC && !_validExpiry(_fromExpiry)) || (txReq.toValidKYC && !_validExpiry(_toExpiry))) {
                 return (Result.NA, bytes32(0));
             }
@@ -261,6 +286,29 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
             return (Result.VALID, getAddressBytes32());
         }
         return (Result.NA, bytes32(0));
+    }
+
+
+    function _isValidTreasuryWallet(address _wallet) internal view returns(bool) {
+        address _treasury = securityToken.getTreasuryWallet();
+        if (_treasury == _wallet) 
+            return true;
+        else {
+            address[] memory modules = securityToken.getModulesByType(WHITELISTTREASURY);
+            uint256 len = modules.length;
+            uint256 i;
+            address module;
+            bool isArchived;
+            for (i = 0; i < len; i++) {
+                (,module,,isArchived,,) = securityToken.getModule(modules[i]);
+                if (!isArchived) {
+                    _treasury = ITreasuryModule(module).getTreasuryWallet();
+                    if (_treasury == _wallet)
+                        return true;
+                }
+            }
+            return false;
+        }
     }
 
     function _isWhitelistModule(address _holder) internal view returns(bool) {

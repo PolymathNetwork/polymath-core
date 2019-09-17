@@ -34,10 +34,10 @@ contract VolumeRestrictionTMStorage {
     IndividualRestrictions individualRestrictions;
 
     struct GlobalRestrictions {
-      // Global restriction that applies to all token holders
-      VolumeRestriction defaultRestriction;
-      // Daily global restriction that applies to all token holders (Total ST traded daily is restricted)
-      VolumeRestriction defaultDailyRestriction;
+        // Global restriction that applies to all token holders
+        VolumeRestriction defaultRestriction;
+        // Daily global restriction that applies to all token holders (Total ST traded daily is restricted)
+        VolumeRestriction defaultDailyRestriction;
     }
 
     // Individual and daily restrictions for investors

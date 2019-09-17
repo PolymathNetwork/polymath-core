@@ -28,6 +28,7 @@ contract ERC20DividendCheckpointFactory is UpgradableModuleFactory {
         title = "ERC20 Dividend Checkpoint";
         description = "Create ERC20 dividends for token holders at a specific checkpoint";
         typesData.push(4);
+        typesData.push(9); // Auto whitelist treasury wallet
         tagsData.push("ERC20");
         tagsData.push("Dividend");
         tagsData.push("Checkpoint");

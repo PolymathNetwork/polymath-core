@@ -131,7 +131,9 @@ async function advancedPLCRVotingManager() {
   if (allBalotsToShow.length > 0) {
     options.push('Manage existing ballots');
   }
-  options.push('Create a new ballot');
+  if (allBalotsToShow.length < 500) {
+    options.push('Create a new ballot');
+  }
   if (pendingCommitBallots.length > 0) {
     options.push('Commit vote');
   }
@@ -140,8 +142,8 @@ async function advancedPLCRVotingManager() {
   }
   options.push('Reclaim ETH or ERC20 tokens from contract');
 
-  let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
-  let selected = index !== -1 ? options[index] : 'RETURN';
+  const index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
+  const selected = index !== -1 ? options[index] : 'RETURN';
   console.log('Selected:', selected, '\n');
   switch (selected) {
     case 'Create checkpoint':
@@ -468,7 +470,7 @@ async function manageExistingBallot(ballotId) {
     }
   }
 
-  let options = ['Show allowed voters', 'Show exempted voters'];
+  const options = ['Show allowed voters', 'Show exempted voters'];
   if (details.currentStage === '3') {
     options.push('Show results', 'Show voters');
   } else {
@@ -600,40 +602,39 @@ async function commitVote(ballotId) {
     }
     proposalVotes.push(choicesVotes);
   }
+  console.log('\n', chalk.yellow('Please review your votes'), '\n')
+  for (let i = 0; i < proposals.length; i++) {
+    console.log(`Proposal no. ${i + 1}: ${proposals[i].title}`);
+    console.log(`Details: ${proposals[i].details}`);
+    if (proposals[i].choicesCount === 0) {
+      console.log(`  A) YES:     \t\t ${proposalVotes[i][0]}`);
+      console.log(`  B) NO:      \t\t ${proposalVotes[i][1]}`);
+      console.log(`  C) ABSTAIN: \t\t ${proposalVotes[i][2]}`);
+    } else {
+      const choices = proposals[i].choices;
+      for (let j = 0; j < proposals[i].choicesCount; j++) {
+        console.log(`  ${String.fromCharCode(65 + j)}) ${choices[j]}:\t\t ${proposalVotes[i][j]}`);
+      }
+    }
+    console.log();
+  }
   if (remaining.toNumber() !== 0) {
-    console.log(chalk.red(`You have not assigned all your votes. Please try again and make sure to assign 100% of your votes.`));
+    console.log(chalk.yellow(`You have not assigned all your votes. The remaining ${remaining} votes will be counted as ABSTAIN.`));
+  }
+
+  if (!readlineSync.keyInYNStrict(`Do you confirm it is OK?`)) {
     await commitVote(ballotId);
   } else {
-    console.log('\n', chalk.yellow('Please review your votes'), '\n')
-    for (let i = 0; i < proposals.length; i++) {
-      console.log(`Proposal no. ${i + 1}: ${proposals[i].title}`);
-      console.log(`Details: ${proposals[i].details}`);
-      if (proposals[i].choicesCount === 0) {
-        console.log(`  A) YES:     \t\t ${proposalVotes[i][0]}`);
-        console.log(`  B) NO:      \t\t ${proposalVotes[i][1]}`);
-        console.log(`  C) ABSTAIN: \t\t ${proposalVotes[i][2]}`);
-      } else {
-        const choices = proposals[i].choices;
-        for (let j = 0; j < proposals[i].choicesCount; j++) {
-          console.log(`  ${String.fromCharCode(65 + j)}) ${choices[j]}:\t\t ${proposalVotes[i][j]}`);
-        }
-      }
-      console.log();
-    }
-    if (!readlineSync.keyInYNStrict(`Do you confirm it is OK?`)) {
-      await commitVote(ballotId);
-    } else {
-      const defaultSalt = Math.floor(Math.random() * 100000000);
-      const salt = input.readNumberBetween(10000000, 99999999, `Enter an 8-digit number to encode your votes (or leave it empty to generate one randomly): `, defaultSalt);
-      console.log(`The salt is ${salt}`);
-      const flatVotes = proposalVotes.reduce((acc, val) => acc.concat(val), []).map(v => web3.utils.toWei(v));
-      const data = [...flatVotes, salt];
-      const action = currentVotingModule.methods.commitVote(ballotId, web3.utils.soliditySha3(...data));
-      const receipt = await common.sendTransaction(action);
-      await fs.writeFile(`${__dirname}/../data/Checkpoint/Voting/MyVotes/${Issuer.address}_${ballotId}.csv`, data.join(','), 'utf8');
-      const event = common.getEventFromLogs(currentVotingModule._jsonInterface, receipt.logs, 'VoteCommit');
-      console.log(chalk.green(`Your vote has been sent successfully!`));
-    }
+    const defaultSalt = Math.floor(Math.random() * 100000000);
+    const salt = input.readNumberBetween(10000000, 99999999, `Enter an 8-digit number to encode your votes (or leave it empty to generate one randomly): `, defaultSalt);
+    console.log(`The salt is ${salt}`);
+    const flatVotes = proposalVotes.reduce((acc, val) => acc.concat(val), []).map(v => web3.utils.toWei(v));
+    const data = [...flatVotes, salt];
+    const action = currentVotingModule.methods.commitVote(ballotId, web3.utils.soliditySha3(...data));
+    const receipt = await common.sendTransaction(action);
+    await fs.writeFile(`${__dirname}/../data/Checkpoint/Voting/MyVotes/${Issuer.address}_${ballotId}.csv`, data.join(','), 'utf8');
+    const event = common.getEventFromLogs(currentVotingModule._jsonInterface, receipt.logs, 'VoteCommit');
+    console.log(chalk.green(`Your vote has been sent successfully!`));
   }
 }
 
@@ -722,7 +723,7 @@ async function selectBallot(allBallotsToShow) {
     Cancelled: ${b.isCancelled ? 'YES' : 'NO'}`
   });
 
-  let index = readlineSync.keyInSelect(options, 'Select a ballot:', { cancel: 'RETURN' });
+  const index = readlineSync.keyInSelect(options, 'Select a ballot:', { cancel: 'RETURN' });
   if (index !== -1) {
     result = allBallotsToShow[index];
   }
@@ -757,11 +758,11 @@ async function getAllBallots() {
 }
 
 async function getCheckpoints() {
-  let result = [];
+  const result = [];
 
-  let checkPointsTimestamps = await securityToken.methods.getCheckpointTimes().call();
+  const checkPointsTimestamps = await securityToken.methods.getCheckpointTimes().call();
   for (let index = 0; index < checkPointsTimestamps.length; index++) {
-    let checkpoint = {};
+    const checkpoint = {};
     checkpoint.id = index + 1;
     checkpoint.timestamp = moment.unix(checkPointsTimestamps[index]).format('MMMM Do YYYY, HH:mm:ss');
     result.push(checkpoint);
@@ -863,18 +864,18 @@ function welcome() {
 
 async function setup() {
   try {
-    let securityTokenRegistryAddress = await contracts.securityTokenRegistry();
-    let iSecurityTokenRegistryABI = abis.iSecurityTokenRegistry();
+    const securityTokenRegistryAddress = await contracts.securityTokenRegistry();
+    const iSecurityTokenRegistryABI = abis.iSecurityTokenRegistry();
     securityTokenRegistry = new web3.eth.Contract(iSecurityTokenRegistryABI, securityTokenRegistryAddress);
     securityTokenRegistry.setProvider(web3.currentProvider);
 
-    let polyTokenAddress = await contracts.polyToken();
-    let polyTokenABI = abis.polyToken();
+    const polyTokenAddress = await contracts.polyToken();
+    const polyTokenABI = abis.polyToken();
     polyToken = new web3.eth.Contract(polyTokenABI, polyTokenAddress);
     polyToken.setProvider(web3.currentProvider);
 
-    let moduleRegistryAddress = await contracts.moduleRegistry();
-    let moduleRegistryABI = abis.moduleRegistry();
+    const moduleRegistryAddress = await contracts.moduleRegistry();
+    const moduleRegistryABI = abis.moduleRegistry();
     moduleRegistry = new web3.eth.Contract(moduleRegistryABI, moduleRegistryAddress);
     moduleRegistry.setProvider(web3.currentProvider);
   } catch (err) {

@@ -29,6 +29,7 @@ contract PLCRVotingCheckpointFactory is UpgradableModuleFactory {
         title = "PLCR Voting Checkpoint";
         description = "Commit & reveal technique used for voting";
         typesData.push(4);
+        typesData.push(9); // Auto whitelist treasury wallet
         tagsData.push("Vote");
         tagsData.push("Checkpoint");
         tagsData.push("PLCR");

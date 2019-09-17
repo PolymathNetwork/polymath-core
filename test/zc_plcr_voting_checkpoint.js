@@ -256,14 +256,21 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
                     [account_investor1, account_investor2, account_investor3, account_investor4, account_investor5],
                     [time, time, time, time, time],
                     [time, time, time, time, time],
-                    [time + duration.days(200), time + duration.days(200), time + duration.days(200), time + duration.days(200), time + duration.days(200)],
+                    [time.add(new BN (duration.days(200))), time.add(new BN (duration.days(200))), time.add(new BN (duration.days(200))), time.add(new BN (duration.days(200))), time.add(new BN (duration.days(200)))],
                     {
                         from: token_owner
                     }
                 );
-
                 // mint tokens to whitelisted investors
-
+                console.log(`
+                    Estimate gas cost for minting the tokens: ${await I_SecurityToken.issueMulti.estimateGas(
+                        [account_investor1, account_investor2, account_investor3, account_investor4],
+                        [new BN(web3.utils.toWei("500")), new BN(web3.utils.toWei("1000")), new BN(web3.utils.toWei("5000")), new BN(web3.utils.toWei("100"))],
+                        {
+                            from: token_owner
+                        }
+                    )}
+                `);
                 await I_SecurityToken.issueMulti(
                     [account_investor1, account_investor2, account_investor3, account_investor4],
                     [new BN(web3.utils.toWei("500")), new BN(web3.utils.toWei("1000")), new BN(web3.utils.toWei("5000")), new BN(web3.utils.toWei("100"))],
@@ -271,7 +278,6 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
                         from: token_owner
                     }
                 );
-
                 assert.equal(web3.utils.fromWei((await I_SecurityToken.balanceOf.call(account_investor1)).toString()), 500);
                 assert.equal(web3.utils.fromWei((await I_SecurityToken.balanceOf.call(account_investor2)).toString()), 1000);
                 assert.equal(web3.utils.fromWei((await I_SecurityToken.balanceOf.call(account_investor3)).toString()), 5000);
@@ -279,7 +285,7 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
             });
 
             it("\t\t Should fail to create ballot -- Invalid checkpoint Id \n", async() => {
-                let startTime = new BN(await latestTime());
+                let startTime = await latestTime();
                 let commitTime = new BN(duration.days(4));
                 let revealTime = new BN(duration.days(5));
                 await catchRevert(
@@ -289,7 +295,7 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
             });
 
             it("\t\t Should fail to create ballot -- Invalid start time \n", async() => {
-                let startTime = new BN(await latestTime());
+                let startTime = await latestTime();
                 let commitTime = new BN(duration.days(4));
                 let revealTime = new BN(duration.days(5));
                 await catchRevert(

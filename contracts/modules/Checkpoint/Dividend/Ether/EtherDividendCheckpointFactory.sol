@@ -28,6 +28,7 @@ contract EtherDividendCheckpointFactory is UpgradableModuleFactory {
         title = "Ether Dividend Checkpoint";
         description = "Create ETH dividends for token holders at a specific checkpoint";
         typesData.push(4);
+        typesData.push(9); // Auto whitelist treasury wallet
         tagsData.push("Ether");
         tagsData.push("Dividend");
         tagsData.push("Checkpoint");

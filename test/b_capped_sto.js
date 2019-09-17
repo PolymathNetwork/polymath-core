@@ -1263,10 +1263,10 @@ contract("CappedSTO", async (accounts) => {
         it("Should whitelist the investor before buying the tokens", async() => {
             let expiryTime = await latestTime() + duration.years(2);
             await I_GeneralTransferManager.modifyKYCDataMulti(
-                [account_investor1, account_investor2, treasury_wallet],
-                [new BN(1), new BN(1), new BN(1)],
-                [new BN(1), new BN(1), new BN(1)],
-                [expiryTime, expiryTime, expiryTime],
+                [account_investor1, account_investor2],
+                [new BN(1), new BN(1)],
+                [new BN(1), new BN(1)],
+                [expiryTime, expiryTime],
                 {
                     from: token_owner
                 }  

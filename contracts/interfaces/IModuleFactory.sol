@@ -4,7 +4,9 @@ pragma solidity 0.5.8;
  * @title Interface that every module factory contract should implement
  */
 interface IModuleFactory {
+    
     event ChangeSetupCost(uint256 _oldSetupCost, uint256 _newSetupCost);
+    event ChangeUsageCost(uint256 _oldUsageCost, uint256 _newUsageCost);
     event ChangeCostType(bool _isOldCostInPoly, bool _isNewCostInPoly);
     event GenerateModuleFromFactory(
         address _module,
@@ -45,6 +47,11 @@ interface IModuleFactory {
     function setupCost() external returns(uint256 usdSetupCost);
 
     /**
+     * @notice Get the usage cost of the module in USD
+     */
+    function usageCost() external returns(uint256 usdUsageCost);
+
+    /**
      * @notice Type of the Module factory
      */
     function getTypes() external view returns(uint8[] memory moduleTypes);
@@ -61,11 +68,18 @@ interface IModuleFactory {
     function changeSetupCost(uint256 _newSetupCost) external;
 
     /**
-     * @notice Used to change the currency and amount setup cost
+     * @notice Used to change the usage cost
+     * @param _usageCost new usage cost
+     */
+    function changeUsageCost(uint256 _usageCost) external;
+
+    /**
+     * @notice Used to change the currency and amount of setup cost
      * @param _setupCost new setup cost
+     * @param _usageCost new usage cost
      * @param _isCostInPoly new setup cost currency. USD or POLY
      */
-    function changeCostAndType(uint256 _setupCost, bool _isCostInPoly) external;
+    function changeCostAndType(uint256 _setupCost, uint256 _usageCost, bool _isCostInPoly) external;
 
     /**
      * @notice Function use to change the lower and upper bound of the compatible version st
@@ -78,6 +92,11 @@ interface IModuleFactory {
      * @notice Get the setup cost of the module
      */
     function setupCostInPoly() external returns (uint256 polySetupCost);
+
+    /**
+     * @notice Get the usage cost of the module
+     */
+    function usageCostInPoly() external returns (uint256 polyUsageCost);
 
     /**
      * @notice Used to get the lower bound
@@ -114,5 +133,7 @@ interface IModuleFactory {
      * @param _title New Title that will replace the old one.
      */
     function changeTitle(string calldata _title) external;
+
+    function polymathRegistry() external returns (address polymathRegistryAddress);
 
 }

@@ -106,9 +106,9 @@ contract('LockUpTransferManager', accounts => {
         ] = instances;
 
         // STEP 4(c): Deploy the LockUpVolumeRestrictionTMFactory
-        [I_LockUpTransferManagerFactory] = await deployLockUpTMAndVerified(account_polymath, I_MRProxied, 0);
+        [I_LockUpTransferManagerFactory] = await deployLockUpTMAndVerified(account_polymath, I_MRProxied, 0, new BN(0));
         // STEP 4(d): Deploy the LockUpVolumeRestrictionTMFactory
-        [P_LockUpTransferManagerFactory] = await deployLockUpTMAndVerified(account_polymath, I_MRProxied, new BN(web3.utils.toWei("500")));
+        [P_LockUpTransferManagerFactory] = await deployLockUpTMAndVerified(account_polymath, I_MRProxied, new BN(web3.utils.toWei("500")), new BN(0));
 
         // Printing all the contract addresses
         console.log(`

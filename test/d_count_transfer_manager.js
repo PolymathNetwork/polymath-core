@@ -117,9 +117,9 @@ contract("CountTransferManager", async (accounts) => {
         ] = instances;
 
         // STEP 2: Deploy the CountTransferManager
-        [I_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, 0);
+        [I_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, 0, new BN(0));
         // STEP 3: Deploy Paid the CountTransferManager
-        [P_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, new BN(web3.utils.toWei("500", "ether")));
+        [P_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, new BN(web3.utils.toWei("500", "ether")), new BN(0));
 
         // Printing all the contract addresses
         console.log(`

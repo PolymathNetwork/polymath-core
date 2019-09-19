@@ -102,8 +102,8 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
 
 
         // STEP 4: Deploy the WeightedVoteCheckpoint
-        [I_WeightedVoteCheckpointFactory] = await deployWeightedVoteCheckpoint(account_polymath, I_MRProxied, 0);
-        [P_WeightedVoteCheckpointFactory] = await deployWeightedVoteCheckpoint(account_polymath, I_MRProxied, new BN(web3.utils.toWei("500")));
+        [I_WeightedVoteCheckpointFactory] = await deployWeightedVoteCheckpoint(account_polymath, I_MRProxied, 0, new BN(0));
+        [P_WeightedVoteCheckpointFactory] = await deployWeightedVoteCheckpoint(account_polymath, I_MRProxied, new BN(web3.utils.toWei("500")), new BN(0));
 
         // Printing all the contract addresses
         console.log(`

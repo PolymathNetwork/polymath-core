@@ -16,6 +16,8 @@ import "../libraries/DecimalMath.sol";
  */
 contract ModuleFactory is IModuleFactory, Ownable {
 
+    using SafeMath for uint256;
+
     IPolymathRegistry public polymathRegistry;
 
     string initialVersion;
@@ -28,6 +30,9 @@ contract ModuleFactory is IModuleFactory, Ownable {
 
     bool public isCostInPoly;
     uint256 public setupCost;
+    uint256 public usageCost;
+    uint256 public lastTimeUsageCostChange;
+    uint256 internal constant LOCKPERIOD = 24 hours;
 
     string constant POLY_ORACLE = "StablePolyUsdOracle";
 
@@ -41,8 +46,10 @@ contract ModuleFactory is IModuleFactory, Ownable {
     /**
      * @notice Constructor
      */
-    constructor(uint256 _setupCost, address _polymathRegistry, bool _isCostInPoly) public {
+    constructor(uint256 _setupCost, uint256 _usageCost, address _polymathRegistry, bool _isCostInPoly) public {
         setupCost = _setupCost;
+        usageCost = _usageCost;
+        lastTimeUsageCostChange = now;
         polymathRegistry = IPolymathRegistry(_polymathRegistry);
         isCostInPoly = _isCostInPoly;
     }
@@ -78,14 +85,33 @@ contract ModuleFactory is IModuleFactory, Ownable {
     }
 
     /**
+     * @notice Used to change the usage cost
+     * @param _usageCost new usage cost
+     */
+    function changeUsageCost(uint256 _usageCost) public onlyOwner {
+        _changeUsageCost(_usageCost);
+    }
+
+    function _changeUsageCost(uint256 _usageCost) internal {
+        require(now.sub(lastTimeUsageCostChange) > LOCKPERIOD, "Under lock period");
+        lastTimeUsageCostChange = now;
+        emit ChangeUsageCost(usageCost, _usageCost);
+        usageCost = _usageCost;
+    }
+
+    /**
      * @notice Used to change the currency and amount of setup cost
      * @param _setupCost new setup cost
+     * @param _usageCost new usage cost
      * @param _isCostInPoly new setup cost currency. USD or POLY
      */
-    function changeCostAndType(uint256 _setupCost, bool _isCostInPoly) public onlyOwner {
+    function changeCostAndType(uint256 _setupCost, uint256 _usageCost, bool _isCostInPoly) public onlyOwner {
         emit ChangeSetupCost(setupCost, _setupCost);
         emit ChangeCostType(isCostInPoly, _isCostInPoly);
         setupCost = _setupCost;
+        if (usageCost != _usageCost) {
+            _changeUsageCost(_usageCost);
+        }
         isCostInPoly = _isCostInPoly;
     }
 
@@ -174,6 +200,16 @@ contract ModuleFactory is IModuleFactory, Ownable {
             return setupCost;
         uint256 polyRate = IOracle(polymathRegistry.getAddress(POLY_ORACLE)).getPrice();
         return DecimalMath.div(setupCost, polyRate);
+    }
+
+    /**
+     * @notice Get the usage cost of the module
+     */
+    function usageCostInPoly() public returns (uint256) {
+        if (isCostInPoly)
+            return usageCost;
+        uint256 polyRate = IOracle(polymathRegistry.getAddress(POLY_ORACLE)).getPrice();
+        return DecimalMath.div(usageCost, polyRate);
     }
 
     /**

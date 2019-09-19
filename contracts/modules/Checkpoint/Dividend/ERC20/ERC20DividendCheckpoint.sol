@@ -56,7 +56,7 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
     )
         external
         withPerm(ADMIN)
-    {
+    {   
         createDividendWithExclusions(_maturity, _expiry, _token, _amount, excluded, _name);
     }
 
@@ -165,6 +165,7 @@ contract ERC20DividendCheckpoint is ERC20DividendCheckpointStorage, DividendChec
         uint256 dividendIndex = dividends.length;
         uint256 currentSupply = securityToken.totalSupplyAt(_checkpointId);
         require(currentSupply > 0, "Invalid supply");
+        _deductUsageFee();  // Deducting the usage cost of creating the dividends
         uint256 excludedSupply = 0;
         dividends.push(
             Dividend(

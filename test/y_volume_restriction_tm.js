@@ -192,9 +192,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
         ] = instances;
 
         // STEP 5: Deploy the VolumeRestrictionTMFactory
-        [I_VolumeRestrictionTMFactory] = await deployVRTMAndVerifyed(account_polymath, I_MRProxied, 0);
+        [I_VolumeRestrictionTMFactory] = await deployVRTMAndVerifyed(account_polymath, I_MRProxied, 0, new BN(0));
         // STEP 6: Deploy the VolumeRestrictionTMFactory
-        [P_VolumeRestrictionTMFactory] = await deployVRTMAndVerifyed(account_polymath, I_MRProxied, new BN(web3.utils.toWei("500")));
+        [P_VolumeRestrictionTMFactory] = await deployVRTMAndVerifyed(account_polymath, I_MRProxied, new BN(web3.utils.toWei("500")), new BN(0));
 
         // Printing all the contract addresses
         console.log(`

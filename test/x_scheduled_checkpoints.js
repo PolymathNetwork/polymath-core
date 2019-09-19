@@ -102,7 +102,7 @@ contract("ScheduledCheckpoint", async (accounts) => {
         ] = instances;
 
         // STEP 2: Deploy the ScheduleCheckpointModule
-        [I_ScheduledCheckpointFactory] = await deployScheduleCheckpointAndVerified(account_polymath, I_MRProxied, 0);
+        [I_ScheduledCheckpointFactory] = await deployScheduleCheckpointAndVerified(account_polymath, I_MRProxied, 0, new BN(0));
 
         // Printing all the contract addresses
         console.log(`

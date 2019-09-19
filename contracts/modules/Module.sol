@@ -6,6 +6,7 @@ import "../interfaces/IModuleFactory.sol";
 import "../interfaces/IDataStore.sol";
 import "../interfaces/ISecurityToken.sol";
 import "../interfaces/ICheckPermission.sol";
+import "../interfaces/IPolymathRegistry.sol";
 import "../storage/modules/ModuleStorage.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
@@ -81,12 +82,28 @@ contract Module is IModule, ModuleStorage, Pausable {
         require(token.transfer(msg.sender, balance), "Transfer failed");
     }
 
-   /**
-    * @notice Reclaims ETH
-    * @dev We duplicate here due to the overriden owner & onlyOwner
-    */
+    /**
+     * @notice Reclaims ETH
+     * @dev We duplicate here due to the overriden owner & onlyOwner
+     */
     function reclaimETH() external {
         _onlySecurityTokenOwner();
         msg.sender.transfer(address(this).balance);
+    }
+
+    /**
+     * @notice Deduct the usage cost
+     */
+    function _deductUsageFee() internal {
+        uint256 _usageCost = IModuleFactory(factory).usageCostInPoly();
+        if (_usageCost > 0) {
+            address registry = IModuleFactory(factory).polymathRegistry();
+            address wallet = IPolymathRegistry(registry).getAddress("usageFeeWallet");
+            require(wallet != address(0), "Invalid wallet");
+            // Below 2 statements are overhead and increase the gas cost
+            require(polyToken.transferFrom(address(securityToken), address(this), _usageCost), "Insufficient allowance");
+            polyToken.approve(wallet, _usageCost);
+            //wallet.withdrawFee(address(securityToken), address(this), _usageCost);
+        }
     }
 }

@@ -256,11 +256,11 @@ contract("USDTieredSTO", async (accounts) => {
 
         I_DaiToken = await PolyTokenFaucet.new({from: POLYMATH});
         // STEP 4: Deploy the GeneralDelegateManagerFactory
-        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(POLYMATH, I_MRProxied, 0);
+        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(POLYMATH, I_MRProxied, 0, new BN(0));
 
         // STEP 5: Deploy the USDTieredSTOFactory
-        [I_USDTieredSTOFactory] = await deployUSDTieredSTOAndVerified(POLYMATH, I_MRProxied, STOSetupCost);
-        [P_USDTieredSTOFactory] = await deployUSDTieredSTOAndVerified(POLYMATH, I_MRProxied, new BN(web3.utils.toWei("500")));
+        [I_USDTieredSTOFactory] = await deployUSDTieredSTOAndVerified(POLYMATH, I_MRProxied, STOSetupCost, new BN(0));
+        [P_USDTieredSTOFactory] = await deployUSDTieredSTOAndVerified(POLYMATH, I_MRProxied, new BN(web3.utils.toWei("500")), new BN(0));
         // Step 12: Deploy & Register Mock Oracles
         I_USDOracle = await MockOracle.new(address_zero, web3.utils.fromAscii("ETH"), web3.utils.fromAscii("USD"), USDETH, { from: POLYMATH }); // 500 dollars per POLY
         I_POLYOracle = await MockOracle.new(I_PolyToken.address, web3.utils.fromAscii("POLY"), web3.utils.fromAscii("USD"), USDPOLY, { from: POLYMATH }); // 25 cents per POLY

@@ -146,10 +146,10 @@ contract("CappedSTO", async (accounts) => {
         ] = instances;
 
         // STEP 5: Deploy the GeneralDelegateManagerFactory
-        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, new BN(0));
+        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, new BN(0), new BN(0));
         // STEP 6: Deploy the CappedSTOFactory
 
-        [I_CappedSTOFactory] = await deployCappedSTOAndVerifyed(account_polymath, I_MRProxied, cappedSTOSetupCost);
+        [I_CappedSTOFactory] = await deployCappedSTOAndVerifyed(account_polymath, I_MRProxied, cappedSTOSetupCost, new BN(0));
 
         // Printing all the contract addresses
         console.log(`
@@ -892,7 +892,7 @@ contract("CappedSTO", async (accounts) => {
             //xxx
             it("should attach a dummy STO", async () => {
                 let I_DummySTOFactory;
-                [I_DummySTOFactory] = await deployDummySTOAndVerifyed(account_polymath, I_MRProxied, new BN(0));
+                [I_DummySTOFactory] = await deployDummySTOAndVerifyed(account_polymath, I_MRProxied, new BN(0), new BN(0));
                 const DummySTOParameters = ["uint256", "uint256", "uint256", "string"];
                 let startTime = await latestTime() + duration.days(1);
                 let endTime = startTime + duration.days(30);
@@ -1239,7 +1239,7 @@ contract("CappedSTO", async (accounts) => {
 
         it("Should fail to issue tokens for a module which type is not 8", async() => {
             let I_DummySTOFactory;
-            [I_DummySTOFactory] = await deployDummySTOAndVerifyed(account_polymath, I_MRProxied, new BN(0));
+            [I_DummySTOFactory] = await deployDummySTOAndVerifyed(account_polymath, I_MRProxied, new BN(0), new BN(0));
             const DummySTOParameters = ["uint256", "uint256", "uint256", "string"];
             let startTime = await latestTime() + duration.days(1);
             let endTime = startTime + duration.days(30);

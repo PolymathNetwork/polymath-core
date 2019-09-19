@@ -133,9 +133,9 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
         ] = instances;
 
         // STEP 2: Deploy the AdvancedPLCRVotingCheckpointFactory
-        [I_AdvancedPLCRVotingCheckpointFactory] = await deployAdvancedPLCRVotingCheckpointAndVerifyed(account_polymath, I_MRProxied, 0);
+        [I_AdvancedPLCRVotingCheckpointFactory] = await deployAdvancedPLCRVotingCheckpointAndVerifyed(account_polymath, I_MRProxied, 0, new BN(0));
         // STEP 3: Deploy Paid the AdvancedPLCRVotingCheckpointFactory
-        [P_AdvancedPLCRVotingCheckpointFactory] = await deployAdvancedPLCRVotingCheckpointAndVerifyed(account_polymath, I_MRProxied, web3.utils.toWei("500", "ether"));
+        [P_AdvancedPLCRVotingCheckpointFactory] = await deployAdvancedPLCRVotingCheckpointAndVerifyed(account_polymath, I_MRProxied, web3.utils.toWei("500", "ether"), new BN(0));
 
         // Printing all the contract addresses
         console.log(`

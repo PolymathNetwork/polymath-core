@@ -107,9 +107,9 @@ contract("Concurrent STO", async (accounts) => {
 
         // STEP 2: Deploy the STO Factories
 
-        [I_CappedSTOFactory] = await deployCappedSTOAndVerifyed(account_polymath, I_MRProxied, STOSetupCost);
-        [I_DummySTOFactory] = await deployDummySTOAndVerifyed(account_polymath, I_MRProxied, STOSetupCost);
-        [I_PreSaleSTOFactory] = await deployPresaleSTOAndVerified(account_polymath, I_MRProxied, STOSetupCost);
+        [I_CappedSTOFactory] = await deployCappedSTOAndVerifyed(account_polymath, I_MRProxied, STOSetupCost, new BN(0));
+        [I_DummySTOFactory] = await deployDummySTOAndVerifyed(account_polymath, I_MRProxied, STOSetupCost, new BN(0));
+        [I_PreSaleSTOFactory] = await deployPresaleSTOAndVerified(account_polymath, I_MRProxied, STOSetupCost, new BN(0));
 
         // Printing all the contract addresses
         console.log(`

@@ -152,17 +152,17 @@ contract('GeneralPermissionManager', accounts => {
         ] = instances;
 
         // STEP 5: Deploy the GeneralDelegateManagerFactory
-        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
+        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0, new BN(0));
         // STEP 6: Deploy the GeneralDelegateManagerFactory
-        [P_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, web3.utils.toWei("500"));
+        [P_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, web3.utils.toWei("500"), new BN(0));
 
-        [I_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, 0);
+        [I_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, 0, new BN(0));
 
 	    // Deploy Modules
-        [I_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, 0);
-        [I_ManualApprovalTransferManagerFactory] = await deployManualApprovalTMAndVerifyed(account_polymath, I_MRProxied, 0);
-        [I_VolumeRestrictionTransferManagerFactory] = await deployLockUpTMAndVerified(account_polymath, I_MRProxied, 0);
-        [I_PercentageTransferManagerFactory] = await deployPercentageTMAndVerified(account_polymath, I_MRProxied, 0);
+        [I_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, 0, new BN(0));
+        [I_ManualApprovalTransferManagerFactory] = await deployManualApprovalTMAndVerifyed(account_polymath, I_MRProxied, 0, new BN(0));
+        [I_VolumeRestrictionTransferManagerFactory] = await deployLockUpTMAndVerified(account_polymath, I_MRProxied, 0, new BN(0));
+        [I_PercentageTransferManagerFactory] = await deployPercentageTMAndVerified(account_polymath, I_MRProxied, 0, new BN(0));
 
         // Printing all the contract addresses
         console.log(`

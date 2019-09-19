@@ -119,9 +119,9 @@ contract("Issuance", async (accounts) => {
         ] = instances;
 
         // STEP 2: Deploy the GeneralDelegateManagerFactory
-        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
+        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0, new BN(0));
         // STEP 3: Deploy the CappedSTOFactory
-        [I_CappedSTOFactory] = await deployCappedSTOAndVerifyed(account_polymath, I_MRProxied, 0);
+        [I_CappedSTOFactory] = await deployCappedSTOAndVerifyed(account_polymath, I_MRProxied, 0, new BN(0));
 
         // Printing all the contract addresses
         console.log(`
@@ -179,7 +179,7 @@ contract("Issuance", async (accounts) => {
             it("POLYMATH: Should successfully attach the STO factory with the security token", async () => {
                 // STEP 4: Deploy the CappedSTOFactory
 
-                [I_CappedSTOFactory] = await deployCappedSTOAndVerifyed(account_polymath, I_MRProxied, cappedSTOSetupCost);
+                [I_CappedSTOFactory] = await deployCappedSTOAndVerifyed(account_polymath, I_MRProxied, cappedSTOSetupCost, new BN(0));
 
                 let bytesSTO = encodeModuleCall(STOParameters, [
                     await latestTime() + duration.seconds(5000),

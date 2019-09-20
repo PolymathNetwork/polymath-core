@@ -121,7 +121,7 @@ contract MultiSigWallet {
     /// @dev Allows to add a new owner. Transaction has to be sent by wallet.
     /// @param owner Address of new owner.
     function addOwner(address owner)
-        external
+        public
         onlyWallet
         ownerDoesNotExist(owner)
         notNull(owner)
@@ -135,7 +135,7 @@ contract MultiSigWallet {
     /// @dev Allows to remove an owner. Transaction has to be sent by wallet.
     /// @param owner Address of owner.
     function removeOwner(address owner)
-        external
+        public
         onlyWallet
         ownerExists(owner)
     {
@@ -155,7 +155,7 @@ contract MultiSigWallet {
     /// @param owner Address of owner to be replaced.
     /// @param newOwner Address of new owner.
     function replaceOwner(address owner, address newOwner)
-        external
+        public
         onlyWallet
         ownerExists(owner)
         ownerDoesNotExist(newOwner)

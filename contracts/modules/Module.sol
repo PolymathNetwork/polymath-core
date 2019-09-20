@@ -2,6 +2,7 @@ pragma solidity 0.5.8;
 
 import "../interfaces/IModule.sol";
 import "../Pausable.sol";
+import "../interfaces/IMultiSigWallet.sol";
 import "../interfaces/IModuleFactory.sol";
 import "../interfaces/IDataStore.sol";
 import "../interfaces/ISecurityToken.sol";
@@ -103,7 +104,7 @@ contract Module is IModule, ModuleStorage, Pausable {
             // Below 2 statements are overhead and increase the gas cost
             require(polyToken.transferFrom(address(securityToken), address(this), _usageCost), "Insufficient allowance");
             polyToken.approve(wallet, _usageCost);
-            //wallet.withdrawFee(address(securityToken), address(this), _usageCost);
+            // IMultiSigWallet(wallet).takeUsageFee(address(securityToken), address(this), _usageCost);
         }
     }
 }

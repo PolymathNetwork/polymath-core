@@ -15,7 +15,17 @@ contract CustomMultiSigWallet is MultiSigWallet {
     IERC20 polyToken;
     ISecurityTokenRegistry securityTokenRegistry;
     uint256 public rebatePercentage;
-    mapping(address => uint256) feeCollected;
+
+    struct Rebate {
+        uint256 totalRebateClaimed;
+        uint256 totalFeeCollected;
+        uint256 feeCollected;
+    }
+
+    mapping(address => Rebate) public rebates;
+
+    event ChangeRebatePercentage(uint256 _oldRebatePercentage, uint256 _newRebatePercentage);
+    event WithdrawRebate(address indexed _whitelabler, uint256 _rebateAmount);
 
     constructor (address[] memory _owners, uint _required, address _polymathRegistry)
     MultiSigWallet(_owners, _required)
@@ -27,22 +37,47 @@ contract CustomMultiSigWallet is MultiSigWallet {
         securityTokenRegistry = ISecurityTokenRegistry(polymathRegistry.getAddress("securityTokenRegistry"));
     }
 
-    function withdrawFee(address _securityToken, uint256 _usageCost) external {
+    /**
+     * @notice It will be used to take usage fee from the modules
+     * @param _securityToken address of the securityToken
+     * @param _usageCost Fee for the given module task
+     */
+    function takeUsageFee(address _securityToken, uint256 _usageCost) external {
         require(securityTokenRegistry.isSecurityToken(_securityToken), "Invalid securityToken");
         polyToken.transferFrom(msg.sender, address(this), _usageCost);
         address whitelablers = ISecurityToken(_securityToken).owner();
-        feeCollected[whitelablers] = feeCollected[whitelablers].add(_usageCost);
+        rebates[whitelablers].feeCollected = rebates[whitelablers].feeCollected.add(_usageCost);
     }
 
-    function getRebate() external {
-        uint256 fee = feeCollected[msg.sender];
-        uint256 rebateCollected = (fee.mul(rebatePercentage)).div(10 ** 18);
-        feeCollected[msg.sender] = uint256(0);
+    /**
+     * @notice Use to withdraw the rebate by the whitelabelers
+     * @dev only valid whitelabelers can execute this function
+     */
+    function withdrawRebate() external {
+        uint256 rebateCollected = getRebateAmount(msg.sender);
+        rebates[msg.sender].totalFeeCollected = rebates[msg.sender].totalFeeCollected.add(rebates[msg.sender].feeCollected);
+        rebates[msg.sender].feeCollected = uint256(0);
+        rebates[msg.sender].totalRebateClaimed = rebates[msg.sender].totalRebateClaimed.add(rebateCollected);
         polyToken.transfer(msg.sender, rebateCollected);
+        emit WithdrawRebate(msg.sender, rebateCollected);
     }
 
-    // function changeRebatePercentage(uint256 _rebatePercentage) external returns (type name) {
-        
-    // }
+    /**
+     * @notice Get the rebate amount for the given whitelabeler
+     */
+    function getRebateAmount(address _whitelabeler) public view returns(uint256 rebate) {
+        rebate = (rebates[_whitelabeler].feeCollected.mul(rebatePercentage)).div(10 ** 18);
+    }
+
+    /**
+     * @notice Use to change the rebate percentage
+     * @dev needs consensus by the signers to execute the transaction
+     * @param _rebatePercentage New rebate percentage
+     */
+    function changeRebatePercentage(uint256 _rebatePercentage) public onlyWallet {
+        require(_rebatePercentage <= 100 * 10 ** 16, "Invalid rebate percentage");
+        emit ChangeRebatePercentage(rebatePercentage, _rebatePercentage);
+        rebatePercentage = _rebatePercentage;
+    }
     
 }

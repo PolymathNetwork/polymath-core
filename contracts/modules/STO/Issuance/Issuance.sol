@@ -1,14 +1,15 @@
 pragma solidity 0.5.8;
 
 import "../../Module.sol";
+import "./IssuanceStorage.sol";
 
 /**
  * @title Issuance module for delegate issuance
  */
-contract Issuance is Module {
+contract Issuance is IssuanceStorage, Module {
 
     event TokensIssued(address indexed _tokenHolder, uint256 _value, address indexed _issuedBy);
-    event MultiTokensIssued(address[] indexed _tokenHolders, uint256[] _values, address indexed _issuedBy);
+    event MultiTokensIssued(address[] _tokenHolders, uint256[] _values, address indexed _issuedBy);
 
     /**
      * @notice Constructor
@@ -66,4 +67,13 @@ contract Issuance is Module {
         allPermissions[0] = ADMIN;
         return allPermissions;
     }
+
+    /**
+     * @notice This function returns the signature of configure function
+     * @return bytes4 Configure function signature
+     */
+    function getInitFunction() public pure returns(bytes4) {
+        return bytes4(0);
+    }
+
 }

@@ -26,10 +26,10 @@ contract IssuanceFactory is UpgradableModuleFactory {
     {
         name = "Issaunce";
         title = "Issuance";
-        description = "Allows delegate to issue tokens";
+        description = "Issue tokens with the help of delegates";
         typesData.push(3);
         tagsData.push("Issaunce");
-        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(3), uint8(1), uint8(0));
+        compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
         compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(3), uint8(1), uint8(0));
     }
 

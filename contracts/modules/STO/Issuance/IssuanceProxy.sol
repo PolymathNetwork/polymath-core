@@ -2,6 +2,7 @@ pragma solidity 0.5.8;
 
 import "../../../proxy/OwnedUpgradeabilityProxy.sol";
 import "../../../Pausable.sol";
+import "./IssuanceStorage.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
 import "../../../storage/modules/STO/STOStorage.sol";
 import "../../../storage/modules/ModuleStorage.sol";
@@ -9,7 +10,7 @@ import "../../../storage/modules/ModuleStorage.sol";
 /**
  * @title Issuance module Proxy
  */
-contract IssuanceProxy is ModuleStorage, Pausable, ReentrancyGuard, OwnedUpgradeabilityProxy {
+contract IssuanceProxy is IssuanceStorage, ModuleStorage, Pausable, ReentrancyGuard, OwnedUpgradeabilityProxy {
 
     /**
     * @notice Constructor

@@ -283,7 +283,7 @@ contract("RestrictedPartialSaleTM", accounts => {
                 [latestTime, latestTime + duration.days(20), web3.utils.toWei("1000000"), "This is dummy sto"]
             );
             let I_DummySTOFactory;
-            [I_DummySTOFactory] = await deployDummySTOAndVerifyed(account_polymath, I_MRProxied, new BN(0));
+            [I_DummySTOFactory] = await deployDummySTOAndVerifyed(account_polymath, I_MRProxied, new BN(0), new BN(0));
             let tx = await I_SecurityToken.addModule(
                         I_DummySTOFactory.address,
                         bytesSTO,

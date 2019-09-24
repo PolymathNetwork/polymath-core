@@ -17,6 +17,9 @@ import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
  * @notice Contract is abstract
  */
 contract Module is IModule, ModuleStorage, Pausable {
+
+    event UsageFeeDeducted(address indexed _wallet, address indexed _securityToken, address _module);
+
     /**
      * @notice Constructor
      * @param _securityToken Address of the security token
@@ -101,10 +104,10 @@ contract Module is IModule, ModuleStorage, Pausable {
             address registry = IModuleFactory(factory).polymathRegistry();
             address wallet = IPolymathRegistry(registry).getAddress("usageFeeWallet");
             require(wallet != address(0), "Invalid wallet");
-            // Below 2 statements are overhead and increase the gas cost
             require(polyToken.transferFrom(address(securityToken), address(this), _usageCost), "Insufficient allowance");
             polyToken.approve(wallet, _usageCost);
-            // IMultiSigWallet(wallet).takeUsageFee(address(securityToken), address(this), _usageCost);
+            IMultiSigWallet(wallet).takeUsageFee(address(securityToken), _usageCost);
+            emit UsageFeeDeducted(wallet, address(securityToken), address(this));
         }
     }
 }

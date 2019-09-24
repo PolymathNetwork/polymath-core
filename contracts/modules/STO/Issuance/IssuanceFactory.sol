@@ -24,7 +24,7 @@ contract IssuanceFactory is UpgradableModuleFactory {
         public
         UpgradableModuleFactory("3.1.0", _setupCost, _logicContract, _polymathRegistry, _isCostInPoly)
     {
-        name = "Issaunce";
+        name = "Issuance";
         title = "Issuance";
         description = "Issue tokens with the help of delegates";
         typesData.push(3);

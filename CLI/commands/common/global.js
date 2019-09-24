@@ -1,3 +1,6 @@
+const fs = require('fs');
+const readlineSync = require('readline-sync');
+const chalk = require('chalk');
 const Web3 = require('web3');
 const constants = require('./constants');
 
@@ -30,9 +33,37 @@ function providerValidator(url) {
   return url.match(regex);
 }
 
-async function httpProvider(url, file) {
-  web3 = new Web3(new Web3.providers.HttpProvider(url));
-  Issuer = await web3.eth.accounts.privateKeyToAccount("0x" + require('fs').readFileSync(file).toString());
+function getAccount(filePath) {
+  if (fs.existsSync(filePath)) {
+    const keyStore = JSON.parse(fs.readFileSync(filePath))
+    if (!keyStore.hasOwnProperty('address')) {
+      console.log(chalk.red('Your key store is not in the correct format'));
+      process.exit(0);
+    }
+    const password = readlineSync.question(`Enter your password to start using the CLI as ${keyStore.address}: `, {
+      hideEchoBack: true // The typed text on screen is hidden by `*` (default).
+    });
+    try {
+      return web3.eth.accounts.decrypt(keyStore, password);
+    } catch (error) {
+      console.log(chalk.red('Could not decrypt your key store. Probably your password is wrong, please try again.'));
+      return getAccount(filePath);
+    }
+  } else {
+    let privKey = readlineSync.question('Enter your private key to generate your key store file: ', {
+      hideEchoBack: true // The typed text on screen is hidden by `*` (default).
+    });
+    if (privKey.substr(0, 2) !== '0x') {
+      privKey = '0x' + privKey;
+    }
+    const password = readlineSync.questionNewPassword(
+      'Enter a password to encrypt your private key: ',
+      { confirmMessage: 'Enter the same password to confirm: ', min: 6 }
+    );
+    const keyStore = web3.eth.accounts.encrypt(privKey, password);
+    fs.writeFileSync(filePath, JSON.stringify(keyStore));
+    return getAccount(filePath);
+  }
 }
 
 module.exports = {
@@ -44,9 +75,11 @@ module.exports = {
           console.log("Invalid remote node")
           process.exit(0)
         }
-        await httpProvider(remoteNetwork, `${__dirname}/../../../privKey`);
+        web3 = new Web3(new Web3.providers.HttpProvider(url));
+        Issuer = getAccount(`${__dirname}/../../../keyStore`);
       } else {
-        await httpProvider("http://localhost:8545", `${__dirname}/../../../privKeyLocal`);
+        web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
+        Issuer = getAccount(`${__dirname}/../../../keyStoreLocal`);
       }
       defaultGasPrice = getGasPrice(await web3.eth.net.getId());
     }

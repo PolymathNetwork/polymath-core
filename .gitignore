@@ -4,6 +4,8 @@
 /CLI/node_modules
 .npm-debug.log
 *.DS_Store
+keyStore
+keyStoreLocal
 privKey
 privKeyLocal
 coverage/

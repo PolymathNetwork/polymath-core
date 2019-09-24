@@ -82,7 +82,11 @@ async function permissionManager() {
 
   let options = ['Manage delegates'];
   if (parseInt(delegates) > 0) {
-    options.push('Explore account', 'Change permission', 'Change multiple permission in batches');
+    options.push('Explore account');
+    if (!await isIssuanceDelegationAllowed()) {
+      options.push('Allow issuance delegation');
+    }
+    options.push('Change permission', 'Change multiple permission in batches');
   }
 
   let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
@@ -94,6 +98,9 @@ async function permissionManager() {
       break;
     case 'Explore account':
       await exploreAccount();
+      break;
+    case 'Allow issuance delegation':
+      await allowIssuanceDelegation();
       break;
     case 'Change permission':
       await changePermission();
@@ -246,6 +253,16 @@ async function exploreAccount() {
   }
 }
 
+async function allowIssuanceDelegation() {
+  const moduleList = await common.getAvailableModules(moduleRegistry, gbl.constants.MODULES_TYPES.STO, securityToken.options.address);
+  const issuanceModule = moduleList.find(m => m.name === 'Issuance');
+  const moduleABI = abis.issuance();
+  console.log(`Adding issuance module...`);
+  await common.addModule(securityToken, polyToken, issuanceModule.factoryAddress, moduleABI);
+  console.log(chalk.green(`Issuance module has been added successfully!`));
+  console.log(`Now you can change the permission as usual to any delegate.`);
+}
+
 async function changePermission() {
   let selectedDelegate = await selectDelegate();
   let selectedModule = await selectModule();
@@ -320,10 +337,10 @@ async function getModulesWithPermissions() {
       if (permissions.length > 0) {
         let moduleData = await securityToken.methods.getModule(m).call();
         modules.push({
-          label: web3.utils.hexToAscii(moduleData.moduleLabel),
-          name: web3.utils.hexToAscii(moduleData.moduleName),
+          label: web3.utils.hexToUtf8(moduleData.moduleLabel),
+          name: web3.utils.hexToUtf8(moduleData.moduleName),
           address: m,
-          permissions: permissions.map(function (p) { return web3.utils.hexToAscii(p) })
+          permissions: permissions.map(function (p) { return web3.utils.hexToUtf8(p) })
         })
       }
     }
@@ -375,6 +392,11 @@ function renderTable(permissions) {
     result += `-`;
   }
   return result
+}
+
+async function isIssuanceDelegationAllowed() {
+  const modulesWithPermissions = await getModulesWithPermissions();
+  return modulesWithPermissions.some(m => m.name === 'Issuance');
 }
 
 async function initialize(_tokenSymbol) {

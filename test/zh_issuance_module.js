@@ -258,7 +258,7 @@ contract("Issuance", async (accounts) => {
             assert.equal(await I_IssuanceFactory.version.call(), "3.1.0");
             assert.equal(
                 web3.utils.toAscii(await I_IssuanceFactory.name.call()).replace(/\u0000/g, ""),
-                "Issaunce",
+                "Issuance",
                 "Wrong Module added"
             );
             assert.equal(
@@ -271,7 +271,7 @@ contract("Issuance", async (accounts) => {
 
         it("Should get the tags of the factory", async () => {
             let tags = await I_IssuanceFactory.getTags.call();
-            assert.equal(web3.utils.toUtf8(tags[0]), "Issaunce");
+            assert.equal(web3.utils.toUtf8(tags[0]), "Issuance");
         });
     });
 

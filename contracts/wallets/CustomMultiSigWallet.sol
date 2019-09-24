@@ -45,7 +45,7 @@ contract CustomMultiSigWallet is MultiSigWallet {
     function takeUsageFee(address _securityToken, uint256 _usageCost) external {
         require(securityTokenRegistry.isSecurityToken(_securityToken), "Invalid securityToken");
         polyToken.transferFrom(msg.sender, address(this), _usageCost);
-        address whitelablers = ISecurityToken(_securityToken).owner();
+        address whitelablers = ISecurityToken(_securityToken).owner(); // Here we will get the whitelabeller from the STR
         rebates[whitelablers].feeCollected = rebates[whitelablers].feeCollected.add(_usageCost);
     }
 

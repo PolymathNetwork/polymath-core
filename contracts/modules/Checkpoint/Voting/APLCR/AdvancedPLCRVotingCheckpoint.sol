@@ -506,7 +506,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
             .add(uint256(ballots[_ballotId].revealDuration))),
             "Already ended"
         );
-        require(!ballots[_ballotId].isCancelled);
+        require(!ballots[_ballotId].isCancelled, "Already cancelled");
         ballots[_ballotId].isCancelled = true;
         emit BallotCancelled(_ballotId);
     }

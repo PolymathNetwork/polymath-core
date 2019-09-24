@@ -878,6 +878,7 @@ contract("CappedSTO", async (accounts) => {
             it("Should return correct price when price is in poly", async () => {
                 let newFactory = await CappedSTOFactory.new(
                     new BN(1000),
+                    new BN(0),
                     I_CappedSTO_Array_POLY[0].address,
                     I_PolymathRegistry.address,
                     true,

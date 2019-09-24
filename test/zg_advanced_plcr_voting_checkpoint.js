@@ -682,7 +682,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                         from: account_investor1
                     }
                 ),
-                "choices count mismatch"
+                "Choices mismatch"
             );
         });
 
@@ -715,7 +715,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                         from: account_investor4
                     }
                 ),
-                "Secret vote not available"
+                "No secret vote"
             );
         });
 
@@ -886,7 +886,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                         from: token_owner
                     }
                 ),
-                "Invalid checkpoint Id"
+                "Invalid checkpointId"
             );
             // -- CustomCumulativeBallot
             await catchRevert(

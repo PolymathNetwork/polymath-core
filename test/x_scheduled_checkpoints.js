@@ -81,11 +81,8 @@ contract("ScheduledCheckpoint", async (accounts) => {
         account_investor1 = accounts[7];
         account_investor2 = accounts[8];
         account_investor3 = accounts[9];
-        //await jumpToTime(Math.floor((new Date().getTime())/1000));
-        await jumpToTime(1553040000); // 03/20/2019 @ 12:00am (UTC)
-        currentTime = new BN(await latestTime());
 
-        // Step 1: Deploy the genral PM ecosystem
+        // Step 1: Deploy the general PM ecosystem
         let instances = await setUpPolymathNetwork(account_polymath, token_owner);
 
         [
@@ -127,6 +124,11 @@ contract("ScheduledCheckpoint", async (accounts) => {
 
     describe("Generate the SecurityToken", async () => {
         it("Should register the ticker before the generation of the security token", async () => {
+            let currentTimeStamp = new Date((await latestTime()).toString() * 1000);
+            let day = currentTimeStamp.getUTCDate();
+            if (day > 20)
+                await increaseTime(duration.days(12));
+            currentTime = new BN(await latestTime());
             await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
             let tx = await I_STRProxied.registerNewTicker(token_owner, symbol, { from: token_owner });
             assert.equal(tx.logs[0].args._owner, token_owner);
@@ -410,7 +412,7 @@ contract("ScheduledCheckpoint", async (accounts) => {
             checkScheduleLog(tx.logs[0], name, startTime, interval, timeUnit);
         });
 
-        it("Check one monthly checkpoint", async() => {
+        it("Should create and verify the details of schedule at period 1", async() => {
             await increaseTime(100);
             await I_ScheduledCheckpoint.updateAll({from: token_owner});
 
@@ -421,10 +423,10 @@ contract("ScheduledCheckpoint", async (accounts) => {
             checkSchedule(schedule, name, startTime, addMonths(startTime, interval), interval, timeUnit, checkpoints, timestamps, periods);
         });
 
-        it("Check two monthly checkpoints", async() => {
-            await increaseTime(duration.days(31 * interval));
+        it("Should create and verify the details of schedule at period 2", async() => {
+            let currentTimestamp = (await latestTime()).toString();
+            await increaseTime(diffMonths(currentTimestamp, interval));
             await I_ScheduledCheckpoint.updateAll({from: token_owner});
-
             let schedule = await I_ScheduledCheckpoint.getSchedule(name);
             let checkpoints = [5, 6];
             let timestamps = [startTime, addMonths(startTime, interval)];
@@ -432,10 +434,10 @@ contract("ScheduledCheckpoint", async (accounts) => {
             checkSchedule(schedule, name, startTime, addMonths(startTime, interval * 2), interval, timeUnit, checkpoints, timestamps, periods);
         });
 
-        it("Check three monthly checkpoints", async() => {
-            await increaseTime(duration.days(31 * interval * 2));
+        it("Should create and verify the details of schedule at period 4", async() => {
+            let currentTimestamp = (await latestTime()).toString();
+            await increaseTime(diffMonths(currentTimestamp, interval * 2));
             await I_ScheduledCheckpoint.updateAll({from: token_owner});
-
             let schedule = await I_ScheduledCheckpoint.getSchedule(name);
             let checkpoints = [5, 6, 7];
             let timestamps = [startTime, addMonths(startTime, interval), addMonths(startTime, interval * 2)];
@@ -444,7 +446,8 @@ contract("ScheduledCheckpoint", async (accounts) => {
         });
 
         it("Check four monthly checkpoints", async() => {
-            await increaseTime(duration.days(31 * interval));
+            let currentTimestamp = (await latestTime()).toString();
+            await increaseTime(diffMonths(currentTimestamp, interval));
             await I_ScheduledCheckpoint.updateAll({from: token_owner});
 
             let schedule = await I_ScheduledCheckpoint.getSchedule(name);
@@ -455,7 +458,8 @@ contract("ScheduledCheckpoint", async (accounts) => {
         });
 
         it("Check five monthly checkpoints", async() => {
-            await increaseTime(duration.days(31 * interval * 3));
+            let currentTimestamp = (await latestTime()).toString();
+            await increaseTime(diffMonths(currentTimestamp, interval * 3));
             await I_ScheduledCheckpoint.updateAll({from: token_owner});
 
             let schedule = await I_ScheduledCheckpoint.getSchedule(name);
@@ -804,6 +808,10 @@ function addWeeks(timestamp, weeks) {
 function addMonths(timestamp, months) {
     let time = new Date(timestamp * 1000);
     return time.setUTCMonth(time.getUTCMonth() + months) / 1000;
+}
+
+function diffMonths(timestamp, months) {
+    return addMonths(timestamp, months) - timestamp;
 }
 
 function addYears(timestamp, years) {

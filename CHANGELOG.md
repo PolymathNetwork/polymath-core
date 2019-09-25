@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 
 ## Modules
 * Add new module `RestrictedPartialSaleTM`.
-* Add new checkpoint voting modules  `WeightedVoteCheckpoint`, `PCLRVotingCheckpoint`, `AdvancedPCLRVotingCheckpoint`.
+* Add new checkpoint voting module `AdvancedPLCRVotingCheckpoint`.
 * Add `addDelegateMulti()`, `deleteDelegateMulti()` batch functions in `GeneralPermissionManager` module.
 * Add `WHITELISTMODULE` constant to `GeneralTransferManager` module.
 
@@ -20,7 +20,7 @@ All notable changes to this project will be documented in this file.
 * STO interface now includes new events `AllowPreMintFlag` and `RevokePreMintFlag`.
 * STO module `pause` function now requires `!isFinalized`.
 * Add `getTreasuryWallet()` function & `preMintAllowed`, `isFinalized` public accessible booleans in STO.
-* Add `reclaimERC20` method to the STO.
+* If `_tokenContract` param is securityToken address in `reclaimERC20` then issuer only be able to reclaim tokens only after STO is finalized otherwise works same for other cases.
 * Treasury wallet is added as a new argument of `configure()` in CappedSTO.
 * Introduced `allowPreMinting()`, `revokePreMintFlag()` functions in USDTieredSTO & CappedSTO to support pre-minting functionality.
 * Add `finalize()` function in CappedSTO.
@@ -33,7 +33,7 @@ All notable changes to this project will be documented in this file.
 * Rename `getTokensMintedByTier()` with `getTokensSoldByTier()` & `getTokensSoldByTier()` with `getTotalTokensSoldByTier()` in USDTieredSTO.
 
 ## STR
-* Ticker name now required to be between 1 and 10 characters in `SecurityTokenRegistry` method `tickerAvailable`.
+* Now `tickerAvailable()` function is internally converting the symbol in to uppercase & performing all required checks to validate the ticker availablity in the ecosystem.    
 
 ## SecurityToken
 * Add event `ModuleUpgraded` to `ISecurityToken` Interface

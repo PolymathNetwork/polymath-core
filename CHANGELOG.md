@@ -20,7 +20,7 @@ All notable changes to this project will be documented in this file.
 * STO interface now includes new events `AllowPreMintFlag` and `RevokePreMintFlag`.
 * STO module `pause` function now requires `!isFinalized`.
 * Add `getTreasuryWallet()` function & `preMintAllowed`, `isFinalized` public accessible booleans in STO.
-* If `_tokenContract` param is securityToken address in `reclaimERC20` then issuer only be able to reclaim tokens only after STO is finalized otherwise works same for other cases.
+* If `_tokenContract` param is securityToken address in `reclaimERC20` then issuer be able to reclaim tokens only after STO is finalized otherwise works same for other cases.
 * Treasury wallet is added as a new argument of `configure()` in CappedSTO.
 * Introduced `allowPreMinting()`, `revokePreMintFlag()` functions in USDTieredSTO & CappedSTO to support pre-minting functionality.
 * Add `finalize()` function in CappedSTO.

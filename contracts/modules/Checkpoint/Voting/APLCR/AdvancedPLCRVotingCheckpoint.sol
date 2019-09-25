@@ -128,13 +128,13 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         uint256 _checkpointId
     )
     internal
-    {
+    {   
         _validateMaximumLimitCount();
         _startTime = _getStartTime(_startTime);
         _isEmptyBytes32(_name);
         _isEmptyString(_proposalTitle);
         _isGreaterThanZero(_commitDuration, _revealDuration);
-        _deductUsageFee();
+        _deductUsageFee(); // Deducting the usage cost of creating the ballots
         uint256 ballotId = ballots.length;
         ballots.push(Ballot(
             _checkpointId, uint64(_commitDuration), uint64(_revealDuration), uint64(_startTime), uint24(1), uint32(0), false, _name
@@ -238,7 +238,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         _isEmptyString(_proposalTitles);
         _isGreaterThanZero(_commitDuration, _revealDuration);
         _isValidLength(_noOfChoices.length, _details.length);
-        _deductUsageFee();
+        _deductUsageFee(); // Deducting the usage cost of creating the ballots
         uint256 ballotId = ballots.length;
         ballots.push(Ballot(
             _checkpointId, uint64(_commitDuration), uint64(_revealDuration), uint64(_startTime), uint24(_noOfChoices.length), uint32(0), false, _name

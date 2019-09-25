@@ -48,6 +48,7 @@ const VestingEscrowWalletFactory = artifacts.require('./VestingEscrowWalletFacto
 const AdvancedPLCRVotingCheckpointFactory = artifacts.require("./AdvancedPLCRVotingCheckpointFactory.sol");
 const AdvancedPLCRVotingCheckpointLogic = artifacts.require("./AdvancedPLCRVotingCheckpoint.sol");
 const AdvancedPLCRVotingLib = artifacts.require("./AdvancedPLCRVotingLib.sol");
+const CustomMultiSigWallet = artifacts.require("./CustomMultiSigWallet.sol");
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -60,6 +61,7 @@ let UsdToken;
 let ETHOracle;
 let POLYOracle;
 let StablePOLYOracle;
+let Signer1, Signer2, Signer3;
 
 module.exports = function(deployer, network, accounts) {
     // Ethereum account address hold by the Polymath (Act as the main account which have ownable permissions)
@@ -70,6 +72,9 @@ module.exports = function(deployer, network, accounts) {
     if (network === "development") {
         web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
         PolymathAccount = accounts[0];
+        Signer1 = PolymathAccount;
+        Signer2 = accounts[1];
+        Signer3 = accounts[2];
         PolyToken = DevPolyToken.address; // Development network polytoken address
         deployer.deploy(DevPolyToken, { from: PolymathAccount }).then(() => {
             DevPolyToken.deployed().then(mockedUSDToken => {
@@ -678,6 +683,12 @@ module.exports = function(deployer, network, accounts) {
         .then(() => {
             // return deployer.deploy(SecurityToken, "a", "a", 18, 1, "a", polymathRegistry.address, STGetter.address, { from: PolymathAccount });
             return polymathRegistry.changeAddress("StablePolyUsdOracle", StablePOLYOracle, { from: PolymathAccount });
+        })
+        .then(() => {
+            return deployer.deploy(CustomMultiSigWallet, [Signer1, Signer2, Signer3], new BN(2), polymathRegistry.address, {from: PolymathAccount});
+        })
+        .then(() => {
+            return polymathRegistry.changeAddress("UsageFeeWallet", CustomMultiSigWallet.address, { from: PolymathAccount });
         })
         .then(() => {
             console.log("\n");

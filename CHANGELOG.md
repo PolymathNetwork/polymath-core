@@ -7,6 +7,7 @@ All notable changes to this project will be documented in this file.
 
 ## Modules
 * Add new module `RestrictedPartialSaleTM`.
+* Add new checkpoint voting module `AdvancedPLCRVotingCheckpoint`.
 * Add `addDelegateMulti()`, `deleteDelegateMulti()` batch functions in `GeneralPermissionManager` module.
 * Add `WHITELISTMODULE` constant to `GeneralTransferManager` module.
 
@@ -19,6 +20,7 @@ All notable changes to this project will be documented in this file.
 * STO interface now includes new events `AllowPreMintFlag` and `RevokePreMintFlag`.
 * STO module `pause` function now requires `!isFinalized`.
 * Add `getTreasuryWallet()` function & `preMintAllowed`, `isFinalized` public accessible booleans in STO.
+* If `_tokenContract` param is securityToken address in `reclaimERC20` then issuer be able to reclaim tokens only after STO is finalized otherwise works same for other cases.
 * Treasury wallet is added as a new argument of `configure()` in CappedSTO.
 * Introduced `allowPreMinting()`, `revokePreMintFlag()` functions in USDTieredSTO & CappedSTO to support pre-minting functionality.
 * Add `finalize()` function in CappedSTO.
@@ -29,6 +31,12 @@ All notable changes to this project will be documented in this file.
 * Removed `isFinalized` and `treasuryWallet` public variables from USDTieredSTOStorage.
 * Rename `mintedTotal, minted, mintedDiscountPoly` variables of Tier struct with `totalTokensSoldInTier, tokenSoldPerFundType, soldDiscountPoly`
 * Rename `getTokensMintedByTier()` with `getTokensSoldByTier()` & `getTokensSoldByTier()` with `getTotalTokensSoldByTier()` in USDTieredSTO.
+
+## STR
+* Now `tickerAvailable()` function is internally converting the symbol in to uppercase & performing all required checks to validate the ticker availablity in the ecosystem.    
+
+## SecurityToken
+* Add event `ModuleUpgraded` to `ISecurityToken` Interface
 
 
 # v3.0.0 - Release Candidate

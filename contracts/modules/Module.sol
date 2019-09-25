@@ -102,7 +102,7 @@ contract Module is IModule, ModuleStorage, Pausable {
         uint256 _usageCost = IModuleFactory(factory).usageCostInPoly();
         if (_usageCost > 0) {
             address registry = IModuleFactory(factory).polymathRegistry();
-            address wallet = IPolymathRegistry(registry).getAddress("usageFeeWallet");
+            address wallet = IPolymathRegistry(registry).getAddress("UsageFeeWallet");
             require(wallet != address(0), "Invalid wallet");
             require(polyToken.transferFrom(address(securityToken), address(this), _usageCost), "Insufficient allowance");
             polyToken.approve(wallet, _usageCost);

@@ -33,8 +33,9 @@ contract CustomMultiSigWallet is MultiSigWallet {
     {
         require(_polymathRegistry != address(0), "Invalid address");
         polymathRegistry = IPolymathRegistry(_polymathRegistry);
-        polyToken = IERC20(polymathRegistry.getAddress("polyToken"));
-        securityTokenRegistry = ISecurityTokenRegistry(polymathRegistry.getAddress("securityTokenRegistry"));
+        polyToken = IERC20(polymathRegistry.getAddress("PolyToken"));
+        securityTokenRegistry = ISecurityTokenRegistry(polymathRegistry.getAddress("SecurityTokenRegistry"));
+        rebatePercentage = 10 * 10 ** 16;  // Assigning 10 % rebate percentage
     }
 
     /**
@@ -45,7 +46,7 @@ contract CustomMultiSigWallet is MultiSigWallet {
     function takeUsageFee(address _securityToken, uint256 _usageCost) external {
         require(securityTokenRegistry.isSecurityToken(_securityToken), "Invalid securityToken");
         polyToken.transferFrom(msg.sender, address(this), _usageCost);
-        address whitelablers = ISecurityToken(_securityToken).owner(); // Here we will get the whitelabeller from the STR
+        address whitelablers = ISecurityToken(_securityToken).owner(); // Here we will get the whitelabeler from the STR
         rebates[whitelablers].feeCollected = rebates[whitelablers].feeCollected.add(_usageCost);
     }
 

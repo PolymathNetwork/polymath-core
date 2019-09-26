@@ -688,7 +688,13 @@ module.exports = function(deployer, network, accounts) {
             return deployer.deploy(CustomMultiSigWallet, [Signer1, Signer2, Signer3], new BN(2), polymathRegistry.address, {from: PolymathAccount});
         })
         .then(() => {
-            return polymathRegistry.changeAddress("UsageFeeWallet", CustomMultiSigWallet.address, { from: PolymathAccount });
+            return polymathRegistry.changeAddress("FeeWallet", CustomMultiSigWallet.address, { from: PolymathAccount });
+        })
+        .then(() => {
+            return SecurityTokenRegistry.at(SecurityTokenRegistryProxy.address);
+        })
+        .then((securityTokenRegistry) => {
+            return securityTokenRegistry.updateFeeWallet();
         })
         .then(() => {
             console.log("\n");

@@ -106,7 +106,9 @@ contract("PercentageTransferManager", async (accounts) => {
         account_investor4 = accounts[5]
         account_delegate = accounts[6];
 
-        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
+        let signers = [token_owner, accounts[2], account_polymath];
+
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner, signers);
 
         [
             I_PolymathRegistry,
@@ -443,7 +445,7 @@ contract("PercentageTransferManager", async (accounts) => {
                 "Wrong Module added"
             );
             assert.equal(await I_PercentageTransferManagerFactory.title.call(), "Percentage Transfer Manager", "Wrong Module added");
-            assert.equal(await I_PercentageTransferManagerFactory.version.call(), "3.0.0");
+            assert.equal(await I_PercentageTransferManagerFactory.version.call(), "3.1.0");
         });
 
         it("Should get the tags of the factory", async () => {

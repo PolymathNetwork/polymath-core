@@ -53,8 +53,10 @@ contract("Data store", async (accounts) => {
         account_polymath = accounts[0];
         token_owner = accounts[1];
 
+        let signers = [account_polymath, accounts[6], token_owner];
+
         // Step 1: Deploy the genral PM ecosystem
-        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner, signers);
 
         [
             I_PolymathRegistry,

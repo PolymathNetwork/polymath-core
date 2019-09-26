@@ -113,7 +113,9 @@ contract('BlacklistTransferManager', accounts => {
         account_investor4 = accounts[5];
         account_investor5 = accounts[6];
 
-        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
+        let signers = [account_polymath, accounts[3], token_owner];
+
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner, signers);
 
         [
             I_PolymathRegistry,
@@ -1073,7 +1075,7 @@ contract('BlacklistTransferManager', accounts => {
                         "Blacklist Transfer Manager",
                         "Wrong Module added");
             assert.equal(await I_BlacklistTransferManagerFactory.version.call(),
-                        "3.0.0",
+                        "3.1.0",
                         "Wrong Module added");
 
         });

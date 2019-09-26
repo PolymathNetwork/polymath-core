@@ -121,7 +121,9 @@ contract("SecurityTokenRegistry", async (accounts) => {
         token_owner = account_issuer;
         dummy_token = accounts[3];
 
-        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
+        let signers = [token_owner, accounts[7], account_polymath];
+
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner, signers);
 
         [
             I_PolymathRegistry,
@@ -568,28 +570,27 @@ contract("SecurityTokenRegistry", async (accounts) => {
         it("Should fail to generate the securityToken -- Because name length is 0", async () => {
             await catchRevert(
                 I_STRProxied.generateNewSecurityToken("", symbol, tokenDetails, false, token_owner, 0, { from: token_owner }),
-                "Bad ticker"
+                "Bad name"
             );
         });
 
         it("Should fail to generate the securityToken -- Because version is not valid", async () => {
             await catchRevert(
-                I_STRProxied.generateNewSecurityToken("", symbol, tokenDetails, false, token_owner, 12356, { from: token_owner }),
-                "Bad ticker"
+                I_STRProxied.generateNewSecurityToken("ABC", symbol, tokenDetails, false, token_owner, 12356, { from: token_owner })
             );
         });
 
         it("Should fail to generate the securityToken -- Because treasury wallet is 0x0", async () => {
             await catchRevert(
                 I_STRProxied.generateNewSecurityToken(name, symbol, tokenDetails, false, address_zero, 0, { from: token_owner }),
-                "0x0 not allowed"
+                "Bad address"
             );
         });
 
         it("Should fail to generate the securityToken -- Because msg.sender is not the rightful owner of the ticker", async () => {
             await catchRevert(
                 I_STRProxied.generateNewSecurityToken(name, symbol, tokenDetails, false, token_owner, 0, { from: account_temp }),
-                "Not authorised"
+                "Unauthroized"
             );
         });
 
@@ -850,8 +851,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should fail to generate the custom ST -- deployedAt param is 0", async () => {
             await catchRevert(
-                I_STRProxied.modifyExistingSecurityToken(symbol2, token_owner, I_SecurityToken.address, "I am custom ST", new BN(0), { from: account_polymath }),
-                "Bad data"
+                I_STRProxied.modifyExistingSecurityToken(symbol2, token_owner, I_SecurityToken.address, "I am custom ST", new BN(0), { from: account_polymath })
             );
         });
 
@@ -1189,7 +1189,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
                 I_STRProxied.refreshSecurityToken("", symbol, "refreshedToken", true, token_owner, {
                     from: token_owner
                 }),
-                "Bad ticker"
+                "Bad name"
             );
         });
 
@@ -1198,7 +1198,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
                 I_STRProxied.refreshSecurityToken("refreshedToken", symbol, "refreshedToken", true, address_zero, {
                     from: token_owner
                 }),
-                "0x0 not allowed"
+                "Bad address"
             );
         });
 
@@ -1207,7 +1207,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
                 I_STRProxied.refreshSecurityToken("refreshedToken", symbol, "refreshedToken", true, token_owner, {
                     from: token_owner
                 }),
-                "Transfers not frozen"
+                "Unfreeze transfers"
             );
         });
 
@@ -1263,7 +1263,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         it("Should remove the ticker from the polymath ecosystem -- fail because ticker doesn't exist in the ecosystem", async () => {
             await catchRevert(
                 I_STRProxied.removeTicker("HOLA", { from: account_polymath }),
-                "Bad ticker"
+                "Bad address"
             );
         });
 

@@ -85,10 +85,12 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
         account_temp = accounts[2];
         account_delegate = accounts[3];
 
+        let signers = [account_polymath, accounts[5], token_owner];
+
         // ----------- POLYMATH NETWORK Configuration ------------
 
        // Step 1: Deploy the genral PM ecosystem
-        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner, signers);
 
         [
             I_PolymathRegistry,
@@ -756,7 +758,7 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
             it("\t\t Should get the exact details of the factory \n", async () => {
                 assert.equal((await I_PLCRVotingCheckpointFactory.setupCost.call()).toNumber(), 0);
                 assert.equal((await I_PLCRVotingCheckpointFactory.getTypes.call())[0], 4);
-                assert.equal(await I_PLCRVotingCheckpointFactory.version.call(), "3.0.0");
+                assert.equal(await I_PLCRVotingCheckpointFactory.version.call(), "3.1.0");
                 assert.equal(
                     web3.utils.toAscii(await I_PLCRVotingCheckpointFactory.name.call()).replace(/\u0000/g, ""),
                     "PLCRVotingCheckpoint",

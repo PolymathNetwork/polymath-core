@@ -88,7 +88,9 @@ contract('LockUpTransferManager', accounts => {
         account_investor2 = accounts[8];
         account_investor3 = accounts[9];
 
-        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
+        let signers = [account_polymath, accounts[6], token_owner];
+
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner, signers);
 
         [
             I_PolymathRegistry,
@@ -1033,7 +1035,7 @@ contract('LockUpTransferManager', accounts => {
             assert.equal(await I_LockUpTransferManagerFactory.title.call(),
                         "LockUp Transfer Manager",
                         "Wrong Module added");
-            assert.equal(await I_LockUpTransferManagerFactory.version.call(), "3.0.0");
+            assert.equal(await I_LockUpTransferManagerFactory.version.call(), "3.1.0");
         });
 
         it("Should get the tags of the factory", async() => {

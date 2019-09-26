@@ -122,6 +122,29 @@ interface ISecurityTokenRegistry {
         external;
 
     /**
+     * @notice Deploys an instance of a new Security Token and records it to the registry
+     * @param _name is the name of the token
+     * @param _ticker is the ticker symbol of the security token
+     * @param _tokenDetails is the off-chain details of the token
+     * @param _divisible is whether or not the token is divisible
+     * @param _treasuryWallet Ethereum address which will holds the STs.
+     * @param _protocolVersion Version of securityToken contract
+     * - `_protocolVersion` is the packed value of uin8[3] array (it will be calculated offchain)
+     * - if _protocolVersion == 0 then latest version of securityToken will be generated
+     * @param _whitelabeler Address of the whitelabeler
+     */
+    function generateNewSecurityTokenByWhitelabeler(
+        string calldata _name,
+        string calldata _ticker,
+        string calldata _tokenDetails,
+        bool _divisible,
+        address _treasuryWallet,
+        uint256 _protocolVersion,
+        address _whitelabeler
+    )
+    external;
+
+    /**
      * @notice Deploys an instance of a new Security Token and replaces the old one in the registry
      * This can be used to upgrade from version 2.0 of ST to 3.0 or in case something goes wrong with earlier ST
      * @dev This function needs to be in STR 3.0. Defined public to avoid stack overflow
@@ -483,5 +506,50 @@ interface ISecurityTokenRegistry {
      * @return bool
      */
     function tickerAvailable(string calldata _ticker) external view returns(bool);
+
+    /**
+     * @notice Use to get the list of securityTokens created using the whitelabeler platform
+     * @param _whitelabeler Address of the whitelabeler
+     */
+    function getSecurityTokenListByWhitelabeler(address _whitelabeler) external view returns (address[] memory);
+
+    /**
+     * @notice Gets the whitelabeler address of a given securityToken
+     * @param _securityToken Address of the securityToken
+     * @return _whitelabeler Address of the whitelabeler
+     */
+    function getWhitelabelerBySecurityToken(address _securityToken) external view returns (address _whitelabeler);
+
+    /**
+     * @notice Use to validate the given whitelabeler address
+     * @param _whitelabeler Address of the whitelabeler
+     */
+    function isWhitelabeler(address _whitelabeler) external view returns(bool);
+
+    /**
+     * @notice Allows Polymath to add the addresses as whitelabelers
+     * @param _whitelabeler Address of the whitelabeler
+     * @param _status boolean value to represent the active and inactiveness of the whitelabeler 
+     */
+    function modifyWhitelabelersList(address _whitelabeler, bool _status) external;
+
+    /**
+     * @notice Allows Polymath to add the addresses as whitelabelers
+     * @param _whitelabelers List of address of the whitelabeler
+     * @param _status Array of boolean value to represent the active and inactiveness of the whitelabelers 
+     */
+    function modifyWhitelabelersListMulti(address[] calldata _whitelabelers, bool[] calldata _status) external;
+
+    /**
+     * @notice Registers the token ticker to the selected owner
+     * @notice Once the token ticker is registered to its owner then no other issuer can claim
+     * @notice its ownership. If the ticker expires and its issuer hasn't used it, then someone else can take it.
+     * @param _owner is address of the owner of the token
+     * @param _ticker is unique token ticker
+     * @param _whitelabeler Address of the whitelabeler
+     */
+    function registerNewTickerByWhitelabeler(address _owner, string calldata _ticker, address _whitelabeler) external;
+
+    function updateFeeWallet() external;
 
 }

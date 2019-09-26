@@ -38,7 +38,7 @@ contract CappedSTOFactory is UpgradableModuleFactory {
         tagsData.push("POLY");
         tagsData.push("STO");
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
-        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(3), uint8(1), uint8(0));
     }
 
     /**

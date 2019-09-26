@@ -93,8 +93,10 @@ contract("EtherDividendCheckpoint", async (accounts) => {
         account_temp = accounts[2];
         wallet = accounts[3];
 
+        let signers = [token_owner, accounts[4], account_polymath];
+
          // Step 1: Deploy the genral PM ecosystem
-         let instances = await setUpPolymathNetwork(account_polymath, token_owner);
+         let instances = await setUpPolymathNetwork(account_polymath, token_owner, signers);
 
          [
              I_PolymathRegistry,
@@ -1029,7 +1031,7 @@ contract("EtherDividendCheckpoint", async (accounts) => {
             it("should get the exact details of the factory", async () => {
                 assert.equal((await I_EtherDividendCheckpointFactory.setupCost.call()).toNumber(), 0);
                 assert.equal((await I_EtherDividendCheckpointFactory.getTypes.call())[0], 4);
-                assert.equal(await I_EtherDividendCheckpointFactory.version.call(), "3.0.0");
+                assert.equal(await I_EtherDividendCheckpointFactory.version.call(), "3.1.0");
                 assert.equal(
                     web3.utils.toAscii(await I_EtherDividendCheckpointFactory.name.call()).replace(/\u0000/g, ""),
                     "EtherDividendCheckpoint",

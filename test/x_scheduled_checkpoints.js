@@ -85,8 +85,10 @@ contract("ScheduledCheckpoint", async (accounts) => {
         await jumpToTime(1553040000); // 03/20/2019 @ 12:00am (UTC)
         currentTime = new BN(await latestTime());
 
+        let signers = [account_polymath, accounts[6], token_owner];
+
         // Step 1: Deploy the genral PM ecosystem
-        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner, signers);
 
         [
             I_PolymathRegistry,

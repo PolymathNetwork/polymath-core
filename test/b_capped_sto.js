@@ -128,7 +128,9 @@ contract("CappedSTO", async (accounts) => {
         treasury_wallet = accounts[6];
         token_owner = account_issuer;
 
-        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
+        let signers = [token_owner, accounts[7], accounts[8]];
+
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner, signers);
         [
             I_PolymathRegistry,
             I_PolyToken,
@@ -658,7 +660,7 @@ contract("CappedSTO", async (accounts) => {
 
                 await catchRevert(
                     I_STRProxied.generateNewSecurityToken(P_name, P_symbol, P_tokenDetails, false,  "0x0000000000000000000000000000000000000000", 0, { from: token_owner }),
-                    "revert 0x0 not allowed"
+                    "Bad address"
                 );
             });
 

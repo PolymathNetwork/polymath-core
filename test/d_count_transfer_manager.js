@@ -97,8 +97,10 @@ contract("CountTransferManager", async (accounts) => {
         account_investor3 = accounts[9];
         account_investor4 = accounts[6];
 
+        let signers = [token_owner, accounts[2], accounts[4]];
+
         // Step 1: Deploy the genral PM ecosystem
-        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner, signers);
 
         [
             I_PolymathRegistry,
@@ -504,7 +506,7 @@ contract("CountTransferManager", async (accounts) => {
                 );
                 await catchRevert(
                     // Fails due to the same version being used
-                    I_CountTransferManagerFactory.setLogicContract("3.0.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath }),
+                    I_CountTransferManagerFactory.setLogicContract("3.1.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath }),
                     "Same version"
                 );
                 await catchRevert(
@@ -535,7 +537,7 @@ contract("CountTransferManager", async (accounts) => {
                 let bytesCM = encodeProxyCall(["uint256"], [12]);
                 await catchRevert(
                     // Fails due to the same version being used
-                    I_CountTransferManagerFactory.updateLogicContract(1, "3.0.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath }),
+                    I_CountTransferManagerFactory.updateLogicContract(1, "3.1.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath }),
                     "Same version"
                 );
                 await catchRevert(

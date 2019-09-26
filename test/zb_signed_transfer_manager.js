@@ -86,8 +86,10 @@ contract("SignedTransferManager", accounts => {
         account_investor3 = accounts[6];
         account_investor4 = accounts[7];
 
+        let signers = [account_polymath, accounts[2], token_owner];
+
         // Step 1: Deploy the genral PM ecosystem
-        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner, signers);
 
         [
             I_PolymathRegistry,

@@ -79,10 +79,12 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
         account_investor4 = accounts[9];
         account_temp = accounts[2];
 
+        let signers = [account_polymath, accounts[3], token_owner];
+
         // ----------- POLYMATH NETWORK Configuration ------------
 
        // Step 1: Deploy the genral PM ecosystem
-       let instances = await setUpPolymathNetwork(account_polymath, token_owner);
+       let instances = await setUpPolymathNetwork(account_polymath, token_owner, signers);
 
        [
            I_PolymathRegistry,
@@ -530,7 +532,7 @@ contract("WeightedVoteCheckpoint", async (accounts) => {
             it("\t\t Should get the exact details of the factory \n", async () => {
                 assert.equal((await I_WeightedVoteCheckpointFactory.setupCost.call()).toNumber(), 0);
                 assert.equal((await I_WeightedVoteCheckpointFactory.getTypes.call())[0], 4);
-                assert.equal(await I_WeightedVoteCheckpointFactory.version.call(), "3.0.0");
+                assert.equal(await I_WeightedVoteCheckpointFactory.version.call(), "3.1.0");
                 assert.equal(
                     web3.utils.toAscii(await I_WeightedVoteCheckpointFactory.name.call()).replace(/\u0000/g, ""),
                     "WeightedVoteCheckpoint",

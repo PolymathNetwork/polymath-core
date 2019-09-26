@@ -113,6 +113,8 @@ contract("GeneralTransferManager", async (accounts) => {
         account_affiliates1 = accounts[3];
         account_affiliates2 = accounts[4];
 
+        let signers = [token_owner, accounts[2], account_polymath];
+
         let oneeth = new BN(web3.utils.toWei("1", "ether"));
         signer = web3.eth.accounts.create();
         await web3.eth.personal.importRawKey(signer.privateKey, "");
@@ -120,7 +122,7 @@ contract("GeneralTransferManager", async (accounts) => {
         await web3.eth.sendTransaction({ from: token_owner, to: signer.address, value: oneeth });
 
         // Step 1: Deploy the genral PM ecosystem
-        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner, signers);
 
         [
             I_PolymathRegistry,
@@ -1366,7 +1368,7 @@ contract("GeneralTransferManager", async (accounts) => {
                 "Wrong Module added"
             );
             assert.equal(await I_GeneralTransferManagerFactory.title.call(), "General Transfer Manager", "Wrong Module added");
-            assert.equal(await I_GeneralTransferManagerFactory.version.call(), "3.0.0");
+            assert.equal(await I_GeneralTransferManagerFactory.version.call(), "3.1.0");
         });
 
         it("Should get the tags of the factory", async () => {

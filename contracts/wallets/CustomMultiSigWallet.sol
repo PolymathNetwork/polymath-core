@@ -43,11 +43,26 @@ contract CustomMultiSigWallet is MultiSigWallet {
      * @param _securityToken address of the securityToken
      * @param _usageCost Fee for the given module task
      */
-    function takeUsageFee(address _securityToken, uint256 _usageCost) external {
+    function collectUsageFee(address _securityToken, uint256 _usageCost) external {
         require(securityTokenRegistry.isSecurityToken(_securityToken), "Invalid securityToken");
         polyToken.transferFrom(msg.sender, address(this), _usageCost);
-        address whitelablers = ISecurityToken(_securityToken).owner(); // Here we will get the whitelabeler from the STR
-        rebates[whitelablers].feeCollected = rebates[whitelablers].feeCollected.add(_usageCost);
+        address whitelabler = securityTokenRegistry.getWhitelabelerBySecurityToken(_securityToken); // Here we will get the whitelabeler from the STR
+        if (securityTokenRegistry.isWhitelabeler(whitelabler)) {
+            rebates[whitelabler].feeCollected = rebates[whitelabler].feeCollected.add(_usageCost);
+        } 
+    }
+
+    /**
+     * @notice It will be used to collect the ST creation and registering ticker fee
+     * @param _whitelabeler Address of the whitelabler
+     * @param _fee Fee that need to deduct 
+     */
+    function collectSTFee(address _whitelabeler, uint256 _fee) external {
+        require(msg.sender == address(securityTokenRegistry), "Unauthroized");
+        polyToken.transferFrom(msg.sender, address(this), _fee);
+        if (securityTokenRegistry.isWhitelabeler(_whitelabeler)) {
+            rebates[_whitelabeler].feeCollected = rebates[_whitelabeler].feeCollected.add(_fee);
+        } 
     }
 
     /**

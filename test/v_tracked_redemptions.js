@@ -85,10 +85,12 @@ contract("TrackedRedemption", async (accounts) => {
         account_investor4 = accounts[9];
         account_temp = accounts[2];
 
+        let signers = [account_polymath, accounts[3], token_owner];
+
         // ----------- POLYMATH NETWORK Configuration ------------
 
        // Step 1: Deploy the genral PM ecosystem
-       let instances = await setUpPolymathNetwork(account_polymath, token_owner);
+       let instances = await setUpPolymathNetwork(account_polymath, token_owner, signers);
 
        [
            I_PolymathRegistry,

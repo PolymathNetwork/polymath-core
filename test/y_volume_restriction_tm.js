@@ -173,8 +173,10 @@ contract('VolumeRestrictionTransferManager', accounts => {
         account_delegate2 = accounts[6];
         account_delegate3 = accounts[5];
 
+        let signers = [account_polymath, accounts[2], token_owner];
+
         // Step 1: Deploy the genral PM ecosystem
-        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner, signers);
 
         [
             I_PolymathRegistry,
@@ -2010,7 +2012,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal(await I_VolumeRestrictionTMFactory.title.call(),
                         "Volume Restriction Transfer Manager",
                         "Wrong Module added");
-            assert.equal(await I_VolumeRestrictionTMFactory.version.call(), "3.0.0");
+            assert.equal(await I_VolumeRestrictionTMFactory.version.call(), "3.1.0");
         });
 
         it("Should get the tags of the factory", async() => {

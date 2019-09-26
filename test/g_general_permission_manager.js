@@ -90,8 +90,10 @@ contract("GeneralPermissionManager", async (accounts) => {
         account_delegate2 = accounts[6];
         account_delegate3 = accounts[5];
 
+        let signers = [token_owner, accounts[4], account_polymath];
+
         // Step 1: Deploy the genral PM ecosystem
-        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner, signers);
 
         [
             I_PolymathRegistry,
@@ -548,7 +550,7 @@ contract("GeneralPermissionManager", async (accounts) => {
         it("should get the exact details of the factory", async () => {
             assert.equal(await I_GeneralPermissionManagerFactory.setupCost.call(), 0);
             assert.equal((await I_GeneralPermissionManagerFactory.getTypes.call())[0], 1);
-            assert.equal(await I_GeneralPermissionManagerFactory.version.call(), "3.0.0");
+            assert.equal(await I_GeneralPermissionManagerFactory.version.call(), "3.1.0");
             assert.equal(
                 web3.utils.toAscii(await I_GeneralPermissionManagerFactory.name.call()).replace(/\u0000/g, ""),
                 "GeneralPermissionManager",

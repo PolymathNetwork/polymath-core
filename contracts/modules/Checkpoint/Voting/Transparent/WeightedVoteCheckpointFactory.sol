@@ -24,7 +24,7 @@ contract WeightedVoteCheckpointFactory is UpgradableModuleFactory {
         bool _isCostInPoly
     )
         public
-        UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry, _isCostInPoly)
+        UpgradableModuleFactory("3.1.0", _setupCost, _usageCost, _logicContract, _polymathRegistry, _isCostInPoly)
     {
         initialVersion = "3.0.0";
         name = "WeightedVoteCheckpoint";
@@ -36,7 +36,7 @@ contract WeightedVoteCheckpointFactory is UpgradableModuleFactory {
         tagsData.push("Transparent");
         tagsData.push("Checkpoint");
         compatibleSTVersionRange["lowerBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
-        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(3), uint8(0), uint8(0));
+        compatibleSTVersionRange["upperBound"] = VersionUtils.pack(uint8(3), uint8(1), uint8(0));
     }
 
     /**

@@ -143,8 +143,10 @@ contract("SecurityToken", async (accounts) => {
         token_owner = account_issuer;
         account_controller = account_temp;
 
+        let signers = [token_owner, account_temp, account_polymath];
+
         // Step:1 Create the polymath ecosystem contract instances
-        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner, signers);
 
         [
             I_PolymathRegistry,
@@ -729,6 +731,7 @@ contract("SecurityToken", async (accounts) => {
 
         it("Should adjust granularity", async () => {
             await I_SecurityToken.changeGranularity(new BN(10).pow(new BN(17)), { from: token_owner });
+            console.log(`Gas for transfer: ${await I_SecurityToken.transfer.estimateGas(accounts[7], new BN(10).pow(new BN(17)), { from: account_investor1})}`);
             await I_SecurityToken.transfer(accounts[7], new BN(10).pow(new BN(17)), { from: account_investor1, gas: 2500000 });
             await I_SecurityToken.transfer(account_investor1, new BN(10).pow(new BN(17)), { from: accounts[7], gas: 2500000 });
         });

@@ -7,7 +7,14 @@ interface IMultiSigWallet {
      * @param _securityToken address of the securityToken
      * @param _usageCost Fee for the given module task
      */
-    function takeUsageFee(address _securityToken, uint256 _usageCost) external;
+    function collectUsageFee(address _securityToken, uint256 _usageCost) external;
+
+    /**
+     * @notice It will be used to collect the ST creation and registering ticker fee
+     * @param _whitelabeler Address of the whitelabler
+     * @param _fee Fee that need to deduct 
+     */
+    function collectSTFee(address _whitelabeler, uint256 _fee) external;
 
     /**
      * @notice Use to withdraw the rebate by the whitelabelers

@@ -189,7 +189,7 @@ contract("STFactory", async (accounts) => {
     describe('Deploying tokens', async () => {
         before(async () => {
 
-            let signers = [account_polymath, accounts[6], token_owner];
+            let signers = [account_polymath, accounts[6], account_issuer];
             // Step:1 Create the polymath ecosystem contract instances
             let instances = await setUpPolymathNetwork(account_polymath, account_issuer, signers);
             [

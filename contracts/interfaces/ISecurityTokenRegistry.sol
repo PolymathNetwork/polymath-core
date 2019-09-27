@@ -36,18 +36,6 @@ interface ISecurityTokenRegistry {
         uint256 _polyFee,
         uint256 _protocolVersion
     );
-    // Emit at the time of launching a new security token v2.0.
-    // _registrationFee is in poly
-    event NewSecurityToken(
-        string _ticker,
-        string _name,
-        address indexed _securityTokenAddress,
-        address indexed _owner,
-        uint256 _addedAt,
-        address _registrant,
-        bool _fromAdmin,
-        uint256 _registrationFee
-    );
     // Emit when new ticker get registers
     event RegisterTicker(
         address indexed _owner,
@@ -70,6 +58,16 @@ interface ISecurityTokenRegistry {
         bool _fromAdmin,
         uint256 _registrationFee
     );
+    // Emits when ST is created from the whitelabler platform
+    event NewSecurityTokenByWhitelabeler(
+        address indexed _securityTokenAddress,
+        address indexed _whitelabeler
+    );
+    // Emits when ticker is created from the whitelabler platform
+    event RegisterTickerByWhitelabeler(
+        string _ticker,
+        address indexed _whitelabeler
+    );
     // Emit at when issuer refreshes exisiting token
     event SecurityTokenRefreshed(
         string _ticker,
@@ -83,6 +81,7 @@ interface ISecurityTokenRegistry {
     event ProtocolFactorySet(address indexed _STFactory, uint8 _major, uint8 _minor, uint8 _patch);
     event LatestVersionSet(uint8 _major, uint8 _minor, uint8 _patch);
     event ProtocolFactoryRemoved(address indexed _STFactory, uint8 _major, uint8 _minor, uint8 _patch);
+    event ModifyWhitelabelersList(address indexed _whitelabeler, bool _status);
 
     /**
      * @notice Deploys an instance of a new Security Token of version 2.0 and records it to the registry

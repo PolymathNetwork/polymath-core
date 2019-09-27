@@ -294,8 +294,12 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
     function _addExemptedAddresses(address[] memory _exemptedAddresses, uint256 _ballotId) internal {
         for (uint256 i = 0; i < _exemptedAddresses.length; i++) {
             Ballot storage ballot = ballots[_ballotId];
-            if (_exemptedAddresses[i] != address(0)) 
+            if (_exemptedAddresses[i] != address(0))
                 ballot.exemptedVoters[_exemptedAddresses[i]] = true;
+            // @FIXME uncomment this once we decrease contract size.
+            // else {
+            //     delete _exemptedAddresses[i];
+            // }
         }
         emit VotersExempted(_ballotId, _exemptedAddresses);
     }
@@ -549,6 +553,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
      * @param _exempt Whether it is exempted or not
      */
     function changeDefaultExemptedVotersList(address _voter, bool _exempt) public {
+        // @FIXME add a reason string once we decrease overall contract size (also for all other instances of _isAnyBallotRunning)
         require(!_isAnyBallotRunning());
         super.changeDefaultExemptedVotersList(_voter, _exempt);
     }
@@ -570,6 +575,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
             uint256 count = length -1;
             for (uint256 i = count; i >= 0 && i < count; i--) {
                 Stage currentStage = getCurrentBallotStage(i);
+                // @FIXME shouldn't we be ORing commit and reveal stages, instead?
                 if (currentStage == Stage.COMMIT && currentStage == Stage.REVEAL && !ballots[i].isCancelled) {
                     isAnyBallotActive = true;
                     break;
@@ -602,6 +608,9 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
      * @return address[] list of invesotrs who are remain to vote
      */
     function getPendingInvestorToVote(uint256 _ballotId) external view returns(address[] memory pendingInvestors) {
+        // @TODO for clarity, shall we revert instead of returning an empty array?
+        // if so, can we change it into a modifier?
+        // btw there are three other similar checks in different functions that can be refactored similarly.
         if (_ballotId >= ballots.length)
             return pendingInvestors;
         else {

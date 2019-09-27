@@ -147,6 +147,9 @@ module.exports = function(deployer, network, accounts) {
         web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
         PolymathAccount = accounts[0];
         PolyToken = DevPolyToken.address; // Development network polytoken address
+        Signer1 = PolymathAccount;
+        Signer2 = accounts[1];
+        Signer3 = accounts[2];
         deployer
             .deploy(MockOracle, PolyToken, web3.utils.fromAscii("POLY"), web3.utils.fromAscii("USD"), new BN(0.5).mul(new BN(10).pow(new BN(18))), { from: PolymathAccount })
             .then(() => {

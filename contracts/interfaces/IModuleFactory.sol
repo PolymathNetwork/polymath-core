@@ -17,7 +17,7 @@ interface IModuleFactory {
         uint256 _setupCostInPoly
     );
     event ChangeSTVersionBound(string _boundType, uint8 _major, uint8 _minor, uint8 _patch);
-
+    event SetupFeeDeducted(address _wallet, address _securityToken, uint256 _setupCostInPoly);
     //Should create an instance of the Module, or throw
     function deploy(bytes calldata _data) external returns(address moduleAddress);
 

@@ -106,7 +106,7 @@ contract Module is IModule, ModuleStorage, Pausable {
             require(wallet != address(0), "Invalid wallet");
             require(polyToken.transferFrom(address(securityToken), address(this), _usageCost), "Insufficient allowance");
             polyToken.approve(wallet, _usageCost);
-            IMultiSigWallet(wallet).collectUsageFee(address(securityToken), _usageCost);
+            IMultiSigWallet(wallet).collectModuleFee(address(securityToken), _usageCost);
             emit UsageFeeDeducted(wallet, address(securityToken), address(this));
         }
     }

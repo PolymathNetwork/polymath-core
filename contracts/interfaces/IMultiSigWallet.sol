@@ -3,11 +3,11 @@ pragma solidity ^0.5.8;
 interface IMultiSigWallet {
 
     /**
-     * @notice It will be used to take usage fee from the modules
+     * @notice It will be used to take usage fee / setup fee from the modules
      * @param _securityToken address of the securityToken
-     * @param _usageCost Fee for the given module task
+     * @param _fee Fee for the given module task
      */
-    function collectUsageFee(address _securityToken, uint256 _usageCost) external;
+    function collectModuleFee(address _securityToken, uint256 _fee) external;
 
     /**
      * @notice It will be used to collect the ST creation and registering ticker fee

@@ -1588,13 +1588,13 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                     from: token_owner 
                 }
             );
-            assert.equal(tx.logs[3].args._types[0].toNumber(), CHECKPOINT_KEY, "AdvancedPLCRVotingCheckpoint factory doesn't get deployed");
+            assert.equal(tx.logs[5].args._types[0].toNumber(), CHECKPOINT_KEY, "AdvancedPLCRVotingCheckpoint factory doesn't get deployed");
             assert.equal(
-                web3.utils.toUtf8(tx.logs[3].args._name),
+                web3.utils.toUtf8(tx.logs[5].args._name),
                 "AdvancedPLCRVotingCheckpoint",
                 "AdvancedPLCRVotingCheckpoint module was not added"
             );
-            P_AdvancedPLCRVotingCheckpoint = await AdvancedPLCRVotingCheckpoint.at(tx.logs[3].args._module);
+            P_AdvancedPLCRVotingCheckpoint = await AdvancedPLCRVotingCheckpoint.at(tx.logs[5].args._module);
         });
 
         it("Create the ballot under the usage cost", async() => {
@@ -1638,7 +1638,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             assert.equal(ballotDetails[10], 0);
             assert.isFalse(ballotDetails[9]);
             let balanceOfWalletAfter = await I_PolyToken.balanceOf.call(I_MultiSigWallet.address);
-            assert.equal(convertToNumber(balanceOfWalletAfter), 4000);
+            assert.equal(convertToNumber(balanceOfWalletAfter), 6000);
         });
 
         it("Should fail to create the ballot again because of insufficient allowance", async() => {
@@ -1671,7 +1671,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             let balanceBeforeWithdraw = convertToNumber(await I_PolyToken.balanceOf.call(whitelabeler));
             let rebateAmount = convertToNumber(await I_MultiSigWallet.getRebateAmount.call(whitelabeler));
             let tx = await I_MultiSigWallet.withdrawRebate({from: whitelabeler});
-            assert.equal(convertToNumber(await I_PolyToken.balanceOf.call(I_MultiSigWallet.address)), 3600);
+            assert.equal(convertToNumber(await I_PolyToken.balanceOf.call(I_MultiSigWallet.address)), 5400);
             let balanceAfterWithdraw = convertToNumber(await I_PolyToken.balanceOf.call(whitelabeler));
             assert.equal(
                 parseInt(balanceBeforeWithdraw) + parseInt(rebateAmount), 

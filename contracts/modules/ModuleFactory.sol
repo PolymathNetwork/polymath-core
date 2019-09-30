@@ -6,6 +6,8 @@ import "../interfaces/IModule.sol";
 import "../interfaces/IOracle.sol";
 import "../interfaces/IPolymathRegistry.sol";
 import "../interfaces/IModuleFactory.sol";
+import "../interfaces/ISecurityTokenRegistry.sol";
+import "../interfaces/IMultiSigWallet.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "../libraries/DecimalMath.sol";
@@ -215,11 +217,22 @@ contract ModuleFactory is IModuleFactory, Ownable {
     /**
      * @notice Calculates fee in POLY
      */
-    function _takeFee() internal returns(uint256) {
+    function _takeFee(address _securityToken) internal returns(uint256) {
         uint256 polySetupCost = setupCostInPoly();
         address polyToken = polymathRegistry.getAddress("PolyToken");
+        ISecurityTokenRegistry securityTokenRegistry = ISecurityTokenRegistry(polymathRegistry.getAddress("SecurityTokenRegistry"));
+        IMultiSigWallet feeWallet = IMultiSigWallet(polymathRegistry.getAddress("FeeWallet"));
+        require(address(feeWallet) != address(0), "Invalid fee wallet address");
         if (polySetupCost > 0) {
-            require(IERC20(polyToken).transferFrom(msg.sender, owner(), polySetupCost), "Insufficient allowance for module fee");
+            address whitelabler = securityTokenRegistry.getWhitelabelerBySecurityToken(_securityToken);
+            if (whitelabler != address(0)) {
+                require(IERC20(polyToken).transferFrom(msg.sender, address(this), polySetupCost), "Insufficient allowance for module fee");
+                IERC20(polyToken).approve(address(feeWallet), polySetupCost);
+                feeWallet.collectModuleFee(_securityToken, polySetupCost);
+            } else {
+                require(IERC20(polyToken).transferFrom(msg.sender, address(feeWallet), polySetupCost), "Insufficient allowance for module fee");
+            }
+            emit SetupFeeDeducted(address(feeWallet), _securityToken, polySetupCost);
         }
         return polySetupCost;
     }
@@ -230,7 +243,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @param _data Data used for the intialization of the module factory variables
      */
     function _initializeModule(address _module, bytes memory _data) internal {
-        uint256 polySetupCost = _takeFee();
+        uint256 polySetupCost = _takeFee(msg.sender);
         bytes4 initFunction = IModule(_module).getInitFunction();
         if (initFunction != bytes4(0)) {
             require(Util.getSig(_data) == initFunction, "Provided data is not valid");

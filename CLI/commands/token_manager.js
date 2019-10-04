@@ -444,8 +444,9 @@ async function issueToSingleAddress(_investor, _amount) {
     if (Issuer.address === await (securityToken.methods.owner().call())) {
       issueAction = securityToken.methods.issue(_investor, web3.utils.toWei(_amount), web3.utils.fromAscii(''));
     } else {
-      const issuanceModuleAddress = (await common.getAllModulesByType(securityToken, gbl.constants.MODULES_TYPES.STO)).find(m => m.name === 'Issuance').address;
-      if (issuanceModuleAddress) {
+      const issuanceModuleExists = (await common.getAllModulesByType(securityToken, gbl.constants.MODULES_TYPES.STO)).find(m => m.name === 'Issuance');
+      if (issuanceModuleExists) {
+        const issuanceModuleAddress = issuanceModuleExists.address;
         const issuanceModule = new web3.eth.Contract(abis.issuance(), issuanceModuleAddress);
         issueAction = issuanceModule.methods.issueTokens(_investor, web3.utils.toWei(_amount), web3.utils.fromAscii(''));
       } else {

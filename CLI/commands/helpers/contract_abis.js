@@ -7,6 +7,7 @@ let securityTokenABI;
 let iSecurityTokenABI;
 let stoInterfaceABI;
 let cappedSTOABI;
+let issuanceABI;
 let usdTieredSTOABI;
 let generalTransferManagerABI;
 let manualApprovalTransferManagerABI;
@@ -43,6 +44,7 @@ try {
     stoInterfaceABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/ISTO.json`).toString()).abi;
     cappedSTOABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/CappedSTO.json`).toString()).abi;
     usdTieredSTOABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/USDTieredSTO.json`).toString()).abi;
+    issuanceABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/Issuance.json`).toString()).abi;
     generalTransferManagerABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/GeneralTransferManager.json`).toString()).abi;
     manualApprovalTransferManagerABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/ManualApprovalTransferManager.json`).toString()).abi;
     countTransferManagerABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/CountTransferManager.json`).toString()).abi;
@@ -102,6 +104,9 @@ module.exports = {
     },
     usdTieredSTO: function () {
         return usdTieredSTOABI;
+    },
+    issuance: function () {
+        return issuanceABI;
     },
     generalTransferManager: function () {
         return generalTransferManagerABI;

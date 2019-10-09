@@ -442,5 +442,14 @@
         <tr>
             <td rowspan="1">pushAvailableTokensMulti</td>
         </tr>
+        <tr>
+            <td rowspan="2">Issuance</td>
+            <td rowspan="2">Issuance</td>
+            <td rowspan="1">issueTokens</td>
+            <td rowspan="2">withPerm(ADMIN)</td>
+        </tr>
+        <tr>
+            <td rowspan="1">issueTokensMulti</td>
+        </tr>
     </tbody>
 </table>

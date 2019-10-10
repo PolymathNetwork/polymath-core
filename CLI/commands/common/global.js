@@ -75,7 +75,7 @@ module.exports = {
           console.log("Invalid remote node")
           process.exit(0)
         }
-        web3 = new Web3(new Web3.providers.HttpProvider(url));
+        web3 = new Web3(new Web3.providers.HttpProvider(remoteNetwork));
         Issuer = getAccount(`${__dirname}/../../../keyStore`);
       } else {
         web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));

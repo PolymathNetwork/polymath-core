@@ -75,8 +75,9 @@ contract("Issuance", async (accounts) => {
         account_delegate = accounts[2];
         treasury_wallet = accounts[6];
         token_owner = account_issuer;
+        let signers = [token_owner, accounts[7], accounts[8]];
 
-        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner, signers);
         [
             I_PolymathRegistry,
             I_PolyToken,

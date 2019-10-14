@@ -660,7 +660,7 @@ contract("CappedSTO", async (accounts) => {
 
                 await catchRevert(
                     I_STRProxied.generateNewSecurityToken(P_name, P_symbol, P_tokenDetails, false,  "0x0000000000000000000000000000000000000000", 0, { from: token_owner }),
-                    "Bad address"
+                    "0x0 not allowed"
                 );
             });
 

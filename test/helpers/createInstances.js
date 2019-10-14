@@ -533,14 +533,14 @@ export async function deployUSDTieredSTOAndVerified(accountPolymath, MRProxyInst
     return Promise.all(new Array(I_USDTieredSTOFactory));
 }
 
-export async function deployIssuanceAndVerifyed(accountPolymath, MRProxyInstance, setupCost, feeInPoly = false) {
+export async function deployIssuanceAndVerifyed(accountPolymath, MRProxyInstance, setupCost, usageCost, feeInPoly = false) {
     I_IssuanceLogic = await Issuance.new(
         "0x0000000000000000000000000000000000000000",
         "0x0000000000000000000000000000000000000000",
         { from: accountPolymath }
     );
 
-    I_IssuanceFactory = await IssuanceFactory.new(setupCost, I_IssuanceLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
+    I_IssuanceFactory = await IssuanceFactory.new(setupCost, usageCost, I_IssuanceLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
 
     assert.notEqual(
         I_IssuanceFactory.address.valueOf(),

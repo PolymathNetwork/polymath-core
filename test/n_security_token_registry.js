@@ -570,7 +570,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         it("Should fail to generate the securityToken -- Because name length is 0", async () => {
             await catchRevert(
                 I_STRProxied.generateNewSecurityToken("", symbol, tokenDetails, false, token_owner, 0, { from: token_owner }),
-                "Bad name"
+                "Bad ticker"
             );
         });
 
@@ -583,14 +583,14 @@ contract("SecurityTokenRegistry", async (accounts) => {
         it("Should fail to generate the securityToken -- Because treasury wallet is 0x0", async () => {
             await catchRevert(
                 I_STRProxied.generateNewSecurityToken(name, symbol, tokenDetails, false, address_zero, 0, { from: token_owner }),
-                "Bad address"
+                "0x0 not allowed"
             );
         });
 
         it("Should fail to generate the securityToken -- Because msg.sender is not the rightful owner of the ticker", async () => {
             await catchRevert(
                 I_STRProxied.generateNewSecurityToken(name, symbol, tokenDetails, false, token_owner, 0, { from: account_temp }),
-                "Unauthroized"
+                "Not authorised"
             );
         });
 
@@ -1189,7 +1189,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
                 I_STRProxied.refreshSecurityToken("", symbol, "refreshedToken", true, token_owner, {
                     from: token_owner
                 }),
-                "Bad name"
+                "Bad ticker"
             );
         });
 
@@ -1198,7 +1198,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
                 I_STRProxied.refreshSecurityToken("refreshedToken", symbol, "refreshedToken", true, address_zero, {
                     from: token_owner
                 }),
-                "Bad address"
+                "0x0 not allowed"
             );
         });
 
@@ -1207,7 +1207,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
                 I_STRProxied.refreshSecurityToken("refreshedToken", symbol, "refreshedToken", true, token_owner, {
                     from: token_owner
                 }),
-                "Unfreeze transfers"
+                "Transfers not frozen"
             );
         });
 
@@ -1263,7 +1263,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         it("Should remove the ticker from the polymath ecosystem -- fail because ticker doesn't exist in the ecosystem", async () => {
             await catchRevert(
                 I_STRProxied.removeTicker("HOLA", { from: account_polymath }),
-                "Bad address"
+                "Bad ticker"
             );
         });
 

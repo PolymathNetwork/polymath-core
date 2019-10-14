@@ -269,21 +269,4 @@ contract STRGetter is EternalStorage {
         return getAddressValue(Encoder.getKey("registeredTickers_owner", _ticker));
     }
 
-    /**
-     * @notice Use to get the list of securityTokens created using the whitelabeler platform
-     * @param _whitelabeler Address of the whitelabeler
-     */
-    function getSecurityTokenListByWhitelabeler(address _whitelabeler) external view returns (address[] memory) {
-        return getArrayAddress(Encoder.getKey("whitelabelerToSecurityTokens", _whitelabeler));
-    }
-
-    /**
-     * @notice Gets the whitelabeler address of a given securityToken
-     * @param _securityToken Address of the securityToken
-     * @return _whitelabeler Address of the whitelabeler
-     */
-    function getWhitelabelerBySecurityToken(address _securityToken) external view returns (address _whitelabeler) {
-        return getAddressValue(Encoder.getKey("securityTokenToWhitelabeler", _securityToken));
-    }
-
 }

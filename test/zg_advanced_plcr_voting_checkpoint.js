@@ -9,7 +9,6 @@ const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 const AdvancedPLCRVotingCheckpointFactory = artifacts.require("./AdvancedPLCRVotingCheckpointFactory.sol");
 const AdvancedPLCRVotingCheckpoint = artifacts.require("./AdvancedPLCRVotingCheckpoint");
 const STGetter = artifacts.require("./STGetter.sol");
-const MultiSigWallet = artifacts.require("./CustomMultiSigWallet.sol");
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -1712,8 +1711,8 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             assert.deepEqual(expected.totalProposals, allBallotsData.totalProposals.map(tp => parseInt(tp.toString())), "Proposal count match");
             assert.deepEqual(expected.currentStages, allBallotsData.currentStages.map(stage => parseInt(stage.toString())), "Current stage match");
             assert.deepEqual(expected.isCancelled, allBallotsData.isCancelled, "Cancelled status match");
-        })
-    })
+        });
+    });
     
     describe("Test cases for non zero usage cost", async() => {
         it("Should fail to whitelist the whitelabeler -- Bad address", async() => {
@@ -1848,13 +1847,13 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                     from: token_owner 
                 }
             );
-            assert.equal(tx.logs[5].args._types[0].toNumber(), CHECKPOINT_KEY, "AdvancedPLCRVotingCheckpoint factory doesn't get deployed");
+            assert.equal(tx.logs[3].args._types[0].toNumber(), CHECKPOINT_KEY, "AdvancedPLCRVotingCheckpoint factory doesn't get deployed");
             assert.equal(
-                web3.utils.toUtf8(tx.logs[5].args._name),
+                web3.utils.toUtf8(tx.logs[3].args._name),
                 "AdvancedPLCRVotingCheckpoint",
                 "AdvancedPLCRVotingCheckpoint module was not added"
             );
-            P_AdvancedPLCRVotingCheckpoint = await AdvancedPLCRVotingCheckpoint.at(tx.logs[5].args._module);
+            P_AdvancedPLCRVotingCheckpoint = await AdvancedPLCRVotingCheckpoint.at(tx.logs[3].args._module);
         });
 
         it("Create the ballot under the usage cost", async() => {
@@ -1879,9 +1878,9 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                     from: token_owner
                 }
             );
-            assert.equal(await I_SecurityToken.currentCheckpointId.call(), 1);
+            assert.equal(await I_SecurityToken.currentCheckpointId.call(), 7);
             assert.equal(web3.utils.toUtf8(tx.logs[1].args._name), "Ballot 1");
-            assert.equal(tx.logs[1].args._checkpointId, 1);
+            assert.equal(tx.logs[1].args._checkpointId, 7);
             assert.equal(tx.logs[1].args._ballotId, 0);
             assert.equal(tx.logs[1].args._startTime, startTime.toString());
             assert.equal(tx.logs[1].args._commitDuration, commitDuration.toString());
@@ -1889,16 +1888,14 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             assert.equal(web3.utils.toUtf8(tx.logs[1].args._details), "Offchain detaiils");
 
             let ballotDetails = await P_AdvancedPLCRVotingCheckpoint.getBallotDetails.call(tx.logs[1].args._ballotId);
-            assert.equal(convertToNumber(ballotDetails[1]), convertToNumber(await stGetter.totalSupplyAt.call(new BN(1))));
+            assert.equal(convertToNumber(ballotDetails[1]), convertToNumber(await stGetter.totalSupplyAt.call(tx.logs[1].args._checkpointId)));
             assert.equal(web3.utils.toUtf8(ballotDetails[0]), "Ballot 1");
-            assert.equal(ballotDetails[2], 1);
+            assert.equal(ballotDetails[2], 7);
             assert.equal(ballotDetails[3].toString(), startTime.toString());
             assert.equal(ballotDetails[6].toString(), 1);
             assert.equal(ballotDetails[12][0], 0);
             assert.equal(ballotDetails[10], 0);
             assert.isFalse(ballotDetails[9]);
-            let balanceOfWalletAfter = await I_PolyToken.balanceOf.call(I_MultiSigWallet.address);
-            assert.equal(convertToNumber(balanceOfWalletAfter), 6000);
         });
 
         it("Should fail to create the ballot again because of insufficient allowance", async() => {
@@ -1925,20 +1922,6 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                 }),
                 "Insufficient tokens allowable"
             );
-        });
-
-        it("Should withdraw rebate successfully from the multi sig wallet", async() => {
-            let balanceBeforeWithdraw = convertToNumber(await I_PolyToken.balanceOf.call(whitelabeler));
-            let rebateAmount = convertToNumber(await I_MultiSigWallet.getRebateAmount.call(whitelabeler));
-            let tx = await I_MultiSigWallet.withdrawRebate({from: whitelabeler});
-            assert.equal(convertToNumber(await I_PolyToken.balanceOf.call(I_MultiSigWallet.address)), 5400);
-            let balanceAfterWithdraw = convertToNumber(await I_PolyToken.balanceOf.call(whitelabeler));
-            assert.equal(
-                parseInt(balanceBeforeWithdraw) + parseInt(rebateAmount), 
-                balanceAfterWithdraw
-            );
-            assert.equal(tx.logs[0].args._whitelabler, whitelabeler);
-            assert.equal(convertToNumber(tx.logs[0].args._rebateAmount), rebateAmount);
         });
     });
 

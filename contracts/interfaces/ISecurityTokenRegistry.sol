@@ -36,6 +36,18 @@ interface ISecurityTokenRegistry {
         uint256 _polyFee,
         uint256 _protocolVersion
     );
+    // Emit at the time of launching a new security token v2.0.
+    // _registrationFee is in poly
+    event NewSecurityToken(
+        string _ticker,
+        string _name,
+        address indexed _securityTokenAddress,
+        address indexed _owner,
+        uint256 _addedAt,
+        address _registrant,
+        bool _fromAdmin,
+        uint256 _registrationFee
+    );
     // Emit when new ticker get registers
     event RegisterTicker(
         address indexed _owner,
@@ -58,16 +70,6 @@ interface ISecurityTokenRegistry {
         bool _fromAdmin,
         uint256 _registrationFee
     );
-    // Emits when ST is created from the whitelabler platform
-    event NewSecurityTokenByWhitelabeler(
-        address indexed _securityTokenAddress,
-        address indexed _whitelabeler
-    );
-    // Emits when ticker is created from the whitelabler platform
-    event RegisterTickerByWhitelabeler(
-        string _ticker,
-        address indexed _whitelabeler
-    );
     // Emit at when issuer refreshes exisiting token
     event SecurityTokenRefreshed(
         string _ticker,
@@ -81,7 +83,6 @@ interface ISecurityTokenRegistry {
     event ProtocolFactorySet(address indexed _STFactory, uint8 _major, uint8 _minor, uint8 _patch);
     event LatestVersionSet(uint8 _major, uint8 _minor, uint8 _patch);
     event ProtocolFactoryRemoved(address indexed _STFactory, uint8 _major, uint8 _minor, uint8 _patch);
-    event ModifyWhitelabelersList(address indexed _whitelabeler, bool _status);
 
     /**
      * @notice Deploys an instance of a new Security Token of version 2.0 and records it to the registry
@@ -119,29 +120,6 @@ interface ISecurityTokenRegistry {
         uint256 _protocolVersion
     )
         external;
-
-    /**
-     * @notice Deploys an instance of a new Security Token and records it to the registry
-     * @param _name is the name of the token
-     * @param _ticker is the ticker symbol of the security token
-     * @param _tokenDetails is the off-chain details of the token
-     * @param _divisible is whether or not the token is divisible
-     * @param _treasuryWallet Ethereum address which will holds the STs.
-     * @param _protocolVersion Version of securityToken contract
-     * - `_protocolVersion` is the packed value of uin8[3] array (it will be calculated offchain)
-     * - if _protocolVersion == 0 then latest version of securityToken will be generated
-     * @param _whitelabeler Address of the whitelabeler
-     */
-    function generateNewSecurityTokenByWhitelabeler(
-        string calldata _name,
-        string calldata _ticker,
-        string calldata _tokenDetails,
-        bool _divisible,
-        address _treasuryWallet,
-        uint256 _protocolVersion,
-        address _whitelabeler
-    )
-    external;
 
     /**
      * @notice Deploys an instance of a new Security Token and replaces the old one in the registry
@@ -505,50 +483,5 @@ interface ISecurityTokenRegistry {
      * @return bool
      */
     function tickerAvailable(string calldata _ticker) external view returns(bool);
-
-    /**
-     * @notice Use to get the list of securityTokens created using the whitelabeler platform
-     * @param _whitelabeler Address of the whitelabeler
-     */
-    function getSecurityTokenListByWhitelabeler(address _whitelabeler) external view returns (address[] memory);
-
-    /**
-     * @notice Gets the whitelabeler address of a given securityToken
-     * @param _securityToken Address of the securityToken
-     * @return _whitelabeler Address of the whitelabeler
-     */
-    function getWhitelabelerBySecurityToken(address _securityToken) external view returns (address _whitelabeler);
-
-    /**
-     * @notice Use to validate the given whitelabeler address
-     * @param _whitelabeler Address of the whitelabeler
-     */
-    function isWhitelabeler(address _whitelabeler) external view returns(bool);
-
-    /**
-     * @notice Allows Polymath to add the addresses as whitelabelers
-     * @param _whitelabeler Address of the whitelabeler
-     * @param _status boolean value to represent the active and inactiveness of the whitelabeler 
-     */
-    function modifyWhitelabelersList(address _whitelabeler, bool _status) external;
-
-    /**
-     * @notice Allows Polymath to add the addresses as whitelabelers
-     * @param _whitelabelers List of address of the whitelabeler
-     * @param _status Array of boolean value to represent the active and inactiveness of the whitelabelers 
-     */
-    function modifyWhitelabelersListMulti(address[] calldata _whitelabelers, bool[] calldata _status) external;
-
-    /**
-     * @notice Registers the token ticker to the selected owner
-     * @notice Once the token ticker is registered to its owner then no other issuer can claim
-     * @notice its ownership. If the ticker expires and its issuer hasn't used it, then someone else can take it.
-     * @param _owner is address of the owner of the token
-     * @param _ticker is unique token ticker
-     * @param _whitelabeler Address of the whitelabeler
-     */
-    function registerNewTickerByWhitelabeler(address _owner, string calldata _ticker, address _whitelabeler) external;
-
-    function updateFeeWallet() external;
 
 }

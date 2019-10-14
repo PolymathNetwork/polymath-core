@@ -17,7 +17,6 @@ interface IModuleFactory {
         uint256 _setupCostInPoly
     );
     event ChangeSTVersionBound(string _boundType, uint8 _major, uint8 _minor, uint8 _patch);
-    event SetupFeeDeducted(address _wallet, address _securityToken, uint256 _setupCostInPoly);
     //Should create an instance of the Module, or throw
     function deploy(bytes calldata _data) external returns(address moduleAddress);
 
@@ -135,5 +134,10 @@ interface IModuleFactory {
     function changeTitle(string calldata _title) external;
 
     function polymathRegistry() external returns (address polymathRegistryAddress);
+
+    /**
+     * @notice Get factory owner
+     */
+    function owner() external view returns (address factoryOwner);
 
 }

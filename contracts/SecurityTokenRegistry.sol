@@ -10,7 +10,6 @@ pragma solidity ^0.5.0;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
-import "./interfaces/IMultiSigWallet.sol";
 import "./interfaces/IOwnable.sol";
 import "./interfaces/ISTFactory.sol";
 import "./interfaces/ISecurityToken.sol";
@@ -87,7 +86,6 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     bytes32 constant IS_FEE_IN_POLY = 0x7152e5426955da44af11ecd67fec5e2a3ba747be974678842afa9394b9a075b6; //keccak256("IS_FEE_IN_POLY")
     bytes32 constant ACTIVE_USERS = 0x425619ce6ba8e9f80f17c0ef298b6557e321d70d7aeff2e74dd157bd87177a9e; //keccak256("activeUsers")
     bytes32 constant LATEST_VERSION = 0x4c63b69b9117452b9f11af62077d0cda875fb4e2dbe07ad6f31f728de6926230; //keccak256("latestVersion")
-    bytes32 constant FEEWALLET = 0xdd694deb5182fce7b11e9dd012e490155a46df68e4c7d8f094500baa8a081daa; //keccak256("FeeWallet) 
 
     string constant POLY_ORACLE = "StablePolyUsdOracle";
 
@@ -122,15 +120,17 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         uint256 _polyFee,
         uint256 _protocolVersion
     );
-    // Emits when ST is created from the whitelabler platform
-    event NewSecurityTokenByWhitelabeler(
-        address indexed _securityTokenAddress,
-        address indexed _whitelabeler
-    );
-    // Emits when ticker is created from the whitelabler platform
-    event RegisterTickerByWhitelabeler(
+    // Emit at the time of launching a new security token v2.0.
+    // _registrationFee is in poly
+    event NewSecurityToken(
         string _ticker,
-        address indexed _whitelabeler
+        string _name,
+        address indexed _securityTokenAddress,
+        address indexed _owner,
+        uint256 _addedAt,
+        address _registrant,
+        bool _fromAdmin,
+        uint256 _registrationFee
     );
     // Emit after ticker registration
     event RegisterTicker(
@@ -165,7 +165,6 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     event ProtocolFactorySet(address indexed _STFactory, uint8 _major, uint8 _minor, uint8 _patch);
     event LatestVersionSet(uint8 _major, uint8 _minor, uint8 _patch);
     event ProtocolFactoryRemoved(address indexed _STFactory, uint8 _major, uint8 _minor, uint8 _patch);
-    event ModifyWhitelabelersList(address indexed _whitelabeler, bool _status);
     /////////////////////////////
     // Modifiers
     /////////////////////////////
@@ -271,10 +270,6 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         set(POLYTOKEN, IPolymathRegistry(polymathRegistry).getAddress("PolyToken"));
     }
 
-    function updateFeeWallet() external onlyOwner {
-        set(FEEWALLET, IPolymathRegistry(getAddressValue(POLYMATHREGISTRY)).getAddress("FeeWallet"));
-    }
-
     /**
      * @notice Converts USD fees into POLY amounts
      */
@@ -333,46 +328,6 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     }
 
     /////////////////////////////
-    /// White label Management
-    /////////////////////////////
-
-    /**
-     * @notice Allows Polymath to add the addresses as whitelabelers
-     * @param _whitelabeler Address of the whitelabeler
-     * @param _status boolean value to represent the active and inactiveness of the whitelabeler 
-     */
-    function modifyWhitelabelersList(address _whitelabeler, bool _status) external onlyOwner {
-        _modifyWhitelabelersList(_whitelabeler, _status);
-    }
-
-    /**
-     * @notice Allows Polymath to add the addresses as whitelabelers
-     * @param _whitelabelers List of address of the whitelabeler
-     * @param _status Array of boolean value to represent the active and inactiveness of the whitelabelers 
-     */
-    function modifyWhitelabelersListMulti(address[] calldata _whitelabelers, bool[] calldata _status) external onlyOwner {
-        require(_whitelabelers.length == _status.length, "Length mismatch");
-        for (uint256 i = 0; i < _whitelabelers.length; i++) {
-            _modifyWhitelabelersList(_whitelabelers[i], _status[i]);
-        }
-    }
-
-    function _modifyWhitelabelersList(address _whitelabeler, bool _status) internal {
-        _checkZeroAddress(_whitelabeler);
-        require(isWhitelabeler(_whitelabeler) != _status);
-        set(Encoder.getKey("whitelabelers", _whitelabeler), _status);
-        emit ModifyWhitelabelersList(_whitelabeler, _status);
-    }
-
-    /**
-     * @notice Use to validate the given whitelabeler address
-     * @param _whitelabeler Address of the whitelabeler
-     */
-    function isWhitelabeler(address _whitelabeler) public view returns(bool) {
-        return getBoolValue(Encoder.getKey("whitelabelers", _whitelabeler));
-    }
-
-    /////////////////////////////
     // Token Ticker Management
     /////////////////////////////
 
@@ -383,34 +338,9 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @param _owner is address of the owner of the token
      * @param _ticker is unique token ticker
      */
-    function registerNewTicker(address _owner, string memory _ticker) public {
-        _registerNewTickerByWhitelabeler(_owner, _ticker, address(0));
-    }
-
-    /**
-     * @notice Registers the token ticker to the selected owner
-     * @notice Once the token ticker is registered to its owner then no other issuer can claim
-     * @notice its ownership. If the ticker expires and its issuer hasn't used it, then someone else can take it.
-     * @param _owner is address of the owner of the token
-     * @param _ticker is unique token ticker
-     * @param _whitelabeler Address of the whitelabeler
-     */
-    function registerNewTickerByWhitelabeler(address _owner, string calldata _ticker, address _whitelabeler) external {
-        _registerNewTickerByWhitelabeler(_owner, _ticker, _whitelabeler);
-    }
-
-    /**
-     * @dev This function is just for backwards compatibility
-     */
-    function registerTicker(address _owner, string calldata _ticker, string calldata _tokenName) external {
-        registerNewTicker(_owner, _ticker);
-        (, uint256 polyFee) = getFees(TICKERREGFEE);
-        emit RegisterTicker(_owner, _ticker, _tokenName, now, now.add(getUintValue(EXPIRYLIMIT)), false, polyFee);
-    }
-
-    function _registerNewTickerByWhitelabeler(address _owner, string memory _ticker, address _whitelabeler) internal whenNotPausedOrOwner {
-        _checkZeroAddress(_owner);
-        _isValidTicker(_ticker);
+    function registerNewTicker(address _owner, string memory _ticker) public whenNotPausedOrOwner {
+        require(_owner != address(0), "Bad address");
+        require(bytes(_ticker).length > 0 && bytes(_ticker).length <= 10, "Bad ticker");
         // Attempt to charge the reg fee if it is > 0 USD
         (uint256 usdFee, uint256 polyFee) = _takeFee(TICKERREGFEE);
         string memory ticker = Util.upper(_ticker);
@@ -420,14 +350,17 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         if (previousOwner != address(0)) {
             _deleteTickerOwnership(previousOwner, ticker);
         }
-        if (_whitelabeler != address(0)) {
-            require(isWhitelabeler(_whitelabeler), "Invalid whitelabeler");
-            _transferFeeToWallet(_whitelabeler, polyFee);
-            set(Encoder.getKey("tickerToWhitelabeler", _ticker), _whitelabeler);
-            emit RegisterTickerByWhitelabeler(_ticker, _whitelabeler);
-        }
         /*solium-disable-next-line security/no-block-members*/
         _addTicker(_owner, ticker, now, now.add(getUintValue(EXPIRYLIMIT)), false, false, polyFee, usdFee);
+    }
+
+    /**
+     * @dev This function is just for backwards compatibility
+     */
+    function registerTicker(address _owner, string calldata _ticker, string calldata _tokenName) external {
+        registerNewTicker(_owner, _ticker);
+        (, uint256 polyFee) = getFees(TICKERREGFEE);
+        emit RegisterTicker(_owner, _ticker, _tokenName, now, now.add(getUintValue(EXPIRYLIMIT)), false, polyFee);
     }
 
     /**
@@ -469,10 +402,10 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         public
         onlyOwner
     {
-        _isValidTicker(_ticker);
+        require(bytes(_ticker).length > 0 && bytes(_ticker).length <= 10, "Bad ticker");
         require(_expiryDate != 0 && _registrationDate != 0, "Bad dates");
         require(_registrationDate <= _expiryDate, "Bad dates");
-        _checkZeroAddress(_owner);
+        require(_owner != address(0), "Bad address");
         string memory ticker = Util.upper(_ticker);
         _modifyTicker(_owner, ticker, _registrationDate, _expiryDate, _status);
     }
@@ -515,7 +448,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         }
         // If status is true, there must be a security token linked to the ticker already
         if (_status) {
-            _checkZeroAddress(getAddressValue(Encoder.getKey("tickerToSecurityToken", _ticker)));
+            require(getAddressValue(Encoder.getKey("tickerToSecurityToken", _ticker)) != address(0), "Not registered");
         }
         _addTicker(_owner, _ticker, _registrationDate, _expiryDate, _status, true, uint256(0), uint256(0));
     }
@@ -531,7 +464,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     function removeTicker(string memory _ticker) public onlyOwner {
         string memory ticker = Util.upper(_ticker);
         address owner = _tickerOwner(ticker);
-        _checkZeroAddress(owner);
+        require(owner != address(0), "Bad ticker");
         _deleteTickerOwnership(owner, ticker);
         set(Encoder.getKey("tickerToSecurityToken", ticker), address(0));
         _storeTickerDetails(ticker, address(0), 0, 0, false);
@@ -546,7 +479,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      */
     function tickerAvailable(string memory _ticker) public view returns(bool) {
         // Validate ticker to avoid confusions where a ticker IS available YET cannot be registered.
-        _isValidTicker(_ticker);
+        require(bytes(_ticker).length > 0 && bytes(_ticker).length <= 10, "Bad ticker");
         string memory ticker = Util.upper(_ticker);
         if (_tickerOwner(ticker) != address(0)) {
             /*solium-disable-next-line security/no-block-members*/
@@ -607,7 +540,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      */
     function transferTickerOwnership(address _newOwner, string memory _ticker) public whenNotPausedOrOwner {
         string memory ticker = Util.upper(_ticker);
-        _checkZeroAddress(_newOwner);
+        require(_newOwner != address(0), "Bad address");
         bytes32 ownerKey = Encoder.getKey("registeredTickers_owner", ticker);
         require(getAddressValue(ownerKey) == msg.sender, "Only owner");
         if (_tickerStatus(ticker)) require(
@@ -689,68 +622,10 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         uint256 _protocolVersion
     )
         public
-    {
-        _generateNewSecurityTokenByWhitelabeler(
-            _name,
-            _ticker,
-            _tokenDetails,
-            _divisible,
-            _treasuryWallet,
-            address(0),
-            _protocolVersion
-        );
-    }
-
-    /**
-     * @notice Deploys an instance of a new Security Token and records it to the registry
-     * @param _name is the name of the token
-     * @param _ticker is the ticker symbol of the security token
-     * @param _tokenDetails is the off-chain details of the token
-     * @param _divisible is whether or not the token is divisible
-     * @param _treasuryWallet Ethereum address which will holds the STs.
-     * @param _protocolVersion Version of securityToken contract
-     * - `_protocolVersion` is the packed value of uin8[3] array (it will be calculated offchain)
-     * - if _protocolVersion == 0 then latest version of securityToken will be generated
-     * @param _whitelabeler Address of the whitelabeler
-     */
-    function generateNewSecurityTokenByWhitelabeler(
-        string calldata _name,
-        string calldata _ticker,
-        string calldata _tokenDetails,
-        bool _divisible,
-        address _treasuryWallet,
-        uint256 _protocolVersion,
-        address _whitelabeler
-    )
-        external
-    {
-        _generateNewSecurityTokenByWhitelabeler(
-            _name,
-            _ticker,
-            _tokenDetails,
-            _divisible,
-            _treasuryWallet,
-            _whitelabeler,
-            _protocolVersion
-        );
-    }
-
-
-    function _generateNewSecurityTokenByWhitelabeler(
-        string memory _name,
-        string memory _ticker,
-        string memory _tokenDetails,
-        bool _divisible,
-        address _treasuryWallet,
-        address _whitelabeler,
-        uint256 _protocolVersion
-    )
-        internal
         whenNotPausedOrOwner
     {
-        _isValidTicker(_ticker);
-        require(bytes(_name).length > 0, "Bad name");
-        _checkZeroAddress(_treasuryWallet);
+        require(bytes(_name).length > 0 && bytes(_ticker).length > 0, "Bad ticker");
+        require(_treasuryWallet != address(0), "0x0 not allowed");
         if (_protocolVersion == 0) {
             _protocolVersion = getUintValue(LATEST_VERSION);
         }
@@ -759,32 +634,22 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         require(!getBoolValue(statusKey), "Already deployed");
         set(statusKey, true);
         address issuer = msg.sender;
-        require(_tickerOwner(_ticker) == issuer, "Unauthroized");
+        require(_tickerOwner(_ticker) == issuer, "Not authorised");
         /*solium-disable-next-line security/no-block-members*/
         require(getUintValue(Encoder.getKey("registeredTickers_expiryDate", _ticker)) >= now, "Ticker expired");
         (uint256 _usdFee, uint256 _polyFee) = _takeFee(STLAUNCHFEE);
         address newSecurityTokenAddress =
             _deployToken(_name, _ticker, _tokenDetails, issuer, _divisible, _treasuryWallet, _protocolVersion);
-        if (_whitelabeler != address(0)) {
-            require(isWhitelabeler(_whitelabeler), "Invalid whitelabeler");
-            require(
-                getAddressValue(Encoder.getKey("tickerToWhitelabeler", _ticker)) == _whitelabeler
+        if (_protocolVersion == VersionUtils.pack(2, 0, 0)) {
+            // For backwards compatibilty. Should be removed with an update when we disable st 2.0 generation.
+            emit NewSecurityToken(
+                _ticker, _name, newSecurityTokenAddress, issuer, now, issuer, false, _polyFee
             );
-            _transferFeeToWallet(_whitelabeler, _polyFee);
-            set(Encoder.getKey("securityTokenToWhitelabeler", newSecurityTokenAddress), _whitelabeler);
-            pushArray(Encoder.getKey("whitelabelerToSecurityTokens", _whitelabeler), newSecurityTokenAddress);
-            emit NewSecurityTokenByWhitelabeler(newSecurityTokenAddress, _whitelabeler);
+        } else {
+            emit NewSecurityToken(
+                _ticker, _name, newSecurityTokenAddress, issuer, now, issuer, false, _usdFee, _polyFee, _protocolVersion
+            );
         }
-        emit NewSecurityToken(
-            _ticker, _name, newSecurityTokenAddress, issuer, now, issuer, false, _usdFee, _polyFee, _protocolVersion
-        );
-    }
-
-    function _transferFeeToWallet(address _whitelabeler, uint256 _polyFee) internal {
-        address wallet = getAddressValue(FEEWALLET);
-        _checkZeroAddress(wallet);
-        IERC20(getAddressValue(POLYTOKEN)).approve(wallet, _polyFee);
-        IMultiSigWallet(wallet).collectSTFee(_whitelabeler, _polyFee);
     }
 
     /**
@@ -805,15 +670,14 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     )
         public whenNotPausedOrOwner returns (address)
     {
-        _isValidTicker(_ticker);
-        require(bytes(_name).length > 0, "Bad name");
-        _checkZeroAddress(_treasuryWallet);
+        require(bytes(_name).length > 0 && bytes(_ticker).length > 0, "Bad ticker");
+        require(_treasuryWallet != address(0), "0x0 not allowed");
         string memory ticker = Util.upper(_ticker);
         require(_tickerStatus(ticker), "not deployed");
         address st = getAddressValue(Encoder.getKey("tickerToSecurityToken", ticker));
         address stOwner = IOwnable(st).owner();
         require(msg.sender == stOwner, "Unauthroized");
-        require(ISecurityToken(st).transfersFrozen(), "Unfreeze transfers");
+        require(ISecurityToken(st).transfersFrozen(), "Transfers not frozen");
         uint256 protocolVersion = getUintValue(LATEST_VERSION);
         address newSecurityTokenAddress =
             _deployToken(_name, ticker, _tokenDetails, stOwner, _divisible, _treasuryWallet, protocolVersion);
@@ -877,10 +741,10 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         public
         onlyOwner
     {
-        _isValidTicker(_ticker);
-        require(_deployedAt != 0 && _owner != address(0));
+        require(bytes(_ticker).length <= 10, "Bad ticker");
+        require(_deployedAt != 0 && _owner != address(0), "Bad data");
         string memory ticker = Util.upper(_ticker);
-        _checkZeroAddress(_securityToken);
+        require(_securityToken != address(0), "Bad address");
         uint256 registrationTime = getUintValue(Encoder.getKey("registeredTickers_registrationDate", ticker));
         uint256 expiryTime = getUintValue(Encoder.getKey("registeredTickers_expiryDate", ticker));
         if (registrationTime == 0) {
@@ -935,7 +799,6 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
         return (keccak256(bytes(getStringValue(Encoder.getKey("securityTokens_ticker", _securityToken)))) != keccak256(""));
     }
 
-    
     /////////////////////////////
     // Ownership, lifecycle & Utility
     /////////////////////////////
@@ -945,7 +808,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     * @param _newOwner The address to transfer ownership to.
     */
     function transferOwnership(address _newOwner) public onlyOwner {
-        _checkZeroAddress(_newOwner);
+        require(_newOwner != address(0), "Bad address");
         emit OwnershipTransferred(getAddressValue(OWNER), _newOwner);
         set(OWNER, _newOwner);
     }
@@ -1020,7 +883,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     * @param _tokenContract is the address of the token contract
     */
     function reclaimERC20(address _tokenContract) public onlyOwner {
-        _checkZeroAddress(_tokenContract);
+        require(_tokenContract != address(0), "Bad address");
         IERC20 token = IERC20(_tokenContract);
         uint256 balance = token.balanceOf(address(this));
         require(token.transfer(owner(), balance), "Transfer failed");
@@ -1040,7 +903,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     }
 
     function _setProtocolFactory(address _STFactoryAddress, uint8 _major, uint8 _minor, uint8 _patch) internal {
-        _checkZeroAddress(_STFactoryAddress);
+        require(_STFactoryAddress != address(0), "Bad address");
         uint24 _packedVersion = VersionUtils.pack(_major, _minor, _patch);
         address stFactoryAddress = getAddressValue(Encoder.getKey("protocolVersionST", uint256(_packedVersion)));
         require(stFactoryAddress == address(0), "Already exists");
@@ -1056,7 +919,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
     */
     function removeProtocolFactory(uint8 _major, uint8 _minor, uint8 _patch) public onlyOwner {
         uint24 _packedVersion = VersionUtils.pack(_major, _minor, _patch);
-        require(getUintValue(LATEST_VERSION) != _packedVersion, "Invalid version");
+        require(getUintValue(LATEST_VERSION) != _packedVersion, "Cannot remove latestVersion");
         emit ProtocolFactoryRemoved(getAddressValue(Encoder.getKey("protocolVersionST", _packedVersion)), _major, _minor, _patch);
         set(Encoder.getKey("protocolVersionST", uint256(_packedVersion)), address(0));
     }
@@ -1085,7 +948,7 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      * @param _newAddress is the address of the polytoken.
      */
     function updatePolyTokenAddress(address _newAddress) public onlyOwner {
-        _checkZeroAddress(_newAddress);
+        require(_newAddress != address(0), "Bad address");
         set(POLYTOKEN, _newAddress);
     }
 
@@ -1103,13 +966,5 @@ contract SecurityTokenRegistry is EternalStorage, Proxy {
      */
     function owner() public view returns(address) {
         return getAddressValue(OWNER);
-    }
-
-    function _checkZeroAddress(address _addressToCheck) internal pure {
-        require(_addressToCheck != address(0), "Bad address");
-    }
-
-    function _isValidTicker(string memory _ticker) internal pure {
-        require(bytes(_ticker).length > 0 && bytes(_ticker).length <= 10, "Bad ticker");
     }
 }

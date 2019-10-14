@@ -2,7 +2,6 @@ pragma solidity 0.5.8;
 
 import "../interfaces/IModule.sol";
 import "../Pausable.sol";
-import "../interfaces/IMultiSigWallet.sol";
 import "../interfaces/IModuleFactory.sol";
 import "../interfaces/IDataStore.sol";
 import "../interfaces/ISecurityToken.sol";
@@ -101,13 +100,10 @@ contract Module is IModule, ModuleStorage, Pausable {
     function _deductUsageFee() internal {
         uint256 _usageCost = IModuleFactory(factory).usageCostInPoly();
         if (_usageCost > 0) {
-            address registry = IModuleFactory(factory).polymathRegistry();
-            address wallet = IPolymathRegistry(registry).getAddress("FeeWallet");
-            require(wallet != address(0), "Invalid wallet");
-            require(polyToken.transferFrom(address(securityToken), address(this), _usageCost), "Insufficient allowance");
-            polyToken.approve(wallet, _usageCost);
-            IMultiSigWallet(wallet).collectModuleFee(address(securityToken), _usageCost);
-            emit UsageFeeDeducted(wallet, address(securityToken), address(this));
+            address factoryOwner = IModuleFactory(factory).owner();
+            require(factoryOwner != address(0), "Invalid owner");
+            require(polyToken.transferFrom(address(securityToken), factoryOwner, _usageCost), "Insufficient allowance");
+            emit UsageFeeDeducted(factoryOwner, address(securityToken), address(this));
         }
     }
 }

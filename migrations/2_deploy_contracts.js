@@ -48,7 +48,6 @@ const VestingEscrowWalletFactory = artifacts.require('./VestingEscrowWalletFacto
 const AdvancedPLCRVotingCheckpointFactory = artifacts.require("./AdvancedPLCRVotingCheckpointFactory.sol");
 const AdvancedPLCRVotingCheckpointLogic = artifacts.require("./AdvancedPLCRVotingCheckpoint.sol");
 const AdvancedPLCRVotingLib = artifacts.require("./AdvancedPLCRVotingLib.sol");
-const CustomMultiSigWallet = artifacts.require("./CustomMultiSigWallet.sol");
 const IssuanceLogic = artifacts.require("./Issuance.sol");
 const IssuanceFactory = artifacts.require("./IssuanceFactory.sol");
 
@@ -63,7 +62,6 @@ let UsdToken;
 let ETHOracle;
 let POLYOracle;
 let StablePOLYOracle;
-let Signer1, Signer2, Signer3;
 
 module.exports = function(deployer, network, accounts) {
     // Ethereum account address hold by the Polymath (Act as the main account which have ownable permissions)
@@ -74,9 +72,6 @@ module.exports = function(deployer, network, accounts) {
     if (network === "development") {
         web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
         PolymathAccount = accounts[0];
-        Signer1 = PolymathAccount;
-        Signer2 = accounts[1];
-        Signer3 = accounts[2];
         PolyToken = DevPolyToken.address; // Development network polytoken address
         deployer.deploy(DevPolyToken, { from: PolymathAccount }).then(() => {
             DevPolyToken.deployed().then(mockedUSDToken => {
@@ -141,9 +136,6 @@ module.exports = function(deployer, network, accounts) {
         web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
         PolymathAccount = accounts[0];
         PolyToken = DevPolyToken.address; // Development network polytoken address
-        Signer1 = PolymathAccount;
-        Signer2 = accounts[1];
-        Signer3 = accounts[2];
         deployer
             .deploy(MockOracle, PolyToken, web3.utils.fromAscii("POLY"), web3.utils.fromAscii("USD"), new BN(0.5).mul(new BN(10).pow(new BN(18))), { from: PolymathAccount })
             .then(() => {
@@ -397,7 +389,7 @@ module.exports = function(deployer, network, accounts) {
         .then(() => {
             // D) Deploy the IssuanceFactory Contract (Factory used to generate the Issuance contract use
             // to issue tokens by the delegates)
-            return deployer.deploy(IssuanceFactory, new BN(0), IssuanceLogic.address, polymathRegistry.address, {
+            return deployer.deploy(IssuanceFactory, new BN(0), new BN(0), IssuanceLogic.address, polymathRegistry.address, {
                 from: PolymathAccount
             });
         })
@@ -711,18 +703,6 @@ module.exports = function(deployer, network, accounts) {
         .then(() => {
             // return deployer.deploy(SecurityToken, "a", "a", 18, 1, "a", polymathRegistry.address, STGetter.address, { from: PolymathAccount });
             return polymathRegistry.changeAddress("StablePolyUsdOracle", StablePOLYOracle, { from: PolymathAccount });
-        })
-        .then(() => {
-            return deployer.deploy(CustomMultiSigWallet, [Signer1, Signer2, Signer3], new BN(2), polymathRegistry.address, {from: PolymathAccount});
-        })
-        .then(() => {
-            return polymathRegistry.changeAddress("FeeWallet", CustomMultiSigWallet.address, { from: PolymathAccount });
-        })
-        .then(() => {
-            return SecurityTokenRegistry.at(SecurityTokenRegistryProxy.address);
-        })
-        .then((securityTokenRegistry) => {
-            return securityTokenRegistry.updateFeeWallet();
         })
         .then(() => {
             console.log("\n");

@@ -9,7 +9,6 @@ const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 const AdvancedPLCRVotingCheckpointFactory = artifacts.require("./AdvancedPLCRVotingCheckpointFactory.sol");
 const AdvancedPLCRVotingCheckpoint = artifacts.require("./AdvancedPLCRVotingCheckpoint");
 const STGetter = artifacts.require("./STGetter.sol");
-const MultiSigWallet = artifacts.require("./CustomMultiSigWallet.sol");
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -1456,120 +1455,6 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
 
     describe("Test cases for non zero usage cost", async() => {
 
-        it("Should fail to whitelist the whitelabeler -- Bad address", async() => {
-            await catchRevert(
-                I_STRProxied.modifyWhitelabelersList(address_zero, true, {from: account_polymath}),
-                "Bad address"
-            );
-        });
-
-        it("Should fail to whitelist the whitelabeler -- Bad msg.sender", async() => {
-            await catchRevert(
-                I_STRProxied.modifyWhitelabelersList(whitelabeler, true, {from: account_investor2}),
-                "Only owner"
-            );
-        });
-
-        it("Should fail to register the ticker when whitelabeler is not whitelisted -- Invalid whitelabeler", async() => {
-            await I_PolyToken.approve(I_STRProxied.address, new BN(initRegFee), { from: token_owner });
-            await catchRevert(
-                I_STRProxied.registerNewTickerByWhitelabeler(token_owner, "USAGE", whitelabeler, { from: token_owner }),
-                "Invalid whitelabeler"
-            );
-        });
-
-        it("Should whitelist the whitelabeler", async() => {
-            let tx = await I_STRProxied.modifyWhitelabelersList(whitelabeler, true, {from: account_polymath});
-            assert.isTrue(await I_STRProxied.isWhitelabeler.call(whitelabeler));
-            assert.equal(tx.logs[0].args._whitelabeler, whitelabeler);
-            assert.equal(tx.logs[0].args._status, true);
-        });
-
-        it("Should whitelist the whitelabeler", async() => {
-            let tx = await I_STRProxied.modifyWhitelabelersList(account_signer1, true, {from: account_polymath});
-            assert.isTrue(await I_STRProxied.isWhitelabeler.call(account_signer1));
-            assert.equal(tx.logs[0].args._whitelabeler, account_signer1);
-            assert.equal(tx.logs[0].args._status, true);
-        });
-
-        it("Should fail to whitelist the whitelabeler -- Already has the same status", async() => {
-            await catchRevert(
-                I_STRProxied.modifyWhitelabelersList(whitelabeler, true, {from: account_polymath})
-            );
-        });
-
-        it("Should fail to whitelist the whitelabeler -- Bad msg.sender", async() => {
-            await catchRevert(
-                I_STRProxied.modifyWhitelabelersListMulti([ account_investor1, account_investor2], [true, true], {from: token_owner}),
-                "Only owner"
-            );
-        })
-
-        it("Should fail to whitelist the whitelabeler -- Length Mismatch", async() => {
-            await catchRevert(
-                I_STRProxied.modifyWhitelabelersListMulti([account_investor1, account_investor2], [true], {from: account_polymath}),
-                "Length mismatch"
-            );
-        });
-
-        it("Should register the ticker before the generation of the security token", async () => {
-            //await I_PolyToken.getTokens(new BN(web3.utils.toWei("50000", "ether")), token_owner);
-            await I_PolyToken.approve(I_STRProxied.address, new BN(initRegFee), { from: token_owner });
-            let tx = await I_STRProxied.registerNewTickerByWhitelabeler(token_owner, "USAGE", whitelabeler, { from: token_owner });
-            assert.equal(tx.logs[0].args._ticker, "USAGE");
-            assert.equal(tx.logs[0].args._whitelabeler, whitelabeler);
-            assert.equal(tx.logs[1].args._owner, token_owner);
-            assert.equal(tx.logs[1].args._ticker, "USAGE");
-        });
-
-        it("Should verify the balance of the MultiSigWallet", async() => {
-            let MultiSigWalletAddress = await I_PolymathRegistry.getAddress.call("FeeWallet");
-            I_MultiSigWallet = await MultiSigWallet.at(MultiSigWalletAddress);
-            assert.equal(
-                convertToNumber(await I_PolyToken.balanceOf.call(MultiSigWalletAddress)),
-                convertToNumber(await I_STRProxied.getTickerRegistrationFee.call()) 
-            );
-        });
-
-        it("Should fail to generate the securityToken -- Invalid whitelabeler", async() => {
-            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            await catchRevert(
-                I_STRProxied.generateNewSecurityTokenByWhitelabeler(name, "USAGE", tokenDetails, false, token_owner, 0, account_investor1, { from: token_owner }),
-                "Invalid whitelabeler"
-            );
-        });
-
-        it("Should fail to generate the securityToken -- Not same whitelabeler as register ticker", async() => {
-            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            await catchRevert(
-                I_STRProxied.generateNewSecurityTokenByWhitelabeler(name, "USAGE", tokenDetails, false, token_owner, 0, account_signer1, { from: token_owner })
-            );
-        });
-
-        it("Should generate the new security token with the same symbol as registered above", async () => {
-            
-            let tx = await I_STRProxied.generateNewSecurityTokenByWhitelabeler(name, "USAGE", tokenDetails, false, token_owner, 0, whitelabeler, { from: token_owner });
-            assert.equal(tx.logs[1].args._whitelabeler, whitelabeler);
-            // Verify the successful generation of the security token
-            assert.equal(tx.logs[2].args._ticker, "USAGE", "SecurityToken doesn't get deployed");
-
-            I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
-            stGetter = await STGetter.at(I_SecurityToken.address);
-            const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
-            // Verify that GeneralTransferManager module get added successfully or not
-            assert.equal(log.args._types[0].toNumber(), transferManagerKey);
-            assert.equal(web3.utils.hexToString(log.args._name), "GeneralTransferManager");
-            assert.equal(
-                convertToNumber(await I_PolyToken.balanceOf.call(I_MultiSigWallet.address)),
-                parseInt(convertToNumber(await I_STRProxied.getTickerRegistrationFee.call())) + parseInt(convertToNumber(await I_STRProxied.getSecurityTokenLaunchFee.call())) 
-            );
-        });
-
-        it("Should initialize the auto attached modules", async () => {
-            let moduleData = (await stGetter.getModulesByType(transferManagerKey))[0];
-            I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
-        });
-
         it("Deploy and attach the module having non-zero usage cost", async() => {
             [P_AdvancedPLCRVotingCheckpointFactory] = await deployAdvancedPLCRVotingCheckpointAndVerifyed(
                 account_polymath,
@@ -1588,13 +1473,13 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                     from: token_owner 
                 }
             );
-            assert.equal(tx.logs[5].args._types[0].toNumber(), CHECKPOINT_KEY, "AdvancedPLCRVotingCheckpoint factory doesn't get deployed");
+            assert.equal(tx.logs[3].args._types[0].toNumber(), CHECKPOINT_KEY, "AdvancedPLCRVotingCheckpoint factory doesn't get deployed");
             assert.equal(
-                web3.utils.toUtf8(tx.logs[5].args._name),
+                web3.utils.toUtf8(tx.logs[3].args._name),
                 "AdvancedPLCRVotingCheckpoint",
                 "AdvancedPLCRVotingCheckpoint module was not added"
             );
-            P_AdvancedPLCRVotingCheckpoint = await AdvancedPLCRVotingCheckpoint.at(tx.logs[5].args._module);
+            P_AdvancedPLCRVotingCheckpoint = await AdvancedPLCRVotingCheckpoint.at(tx.logs[3].args._module);
         });
 
         it("Create the ballot under the usage cost", async() => {
@@ -1619,9 +1504,9 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                     from: token_owner
                 }
             );
-            assert.equal(await I_SecurityToken.currentCheckpointId.call(), 1);
+            assert.equal(await I_SecurityToken.currentCheckpointId.call(), 7);
             assert.equal(web3.utils.toUtf8(tx.logs[1].args._name), "Ballot 1");
-            assert.equal(tx.logs[1].args._checkpointId, 1);
+            assert.equal(tx.logs[1].args._checkpointId, 7);
             assert.equal(tx.logs[1].args._ballotId, 0);
             assert.equal(tx.logs[1].args._startTime, startTime.toString());
             assert.equal(tx.logs[1].args._commitDuration, commitDuration.toString());
@@ -1629,16 +1514,14 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             assert.equal(web3.utils.toUtf8(tx.logs[1].args._details), "Offchain detaiils");
 
             let ballotDetails = await P_AdvancedPLCRVotingCheckpoint.getBallotDetails.call(tx.logs[1].args._ballotId);
-            assert.equal(convertToNumber(ballotDetails[1]), convertToNumber(await stGetter.totalSupplyAt.call(new BN(1))));
+            assert.equal(convertToNumber(ballotDetails[1]), convertToNumber(await stGetter.totalSupplyAt.call(tx.logs[1].args._checkpointId)));
             assert.equal(web3.utils.toUtf8(ballotDetails[0]), "Ballot 1");
-            assert.equal(ballotDetails[2], 1);
+            assert.equal(ballotDetails[2], 7);
             assert.equal(ballotDetails[3].toString(), startTime.toString());
             assert.equal(ballotDetails[6].toString(), 1);
             assert.equal(ballotDetails[12][0], 0);
             assert.equal(ballotDetails[10], 0);
             assert.isFalse(ballotDetails[9]);
-            let balanceOfWalletAfter = await I_PolyToken.balanceOf.call(I_MultiSigWallet.address);
-            assert.equal(convertToNumber(balanceOfWalletAfter), 6000);
         });
 
         it("Should fail to create the ballot again because of insufficient allowance", async() => {
@@ -1665,20 +1548,6 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                 }),
                 "Insufficient tokens allowable"
             );
-        });
-
-        it("Should withdraw rebate successfully from the multi sig wallet", async() => {
-            let balanceBeforeWithdraw = convertToNumber(await I_PolyToken.balanceOf.call(whitelabeler));
-            let rebateAmount = convertToNumber(await I_MultiSigWallet.getRebateAmount.call(whitelabeler));
-            let tx = await I_MultiSigWallet.withdrawRebate({from: whitelabeler});
-            assert.equal(convertToNumber(await I_PolyToken.balanceOf.call(I_MultiSigWallet.address)), 5400);
-            let balanceAfterWithdraw = convertToNumber(await I_PolyToken.balanceOf.call(whitelabeler));
-            assert.equal(
-                parseInt(balanceBeforeWithdraw) + parseInt(rebateAmount), 
-                balanceAfterWithdraw
-            );
-            assert.equal(tx.logs[0].args._whitelabler, whitelabeler);
-            assert.equal(convertToNumber(tx.logs[0].args._rebateAmount), rebateAmount);
         });
     });
 

@@ -59,7 +59,6 @@ const RestrictedPartialSaleTMFactory = artifacts.require("./RestrictedPartialSal
 const RestrictedPartialSaleTM = artifacts.require("./RestrictedPartialSaleTM.sol");
 const AdvancedPLCRVotingCheckpointFactory = artifacts.require("./AdvancedPLCRVotingCheckpointFactory");
 const AdvancedPLCRVotingCheckpoint = artifacts.require("./AdvancedPLCRVotingCheckpoint");
-const CustomMultiSigWallet = artifacts.require("./CustomMultiSigWallet");
 const Issuance = artifacts.require("./Issuance.sol");
 const IssuanceFactory = artifacts.require("./IssuanceFactory.sol");
 
@@ -131,7 +130,6 @@ let I_PLCRVotingCheckpointLogic;
 let I_RestrictedPartialSaleTMLogic;
 let I_AdvancedPLCRVotingCheckpointFactory;
 let I_AdvancedPLCRVotingCheckpointLogic;
-let I_CustomMultiSigWallet;
 
 // Initial fee for ticker registry and security token registry
 const initRegFee = new BN(web3.utils.toWei("250"));
@@ -159,8 +157,6 @@ export async function setUpPolymathNetwork(account_polymath, token_owner, signer
     let f = await deploySTR(account_polymath);
     // Step 8: update the registries addresses from the PolymathRegistry contract
     await setInPolymathRegistry(account_polymath);
-    // Step 9: Deploy MultSigWallet
-    await deployMultiSigWallet(account_polymath, signers);
     // STEP 9: Register the Modules with the ModuleRegistry contract
     await registerGTM(account_polymath);
     // STEP 10: Add dummy oracles
@@ -319,12 +315,6 @@ async function setInPolymathRegistry(account_polymath) {
     await I_PolymathRegistry.changeAddress("FeatureRegistry", I_FeatureRegistry.address, { from: account_polymath });
     await I_PolymathRegistry.changeAddress("SecurityTokenRegistry", I_SecurityTokenRegistryProxy.address, { from: account_polymath });
     await I_MRProxied.updateFromRegistry({ from: account_polymath });
-}
-
-async function deployMultiSigWallet(account_polymath, signers) {
-    I_CustomMultiSigWallet = await CustomMultiSigWallet.new(signers, 2, I_PolymathRegistry.address, {from: account_polymath});
-    await I_PolymathRegistry.changeAddress("FeeWallet", I_CustomMultiSigWallet.address, { from: account_polymath });
-    await I_STRProxied.updateFeeWallet({from: account_polymath});
 }
 
 async function registerGTM(account_polymath) {

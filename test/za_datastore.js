@@ -129,6 +129,10 @@ contract("Data store", async (accounts) => {
             await catchRevert(I_DataStore.setSecurityToken(address_one, { from: account_polymath }),     "Unauthorized");
         });
 
+        it("Should not allow changing security token address to an invalid address", async () => {
+            await catchRevert(I_DataStore.setSecurityToken(address_zero, { from: token_owner }), "Invalid address");
+        });
+
         it("Should allow issuer to change security token address", async () => {
             let snapId = await takeSnapshot();
             await I_DataStore.setSecurityToken(address_one, { from: token_owner });
@@ -223,9 +227,11 @@ contract("Data store", async (accounts) => {
             await I_DataStore.insertUint256(key, new BN(10), { from: token_owner });
             let arrElement = await I_DataStore.getUint256ArrayElement(key, arrLen.toNumber());
             let arrElements = await I_DataStore.getUint256ArrayElements(key, 0, arrLen.toNumber());
+            let arrElementsOFB = await I_DataStore.getUint256ArrayElements(key, 0, arrLen.toNumber() + 10);
             assert.equal(arrElement.toNumber(), arrElements[arrLen.toNumber()].toNumber());
             assert.equal(arrLen.toNumber() + 1, (await I_DataStore.getUint256ArrayLength(key)).toNumber(), "Incorrect Array Length");
             assert.equal(arrElement.toNumber(), 10, "Incorrect array element");
+            assert.equal(arrElementsOFB.length, arrElements.length, "Returned array size is the same despite the exaggerated endIndex");
         });
 
         it("Should insert bytes32 into Array", async () => {
@@ -233,9 +239,11 @@ contract("Data store", async (accounts) => {
             await I_DataStore.insertBytes32(key, bytes32data, { from: token_owner });
             let arrElement = await I_DataStore.getBytes32ArrayElement(key, arrLen.toNumber());
             let arrElements = await I_DataStore.getBytes32ArrayElements(key, 0, arrLen.toNumber());
+            let arrElementsOFB = await I_DataStore.getBytes32ArrayElements(key, 0, arrLen.toNumber() + 10);
             assert.equal(arrElement, arrElements[arrLen.toNumber()]);
             assert.equal(arrLen.toNumber() + 1, (await I_DataStore.getBytes32ArrayLength(key)).toNumber(), "Incorrect Array Length");
             assert.equal(arrElement, bytes32data, "Incorrect array element");
+            assert.equal(arrElementsOFB.length, arrElements.length, "Returned array size is the same despite the exaggerated endIndex");
         });
 
         it("Should insert address into Array", async () => {
@@ -253,9 +261,11 @@ contract("Data store", async (accounts) => {
             await I_DataStore.insertBool(key, true, { from: token_owner });
             let arrElement = await I_DataStore.getBoolArrayElement(key, arrLen.toNumber());
             let arrElements = await I_DataStore.getBoolArrayElements(key, 0, arrLen.toNumber());
+            let arrElementsOFB = await I_DataStore.getBoolArrayElements(key, 0, arrLen.toNumber() + 10);
             assert.equal(arrElement, arrElements[arrLen.toNumber()]);
             assert.equal(arrLen.toNumber() + 1, (await I_DataStore.getBoolArrayLength(key)).toNumber(), "Incorrect Array Length");
             assert.equal(arrElement, true, "Incorrect array element");
+            assert.equal(arrElementsOFB.length, arrElements.length, "Returned array size is the same despite the exaggerated endIndex");
         });
 
         it("Should delete uint256 from Array", async () => {
@@ -475,6 +485,24 @@ contract("Data store", async (accounts) => {
 
         it("Should not allow unauthorized addresses to insert multiple bool into multiple Array", async () => {
             await catchRevert(I_DataStore.insertBoolMulti([key, key2], [true, true], { from: account_polymath }), "Unauthorized");
+        });
+    });
+
+    describe("Deleting out of bound indices", async () => {
+        it("Should prevent deleting out of bound indices of uintArray", async () => {
+            await catchRevert(I_DataStore.deleteUint256(key, (await I_DataStore.getUint256ArrayLength(key)).toNumber() + 1), { from: token_owner }, "Invalid Index");
+        });
+
+        it("Should prevent deleting out of bound indices of uintArray", async () => {
+            await catchRevert(I_DataStore.deleteBytes32(key, (await I_DataStore.getBytes32ArrayLength(key)).toNumber() + 1), { from: token_owner }, "Invalid Index");
+        });
+
+        it("Should prevent deleting out of bound indices of uintArray", async () => {
+            await catchRevert(I_DataStore.deleteAddress(key, (await I_DataStore.getAddressArrayLength(key)).toNumber() + 1), { from: token_owner }, "Invalid Index");
+        });
+
+        it("Should prevent deleting out of bound indices of uintArray", async () => {
+            await catchRevert(I_DataStore.deleteBool(key, (await I_DataStore.getBoolArrayLength(key)).toNumber() + 1), { from: token_owner }, "Invalid Index");
         });
     });
 });

@@ -711,9 +711,7 @@ contract SecurityToken is ERC20, ReentrancyGuard, SecurityTokenStorage, IERC1594
 
     /**
      * @notice This function must be called to increase the total supply (Corresponds to mint function of ERC20).
-     * @dev It only be called by the token issuer or the operator defined by the issuer. ERC1594 doesn't have
-     * have the any logic related to operator but its superset ERC1400 have the operator logic and this function
-     * is allowed to call by the operator.
+     * @dev It only be called by the token issuer or the module that has mint permission.
      * @param _tokenHolder The account that will receive the created tokens (account should be whitelisted or KYCed).
      * @param _value The amount of tokens need to be issued
      * @param _data The `bytes _data` allows arbitrary data to be submitted alongside the transfer.

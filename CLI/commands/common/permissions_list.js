@@ -161,6 +161,10 @@ function getPermissionList() {
             sendToTreasury: "OPERATOR",
             pushAvailableTokens: "OPERATOR",
             pushAvailableTokensMulti: "OPERATOR"
+        },
+        Issuance: {
+            issueTokens: "ADMIN",
+            issueTokensMulti: "ADMIN"
         }
     }
 }
@@ -168,7 +172,7 @@ function getPermissionList() {
 module.exports = {
     getPermissionList,
     verifyPermission: function (contractName, functionName) {
-        let list = getPermissionList();
+        const list = getPermissionList();
         try {
             return list[contractName][functionName]
         } catch (e) {

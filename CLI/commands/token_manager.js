@@ -440,12 +440,24 @@ async function getGeneralTransferManager() {
 
 async function issueToSingleAddress(_investor, _amount) {
   try {
-    let issueAction = securityToken.methods.issue(_investor, web3.utils.toWei(_amount), web3.utils.fromAscii(''));
+    let issueAction;
+    if (Issuer.address === await (securityToken.methods.owner().call())) {
+      issueAction = securityToken.methods.issue(_investor, web3.utils.toWei(_amount), web3.utils.fromAscii(''));
+    } else {
+      const issuanceModuleExists = (await common.getAllModulesByType(securityToken, gbl.constants.MODULES_TYPES.STO)).find(m => m.name === 'Issuance');
+      if (issuanceModuleExists) {
+        const issuanceModuleAddress = issuanceModuleExists.address;
+        const issuanceModule = new web3.eth.Contract(abis.issuance(), issuanceModuleAddress);
+        issueAction = issuanceModule.methods.issueTokens(_investor, web3.utils.toWei(_amount), web3.utils.fromAscii(''));
+      } else {
+        console.log(chalk.red(`You are not allowed to mint tokens.`));
+        return;
+      }
+    }
     let receipt = await common.sendTransaction(issueAction);
     let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'Issued');
     console.log(chalk.green(`${web3.utils.fromWei(event._value)} tokens have been issued to ${event._to} successfully.`));
-  }
-  catch (e) {
+  } catch (e) {
     console.log(e);
     console.log(chalk.red(`Issuance was not successful - Please make sure beneficiary address has been whitelisted`));
   }
@@ -489,12 +501,26 @@ async function multiIssue(_csvFilePath, _batchSize) {
     }
   }
 
+  let issueAction;
+  if (Issuer.address === await (securityToken.methods.owner().call())) {
+    issueAction = securityToken.methods.issueMulti;
+  } else {
+    const issuanceModuleAddress = (await common.getAllModulesByType(securityToken, gbl.constants.MODULES_TYPES.STO)).find(m => m.name === 'Issuance').address;
+    if (issuanceModuleAddress) {
+      const issuanceModule = new web3.eth.Contract(abis.issuance(), issuanceModuleAddress);
+      issueAction = issuanceModule.methods.issueTokensMulti;
+    } else {
+      console.log(chalk.red(`You are not allowed to mint tokens.`));
+      return;
+    }
+  }
+
   let batches = common.splitIntoBatches(verifiedData, batchSize);
   let [investorArray, amountArray] = common.transposeBatches(batches);
   for (let batch = 0; batch < batches.length; batch++) {
     console.log(`Batch ${batch + 1} - Attempting to issue tokens to accounts: \n\n`, investorArray[batch], '\n');
     amountArray[batch] = amountArray[batch].map(a => web3.utils.toWei(a.toString()));
-    let action = securityToken.methods.issueMulti(investorArray[batch], amountArray[batch]);
+    let action = issueAction(investorArray[batch], amountArray[batch]);
     let receipt = await common.sendTransaction(action);
     console.log(chalk.green('Multi issue transaction was successful.'));
     console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);

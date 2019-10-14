@@ -49,6 +49,8 @@ const AdvancedPLCRVotingCheckpointFactory = artifacts.require("./AdvancedPLCRVot
 const AdvancedPLCRVotingCheckpointLogic = artifacts.require("./AdvancedPLCRVotingCheckpoint.sol");
 const AdvancedPLCRVotingLib = artifacts.require("./AdvancedPLCRVotingLib.sol");
 const CustomMultiSigWallet = artifacts.require("./CustomMultiSigWallet.sol");
+const IssuanceLogic = artifacts.require("./Issuance.sol");
+const IssuanceFactory = artifacts.require("./IssuanceFactory.sol");
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -333,6 +335,11 @@ module.exports = function(deployer, network, accounts) {
             return deployer.deploy(RestrictedPartialSaleTMLogic, nullAddress, nullAddress, { from: PolymathAccount });
         })
         .then(() => {
+            // B) Deploy the IssuanceLogic Contract (Factory used to generate the Issuance contract and this
+            // manager attach with the securityToken contract at the time of deployment)
+            return deployer.deploy(IssuanceLogic, nullAddress, nullAddress, { from: PolymathAccount });
+        })
+        .then(() => {
             // B) Deploy the CappedSTOLogic Contract (Factory used to generate the CappedSTO contract and this
             // manager attach with the securityToken contract at the time of deployment)
             return deployer.deploy(CappedSTOLogic, nullAddress, nullAddress, { from: PolymathAccount });
@@ -384,6 +391,13 @@ module.exports = function(deployer, network, accounts) {
             // D) Deploy the PercentageTransferManagerFactory Contract (Factory used to generate the PercentageTransferManager contract use
             // to track the percentage of investment the investors could do for a particular security token)
             return deployer.deploy(PercentageTransferManagerFactory, new BN(0), new BN(0), PercentageTransferManagerLogic.address, polymathRegistry.address, {
+                from: PolymathAccount
+            });
+        })
+        .then(() => {
+            // D) Deploy the IssuanceFactory Contract (Factory used to generate the Issuance contract use
+            // to issue tokens by the delegates)
+            return deployer.deploy(IssuanceFactory, new BN(0), IssuanceLogic.address, polymathRegistry.address, {
                 from: PolymathAccount
             });
         })
@@ -550,6 +564,11 @@ module.exports = function(deployer, network, accounts) {
             return moduleRegistry.registerModule(RestrictedPartialSaleTMFactory.address, { from: PolymathAccount });
         })
         .then(() => {
+            // D) Register the IssuanceFactory in the ModuleRegistry to make the factory available at the protocol level.
+            // So any securityToken can use that factory to generate the Issuance contract.
+            return moduleRegistry.registerModule(IssuanceFactory.address, { from: PolymathAccount });
+        })
+        .then(() => {
             // D) Register the ManualApprovalTransferManagerFactory in the ModuleRegistry to make the factory available at the protocol level.
             // So any securityToken can use that factory to generate the ManualApprovalTransferManager contract.
             return moduleRegistry.registerModule(ManualApprovalTransferManagerFactory.address, { from: PolymathAccount });
@@ -628,6 +647,12 @@ module.exports = function(deployer, network, accounts) {
             // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
             // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
             return moduleRegistry.verifyModule(RestrictedPartialSaleTMFactory.address, { from: PolymathAccount });
+        })
+        .then(() => {
+            // G) Once the IssuanceFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken
+            // contract, Factory should comes under the verified list of factories or those factories deployed by the securityToken issuers only.
+            // Here it gets verified because it is deployed by the third party account (Polymath Account) not with the issuer accounts.
+            return moduleRegistry.verifyModule(IssuanceFactory.address, { from: PolymathAccount });
         })
         .then(() => {
             // G) Once the ManualApprovalTransferManagerFactory registered with the ModuleRegistry contract then for making them accessble to the securityToken

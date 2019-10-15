@@ -97,10 +97,8 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
         account_manager = accounts[5];
         wallet = accounts[3];
 
-        let signers = [token_owner, accounts[4], account_polymath];
-
         // Step 1: Deploy the genral PM ecosystem
-        let instances = await setUpPolymathNetwork(account_polymath, token_owner, signers);
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
 
         [
             I_PolymathRegistry,

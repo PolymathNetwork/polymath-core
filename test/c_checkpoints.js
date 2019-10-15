@@ -81,10 +81,8 @@ contract("Checkpoints", async function(accounts) {
         account_investor3 = accounts[8];
         account_investor4 = accounts[9];
 
-        let signers = [token_owner, accounts[2], accounts[4]];
-
         // Step 1: Deploy the genral PM ecosystem
-        let instances = await setUpPolymathNetwork(account_polymath, token_owner, signers);
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
 
         [
             I_PolymathRegistry,

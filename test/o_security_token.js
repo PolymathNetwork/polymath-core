@@ -143,10 +143,8 @@ contract("SecurityToken", async (accounts) => {
         token_owner = account_issuer;
         account_controller = account_temp;
 
-        let signers = [token_owner, account_temp, account_polymath];
-
         // Step:1 Create the polymath ecosystem contract instances
-        let instances = await setUpPolymathNetwork(account_polymath, token_owner, signers);
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
 
         [
             I_PolymathRegistry,

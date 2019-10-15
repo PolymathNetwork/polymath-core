@@ -112,10 +112,8 @@ contract("ModuleRegistry", async (accounts) => {
         account_temp = accounts[8];
         token_owner = account_issuer;
 
-        let signers = [token_owner, accounts[3], account_polymath];
-
        // Step 1: Deploy the genral PM ecosystem
-       let instances = await setUpPolymathNetwork(account_polymath, token_owner, signers);
+       let instances = await setUpPolymathNetwork(account_polymath, token_owner);
 
        [
            I_PolymathRegistry,

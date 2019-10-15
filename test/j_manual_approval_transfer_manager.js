@@ -96,10 +96,9 @@ contract("ManualApprovalTransferManager", accounts => {
         account_investor4 = accounts[9];
         account_investor5 = accounts[5];
 
-        let signers = [token_owner, accounts[2], account_polymath];
 
         // Step 1: Deploy the genral PM ecosystem
-        let instances = await setUpPolymathNetwork(account_polymath, token_owner, signers);
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
 
         [
             I_PolymathRegistry,

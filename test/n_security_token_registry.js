@@ -121,9 +121,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
         token_owner = account_issuer;
         dummy_token = accounts[3];
 
-        let signers = [token_owner, accounts[7], account_polymath];
-
-        let instances = await setUpPolymathNetwork(account_polymath, token_owner, signers);
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
 
         [
             I_PolymathRegistry,

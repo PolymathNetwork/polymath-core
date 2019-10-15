@@ -106,9 +106,7 @@ contract("PercentageTransferManager", async (accounts) => {
         account_investor4 = accounts[5]
         account_delegate = accounts[6];
 
-        let signers = [token_owner, accounts[2], account_polymath];
-
-        let instances = await setUpPolymathNetwork(account_polymath, token_owner, signers);
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
 
         [
             I_PolymathRegistry,

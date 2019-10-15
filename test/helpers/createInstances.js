@@ -139,7 +139,7 @@ const MRProxyParameters = ["address", "address"];
 
 /// Function use to launch the polymath ecossystem.
 
-export async function setUpPolymathNetwork(account_polymath, token_owner, signers) {
+export async function setUpPolymathNetwork(account_polymath, token_owner) {
     // ----------- POLYMATH NETWORK Configuration ------------
     // Step 1: Deploy the PolyToken and PolymathRegistry
     let a = await deployPolyRegistryAndPolyToken(account_polymath, token_owner);

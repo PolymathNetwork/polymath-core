@@ -234,10 +234,9 @@ contract("USDTieredSTO", async (accounts) => {
         INVESTOR2 = accounts[8];
         INVESTOR3 = accounts[9];
 
-        let signers = [ISSUER, WALLET, POLYMATH];
 
         // Step:1 Create the polymath ecosystem contract instances
-        let instances = await setUpPolymathNetwork(POLYMATH, ISSUER, signers);
+        let instances = await setUpPolymathNetwork(POLYMATH, ISSUER);
 
         [
             I_PolymathRegistry,

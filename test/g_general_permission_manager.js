@@ -90,10 +90,8 @@ contract("GeneralPermissionManager", async (accounts) => {
         account_delegate2 = accounts[6];
         account_delegate3 = accounts[5];
 
-        let signers = [token_owner, accounts[4], account_polymath];
-
         // Step 1: Deploy the genral PM ecosystem
-        let instances = await setUpPolymathNetwork(account_polymath, token_owner, signers);
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
 
         [
             I_PolymathRegistry,

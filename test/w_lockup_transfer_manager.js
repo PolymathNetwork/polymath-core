@@ -88,9 +88,7 @@ contract('LockUpTransferManager', accounts => {
         account_investor2 = accounts[8];
         account_investor3 = accounts[9];
 
-        let signers = [account_polymath, accounts[6], token_owner];
-
-        let instances = await setUpPolymathNetwork(account_polymath, token_owner, signers);
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
 
         [
             I_PolymathRegistry,

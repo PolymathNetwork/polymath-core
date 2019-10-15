@@ -113,9 +113,7 @@ contract('BlacklistTransferManager', accounts => {
         account_investor4 = accounts[5];
         account_investor5 = accounts[6];
 
-        let signers = [account_polymath, accounts[3], token_owner];
-
-        let instances = await setUpPolymathNetwork(account_polymath, token_owner, signers);
+        let instances = await setUpPolymathNetwork(account_polymath, token_owner);
 
         [
             I_PolymathRegistry,

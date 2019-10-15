@@ -86,10 +86,8 @@ contract("Concurrent STO", async (accounts) => {
         account_investor2 = accounts[4];
         account_investor3 = accounts[5];
 
-        let signers = [account_polymath, accounts[6], account_issuer];
-
        // Step:1 Create the polymath ecosystem contract instances
-       let instances = await setUpPolymathNetwork(account_polymath, account_issuer, signers);
+       let instances = await setUpPolymathNetwork(account_polymath, account_issuer);
 
        [
            I_PolymathRegistry,

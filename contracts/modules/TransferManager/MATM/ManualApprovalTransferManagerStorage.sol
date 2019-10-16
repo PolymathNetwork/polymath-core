@@ -10,6 +10,7 @@ contract ManualApprovalTransferManagerStorage {
         address from;
         address to;
         uint256 allowance;
+        uint256 remainingAllowance;
         uint256 expiryTime;
         bytes32 description;
     }

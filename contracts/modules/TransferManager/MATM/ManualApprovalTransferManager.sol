@@ -70,7 +70,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
         if (esc != bytes32(0)) {
             uint256 index = approvalIndex[_from][_to] - 1;
             ManualApproval storage approval = approvals[index];
-            approval.allowance = approval.allowance.sub(_amount);
+            approval.remainingAllowance = approval.remainingAllowance.sub(_amount);
         }
         return (success);
     }
@@ -108,7 +108,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
         if (!paused && index != 0) {
             index--; //Actual index is storedIndex - 1
             ManualApproval memory approval = approvals[index];
-            if ((approval.expiryTime >= now) && (approval.allowance >= _amount)) {
+            if ((approval.expiryTime >= now) && (approval.remainingAllowance >= _amount)) {
                 return (Result.VALID, bytes32(uint256(address(this)) << 96));
             }
         }
@@ -142,10 +142,10 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
         require(_allowance > 0, "Invalid allowance");
         if (approvalIndex[_from][_to] != 0) {
             uint256 index = approvalIndex[_from][_to] - 1;
-            require(approvals[index].expiryTime < now || approvals[index].allowance == 0, "Approval already exists");
+            require(approvals[index].expiryTime < now || approvals[index].remainingAllowance == 0, "Approval already exists");
             _revokeManualApproval(_from, _to);
         }
-        approvals.push(ManualApproval(_from, _to, _allowance, _expiryTime, _description));
+        approvals.push(ManualApproval(_from, _to, _allowance, _allowance, _expiryTime, _description));
         approvalIndex[_from][_to] = approvals.length;
         emit AddManualApproval(_from, _to, _allowance, _expiryTime, _description, msg.sender);
     }
@@ -214,9 +214,10 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
         require(index != 0, "Approval not present");
         index--; //Index is stored in an incremented form. 0 represnts non existant.
         ManualApproval storage approval = approvals[index];
-        uint256 allowance = approval.allowance;
+        uint256 allowance = approval.remainingAllowance;
         uint256 expiryTime = approval.expiryTime;
-        require(allowance != 0 && expiryTime > now, "Not allowed");
+        require(allowance != 0, "Approval has been exhausted");
+        require(expiryTime > now, "Approval has expired");
 
         if (_changeInAllowance > 0) {
             if (_increase) {
@@ -231,6 +232,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
                 }
             }
             approval.allowance = allowance;
+            approval.remainingAllowance = allowance;
         }
         // Greedy storage technique
         if (expiryTime != _expiryTime) {
@@ -264,7 +266,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
         withPerm(ADMIN)
     {
         _checkInputLengthArray(_from, _to, _changeInAllowance, _expiryTimes, _descriptions);
-        require(_increase.length == _changeInAllowance.length, "Input length array mismatch");
+        require(_increase.length == _changeInAllowance.length, "Input array length mismatch");
         for (uint256 i = 0; i < _from.length; i++) {
             _modifyManualApproval(_from[i], _to[i], _expiryTimes[i], _changeInAllowance[i], _descriptions[i], _increase[i]);
         }
@@ -357,7 +359,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
 
                 from[counter]=approvals[i].from;
                 to[counter]=approvals[i].to;
-                allowance[counter]=approvals[i].allowance;
+                allowance[counter]=approvals[i].remainingAllowance;
                 expiryTime[counter]=approvals[i].expiryTime;
                 description[counter]=approvals[i].description;
                 counter ++;
@@ -372,22 +374,24 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
      * @param _to Address of the receiver
      * @return uint256 expiryTime of the approval
      * @return uint256 allowance provided to the approval
+     * @return uint256 the remaining allowance
+     * @return uint256 the remaining allowance
      * @return uint256 Description provided to the approval
      */
-    function getApprovalDetails(address _from, address _to) external view returns(uint256, uint256, bytes32) {
+    function getApprovalDetails(address _from, address _to) external view returns(uint256, uint256, uint256, bytes32) {
         uint256 index = approvalIndex[_from][_to];
         if (index != 0) {
             index--;
-            if (index < approvals.length) {
-                ManualApproval storage approval = approvals[index];
-                return(
-                    approval.expiryTime,
-                    approval.allowance,
-                    approval.description
-                );
-            }
+            assert(index < approvals.length);
+            ManualApproval storage approval = approvals[index];
+            return(
+                approval.expiryTime,
+                approval.allowance,
+                approval.remainingAllowance,
+                approval.description
+            );
         }
-        return (uint256(0), uint256(0), bytes32(0));
+        return (uint256(0), uint256(0), uint256(0), bytes32(0));
     }
 
     /**
@@ -410,6 +414,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
         address[] memory from = new address[](approvalsLength);
         address[] memory to = new address[](approvalsLength);
         uint256[] memory allowance = new uint256[](approvalsLength);
+        uint256[] memory remainingAllowance = new uint256[](approvalsLength);
         uint256[] memory expiryTime = new uint256[](approvalsLength);
         bytes32[] memory description = new bytes32[](approvalsLength);
 
@@ -418,6 +423,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
             from[i]=approvals[i].from;
             to[i]=approvals[i].to;
             allowance[i]=approvals[i].allowance;
+            remainingAllowance[i]=approvals[i].remainingAllowance;
             expiryTime[i]=approvals[i].expiryTime;
             description[i]=approvals[i].description;
 

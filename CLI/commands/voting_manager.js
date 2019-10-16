@@ -249,171 +249,173 @@ async function addOrRemoveExemptedVoters() {
 }
 
 async function createBallot() {
-  // 0) Choose a name
-  const name = input.readStringNonEmpty(`Enter a name for the ballot to help you identify it: `);
-  // 1) Choose the start time
-  const startTime = input.readDateInTheFutureOrZero(`Enter the start date (Unix Epoch time) for the ballot (now = 0): `, 0);
-  // 2) Choose commit duration
-  const commitDuration = input.readNumberGreaterThan(0, `Enter the duration in seconds for the voting stage: `);
-  // 3) Choose reveal duration
-  const revealDuration = input.readNumberGreaterThan(0, `Enter the duration in seconds for the reveal stage: `);
-  // 4) Choose number of proposal (if it is 1 => statutory, if it is >1 => cumulative
-  const proposalsCount = input.readNumberGreaterThan(0, `Enter the number of proposals for this ballot: `);
-  // 5) For each proposal:
-  const proposals = [];
-  for (let i = 0; i < proposalsCount; i++) {
-    //  a) Enter the title
-    const proposalTitle = input.readStringNonEmpty(`Enter a title for the proposal no. ${i + 1}: `);
-    //  b) Enter the details
-    const proposalDetails = input.readString(`Enter a link to off-chain details related to the proposal no. ${i + 1}: `);
-    //  c) Choose the number of choices
-    const choicesCount = input.readNumberGreaterThanOrEqual(0, `Enter the amount of choices for the proposal no. ${i + 1}: `);
-    //  d) If it is >0, for each choice enter the string
-    const choices = [];
-    for (let j = 0; j < choicesCount; j++) {
-      const choice = input.readStringNonEmpty(`Enter the choice no. ${j + 1} for the proposal no. ${i + 1}: `);
-      choices.push(choice);
+  if (await common.checkBudget(securityToken, polyToken, currentVotingModule)) {
+    // 0) Choose a name
+    const name = input.readStringNonEmpty(`Enter a name for the ballot to help you identify it: `);
+    // 1) Choose the start time
+    const startTime = input.readDateInTheFutureOrZero(`Enter the start date (Unix Epoch time) for the ballot (now = 0): `, 0);
+    // 2) Choose commit duration
+    const commitDuration = input.readNumberGreaterThan(0, `Enter the duration in seconds for the voting stage: `);
+    // 3) Choose reveal duration
+    const revealDuration = input.readNumberGreaterThan(0, `Enter the duration in seconds for the reveal stage: `);
+    // 4) Choose number of proposal (if it is 1 => statutory, if it is >1 => cumulative
+    const proposalsCount = input.readNumberGreaterThan(0, `Enter the number of proposals for this ballot: `);
+    // 5) For each proposal:
+    const proposals = [];
+    for (let i = 0; i < proposalsCount; i++) {
+      //  a) Enter the title
+      const proposalTitle = input.readStringNonEmpty(`Enter a title for the proposal no. ${i + 1}: `);
+      //  b) Enter the details
+      const proposalDetails = input.readString(`Enter a link to off-chain details related to the proposal no. ${i + 1}: `);
+      //  c) Choose the number of choices
+      const choicesCount = input.readNumberGreaterThanOrEqual(0, `Enter the amount of choices for the proposal no. ${i + 1}: `);
+      //  d) If it is >0, for each choice enter the string
+      const choices = [];
+      for (let j = 0; j < choicesCount; j++) {
+        const choice = input.readStringNonEmpty(`Enter the choice no. ${j + 1} for the proposal no. ${i + 1}: `);
+        choices.push(choice);
+      }
+      proposals.push(Proposal(proposalTitle, proposalDetails, choices));
     }
-    proposals.push(Proposal(proposalTitle, proposalDetails, choices));
-  }
-  // 6) Choose a checkpoint (if a checkpoint is chosen => custom call, otherwise the standard call
-  const checkpointId = await selectCheckpoint(true); // If there are no checkpoints, it must create a new one
-  // 7) Choose exclusions (if any exclusion => withExclusion call) (edited)
-  const useDefaultExemptions = readlineSync.keyInYNStrict(`Do you want to use the default exemption voters list for this ballot?`);
-  const exemptions = useDefaultExemptions ? undefined : input.readMultipleAddresses(`Enter addresses to exempt from this ballot (ex - add1, add2, add3, ...): `);
+    // 6) Choose a checkpoint (if a checkpoint is chosen => custom call, otherwise the standard call
+    const checkpointId = await selectCheckpoint(true); // If there are no checkpoints, it must create a new one
+    // 7) Choose exclusions (if any exclusion => withExclusion call) (edited)
+    const useDefaultExemptions = readlineSync.keyInYNStrict(`Do you want to use the default exemption voters list for this ballot?`);
+    const exemptions = useDefaultExemptions ? undefined : input.readMultipleAddresses(`Enter addresses to exempt from this ballot (ex - add1, add2, add3, ...): `);
 
-  const ballot = Ballot(startTime, commitDuration, revealDuration, proposals, checkpointId, exemptions);
+    const ballot = Ballot(startTime, commitDuration, revealDuration, proposals, checkpointId, exemptions);
 
-  if (ballot.proposalDetails.length === 1) {
-    // Statutory ballot
-    let action;
-    if (ballot.checkpointId === 0) {
-      // Standard
-      if (exemptions) {
-        // With exemptions
-        action = currentVotingModule.methods.createStatutoryBallotWithExemption(
-          web3.utils.asciiToHex(name),
-          ballot.startTime,
-          ballot.commitDuration,
-          ballot.revealDuration,
-          ballot.proposalTitles.join(','),
-          web3.utils.asciiToHex(ballot.proposalDetails[0]),
-          ballot.choices.join(','),
-          ballot.choicesCounts[0],
-          ballot.exemptions
-        )
-      } else {
+    if (ballot.proposalDetails.length === 1) {
+      // Statutory ballot
+      let action;
+      if (ballot.checkpointId === 0) {
         // Standard
-        action = currentVotingModule.methods.createStatutoryBallot(
-          web3.utils.asciiToHex(name),
-          ballot.startTime,
-          ballot.commitDuration,
-          ballot.revealDuration,
-          ballot.proposalTitles.join(','),
-          web3.utils.asciiToHex(ballot.proposalDetails[0]),
-          ballot.choices.join(','),
-          ballot.choicesCounts[0]
-        )
+        if (exemptions) {
+          // With exemptions
+          action = currentVotingModule.methods.createStatutoryBallotWithExemption(
+            web3.utils.asciiToHex(name),
+            ballot.startTime,
+            ballot.commitDuration,
+            ballot.revealDuration,
+            ballot.proposalTitles.join(','),
+            web3.utils.asciiToHex(ballot.proposalDetails[0]),
+            ballot.choices.join(','),
+            ballot.choicesCounts[0],
+            ballot.exemptions
+          )
+        } else {
+          // Standard
+          action = currentVotingModule.methods.createStatutoryBallot(
+            web3.utils.asciiToHex(name),
+            ballot.startTime,
+            ballot.commitDuration,
+            ballot.revealDuration,
+            ballot.proposalTitles.join(','),
+            web3.utils.asciiToHex(ballot.proposalDetails[0]),
+            ballot.choices.join(','),
+            ballot.choicesCounts[0]
+          )
+        }
+      } else {
+        // Custom
+        if (exemptions) {
+          // With exemptions
+          action = currentVotingModule.methods.createCustomStatutoryBallotWithExemption(
+            web3.utils.asciiToHex(name),
+            ballot.startTime,
+            ballot.commitDuration,
+            ballot.revealDuration,
+            ballot.proposalTitles.join(','),
+            web3.utils.asciiToHex(ballot.proposalDetails[0]),
+            ballot.choices.join(','),
+            ballot.choicesCounts[0],
+            ballot.checkpointId,
+            ballot.exemptions
+          )
+        } else {
+          // Standard
+          action = currentVotingModule.methods.createCustomStatutoryBallot(
+            web3.utils.asciiToHex(name),
+            ballot.startTime,
+            ballot.commitDuration,
+            ballot.revealDuration,
+            ballot.proposalTitles.join(','),
+            web3.utils.asciiToHex(ballot.proposalDetails[0]),
+            ballot.choices.join(','),
+            ballot.choicesCounts[0],
+            ballot.checkpointId
+          )
+        }
       }
+      const receipt = await common.sendTransaction(action);
+      const event = common.getEventFromLogs(currentVotingModule._jsonInterface, receipt.logs, 'StatutoryBallotCreated');
+      console.log(chalk.green(`Statutory ballot has been created successfully!`));
     } else {
-      // Custom
-      if (exemptions) {
-        // With exemptions
-        action = currentVotingModule.methods.createCustomStatutoryBallotWithExemption(
-          web3.utils.asciiToHex(name),
-          ballot.startTime,
-          ballot.commitDuration,
-          ballot.revealDuration,
-          ballot.proposalTitles.join(','),
-          web3.utils.asciiToHex(ballot.proposalDetails[0]),
-          ballot.choices.join(','),
-          ballot.choicesCounts[0],
-          ballot.checkpointId,
-          ballot.exemptions
-        )
-      } else {
+      // Cumulative ballot
+      let action;
+      if (ballot.checkpointId === 0) {
         // Standard
-        action = currentVotingModule.methods.createCustomStatutoryBallot(
-          web3.utils.asciiToHex(name),
-          ballot.startTime,
-          ballot.commitDuration,
-          ballot.revealDuration,
-          ballot.proposalTitles.join(','),
-          web3.utils.asciiToHex(ballot.proposalDetails[0]),
-          ballot.choices.join(','),
-          ballot.choicesCounts[0],
-          ballot.checkpointId
-        )
+        if (exemptions) {
+          // With exemptions
+          action = currentVotingModule.methods.createCumulativeBallotWithExemption(
+            web3.utils.asciiToHex(name),
+            ballot.startTime,
+            ballot.commitDuration,
+            ballot.revealDuration,
+            ballot.proposalTitles.join(','),
+            ballot.proposalDetails.map(pd => web3.utils.asciiToHex(pd)),
+            ballot.choices.join(','),
+            ballot.choicesCounts,
+            ballot.exemptions
+          )
+        } else {
+          // Standard
+          action = currentVotingModule.methods.createCumulativeBallot(
+            web3.utils.asciiToHex(name),
+            ballot.startTime,
+            ballot.commitDuration,
+            ballot.revealDuration,
+            ballot.proposalTitles.join(','),
+            ballot.proposalDetails.map(pd => web3.utils.asciiToHex(pd)),
+            ballot.choices.join(','),
+            ballot.choicesCounts
+          )
+        }
+      } else {
+        // Custom
+        if (exemptions) {
+          // With exemptions
+          action = currentVotingModule.methods.createCustomCumulativeBallotWithExemption(
+            web3.utils.asciiToHex(name),
+            ballot.startTime,
+            ballot.commitDuration,
+            ballot.revealDuration,
+            ballot.proposalTitles.join(','),
+            ballot.proposalDetails.map(pd => web3.utils.asciiToHex(pd)),
+            ballot.choices.join(','),
+            ballot.choicesCounts,
+            ballot.checkpointId,
+            ballot.exemptions
+          )
+        } else {
+          // Standard
+          action = currentVotingModule.methods.createCustomCumulativeBallot(
+            web3.utils.asciiToHex(name),
+            ballot.startTime,
+            ballot.commitDuration,
+            ballot.revealDuration,
+            ballot.proposalTitles.join(','),
+            ballot.proposalDetails.map(pd => web3.utils.asciiToHex(pd)),
+            ballot.choices.join(','),
+            ballot.choicesCounts,
+            ballot.checkpointId
+          )
+        }
       }
+      const receipt = await common.sendTransaction(action);
+      const event = common.getEventFromLogs(currentVotingModule._jsonInterface, receipt.logs, 'CumulativeBallotCreated');
+      console.log(chalk.green(`Cumulative ballot has been created successfully!`));
     }
-    const receipt = await common.sendTransaction(action);
-    const event = common.getEventFromLogs(currentVotingModule._jsonInterface, receipt.logs, 'StatutoryBallotCreated');
-    console.log(chalk.green(`Statutory ballot has been created successfully!`));
-  } else {
-    // Cumulative ballot
-    let action;
-    if (ballot.checkpointId === 0) {
-      // Standard
-      if (exemptions) {
-        // With exemptions
-        action = currentVotingModule.methods.createCumulativeBallotWithExemption(
-          web3.utils.asciiToHex(name),
-          ballot.startTime,
-          ballot.commitDuration,
-          ballot.revealDuration,
-          ballot.proposalTitles.join(','),
-          ballot.proposalDetails.map(pd => web3.utils.asciiToHex(pd)),
-          ballot.choices.join(','),
-          ballot.choicesCounts,
-          ballot.exemptions
-        )
-      } else {
-        // Standard
-        action = currentVotingModule.methods.createCumulativeBallot(
-          web3.utils.asciiToHex(name),
-          ballot.startTime,
-          ballot.commitDuration,
-          ballot.revealDuration,
-          ballot.proposalTitles.join(','),
-          ballot.proposalDetails.map(pd => web3.utils.asciiToHex(pd)),
-          ballot.choices.join(','),
-          ballot.choicesCounts
-        )
-      }
-    } else {
-      // Custom
-      if (exemptions) {
-        // With exemptions
-        action = currentVotingModule.methods.createCustomCumulativeBallotWithExemption(
-          web3.utils.asciiToHex(name),
-          ballot.startTime,
-          ballot.commitDuration,
-          ballot.revealDuration,
-          ballot.proposalTitles.join(','),
-          ballot.proposalDetails.map(pd => web3.utils.asciiToHex(pd)),
-          ballot.choices.join(','),
-          ballot.choicesCounts,
-          ballot.checkpointId,
-          ballot.exemptions
-        )
-      } else {
-        // Standard
-        action = currentVotingModule.methods.createCustomCumulativeBallot(
-          web3.utils.asciiToHex(name),
-          ballot.startTime,
-          ballot.commitDuration,
-          ballot.revealDuration,
-          ballot.proposalTitles.join(','),
-          ballot.proposalDetails.map(pd => web3.utils.asciiToHex(pd)),
-          ballot.choices.join(','),
-          ballot.choicesCounts,
-          ballot.checkpointId
-        )
-      }
-    }
-    const receipt = await common.sendTransaction(action);
-    const event = common.getEventFromLogs(currentVotingModule._jsonInterface, receipt.logs, 'CumulativeBallotCreated');
-    console.log(chalk.green(`Cumulative ballot has been created successfully!`));
   }
 }
 

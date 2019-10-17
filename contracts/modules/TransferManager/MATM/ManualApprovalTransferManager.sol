@@ -215,6 +215,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
         index--; //Index is stored in an incremented form. 0 represnts non existant.
         ManualApproval storage approval = approvals[index];
         uint256 allowance = approval.allowance;
+        uint256 initialAllowance = approval.initialAllowance;
         uint256 expiryTime = approval.expiryTime;
         require(allowance != 0, "Approval has been exhausted");
         require(expiryTime > now, "Approval has expired");
@@ -223,16 +224,24 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
             if (_increase) {
                 // Allowance get increased
                 allowance = allowance.add(_changeInAllowance);
+                initialAllowance = initialAllowance.add(_changeInAllowance);
             } else {
                 // Allowance get decreased
                 if (_changeInAllowance >= allowance) {
                     allowance = 0;
+                    if (_changeInAllowance >= initialAllowance) {
+                        initialAllowance = 0;
+                    }
+                    else {
+                        initialAllowance = initialAllowance.sub(_changeInAllowance.sub(allowance));
+                    }
                 } else {
-                    allowance = allowance - _changeInAllowance;
+                    allowance = allowance.sub(_changeInAllowance);
+                    initialAllowance = initialAllowance.sub(_changeInAllowance);
                 }
             }
-            approval.initialAllowance = allowance;
             approval.allowance = allowance;
+            approval.initialAllowance = initialAllowance;
         }
         // Greedy storage technique
         if (expiryTime != _expiryTime) {

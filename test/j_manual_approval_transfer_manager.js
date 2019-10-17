@@ -625,7 +625,7 @@ contract("ManualApprovalTransferManager", accounts => {
             let data = await I_ManualApprovalTransferManager.approvals.call(0);
             assert.equal(data[0], account_investor1);
             assert.equal(data[1], account_investor4);
-            assert.equal(data[2].toString(), web3.utils.toWei("5"));
+            assert.equal(data[2].toString(), web3.utils.toWei("6"));
             assert.equal(data[3].toString(), web3.utils.toWei("5"));
             assert.equal(data[4].toString(), expiryTimeMA);
             assert.equal(web3.utils.toUtf8(data[5]), "New Description");
@@ -656,7 +656,7 @@ contract("ManualApprovalTransferManager", accounts => {
             let data = await I_ManualApprovalTransferManager.approvals.call(0);
             assert.equal(data[0], account_investor1);
             assert.equal(data[1], account_investor4);
-            assert.equal(data[2].toString(), web3.utils.toWei("1"));
+            assert.equal(data[2].toString(), web3.utils.toWei("5"));
             assert.equal(data[3].toString(), web3.utils.toWei("1"));
             assert.equal(data[4].toString(), expiryTimeMA);
             assert.equal(web3.utils.toUtf8(data[5]), "New Description");

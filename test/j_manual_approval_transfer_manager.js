@@ -390,10 +390,10 @@ contract("ManualApprovalTransferManager", accounts => {
             assert.equal(tx[1][0], account_investor4);
             console.log("2");
             assert.equal(tx[2][0], web3.utils.toWei("3"));
-            console.log("3");
-            assert.equal(tx[3][0].toString(), approvalTime);
             console.log("4");
-            assert.equal(web3.utils.toUtf8(tx[4][0]), "DESCRIPTION");
+            assert.equal(tx[4][0].toString(), approvalTime);
+            console.log("5");
+            assert.equal(web3.utils.toUtf8(tx[5][0]), "DESCRIPTION");
         })
 
         it("Should fail to add the same manual approval for the same `_from` & `_to` address", async() => {

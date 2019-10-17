@@ -9,8 +9,8 @@ contract ManualApprovalTransferManagerStorage {
     struct ManualApproval {
         address from;
         address to;
+        uint256 approvedAllowance;
         uint256 allowance;
-        uint256 remainingAllowance;
         uint256 expiryTime;
         bytes32 description;
     }

@@ -231,7 +231,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
                     allowance = allowance - _changeInAllowance;
                 }
             }
-            approval.approvedAllowance = allowance;
+            approval.initialAllowance = allowance;
             approval.allowance = allowance;
         }
         // Greedy storage technique
@@ -348,7 +348,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
 
         address[] memory from = new address[](counter);
         address[] memory to = new address[](counter);
-        uint256[] memory approvedAllowance = new uint256[](counter);
+        uint256[] memory initialAllowance = new uint256[](counter);
         uint256[] memory allowance = new uint256[](counter);
         uint256[] memory expiryTime = new uint256[](counter);
         bytes32[] memory description = new bytes32[](counter);
@@ -360,14 +360,14 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
 
                 from[counter]=approvals[i].from;
                 to[counter]=approvals[i].to;
-                approvedAllowance[counter]=approvals[i].approvedAllowance;
+                initialAllowance[counter]=approvals[i].initialAllowance;
                 allowance[counter]=approvals[i].allowance;
                 expiryTime[counter]=approvals[i].expiryTime;
                 description[counter]=approvals[i].description;
                 counter ++;
             }
         }
-        return (from, to, approvedAllowance, allowance, expiryTime, description);
+        return (from, to, initialAllowance, allowance, expiryTime, description);
     }
 
     /**
@@ -387,7 +387,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
             ManualApproval storage approval = approvals[index];
             return(
                 approval.expiryTime,
-                approval.approvedAllowance,
+                approval.initialAllowance,
                 approval.allowance,
                 approval.description
             );
@@ -414,7 +414,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
         uint256 approvalsLength = approvals.length;
         address[] memory from = new address[](approvalsLength);
         address[] memory to = new address[](approvalsLength);
-        uint256[] memory approvedAllowance = new uint256[](approvalsLength);
+        uint256[] memory initialAllowance = new uint256[](approvalsLength);
         uint256[] memory allowance = new uint256[](approvalsLength);
         uint256[] memory expiryTime = new uint256[](approvalsLength);
         bytes32[] memory description = new bytes32[](approvalsLength);
@@ -423,14 +423,14 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
 
             from[i]=approvals[i].from;
             to[i]=approvals[i].to;
-            approvedAllowance[i]=approvals[i].approvedAllowance;
+            initialAllowance[i]=approvals[i].initialAllowance;
             allowance[i]=approvals[i].allowance;
             expiryTime[i]=approvals[i].expiryTime;
             description[i]=approvals[i].description;
 
         }
 
-        return (from, to, approvedAllowance, allowance, expiryTime, description);
+        return (from, to, initialAllowance, allowance, expiryTime, description);
 
     }
 

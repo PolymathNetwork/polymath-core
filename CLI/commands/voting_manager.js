@@ -25,7 +25,7 @@ const EXEMPTED_VOTERS_DATA_CSV = `${__dirname}/../data/Checkpoint/Voting/exempte
 async function executeApp() {
   console.log('\n', chalk.blue('Voting manager - Main Menu', '\n'));
 
-  const vModules = await common.getAllModulesByType(securityToken, gbl.constants.MODULES_TYPES.DIVIDENDS);
+  const vModules = await common.getAllModulesByType(securityToken, gbl.constants.MODULES_TYPES.DIVIDENDS, polyToken);
   const nonArchivedModules = vModules.filter(m => !m.archived);
   if (nonArchivedModules.length > 0) {
     console.log(`Voting modules attached:`);

@@ -107,7 +107,7 @@ async function inputSymbol(symbol) {
     let generalTransferManagerABI = abis.generalTransferManager();
     generalTransferManager = new web3.eth.Contract(generalTransferManagerABI, gtmModules[0]);
 
-    let stoModules = await common.getAllModulesByType(securityToken, gbl.constants.MODULES_TYPES.STO);
+    let stoModules = await common.getAllModulesByType(securityToken, gbl.constants.MODULES_TYPES.STO, polyToken);
     let nonArchivedModules = stoModules.filter(m => !m.archived);
     if (nonArchivedModules.length == 0) {
         console.log(chalk.red(`There is no STO module attached to the ${STSymbol.toUpperCase()} Token. No further actions can be taken.`));

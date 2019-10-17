@@ -20,7 +20,7 @@ const CHANGE_PERMISSIONS_DATA_CSV = `${__dirname}/../data/Permission/change_perm
 async function executeApp() {
   console.log('\n', chalk.blue('Permission Manager - Main Menu', '\n'));
   
-  let pmModules = await common.getAllModulesByType(securityToken, gbl.constants.MODULES_TYPES.PERMISSION);
+  let pmModules = await common.getAllModulesByType(securityToken, gbl.constants.MODULES_TYPES.PERMISSION, polyToken);
   let nonArchivedModules = pmModules.filter(m => !m.archived);
   if (nonArchivedModules.length > 0) {
     console.log(`Permission Manager modules attached:`);

@@ -445,7 +445,7 @@ module.exports = function(deployer, network, accounts) {
         .then(() => {
             // D) Deploy the AdvancedPLCRVotingCheckpoint Contract (Factory used to generate the AdvancedPLCRVotingCheckpoint contract use
             // to governance purpose for a company)
-            return deployer.deploy(AdvancedPLCRVotingCheckpointFactory, new BN(0), new BN(0), AdvancedPLCRVotingCheckpointLogic.address, polymathRegistry.address, {
+            return deployer.deploy(AdvancedPLCRVotingCheckpointFactory, new BN(0), initRegFee, AdvancedPLCRVotingCheckpointLogic.address, polymathRegistry.address, {
                 from: PolymathAccount
             });
         })

@@ -55,14 +55,16 @@ async function addModule (securityToken, polyToken, factoryAddress, moduleABI, g
   const moduleUsageCost = new web3.utils.BN(await moduleFactory.methods.usageCostInPoly().call());
   console.log(`This module has an usage cost of ${web3.utils.fromWei(moduleUsageCost)} POLY.`);
   const budgetAmount = new web3.utils.BN(web3.utils.toWei(input.readNumberGreaterThanOrEqual(0, `Enter the amount of POLY you want to set as budget for this module: `)));
-  const issuerBalance = new web3.utils.BN(await polyToken.methods.balanceOf(Issuer.address).call());
-  if (issuerBalance.lt(budgetAmount)) {
-    console.log(chalk.red(`\n**************************************************************************************************************************************************`));
-    console.log(chalk.red(`Not enough balance to set the ${moduleName} budget. Requires ${web3.utils.fromWei(budgetAmount)} POLY but have ${web3.utils.fromWei(issuerBalance)} POLY. Access POLY faucet to get the POLY to complete this txn`));
-    console.log(chalk.red(`**************************************************************************************************************************************************\n`));
-    process.exit(0);
+  if (readlineSync.keyInYNStrict(`Do you want to transfer ${web3.utils.fromWei(budgetAmount)} POLY to Security Token contract now?`)) {
+    const issuerBalance = new web3.utils.BN(await polyToken.methods.balanceOf(Issuer.address).call());
+    transferAmount = transferAmount.add(budgetAmount)
+    if (issuerBalance.lt(transferAmount)) {
+      console.log(chalk.red(`\n**************************************************************************************************************************************************`));
+      console.log(chalk.red(`Not enough balance to set the ${moduleName} budget. Requires ${web3.utils.fromWei(budgetAmount)} POLY but have ${web3.utils.fromWei(issuerBalance)} POLY. Access POLY faucet to get the POLY to complete this txn`));
+      console.log(chalk.red(`**************************************************************************************************************************************************\n`));
+      process.exit(0);
+    }
   }
-  transferAmount = transferAmount.add(budgetAmount)
 
   let bytes = web3.utils.fromAscii('', 16);
   if (typeof getInitializeData !== 'undefined') {
@@ -96,8 +98,8 @@ async function getAvailableModules(moduleRegistry, moduleType, stAddress) {
   return moduleList;
 }
 
-async function getAllModulesByType (securityToken, type) {
-  function ModuleInfo (_moduleType, _name, _address, _factoryAddress, _archived, _paused, _version, _label) {
+async function getAllModulesByType (securityToken, type, polyToken) {
+  function ModuleInfo (_moduleType, _name, _address, _factoryAddress, _archived, _paused, _version, _label, _remainingBudget) {
     this.name = _name;
     this.type = _moduleType;
     this.address = _address;
@@ -106,6 +108,7 @@ async function getAllModulesByType (securityToken, type) {
     this.paused = _paused;
     this.version = _version;
     this.label = _label;
+    this.remainingBudget = _remainingBudget;
   }
 
   let modules = [];
@@ -116,6 +119,11 @@ async function getAllModulesByType (securityToken, type) {
     let pausedTemp = await contractTemp.methods.paused().call();
     let factory = new web3.eth.Contract(abis.moduleFactory(), details[2]);
     let versionTemp = await factory.methods.version().call();
+    let usageCost = await factory.methods.usageCostInPoly().call();
+    let remainingBudget;
+    if (usageCost !== '0') {
+      remainingBudget = web3.utils.fromWei(await polyToken.methods.allowance(securityToken.options.address, details[1]).call());
+    }
     modules.push(new ModuleInfo(
       type,
       web3.utils.hexToUtf8(details[0]),
@@ -124,7 +132,8 @@ async function getAllModulesByType (securityToken, type) {
       details[3],
       pausedTemp,
       versionTemp,
-      web3.utils.hexToUtf8(details[5])
+      web3.utils.hexToUtf8(details[5]),
+      remainingBudget
       ));
   }
 

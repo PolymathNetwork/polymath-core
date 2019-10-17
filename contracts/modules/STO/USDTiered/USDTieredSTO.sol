@@ -93,6 +93,8 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @param _wallet Ethereum account address to hold the funds
      * @param _treasuryWallet Ethereum account address to receive unsold tokens
      * @param _usdTokens Contract address of the stable coins
+     * @param _customOracleAddresses Addresses of the custom oracles
+     * @param _denominatedCurrencySymbol Symbol of the denominated currency
      */
     function configure(
         uint256 _startTime,

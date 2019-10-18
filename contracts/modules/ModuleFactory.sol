@@ -31,9 +31,10 @@ contract ModuleFactory is IModuleFactory, Ownable {
 
     bool public isCostInPoly;
     uint256 public setupCost;
-    uint256 public usageCost;
+    uint256 usageFee;
+    uint256 tempUsageFee;
     uint256 public lastTimeUsageCostChange;
-    uint256 internal constant LOCKPERIOD = 24 hours;
+    uint256 internal constant COLDPERIOD = 24 hours;
 
     string constant POLY_ORACLE = "StablePolyUsdOracle";
 
@@ -49,7 +50,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      */
     constructor(uint256 _setupCost, uint256 _usageCost, address _polymathRegistry, bool _isCostInPoly) public {
         setupCost = _setupCost;
-        usageCost = _usageCost;
+        usageFee = _usageCost;
         lastTimeUsageCostChange = now;
         polymathRegistry = IPolymathRegistry(_polymathRegistry);
         isCostInPoly = _isCostInPoly;
@@ -94,10 +95,17 @@ contract ModuleFactory is IModuleFactory, Ownable {
     }
 
     function _changeUsageCost(uint256 _usageCost) internal {
-        require(now.sub(lastTimeUsageCostChange) > LOCKPERIOD, "Under lock period");
         lastTimeUsageCostChange = now;
-        emit ChangeUsageCost(usageCost, _usageCost);
-        usageCost = _usageCost;
+        emit ChangeUsageCost(usageFee, _usageCost);
+        tempUsageFee = usageFee;
+        usageFee = _usageCost;
+    }
+
+    function usageCost() public view returns(uint256 usdUsageCost) {
+        if (now > lastTimeUsageCostChange.add(COLDPERIOD))
+            return usageFee;
+        else
+            return tempUsageFee;
     }
 
     /**
@@ -110,7 +118,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
         emit ChangeSetupCost(setupCost, _setupCost);
         emit ChangeCostType(isCostInPoly, _isCostInPoly);
         setupCost = _setupCost;
-        if (usageCost != _usageCost) {
+        if (usageFee != _usageCost) {
             _changeUsageCost(_usageCost);
         }
         isCostInPoly = _isCostInPoly;
@@ -207,10 +215,11 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @notice Get the usage cost of the module
      */
     function usageCostInPoly() public returns (uint256) {
+        uint256 _usageCost = usageCost();
         if (isCostInPoly)
-            return usageCost;
+            return _usageCost;
         uint256 polyRate = IOracle(polymathRegistry.getAddress(POLY_ORACLE)).getPrice();
-        return DecimalMath.div(usageCost, polyRate);
+        return DecimalMath.div(_usageCost, polyRate);
     }
 
     /**

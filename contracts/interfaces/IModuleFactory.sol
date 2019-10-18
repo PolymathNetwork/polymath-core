@@ -43,12 +43,12 @@ interface IModuleFactory {
     /**
      * @notice Get the setup cost of the module in USD
      */
-    function setupCost() external returns(uint256 usdSetupCost);
+    function setupCost() external view returns(uint256 usdSetupCost);
 
     /**
      * @notice Get the usage cost of the module in USD
      */
-    function usageCost() external returns(uint256 usdUsageCost);
+    function usageCost() external view returns(uint256 usdUsageCost);
 
     /**
      * @notice Type of the Module factory

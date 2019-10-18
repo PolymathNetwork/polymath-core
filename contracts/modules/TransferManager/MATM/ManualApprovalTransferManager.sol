@@ -228,13 +228,13 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
             } else {
                 // Allowance get decreased
                 if (_changeInAllowance >= allowance) {
-                    allowance = 0;
                     if (_changeInAllowance >= initialAllowance) {
                         initialAllowance = 0;
                     }
                     else {
-                        initialAllowance = initialAllowance.sub(_changeInAllowance.sub(allowance));
+                        initialAllowance = initialAllowance.sub(allowance);
                     }
+                    allowance = 0;
                 } else {
                     allowance = allowance.sub(_changeInAllowance);
                     initialAllowance = initialAllowance.sub(_changeInAllowance);

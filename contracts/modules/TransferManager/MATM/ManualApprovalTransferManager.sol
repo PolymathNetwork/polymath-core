@@ -25,7 +25,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
         uint256 _expiryTime,
         uint256 _allowance,
         bytes32 _description,
-        address indexed _edittedBy
+        address indexed _editedBy
     );
 
     event RevokeManualApproval(

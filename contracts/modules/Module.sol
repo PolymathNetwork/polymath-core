@@ -99,9 +99,8 @@ contract Module is IModule, ModuleStorage, Pausable {
      */
     function _deductUsageFee() internal {
         uint256 _usageCost = IModuleFactory(factory).usageCostInPoly();
-        if (_usageCost > 0) {
-            address factoryOwner = IModuleFactory(factory).owner();
-            require(factoryOwner != address(0), "Invalid owner");
+        address factoryOwner = IModuleFactory(factory).owner();
+        if (_usageCost > 0 && factoryOwner != address(0)) {
             require(polyToken.transferFrom(address(securityToken), factoryOwner, _usageCost), "Insufficient allowance");
             emit UsageFeeDeducted(factoryOwner, address(securityToken), address(this));
         }

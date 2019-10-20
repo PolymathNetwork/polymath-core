@@ -74,6 +74,31 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
         return new BN(web3.utils.toWei(value.toString()));
     }
 
+    async function _createDummyBallot(name) {
+        name = web3.utils.toHex(name);
+        const startTime = (await currentTime());
+        const commitDuration = new BN(duration.hours(4));
+        const revealDuration = new BN(duration.hours(4));
+        const proposalTitle = "Titile 1";
+        const details = web3.utils.toHex("Offchain detaiils");
+        const choices = "";
+        const noOfChoices = 0;
+        const tx = await I_AdvancedPLCRVotingCheckpoint.createStatutoryBallot(
+            name,
+            startTime,
+            commitDuration,
+            revealDuration,
+            proposalTitle,
+            details,
+            choices,
+            noOfChoices, {
+                from: token_owner
+            }
+        );
+        const ballotId = tx.logs[0].args._ballotId;
+        return ballotId;
+    }
+
     before(async () => {
         // Accounts setup
         account_polymath = accounts[0];
@@ -993,8 +1018,6 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             );
             assert.equal(await I_SecurityToken.currentCheckpointId.call(), 4);
             assert.equal(web3.utils.toUtf8(tx.logs[0].args._name), "Ballot 4");
-            // @FIXME uncomment this assertion once we make sure that 0x0 addresses are filtered out of the event.
-            // assert.isFalse(tx.logs[1].args._exemptedAddresses.includes(address_zero), "0x0 address was NOT filtered out as expected");
             assert.equal(tx.logs[0].args._checkpointId, 4);
             assert.equal(tx.logs[0].args._ballotId, 3);
             assert.equal(tx.logs[0].args._startTime, startTime.toString());
@@ -1601,9 +1624,31 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
 
     describe('Exempted voters management', async () => {
         it("Default exemptions", async () => {
-            const defaultExemptionVotersList = await I_AdvancedPLCRVotingCheckpoint.getDefaultExemptionVotersList.call();
+            // Create a dummy ballot
+            const ballotId = await _createDummyBallot("Exemptions 1");
 
-            assert.equal(defaultExemptionVotersList.length, 0, 'defaultExemptionVotersList should be empty');
+            const ballot0Exempt = await I_AdvancedPLCRVotingCheckpoint.getExemptedVotersByBallot(ballotId);
+            assert.deepEqual(ballot0Exempt.length, 0, "Exempted list of a ballot should be empty");
+
+            const ballotNExempt = await I_AdvancedPLCRVotingCheckpoint.getExemptedVotersByBallot(ballotId.add(new BN(1)))
+            assert.deepEqual(ballotNExempt.length, 0, "Exempted list of non-existent ballot should be empty");
+
+            await increaseTime(duration.hours(5));
+
+            // Attempt to add investor 1 to default exemptions list - should fail because there's a running ballot.
+            await catchRevert(I_AdvancedPLCRVotingCheckpoint.changeDefaultExemptedVotersList(account_investor1, true, {
+                from: token_owner
+            }));
+            // Attempt to remove investor 1 and add investor 2 to exemptions list - should fail because there's a running ballot.
+            await catchRevert(I_AdvancedPLCRVotingCheckpoint.changeDefaultExemptedVotersListMulti([account_investor1, account_investor2], [false, true], {
+                from: token_owner
+            }));
+            const defaultExemptionVotersList = await I_AdvancedPLCRVotingCheckpoint.getDefaultExemptionVotersList.call();
+            assert.equal(defaultExemptionVotersList.length, 0, 'defaultExemptionVotersList should still be empty');
+
+            // Move beyond any running ballots
+            await increaseTime(duration.years(1));
+
             // Add investor 1 to default exemptions list
             await I_AdvancedPLCRVotingCheckpoint.changeDefaultExemptedVotersList(account_investor1, true, {
                 from: token_owner
@@ -1616,34 +1661,13 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             const post_defaultExemptionVotersList = await I_AdvancedPLCRVotingCheckpoint.getDefaultExemptionVotersList.call();
             assert.deepEqual(post_defaultExemptionVotersList, [account_investor2], `Default exemptions should include ${account_investor2} only`);
 
-            // Create a dummy ballot
-            const name = web3.utils.toHex("Exemptions");
-            const startTime = (await currentTime());
-            const commitDuration = new BN(duration.hours(4));
-            const revealDuration = new BN(duration.hours(4));
-            const proposalTitle = "Titile 1";
-            const details = web3.utils.toHex("Offchain detaiils");
-            const choices = "";
-            const noOfChoices = 0;
-            const tx = await I_AdvancedPLCRVotingCheckpoint.createStatutoryBallot(
-                name,
-                startTime,
-                commitDuration,
-                revealDuration,
-                proposalTitle,
-                details,
-                choices,
-                noOfChoices, {
-                    from: token_owner
-                }
-            );
-            const ballotId = tx.logs[0].args._ballotId;
+            // Create another dummy ballot
+            const ballotId2 = await _createDummyBallot("Exemptions 2");
+            const ballot2Exempt = await I_AdvancedPLCRVotingCheckpoint.getExemptedVotersByBallot(ballotId2);
+            assert.deepEqual(ballot2Exempt, [account_investor2], "Exempted list of a ballot should also include default exempted addresses");
 
-            const ballot0Exempt = await I_AdvancedPLCRVotingCheckpoint.getExemptedVotersByBallot(ballotId);
-            assert.deepEqual(ballot0Exempt, [account_investor2], "Exempted list of a ballot should also include default exempted addresses");
-
-            const ballotNExempt = await I_AdvancedPLCRVotingCheckpoint.getExemptedVotersByBallot(ballotId.add(new BN(1)))
-            assert.deepEqual(ballotNExempt.length, 0, "Exempted list of non-existent ballot should be empty");
+            const ballotN2Exempt = await I_AdvancedPLCRVotingCheckpoint.getExemptedVotersByBallot(ballotId2.add(new BN(1)))
+            assert.deepEqual(ballotN2Exempt.length, 0, "Exempted list of non-existent ballot should be empty");
         });
     });
 
@@ -1651,7 +1675,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
         it('Returns all ballots data', async () => {
             const expected = {
                 ballotIds: [
-                    0, 1, 2, 3, 4, 5, 6, 7
+                    0, 1, 2, 3, 4, 5, 6, 7, 8
                 ],
                 names: [
                     "Ballot 1",
@@ -1661,24 +1685,25 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                     "Ballot 5",
                     "Ballot 6",
                     "Ballot 6",
-                    "Exemptions"
+                    "Exemptions 1",
+                    "Exemptions 2"
                 ],
                 totalProposals: [
-                    1, 1, 1, 1, 3, 3, 3, 1
+                    1, 1, 1, 1, 3, 3, 3, 1, 1
                 ],
                 currentStages: [
-                    3, 3, 3, 3, 3, 3, 1, 1
+                    3, 3, 3, 3, 3, 3, 3, 3, 1
                 ],
-                isCancelled: [false, false, false, false, false, false, true, false]
+                isCancelled: [false, false, false, false, false, false, true, false, false]
             }
 
             const allBallotsData = await I_AdvancedPLCRVotingCheckpoint.getAllBallots();
 
-            assert.deepEqual(expected.ballotIds, allBallotsData.ballotIds.map(id => parseInt(id.toString())));
-            assert.deepEqual(expected.names, allBallotsData.names.map(name => web3.utils.hexToUtf8(name)));
-            assert.deepEqual(expected.totalProposals, allBallotsData.totalProposals.map(tp => parseInt(tp.toString())));
-            assert.deepEqual(expected.currentStages, allBallotsData.currentStages.map(stage => parseInt(stage.toString())));
-            assert.deepEqual(expected.isCancelled, allBallotsData.isCancelled);
+            assert.deepEqual(expected.ballotIds, allBallotsData.ballotIds.map(id => parseInt(id.toString())), "IDs match");
+            assert.deepEqual(expected.names, allBallotsData.names.map(name => web3.utils.hexToUtf8(name)), "Names match");
+            assert.deepEqual(expected.totalProposals, allBallotsData.totalProposals.map(tp => parseInt(tp.toString())), "Proposal count match");
+            assert.deepEqual(expected.currentStages, allBallotsData.currentStages.map(stage => parseInt(stage.toString())), "Current stage match");
+            assert.deepEqual(expected.isCancelled, allBallotsData.isCancelled, "Cancelled status match");
         })
     })
 });

@@ -296,10 +296,6 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
             Ballot storage ballot = ballots[_ballotId];
             if (_exemptedAddresses[i] != address(0))
                 ballot.exemptedVoters[_exemptedAddresses[i]] = true;
-            // @FIXME uncomment this once we decrease contract size.
-            // else {
-            //     delete _exemptedAddresses[i];
-            // }
         }
         emit VotersExempted(_ballotId, _exemptedAddresses);
     }
@@ -572,11 +568,11 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         uint256 length = ballots.length;
         isAnyBallotActive = false;
         if (length != 0) {
-            uint256 count = length -1;
-            for (uint256 i = count; i >= 0 && i < count; i--) {
+            uint256 count = length - 1;
+            // "i <= count" is to prevert underflow.
+            for (uint256 i = count; i >= 0 && i <= count; i--) {
                 Stage currentStage = getCurrentBallotStage(i);
-                // @FIXME shouldn't we be ORing commit and reveal stages, instead?
-                if (currentStage == Stage.COMMIT && currentStage == Stage.REVEAL && !ballots[i].isCancelled) {
+                if (!ballots[i].isCancelled && (currentStage == Stage.COMMIT || currentStage == Stage.REVEAL)) {
                     isAnyBallotActive = true;
                     break;
                 }
@@ -608,9 +604,6 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
      * @return address[] list of invesotrs who are remain to vote
      */
     function getPendingInvestorToVote(uint256 _ballotId) external view returns(address[] memory pendingInvestors) {
-        // @TODO for clarity, shall we revert instead of returning an empty array?
-        // if so, can we change it into a modifier?
-        // btw there are three other similar checks in different functions that can be refactored similarly.
         if (_ballotId >= ballots.length)
             return pendingInvestors;
         else {

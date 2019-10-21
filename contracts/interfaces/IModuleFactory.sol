@@ -7,6 +7,7 @@ interface IModuleFactory {
     
     event ChangeSetupCost(uint256 _oldSetupCost, uint256 _newSetupCost);
     event ChangeUsageCost(uint256 _oldUsageCost, uint256 _newUsageCost);
+    event UsageCostProposed(uint256 _proposedFee, uint256 _currentFee);
     event ChangeCostType(bool _isOldCostInPoly, bool _isNewCostInPoly);
     event GenerateModuleFromFactory(
         address _module,
@@ -19,6 +20,11 @@ interface IModuleFactory {
     event ChangeSTVersionBound(string _boundType, uint8 _major, uint8 _minor, uint8 _patch);
     //Should create an instance of the Module, or throw
     function deploy(bytes calldata _data) external returns(address moduleAddress);
+
+    /**
+     * @notice Get factory owner
+     */
+    function owner() external view returns (address factoryOwner);
 
     /**
      * @notice Get the tags related to the module factory
@@ -51,6 +57,16 @@ interface IModuleFactory {
     function usageCost() external view returns(uint256 usdUsageCost);
 
     /**
+     * @notice Get the usage cost of the module in USD
+     */
+    function proposedUsageCost() external view returns(uint256 usdProposedUsageCost);
+
+    /**
+     * @notice Get the usage cost proposal time
+     */
+    function usageCostProposedAt() external view returns(uint256 usageCostProposedAtTime);
+
+    /**
      * @notice Type of the Module factory
      */
     function getTypes() external view returns(uint8[] memory moduleTypes);
@@ -68,9 +84,14 @@ interface IModuleFactory {
 
     /**
      * @notice Used to change the usage cost
-     * @param _usageCost new usage cost
      */
-    function changeUsageCost(uint256 _usageCost) external;
+    function changeUsageCost() external;
+
+    /**
+     * @notice Used to propose the usage cost
+     * @param _usageCostProposed Proposed usage cost amount
+     */
+    function proposeUsageCost(uint256 _usageCostProposed) external;
 
     /**
      * @notice Used to change the currency and amount of setup cost
@@ -133,11 +154,9 @@ interface IModuleFactory {
      */
     function changeTitle(string calldata _title) external;
 
-    function polymathRegistry() external returns (address polymathRegistryAddress);
-
     /**
-     * @notice Get factory owner
+     * @notice Address of the polymath registry
      */
-    function owner() external view returns (address factoryOwner);
+    function polymathRegistry() external returns (address polymathRegistryAddress);
 
 }

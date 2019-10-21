@@ -15,6 +15,9 @@ function getGasPrice(networkId) {
     case 3: //Ropsten
       gasPrice = 50000000000;
       break;
+    case 5: //Goerli
+      gasPrice = 50000000000;
+      break;
     case 15: //Ganache
       gasPrice = 50000000000;
       break;
@@ -75,7 +78,7 @@ module.exports = {
           console.log("Invalid remote node")
           process.exit(0)
         }
-        web3 = new Web3(new Web3.providers.HttpProvider(url));
+        web3 = new Web3(new Web3.providers.HttpProvider(remoteNetwork));
         Issuer = getAccount(`${__dirname}/../../../keyStore`);
       } else {
         web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));

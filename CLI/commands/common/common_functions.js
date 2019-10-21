@@ -19,7 +19,7 @@ async function checkBudget(securityToken, polyToken, currentModule) {
       result = false;
       console.log(chalk.red(`POLY allowance is not enough. Please change the budget for this module and try again.`));
     } else {
-      const currentBalance = new web3.utils.BN(await polyToken.methods.balanceOf(securityToken).call());
+      const currentBalance = new web3.utils.BN(await polyToken.methods.balanceOf(securityToken.options.address).call());
       if (currentBalance.lt(usageCost)) {
         result = false;
         console.log(chalk.red(`POLY balance is not enough. Please transfer POLY to the Security Token contract and try again.`));
@@ -52,17 +52,20 @@ async function addModule (securityToken, polyToken, factoryAddress, moduleABI, g
     }
   }
 
+  let budgetAmount = new web3.utils.BN(0);
   const moduleUsageCost = new web3.utils.BN(await moduleFactory.methods.usageCostInPoly().call());
-  console.log(`This module has an usage cost of ${web3.utils.fromWei(moduleUsageCost)} POLY.`);
-  const budgetAmount = new web3.utils.BN(web3.utils.toWei(input.readNumberGreaterThanOrEqual(0, `Enter the amount of POLY you want to set as budget for this module: `)));
-  if (readlineSync.keyInYNStrict(`Do you want to transfer ${web3.utils.fromWei(budgetAmount)} POLY to Security Token contract now?`)) {
-    const issuerBalance = new web3.utils.BN(await polyToken.methods.balanceOf(Issuer.address).call());
-    transferAmount = transferAmount.add(budgetAmount)
-    if (issuerBalance.lt(transferAmount)) {
-      console.log(chalk.red(`\n**************************************************************************************************************************************************`));
-      console.log(chalk.red(`Not enough balance to set the ${moduleName} budget. Requires ${web3.utils.fromWei(budgetAmount)} POLY but have ${web3.utils.fromWei(issuerBalance)} POLY. Access POLY faucet to get the POLY to complete this txn`));
-      console.log(chalk.red(`**************************************************************************************************************************************************\n`));
-      process.exit(0);
+  if (moduleUsageCost.gt(new web3.utils.BN(0))) {
+    console.log(`This module has an usage cost of ${web3.utils.fromWei(moduleUsageCost)} POLY.`);
+    budgetAmount = new web3.utils.BN(web3.utils.toWei(input.readNumberGreaterThanOrEqual(0, `Enter the amount of POLY you want to set as budget for this module: `)));
+    if (readlineSync.keyInYNStrict(`Do you want to transfer ${web3.utils.fromWei(budgetAmount)} POLY to Security Token contract now?`)) {
+      const issuerBalance = new web3.utils.BN(await polyToken.methods.balanceOf(Issuer.address).call());
+      transferAmount = transferAmount.add(budgetAmount)
+      if (issuerBalance.lt(transferAmount)) {
+        console.log(chalk.red(`\n**************************************************************************************************************************************************`));
+        console.log(chalk.red(`Not enough balance to set the ${moduleName} budget. Requires ${web3.utils.fromWei(budgetAmount)} POLY but have ${web3.utils.fromWei(issuerBalance)} POLY. Access POLY faucet to get the POLY to complete this txn`));
+        console.log(chalk.red(`**************************************************************************************************************************************************\n`));
+        process.exit(0);
+      }
     }
   }
 

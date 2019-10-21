@@ -31,9 +31,9 @@ contract ModuleFactory is IModuleFactory, Ownable {
 
     bool public isCostInPoly;
     uint256 public setupCost;
-    uint256 usageFee;
-    uint256 tempUsageFee;
-    uint256 public lastTimeUsageCostChange;
+    uint256 public usageCost;
+    uint256 public proposedUsageCost;
+    uint256 public usageCostProposedAt;
     uint256 internal constant COLDPERIOD = 24 hours;
 
     string constant POLY_ORACLE = "StablePolyUsdOracle";
@@ -50,8 +50,9 @@ contract ModuleFactory is IModuleFactory, Ownable {
      */
     constructor(uint256 _setupCost, uint256 _usageCost, address _polymathRegistry, bool _isCostInPoly) public {
         setupCost = _setupCost;
-        usageFee = _usageCost;
-        lastTimeUsageCostChange = now;
+        usageCost = _usageCost;
+        proposedUsageCost = usageCost;
+        usageCostProposedAt = now;
         polymathRegistry = IPolymathRegistry(_polymathRegistry);
         isCostInPoly = _isCostInPoly;
     }
@@ -88,24 +89,26 @@ contract ModuleFactory is IModuleFactory, Ownable {
 
     /**
      * @notice Used to change the usage cost
-     * @param _usageCost new usage cost
      */
-    function changeUsageCost(uint256 _usageCost) public onlyOwner {
-        _changeUsageCost(_usageCost);
+    function changeUsageCost() public onlyOwner {
+        require(now > usageCostProposedAt.add(COLDPERIOD), "Proposal is in unmatured state");
+        require(usageCost != proposedUsageCost);
+        emit ChangeUsageCost(usageCost, proposedUsageCost);
+        usageCost = proposedUsageCost;
     }
 
-    function _changeUsageCost(uint256 _usageCost) internal {
-        lastTimeUsageCostChange = now;
-        emit ChangeUsageCost(usageFee, _usageCost);
-        tempUsageFee = usageFee;
-        usageFee = _usageCost;
+    /**
+     * @notice Used to propose the usage cost
+     * @param _usageCostProposed Proposed usage cost amount
+     */
+    function proposeUsageCost(uint256 _usageCostProposed) external onlyOwner {
+        _proposeUsageCost(_usageCostProposed);
     }
 
-    function usageCost() public view returns(uint256 usdUsageCost) {
-        if (now > lastTimeUsageCostChange.add(COLDPERIOD))
-            return usageFee;
-        else
-            return tempUsageFee;
+    function _proposeUsageCost(uint256 _usageCostProposed) internal {
+        usageCostProposedAt = now;
+        emit UsageCostProposed(proposedUsageCost, usageCost);
+        proposedUsageCost = _usageCostProposed;
     }
 
     /**
@@ -118,8 +121,8 @@ contract ModuleFactory is IModuleFactory, Ownable {
         emit ChangeSetupCost(setupCost, _setupCost);
         emit ChangeCostType(isCostInPoly, _isCostInPoly);
         setupCost = _setupCost;
-        if (usageFee != _usageCost) {
-            _changeUsageCost(_usageCost);
+        if (usageCost != _usageCost) {
+            _proposeUsageCost(_usageCost);
         }
         isCostInPoly = _isCostInPoly;
     }
@@ -215,11 +218,10 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @notice Get the usage cost of the module
      */
     function usageCostInPoly() public returns (uint256) {
-        uint256 _usageCost = usageCost();
         if (isCostInPoly)
-            return _usageCost;
+            return usageCost;
         uint256 polyRate = IOracle(polymathRegistry.getAddress(POLY_ORACLE)).getPrice();
-        return DecimalMath.div(_usageCost, polyRate);
+        return DecimalMath.div(usageCost, polyRate);
     }
 
     /**

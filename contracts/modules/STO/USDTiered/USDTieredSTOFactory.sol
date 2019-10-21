@@ -25,7 +25,7 @@ contract USDTieredSTOFactory is UpgradableModuleFactory {
         UpgradableModuleFactory("3.1.0", _setupCost, _logicContract, _polymathRegistry, _isCostInPoly)
     {
         name = "USDTieredSTO";
-        title = "USD Tiered STO";
+        title = "Tiered STO";
         /*solium-disable-next-line max-len*/
         description = "It allows both accredited and non-accredited investors to contribute into the STO. Non-accredited investors will be capped at a maximum investment limit (as a default or specific to their jurisdiction). Tokens will be sold according to tiers sequentially & each tier has its own price and volume of tokens to sell. Upon receipt of funds (ETH, POLY or DAI), security tokens will automatically transfer to investor’s wallet address";
         typesData.push(3);

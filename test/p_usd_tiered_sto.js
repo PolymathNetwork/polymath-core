@@ -109,6 +109,8 @@ contract("USDTieredSTO", async (accounts) => {
     let _wallet = [];
     let _treasuryWallet = [];
     let _usdToken = [];
+    let _customOracleAddresses = [];
+    let _denominatedCurrency = [];
 
     /* function configure(
         uint256 _startTime,
@@ -334,6 +336,8 @@ contract("USDTieredSTO", async (accounts) => {
             _wallet.push(WALLET);
             _treasuryWallet.push(TREASURYWALLET);
             _usdToken.push([I_DaiToken.address]);
+            _customOracleAddresses.push([]);
+            _denominatedCurrency.push(web3.utils.toHex(""));
 
             let config = [
                 _startTime[stoId],
@@ -347,7 +351,9 @@ contract("USDTieredSTO", async (accounts) => {
                 _fundRaiseTypes[stoId],
                 _wallet[stoId],
                 _treasuryWallet[stoId],
-                _usdToken[stoId]
+                _usdToken[stoId],
+                _customOracleAddresses[stoId],
+                _denominatedCurrency[stoId]
             ];
 
             let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);

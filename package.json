@@ -94,7 +94,7 @@
     "prettier": "^1.18.2",
     "request": "^2.88.0",
     "request-promise": "^4.2.4",
-    "sol-merger": "^1.0.0",
+    "sol-merger": "^1.1.1",
     "solidity-docgen": "^0.1.1",
     "solium": "^1.2.4",
     "table": "^5.4.4"

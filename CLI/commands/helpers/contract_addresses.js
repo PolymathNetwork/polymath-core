@@ -12,6 +12,9 @@ function getPolymathRegistryAddress(networkId) {
     case 3: // ROPSTEN
       result = "";
       break;
+    case 5: // GOERLI
+      result = "0x7e3c8aF98538Ba19A10Dfc7E8F5469a76998b0f0";
+      break;
     case 15: // GANACHE
       result = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/PolymathRegistry.json`).toString()).networks[networkId].address;
       break;

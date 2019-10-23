@@ -911,7 +911,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                         from: token_owner
                     }
                 ),
-                "Invalid checkpoint Id"
+                "Invalid checkpointId"
             );
 
             // Create successfully ballot
@@ -1877,9 +1877,9 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                     from: token_owner
                 }
             );
-            assert.equal(await I_SecurityToken.currentCheckpointId.call(), 7);
+            assert.equal(await I_SecurityToken.currentCheckpointId.call(), 10);
             assert.equal(web3.utils.toUtf8(tx.logs[1].args._name), "Ballot 1");
-            assert.equal(tx.logs[1].args._checkpointId, 7);
+            assert.equal(tx.logs[1].args._checkpointId, 10);
             assert.equal(tx.logs[1].args._ballotId, 0);
             assert.equal(tx.logs[1].args._startTime, startTime.toString());
             assert.equal(tx.logs[1].args._commitDuration, commitDuration.toString());
@@ -1889,7 +1889,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             let ballotDetails = await P_AdvancedPLCRVotingCheckpoint.getBallotDetails.call(tx.logs[1].args._ballotId);
             assert.equal(convertToNumber(ballotDetails[1]), convertToNumber(await stGetter.totalSupplyAt.call(tx.logs[1].args._checkpointId)));
             assert.equal(web3.utils.toUtf8(ballotDetails[0]), "Ballot 1");
-            assert.equal(ballotDetails[2], 7);
+            assert.equal(ballotDetails[2], 10);
             assert.equal(ballotDetails[3].toString(), startTime.toString());
             assert.equal(ballotDetails[6].toString(), 1);
             assert.equal(ballotDetails[12][0], 0);

@@ -34,6 +34,8 @@ contract ModuleFactory is IModuleFactory, Ownable {
     uint256 public usageCost;
     uint256 public proposedUsageCost;
     uint256 public usageCostProposedAt;
+    bool public willCostInPoly;
+    uint256 public changeInCostTypeAt;
     uint256 internal constant COLDPERIOD = 24 hours;
 
     string constant POLY_ORACLE = "StablePolyUsdOracle";
@@ -53,8 +55,10 @@ contract ModuleFactory is IModuleFactory, Ownable {
         usageCost = _usageCost;
         proposedUsageCost = usageCost;
         usageCostProposedAt = now;
+        changeInCostTypeAt = now;
         polymathRegistry = IPolymathRegistry(_polymathRegistry);
         isCostInPoly = _isCostInPoly;
+        willCostInPoly = isCostInPoly;
     }
 
     /**
@@ -92,7 +96,6 @@ contract ModuleFactory is IModuleFactory, Ownable {
      */
     function changeUsageCost() public onlyOwner {
         require(now > usageCostProposedAt.add(COLDPERIOD), "Proposal is in unmatured state");
-        require(usageCost != proposedUsageCost);
         emit ChangeUsageCost(usageCost, proposedUsageCost);
         usageCost = proposedUsageCost;
     }
@@ -106,6 +109,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
     }
 
     function _proposeUsageCost(uint256 _usageCostProposed) internal {
+        require(usageCost != proposedUsageCost);
         usageCostProposedAt = now;
         emit UsageCostProposed(proposedUsageCost, usageCost);
         proposedUsageCost = _usageCostProposed;
@@ -117,14 +121,30 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @param _usageCost new usage cost
      * @param _isCostInPoly new setup cost currency. USD or POLY
      */
-    function changeCostAndType(uint256 _setupCost, uint256 _usageCost, bool _isCostInPoly) public onlyOwner {
+    function changeCostAndType(uint256 _setupCost, uint256 _usageCost, bool _isCostInPoly) external onlyOwner {
         emit ChangeSetupCost(setupCost, _setupCost);
-        emit ChangeCostType(isCostInPoly, _isCostInPoly);
         setupCost = _setupCost;
         if (usageCost != _usageCost) {
             _proposeUsageCost(_usageCost);
         }
-        isCostInPoly = _isCostInPoly;
+        _proposedChangeInCostType(_isCostInPoly);
+    }
+
+    /**
+     * @notice Used to change the cost type
+     */
+    function changeCostType() external onlyOwner {
+        require(now > changeInCostTypeAt.add(COLDPERIOD), "Proposal is in unmatured state");
+        emit ChangeCostType(isCostInPoly, willCostInPoly);
+        isCostInPoly = willCostInPoly;
+    }
+
+    function _proposedChangeInCostType(bool _isCostInPoly) internal {
+        if (isCostInPoly != _isCostInPoly) {
+            changeInCostTypeAt = now;
+            willCostInPoly = _isCostInPoly;
+            emit ChangeCostTypeProposed(willCostInPoly, isCostInPoly);
+        }
     }
 
     /**

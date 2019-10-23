@@ -9,6 +9,7 @@ interface IModuleFactory {
     event ChangeUsageCost(uint256 _oldUsageCost, uint256 _newUsageCost);
     event UsageCostProposed(uint256 _proposedFee, uint256 _currentFee);
     event ChangeCostType(bool _isOldCostInPoly, bool _isNewCostInPoly);
+    event ChangeCostTypeProposed(bool _proposedCostType, bool _currentCostType);
     event GenerateModuleFromFactory(
         address _module,
         bytes32 indexed _moduleName,
@@ -86,6 +87,11 @@ interface IModuleFactory {
      * @notice Used to change the usage cost
      */
     function changeUsageCost() external;
+
+    /**
+     * @notice Used to change the cost type
+     */
+    function changeCostType() external;
 
     /**
      * @notice Used to propose the usage cost

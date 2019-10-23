@@ -51,19 +51,20 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         uint256[] _tokensPerTierDiscountPoly
     );
     event SetTreasuryWallet(address _oldWallet, address _newWallet);
+    event SetOracles(bytes32 _denominatedCurrency, bool _isCustomOracles);
 
     ///////////////
     // Modifiers //
     ///////////////
 
     modifier validETH() {
-        _checkNonZeroOracleAddress(_getOracle(bytes32("ETH")));
+        _checkZeroOracleAddress(_getOracle(bytes32("ETH")));
         require(fundRaiseTypes[uint8(FundRaiseType.ETH)], "ETH not allowed");
         _;
     }
 
     modifier validPOLY() {
-        _checkNonZeroOracleAddress(_getOracle(bytes32("POLY")));
+        _checkZeroOracleAddress(_getOracle(bytes32("POLY")));
         require(fundRaiseTypes[uint8(FundRaiseType.POLY)], "POLY not allowed");
         _;
     }
@@ -214,6 +215,8 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      */
     function modifyOracles(address[] calldata _customOracleAddresses, bytes32 _denominatedCurrencySymbol) external {
         _onlySecurityTokenOwner();
+        // If Issuer wants to change the denominatedCurrency then they have to change the rates as well according the denominated currency
+        // It is advised to call modifyTiers just after calling modifyOracles from the dApp side.
         if (_denominatedCurrencySymbol != denominatedCurrency)
             _isSTOStarted();
         _modifyOracles(_customOracleAddresses, _denominatedCurrencySymbol);
@@ -222,26 +225,30 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
     function _modifyOracles(address[] memory _customOracleAddresses, bytes32 _denominatedCurrencySymbol) internal {
         if (_customOracleAddresses.length == 0 && _denominatedCurrencySymbol == bytes32(0)) {
             denominatedCurrency = bytes32("USD");
-            oracleKeys[bytes32("ETH")][bytes32("USD")] = ETH_ORACLE;
-            oracleKeys[bytes32("POLY")][bytes32("USD")] = POLY_ORACLE;
+            delete customOracles[bytes32("ETH")][denominatedCurrency];
+            delete customOracles[bytes32("POLY")][denominatedCurrency];
+            oracleKeys[bytes32("ETH")][denominatedCurrency] = ETH_ORACLE;
+            oracleKeys[bytes32("POLY")][denominatedCurrency] = POLY_ORACLE;
+            emit SetOracles(denominatedCurrency, false);
         }
         else {
-            require(_denominatedCurrencySymbol != bytes32(0), "Invalid currency symbol");
+            require(_denominatedCurrencySymbol != bytes32(0), "Invalid currency");
             require(_customOracleAddresses.length == 2, "Invalid no. of oracles");
             if (fundRaiseTypes[uint8(FundRaiseType.ETH)]) {
-                _checkNonZeroOracleAddress(_customOracleAddresses[0]);
+                _checkZeroOracleAddress(_customOracleAddresses[0]);
             }
             if (fundRaiseTypes[uint8(FundRaiseType.POLY)]) {
-                _checkNonZeroOracleAddress(_customOracleAddresses[1]);
+                _checkZeroOracleAddress(_customOracleAddresses[1]);
             }
             denominatedCurrency = _denominatedCurrencySymbol;
             customOracles[bytes32("ETH")][denominatedCurrency] = _customOracleAddresses[0];
             customOracles[bytes32("POLY")][denominatedCurrency] = _customOracleAddresses[1];
+            emit SetOracles(denominatedCurrency, true);
         }
     }
 
-    function _checkNonZeroOracleAddress(address _addressForCheck) internal pure {
-        require(_addressForCheck != address(0), "Invalid Oracle");
+    function _checkZeroOracleAddress(address _addressForCheck) internal pure {
+        require(_addressForCheck != address(0), "Invalid address");
     }
 
     function _modifyLimits(uint256 _nonAccreditedLimitUSD, uint256 _minimumInvestmentUSD) internal {
@@ -294,7 +301,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
     }
 
     function _modifyAddresses(address payable _wallet, address _treasuryWallet, IERC20[] memory _stableTokens) internal {
-        require(_wallet != address(0), "Invalid wallet");
+        _checkZeroOracleAddress(_wallet);
         wallet = _wallet;
         emit SetTreasuryWallet(treasuryWallet, _treasuryWallet);
         treasuryWallet = _treasuryWallet;
@@ -337,7 +344,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
             }
         }
         address walletAddress = getTreasuryWallet();
-        require(walletAddress != address(0), "Invalid address");
+        _checkZeroOracleAddress(walletAddress);
         if (preMintAllowed) {
             if (tempReturned == securityToken.balanceOf(address(this)))
                 tempReturned = securityToken.balanceOf(address(this));

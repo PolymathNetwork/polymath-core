@@ -295,7 +295,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
     function _addExemptedAddresses(address[] memory _exemptedAddresses, uint256 _ballotId) internal {
         for (uint256 i = 0; i < _exemptedAddresses.length; i++) {
             Ballot storage ballot = ballots[_ballotId];
-            if (_exemptedAddresses[i] != address(0)) 
+            if (_exemptedAddresses[i] != address(0))
                 ballot.exemptedVoters[_exemptedAddresses[i]] = true;
         }
         emit VotersExempted(_ballotId, _exemptedAddresses);
@@ -551,6 +551,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
      * @param _exempt Whether it is exempted or not
      */
     function changeDefaultExemptedVotersList(address _voter, bool _exempt) public {
+        // @FIXME add a reason string once we decrease overall contract size (also for all other instances of _isAnyBallotRunning)
         require(!_isAnyBallotRunning());
         super.changeDefaultExemptedVotersList(_voter, _exempt);
     }
@@ -569,10 +570,11 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         uint256 length = ballots.length;
         isAnyBallotActive = false;
         if (length != 0) {
-            uint256 count = length -1;
-            for (uint256 i = count; i >= 0 && i < count; i--) {
+            uint256 count = length - 1;
+            // "i <= count" is to prevert underflow.
+            for (uint256 i = count; i >= 0 && i <= count; i--) {
                 Stage currentStage = getCurrentBallotStage(i);
-                if (currentStage == Stage.COMMIT && currentStage == Stage.REVEAL && !ballots[i].isCancelled) {
+                if (!ballots[i].isCancelled && (currentStage == Stage.COMMIT || currentStage == Stage.REVEAL)) {
                     isAnyBallotActive = true;
                     break;
                 }

@@ -9,6 +9,8 @@ import "./USDTieredSTOStorage.sol";
 
 /**
  * @title STO module for standard capped crowdsale
+ * @dev Contract is now available to be pegged with other fiat currency so every `USD` prefix and suffix in variable names
+ * doesn't makes sense in the contract but we are keeping this variable naming convention to maintain the backward compatibility.
  */
 contract USDTieredSTO is USDTieredSTOStorage, STO {
     using SafeMath for uint256;
@@ -233,6 +235,15 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         }
         else {
             require(_denominatedCurrencySymbol != bytes32(0), "Invalid currency");
+            // Issuer is allow to set the oracle address for either ETH or POLY or allowed to set both
+            // it depends upon its selected fund raise types. When _denominatedCurrencySymbol != bytes32(0) it means oracle address
+            // array length should be equal 2 
+            // if fund raise type is ETH then
+            // _customOracleAddresses = [ETH_oracle_address, 0x0]
+            // if raise type POLY then
+            // _customOracleAddresses = [0x0, POLY_oracle_address]
+            // If raise type ETH and POLY both
+            // _customOracleAddresses = [ETH_oracle_address, POLY_oracle_address]
             require(_customOracleAddresses.length == 2, "Invalid no. of oracles");
             if (fundRaiseTypes[uint8(FundRaiseType.ETH)]) {
                 _checkZeroOracleAddress(_customOracleAddresses[0]);

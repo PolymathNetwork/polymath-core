@@ -50,7 +50,6 @@ const AdvancedPLCRVotingCheckpointLogic = artifacts.require("./AdvancedPLCRVotin
 const AdvancedPLCRVotingLib = artifacts.require("./AdvancedPLCRVotingLib.sol");
 const IssuanceLogic = artifacts.require("./Issuance.sol");
 const IssuanceFactory = artifacts.require("./IssuanceFactory.sol");
-const AdvancedPLCRVotingLib = artifacts.require("./AdvancedPLCRVotingLib.sol");
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;

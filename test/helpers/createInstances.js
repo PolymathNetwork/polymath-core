@@ -61,7 +61,6 @@ const AdvancedPLCRVotingCheckpointFactory = artifacts.require("./AdvancedPLCRVot
 const AdvancedPLCRVotingCheckpoint = artifacts.require("./AdvancedPLCRVotingCheckpoint");
 const Issuance = artifacts.require("./Issuance.sol");
 const IssuanceFactory = artifacts.require("./IssuanceFactory.sol");
-const CustomMultiSigWallet = artifacts.require("./CustomMultiSigWallet");
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;

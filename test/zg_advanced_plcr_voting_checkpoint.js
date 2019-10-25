@@ -1678,155 +1678,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
         });
     });
 
-        it('Returns all ballots data', async () => {
-            const expected = {
-                ballotIds: [
-                    0, 1, 2, 3, 4, 5, 6, 7, 8
-                ],
-                names: [
-                    "Ballot 1",
-                    "Ballot 2",
-                    "Ballot 3",
-                    "Ballot 4",
-                    "Ballot 5",
-                    "Ballot 6",
-                    "Ballot 6",
-                    "Exemptions 1",
-                    "Exemptions 2"
-                ],
-                totalProposals: [
-                    1, 1, 1, 1, 3, 3, 3, 1, 1
-                ],
-                currentStages: [
-                    3, 3, 3, 3, 3, 3, 3, 3, 1
-                ],
-                isCancelled: [false, false, false, false, false, false, true, false, false]
-            }
-
-            const allBallotsData = await I_AdvancedPLCRVotingCheckpoint.getAllBallots();
-
-            assert.deepEqual(expected.ballotIds, allBallotsData.ballotIds.map(id => parseInt(id.toString())), "IDs match");
-            assert.deepEqual(expected.names, allBallotsData.names.map(name => web3.utils.hexToUtf8(name)), "Names match");
-            assert.deepEqual(expected.totalProposals, allBallotsData.totalProposals.map(tp => parseInt(tp.toString())), "Proposal count match");
-            assert.deepEqual(expected.currentStages, allBallotsData.currentStages.map(stage => parseInt(stage.toString())), "Current stage match");
-            assert.deepEqual(expected.isCancelled, allBallotsData.isCancelled, "Cancelled status match");
-        });
-    });
-    
     describe("Test cases for non zero usage cost", async() => {
-        it("Should fail to whitelist the whitelabeler -- Bad address", async() => {
-            await catchRevert(
-                I_STRProxied.modifyWhitelabelersList(address_zero, true, {from: account_polymath}),
-                "Bad address"
-            );
-        });
-
-        it("Should fail to whitelist the whitelabeler -- Bad msg.sender", async() => {
-            await catchRevert(
-                I_STRProxied.modifyWhitelabelersList(whitelabeler, true, {from: account_investor2}),
-                "Only owner"
-            );
-        });
-
-        it("Should fail to register the ticker when whitelabeler is not whitelisted -- Invalid whitelabeler", async() => {
-            await I_PolyToken.approve(I_STRProxied.address, new BN(initRegFee), { from: token_owner });
-            await catchRevert(
-                I_STRProxied.registerNewTickerByWhitelabeler(token_owner, "USAGE", whitelabeler, { from: token_owner }),
-                "Invalid whitelabeler"
-            );
-        });
-
-        it("Should whitelist the whitelabeler", async() => {
-            let tx = await I_STRProxied.modifyWhitelabelersList(whitelabeler, true, {from: account_polymath});
-            assert.isTrue(await I_STRProxied.isWhitelabeler.call(whitelabeler));
-            assert.equal(tx.logs[0].args._whitelabeler, whitelabeler);
-            assert.equal(tx.logs[0].args._status, true);
-        });
-
-        it("Should whitelist the whitelabeler", async() => {
-            let tx = await I_STRProxied.modifyWhitelabelersList(account_signer1, true, {from: account_polymath});
-            assert.isTrue(await I_STRProxied.isWhitelabeler.call(account_signer1));
-            assert.equal(tx.logs[0].args._whitelabeler, account_signer1);
-            assert.equal(tx.logs[0].args._status, true);
-        });
-
-        it("Should fail to whitelist the whitelabeler -- Already has the same status", async() => {
-            await catchRevert(
-                I_STRProxied.modifyWhitelabelersList(whitelabeler, true, {from: account_polymath})
-            );
-        });
-
-        it("Should fail to whitelist the whitelabeler -- Bad msg.sender", async() => {
-            await catchRevert(
-                I_STRProxied.modifyWhitelabelersListMulti([ account_investor1, account_investor2], [true, true], {from: token_owner}),
-                "Only owner"
-            );
-        })
-
-        it("Should fail to whitelist the whitelabeler -- Length Mismatch", async() => {
-            await catchRevert(
-                I_STRProxied.modifyWhitelabelersListMulti([account_investor1, account_investor2], [true], {from: account_polymath}),
-                "Length mismatch"
-            );
-        });
-
-        it("Should register the ticker before the generation of the security token", async () => {
-            //await I_PolyToken.getTokens(new BN(web3.utils.toWei("50000", "ether")), token_owner);
-            await I_PolyToken.approve(I_STRProxied.address, new BN(initRegFee), { from: token_owner });
-            let tx = await I_STRProxied.registerNewTickerByWhitelabeler(token_owner, "USAGE", whitelabeler, { from: token_owner });
-            assert.equal(tx.logs[0].args._ticker, "USAGE");
-            assert.equal(tx.logs[0].args._whitelabeler, whitelabeler);
-            assert.equal(tx.logs[1].args._owner, token_owner);
-            assert.equal(tx.logs[1].args._ticker, "USAGE");
-        });
-
-        it("Should verify the balance of the MultiSigWallet", async() => {
-            let MultiSigWalletAddress = await I_PolymathRegistry.getAddress.call("FeeWallet");
-            I_MultiSigWallet = await MultiSigWallet.at(MultiSigWalletAddress);
-            assert.equal(
-                convertToNumber(await I_PolyToken.balanceOf.call(MultiSigWalletAddress)),
-                convertToNumber(await I_STRProxied.getTickerRegistrationFee.call()) 
-            );
-        });
-
-        it("Should fail to generate the securityToken -- Invalid whitelabeler", async() => {
-            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            await catchRevert(
-                I_STRProxied.generateNewSecurityTokenByWhitelabeler(name, "USAGE", tokenDetails, false, token_owner, 0, account_investor1, { from: token_owner }),
-                "Invalid whitelabeler"
-            );
-        });
-
-        it("Should fail to generate the securityToken -- Not same whitelabeler as register ticker", async() => {
-            await I_PolyToken.approve(I_STRProxied.address, initRegFee, { from: token_owner });
-            await catchRevert(
-                I_STRProxied.generateNewSecurityTokenByWhitelabeler(name, "USAGE", tokenDetails, false, token_owner, 0, account_signer1, { from: token_owner })
-            );
-        });
-
-        it("Should generate the new security token with the same symbol as registered above", async () => {
-            
-            let tx = await I_STRProxied.generateNewSecurityTokenByWhitelabeler(name, "USAGE", tokenDetails, false, token_owner, 0, whitelabeler, { from: token_owner });
-            assert.equal(tx.logs[1].args._whitelabeler, whitelabeler);
-            // Verify the successful generation of the security token
-            assert.equal(tx.logs[2].args._ticker, "USAGE", "SecurityToken doesn't get deployed");
-
-            I_SecurityToken = await SecurityToken.at(tx.logs[2].args._securityTokenAddress);
-            stGetter = await STGetter.at(I_SecurityToken.address);
-            const log = (await I_SecurityToken.getPastEvents('ModuleAdded', {filter: {transactionHash: tx.transactionHash}}))[0];
-            // Verify that GeneralTransferManager module get added successfully or not
-            assert.equal(log.args._types[0].toNumber(), transferManagerKey);
-            assert.equal(web3.utils.hexToString(log.args._name), "GeneralTransferManager");
-            assert.equal(
-                convertToNumber(await I_PolyToken.balanceOf.call(I_MultiSigWallet.address)),
-                parseInt(convertToNumber(await I_STRProxied.getTickerRegistrationFee.call())) + parseInt(convertToNumber(await I_STRProxied.getSecurityTokenLaunchFee.call())) 
-            );
-        });
-
-        it("Should initialize the auto attached modules", async () => {
-            let moduleData = (await stGetter.getModulesByType(transferManagerKey))[0];
-            I_GeneralTransferManager = await GeneralTransferManager.at(moduleData);
-        });
 
         it("Deploy and attach the module having non-zero usage cost", async() => {
             [P_AdvancedPLCRVotingCheckpointFactory] = await deployAdvancedPLCRVotingCheckpointAndVerifyed(
@@ -1924,4 +1776,39 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
         });
     });
 
+    describe('Utility functions', async () => {
+        it('Returns all ballots data', async () => {
+            const expected = {
+                ballotIds: [
+                    0, 1, 2, 3, 4, 5, 6, 7, 8
+                ],
+                names: [
+                    "Ballot 1",
+                    "Ballot 2",
+                    "Ballot 3",
+                    "Ballot 4",
+                    "Ballot 5",
+                    "Ballot 6",
+                    "Ballot 6",
+                    "Exemptions 1",
+                    "Exemptions 2"
+                ],
+                totalProposals: [
+                    1, 1, 1, 1, 3, 3, 3, 1, 1
+                ],
+                currentStages: [
+                    3, 3, 3, 3, 3, 3, 3, 3, 1
+                ],
+                isCancelled: [false, false, false, false, false, false, true, false, false]
+            }
+
+            const allBallotsData = await I_AdvancedPLCRVotingCheckpoint.getAllBallots();
+
+            assert.deepEqual(expected.ballotIds, allBallotsData.ballotIds.map(id => parseInt(id.toString())), "IDs match");
+            assert.deepEqual(expected.names, allBallotsData.names.map(name => web3.utils.hexToUtf8(name)), "Names match");
+            assert.deepEqual(expected.totalProposals, allBallotsData.totalProposals.map(tp => parseInt(tp.toString())), "Proposal count match");
+            assert.deepEqual(expected.currentStages, allBallotsData.currentStages.map(stage => parseInt(stage.toString())), "Current stage match");
+            assert.deepEqual(expected.isCancelled, allBallotsData.isCancelled, "Cancelled status match");
+        })
+    })
 });

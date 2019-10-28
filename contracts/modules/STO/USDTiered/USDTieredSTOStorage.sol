@@ -38,7 +38,7 @@ contract USDTieredSTOStorage {
     bool public allowBeneficialInvestments;
 
     // List of stable coin addresses
-    IERC20[] internal usdTokens;
+    IERC20[] internal stableTokens;
 
     // Current tier
     uint256 public currentTier;
@@ -56,7 +56,7 @@ contract USDTieredSTOStorage {
     mapping(address => mapping(uint8 => uint256)) public investorInvested;
 
     // List of active stable coin addresses
-    mapping (address => bool) internal usdTokenEnabled;
+    mapping (address => bool) internal stableTokenEnabled;
 
     // Default limit in USD for non-accredited investors multiplied by 10**18
     uint256 public nonAccreditedLimitUSD;
@@ -72,4 +72,6 @@ contract USDTieredSTOStorage {
 
     // Optional custom Oracles.
     mapping(bytes32 => mapping(bytes32 => address)) customOracles;
+
+    bytes32 public denominatedCurrency;
 }

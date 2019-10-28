@@ -110,9 +110,9 @@ contract("RestrictedPartialSaleTM", accounts => {
         ] = instances;
 
         // STEP 2: Deploy the RestrictedPartialSaleTM
-        [I_RestrictedPartialSaleTMFactory] = await deployRestrictedPartialSaleTMAndVerifyed(account_polymath, I_MRProxied, 0);
+        [I_RestrictedPartialSaleTMFactory] = await deployRestrictedPartialSaleTMAndVerifyed(account_polymath, I_MRProxied, 0, new BN(0));
         // STEP 3: Deploy Paid the RestrictedPartialSaleTM
-        [P_RestrictedPartialSaleTMFactory] = await deployRestrictedPartialSaleTMAndVerifyed(account_polymath, I_MRProxied, web3.utils.toWei("500", "ether"));
+        [P_RestrictedPartialSaleTMFactory] = await deployRestrictedPartialSaleTMAndVerifyed(account_polymath, I_MRProxied, web3.utils.toWei("500", "ether"), new BN(0));
 
         // Printing all the contract addresses
         console.log(`
@@ -283,7 +283,7 @@ contract("RestrictedPartialSaleTM", accounts => {
                 [latestTime, latestTime + duration.days(20), web3.utils.toWei("1000000"), "This is dummy sto"]
             );
             let I_DummySTOFactory;
-            [I_DummySTOFactory] = await deployDummySTOAndVerifyed(account_polymath, I_MRProxied, new BN(0));
+            [I_DummySTOFactory] = await deployDummySTOAndVerifyed(account_polymath, I_MRProxied, new BN(0), new BN(0));
             let tx = await I_SecurityToken.addModule(
                         I_DummySTOFactory.address,
                         bytesSTO,

@@ -85,6 +85,7 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
         account_temp = accounts[2];
         account_delegate = accounts[3];
 
+
         // ----------- POLYMATH NETWORK Configuration ------------
 
        // Step 1: Deploy the genral PM ecosystem
@@ -108,10 +109,10 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
 
 
         // STEP 4: Deploy the WeightedVoteCheckpoint
-        [I_PLCRVotingCheckpointFactory] = await deployPLCRVoteCheckpoint(account_polymath, I_MRProxied, 0);
-        [P_PLCRVotingCheckpointFactory] = await deployPLCRVoteCheckpoint(account_polymath, I_MRProxied, new BN(web3.utils.toWei("500")));
+        [I_PLCRVotingCheckpointFactory] = await deployPLCRVoteCheckpoint(account_polymath, I_MRProxied, 0, new BN(0));
+        [P_PLCRVotingCheckpointFactory] = await deployPLCRVoteCheckpoint(account_polymath, I_MRProxied, new BN(web3.utils.toWei("500")), new BN(0));
 
-        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
+        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0, new BN(0));
 
         // Printing all the contract addresses
         console.log(`
@@ -756,7 +757,7 @@ contract("PLCRVotingCheckpoint", async (accounts) => {
             it("\t\t Should get the exact details of the factory \n", async () => {
                 assert.equal((await I_PLCRVotingCheckpointFactory.setupCost.call()).toNumber(), 0);
                 assert.equal((await I_PLCRVotingCheckpointFactory.getTypes.call())[0], 4);
-                assert.equal(await I_PLCRVotingCheckpointFactory.version.call(), "3.0.0");
+                assert.equal(await I_PLCRVotingCheckpointFactory.version.call(), "3.1.0");
                 assert.equal(
                     web3.utils.toAscii(await I_PLCRVotingCheckpointFactory.name.call()).replace(/\u0000/g, ""),
                     "PLCRVotingCheckpoint",

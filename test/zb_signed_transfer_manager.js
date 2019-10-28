@@ -105,11 +105,11 @@ contract("SignedTransferManager", accounts => {
         ] = instances;
 
         // STEP 2: Deploy the GeneralPermissionManagerFactory
-        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, new BN(0));
+        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, new BN(0), new BN(0));
         // STEP 3: Deploy the SignedTransferManagerFactory
-        [I_SignedTransferManagerFactory] = await deploySignedTMAndVerifyed(account_polymath, I_MRProxied, new BN(0));
+        [I_SignedTransferManagerFactory] = await deploySignedTMAndVerifyed(account_polymath, I_MRProxied, new BN(0), new BN(0));
         // STEP 4: Deploy the Paid SignedTransferManagerFactory
-        [P_SignedTransferManagerFactory] = await deploySignedTMAndVerifyed(account_polymath, I_MRProxied, web3.utils.toWei("500", "ether"));
+        [P_SignedTransferManagerFactory] = await deploySignedTMAndVerifyed(account_polymath, I_MRProxied, web3.utils.toWei("500", "ether"), new BN(0));
 
         // Printing all the contract addresses
         console.log(`

@@ -68,7 +68,7 @@ contract("STFactory", async (accounts) => {
         I_DataStoreLogic = await DataStoreLogic.new({ from: account_polymath });
         I_DataStoreFactory = await DataStoreFactory.new(I_DataStoreLogic.address, { from: account_polymath });
         I_GeneralTransferManagerLogic = await GeneralTransferManager.new(zero_address, zero_address, { from: account_polymath });
-        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(new BN(0), I_GeneralTransferManagerLogic.address, I_PolymathRegistry.address, true, {
+        I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(new BN(0), new BN(0), I_GeneralTransferManagerLogic.address, I_PolymathRegistry.address, true, {
             from: account_polymath
         });
         const tokenInitBytes = {
@@ -188,6 +188,7 @@ contract("STFactory", async (accounts) => {
 
     describe('Deploying tokens', async () => {
         before(async () => {
+
             // Step:1 Create the polymath ecosystem contract instances
             let instances = await setUpPolymathNetwork(account_polymath, account_issuer);
             [

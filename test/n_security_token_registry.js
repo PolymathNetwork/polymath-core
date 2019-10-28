@@ -144,7 +144,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         // STEP 8: Deploy the CappedSTOFactory
 
-        [I_DummySTOFactory] = await deployDummySTOAndVerifyed(account_polymath, I_MRProxied, 0);
+        [I_DummySTOFactory] = await deployDummySTOAndVerifyed(account_polymath, I_MRProxied, 0, new BN(0));
         // Step 9: Deploy the SecurityTokenRegistry
         console.log(I_SecurityTokenRegistry.address);
         I_SecurityTokenRegistry = await SecurityTokenRegistry.new({ from: account_polymath });
@@ -574,8 +574,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should fail to generate the securityToken -- Because version is not valid", async () => {
             await catchRevert(
-                I_STRProxied.generateNewSecurityToken("", symbol, tokenDetails, false, token_owner, 12356, { from: token_owner }),
-                "Bad ticker"
+                I_STRProxied.generateNewSecurityToken("ABC", symbol, tokenDetails, false, token_owner, 12356, { from: token_owner })
             );
         });
 
@@ -850,8 +849,7 @@ contract("SecurityTokenRegistry", async (accounts) => {
 
         it("Should fail to generate the custom ST -- deployedAt param is 0", async () => {
             await catchRevert(
-                I_STRProxied.modifyExistingSecurityToken(symbol2, token_owner, I_SecurityToken.address, "I am custom ST", new BN(0), { from: account_polymath }),
-                "Bad data"
+                I_STRProxied.modifyExistingSecurityToken(symbol2, token_owner, I_SecurityToken.address, "I am custom ST", new BN(0), { from: account_polymath })
             );
         });
 

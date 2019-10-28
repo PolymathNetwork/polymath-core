@@ -30,7 +30,7 @@ async function executeApp () {
     console.log('\n', chalk.blue('STO Manager - Main Menu'), '\n');
 
     // Show non-archived attached STO modules
-    let stoModules = await common.getAllModulesByType(securityToken, gbl.constants.MODULES_TYPES.STO);
+    let stoModules = await common.getAllModulesByType(securityToken, gbl.constants.MODULES_TYPES.STO, polyToken);
     let nonArchivedModules = stoModules.filter(m => !m.archived);
     if (nonArchivedModules.length > 0) {
       console.log(`STO modules attached:`);

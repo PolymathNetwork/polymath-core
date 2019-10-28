@@ -110,9 +110,9 @@ contract("GeneralPermissionManager", async (accounts) => {
         ] = instances;
 
         // STEP 5: Deploy the GeneralDelegateManagerFactory
-        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
+        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0, new BN(0));
         // STEP 6: Deploy the GeneralDelegateManagerFactory
-        [P_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, new BN(web3.utils.toWei("500")));
+        [P_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, new BN(web3.utils.toWei("500")), new BN(0));
         I_SecurityTokenRegistryInterface = await SecurityTokenRegistryInterface.at(I_SecurityTokenRegistryProxy.address);
         // Printing all the contract addresses
         console.log(`
@@ -548,7 +548,7 @@ contract("GeneralPermissionManager", async (accounts) => {
         it("should get the exact details of the factory", async () => {
             assert.equal(await I_GeneralPermissionManagerFactory.setupCost.call(), 0);
             assert.equal((await I_GeneralPermissionManagerFactory.getTypes.call())[0], 1);
-            assert.equal(await I_GeneralPermissionManagerFactory.version.call(), "3.0.0");
+            assert.equal(await I_GeneralPermissionManagerFactory.version.call(), "3.1.0");
             assert.equal(
                 web3.utils.toAscii(await I_GeneralPermissionManagerFactory.name.call()).replace(/\u0000/g, ""),
                 "GeneralPermissionManager",

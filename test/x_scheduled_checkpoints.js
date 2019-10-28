@@ -82,7 +82,7 @@ contract("ScheduledCheckpoint", async (accounts) => {
         account_investor2 = accounts[8];
         account_investor3 = accounts[9];
 
-        // Step 1: Deploy the general PM ecosystem
+        // Step 1: Deploy the genral PM ecosystem
         let instances = await setUpPolymathNetwork(account_polymath, token_owner);
 
         [
@@ -102,7 +102,7 @@ contract("ScheduledCheckpoint", async (accounts) => {
         ] = instances;
 
         // STEP 2: Deploy the ScheduleCheckpointModule
-        [I_ScheduledCheckpointFactory] = await deployScheduleCheckpointAndVerified(account_polymath, I_MRProxied, 0);
+        [I_ScheduledCheckpointFactory] = await deployScheduleCheckpointAndVerified(account_polymath, I_MRProxied, 0, new BN(0));
 
         // Printing all the contract addresses
         console.log(`

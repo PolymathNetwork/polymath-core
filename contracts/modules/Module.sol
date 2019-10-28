@@ -6,6 +6,7 @@ import "../interfaces/IModuleFactory.sol";
 import "../interfaces/IDataStore.sol";
 import "../interfaces/ISecurityToken.sol";
 import "../interfaces/ICheckPermission.sol";
+import "../interfaces/IPolymathRegistry.sol";
 import "../storage/modules/ModuleStorage.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
@@ -15,6 +16,9 @@ import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
  * @notice Contract is abstract
  */
 contract Module is IModule, ModuleStorage, Pausable {
+
+    event UsageFeeDeducted(address indexed _wallet, address indexed _securityToken, address _module);
+
     /**
      * @notice Constructor
      * @param _securityToken Address of the security token
@@ -81,12 +85,24 @@ contract Module is IModule, ModuleStorage, Pausable {
         require(token.transfer(msg.sender, balance), "Transfer failed");
     }
 
-   /**
-    * @notice Reclaims ETH
-    * @dev We duplicate here due to the overriden owner & onlyOwner
-    */
+    /**
+     * @notice Reclaims ETH
+     * @dev We duplicate here due to the overriden owner & onlyOwner
+     */
     function reclaimETH() external {
         _onlySecurityTokenOwner();
         msg.sender.transfer(address(this).balance);
+    }
+
+    /**
+     * @notice Deduct the usage cost
+     */
+    function _deductUsageFee() internal {
+        uint256 _usageCost = IModuleFactory(factory).usageCostInPoly();
+        address factoryOwner = IModuleFactory(factory).owner();
+        if (_usageCost > 0 && factoryOwner != address(0)) {
+            require(polyToken.transferFrom(address(securityToken), factoryOwner, _usageCost), "Insufficient allowance");
+            emit UsageFeeDeducted(factoryOwner, address(securityToken), address(this));
+        }
     }
 }

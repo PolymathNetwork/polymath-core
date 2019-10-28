@@ -117,9 +117,9 @@ contract("CountTransferManager", async (accounts) => {
         ] = instances;
 
         // STEP 2: Deploy the CountTransferManager
-        [I_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, 0);
+        [I_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, 0, new BN(0));
         // STEP 3: Deploy Paid the CountTransferManager
-        [P_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, new BN(web3.utils.toWei("500", "ether")));
+        [P_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, new BN(web3.utils.toWei("500", "ether")), new BN(0));
 
         // Printing all the contract addresses
         console.log(`
@@ -504,7 +504,7 @@ contract("CountTransferManager", async (accounts) => {
                 );
                 await catchRevert(
                     // Fails due to the same version being used
-                    I_CountTransferManagerFactory.setLogicContract("3.0.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath }),
+                    I_CountTransferManagerFactory.setLogicContract("3.1.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath }),
                     "Same version"
                 );
                 await catchRevert(
@@ -535,7 +535,7 @@ contract("CountTransferManager", async (accounts) => {
                 let bytesCM = encodeProxyCall(["uint256"], [12]);
                 await catchRevert(
                     // Fails due to the same version being used
-                    I_CountTransferManagerFactory.updateLogicContract(1, "3.0.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath }),
+                    I_CountTransferManagerFactory.updateLogicContract(1, "3.1.0", I_MockCountTransferManagerLogic.address, bytesCM, { from: account_polymath }),
                     "Same version"
                 );
                 await catchRevert(
@@ -638,16 +638,19 @@ contract("CountTransferManager", async (accounts) => {
 
             it("Should successfully change the cost type -- fail beacuse of bad owner", async () => {
                 await catchRevert(
-                    I_CountTransferManagerFactory.changeCostAndType(new BN(web3.utils.toWei("500")), true, { from: account_investor3 }),
+                    I_CountTransferManagerFactory.changeCostAndType(new BN(web3.utils.toWei("500")), new BN(0), true, { from: account_investor3 }),
                     "revert"
                 );
             });
 
             it("Should successfully change the cost type", async () => {
                 let snapId = await takeSnapshot();
-                let tx = await I_CountTransferManagerFactory.changeCostAndType(new BN(web3.utils.toWei("500")), true, { from: account_polymath });
+                let tx = await I_CountTransferManagerFactory.changeCostAndType(new BN(web3.utils.toWei("500")), new BN(0), true, { from: account_polymath });
                 assert.equal(tx.logs[0].args[1].toString(), new BN(web3.utils.toWei("500")).toString(), "wrong setup fee in event");
-                assert.equal(tx.logs[1].args[1], true, "wrong fee type in event");
+                assert.equal(tx.logs[1].args[1], false, "wrong fee type in event");
+                await increaseTime(duration.days(1.1));
+                await I_CountTransferManagerFactory.changeCostType({from: account_polymath});
+                assert.isTrue(await I_CountTransferManagerFactory.isCostInPoly.call());
                 assert.equal((await I_CountTransferManagerFactory.setupCost.call()).toString(), new BN(web3.utils.toWei("500")).toString());
                 assert.equal((await I_CountTransferManagerFactory.setupCost.call()).toString(), (await I_CountTransferManagerFactory.setupCostInPoly.call()).toString());
                 await revertToSnapshot(snapId);

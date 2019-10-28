@@ -24,7 +24,7 @@ const REVOKE_SCHEDULE_CSV = `${__dirname}/../data/Wallet/VEW/revoke_schedule_dat
 async function executeApp() {
   console.log('\n', chalk.blue('Wallet - Main Menu', '\n'));
   
-  let wModules = await common.getAllModulesByType(securityToken, gbl.constants.MODULES_TYPES.WALLET);
+  let wModules = await common.getAllModulesByType(securityToken, gbl.constants.MODULES_TYPES.WALLET, polyToken);
   let nonArchivedModules = wModules.filter(m => !m.archived);
   if (nonArchivedModules.length > 0) {
     console.log(`Wallet modules attached:`);

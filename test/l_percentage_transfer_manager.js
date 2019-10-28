@@ -125,16 +125,17 @@ contract("PercentageTransferManager", async (accounts) => {
         ] = instances;
 
         // STEP 2: Deploy the GeneralDelegateManagerFactory
-        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
+        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0, new BN(0));
 
         // STEP 3(a): Deploy the PercentageTransferManager
-        [I_PercentageTransferManagerFactory] = await deployPercentageTMAndVerified(account_polymath, I_MRProxied, 0);
+        [I_PercentageTransferManagerFactory] = await deployPercentageTMAndVerified(account_polymath, I_MRProxied, 0, new BN(0));
 
         // STEP 4(b): Deploy the PercentageTransferManager
         [P_PercentageTransferManagerFactory] = await deployPercentageTMAndVerified(
             account_polymath,
             I_MRProxied,
-            new BN(web3.utils.toWei("500", "ether"))
+            new BN(web3.utils.toWei("500", "ether")),
+            new BN(0)
         );
         // Printing all the contract addresses
         console.log(`
@@ -442,7 +443,7 @@ contract("PercentageTransferManager", async (accounts) => {
                 "Wrong Module added"
             );
             assert.equal(await I_PercentageTransferManagerFactory.title.call(), "Percentage Transfer Manager", "Wrong Module added");
-            assert.equal(await I_PercentageTransferManagerFactory.version.call(), "3.0.0");
+            assert.equal(await I_PercentageTransferManagerFactory.version.call(), "3.1.0");
         });
 
         it("Should get the tags of the factory", async () => {

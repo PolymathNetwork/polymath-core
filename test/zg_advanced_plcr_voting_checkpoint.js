@@ -25,16 +25,21 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
     let account_investor4;
     let account_investor5;
     let account_treasury;
+    let account_signer1;
+    let account_signer2;
+    let whitelabeler;
 
     // Contract Instance Declaration
     let I_SecurityTokenRegistryProxy;
     let I_GeneralTransferManagerFactory;
     let I_AdvancedPLCRVotingCheckpoint;
     let I_AdvancedPLCRVotingCheckpointFactory;
-    let P_AdvancedPLCRVotingCheckpointFactory
+    let P_AdvancedPLCRVotingCheckpointFactory;
+    let P_AdvancedPLCRVotingCheckpoint;
     let I_GeneralTransferManager;
     let I_ModuleRegistry;
     let I_ModuleRegistryProxy;
+    let I_MultiSigWallet;
     let I_MRProxied;
     let I_STRProxied;
     let I_FeatureRegistry;
@@ -111,7 +116,9 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
         account_investor3 = accounts[9];
         account_investor4 = accounts[6];
         account_investor5 = accounts[4];
-
+        account_signer1 = accounts[2];
+        account_signer2 = accounts[3];
+        whitelabeler = account_signer2;
 
         // Step 1: Deploy the genral PM ecosystem
         let instances = await setUpPolymathNetwork(account_polymath, token_owner);
@@ -133,9 +140,9 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
         ] = instances;
 
         // STEP 2: Deploy the AdvancedPLCRVotingCheckpointFactory
-        [I_AdvancedPLCRVotingCheckpointFactory] = await deployAdvancedPLCRVotingCheckpointAndVerifyed(account_polymath, I_MRProxied, 0);
+        [I_AdvancedPLCRVotingCheckpointFactory] = await deployAdvancedPLCRVotingCheckpointAndVerifyed(account_polymath, I_MRProxied, 0, new BN(0));
         // STEP 3: Deploy Paid the AdvancedPLCRVotingCheckpointFactory
-        [P_AdvancedPLCRVotingCheckpointFactory] = await deployAdvancedPLCRVotingCheckpointAndVerifyed(account_polymath, I_MRProxied, web3.utils.toWei("500", "ether"));
+        [P_AdvancedPLCRVotingCheckpointFactory] = await deployAdvancedPLCRVotingCheckpointAndVerifyed(account_polymath, I_MRProxied, web3.utils.toWei("500", "ether"), new BN(0));
 
         // Printing all the contract addresses
         console.log(`
@@ -682,7 +689,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                         from: account_investor1
                     }
                 ),
-                "choices count mismatch"
+                "Choices mismatch"
             );
         });
 
@@ -715,7 +722,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                         from: account_investor4
                     }
                 ),
-                "Secret vote not available"
+                "No secret vote"
             );
         });
 
@@ -886,7 +893,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                         from: token_owner
                     }
                 ),
-                "Invalid checkpoint Id"
+                "Invalid checkpointId"
             );
             // -- CustomCumulativeBallot
             await catchRevert(
@@ -904,7 +911,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                         from: token_owner
                     }
                 ),
-                "Invalid checkpoint Id"
+                "Invalid checkpointId"
             );
 
             // Create successfully ballot
@@ -1668,6 +1675,104 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
 
             const ballotN2Exempt = await I_AdvancedPLCRVotingCheckpoint.getExemptedVotersByBallot(ballotId2.add(new BN(1)))
             assert.deepEqual(ballotN2Exempt.length, 0, "Exempted list of non-existent ballot should be empty");
+        });
+    });
+
+    describe("Test cases for non zero usage cost", async() => {
+
+        it("Deploy and attach the module having non-zero usage cost", async() => {
+            [P_AdvancedPLCRVotingCheckpointFactory] = await deployAdvancedPLCRVotingCheckpointAndVerifyed(
+                account_polymath,
+                I_MRProxied,
+                new BN(web3.utils.toWei("500", "ether")),
+                new BN(web3.utils.toWei("500", "ether"))
+            );
+            await I_PolyToken.transfer(I_SecurityToken.address, new BN(web3.utils.toWei("50000", "ether")), { from: token_owner });
+            const tx = await I_SecurityToken.addModule(
+                P_AdvancedPLCRVotingCheckpointFactory.address,
+                '0x0',
+                new BN(web3.utils.toWei("5000")),
+                new BN(web3.utils.toWei("2000")),
+                false,
+                { 
+                    from: token_owner 
+                }
+            );
+            assert.equal(tx.logs[3].args._types[0].toNumber(), CHECKPOINT_KEY, "AdvancedPLCRVotingCheckpoint factory doesn't get deployed");
+            assert.equal(
+                web3.utils.toUtf8(tx.logs[3].args._name),
+                "AdvancedPLCRVotingCheckpoint",
+                "AdvancedPLCRVotingCheckpoint module was not added"
+            );
+            P_AdvancedPLCRVotingCheckpoint = await AdvancedPLCRVotingCheckpoint.at(tx.logs[3].args._module);
+        });
+
+        it("Create the ballot under the usage cost", async() => {
+            let name = web3.utils.toHex("Ballot 1");
+            let startTime = (await currentTime()).add(new BN(duration.days(1)));
+            let commitDuration = new BN(duration.hours(5));
+            let revealDuration = new BN(duration.hours(4));
+            let proposalTitle = "Titile 1";
+            let details = web3.utils.toHex("Offchain detaiils");
+            let choices = "";
+            let noOfChoices = 0;
+            let tx = await P_AdvancedPLCRVotingCheckpoint.createStatutoryBallot(
+                name,
+                startTime,
+                commitDuration,
+                revealDuration,
+                proposalTitle,
+                details,
+                choices,
+                noOfChoices,
+                {
+                    from: token_owner
+                }
+            );
+            assert.equal(await I_SecurityToken.currentCheckpointId.call(), 10);
+            assert.equal(web3.utils.toUtf8(tx.logs[1].args._name), "Ballot 1");
+            assert.equal(tx.logs[1].args._checkpointId, 10);
+            assert.equal(tx.logs[1].args._ballotId, 0);
+            assert.equal(tx.logs[1].args._startTime, startTime.toString());
+            assert.equal(tx.logs[1].args._commitDuration, commitDuration.toString());
+            assert.equal(tx.logs[1].args._revealDuration, revealDuration.toString());
+            assert.equal(web3.utils.toUtf8(tx.logs[1].args._details), "Offchain detaiils");
+
+            let ballotDetails = await P_AdvancedPLCRVotingCheckpoint.getBallotDetails.call(tx.logs[1].args._ballotId);
+            assert.equal(convertToNumber(ballotDetails[1]), convertToNumber(await stGetter.totalSupplyAt.call(tx.logs[1].args._checkpointId)));
+            assert.equal(web3.utils.toUtf8(ballotDetails[0]), "Ballot 1");
+            assert.equal(ballotDetails[2], 10);
+            assert.equal(ballotDetails[3].toString(), startTime.toString());
+            assert.equal(ballotDetails[6].toString(), 1);
+            assert.equal(ballotDetails[12][0], 0);
+            assert.equal(ballotDetails[10], 0);
+            assert.isFalse(ballotDetails[9]);
+        });
+
+        it("Should fail to create the ballot again because of insufficient allowance", async() => {
+            let name = web3.utils.toHex("Ballot 2");
+            let startTime = (await currentTime()).add(new BN(duration.days(1)));
+            let commitDuration = new BN(duration.hours(5));
+            let revealDuration = new BN(duration.hours(4));
+            let proposalTitle = "Titile 2";
+            let details = web3.utils.toHex("Offchain detaiils");
+            let choices = "";
+            let noOfChoices = 0;
+            await catchRevert(
+                P_AdvancedPLCRVotingCheckpoint.createStatutoryBallot(
+                name,
+                startTime,
+                commitDuration,
+                revealDuration,
+                proposalTitle,
+                details,
+                choices,
+                noOfChoices,
+                {
+                    from: token_owner
+                }),
+                "Insufficient tokens allowable"
+            );
         });
     });
 

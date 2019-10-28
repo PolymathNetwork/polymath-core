@@ -230,7 +230,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
         I_DaiToken = await PolyTokenFaucet.new({ from: POLYMATH });
 
         // STEP 5: Deploy the USDTieredSTOFactory
-        [I_USDTieredSTOFactory] = await deployUSDTieredSTOAndVerified(POLYMATH, I_MRProxied, STOSetupCost);
+        [I_USDTieredSTOFactory] = await deployUSDTieredSTOAndVerified(POLYMATH, I_MRProxied, STOSetupCost, new BN(0));
 
         // Step 12: Deploy & Register Mock Oracles
         I_USDOracle = await MockOracle.new(address_zero, web3.utils.fromAscii("ETH"), web3.utils.fromAscii("USD"), USDETH, { from: POLYMATH }); // 500 dollars per POLY

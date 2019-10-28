@@ -61,7 +61,7 @@ let currentTransferManager;
 async function executeApp() {
   console.log('\n', chalk.blue('Transfer Manager - Main Menu', '\n'));
 
-  let tmModules = await common.getAllModulesByType(securityToken, gbl.constants.MODULES_TYPES.TRANSFER);
+  let tmModules = await common.getAllModulesByType(securityToken, gbl.constants.MODULES_TYPES.TRANSFER, polyToken);
   let nonArchivedModules = tmModules.filter(m => !m.archived);
   if (nonArchivedModules.length > 0) {
     console.log(`Transfer Manager modules attached:`);

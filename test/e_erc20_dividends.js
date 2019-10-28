@@ -119,9 +119,10 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
         [P_ERC20DividendCheckpointFactory] = await deployERC20DividendAndVerifyed(
             account_polymath,
             I_MRProxied,
-            new BN(web3.utils.toWei("500", "ether"))
+            new BN(web3.utils.toWei("500", "ether")),
+            new BN(0)
         );
-        [I_ERC20DividendCheckpointFactory] = await deployERC20DividendAndVerifyed(account_polymath, I_MRProxied, 0);
+        [I_ERC20DividendCheckpointFactory] = await deployERC20DividendAndVerifyed(account_polymath, I_MRProxied, 0, new BN(0));
 
         // Printing all the contract addresses
         console.log(`
@@ -1054,7 +1055,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
         });
 
         it("should register a delegate", async () => {
-            [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
+            [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0, new BN(0));
             let tx = await I_SecurityToken.addModule(I_GeneralPermissionManagerFactory.address, "0x", new BN(0), new BN(0), false, { from: token_owner });
             assert.equal(tx.logs[2].args._types[0].toNumber(), delegateManagerKey, "General Permission Manager doesn't get deployed");
             assert.equal(
@@ -1324,7 +1325,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
             it("should get the exact details of the factory", async () => {
                 assert.equal((await I_ERC20DividendCheckpointFactory.setupCost.call()).toNumber(), 0);
                 assert.equal((await I_ERC20DividendCheckpointFactory.getTypes.call())[0], 4);
-                assert.equal(await I_ERC20DividendCheckpointFactory.version.call(), "3.0.0");
+                assert.equal(await I_ERC20DividendCheckpointFactory.version.call(), "3.1.0");
                 assert.equal(
                     web3.utils.toAscii(await I_ERC20DividendCheckpointFactory.name.call()).replace(/\u0000/g, ""),
                     "ERC20DividendCheckpoint",

@@ -6,6 +6,7 @@ import "../interfaces/IModule.sol";
 import "../interfaces/IOracle.sol";
 import "../interfaces/IPolymathRegistry.sol";
 import "../interfaces/IModuleFactory.sol";
+import "../interfaces/ISecurityTokenRegistry.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "../libraries/DecimalMath.sol";
@@ -15,6 +16,8 @@ import "../libraries/DecimalMath.sol";
  * @notice Contract is abstract
  */
 contract ModuleFactory is IModuleFactory, Ownable {
+
+    using SafeMath for uint256;
 
     IPolymathRegistry public polymathRegistry;
 
@@ -28,6 +31,12 @@ contract ModuleFactory is IModuleFactory, Ownable {
 
     bool public isCostInPoly;
     uint256 public setupCost;
+    uint256 public usageCost;
+    uint256 public proposedUsageCost;
+    uint256 public usageCostProposedAt;
+    bool public willCostInPoly;
+    uint256 public changeInCostTypeAt;
+    uint256 internal constant COLDPERIOD = 24 hours;
 
     string constant POLY_ORACLE = "StablePolyUsdOracle";
 
@@ -41,10 +50,15 @@ contract ModuleFactory is IModuleFactory, Ownable {
     /**
      * @notice Constructor
      */
-    constructor(uint256 _setupCost, address _polymathRegistry, bool _isCostInPoly) public {
+    constructor(uint256 _setupCost, uint256 _usageCost, address _polymathRegistry, bool _isCostInPoly) public {
         setupCost = _setupCost;
+        usageCost = _usageCost;
+        proposedUsageCost = usageCost;
+        usageCostProposedAt = now;
+        changeInCostTypeAt = now;
         polymathRegistry = IPolymathRegistry(_polymathRegistry);
         isCostInPoly = _isCostInPoly;
+        willCostInPoly = isCostInPoly;
     }
 
     /**
@@ -78,15 +92,59 @@ contract ModuleFactory is IModuleFactory, Ownable {
     }
 
     /**
+     * @notice Used to change the usage cost
+     */
+    function changeUsageCost() public onlyOwner {
+        require(now > usageCostProposedAt.add(COLDPERIOD), "Proposal is in unmatured state");
+        emit ChangeUsageCost(usageCost, proposedUsageCost);
+        usageCost = proposedUsageCost;
+    }
+
+    /**
+     * @notice Used to propose the usage cost
+     * @param _usageCostProposed Proposed usage cost amount
+     */
+    function proposeUsageCost(uint256 _usageCostProposed) external onlyOwner {
+        _proposeUsageCost(_usageCostProposed);
+    }
+
+    function _proposeUsageCost(uint256 _usageCostProposed) internal {
+        require(usageCost != proposedUsageCost);
+        usageCostProposedAt = now;
+        emit UsageCostProposed(proposedUsageCost, usageCost);
+        proposedUsageCost = _usageCostProposed;
+    }
+
+    /**
      * @notice Used to change the currency and amount of setup cost
      * @param _setupCost new setup cost
+     * @param _usageCost new usage cost
      * @param _isCostInPoly new setup cost currency. USD or POLY
      */
-    function changeCostAndType(uint256 _setupCost, bool _isCostInPoly) public onlyOwner {
+    function changeCostAndType(uint256 _setupCost, uint256 _usageCost, bool _isCostInPoly) external onlyOwner {
         emit ChangeSetupCost(setupCost, _setupCost);
-        emit ChangeCostType(isCostInPoly, _isCostInPoly);
         setupCost = _setupCost;
-        isCostInPoly = _isCostInPoly;
+        if (usageCost != _usageCost) {
+            _proposeUsageCost(_usageCost);
+        }
+        _proposedChangeInCostType(_isCostInPoly);
+    }
+
+    /**
+     * @notice Used to change the cost type
+     */
+    function changeCostType() external onlyOwner {
+        require(now > changeInCostTypeAt.add(COLDPERIOD), "Proposal is in unmatured state");
+        emit ChangeCostType(isCostInPoly, willCostInPoly);
+        isCostInPoly = willCostInPoly;
+    }
+
+    function _proposedChangeInCostType(bool _isCostInPoly) internal {
+        if (isCostInPoly != _isCostInPoly) {
+            changeInCostTypeAt = now;
+            willCostInPoly = _isCostInPoly;
+            emit ChangeCostTypeProposed(willCostInPoly, isCostInPoly);
+        }
     }
 
     /**
@@ -174,6 +232,16 @@ contract ModuleFactory is IModuleFactory, Ownable {
             return setupCost;
         uint256 polyRate = IOracle(polymathRegistry.getAddress(POLY_ORACLE)).getPrice();
         return DecimalMath.div(setupCost, polyRate);
+    }
+
+    /**
+     * @notice Get the usage cost of the module
+     */
+    function usageCostInPoly() public returns (uint256) {
+        if (isCostInPoly)
+            return usageCost;
+        uint256 polyRate = IOracle(polymathRegistry.getAddress(POLY_ORACLE)).getPrice();
+        return DecimalMath.div(usageCost, polyRate);
     }
 
     /**

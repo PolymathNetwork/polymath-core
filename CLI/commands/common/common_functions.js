@@ -5,6 +5,31 @@ const abis = require('../helpers/contract_abis');
 const input = require('../IO/input');
 const readlineSync = require('readline-sync');
 
+async function checkBudget(securityToken, polyToken, currentModule) {
+  let result = true;
+  const factoryAddress = await currentModule.methods.factory().call();
+  const moduleFactoryABI = abis.moduleFactory();
+  const moduleFactory = new web3.eth.Contract(moduleFactoryABI, factoryAddress);
+  moduleFactory.setProvider(web3.currentProvider);
+
+  const usageCost = new web3.utils.BN(await moduleFactory.methods.usageCostInPoly().call());
+  if (usageCost.gt(new web3.utils.BN(0))) {
+    const currentAllowance = new web3.utils.BN(await polyToken.methods.allowance(securityToken.options.address, currentModule.options.address).call());
+    if (currentAllowance.lt(usageCost)) {
+      result = false;
+      console.log(chalk.red(`POLY allowance is not enough. Please change the budget for this module and try again.`));
+    } else {
+      const currentBalance = new web3.utils.BN(await polyToken.methods.balanceOf(securityToken.options.address).call());
+      if (currentBalance.lt(usageCost)) {
+        result = false;
+        console.log(chalk.red(`POLY balance is not enough. Please transfer POLY to the Security Token contract and try again.`));
+      }
+    }
+  }
+
+  return result;
+}
+
 async function addModule (securityToken, polyToken, factoryAddress, moduleABI, getInitializeData, configFile) {
   const moduleFactoryABI = abis.moduleFactory();
   const moduleFactory = new web3.eth.Contract(moduleFactoryABI, factoryAddress);
@@ -27,6 +52,23 @@ async function addModule (securityToken, polyToken, factoryAddress, moduleABI, g
     }
   }
 
+  let budgetAmount = new web3.utils.BN(0);
+  const moduleUsageCost = new web3.utils.BN(await moduleFactory.methods.usageCostInPoly().call());
+  if (moduleUsageCost.gt(new web3.utils.BN(0))) {
+    console.log(`This module has an usage cost of ${web3.utils.fromWei(moduleUsageCost)} POLY.`);
+    budgetAmount = new web3.utils.BN(web3.utils.toWei(input.readNumberGreaterThanOrEqual(0, `Enter the amount of POLY you want to set as budget for this module: `)));
+    if (readlineSync.keyInYNStrict(`Do you want to transfer ${web3.utils.fromWei(budgetAmount)} POLY to Security Token contract now?`)) {
+      const issuerBalance = new web3.utils.BN(await polyToken.methods.balanceOf(Issuer.address).call());
+      transferAmount = transferAmount.add(budgetAmount)
+      if (issuerBalance.lt(transferAmount)) {
+        console.log(chalk.red(`\n**************************************************************************************************************************************************`));
+        console.log(chalk.red(`Not enough balance to set the ${moduleName} budget. Requires ${web3.utils.fromWei(budgetAmount)} POLY but have ${web3.utils.fromWei(issuerBalance)} POLY. Access POLY faucet to get the POLY to complete this txn`));
+        console.log(chalk.red(`**************************************************************************************************************************************************\n`));
+        process.exit(0);
+      }
+    }
+  }
+
   let bytes = web3.utils.fromAscii('', 16);
   if (typeof getInitializeData !== 'undefined') {
     bytes = await getInitializeData(moduleABI, configFile);
@@ -40,7 +82,7 @@ async function addModule (securityToken, polyToken, factoryAddress, moduleABI, g
     let transferEvent = this.getEventFromLogs(polyToken._jsonInterface, transferReceipt.logs, 'Transfer');
     console.log(`Number of POLY sent: ${web3.utils.fromWei(new web3.utils.BN(transferEvent.value))}`);
   }
-  let addModuleAction = securityToken.methods.addModuleWithLabel(factoryAddress, bytes, moduleFee, 0, moduleLabel, addModuleArchived);
+  let addModuleAction = securityToken.methods.addModuleWithLabel(factoryAddress, bytes, moduleFee, budgetAmount, moduleLabel, addModuleArchived);
   let receipt = await this.sendTransaction(addModuleAction);
   let event = this.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'ModuleAdded');
   console.log(`${moduleName} deployed at address: ${event._module}`);
@@ -59,8 +101,8 @@ async function getAvailableModules(moduleRegistry, moduleType, stAddress) {
   return moduleList;
 }
 
-async function getAllModulesByType (securityToken, type) {
-  function ModuleInfo (_moduleType, _name, _address, _factoryAddress, _archived, _paused, _version, _label) {
+async function getAllModulesByType (securityToken, type, polyToken) {
+  function ModuleInfo (_moduleType, _name, _address, _factoryAddress, _archived, _paused, _version, _label, _remainingBudget) {
     this.name = _name;
     this.type = _moduleType;
     this.address = _address;
@@ -69,6 +111,7 @@ async function getAllModulesByType (securityToken, type) {
     this.paused = _paused;
     this.version = _version;
     this.label = _label;
+    this.remainingBudget = _remainingBudget;
   }
 
   let modules = [];
@@ -79,6 +122,11 @@ async function getAllModulesByType (securityToken, type) {
     let pausedTemp = await contractTemp.methods.paused().call();
     let factory = new web3.eth.Contract(abis.moduleFactory(), details[2]);
     let versionTemp = await factory.methods.version().call();
+    let usageCost = await factory.methods.usageCostInPoly().call();
+    let remainingBudget;
+    if (usageCost !== '0') {
+      remainingBudget = web3.utils.fromWei(await polyToken.methods.allowance(securityToken.options.address, details[1]).call());
+    }
     modules.push(new ModuleInfo(
       type,
       web3.utils.hexToUtf8(details[0]),
@@ -87,7 +135,8 @@ async function getAllModulesByType (securityToken, type) {
       details[3],
       pausedTemp,
       versionTemp,
-      web3.utils.hexToUtf8(details[5])
+      web3.utils.hexToUtf8(details[5]),
+      remainingBudget
       ));
   }
 
@@ -342,5 +391,6 @@ module.exports = {
   addModule,
   getAvailableModules,
   getAllModulesByType,
-  selectToken
+  selectToken,
+  checkBudget
 };

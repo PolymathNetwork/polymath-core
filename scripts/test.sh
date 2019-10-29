@@ -106,6 +106,6 @@ else
       node --max-old-space-size=8192 node_modules/.bin/truffle test `find test/*.js ! -name a_poly_oracle.js | circleci tests split --split-by=timings`
     fi
   else
-    node --max-old-space-size=8192 node_modules/.bin/truffle test `find test/*.js ! -name a_poly_oracle.js`
+    node --max-old-space-size=8192 node_modules/.bin/truffle test test/w_lockup_transfer_manager.js
   fi
 fi

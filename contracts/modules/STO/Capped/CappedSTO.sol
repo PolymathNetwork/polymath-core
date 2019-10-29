@@ -270,8 +270,13 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
     * @notice Determines how ETH is stored/forwarded on purchases.
     */
     function _forwardFunds(uint256 _refund) internal {
-        wallet.transfer(msg.value.sub(_refund));
-        msg.sender.transfer(_refund);
+        // Remove the transfer in the favor of Intanbul fork
+        // wallet.transfer(msg.value.sub(_refund));
+        // msg.sender.transfer(_refund);
+        (bool success, ) = wallet.call.value(msg.value.sub(_refund))("");
+        require(success, "Fail in transfering ETH");
+        (success, ) = msg.sender.call.value(_refund)("");
+        require(success, "Fail in refunding ETH");
     }
 
     /**

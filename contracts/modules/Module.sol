@@ -91,7 +91,10 @@ contract Module is IModule, ModuleStorage, Pausable {
      */
     function reclaimETH() external {
         _onlySecurityTokenOwner();
-        msg.sender.transfer(address(this).balance);
+        // Remove the transfer in the favor of Intanbul fork
+        // msg.sender.transfer(address(this).balance);
+        (bool success, ) = msg.sender.call.value(address(this).balance)("");
+        require(success, "Fail in transfer ETH");
     }
 
     /**

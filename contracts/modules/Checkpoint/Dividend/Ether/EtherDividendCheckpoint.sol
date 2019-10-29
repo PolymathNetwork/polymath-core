@@ -200,6 +200,7 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         dividend.reclaimed = true;
         uint256 remainingAmount = dividend.amount.sub(dividend.claimedAmount);
         address payable wallet = getTreasuryWallet();
+        // needs to work on this Before Istanbul fork
         wallet.transfer(remainingAmount);
         emit EtherDividendReclaimed(wallet, _dividendIndex, remainingAmount);
     }
@@ -214,8 +215,11 @@ contract EtherDividendCheckpoint is DividendCheckpoint {
         uint256 remainingWithheld = dividend.totalWithheld.sub(dividend.totalWithheldWithdrawn);
         dividend.totalWithheldWithdrawn = dividend.totalWithheld;
         address payable wallet = getTreasuryWallet();
-        wallet.transfer(remainingWithheld);
         emit EtherDividendWithholdingWithdrawn(wallet, _dividendIndex, remainingWithheld);
+        // Remove the transfer in the favor of Intanbul fork
+        // wallet.transfer(remainingWithheld);
+        (bool success, ) = wallet.call.value(remainingWithheld)("");
+        require(success, "Fail in transfering ETH");
     }
 
 }

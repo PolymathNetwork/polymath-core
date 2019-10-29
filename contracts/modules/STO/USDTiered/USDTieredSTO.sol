@@ -326,7 +326,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         }
         stableTokens = _stableTokens;
         for(i = 0; i < _stableTokens.length; i++) {
-            require(address(_stableTokens[i]) != address(0) && _stableTokens[i] != polyToken, "Invalid USD token");
+            require(address(_stableTokens[i]) != address(0) && _stableTokens[i] != polyToken, "Invalid token");
             stableTokenEnabled[address(_stableTokens[i])] = true;
         }
         emit SetAddresses(wallet, _stableTokens);
@@ -383,7 +383,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      */
     function changeNonAccreditedLimit(address[] calldata _investors, uint256[] calldata _nonAccreditedLimit) external withPerm(OPERATOR) {
         //nonAccreditedLimitUSDOverride
-        require(_investors.length == _nonAccreditedLimit.length, "Length mismatch");
+        require(_investors.length == _nonAccreditedLimit.length);
         for (uint256 i = 0; i < _investors.length; i++) {
             nonAccreditedLimitUSDOverride[_investors[i]] = _nonAccreditedLimit[i];
             emit SetNonAccreditedLimit(_investors[i], _nonAccreditedLimit[i]);
@@ -452,11 +452,20 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         investorInvested[_beneficiary][uint8(FundRaiseType.ETH)] = investorInvested[_beneficiary][uint8(FundRaiseType.ETH)].add(spentValue);
         fundsRaised[uint8(FundRaiseType.ETH)] = fundsRaised[uint8(FundRaiseType.ETH)].add(spentValue);
         // Forward ETH to issuer wallet
-        wallet.transfer(spentValue);
+        // Remove the transfer in the favor of Intanbul fork
+        // wallet.transfer(spentValue);
+        _transferFunds(wallet, spentValue);
         // Refund excess ETH to investor wallet
-        msg.sender.transfer(msg.value.sub(spentValue));
+        // Remove the transfer in the favor of Intanbul fork
+        // msg.sender.transfer(msg.value.sub(spentValue));
+        _transferFunds(msg.sender, msg.value.sub(spentValue));
         emit FundsReceived(msg.sender, _beneficiary, spentUSD, FundRaiseType.ETH, msg.value, spentValue, rate);
         return (spentUSD, spentValue, getTokensMinted().sub(initialMinted));
+    }
+
+    function _transferFunds(address _wallet, uint256 _value) internal {
+        (bool success, ) = _wallet.call.value(_value)("");
+        require(success);
     }
 
     /**
@@ -573,7 +582,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         // Check for non-accredited cap
         if (!_isAccredited(_beneficiary)) {
             uint256 investorLimitUSD = (nonAccreditedLimitUSDOverride[_beneficiary] == 0) ? nonAccreditedLimitUSD : nonAccreditedLimitUSDOverride[_beneficiary];
-            require(investorInvestedUSD[_beneficiary] < investorLimitUSD, "Over Non-accredited investor limit");
+            require(investorInvestedUSD[_beneficiary] < investorLimitUSD, "Over NA-Investor limit");
             if (investedUSD.add(investorInvestedUSD[_beneficiary]) > investorLimitUSD)
                 netInvestedUSD = investorLimitUSD.sub(investorInvestedUSD[_beneficiary]);
         }
@@ -653,7 +662,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         }
 
         if (purchasedTokens > 0) {
-            if (preMintAllowed)
+            if (preMintAllowed) 
                 securityToken.transfer(_beneficiary, purchasedTokens);
             else
                 securityToken.issue(_beneficiary, purchasedTokens, "");
@@ -680,22 +689,17 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @notice This function returns whether or not the STO is in fundraising mode (open)
      * @return bool Whether the STO is accepting investments
      */
-    function isOpen() public view returns(bool) {
+    function isOpen() public view returns(bool _isOpen) {
         /*solium-disable-next-line security/no-block-members*/
-        if (isFinalized || now < startTime || now >= endTime || capReached())
-            return false;
-        return true;
+        _isOpen = (isFinalized || now < startTime || now >= endTime || capReached()) ? false : true;
     }
 
     /**
      * @notice Checks whether the cap has been reached.
      * @return bool Whether the cap was reached
      */
-    function capReached() public view returns (bool) {
-        if (isFinalized) {
-            return (finalAmountReturned == 0);
-        }
-        return (tiers[tiers.length - 1].totalTokensSoldInTier == tiers[tiers.length - 1].tokenTotal);
+    function capReached() public view returns (bool isCapReached) {
+        isCapReached = isFinalized ? (finalAmountReturned == 0) : (tiers[tiers.length - 1].totalTokensSoldInTier == tiers[tiers.length - 1].tokenTotal);
     }
 
     /**
@@ -704,12 +708,16 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      */
     function getRate(FundRaiseType _fundRaiseType) public returns (uint256) {
         if (_fundRaiseType == FundRaiseType.ETH) {
-            return IOracle(_getOracle(bytes32("ETH"))).getPrice();
+            return _getPrice(bytes32("ETH"));
         } else if (_fundRaiseType == FundRaiseType.POLY) {
-            return IOracle(_getOracle(bytes32("POLY"))).getPrice();
+            return _getPrice(bytes32("POLY"));
         } else if (_fundRaiseType == FundRaiseType.SC) {
             return 10**18;
         }
+    }
+
+    function _getPrice(bytes32 _currencyType) internal returns (uint256) {
+        return IOracle(_getOracle(_currencyType)).getPrice();
     }
 
     /**
@@ -725,22 +733,22 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
     }
 
     /**
-     * @notice This function converts from ETH or POLY to USD
+     * @notice This function converts from ETH or POLY to given denominated currency
      * @param _fundRaiseType Currency key
-     * @param _amount Value to convert to USD
-     * @return uint256 Value in USD
+     * @param _amount Value to convert to given denominated currency
+     * @return uint256 Value in given denominated currency
      */
-    function convertToUSD(FundRaiseType _fundRaiseType, uint256 _amount) public returns(uint256) {
+    function convertToUSD(FundRaiseType _fundRaiseType, uint256 _amount) external returns(uint256) {
         return DecimalMath.mul(_amount, getRate(_fundRaiseType));
     }
 
     /**
-     * @notice This function converts from USD to ETH or POLY
+     * @notice This function converts from denominated currency to ETH or POLY
      * @param _fundRaiseType Currency key
-     * @param _amount Value to convert from USD
+     * @param _amount Value to convert from denominated currency
      * @return uint256 Value in ETH or POLY
      */
-    function convertFromUSD(FundRaiseType _fundRaiseType, uint256 _amount) public returns(uint256) {
+    function convertFromUSD(FundRaiseType _fundRaiseType, uint256 _amount) external returns(uint256) {
         return DecimalMath.div(_amount, getRate(_fundRaiseType));
     }
 

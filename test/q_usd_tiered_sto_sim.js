@@ -454,7 +454,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
                             // under non-accredited cap
                             await invest(NONACCREDITED1, false);
                         // over non-accredited cap
-                        else await investFAIL(NONACCREDITED1, "Over Non-accredited investor limit");
+                        else await investFAIL(NONACCREDITED1, "Over NA-Investor limit");
                         break;
                     case 3: // NONACCREDITED2
                         let usd_NONACCREDITED2 = await I_USDTieredSTO_Array[stoId].investorInvestedUSD.call(NONACCREDITED2);
@@ -462,7 +462,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
                             // under non-accredited cap
                             await invest(NONACCREDITED2, false);
                         // over non-accredited cap
-                        else await investFAIL(NONACCREDITED2, "Over Non-accredited investor limit");
+                        else await investFAIL(NONACCREDITED2, "Over NA-Investor limit");
                         break;
                     case 4: // NOTWHITELISTED
                         await investFAIL(NOTWHITELISTED, "Transfer Invalid");

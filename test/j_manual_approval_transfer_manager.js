@@ -96,6 +96,7 @@ contract("ManualApprovalTransferManager", accounts => {
         account_investor4 = accounts[9];
         account_investor5 = accounts[5];
 
+
         // Step 1: Deploy the genral PM ecosystem
         let instances = await setUpPolymathNetwork(account_polymath, token_owner);
 
@@ -116,13 +117,13 @@ contract("ManualApprovalTransferManager", accounts => {
         ] = instances;
 
         // STEP 2: Deploy the GeneralDelegateManagerFactory
-        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
+        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0, new BN(0));
         // STEP 3: Deploy the ManualApprovalTransferManagerFactory
-        [I_ManualApprovalTransferManagerFactory] = await deployManualApprovalTMAndVerifyed(account_polymath, I_MRProxied, 0);
+        [I_ManualApprovalTransferManagerFactory] = await deployManualApprovalTMAndVerifyed(account_polymath, I_MRProxied, 0, new BN(0));
         // STEP 4: Deploy the Paid ManualApprovalTransferManagerFactory
-        [P_ManualApprovalTransferManagerFactory] = await deployManualApprovalTMAndVerifyed(account_polymath, I_MRProxied, web3.utils.toWei("500", "ether"));
+        [P_ManualApprovalTransferManagerFactory] = await deployManualApprovalTMAndVerifyed(account_polymath, I_MRProxied, web3.utils.toWei("500", "ether"), new BN(0));
         // STEP 5: Deploy the CountTransferManagerFactory
-        [I_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, 0);
+        [I_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, 0, new BN(0));
 
         // Printing all the contract addresses
         console.log(`
@@ -835,7 +836,7 @@ contract("ManualApprovalTransferManager", accounts => {
             assert.equal(desc, "Manage transfers using single approvals", "Wrong Module added");
             let title = await I_ManualApprovalTransferManagerFactory.title.call();
             assert.equal(title, "Manual Approval Transfer Manager", "Wrong Module added");
-            assert.equal(await I_ManualApprovalTransferManagerFactory.version.call(), "3.0.0");
+            assert.equal(await I_ManualApprovalTransferManagerFactory.version.call(), "3.1.0");
         });
 
         it("Should get the tags of the factory", async () => {

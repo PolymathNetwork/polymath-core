@@ -106,9 +106,9 @@ contract('LockUpTransferManager', accounts => {
         ] = instances;
 
         // STEP 4(c): Deploy the LockUpVolumeRestrictionTMFactory
-        [I_LockUpTransferManagerFactory] = await deployLockUpTMAndVerified(account_polymath, I_MRProxied, 0);
+        [I_LockUpTransferManagerFactory] = await deployLockUpTMAndVerified(account_polymath, I_MRProxied, 0, new BN(0));
         // STEP 4(d): Deploy the LockUpVolumeRestrictionTMFactory
-        [P_LockUpTransferManagerFactory] = await deployLockUpTMAndVerified(account_polymath, I_MRProxied, new BN(web3.utils.toWei("500")));
+        [P_LockUpTransferManagerFactory] = await deployLockUpTMAndVerified(account_polymath, I_MRProxied, new BN(web3.utils.toWei("500")), new BN(0));
 
         // Printing all the contract addresses
         console.log(`
@@ -1238,7 +1238,7 @@ contract('LockUpTransferManager', accounts => {
             assert.equal(await I_LockUpTransferManagerFactory.title.call(),
                         "LockUp Transfer Manager",
                         "Wrong Module added");
-            assert.equal(await I_LockUpTransferManagerFactory.version.call(), "3.0.0");
+            assert.equal(await I_LockUpTransferManagerFactory.version.call(), "3.1.0");
         });
 
         it("Should get the tags of the factory", async() => {

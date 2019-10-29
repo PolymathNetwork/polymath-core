@@ -2,7 +2,7 @@ pragma solidity ^0.5.8;
 
 import "../VotingCheckpoint.sol";
 import "./AdvancedPLCRVotingCheckpointStorage.sol";
-import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "../../../../libraries/AdvancedPLCRVotingLib.sol";
 
 contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, VotingCheckpoint {
 
@@ -112,7 +112,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
     public
     withPerm(ADMIN) 
     {   
-        require(_checkpointId <= securityToken.currentCheckpointId(), "Invalid checkpoint Id");
+        _checkValidCheckpointId(_checkpointId);
         _createCustomStatutoryBallot(_name, _startTime, _commitDuration, _revealDuration, _proposalTitle, _details, _choices, _noOfChoices, _checkpointId);
     }
 
@@ -128,13 +128,13 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         uint256 _checkpointId
     )
     internal
-    {
-        //TODO: Charging Usage cost
+    {   
         _validateMaximumLimitCount();
         _startTime = _getStartTime(_startTime);
         _isEmptyBytes32(_name);
         _isEmptyString(_proposalTitle);
         _isGreaterThanZero(_commitDuration, _revealDuration);
+        _deductUsageFee(); // Deducting the usage cost of creating the ballots
         uint256 ballotId = ballots.length;
         ballots.push(Ballot(
             _checkpointId, uint64(_commitDuration), uint64(_revealDuration), uint64(_startTime), uint24(1), uint32(0), false, _name
@@ -182,7 +182,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
     public
     withPerm(ADMIN) 
     {
-        require(_checkpointId <= securityToken.currentCheckpointId(), "Invalid checkpoint Id");
+        _checkValidCheckpointId(_checkpointId);
         _createCustomCumulativeBallot(
             _name, _startTime, _commitDuration, _revealDuration, _proposalTitles, _details, _choices, _noOfChoices, _checkpointId
         );
@@ -238,6 +238,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         _isEmptyString(_proposalTitles);
         _isGreaterThanZero(_commitDuration, _revealDuration);
         _isValidLength(_noOfChoices.length, _details.length);
+        _deductUsageFee(); // Deducting the usage cost of creating the ballots
         uint256 ballotId = ballots.length;
         ballots.push(Ballot(
             _checkpointId, uint64(_commitDuration), uint64(_revealDuration), uint64(_startTime), uint24(_noOfChoices.length), uint32(0), false, _name
@@ -294,7 +295,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
     function _addExemptedAddresses(address[] memory _exemptedAddresses, uint256 _ballotId) internal {
         for (uint256 i = 0; i < _exemptedAddresses.length; i++) {
             Ballot storage ballot = ballots[_ballotId];
-            if (_exemptedAddresses[i] != address(0)) 
+            if (_exemptedAddresses[i] != address(0))
                 ballot.exemptedVoters[_exemptedAddresses[i]] = true;
         }
         emit VotersExempted(_ballotId, _exemptedAddresses);
@@ -457,7 +458,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         Ballot storage ballot = ballots[_ballotId];
         // validate the storage values 
         require(!ballot.isCancelled, "Cancelled ballot");
-        require(ballot.voteDetails[msg.sender].secretVote != bytes32(0), "Secret vote not available");
+        require(ballot.voteDetails[msg.sender].secretVote != bytes32(0), "No secret vote");
         uint256 choiceCount = 0;
         uint256 i;
         for (i = 0; i < ballot.totalProposals; i++) {
@@ -465,7 +466,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
             _noOfChoice = _noOfChoice == 0 ? 3 : _noOfChoice;
             choiceCount = choiceCount.add(_noOfChoice);
         }
-        require(choiceCount == _choices.length, "choices count mismatch");
+        require(choiceCount == _choices.length, "Choices mismatch");
 
         // validate the secret vote
         require(
@@ -485,6 +486,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
             }
             choiceCount = temp;
         }
+        require(totalChoiceWeight <= weight);
         // update the storage values
         ballot.totalVoters = ballot.totalVoters + 1;
         ballot.voteDetails[msg.sender] = Vote(bytes32(0));
@@ -549,6 +551,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
      * @param _exempt Whether it is exempted or not
      */
     function changeDefaultExemptedVotersList(address _voter, bool _exempt) public {
+        // @FIXME add a reason string once we decrease overall contract size (also for all other instances of _isAnyBallotRunning)
         require(!_isAnyBallotRunning());
         super.changeDefaultExemptedVotersList(_voter, _exempt);
     }
@@ -567,10 +570,11 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         uint256 length = ballots.length;
         isAnyBallotActive = false;
         if (length != 0) {
-            uint256 count = length -1;
-            for (uint256 i = count; i >= 0 && i < count; i--) {
+            uint256 count = length - 1;
+            // "i <= count" is to prevert underflow.
+            for (uint256 i = count; i >= 0 && i <= count; i--) {
                 Stage currentStage = getCurrentBallotStage(i);
-                if (currentStage == Stage.COMMIT && currentStage == Stage.REVEAL && !ballots[i].isCancelled) {
+                if (!ballots[i].isCancelled && (currentStage == Stage.COMMIT || currentStage == Stage.REVEAL)) {
                     isAnyBallotActive = true;
                     break;
                 }
@@ -605,38 +609,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         if (_ballotId >= ballots.length)
             return pendingInvestors;
         else {
-            Ballot storage ballot = ballots[_ballotId];
-            address[] memory allowedVoters = getAllowedVotersByBallot(_ballotId);
-            uint256 count = 0;
-            uint256 i;
-            for (i = 0; i < allowedVoters.length ; i++) {
-                if (getCurrentBallotStage(_ballotId) == Stage.COMMIT) {
-                    if (ballot.voteDetails[allowedVoters[i]].secretVote == bytes3(0)) {
-                        count++;
-                    }
-                }
-                else if (getCurrentBallotStage(_ballotId) == Stage.REVEAL) {
-                    if (ballot.voteDetails[allowedVoters[i]].voteOptions[0].length == 0) {
-                        count++;
-                    }
-                }
-            }
-            pendingInvestors = new address[](count);
-            count = 0;
-            for (i = 0; i < allowedVoters.length ; i++) {
-                if (getCurrentBallotStage(_ballotId) == Stage.COMMIT) {
-                    if (ballot.voteDetails[allowedVoters[i]].secretVote == bytes3(0)) {
-                        pendingInvestors[count] = allowedVoters[i];
-                        count++;
-                    }
-                }
-                else if (getCurrentBallotStage(_ballotId) == Stage.REVEAL) {
-                    if (ballot.voteDetails[allowedVoters[i]].voteOptions[0].length == 0) {
-                        pendingInvestors[count] = allowedVoters[i];
-                        count++;
-                    }
-                }
-            }
+            pendingInvestors = AdvancedPLCRVotingLib.getPendingInvestorToVote(getAllowedVotersByBallot(_ballotId), ballots[_ballotId]);
         }
     }
 
@@ -649,21 +622,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         if (_ballotId >= ballots.length)
             return commitedVoteCount;
         else {
-            Ballot storage ballot = ballots[_ballotId];
-            uint256 i;
-            address[] memory allowedVoters = getAllowedVotersByBallot(_ballotId);
-            if (getCurrentBallotStage(_ballotId) == Stage.COMMIT) {
-                for (i = 0; i < allowedVoters.length; i++) {
-                    if (ballot.voteDetails[allowedVoters[i]].secretVote != bytes32(0))
-                        commitedVoteCount++;
-                }
-            } else if (getCurrentBallotStage(_ballotId) == Stage.REVEAL || getCurrentBallotStage(_ballotId) == Stage.RESOLVED) {
-                for (i = 0; i < allowedVoters.length; i++) {
-                    if (ballot.voteDetails[allowedVoters[i]].secretVote != bytes32(0)
-                        || ballot.voteDetails[allowedVoters[i]].voteOptions[0].length != uint256(0))
-                        commitedVoteCount++;
-                }
-            }
+            commitedVoteCount = AdvancedPLCRVotingLib.getCommitedVoteCount(getAllowedVotersByBallot(_ballotId), ballots[_ballotId]);
         }
     }
 
@@ -735,28 +694,12 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         if (_ballotId >= ballots.length) {
             return exemptedVoters;
         } else {
-            uint256 count = 0;
-            uint256 i;
-            Ballot storage ballot = ballots[_ballotId];
-            address[] memory investorAtCheckpoint = securityToken.getInvestorsAt(ballot.checkpointId);
-            uint256 length = investorAtCheckpoint.length;
-            for (i = 0; i < length; i++) {
-                if (ballot.exemptedVoters[investorAtCheckpoint[i]])
-                    count++;
+            exemptedVoters = AdvancedPLCRVotingLib.getExemptedVotersByBallot(
+                    securityToken.getInvestorsAt(ballots[_ballotId].checkpointId),
+                    defaultExemptedVoters,
+                    ballots[_ballotId]
+                );
             }
-            exemptedVoters = new address[](count.add(defaultExemptedVoters.length));
-            count = 0;
-            for (i = 0; i < length; i++) {
-                if (ballot.exemptedVoters[investorAtCheckpoint[i]]) {
-                    exemptedVoters[count] = investorAtCheckpoint[i];
-                    count++;
-                }
-            }
-            for (i = 0; i < defaultExemptedVoters.length; i++) {
-                exemptedVoters[count] = defaultExemptedVoters[i];
-                count++;
-            }
-        }
     }
 
     /**
@@ -800,18 +743,8 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
      * @param _ballotId Given ballot Id
      */
     function getCurrentBallotStage(uint256 _ballotId) public view returns (Stage) {
-        Ballot memory ballot = ballots[_ballotId];
-        uint256 commitTimeEnd = uint256(ballot.startTime).add(uint256(ballot.commitDuration));
-        uint256 revealTimeEnd = commitTimeEnd.add(uint256(ballot.revealDuration));
-
-        if (now < ballot.startTime)
-            return Stage.PREP;
-        else if (now >= ballot.startTime && now <= commitTimeEnd) 
-            return Stage.COMMIT;
-        else if ( now > commitTimeEnd && now <= revealTimeEnd)
-            return Stage.REVEAL;
-        else if (now > revealTimeEnd)
-            return Stage.RESOLVED;
+        Ballot storage ballot = ballots[_ballotId];
+        return AdvancedPLCRVotingLib.getCurrentBallotStage(ballot);
     }
 
     /**
@@ -853,41 +786,10 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         )
             return (choicesWeighting, noOfChoicesInProposal, voters);
         else {
-            address[] memory allowedVoters = getAllowedVotersByBallot(_ballotId);
-            Ballot storage ballot = ballots[_ballotId];
-            voters = new address[](ballot.totalVoters);
-            (uint256 i, uint256 j, uint256 k, uint256 count) = (0, 0, 0, 0);
-            // Filtering the actual voters address from the allowed voters address list
-            for (i = 0; i < allowedVoters.length; i++) {
-                if (ballot.voteDetails[allowedVoters[i]].voteOptions[0].length > 0) {
-                    voters[count] = allowedVoters[i];
-                    count++;
-                } 
-            }
-            count = 0;
-            // calculating the length of the choicesWeighting array it should be equal
-            // to the aggregation of ∑(proposalᵢ * noOfChoicesᵢ) where i = 0 ...totalProposal-1 
-            for (i = 0; i < ballot.totalProposals; i++) {
-                uint256 _noOfChoice = _getNoOfChoice(ballot.proposals[i].noOfChoices);
-                count = count.add(_noOfChoice);
-            }
-            choicesWeighting = new uint256[](count);
-            noOfChoicesInProposal = new uint256[](ballot.totalProposals);
-            count = 0;
-            for (i = 0; i < ballot.totalProposals; i++) {
-                uint256 _noOfChoices = _getNoOfChoice(ballot.proposals[i].noOfChoices);
-                noOfChoicesInProposal[i] = _noOfChoices;
-                uint256 nextProposalChoiceLen = count + _noOfChoices;
-                for (j = 0; j < ballot.totalVoters; j++) {
-                    uint256[] storage choiceWeight = ballot.voteDetails[voters[j]].voteOptions[i];
-                    uint256 l = 0;
-                    for (k = count; k < nextProposalChoiceLen; k++) {
-                        choicesWeighting[k] = choicesWeighting[k].add(choiceWeight[l]);
-                        l++;
-                    }
-                }
-                count = nextProposalChoiceLen;
-            }
+            (choicesWeighting, noOfChoicesInProposal, voters) = AdvancedPLCRVotingLib.getBallotResults(
+                getAllowedVotersByBallot(_ballotId),
+                ballots[_ballotId]
+            );
         }
     }
 
@@ -1020,6 +922,10 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
 
     function _getNoOfChoice(uint256 _noOfChoice) internal pure returns(uint256 noOfChoice) {
         noOfChoice = _noOfChoice == 0 ? DEFAULTCHOICE : _noOfChoice;
+    }
+
+    function _checkValidCheckpointId(uint256 _checkpointId) internal view {
+        require(_checkpointId <= securityToken.currentCheckpointId(), "Invalid checkpointId");
     }
 
 }

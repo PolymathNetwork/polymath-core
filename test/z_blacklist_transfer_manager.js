@@ -131,13 +131,13 @@ contract('BlacklistTransferManager', accounts => {
         ] = instances;
 
         // STEP 2: Deploy the GeneralDelegateManagerFactory
-        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, new BN(0));
+        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, new BN(0), new BN(0));
 
         // STEP 3(a): Deploy the PercentageTransferManager
-        [I_BlacklistTransferManagerFactory] = await deployBlacklistTMAndVerified(account_polymath, I_MRProxied, new BN(0));
+        [I_BlacklistTransferManagerFactory] = await deployBlacklistTMAndVerified(account_polymath, I_MRProxied, new BN(0), new BN(0));
 
         // STEP 4(b): Deploy the PercentageTransferManager
-        [P_BlacklistTransferManagerFactory] = await deployBlacklistTMAndVerified(account_polymath, I_MRProxied, new BN(web3.utils.toWei("500", "ether")));
+        [P_BlacklistTransferManagerFactory] = await deployBlacklistTMAndVerified(account_polymath, I_MRProxied, new BN(web3.utils.toWei("500", "ether")), new BN(0));
         // ----------- POLYMATH NETWORK Configuration ------------
 
         // Printing all the contract addresses
@@ -1073,7 +1073,7 @@ contract('BlacklistTransferManager', accounts => {
                         "Blacklist Transfer Manager",
                         "Wrong Module added");
             assert.equal(await I_BlacklistTransferManagerFactory.version.call(),
-                        "3.0.0",
+                        "3.1.0",
                         "Wrong Module added");
 
         });

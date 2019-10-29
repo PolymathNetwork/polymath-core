@@ -93,6 +93,8 @@ contract("USDTieredSTO Sim", async (accounts) => {
     let _wallet = [];
     let _treasuryWallet = [];
     let _usdToken = [];
+    let _customOracleAddresses = [];
+    let _denominatedCurrency = [];
 
     const address_zero = "0x0000000000000000000000000000000000000000";
     const one_address = "0x0000000000000000000000000000000000000001";
@@ -161,7 +163,15 @@ contract("USDTieredSTO Sim", async (accounts) => {
             },
             {
                 type: "address[]",
-                name: "_usdTokens"
+                name: "_stableTokens"
+            },
+            {
+                type: "address[]",
+                name: "_customOracleAddresses"
+            },
+            {
+                type: "bytes32",
+                name: "_denominatedCurrency"
             }
         ]
     };
@@ -220,7 +230,7 @@ contract("USDTieredSTO Sim", async (accounts) => {
         I_DaiToken = await PolyTokenFaucet.new({ from: POLYMATH });
 
         // STEP 5: Deploy the USDTieredSTOFactory
-        [I_USDTieredSTOFactory] = await deployUSDTieredSTOAndVerified(POLYMATH, I_MRProxied, STOSetupCost);
+        [I_USDTieredSTOFactory] = await deployUSDTieredSTOAndVerified(POLYMATH, I_MRProxied, STOSetupCost, new BN(0));
 
         // Step 12: Deploy & Register Mock Oracles
         I_USDOracle = await MockOracle.new(address_zero, web3.utils.fromAscii("ETH"), web3.utils.fromAscii("USD"), USDETH, { from: POLYMATH }); // 500 dollars per POLY
@@ -294,6 +304,8 @@ contract("USDTieredSTO Sim", async (accounts) => {
             _wallet.push(WALLET);
             _treasuryWallet.push(TREASURYWALLET);
             _usdToken.push(I_DaiToken.address);
+            _customOracleAddresses.push([]);
+            _denominatedCurrency.push(web3.utils.toHex(""));
 
             let config = [
                 _startTime[stoId].toString(),
@@ -307,7 +319,9 @@ contract("USDTieredSTO Sim", async (accounts) => {
                 _fundRaiseTypes[stoId],
                 _wallet[stoId],
                 _treasuryWallet[stoId],
-                [_usdToken[stoId]]
+                [_usdToken[stoId]],
+                _customOracleAddresses[stoId],
+                _denominatedCurrency[stoId]
             ];
 
             _ratePerTier = [];

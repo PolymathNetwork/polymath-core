@@ -15,6 +15,7 @@
     "wincov": "scripts\\wincov.cmd",
     "docs": "DOCS_PUBLISH=true scripts/docs.sh",
     "docs:generate": "DOCS_PUBLISH=false scripts/docs.sh",
+    "docs:start": "cd polymath-developer-portal/website && yarn start",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "lint:sol": "solium -d .",

@@ -327,7 +327,7 @@ contract('LockUpTransferManager', accounts => {
             let tx = await I_LockUpTransferManager.pause({from: token_owner});
         });
 
-        it("Module is paused - Should return all user's entire as UNLOCKED", async () => {
+        it("Module is paused - Should return user's entire balance as UNLOCKED", async () => {
             const balance = await I_SecurityToken.balanceOf.call(account_investor2);
             const unlocked = await I_LockUpTransferManager.getTokensByPartition.call(web3.utils.utf8ToHex(`UNLOCKED`), account_investor2, new BN(0));
             console.log('UNLOCKED, balance', unlocked.toString(), balance.toString());
@@ -824,14 +824,45 @@ contract('LockUpTransferManager', accounts => {
             await I_SecurityToken.transfer(account_investor1, web3.utils.toWei('3'), { from: account_investor3 })
         });
 
-        // @FIXME1
         it("Should fail to remove user from lockup as they're already removed", async () => {
-            await catchRevert(I_LockUpTransferManager.removeLockUpFromUserMulti(
-                [account_investor3],
-                [web3.utils.fromAscii("d_lockup")], {
+            const currentTime2 = new BN(await latestTime());
+            await I_LockUpTransferManager.addNewLockUpToUser(
+                account_investor3,
+                web3.utils.toWei("6", "ether"),
+                currentTime2.add(new BN(duration.seconds(1))),
+                60,
+                20,
+                web3.utils.fromAscii("e_lockup"),
+                {
+                    from: token_owner
+                }
+            );
+
+            const lockups = await I_LockUpTransferManager.getLockupsNamesToUser(account_investor3);
+            console.log('USER LOCKUPS', lockups.map(lockup => web3.utils.toUtf8(lockup)));
+            await catchRevert(I_LockUpTransferManager.removeLockUpFromUser(
+                account_investor3,
+                web3.utils.fromAscii("d_lockup"), {
                     from: token_owner
                 }
             ), "User not in lockup");
+        })
+
+        it("Special case - Should fail to remove user from lockup if they're not in ANY lockups", async () => {
+            // First, remove user from latest lockup (ie e_lockup)
+            await I_LockUpTransferManager.removeLockUpFromUser(
+                account_investor3,
+                web3.utils.fromAscii("e_lockup"), {
+                    from: token_owner
+                }
+            );
+
+            await catchRevert(I_LockUpTransferManager.removeLockUpFromUser(
+                account_investor3,
+                web3.utils.fromAscii("e_lockup"), {
+                    from: token_owner
+                }
+            ), "User not in any lockups");
         })
 
         it("Should fail to modify the lockup -- because of bad owner", async() => {

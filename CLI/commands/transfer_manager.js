@@ -65,7 +65,7 @@ async function executeApp() {
   let nonArchivedModules = tmModules.filter(m => !m.archived);
   if (nonArchivedModules.length > 0) {
     console.log(`Transfer Manager modules attached:`);
-    nonArchivedModules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
+    nonArchivedModules.map(m => `${m.label}: ${m.title} (${m.version}) at ${m.address}`);
   } else {
     console.log(`There are no Transfer Manager modules attached`);
   }
@@ -324,7 +324,7 @@ async function manageOperators() {
 }
 
 async function configExistingModules(tmModules) {
-  let options = tmModules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
+  let options = tmModules.map(m => `${m.label}: ${m.title} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module do you want to config? ', { cancel: 'RETURN' });
   console.log('Selected:', index !== -1 ? options[index] : 'RETURN', '\n');
   let moduleNameSelected = index !== -1 ? tmModules[index].name : 'RETURN';
@@ -375,10 +375,9 @@ async function configExistingModules(tmModules) {
 
 async function addTransferManagerModule() {
   let moduleList = await common.getAvailableModules(moduleRegistry, gbl.constants.MODULES_TYPES.TRANSFER, securityToken.options.address);
-  let options = moduleList.map(m => `${m.name} - ${m.version} (${m.factoryAddress})`);
-
+  let options = moduleList.map(m => `${m.title} - ${m.version} (${m.factoryAddress})`);
   let index = readlineSync.keyInSelect(options, 'Which Transfer Manager module do you want to add? ', { cancel: 'RETURN' });
-  if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${moduleList[index].name} module?`)) {
+  if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${moduleList[index].title} module?`)) {
     let getInitializeData;
     let moduleAbi;
     switch (moduleList[index].name) {

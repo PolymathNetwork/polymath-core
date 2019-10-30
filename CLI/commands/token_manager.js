@@ -125,32 +125,32 @@ async function displayModules() {
 
   if (numPM) {
     console.log(`Permission Manager Modules:`);
-    pmModules.map(m => console.log(`- ${m.label}: ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address} ${m.remainingBudget ? ` - Remaining budget: ${m.remainingBudget} POLY` : ''}`));
+    pmModules.map(m => console.log(`- ${m.label}: ${m.title} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address} ${m.remainingBudget ? ` - Remaining budget: ${m.remainingBudget} POLY` : ''}`));
   }
 
   if (numTM) {
     console.log(`Transfer Manager Modules:`);
-    tmModules.map(m => console.log(`- ${m.label}: ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address} ${m.remainingBudget ? ` - Remaining budget: ${m.remainingBudget} POLY` : ''}`));
+    tmModules.map(m => console.log(`- ${m.label}: ${m.title} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address} ${m.remainingBudget ? ` - Remaining budget: ${m.remainingBudget} POLY` : ''}`));
   }
 
   if (numSTO) {
     console.log(`STO Modules:`);
-    stoModules.map(m => console.log(`- ${m.label}: ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address} ${m.remainingBudget ? ` - Remaining budget: ${m.remainingBudget} POLY` : ''}`));
+    stoModules.map(m => console.log(`- ${m.label}: ${m.title} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address} ${m.remainingBudget ? ` - Remaining budget: ${m.remainingBudget} POLY` : ''}`));
   }
 
   if (numCP) {
     console.log(`Checkpoint Modules:`);
-    cpModules.map(m => console.log(`- ${m.label}: ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address} ${m.remainingBudget ? ` - Remaining budget: ${m.remainingBudget} POLY` : ''}`));
+    cpModules.map(m => console.log(`- ${m.label}: ${m.title} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address} ${m.remainingBudget ? ` - Remaining budget: ${m.remainingBudget} POLY` : ''}`));
   }
 
   if (numBURN) {
     console.log(`Burn Modules:`);
-    burnModules.map(m => console.log(`- ${m.label}: ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address} ${m.remainingBudget ? ` - Remaining budget: ${m.remainingBudget} POLY` : ''}`));
+    burnModules.map(m => console.log(`- ${m.label}: ${m.title} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address} ${m.remainingBudget ? ` - Remaining budget: ${m.remainingBudget} POLY` : ''}`));
   }
 
   if (numW) {
     console.log(`Wallet Modules:`);
-    walletModules.map(m => console.log(`- ${m.label}: ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address} ${m.remainingBudget ? ` - Remaining budget: ${m.remainingBudget} POLY` : ''}`));
+    walletModules.map(m => console.log(`- ${m.label}: ${m.title} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address} ${m.remainingBudget ? ` - Remaining budget: ${m.remainingBudget} POLY` : ''}`));
   }
 }
 
@@ -638,7 +638,7 @@ async function addModule() {
 }
 
 async function pauseModule(modules) {
-  let options = modules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
+  let options = modules.map(m => `${m.label}: ${m.title} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module would you like to pause?');
   if (index != -1) {
     console.log("\nSelected:", options[index]);
@@ -656,12 +656,12 @@ async function pauseModule(modules) {
     let pausableModule = new web3.eth.Contract(moduleABI, modules[index].address);
     let pauseAction = pausableModule.methods.pause();
     await common.sendTransaction(pauseAction);
-    console.log(chalk.green(`${modules[index].name} has been paused successfully!`));
+    console.log(chalk.green(`${modules[index].title} has been paused successfully!`));
   }
 }
 
 async function unpauseModule(modules) {
-  let options = modules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
+  let options = modules.map(m => `${m.label}: ${m.title} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module would you like to pause?');
   if (index != -1) {
     console.log("\nSelected: ", options[index]);
@@ -679,45 +679,45 @@ async function unpauseModule(modules) {
     let pausableModule = new web3.eth.Contract(moduleABI, modules[index].address);
     let unpauseAction = pausableModule.methods.unpause();
     await common.sendTransaction(unpauseAction);
-    console.log(chalk.green(`${modules[index].name} has been unpaused successfully!`));
+    console.log(chalk.green(`${modules[index].title} has been unpaused successfully!`));
   }
 }
 
 async function archiveModule(modules) {
-  let options = modules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
+  let options = modules.map(m => `${m.label}: ${m.title} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module would you like to archive?');
   if (index != -1) {
     console.log("\nSelected: ", options[index]);
     let archiveModuleAction = securityToken.methods.archiveModule(modules[index].address);
     await common.sendTransaction(archiveModuleAction, { factor: 2 });
-    console.log(chalk.green(`${modules[index].name} has been archived successfully!`));
+    console.log(chalk.green(`${modules[index].title} has been archived successfully!`));
   }
 }
 
 async function unarchiveModule(modules) {
-  let options = modules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
+  let options = modules.map(m => `${m.label}: ${m.title} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module would you like to unarchive?');
   if (index != -1) {
     console.log("\nSelected: ", options[index]);
     let unarchiveModuleAction = securityToken.methods.unarchiveModule(modules[index].address);
     await common.sendTransaction(unarchiveModuleAction, { factor: 2 });
-    console.log(chalk.green(`${modules[index].name} has been unarchived successfully!`));
+    console.log(chalk.green(`${modules[index].title} has been unarchived successfully!`));
   }
 }
 
 async function removeModule(modules) {
-  let options = modules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
+  let options = modules.map(m => `${m.label}: ${m.title} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module would you like to remove?');
   if (index != -1) {
     console.log("\nSelected: ", options[index]);
     let removeModuleAction = securityToken.methods.removeModule(modules[index].address);
     await common.sendTransaction(removeModuleAction, { factor: 2 });
-    console.log(chalk.green(`${modules[index].name} has been removed successfully!`));
+    console.log(chalk.green(`${modules[index].title} has been removed successfully!`));
   }
 }
 
 async function changeBudget(modules) {
-  let options = modules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address} - Remaining budget: ${m.remainingBudget ? m.remainingBudget : 0} POLY`);
+  let options = modules.map(m => `${m.label}: ${m.title} (${m.version}) at ${m.address} - Remaining budget: ${m.remainingBudget ? m.remainingBudget : 0} POLY`);
   let index = readlineSync.keyInSelect(options, 'Which module would you like to change budget for?');
   if (index != -1) {
     console.log("\nSelected: ", options[index]);

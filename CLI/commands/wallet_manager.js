@@ -11,6 +11,7 @@ const input = require('./IO/input');
 
 // App flow
 let securityTokenRegistry;
+let moduleRegistry;
 let securityToken;
 let polyToken;
 let tokenSymbol;
@@ -28,7 +29,7 @@ async function executeApp() {
   let nonArchivedModules = wModules.filter(m => !m.archived);
   if (nonArchivedModules.length > 0) {
     console.log(`Wallet modules attached:`);
-    nonArchivedModules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
+    nonArchivedModules.map(m => `${m.label}: ${m.title} (${m.version}) at ${m.address}`);
   } else {
     console.log(`There are no Wallet modules attached`);
   }
@@ -58,7 +59,7 @@ async function executeApp() {
 
 async function addWalletModule() {
   let moduleList = await common.getAvailableModules(moduleRegistry, gbl.constants.MODULES_TYPES.WALLET, securityToken.options.address);
-  let options = moduleList.map(m => `${m.name} - ${m.version} (${m.factoryAddress})`);
+  let options = moduleList.map(m => `${m.title} - ${m.version} (${m.factoryAddress})`);
 
   let index = readlineSync.keyInSelect(options, 'Which wallet module do you want to add? ', { cancel: 'RETURN' });
   if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]}? `)) {
@@ -75,7 +76,7 @@ function getVestingEscrowWalletInitializeData(moduleABI) {
 }
 
 async function configExistingModules(walletModules) {
-  let options = walletModules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
+  let options = walletModules.map(m => `${m.label}: ${m.title} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module do you want to config? ', { cancel: 'RETURN' });
   console.log('Selected:', index != -1 ? options[index] : 'RETURN', '\n');
   currentWalletModule = new web3.eth.Contract(abis.vestingEscrowWallet(), walletModules[index].address);

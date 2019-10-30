@@ -29,7 +29,7 @@ async function executeApp() {
   const nonArchivedModules = vModules.filter(m => !m.archived);
   if (nonArchivedModules.length > 0) {
     console.log(`Voting modules attached:`);
-    nonArchivedModules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
+    nonArchivedModules.map(m => `${m.label}: ${m.title} (${m.version}) at ${m.address}`);
   } else {
     console.log(`There are no voting modules attached`);
   }
@@ -70,8 +70,7 @@ async function createCheckpointFromST() {
 
 async function addVotingModule() {
   const moduleList = (await common.getAvailableModules(moduleRegistry, gbl.constants.MODULES_TYPES.DIVIDENDS, securityToken.options.address)).filter(m => m.name.includes('Voting'));
-  const options = moduleList.map(m => `${m.name} - ${m.version} (${m.factoryAddress})`);
-
+  const options = moduleList.map(m => `${m.title} - ${m.version} (${m.factoryAddress})`);
   const index = readlineSync.keyInSelect(options, 'Which voting module do you want to add? ', { cancel: 'RETURN' });
   if (index !== -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]}? `)) {
     const moduleABI = abis.advancedPLCRVotingCheckpointABI();
@@ -80,7 +79,7 @@ async function addVotingModule() {
 }
 
 async function configExistingModules(votingModules) {
-  const options = votingModules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
+  const options = votingModules.map(m => `${m.label}: ${m.title} (${m.version}) at ${m.address}`);
   const index = readlineSync.keyInSelect(options, 'Which module do you want to config? ', { cancel: false });
   console.log('Selected:', options[index], '\n');
   const moduleNameSelected = votingModules[index].name;

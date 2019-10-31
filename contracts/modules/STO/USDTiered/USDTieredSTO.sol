@@ -698,6 +698,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         return (tiers[tiers.length - 1].totalTokensSoldInTier == tiers[tiers.length - 1].tokenTotal);
     }
 
+    // CONCERN: This function should be removed or change there access modifier to internal in the favor of MakerDao Oracles V2
     /**
      * @dev returns current conversion rate of funds
      * @param _fundRaiseType Fund raise type to get rate of
@@ -724,6 +725,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         }
     }
 
+    // CONCERN: This function should be removed or change there access modifier to internal in the favor of MakerDao Oracles V2
     /**
      * @notice This function converts from ETH or POLY to USD
      * @param _fundRaiseType Currency key
@@ -734,6 +736,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         return DecimalMath.mul(_amount, getRate(_fundRaiseType));
     }
 
+    // CONCERN: This function should be removed or change there access modifier to internal in the favor of MakerDao Oracles V2
     /**
      * @notice This function converts from USD to ETH or POLY
      * @param _fundRaiseType Currency key

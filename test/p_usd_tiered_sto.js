@@ -11,6 +11,7 @@ const SecurityToken = artifacts.require("./SecurityToken.sol");
 const GeneralTransferManager = artifacts.require("./GeneralTransferManager");
 const PolyTokenFaucet = artifacts.require("./PolyTokenFaucet.sol");
 const STGetter = artifacts.require("./STGetter.sol");
+const MakerDaoOracleV2 = artifacts.require("./MakerDAOOracleV2.sol");
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -38,6 +39,7 @@ contract("USDTieredSTO", async (accounts) => {
     let DAI = 2;
     let oldEthRate;
     let oldPolyRate;
+    let I_OracleV2;
 
     let MESSAGE = "Transaction Should Fail!";
     const GAS_PRICE = 0;
@@ -297,7 +299,7 @@ contract("USDTieredSTO", async (accounts) => {
         `);
     });
 
-    describe.skip("Generate the SecurityToken", async () => {
+    describe("Generate the SecurityToken", async () => {
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.getTokens(REGFEE, ISSUER);
             await I_PolyToken.approve(I_STRProxied.address, REGFEE, { from: ISSUER });
@@ -329,7 +331,7 @@ contract("USDTieredSTO", async (accounts) => {
         });
     });
 
-    describe.skip("Test sto deployment", async () => {
+    describe("Test sto deployment", async () => {
         it("Should successfully attach the first STO module to the security token", async () => {
             let stoId = 0; // No discount
 
@@ -1046,7 +1048,7 @@ contract("USDTieredSTO", async (accounts) => {
         });
     });
 
-    describe.skip("Test modifying configuration", async () => {
+    describe("Test modifying configuration", async () => {
         it("Should not allow unauthorized address to change oracle address", async () => {
             let stoId = 3;
             await catchRevert(I_USDTieredSTO_Array[stoId].modifyOracles([], "0x0", { from: ACCREDITED1 }), "revert Sender is not owner");
@@ -1266,7 +1268,7 @@ contract("USDTieredSTO", async (accounts) => {
         });
     });
 
-    describe.skip("Test buying failure conditions", async () => {
+    describe("Test buying failure conditions", async () => {
         it("should fail if before STO start time", async () => {
             let stoId = 0;
             let snapId = await takeSnapshot();
@@ -1789,7 +1791,7 @@ contract("USDTieredSTO", async (accounts) => {
         });
     });
 
-    describe.skip("Prep STO", async () => {
+    describe("Prep STO", async () => {
         it("should jump forward to after STO start", async () => {
             let stoId = 0;
             await increaseTime(duration.days(3));
@@ -1828,7 +1830,7 @@ contract("USDTieredSTO", async (accounts) => {
         });
     });
 
-    describe.skip("Buy Tokens with no discount", async () => {
+    describe("Buy Tokens with no discount", async () => {
         it("Should prevent buying 0 amount", async () => {
             let stoId = 0;
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, 0, I_DaiToken.address, { from: NONACCREDITED1 }),
@@ -3546,7 +3548,7 @@ contract("USDTieredSTO", async (accounts) => {
         });
     });
 
-    describe.skip("Buy Tokens with POLY discount", async () => {
+    describe("Buy Tokens with POLY discount", async () => {
         it("should successfully buy using fallback at tier 0 for NONACCREDITED1", async () => {
             let stoId = 2;
             let tierId = 0;
@@ -5052,7 +5054,7 @@ contract("USDTieredSTO", async (accounts) => {
         });
     });
 
-    describe.skip("Test getter functions", async () => {
+    describe("Test getter functions", async () => {
         describe("Generic", async () => {
             it("should get the right number of investors", async () => {
                 assert.equal(
@@ -5109,7 +5111,7 @@ contract("USDTieredSTO", async (accounts) => {
             });
         });
 
-        describe.skip("convertToUSD", async () => {
+        describe("convertToUSD", async () => {
             it("should reset exchange rates", async () => {
                 // Reset exchange rates
                 await I_USDOracle.changePrice(USDETH, { from: POLYMATH });
@@ -5143,7 +5145,7 @@ contract("USDTieredSTO", async (accounts) => {
             });
         });
 
-        describe.skip("convertFromUSD", async () => {
+        describe("convertFromUSD", async () => {
             it("should get the right conversion for USD to ETH", async () => {
                 // 10000 USD to 20 ETH
                 let usdInWei = new BN(web3.utils.toWei("10000", "ether"));
@@ -5875,6 +5877,140 @@ contract("USDTieredSTO", async (accounts) => {
             assert.equal(
                 tx.logs[0].args._beneficiary,
                 INVESTOR1
+            );
+        });
+    });
+
+    describe("Test the functionality of the MakerDao Oracles V2", async() => {
+
+        it("Should add the new tieredSTO successfully", async() => {
+        
+            let nowTime = await latestTime();
+            let _startTime = new BN(nowTime).add(new BN(duration.days(2))).toString();
+            let _endTime = new BN(_startTime).add(new BN(duration.days(100))).toString();
+            let _ratePerTier = [new BN(10).mul(e16).toString(), new BN(15).mul(e16).toString()]; // [ 0.10 USD/Token, 0.15 USD/Token ]
+            let _ratePerTierDiscountPoly = [new BN(10).mul(e16).toString(), new BN(15).mul(e16).toString()]; // [ 0.10 USD/Token, 0.15 USD/Token ]
+            let _tokensPerTierTotal = [new BN(100000000).mul(new BN(e18)).toString(), new BN(200000000).mul(new BN(e18)).toString()]; // [ 100m Token, 200m Token ]
+            let _tokensPerTierDiscountPoly = [new BN(0).toString(), new BN(0).toString()]; // [ new BN(0), 0 ]
+            let _nonAccreditedLimitUSD = new BN(10000).mul(new BN(e18)).toString(); // 10k EUR
+            let _minimumInvestmentUSD = new BN(5).mul(e18).toString(); // 5 EUR
+            let _fundRaiseTypes = [0, 1, 2];
+            let _wallet = WALLET;
+            let _treasuryWallet = TREASURYWALLET;
+            let _usdToken = [I_DaiToken.address];
+            let _oracleAddresses = [];
+            let _denominatedCurrency = web3.utils.fromAscii("");
+
+            let config = [
+                _startTime,
+                _endTime,
+                _ratePerTier,
+                _ratePerTierDiscountPoly,
+                _tokensPerTierTotal,
+                _tokensPerTierDiscountPoly,
+                _nonAccreditedLimitUSD,
+                _minimumInvestmentUSD,
+                _fundRaiseTypes,
+                _wallet,
+                _treasuryWallet,
+                _usdToken,
+                _oracleAddresses,
+                _denominatedCurrency
+            ];
+
+            let bytesSTO = web3.eth.abi.encodeFunctionCall(functionSignature, config);
+            let tx = await I_SecurityToken.addModule(I_USDTieredSTOFactory.address, bytesSTO, new BN(0), new BN(0), false, { from: ISSUER, gasPrice: GAS_PRICE });
+            console.log("          Gas addModule: ".grey + tx.receipt.gasUsed.toString().grey);
+            assert.equal(tx.logs[2].args._types[0], STOKEY, "USDTieredSTO doesn't get deployed");
+            assert.equal(web3.utils.hexToString(tx.logs[2].args._name), "USDTieredSTO", "USDTieredSTOFactory module was not added");
+            I_USDTieredSTO = await USDTieredSTO.at(tx.logs[2].args._module);
+
+            assert.equal((await I_USDTieredSTO.startTime.call()).toString(), _startTime.toString(), "Incorrect _startTime in config");
+            assert.equal((await I_USDTieredSTO.endTime.call()).toString(), _endTime.toString(), "Incorrect _endTime in config");
+            for (var i = 0; i < _ratePerTier.length; i++) {
+                assert.equal(
+                    (await I_USDTieredSTO.tiers.call(i))[0].toString(),
+                    _ratePerTier[i].toString(),
+                    "Incorrect _ratePerTier in config"
+                );
+                assert.equal(
+                    (await I_USDTieredSTO.tiers.call(i))[1].toString(),
+                    _ratePerTierDiscountPoly[i].toString(),
+                    "Incorrect _ratePerTierDiscountPoly in config"
+                );
+                assert.equal(
+                    (await I_USDTieredSTO.tiers.call(i))[2].toString(),
+                    _tokensPerTierTotal[i].toString(),
+                    "Incorrect _tokensPerTierTotal in config"
+                );
+                assert.equal(
+                    (await I_USDTieredSTO.tiers.call(i))[3].toString(),
+                    _tokensPerTierDiscountPoly[i].toString(),
+                    "Incorrect _tokensPerTierDiscountPoly in config"
+                );
+            }
+            assert.equal(
+                (await I_USDTieredSTO.nonAccreditedLimitUSD.call()).toString(),
+                _nonAccreditedLimitUSD.toString(),
+                "Incorrect _nonAccreditedLimitUSD in config"
+            );
+            assert.equal(
+                (await I_USDTieredSTO.minimumInvestmentUSD.call()).toString(),
+                _minimumInvestmentUSD.toString(),
+                "Incorrect _minimumInvestmentUSD in config"
+            );
+            assert.equal(await I_USDTieredSTO.wallet.call(), _wallet, "Incorrect _wallet in config");
+            assert.equal(
+                await I_USDTieredSTO.getTreasuryWallet.call(),
+                _treasuryWallet,
+                "Incorrect _treasuryWallet in config"
+            );
+            assert.equal((await I_USDTieredSTO.getUsdTokens())[0], _usdToken[0], "Incorrect _usdToken in config");
+            assert.equal(
+                await I_USDTieredSTO.getNumberOfTiers(),
+                _tokensPerTierTotal.length,
+                "Incorrect number of tiers"
+            );
+            assert.equal((await I_USDTieredSTO.getPermissions()).length, new BN(2), "Incorrect number of permissions");
+        });
+
+        it("Call the V2 oracles by the valid module of the registered securityToken", async() => {
+            // Step 1 - Deploy the oracle
+            I_OracleV2 = await MakerDaoOracleV2.new(
+                "0x0000000000000000000000000000000000000000",
+                "0x0000000000000000000000000000000000000000",
+                web3.utils.fromAscii("USD"),
+                I_PolymathRegistry.address,
+                {
+                    from: POLYMATH
+                }
+            );
+            // Step 2 - trigger manual price
+            await I_OracleV2.setManualOverride(true, {from: POLYMATH});
+            await I_OracleV2.setManualPrice(web3.utils.toWei("170"), {from: POLYMATH});
+            // Step 3 - Orwrite the existing oracle address with the new one
+            await I_PolymathRegistry.changeAddress("EthUsdOracle", I_OracleV2.address, {from: POLYMATH});
+            // Step 4 - Invest the funds to the USDTieredSTO and check whether oracle is working correctly or not
+            await increaseTime(duration.days(2.1));
+            let tx = await I_USDTieredSTO.buyWithETH(INVESTOR1, {from: INVESTOR1, value: new BN(web3.utils.toWei("10"))});
+            assert.equal(tx.logs.length, 2);
+            assert.equal(tx.logs[0].event, "TokenPurchase");
+            assert.equal(tx.logs[1].event, "FundsReceived");
+            assert.equal(
+                tx.logs[0].args._beneficiary,
+                INVESTOR1
+            );
+            assert.equal(
+                convertToNumber(await I_USDTieredSTO.getTokensSold.call()),
+                web3.utils.fromWei(tx.logs[0].args._tokens),
+                "Incorrect no of tokens sold"
+            );
+            assert.equal(web3.utils.fromWei(tx.logs[0].args._tokens), 17000);
+        });
+
+        it("Should fail to read the prices other than the valid module", async() => {
+            await catchRevert(
+                I_OracleV2.getPrice({from: INVESTOR1})
             );
         });
     });

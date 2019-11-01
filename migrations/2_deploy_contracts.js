@@ -52,6 +52,7 @@ const IssuanceLogic = artifacts.require("./Issuance.sol");
 const IssuanceFactory = artifacts.require("./IssuanceFactory.sol");
 
 const Web3 = require("web3");
+require('dotenv').config();
 let BN = Web3.utils.BN;
 const nullAddress = "0x0000000000000000000000000000000000000000";
 const cappedSTOSetupCost = new BN(20000).mul(new BN(10).pow(new BN(18))); // 20K POLY fee
@@ -118,20 +119,27 @@ module.exports = function(deployer, network, accounts) {
                 });
             });
     } else if (network === "kovan") {
-        web3 = new Web3(new Web3.providers.HttpProvider("https://kovan.infura.io/g5xfoQ0jFSE9S5LwM1Ei"));
+        web3 = new Web3(new Web3.providers.HttpProvider(process.env.KOVAN_ENDPOINT));
         PolymathAccount = accounts[0];
         PolyToken = "0xb347b9f5b56b431b2cf4e1d90a5995f7519ca792"; // PolyToken Kovan Faucet Address
         POLYOracle = "0x461d98EF2A0c7Ac1416EF065840fF5d4C946206C"; // Poly Oracle Kovan Address
         ETHOracle = "0xCE5551FC9d43E9D2CC255139169FC889352405C8"; // ETH Oracle Kovan Address
-        StablePOLYOracle = ""; // TODO
+        StablePOLYOracle = "0xdf397a6119a549f39612358e4d215c495486f3c9"; // Stable Poly oracle
+    } else if (network === "goerli") {
+        web3 = new Web3(new Web3.providers.HttpProvider(process.env.GOERLI_ENDPOINT));
+        PolymathAccount = accounts[0];
+        PolyToken = "0x5af7f19575c1b0638994158e1137698701a18c67"; // Mainnet PolyToken Address
+        POLYOracle = "0x3f20933f699076d5f296781982c4b80da8cc82e6"; // Poly Oracle Mainnet Address
+        ETHOracle = "0x1c3b89f506f34ab1a68f5ea4fe9a815f5b3bf416"; // ETH Oracle Mainnet Address
+        StablePOLYOracle = "0x692E83f816b8B35dd5f76eD90c4e2c721B637E4e"; // Stable Poly oracle
     } else if (network === "mainnet") {
-        web3 = new Web3(new Web3.providers.HttpProvider("https://mainnet.infura.io/g5xfoQ0jFSE9S5LwM1Ei"));
+        web3 = new Web3(new Web3.providers.HttpProvider(process.env.MAINNET_ENDPOINT));
         PolymathAccount = accounts[0];
         PolyToken = "0x9992eC3cF6A55b00978cdDF2b27BC6882d88D1eC"; // Mainnet PolyToken Address
         POLYOracle = "0x52cb4616E191Ff664B0bff247469ce7b74579D1B"; // Poly Oracle Mainnet Address
         ETHOracle = "0x60055e9a93aae267da5a052e95846fa9469c0e7a"; // ETH Oracle Mainnet Address
-        StablePOLYOracle = ""; // TODO
-    }
+        StablePOLYOracle = "0x6762658e878c99d449e43d376f9ed32f6bf9189a"; // Stable Poly oracle
+    } 
     if (network === "coverage") {
         web3 = new Web3(new Web3.providers.HttpProvider("http://localhost:8545"));
         PolymathAccount = accounts[0];
@@ -501,6 +509,12 @@ module.exports = function(deployer, network, accounts) {
         })
         .then((securityTokenRegistry) => {
             return securityTokenRegistry.setLatestVersion(3, 0, 0);
+        })
+        .then(() => {
+            return SecurityTokenRegistry.at(SecurityTokenRegistryProxy.address);
+        })
+        .then((securityTokenRegistry) => {
+            return securityTokenRegistry.changeFeesAmountAndCurrency(initRegFee, initRegFee, true, {from: PolymathAccount});
         })
         .then(() => {
             // Assign the address into the SecurityTokenRegistry key

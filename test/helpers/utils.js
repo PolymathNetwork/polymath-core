@@ -53,3 +53,10 @@ export async function latestBlock() {
     let block = await web3.eth.getBlock("latest");
     return block.number;
 }
+
+export const TM_RESULT = {
+    INVALID: '0',
+    NA: '1',
+    VALID: '2',
+    FORCE_VALID: '3'
+}

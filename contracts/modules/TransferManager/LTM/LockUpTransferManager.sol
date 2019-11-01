@@ -542,6 +542,7 @@ contract LockUpTransferManager is LockUpTransferManagerStorage, TransferManager 
     function _removeLockUpFromUser(address _userAddress, bytes32 _lockupName) internal {
         _checkZeroAddress(_userAddress);
         _checkValidName(_lockupName);
+        require(userToLockups[_userAddress].length > 0, "User not in any lockups");
         require(
             userToLockups[_userAddress][userToLockupIndex[_userAddress][_lockupName]] == _lockupName,
             "User not in lockup"

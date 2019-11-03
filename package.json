@@ -23,8 +23,8 @@
     "compile": "truffle compile --optimize-runs 200",
     "ganache-cli": "node_modules/.bin/ganache-cli -i 15 --gasLimit 8000000",
     "migrate:local": "truffle migrate --network=development --reset --all",
+    "migrate:goerli": "truffle migrate --network=goerli --reset --all",
     "migrate:ropsten": "truffle migrate --network=ropsten --reset --all",
-    "migrate:ropsten": "truffle migrate --network=goerli --reset --all",
     "migrate:kovan": "truffle migrate --network=kovan --reset --all",
     "migrate:mainnet": "truffle migrate --network=mainnet",
     "coverage": "scripts/coverage.sh",
@@ -88,7 +88,7 @@
     "prettier": "^1.18.2",
     "request": "^2.88.0",
     "request-promise": "^4.2.4",
-    "sol-merger": "^1.0.0",
+    "truffle-flattener": "^1.4.2",
     "solidity-docgen": "^0.1.1",
     "solium": "^1.2.4",
     "table": "^5.4.6"

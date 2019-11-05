@@ -98,7 +98,7 @@ function readStringNonEmpty(message, defaultValue) {
 function readStringNonEmptyWithMaxBinarySize(maxBinarySize, message, defaultValue) {
   return readlineSync.question(message, {
     limit: function (input) {
-      return input.length > 0 && getBinarySize(input) < maxBinarySize
+      return input.length > 0 && Buffer.byteLength(input, 'utf8') < maxBinarySize
     },
     limitMessage: `Must be a valid string with binary size less than ${maxBinarySize}`,
     defaultInput: defaultValue

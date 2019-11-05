@@ -25,7 +25,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
         uint256 _expiryTime,
         uint256 _allowance,
         bytes32 _description,
-        address indexed _edittedBy
+        address indexed _editedBy
     );
 
     event RevokeManualApproval(
@@ -145,7 +145,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
             require(approvals[index].expiryTime < now || approvals[index].allowance == 0, "Approval already exists");
             _revokeManualApproval(_from, _to);
         }
-        approvals.push(ManualApproval(_from, _to, _allowance, _expiryTime, _description));
+        approvals.push(ManualApproval(_from, _to, _allowance, _allowance, _expiryTime, _description));
         approvalIndex[_from][_to] = approvals.length;
         emit AddManualApproval(_from, _to, _allowance, _expiryTime, _description, msg.sender);
     }
@@ -215,22 +215,33 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
         index--; //Index is stored in an incremented form. 0 represnts non existant.
         ManualApproval storage approval = approvals[index];
         uint256 allowance = approval.allowance;
+        uint256 initialAllowance = approval.initialAllowance;
         uint256 expiryTime = approval.expiryTime;
-        require(allowance != 0 && expiryTime > now, "Not allowed");
+        require(allowance != 0, "Approval has been exhausted");
+        require(expiryTime > now, "Approval has expired");
 
         if (_changeInAllowance > 0) {
             if (_increase) {
                 // Allowance get increased
                 allowance = allowance.add(_changeInAllowance);
+                initialAllowance = initialAllowance.add(_changeInAllowance);
             } else {
                 // Allowance get decreased
                 if (_changeInAllowance >= allowance) {
+                    if (_changeInAllowance >= initialAllowance) {
+                        initialAllowance = 0;
+                    }
+                    else {
+                        initialAllowance = initialAllowance.sub(allowance);
+                    }
                     allowance = 0;
                 } else {
-                    allowance = allowance - _changeInAllowance;
+                    allowance = allowance.sub(_changeInAllowance);
+                    initialAllowance = initialAllowance.sub(_changeInAllowance);
                 }
             }
             approval.allowance = allowance;
+            approval.initialAllowance = initialAllowance;
         }
         // Greedy storage technique
         if (expiryTime != _expiryTime) {
@@ -264,7 +275,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
         withPerm(ADMIN)
     {
         _checkInputLengthArray(_from, _to, _changeInAllowance, _expiryTimes, _descriptions);
-        require(_increase.length == _changeInAllowance.length, "Input length array mismatch");
+        require(_increase.length == _changeInAllowance.length, "Input array length mismatch");
         for (uint256 i = 0; i < _from.length; i++) {
             _modifyManualApproval(_from[i], _to[i], _expiryTimes[i], _changeInAllowance[i], _descriptions[i], _increase[i]);
         }
@@ -335,7 +346,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
      * @return uint256[] expiry times provided to the approvals
      * @return bytes32[] descriptions provided to the approvals
      */
-    function getActiveApprovalsToUser(address _user) external view returns(address[] memory, address[] memory, uint256[] memory, uint256[] memory, bytes32[] memory) {
+    function getActiveApprovalsToUser(address _user) external view returns(address[] memory, address[] memory, uint256[] memory, uint256[] memory, uint256[] memory, bytes32[] memory) {
         uint256 counter = 0;
         uint256 approvalsLength = approvals.length;
         for (uint256 i = 0; i < approvalsLength; i++) {
@@ -346,6 +357,7 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
 
         address[] memory from = new address[](counter);
         address[] memory to = new address[](counter);
+        uint256[] memory initialAllowance = new uint256[](counter);
         uint256[] memory allowance = new uint256[](counter);
         uint256[] memory expiryTime = new uint256[](counter);
         bytes32[] memory description = new bytes32[](counter);
@@ -357,13 +369,14 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
 
                 from[counter]=approvals[i].from;
                 to[counter]=approvals[i].to;
+                initialAllowance[counter]=approvals[i].initialAllowance;
                 allowance[counter]=approvals[i].allowance;
                 expiryTime[counter]=approvals[i].expiryTime;
                 description[counter]=approvals[i].description;
                 counter ++;
             }
         }
-        return (from, to, allowance, expiryTime, description);
+        return (from, to, initialAllowance, allowance, expiryTime, description);
     }
 
     /**
@@ -372,22 +385,23 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
      * @param _to Address of the receiver
      * @return uint256 expiryTime of the approval
      * @return uint256 allowance provided to the approval
+     * @return uint256 the remaining allowance
      * @return uint256 Description provided to the approval
      */
-    function getApprovalDetails(address _from, address _to) external view returns(uint256, uint256, bytes32) {
+    function getApprovalDetails(address _from, address _to) external view returns(uint256, uint256, uint256, bytes32) {
         uint256 index = approvalIndex[_from][_to];
         if (index != 0) {
             index--;
-            if (index < approvals.length) {
-                ManualApproval storage approval = approvals[index];
-                return(
-                    approval.expiryTime,
-                    approval.allowance,
-                    approval.description
-                );
-            }
+            assert(index < approvals.length);
+            ManualApproval storage approval = approvals[index];
+            return(
+                approval.expiryTime,
+                approval.initialAllowance,
+                approval.allowance,
+                approval.description
+            );
         }
-        return (uint256(0), uint256(0), bytes32(0));
+        return (uint256(0), uint256(0), uint256(0), bytes32(0));
     }
 
     /**
@@ -405,10 +419,11 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
      * @return uint256[] expiry times provided to the approvals
      * @return bytes32[] descriptions provided to the approvals
      */
-    function getAllApprovals() external view returns(address[] memory, address[] memory, uint256[] memory, uint256[] memory, bytes32[] memory) {
+    function getAllApprovals() external view returns(address[] memory, address[] memory, uint256[] memory, uint256[] memory, uint256[] memory, bytes32[] memory) {
         uint256 approvalsLength = approvals.length;
         address[] memory from = new address[](approvalsLength);
         address[] memory to = new address[](approvalsLength);
+        uint256[] memory initialAllowance = new uint256[](approvalsLength);
         uint256[] memory allowance = new uint256[](approvalsLength);
         uint256[] memory expiryTime = new uint256[](approvalsLength);
         bytes32[] memory description = new bytes32[](approvalsLength);
@@ -417,13 +432,14 @@ contract ManualApprovalTransferManager is ManualApprovalTransferManagerStorage, 
 
             from[i]=approvals[i].from;
             to[i]=approvals[i].to;
+            initialAllowance[i]=approvals[i].initialAllowance;
             allowance[i]=approvals[i].allowance;
             expiryTime[i]=approvals[i].expiryTime;
             description[i]=approvals[i].description;
 
         }
 
-        return (from, to, allowance, expiryTime, description);
+        return (from, to, initialAllowance, allowance, expiryTime, description);
 
     }
 

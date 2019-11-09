@@ -79,7 +79,7 @@
     "babel-preset-stage-2": "6.24.1",
     "babel-preset-stage-3": "6.24.1",
     "babel-register": "6.26.0",
-    "chalk": "^2.4.2",
+    "chalk": "^3.0.0",
     "coveralls": "^3.0.5",
     "eslint": "^6.1.0",
     "eslint-config-standard": "^13.0.1",

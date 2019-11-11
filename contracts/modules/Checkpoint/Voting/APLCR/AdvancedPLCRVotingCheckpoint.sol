@@ -62,12 +62,12 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
      * @notice Use to create the ballot
      * @param _name Name of the ballot (Should be unique)
      * @param _startTime startTime of the ballot
-     * @param _commitDuration Unix time period till the voters commit there vote
-     * @param _revealDuration Unix time period till the voters reveal there vote starts when commit duration ends
+     * @param _commitDuration Unix time period till the voters commit their vote
+     * @param _revealDuration Unix time period till the voters reveal their vote starts when commit duration ends
      * @param _proposalTitle Title of proposal
      * @param _details Off-chain details related to the proposal
      * @param _choices Choices of proposals
-     * @param _noOfChoices No. of choices (If it is 0 then it means NAY/YAY ballot type is choosen).
+     * @param _noOfChoices No. of choices (If it is 0 then it means NAY/YAY ballot type is chosen).
      */
     function createStatutoryBallot(
         bytes32 _name,
@@ -90,12 +90,12 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
      * @notice Use to create the ballot
      * @param _name Name of the ballot (Should be unique)
      * @param _startTime startTime of the ballot
-     * @param _commitDuration Unix time period till the voters commit there vote
-     * @param _revealDuration Unix time period till the voters reveal there vote starts when commit duration ends
+     * @param _commitDuration Unix time period till the voters commit their vote
+     * @param _revealDuration Unix time period till the voters reveal their vote starts when commit duration ends
      * @param _proposalTitle Title of proposal
      * @param _details Off-chain details related to the proposal
      * @param _choices Choices of proposals
-     * @param _noOfChoices No. of choices (If it is 0 then it means NAY/YAY/ABSTAIN ballot type is choosen).
+     * @param _noOfChoices No. of choices (If it is 0 then it means NAY/YAY/ABSTAIN ballot type is chosen).
      * @param _checkpointId Valid checkpoint Id
      */
     function createCustomStatutoryBallot(
@@ -160,12 +160,12 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
      * @notice Use to create the ballot
      * @param _name Name of the ballot (Should be unique)
      * @param _startTime startTime of the ballot
-     * @param _commitDuration Unix time period till the voters commit there vote
-     * @param _revealDuration Unix time period till the voters reveal there vote starts when commit duration ends
+     * @param _commitDuration Unix time period till the voters commit their vote
+     * @param _revealDuration Unix time period till the voters reveal their vote starts when commit duration ends
      * @param _proposalTitles Title of proposals (In a comma seperated string)
      * @param _details Off-chain details related to the proposal
      * @param _choices Choices of proposals (In a comma seperated string)
-     * @param _noOfChoices Array of No. of choices (If it is 0 then it means NAY/YAY ballot type is choosen).
+     * @param _noOfChoices Array of No. of choices (If it is 0 then it means NAY/YAY ballot type is chosen).
      * @param _checkpointId Valid checkpoint Id
      */
     function createCustomCumulativeBallot(
@@ -192,12 +192,12 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
      * @notice Use to create the ballot
      * @param _name Name of the ballot (Should be unique)
      * @param _startTime startTime of the ballot
-     * @param _commitDuration Unix time period till the voters commit there vote
-     * @param _revealDuration Unix time period till the voters reveal there vote starts when commit duration ends
+     * @param _commitDuration Unix time period till the voters commit their vote
+     * @param _revealDuration Unix time period till the voters reveal their vote starts when commit duration ends
      * @param _proposalTitles Title of proposal (In a comma seperated string)
      * @param _details Off-chain details related to the proposal
      * @param _choices Choices of proposals (In a comma seperated string)
-     * @param _noOfChoices Array of No. of choices (If it is 0 then it means NAY/YAY ballot type is choosen).
+     * @param _noOfChoices Array of No. of choices (If it is 0 then it means NAY/YAY ballot type is chosen).
      */
     function createCumulativeBallot(
         bytes32 _name,
@@ -231,7 +231,6 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
     )
     internal
     {
-        //TODO: Charging Usage cost
         _validateMaximumLimitCount();
         _startTime = _getStartTime(_startTime);
         _isEmptyBytes32(_name);
@@ -255,12 +254,12 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
      * @notice Use to create the ballot
      * @param _name Name of the ballot (Should be unique)
      * @param _startTime startTime of the ballot
-     * @param _commitDuration Unix time period till the voters commit there vote
-     * @param _revealDuration Unix time period till the voters reveal there vote starts when commit duration ends
+     * @param _commitDuration Unix time period till the voters commit their vote
+     * @param _revealDuration Unix time period till the voters reveal their vote starts when commit duration ends
      * @param _proposalTitles Title of proposal (Comma seperated values)
      * @param _details Off-chain details related to the proposal
      * @param _choices Choices of proposals (Comma seperated values)
-     * @param _noOfChoices Array of No. of choices (If it is 0 then it means NAY/YAY ballot type is choosen).
+     * @param _noOfChoices Array of No. of choices (If it is 0 then it means NAY/YAY ballot type is chosen).
      * @param _checkpointId Valid checkpoint Id
      * @param _exemptedAddresses List of addresses not allowed to vote
      */
@@ -305,12 +304,12 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
      * @notice Use to create the ballot
      * @param _name Name of the ballot (Should be unique)
      * @param _startTime startTime of the ballot
-     * @param _commitDuration Unix time period till the voters commit there vote
-     * @param _revealDuration Unix time period till the voters reveal there vote starts when commit duration ends
+     * @param _commitDuration Unix time period till the voters commit their vote
+     * @param _revealDuration Unix time period till the voters reveal their vote starts when commit duration ends
      * @param _proposalTitles Title of proposal (Comma seperated values)
      * @param _details Off-chain details related to the proposal
      * @param _choices Choices of proposals (Comma seperated values)
-     * @param _noOfChoices Array of No. of choices (If it is 0 then it means NAY/YAY ballot type is choosen).
+     * @param _noOfChoices Array of No. of choices (If it is 0 then it means NAY/YAY ballot type is chosen).
      * @param _exemptedAddresses List of addresses not allowed to vote
      */
     function createCumulativeBallotWithExemption(
@@ -343,12 +342,12 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
      * @notice Use to create the ballot
      * @param _name Name of the ballot (Should be unique)
      * @param _startTime startTime of the ballot
-     * @param _commitDuration Unix time period till the voters commit there vote
-     * @param _revealDuration Unix time period till the voters reveal there vote starts when commit duration ends
+     * @param _commitDuration Unix time period till the voters commit their vote
+     * @param _revealDuration Unix time period till the voters reveal their vote starts when commit duration ends
      * @param _proposalTitle Title of proposal
      * @param _details Off-chain details related to the proposal
      * @param _choices Choices of proposals (Comma seperated values)
-     * @param _noOfChoices No. of choices (If it is 0 then it means NAY/YAY ballot type is choosen).
+     * @param _noOfChoices No. of choices (If it is 0 then it means NAY/YAY ballot type is chosen).
      * @param _exemptedAddresses List of addresses not allowed to vote
      */
     function createStatutoryBallotWithExemption(
@@ -381,12 +380,12 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
      * @notice Use to create the ballot
      * @param _name Name of the ballot (Should be unique)
      * @param _startTime startTime of the ballot
-     * @param _commitDuration Unix time period till the voters commit there vote
-     * @param _revealDuration Unix time period till the voters reveal there vote starts when commit duration ends
+     * @param _commitDuration Unix time period till the voters commit their vote
+     * @param _revealDuration Unix time period till the voters reveal their vote starts when commit duration ends
      * @param _proposalTitle Title of proposal
      * @param _details Off-chain details related to the proposal
      * @param _choices Choices of proposals (Comma seperated values)
-     * @param _noOfChoices No. of choices (If it is 0 then it means NAY/YAY ballot type is choosen).
+     * @param _noOfChoices No. of choices (If it is 0 then it means NAY/YAY ballot type is chosen).
      * @param _checkpointId Valid checkpoint Id
      * @param _exemptedAddresses List of addresses not allowed to vote
      */
@@ -616,13 +615,13 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
     /**
      * @notice It will return the no. of the voters who take part in the commit phase of the voting
      * @param _ballotId Targeted ballot index
-     * @return commitedVoteCount no. of the voters who take part in the commit phase of the voting    
+     * @return committedVoteCount no. of the voters who take part in the commit phase of the voting    
      */
-    function getCommitedVoteCount(uint256 _ballotId) public view returns(uint256 commitedVoteCount) {
+    function getCommittedVoteCount(uint256 _ballotId) public view returns(uint256 committedVoteCount) {
         if (_ballotId >= ballots.length)
-            return commitedVoteCount;
+            return committedVoteCount;
         else {
-            commitedVoteCount = AdvancedPLCRVotingLib.getCommitedVoteCount(getAllowedVotersByBallot(_ballotId), ballots[_ballotId]);
+            committedVoteCount = AdvancedPLCRVotingLib.getCommittedVoteCount(getAllowedVotersByBallot(_ballotId), ballots[_ballotId]);
         }
     }
 
@@ -748,7 +747,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
     }
 
     /**
-     * @notice Get the voting power for an voter in terms of the token
+     * @notice Get the voting power for a voter in terms of the token
      * @param _voter Address of the voter (Who will vote).
      * @param _ballotId Id of the ballot.
      */
@@ -804,7 +803,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
      * @return uint256 revealDuration
      * @return uint256 totalProposals
      * @return uint256 totalVoters
-     * @return uint256 commitedVoteCount
+     * @return uint256 committedVoteCount
      * @return bool isCancelled
      * @return Stage currentStage
      * @return bytes32 proposalDetails
@@ -819,14 +818,14 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
         uint256 revealDuration,
         uint256 totalProposals,
         uint256 totalVoters,
-        uint256 commitedVoteCount,
+        uint256 committedVoteCount,
         bool isCancelled,
         Stage currentStage,
         bytes32[] memory proposalDetails,
         uint256[] memory proposalChoicesCounts
     ) {
         Ballot storage ballot = ballots[_ballotId];
-        commitedVoteCount = getCommitedVoteCount(_ballotId);
+        committedVoteCount = getCommittedVoteCount(_ballotId);
         currentStage = getCurrentBallotStage(_ballotId);
         proposalDetails = new bytes32[](ballot.totalProposals);
         proposalChoicesCounts = new uint256[](ballot.totalProposals);
@@ -843,7 +842,7 @@ contract AdvancedPLCRVotingCheckpoint is AdvancedPLCRVotingCheckpointStorage, Vo
             ballot.revealDuration,
             ballot.totalProposals,
             ballot.totalVoters,
-            commitedVoteCount,
+            committedVoteCount,
             ballot.isCancelled,
             currentStage,
             proposalDetails,

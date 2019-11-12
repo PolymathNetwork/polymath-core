@@ -28,6 +28,8 @@ contract("ManualApprovalTransferManager", accounts => {
     let account_investor3;
     let account_investor4;
     let account_investor5;
+    let account_investor6;
+    let account_investor7;
 
     // investor Details
     let fromTime = latestTime();
@@ -95,6 +97,9 @@ contract("ManualApprovalTransferManager", accounts => {
         account_investor3 = accounts[8];
         account_investor4 = accounts[9];
         account_investor5 = accounts[5];
+        account_investor6 = accounts[2];
+        account_investor7 = accounts[3];
+
 
 
         // Step 1: Deploy the genral PM ecosystem
@@ -347,6 +352,20 @@ contract("ManualApprovalTransferManager", accounts => {
             );
         });
 
+        it("Should fail to add a manual approval because of invalid allowance", async () => {
+            await catchRevert(
+                I_ManualApprovalTransferManager.addManualApproval(
+                    account_investor1,
+                    account_investor4,
+                    0,
+                    currentTime.add(new BN(duration.days(1))),
+                    web3.utils.fromAscii("DESCRIPTION"),
+                    { from: token_owner }
+                ),
+                "Invalid allowance"
+            );
+        });
+
         it("Add a manual approval for a 4th investor & return correct length", async () => {
             approvalTime = currentTime.add(new BN(duration.days(1)));
             await I_ManualApprovalTransferManager.addManualApproval(
@@ -372,10 +391,10 @@ contract("ManualApprovalTransferManager", accounts => {
             assert.equal(tx[1][0], account_investor4);
             console.log("2");
             assert.equal(tx[2][0], web3.utils.toWei("3"));
-            console.log("3");
-            assert.equal(tx[3][0].toString(), approvalTime);
             console.log("4");
-            assert.equal(web3.utils.toUtf8(tx[4][0]), "DESCRIPTION");
+            assert.equal(tx[4][0].toString(), approvalTime);
+            console.log("5");
+            assert.equal(web3.utils.toUtf8(tx[5][0]), "DESCRIPTION");
         })
 
         it("Should fail to add the same manual approval for the same `_from` & `_to` address", async() => {
@@ -461,11 +480,11 @@ contract("ManualApprovalTransferManager", accounts => {
             );
         });
 
-        it("Should fail to modify the manual approval when the approval get expired", async() => {
+        it("Should fail to modify the manual approval when the approval doesn't exist", async() => {
             await catchRevert(
                 I_ManualApprovalTransferManager.modifyManualApproval(
-                    account_investor1,
-                    account_investor4,
+                    account_investor6,
+                    account_investor7,
                     currentTime.add(new BN(duration.days(2))),
                     web3.utils.toWei("5"),
                     web3.utils.fromAscii("New Description"),
@@ -474,7 +493,41 @@ contract("ManualApprovalTransferManager", accounts => {
                         from: token_owner
                     }
                 ),
-                "Not allowed"
+                "Approval not present"
+            );
+        });
+
+        it("Should fail to modify the manual approval when the approval doesn't exist", async() => {
+            await catchRevert(
+                I_ManualApprovalTransferManager.modifyManualApproval(
+                    account_investor6,
+                    account_investor7,
+                    0,
+                    web3.utils.toWei("5"),
+                    web3.utils.fromAscii("New Description"),
+                    false,
+                    {
+                        from: token_owner
+                    }
+                ),
+                "Invalid expiry time"
+            );
+        });
+
+        it("Should fail to modify the manual approval when the approval doesn't exist", async() => {
+            await catchRevert(
+                I_ManualApprovalTransferManager.modifyManualApproval(
+                    account_investor6,
+                    account_investor7,
+                    currentTime.add(new BN(duration.days(2))),
+                    web3.utils.toWei("5"),
+                    web3.utils.fromAscii("New Description"),
+                    false,
+                    {
+                        from: token_owner
+                    }
+                ),
+                "Approval not present"
             );
         });
 
@@ -496,8 +549,27 @@ contract("ManualApprovalTransferManager", accounts => {
             assert.equal(data[0], account_investor1);
             assert.equal(data[1], account_investor4);
             assert.equal(data[2], web3.utils.toWei("2"));
-            assert.equal(web3.utils.toUtf8(data[4]), "DESCRIPTION");
+            assert.equal(data[3], web3.utils.toWei("2"));
+            assert.equal(web3.utils.toUtf8(data[5]), "DESCRIPTION");
         });
+
+        it("Should set allowance to zero, if allowance is to be decreased to less than the current value", async () => {
+            const snapId = await takeSnapshot();
+            currentTime = new BN(await latestTime());
+            const tx = await I_ManualApprovalTransferManager.modifyManualApproval(
+                account_investor1,
+                account_investor4,
+                currentTime.add(new BN(duration.days(1))),
+                web3.utils.toWei("3"), // current allowance is 2 tokens.
+                web3.utils.fromAscii("New Description"),
+                false,
+                {
+                    from: token_owner
+                }
+            );
+            assert.equal((tx.logs[0].args._allowance).toString(), '0');
+            await revertToSnapshot(snapId);
+        })
 
         it("Should modify the manual approval expiry time for 4th investor", async () => {
             currentTime = new BN(await latestTime());
@@ -518,8 +590,9 @@ contract("ManualApprovalTransferManager", accounts => {
             assert.equal(data[0], account_investor1);
             assert.equal(data[1], account_investor4);
             assert.equal(data[2], web3.utils.toWei("2"));
-            assert.equal(data[3].toString(), expiryTimeMA);
-            assert.equal(web3.utils.toUtf8(data[4]), "New Description");
+            assert.equal(data[3], web3.utils.toWei("2"));
+            assert.equal(data[4].toString(), expiryTimeMA);
+            assert.equal(web3.utils.toUtf8(data[5]), "New Description");
             assert.equal(tx.logs[0].args._from, account_investor1);
             assert.equal(tx.logs[0].args._to, account_investor4);
             assert.equal((tx.logs[0].args._expiryTime).toString(), expiryTimeMA);
@@ -553,9 +626,10 @@ contract("ManualApprovalTransferManager", accounts => {
             let data = await I_ManualApprovalTransferManager.approvals.call(0);
             assert.equal(data[0], account_investor1);
             assert.equal(data[1], account_investor4);
-            assert.equal(data[2].toString(), web3.utils.toWei("5"));
-            assert.equal(data[3].toString(), expiryTimeMA);
-            assert.equal(web3.utils.toUtf8(data[4]), "New Description");
+            assert.equal(data[2].toString(), web3.utils.toWei("6"));
+            assert.equal(data[3].toString(), web3.utils.toWei("5"));
+            assert.equal(data[4].toString(), expiryTimeMA);
+            assert.equal(web3.utils.toUtf8(data[5]), "New Description");
         });
 
         it("Should transact according to new allowance", async() => {
@@ -583,9 +657,10 @@ contract("ManualApprovalTransferManager", accounts => {
             let data = await I_ManualApprovalTransferManager.approvals.call(0);
             assert.equal(data[0], account_investor1);
             assert.equal(data[1], account_investor4);
-            assert.equal(data[2].toString(), web3.utils.toWei("1"));
-            assert.equal(data[3].toString(), expiryTimeMA);
-            assert.equal(web3.utils.toUtf8(data[4]), "New Description");
+            assert.equal(data[2].toString(), web3.utils.toWei("5"));
+            assert.equal(data[3].toString(), web3.utils.toWei("1"));
+            assert.equal(data[4].toString(), expiryTimeMA);
+            assert.equal(web3.utils.toUtf8(data[5]), "New Description");
         });
 
         it("Should fail to transfer the tokens because allowance get changed", async() => {
@@ -616,7 +691,7 @@ contract("ManualApprovalTransferManager", accounts => {
                         from: token_owner
                     }
                 ),
-                "Not allowed"
+                "Approval has been exhausted"
             );
         });
 
@@ -720,7 +795,7 @@ contract("ManualApprovalTransferManager", accounts => {
             )
         });
 
-        it("Add multiple manual approvals", async () => {
+        it("Add multiple manual approvals, and then retrieve", async () => {
             let time = currentTime.add(new BN(duration.days(1)));
             await I_ManualApprovalTransferManager.addManualApprovalMulti(
                 [account_investor2,account_investor3],
@@ -740,7 +815,97 @@ contract("ManualApprovalTransferManager", accounts => {
             let approvalDetail = await I_ManualApprovalTransferManager.getApprovalDetails.call(account_investor2, account_investor3);
             assert.equal(approvalDetail[0].toString(), time);
             assert.equal(approvalDetail[1].toString(), web3.utils.toWei("2", "ether"));
-            assert.equal(web3.utils.toUtf8(approvalDetail[2]), "DESCRIPTION_1");
+            assert.equal(approvalDetail[2].toString(), web3.utils.toWei("2", "ether"));
+            assert.equal(web3.utils.toUtf8(approvalDetail[3]), "DESCRIPTION_1");
+        });
+
+        it("Retrieving details of non-existent approval", async () => {
+            const approvalDetail = await I_ManualApprovalTransferManager.getApprovalDetails.call(account_investor6, account_investor7);
+            console.log('approvalDetail', approvalDetail);
+            const parsedDetail = {
+                0: approvalDetail[0].toString(),
+                1: approvalDetail[1].toString(),
+                2: approvalDetail[2].toString(),
+                3: web3.utils.hexToUtf8(approvalDetail[3])
+            }
+            assert.deepEqual({0:'0', 1:'0', 2:'0', 3: ''}, parsedDetail, "Approval doesn't exist");
+        });
+
+        it("Should fail to modify multiple approvals because of mismatched array params", async () => {
+            await catchRevert(
+                    I_ManualApprovalTransferManager.modifyManualApprovalMulti(
+                    [account_investor2],
+                    [account_investor3,account_investor4],
+                    [web3.utils.toWei("2", "ether"), web3.utils.toWei("2", "ether")],
+                    [currentTime.add(new BN(duration.days(1))),currentTime.add(new BN(duration.days(1)))],
+                    [web3.utils.fromAscii("DESCRIPTION_1"), web3.utils.fromAscii("DESCRIPTION_2")],
+                    [true, true],
+                    {
+                        from: token_owner
+                    }
+                ),
+                "Input array length mismatch"
+            )
+
+            await catchRevert(
+                    I_ManualApprovalTransferManager.modifyManualApprovalMulti(
+                    [account_investor2,account_investor3],
+                    [account_investor3,account_investor4],
+                    [web3.utils.toWei("2", "ether"), web3.utils.toWei("2", "ether")],
+                    [currentTime.add(new BN(duration.days(1)))],
+                    [web3.utils.fromAscii("DESCRIPTION_1"), web3.utils.fromAscii("DESCRIPTION_2")],
+                    [true, true],
+                    {
+                        from: token_owner
+                    }
+                ),
+                "Input array length mismatch"
+            )
+
+            await catchRevert(
+                    I_ManualApprovalTransferManager.modifyManualApprovalMulti(
+                    [account_investor2,account_investor3],
+                    [account_investor3,account_investor4],
+                    [web3.utils.toWei("2", "ether")],
+                    [currentTime.add(new BN(duration.days(1))),currentTime.add(new BN(duration.days(1)))],
+                    [web3.utils.fromAscii("DESCRIPTION_1"), web3.utils.fromAscii("DESCRIPTION_2")],
+                    [true, true],
+                    {
+                        from: token_owner
+                    }
+                ),
+                "Input array length mismatch"
+            )
+
+            await catchRevert(
+                    I_ManualApprovalTransferManager.modifyManualApprovalMulti(
+                    [account_investor2,account_investor3],
+                    [account_investor3,account_investor4],
+                    [web3.utils.toWei("2", "ether"), web3.utils.toWei("2", "ether")],
+                    [currentTime.add(new BN(duration.days(1))),currentTime.add(new BN(duration.days(1)))],
+                    [web3.utils.fromAscii("DESCRIPTION_1")],
+                    [true, true],
+                    {
+                        from: token_owner
+                    }
+                ),
+                "Input array length mismatch"
+            )
+
+            await catchRevert(
+                    I_ManualApprovalTransferManager.modifyManualApprovalMulti(
+                    [account_investor2,account_investor3],
+                    [account_investor3,account_investor4],
+                    [web3.utils.toWei("2", "ether"), web3.utils.toWei("2", "ether")],
+                    [currentTime.add(new BN(duration.days(1))),currentTime.add(new BN(duration.days(1)))],
+                    [web3.utils.fromAscii("DESCRIPTION_1"), web3.utils.fromAscii("DESCRIPTION_2")],
+                    [true],
+                    {
+                        from: token_owner
+                    }
+                ),
+                "Input array length mismatch"
+            )
         });
 
         it("Should fail to revoke the multiple manual approvals -- because of bad owner", async() => {

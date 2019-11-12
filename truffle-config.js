@@ -1,7 +1,6 @@
 require('babel-register');
 require('babel-polyfill');
 require('dotenv').config();
-const fs = require('fs');
 const NonceTrackerSubprovider = require("web3-provider-engine/subproviders/nonce-tracker")
 
 const HDWalletProvider = require("truffle-hdwallet-provider");
@@ -22,40 +21,62 @@ module.exports = {
       gas: 7900000,
     },
     mainnet: {
-      host: 'localhost',
-      port: 8545,
+      provider: () => {
+        let wallet = new HDWalletProvider(process.env.PRIVATE_KEY, process.env.MAINNET_ENDPOINT)
+        var nonceTracker = new NonceTrackerSubprovider()
+        wallet.engine._providers.unshift(nonceTracker)
+        nonceTracker.setEngine(wallet.engine)
+        return wallet
+      },
       network_id: '1', // Match any network id
-      gas: 7900000,
-      gasPrice: 10000000000
+      gasPrice: 10000000000 // 10 gwei
     },
     ropsten: {
-      // provider: new HDWalletProvider(privKey, "http://localhost:8545"),
-      host: 'localhost',
-      port: 8545,
+      provider: () => {
+        let wallet = new HDWalletProvider(process.env.PRIVATE_KEY, process.env.ROPSTEN_ENDPOINT)
+        var nonceTracker = new NonceTrackerSubprovider()
+        wallet.engine._providers.unshift(nonceTracker)
+        nonceTracker.setEngine(wallet.engine)
+        return wallet
+      },
       network_id: '3', // Match any network id
       gas: 4500000,
       gasPrice: 150000000000
     },
     rinkeby: {
-      // provider: new HDWalletProvider(privKey, "http://localhost:8545"),
-      host: 'localhost',
-      port: 8545,
+      provider: () => {
+        let wallet = new HDWalletProvider(process.env.PRIVATE_KEY, process.env.RINKEBY_ENDPOINT)
+        var nonceTracker = new NonceTrackerSubprovider()
+        wallet.engine._providers.unshift(nonceTracker)
+        nonceTracker.setEngine(wallet.engine)
+        return wallet
+      },
       network_id: '4', // Match any network id
       gas: 7500000,
       gasPrice: 10000000000
     },
     kovan: {
       provider: () => {
-        const key = fs.readFileSync('./privKey').toString();
-        let wallet = new HDWalletProvider(key, "https://kovan.infura.io/")
+        let wallet = new HDWalletProvider(process.env.PRIVATE_KEY, process.env.KOVAN_ENDPOINT)
         var nonceTracker = new NonceTrackerSubprovider()
         wallet.engine._providers.unshift(nonceTracker)
         nonceTracker.setEngine(wallet.engine)
         return wallet
       },
       network_id: '42', // Match any network id
+      gasPrice: 5000000000 // 5 gwei
+    },
+    goerli: {
+      provider: () => {
+        let wallet = new HDWalletProvider(process.env.PRIVATE_KEY, process.env.GOERLI_ENDPOINT)
+        var nonceTracker = new NonceTrackerSubprovider()
+        wallet.engine._providers.unshift(nonceTracker)
+        nonceTracker.setEngine(wallet.engine)
+        return wallet
+      },
+      network_id: '5', // Match any network id
       gas: 7900000,
-      gasPrice: 5000000000
+      gasPrice: 21000000000
     },
     coverage: {
       host: "localhost",
@@ -78,5 +99,11 @@ module.exports = {
   },
   mocha: {
     enableTimeouts: false
+  },
+  plugins: [
+    'truffle-plugin-verify'
+  ],
+  api_keys: {
+    etherscan: process.env.ETHERSCAN_API_KEY
   }
 };

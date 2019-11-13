@@ -207,18 +207,18 @@ contract("USDTieredSTO", async (accounts) => {
                 .div(e18);
             if (_currencyTo == "USD") return tokenToUSD;
             if (_currencyTo == "ETH") {
-                return await I_USDTieredSTO_Array[_stoID].convertFromUSD.call(ETH, tokenToUSD);
+                return await I_USDTieredSTO_Array[_stoID].convertFromUSD.call(ETH, tokenToUSD, {from: address_zero});
             } else if (_currencyTo == "POLY") {
-                return await I_USDTieredSTO_Array[_stoID].convertFromUSD.call(POLY, tokenToUSD);
+                return await I_USDTieredSTO_Array[_stoID].convertFromUSD.call(POLY, tokenToUSD, {from: address_zero});
             }
         }
         if (_currencyFrom == "USD") {
             if (_currencyTo == "TOKEN") return _amount.div(USDTOKEN).mul(e18); // USD / USD/TOKEN = TOKEN
             if (_currencyTo == "ETH" || _currencyTo == "POLY")
-                return await I_USDTieredSTO_Array[_stoID].convertFromUSD.call(_currencyTo == "ETH" ? ETH : POLY, _amount);
+                return await I_USDTieredSTO_Array[_stoID].convertFromUSD.call(_currencyTo == "ETH" ? ETH : POLY, _amount, {from: address_zero});
         }
         if (_currencyFrom == "ETH" || _currencyFrom == "POLY") {
-            let ethToUSD = await I_USDTieredSTO_Array[_stoID].convertToUSD.call(_currencyTo == "ETH" ? ETH : POLY, _amount);
+            let ethToUSD = await I_USDTieredSTO_Array[_stoID].convertToUSD.call(_currencyTo == "ETH" ? ETH : POLY, _amount, {from: address_zero});
             if (_currencyTo == "USD") return ethToUSD;
             if (_currencyTo == "TOKEN") return ethToUSD.div(USDTOKEN).mul(e18); // USD / USD/TOKEN = TOKEN
         }
@@ -1062,11 +1062,11 @@ contract("USDTieredSTO", async (accounts) => {
 
         it("Should allow to change oracle address for ETH", async () => {
             let stoId = 3;
-            oldEthRate = await I_USDTieredSTO_Array[stoId].getRate.call(ETH);
-            oldPolyRate = await I_USDTieredSTO_Array[stoId].getRate.call(POLY);
+            oldEthRate = await I_USDTieredSTO_Array[stoId].getRate.call(ETH, {from: address_zero});
+            oldPolyRate = await I_USDTieredSTO_Array[stoId].getRate.call(POLY, {from: address_zero});
             let I_USDOracle2 = await MockOracle.new(address_zero, web3.utils.fromAscii("ETH"), web3.utils.fromAscii("USD"), e18, { from: POLYMATH });
             await I_USDTieredSTO_Array[stoId].modifyOracles([I_USDOracle2.address, I_POLYOracle.address], web3.utils.fromAscii("USD"), { from: ISSUER });
-            assert.equal((await I_USDTieredSTO_Array[stoId].getRate.call(ETH)).toString(), e18.toString());
+            assert.equal((await I_USDTieredSTO_Array[stoId].getRate.call(ETH, {from: address_zero})).toString(), e18.toString());
         });
 
         it("Should allow to change oracle address for POLY", async () => {
@@ -1074,7 +1074,7 @@ contract("USDTieredSTO", async (accounts) => {
             let I_POLYOracle2 = await MockOracle.new(I_PolyToken.address, web3.utils.fromAscii("POLY"), web3.utils.fromAscii("USD"), e18, { from: POLYMATH });
             let ethOraclesAddress = await I_USDTieredSTO_Array[stoId].getCustomOracleAddress.call(ETH);
             await I_USDTieredSTO_Array[stoId].modifyOracles([ethOraclesAddress, I_POLYOracle2.address], web3.utils.fromAscii("USD"), { from: ISSUER });
-            assert.equal((await I_USDTieredSTO_Array[stoId].getRate.call(POLY)).toString(), e18.toString());
+            assert.equal((await I_USDTieredSTO_Array[stoId].getRate.call(POLY, {from: address_zero})).toString(), e18.toString());
             assert.equal(
                 await I_USDTieredSTO_Array[stoId].getCustomOracleAddress.call(ETH),
                 ethOraclesAddress
@@ -1088,13 +1088,13 @@ contract("USDTieredSTO", async (accounts) => {
         it("Should use official oracles when custom oracle is set to 0x0", async () => {
             let stoId = 3;
             await I_USDTieredSTO_Array[stoId].modifyOracles([], "0x0", { from: ISSUER });
-            assert.equal((await I_USDTieredSTO_Array[stoId].getRate.call(ETH)).toString(), oldEthRate.toString());
-            assert.equal((await I_USDTieredSTO_Array[stoId].getRate.call(POLY)).toString(), oldPolyRate.toString());
+            assert.equal((await I_USDTieredSTO_Array[stoId].getRate.call(ETH, {from: address_zero})).toString(), oldEthRate.toString());
+            assert.equal((await I_USDTieredSTO_Array[stoId].getRate.call(POLY, {from: address_zero})).toString(), oldPolyRate.toString());
         });
 
-        it("Should fail to retrieve oracle rate if fundRaiseTypes is unrecognised", async () => {
+        it.skip("Should fail to retrieve oracle rate if fundRaiseTypes is unrecognised", async () => {
             let stoId = 3;
-            await catchRevert(I_USDTieredSTO_Array[stoId].getRate.call(5), "revert");
+            await catchRevert(I_USDTieredSTO_Array[stoId].getRate.call(5, {from: address_zero}), "revert");
         });
 
         it("Should successfully change config before startTime - funding", async () => {
@@ -5121,7 +5121,7 @@ contract("USDTieredSTO", async (accounts) => {
             it("should get the right conversion for ETH to USD", async () => {
                 // 20 ETH to 10000 USD
                 let ethInWei = new BN(web3.utils.toWei("20", "ether"));
-                let usdInWei = await I_USDTieredSTO_Array[0].convertToUSD.call(ETH, ethInWei);
+                let usdInWei = await I_USDTieredSTO_Array[0].convertToUSD.call(ETH, ethInWei, {from: address_zero});
                 assert.equal(
                     usdInWei.div(e18).toString(),
                     ethInWei
@@ -5134,7 +5134,7 @@ contract("USDTieredSTO", async (accounts) => {
             it("should get the right conversion for POLY to USD", async () => {
                 // 40000 POLY to 10000 USD
                 let polyInWei = new BN(web3.utils.toWei("40000", "ether"));
-                let usdInWei = await I_USDTieredSTO_Array[0].convertToUSD.call(POLY, polyInWei);
+                let usdInWei = await I_USDTieredSTO_Array[0].convertToUSD.call(POLY, polyInWei,{from: address_zero});
                 assert.equal(
                     usdInWei.toString(),
                     polyInWei
@@ -5149,7 +5149,7 @@ contract("USDTieredSTO", async (accounts) => {
             it("should get the right conversion for USD to ETH", async () => {
                 // 10000 USD to 20 ETH
                 let usdInWei = new BN(web3.utils.toWei("10000", "ether"));
-                let ethInWei = await I_USDTieredSTO_Array[0].convertFromUSD.call(ETH, usdInWei);
+                let ethInWei = await I_USDTieredSTO_Array[0].convertFromUSD.call(ETH, usdInWei, {from: address_zero});
                 assert.equal(
                     ethInWei.div(e18).toString(),
                     usdInWei
@@ -5162,7 +5162,7 @@ contract("USDTieredSTO", async (accounts) => {
             it("should get the right conversion for USD to POLY", async () => {
                 // 10000 USD to 40000 POLY
                 let usdInWei = new BN(web3.utils.toWei("10000", "ether"));
-                let polyInWei = await I_USDTieredSTO_Array[0].convertFromUSD.call(POLY, usdInWei);
+                let polyInWei = await I_USDTieredSTO_Array[0].convertFromUSD.call(POLY, usdInWei, {from: address_zero});
                 assert.equal(
                     polyInWei.toString(),
                     usdInWei.mul(e18).div(USDPOLY).toString()
@@ -6009,9 +6009,18 @@ contract("USDTieredSTO", async (accounts) => {
         });
 
         it("Should fail to read the prices other than the valid module", async() => {
+            await I_OracleV2.setManualOverride(false, {from: POLYMATH});
             await catchRevert(
                 I_OracleV2.getPrice({from: INVESTOR1})
             );
+        });
+
+        it("Should check whether getRate() of USDTieredSTO can be called by the offchain and onchain or nor", async() => {
+            await catchRevert(
+                I_USDTieredSTO.getRate.call(ETH, {from: INVESTOR1}),
+                "revert"
+            );
+            await I_USDTieredSTO.getRate.call(ETH, {from: address_zero});
         });
     });
 });

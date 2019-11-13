@@ -12,12 +12,11 @@ contract MakerDAOOracleV2 is IOracle, Ownable {
     IMedianizer public medianizer;
     address public currencyAddress;
     IPolymathRegistry polymathRegistry;
+    ISecurityTokenRegistry securityTokenRegistry;
     bytes32 public currencySymbol;
 
     bool public manualOverride;
     uint256 public manualPrice;
-
-    string constant STR = "SecurityTokenRegistry";
 
     /*solium-disable-next-line security/no-block-members*/
     event ChangeMedianizer(address _newMedianizer, address _oldMedianizer);
@@ -36,13 +35,14 @@ contract MakerDAOOracleV2 is IOracle, Ownable {
         currencyAddress = _currencyAddress;
         currencySymbol = _currencySymbol;
         polymathRegistry = IPolymathRegistry(_polymathRegistry);
+        securityTokenRegistry = ISecurityTokenRegistry(polymathRegistry.getAddress("SecurityTokenRegistry"));
     }
 
     /**
       * @notice Updates medianizer address
       * @param _medianizer Address of Maker medianizer
       */
-    function changeMedianier(address _medianizer) public onlyOwner {
+    function changeMedianizer(address _medianizer) public onlyOwner {
         require(_medianizer != address(0), "0x not allowed");
         /*solium-disable-next-line security/no-block-members*/
         emit ChangeMedianizer(_medianizer, address(medianizer));
@@ -75,10 +75,10 @@ contract MakerDAOOracleV2 is IOracle, Ownable {
     * @notice Returns price - should throw if not valid
     */
     function getPrice() external returns(uint256) {
-        _isCallerAllowed(msg.sender);
         if (manualOverride) {
             return manualPrice;
         }
+        _checkCallerAllowed(msg.sender);
         (bytes32 price, bool valid) = medianizer.peek();
         require(valid, "MakerDAO Oracle returning invalid value");
         return uint256(price);
@@ -87,13 +87,13 @@ contract MakerDAOOracleV2 is IOracle, Ownable {
     // This function allows following contracts to read data from the oracles
     // - STR Address
     // - Any valid module of polymath ecosystem
-    function _isCallerAllowed(address _caller) view internal {
-        if (_caller != polymathRegistry.getAddress(STR)) {
+    function _checkCallerAllowed(address _caller) view internal {
+        if (_caller != address(securityTokenRegistry)) {
             address _securityToken = IModule(_caller).securityToken();
             // Validate the securityToken address
             // securityToken should be a part of the Polymath ecosystem
             require(_securityToken != address(0), "Invalid address");
-            require(ISecurityTokenRegistry(polymathRegistry.getAddress(STR)).isSecurityToken(_securityToken), "Invalid securityToken");
+            require(securityTokenRegistry.isSecurityToken(_securityToken), "Invalid securityToken");
             // Validate the module address
             // module address should be a valid and active module of the securityToken
             address moduleAddress;

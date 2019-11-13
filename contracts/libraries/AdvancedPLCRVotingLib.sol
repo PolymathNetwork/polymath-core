@@ -147,28 +147,28 @@ library AdvancedPLCRVotingLib {
      * @notice It will return the no. of the voters who take part in the commit phase of the voting
      * @param allowedVoters list of voters those are allowed to vote
      * @param ballot Details of the given ballot id
-     * @return commitedVoteCount no. of the voters who take part in the commit phase of the voting    
+     * @return committedVoteCount no. of the voters who take part in the commit phase of the voting    
      */
-    function getCommitedVoteCount(
+    function getCommittedVoteCount(
         address[] memory allowedVoters,
         AdvancedPLCRVotingCheckpointStorage.Ballot storage ballot
     ) 
         public
         view
-        returns (uint256 commitedVoteCount)
+        returns (uint256 committedVoteCount)
     {
         uint256 i;
         if (getCurrentBallotStage(ballot) == AdvancedPLCRVotingCheckpointStorage.Stage.COMMIT) {
             for (i = 0; i < allowedVoters.length; i++) {
                 if (ballot.voteDetails[allowedVoters[i]].secretVote != bytes32(0))
-                    commitedVoteCount++;
+                    committedVoteCount++;
             }
         } else if (getCurrentBallotStage(ballot) == AdvancedPLCRVotingCheckpointStorage.Stage.REVEAL
                 || getCurrentBallotStage(ballot) == AdvancedPLCRVotingCheckpointStorage.Stage.RESOLVED) {
             for (i = 0; i < allowedVoters.length; i++) {
                 if (ballot.voteDetails[allowedVoters[i]].secretVote != bytes32(0)
                     || ballot.voteDetails[allowedVoters[i]].voteOptions[0].length != uint256(0))
-                    commitedVoteCount++;
+                    committedVoteCount++;
             }
         }
     }

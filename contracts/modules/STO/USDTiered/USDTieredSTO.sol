@@ -893,7 +893,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
             oracleAddress =  IPolymathRegistry(securityToken.polymathRegistry()).getAddress(oracleKeys[_currency][denominatedCurrency]);
     }
 
-    function _checkZeroAddress(address _reader) view internal {
+    function _checkZeroAddress(address _reader) pure internal {
         require(_reader == address(0));
     }
 }

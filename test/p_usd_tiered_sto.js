@@ -6014,13 +6014,5 @@ contract("USDTieredSTO", async (accounts) => {
                 I_OracleV2.getPrice({from: INVESTOR1})
             );
         });
-
-        it("Should check whether getRate() of USDTieredSTO can be called by the offchain and onchain or nor", async() => {
-            await catchRevert(
-                I_USDTieredSTO.getRate.call(ETH, {from: INVESTOR1}),
-                "revert"
-            );
-            await I_USDTieredSTO.getRate.call(ETH, {from: address_zero});
-        });
     });
 });

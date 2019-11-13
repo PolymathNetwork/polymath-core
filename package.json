@@ -13,7 +13,9 @@
     "gas": "scripts/gasUsage.sh",
     "wintest": "scripts\\wintest.cmd",
     "wincov": "scripts\\wincov.cmd",
-    "docs": "scripts/docs.sh",
+    "docs": "DOCS_PUBLISH=true scripts/docs.sh",
+    "docs:generate": "DOCS_PUBLISH=false scripts/docs.sh",
+    "docs:start": "cd polymath-developer-portal/website && yarn start",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "lint:sol": "solium -d .",
@@ -61,6 +63,7 @@
     "truffle": "^5.0.32",
     "truffle-hdwallet-provider": "^1.0.16",
     "web3": "^1.2.1",
+    "solidoc": "PolymathNetwork/solidoc",
     "web3-provider-engine": "^15.0.0"
   },
   "devDependencies": {
@@ -75,7 +78,7 @@
     "eslint": "^6.1.0",
     "eslint-config-standard": "^13.0.1",
     "eslint-plugin-import": "^2.18.2",
-    "eslint-plugin-node": "^9.1.0",
+    "eslint-plugin-node": "^10.0.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-standard": "^4.0.0",
     "eth-gas-reporter": "^0.2.10",
@@ -89,7 +92,6 @@
     "request": "^2.88.0",
     "request-promise": "^4.2.4",
     "truffle-flattener": "^1.4.2",
-    "solidity-docgen": "^0.1.1",
     "solium": "^1.2.4",
     "table": "^5.4.6"
   },

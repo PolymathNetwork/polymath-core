@@ -15,6 +15,9 @@ function getGasPrice(networkId) {
     case 3: //Ropsten
       gasPrice = 50000000000;
       break;
+    case 5: //Goerli
+      gasPrice = 50000000000;
+      break;
     case 15: //Ganache
       gasPrice = 50000000000;
       break;

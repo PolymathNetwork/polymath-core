@@ -443,7 +443,7 @@ async function manageExistingBallot(ballotId) {
   console.log(`- Reveal duration:                 ${details.revealDuration} seconds - ${moment.unix(details.startTime).add(details.commitDuration, 's').add(details.revealDuration, 's').format('MMMM Do YYYY, HH:mm:ss')}`);
   console.log(`- Allowed voters:                  ${allowedVoters.length}`);
   console.log(`- Exempted voters:                 ${exemptedVoters.length}`);
-  console.log(`- Total commited votes:            ${details.commitedVoteCount}`);
+  console.log(`- Total committed votes:           ${details.committedVoteCount}`);
   console.log(`- Total revealed votes:            ${details.totalVoters}`);
   console.log(`- Proposals:`);
   let k = 0;

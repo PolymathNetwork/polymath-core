@@ -552,7 +552,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             );
             assert.equal(tx.logs[0].args._voter, account_investor1);
             assert.equal(tx.logs[0].args._ballotId, 0);
-            let commitVoteCount = await I_AdvancedPLCRVotingCheckpoint.getCommitedVoteCount.call(new BN(0));
+            let commitVoteCount = await I_AdvancedPLCRVotingCheckpoint.getCommittedVoteCount.call(new BN(0));
             assert.equal(commitVoteCount, 1);
         });
 
@@ -631,7 +631,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             );
             assert.equal(tx.logs[0].args._voter, account_investor2);
             assert.equal(tx.logs[0].args._ballotId, 0);
-            let commitVoteCount = await I_AdvancedPLCRVotingCheckpoint.getCommitedVoteCount.call(new BN(0));
+            let commitVoteCount = await I_AdvancedPLCRVotingCheckpoint.getCommittedVoteCount.call(new BN(0));
             assert.equal(commitVoteCount, 2);
             secrets[2] = Math.floor(Math.random() * 100000000); // 8 digits
             tx = await I_AdvancedPLCRVotingCheckpoint.commitVote(
@@ -641,7 +641,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
                     from : account_investor3
                 }
             );
-            commitVoteCount = await I_AdvancedPLCRVotingCheckpoint.getCommitedVoteCount.call(new BN(0));
+            commitVoteCount = await I_AdvancedPLCRVotingCheckpoint.getCommittedVoteCount.call(new BN(0));
             assert.equal(commitVoteCount, 3);
         });
 
@@ -759,7 +759,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             );
             assert.equal((tx.logs[0].args._ballotId).toString(), ballotId.toString());
             assert.equal((tx.logs[0].args._salt).toString(), secrets[0]);
-            let commitVoteCount = await I_AdvancedPLCRVotingCheckpoint.getCommitedVoteCount.call(new BN(0));
+            let commitVoteCount = await I_AdvancedPLCRVotingCheckpoint.getCommittedVoteCount.call(new BN(0));
             assert.equal(commitVoteCount, 3);
         });
 
@@ -800,7 +800,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             );
             assert.equal((tx.logs[0].args._ballotId).toString(), ballotId.toString());
             assert.equal((tx.logs[0].args._salt).toString(), secrets[2]);
-            let commitVoteCount = await I_AdvancedPLCRVotingCheckpoint.getCommitedVoteCount.call(new BN(0));
+            let commitVoteCount = await I_AdvancedPLCRVotingCheckpoint.getCommittedVoteCount.call(new BN(0));
             assert.equal(commitVoteCount, 3);
         });
 
@@ -1358,7 +1358,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             );
             assert.equal(tx.logs[0].args._voter, account_investor3);
             assert.equal((tx.logs[0].args._ballotId).toString(), ballotId.toString());
-            let commitVoteCount = await I_AdvancedPLCRVotingCheckpoint.getCommitedVoteCount.call(ballotId);
+            let commitVoteCount = await I_AdvancedPLCRVotingCheckpoint.getCommittedVoteCount.call(ballotId);
             assert.equal(commitVoteCount, 1);
             let pendingInvestorToVote = await I_AdvancedPLCRVotingCheckpoint.getPendingInvestorToVote.call(ballotId);
             assert.notInclude(pendingInvestorToVote, account_investor3);
@@ -1387,7 +1387,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             );
             assert.equal(tx.logs[0].args._voter, account_investor4);
             assert.equal((tx.logs[0].args._ballotId).toString(), ballotId.toString());
-            let commitVoteCount = await I_AdvancedPLCRVotingCheckpoint.getCommitedVoteCount.call(ballotId);
+            let commitVoteCount = await I_AdvancedPLCRVotingCheckpoint.getCommittedVoteCount.call(ballotId);
             assert.equal(commitVoteCount, 2);
             let pendingInvestorToVote = await I_AdvancedPLCRVotingCheckpoint.getPendingInvestorToVote.call(ballotId);
             console.log(pendingInvestorToVote);
@@ -1417,7 +1417,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             );
             assert.equal(tx.logs[0].args._voter, account_investor5);
             assert.equal((tx.logs[0].args._ballotId).toString(), ballotId.toString());
-            let commitVoteCount = await I_AdvancedPLCRVotingCheckpoint.getCommitedVoteCount.call(ballotId);
+            let commitVoteCount = await I_AdvancedPLCRVotingCheckpoint.getCommittedVoteCount.call(ballotId);
             assert.equal(commitVoteCount, 3);
             let pendingInvestorToVote = await I_AdvancedPLCRVotingCheckpoint.getPendingInvestorToVote.call(ballotId);
             assert.equal(pendingInvestorToVote.length, 0);
@@ -1467,7 +1467,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             assert.equal(pendingInvestorToVote.length, 2);
             assert.notInclude(pendingInvestorToVote, account_investor3);
 
-            let commitVoteCount = await I_AdvancedPLCRVotingCheckpoint.getCommitedVoteCount.call(ballotId);
+            let commitVoteCount = await I_AdvancedPLCRVotingCheckpoint.getCommittedVoteCount.call(ballotId);
             assert.equal(commitVoteCount, 3);
             
             // Reveal vote for investor 4
@@ -1497,7 +1497,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             assert.equal(pendingInvestorToVote.length, 1);
             assert.notInclude(pendingInvestorToVote, account_investor4);
 
-            commitVoteCount = await I_AdvancedPLCRVotingCheckpoint.getCommitedVoteCount.call(ballotId);
+            commitVoteCount = await I_AdvancedPLCRVotingCheckpoint.getCommittedVoteCount.call(ballotId);
             assert.equal(commitVoteCount, 3);
 
             // Reveal vote for investor 5
@@ -1524,7 +1524,7 @@ contract("AdvancedPLCRVotingCheckpoint", accounts => {
             pendingInvestorToVote = await I_AdvancedPLCRVotingCheckpoint.getPendingInvestorToVote.call(ballotId);
             assert.equal(pendingInvestorToVote.length, 0);
 
-            commitVoteCount = await I_AdvancedPLCRVotingCheckpoint.getCommitedVoteCount.call(ballotId);
+            commitVoteCount = await I_AdvancedPLCRVotingCheckpoint.getCommittedVoteCount.call(ballotId);
             assert.equal(commitVoteCount, 3);
         });
 

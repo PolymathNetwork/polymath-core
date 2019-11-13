@@ -904,7 +904,7 @@ async function matmManage() {
   if (getApprovals.length > 0) {
     let options = []
     getApprovals.forEach((item) => {
-      options.push(`${web3.utils.toAscii(item.description)}\n    From: ${item.from}\n    To: ${item.to}\n    Amount: ${web3.utils.fromWei(item.allowance)} ${tokenSymbol}\n    Expiry date: ${moment.unix(item.expiryTime).format('MM/DD/YYYY HH:mm')}\n`)
+      options.push(`${web3.utils.toAscii(item.description)}\n    From: ${item.from}\n    To: ${item.to}\n    Initial amount: ${web3.utils.fromWei(item.initialAllowance)} ${tokenSymbol}\n    Remaining amount: ${web3.utils.fromWei(item.allowance)} ${tokenSymbol}\n    Expiry date: ${moment.unix(item.expiryTime).format('MM/DD/YYYY HH:mm')}\n`)
     })
 
     let index = readlineSync.keyInSelect(options, 'Select an existing approval: ', {
@@ -947,7 +947,7 @@ async function matmManage() {
 async function matmExplore() {
   let getApprovals = await getApprovalsArray();
   getApprovals.forEach((item) => {
-    printMatmRow(item.from, item.to, item.allowance, item.expiryTime, item.description);
+    printMatmRow(item.from, item.to, item.initialAllowance, item.allowance, item.expiryTime, item.description);
   })
 }
 
@@ -1008,14 +1008,14 @@ async function matmManageDecrease(selectedApproval) {
 async function matmManageTimeOrDescription(selectedApproval) {
   let { expiryTime, description } = readExpiryTimeAndDescription(selectedApproval);
 
-  let modifyManualApprovalAction = currentTransferManager.methods.modifyManualApproval(selectedApproval.from, selectedApproval.to, parseInt(expiryTime), selectedApproval.allowance, web3.utils.fromAscii(description), 2);
+  let modifyManualApprovalAction = currentTransferManager.methods.modifyManualApproval(selectedApproval.from, selectedApproval.to, parseInt(expiryTime), 0, web3.utils.fromAscii(description), 2);
   await common.sendTransaction(modifyManualApprovalAction);
   console.log(chalk.green(`The approval expiry time has been modified successfully!`));
 }
 
 function readExpiryTimeAndDescription(selectedApproval) {
   let expiryTime = parseInt(input.readNumberGreaterThan(0, `Enter the new expiry time (Unix Epoch time) until which the transfer is allowed or leave empty to keep the current (${selectedApproval.expiryTime}): `, selectedApproval.expiryTime));
-  let description = readlineSync.readStringNonEmptyWithMaxBinarySize(33, `Enter the new description for the manual approval or leave empty to keep the current (${web3.utils.toAscii(selectedApproval.description)}): `);
+  let description = input.readStringNonEmptyWithMaxBinarySize(33, `Enter the new description for the manual approval or leave empty to keep the current (${web3.utils.toAscii(selectedApproval.description)}): `);
   return { expiryTime, description };
 }
 
@@ -1038,14 +1038,15 @@ async function getApprovalsArray() {
   }
 }
 
-function printMatmRow(from, to, allowance, time, description) {
-  console.log(`\nDescription: ${web3.utils.toAscii(description)}\nFrom ${from} to ${to}\nAllowance: ${web3.utils.fromWei(allowance)}\nExpiry time: ${moment.unix(time).format('MMMM Do YYYY HH:mm')}\n`);
+function printMatmRow(from, to, initialAllowance, allowance, time, description) {
+  console.log(`\nDescription: ${web3.utils.toAscii(description)}\nFrom ${from} to ${to}\nInitial allowance: ${web3.utils.fromWei(initialAllowance)}\nRemaining allowance: ${web3.utils.fromWei(allowance)}\nExpiry time: ${moment.unix(time).format('MMMM Do YYYY HH:mm')}\n`);
 }
 
 async function getApprovals() {
-  function ApprovalDetail(_from, _to, _allowance, _expiryTime, _description) {
+  function ApprovalDetail(_from, _to, _initialAllowance, _allowance, _expiryTime, _description) {
     this.from = _from;
     this.to = _to;
+    this.initialAllowance = _initialAllowance;
     this.allowance = _allowance;
     this.expiryTime = _expiryTime;
     this.description = _description;
@@ -1054,15 +1055,16 @@ async function getApprovals() {
   let results = [];
   let approvalDetails = await currentTransferManager.methods.getAllApprovals().call();
   for (let i = 0; i < approvalDetails[0].length; i++) {
-    results.push(new ApprovalDetail(approvalDetails[0][i], approvalDetails[1][i], approvalDetails[2][i], approvalDetails[3][i], approvalDetails[4][i]));
+    results.push(new ApprovalDetail(approvalDetails[0][i], approvalDetails[1][i], approvalDetails[2][i], approvalDetails[3][i], approvalDetails[4][i], approvalDetails[5][i]));
   }
   return results;
 }
 
 async function getApprovalsToAnAddress(address) {
-  function ApprovalDetail(_from, _to, _allowance, _expiryTime, _description) {
+  function ApprovalDetail(_from, _to, _initialAllowance, _allowance, _expiryTime, _description) {
     this.from = _from;
     this.to = _to;
+    this.initialAllowance = _initialAllowance;
     this.allowance = _allowance;
     this.expiryTime = _expiryTime;
     this.description = _description;
@@ -1071,7 +1073,7 @@ async function getApprovalsToAnAddress(address) {
   let results = [];
   let approvals = await currentTransferManager.methods.getActiveApprovalsToUser(address).call();
   for (let i = 0; i < approvals[0].length; i++) {
-    results.push(new ApprovalDetail(approvals[0][i], approvals[1][i], approvals[2][i], approvals[3][i], approvals[4][i]));
+    results.push(new ApprovalDetail(approvals[0][i], approvals[1][i], approvals[2][i], approvals[3][i], approvals[4][i], approvals[5][i]));
   }
   return results;
 }

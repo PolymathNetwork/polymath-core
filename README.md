@@ -116,8 +116,9 @@ You can easily navigate through it with the sidebar directory in order to run th
 # Setting up Polymath Core
 
 ## Mainnet
-
 ### v3.0.0 
+
+V3 Audit Report by Consensys Diligence: https://github.com/PolymathNetwork/polymath-audit-report-2019-04
 
 | Contract                                                         | Address                                                                                                                       |
 | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |

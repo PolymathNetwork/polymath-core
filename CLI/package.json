@@ -11,8 +11,8 @@
   "dependencies": {
     "bignumber.js": "^8.1.1",
     "chalk": "^2.4.1",
-    "commander": "^2.16.0",
-    "csv-parse": "^4.0.1",
+    "commander": "^3.0.2",
+    "csv-parse": "^4.4.6",
     "ethers": "^4.0.7",
     "moment": "^2.22.2",
     "readline-sync": "^1.4.9",

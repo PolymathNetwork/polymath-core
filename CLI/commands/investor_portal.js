@@ -65,9 +65,9 @@ async function executeApp(investorAddress, investorPrivKey, symbol, currency, am
                 break;
             case 'USDTieredSTO':
                 await showUserInfo(User.address);
-                await showUserInfoForUSDTieredSTO();
-                await showUSDTieredSTOInfo();
-                await investUsdTieredSTO(currency, amount)
+                await showUserInfoForTieredSTO();
+                await showTieredSTOInfo();
+                await investTieredSTO(currency, amount)
                 break;
         }
     } catch (err) {
@@ -124,7 +124,7 @@ function selectExistingSTO (stoModules, showPaused) {
     if (!showPaused) {
       filteredModules = stoModules.filter(m => !m.paused);
     }
-    let options = filteredModules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
+    let options = filteredModules.map(m => `${m.label}: ${m.title} (${m.version}) at ${m.address}`);
     let index = readlineSync.keyInSelect(options, 'Select a module: ', { cancel: false });
     console.log('Selected:', options[index], '\n');
     let selectedName = filteredModules[index].name;
@@ -289,8 +289,9 @@ async function checkBalance(address) {
     }
 }
 
-async function showUserInfoForUSDTieredSTO() {
+async function showUserInfoForTieredSTO() {
     let stableSymbols = [];
+    let denominatedCurrency = web3.utils.hexToUtf8(await currentSTO.methods.denominatedCurrency().call());
     let listOfStableCoins = await currentSTO.methods.getUsdTokens().call();
 
     for (const fundType in gbl.constants.FUND_RAISE_TYPES) {
@@ -300,15 +301,15 @@ async function showUserInfoForUSDTieredSTO() {
             }
             let displayInvestorInvested = web3.utils.fromWei(await currentSTO.methods.investorInvested(User.address, gbl.constants.FUND_RAISE_TYPES[fundType]).call());
             if ((fundType == STABLE) && (stableSymbols.length)) {
-                console.log(`    - Invested in stable coin(s):    ${displayInvestorInvested} USD`);
+                console.log(`    - Invested in stable coin(s):    ${displayInvestorInvested} ${denominatedCurrency}`);
             } else {
                 console.log(`    - Invested in ${fundType}:\t     ${displayInvestorInvested} ${fundType}`);
             }
         }
     }
 
-    let displayInvestorInvestedUSD = web3.utils.fromWei(await currentSTO.methods.investorInvestedUSD(User.address).call());
-    console.log(`    - Total invested in USD: ${displayInvestorInvestedUSD} USD`);
+    let displayInvestorInvestedStable = web3.utils.fromWei(await currentSTO.methods.investorInvestedUSD(User.address).call());
+    console.log(`    - Total invested in ${denominatedCurrency}: ${displayInvestorInvestedStable} ${denominatedCurrency}`);
 
     let now = Math.floor(Date.now() / 1000);
 
@@ -326,20 +327,21 @@ async function showUserInfoForUSDTieredSTO() {
     console.log(`    - Accredited:            ${(displayIsUserAccredited) ? "YES" : "NO"}`)
 
     if (!displayIsUserAccredited) {
-        let displayOverrideNonAccreditedLimitUSD = web3.utils.fromWei(await currentSTO.methods.nonAccreditedLimitUSDOverride(User.address).call());
-        let displayNonAccreditedLimitUSD = displayOverrideNonAccreditedLimitUSD != 0 ? displayOverrideNonAccreditedLimitUSD : web3.utils.fromWei(await currentSTO.methods.nonAccreditedLimitUSD().call());
-        let displayTokensRemainingAllocation = displayNonAccreditedLimitUSD - displayInvestorInvestedUSD;
-        console.log(`    - Remaining allocation:  ${(displayTokensRemainingAllocation > 0 ? displayTokensRemainingAllocation : 0)} USD`);
+        let displayOverrideNonAccreditedLimitFiat = web3.utils.fromWei(await currentSTO.methods.nonAccreditedLimitUSDOverride(User.address).call());
+        let displayNonAccreditedLimitFiat = displayOverrideNonAccreditedLimitFiat != 0 ? displayOverrideNonAccreditedLimitFiat : web3.utils.fromWei(await currentSTO.methods.nonAccreditedLimitUSD().call());
+        let displayTokensRemainingAllocation = displayNonAccreditedLimitFiat - displayInvestorInvestedStable;
+        console.log(`    - Remaining allocation:  ${(displayTokensRemainingAllocation > 0 ? displayTokensRemainingAllocation : 0)} ${denominatedCurrency}`);
     }
     console.log('\n');
 }
 
-async function showUSDTieredSTOInfo() {
+async function showTieredSTOInfo() {
     let displayStartTime = await currentSTO.methods.startTime().call();
     let displayEndTime = await currentSTO.methods.endTime().call();
     let displayCurrentTier = parseInt(await currentSTO.methods.currentTier().call()) + 1;
-    let displayNonAccreditedLimitUSD = web3.utils.fromWei(await currentSTO.methods.nonAccreditedLimitUSD().call());
-    let displayMinimumInvestmentUSD = web3.utils.fromWei(await currentSTO.methods.minimumInvestmentUSD().call());
+    let denominatedCurrency = web3.utils.hexToUtf8(await currentSTO.methods.denominatedCurrency().call());
+    let displayNonAccreditedLimitFiat = web3.utils.fromWei(await currentSTO.methods.nonAccreditedLimitUSD().call());
+    let displayMinimumInvestmentFiat = web3.utils.fromWei(await currentSTO.methods.minimumInvestmentUSD().call());
     let displayWallet = await currentSTO.methods.wallet().call();
     let displayTreasuryWallet = await currentSTO.methods.getTreasuryWallet().call();
     let displayTokensSold = web3.utils.fromWei(await currentSTO.methods.getTokensSold().call());
@@ -382,7 +384,7 @@ async function showUSDTieredSTOInfo() {
             let soldPerTierDiscountPoly = tier.soldDiscountPoly;
             displayDiscountTokens = `
         Tokens at discounted rate: ${web3.utils.fromWei(tokensPerTierDiscountPoly)} ${displayTokenSymbol}
-        Discounted rate:           ${web3.utils.fromWei(ratePerTierDiscountPoly, 'ether')} USD per Token`;
+        Discounted rate:           ${web3.utils.fromWei(ratePerTierDiscountPoly, 'ether')} ${denominatedCurrency} per Token`;
 
             displayDiscountSold = `(${web3.utils.fromWei(soldPerTierDiscountPoly)} ${displayTokenSymbol} at discounted rate)`;
         }
@@ -403,13 +405,13 @@ async function showUSDTieredSTOInfo() {
         displayTiers += `
     - Tier ${t + 1}:
         Tokens:                    ${web3.utils.fromWei(tokensPerTierTotal)} ${displayTokenSymbol}
-        Rate:                      ${web3.utils.fromWei(ratePerTier)} USD per Token` + displayDiscountTokens;
+        Rate:                      ${web3.utils.fromWei(ratePerTier)} ${denominatedCurrency} per Token` + displayDiscountTokens;
 
         displaySoldPerTier += `
     - Tokens sold in Tier ${t + 1}:       ${web3.utils.fromWei(soldPerTierTotal)} ${displayTokenSymbol}` + displaySoldPerTierPerType;
     }
 
-    let displayFundsRaisedUSD = web3.utils.fromWei(await currentSTO.methods.fundsRaisedUSD().call());
+    let displayFundsRaisedFiat = web3.utils.fromWei(await currentSTO.methods.fundsRaisedUSD().call());
 
     let displayWalletBalancePerType = '';
     let displayTreasuryWalletBalancePerType = '';
@@ -469,8 +471,8 @@ async function showUSDTieredSTOInfo() {
     - Pre-minting Allowed:         ${preMintAllowed ? 'YES' : 'NO'}
     - Tiers:                       ${tiersLength}` +
         displayTiers + `
-    - Minimum Investment:          ${displayMinimumInvestmentUSD} USD
-    - Non Accredited Limit:        ${displayNonAccreditedLimitUSD} USD
+    - Minimum Investment:          ${displayMinimumInvestmentFiat} ${denominatedCurrency}
+    - Non Accredited Limit:        ${displayNonAccreditedLimitFiat} ${denominatedCurrency}
     - Beneficial Investments       ${beneficialInvestmentsAllowed ? 'Allowed' : 'Disallowed'}
     - Wallet:                      ${displayWallet}` +
         displayWalletBalancePerType + `
@@ -489,7 +491,7 @@ async function showUSDTieredSTOInfo() {
     - Investor count:              ${displayInvestorCount}
     - Funds Raised` +
         displayFundsRaisedPerType + `
-        Total USD:                 ${displayFundsRaisedUSD} USD
+        Total ${denominatedCurrency}:                 ${displayFundsRaisedFiat} ${denominatedCurrency}
     `);
 
     if (displayCannotBuy) {
@@ -552,9 +554,10 @@ async function investCappedSTO(currency, amount) {
 }
 
 // Allow investor to buy tokens.
-async function investUsdTieredSTO(currency, amount) {
+async function investTieredSTO(currency, amount) {
     let listOfStableCoins = await currentSTO.methods.getUsdTokens().call();
     let stableSymbols = await processAddress(listOfStableCoins);
+    let denominatedCurrency = web3.utils.hexToUtf8(await currentSTO.methods.denominatedCurrency().call());
 
     let raiseType;
 
@@ -569,7 +572,7 @@ async function investUsdTieredSTO(currency, amount) {
         for (const type of raiseTypes) {
             let displayPrice = web3.utils.fromWei(await currentSTO.methods.convertToUSD(gbl.constants.FUND_RAISE_TYPES[type], web3.utils.toWei("1")).call());
             if (!((type == STABLE) && (stableSymbols.length))) {
-                console.log(chalk.green(`   Current ${type} price:\t\t   ${displayPrice} USD`));
+                console.log(chalk.green(`   Current ${type} price:\t\t   ${displayPrice} ${denominatedCurrency}`));
             }
         }
         if (raiseTypes.length > 1) {
@@ -597,18 +600,18 @@ async function investUsdTieredSTO(currency, amount) {
 
     let cost;
     if (typeof amount === 'undefined') {
-        let investorInvestedUSD = await currentSTO.methods.investorInvestedUSD(User.address).call();
-        let minimumInvestmentUSD = await currentSTO.methods.minimumInvestmentUSD().call();
+        let investorInvestedFiat = await currentSTO.methods.investorInvestedUSD(User.address).call();
+        let minimumInvestmentFiat = await currentSTO.methods.minimumInvestmentUSD().call();
         let minimumInvestmentRaiseType;
 
         // if raiseType is different than ETH or POLY, we assume is STABLE
         if ((raiseType != ETH) && (raiseType != POLY)) {
-            minimumInvestmentRaiseType = await currentSTO.methods.convertFromUSD(gbl.constants.FUND_RAISE_TYPES[STABLE], minimumInvestmentUSD).call();
+            minimumInvestmentRaiseType = await currentSTO.methods.convertFromUSD(gbl.constants.FUND_RAISE_TYPES[STABLE], minimumInvestmentFiat).call();
         } else {
-            minimumInvestmentRaiseType = await currentSTO.methods.convertFromUSD(gbl.constants.FUND_RAISE_TYPES[raiseType], minimumInvestmentUSD).call();
+            minimumInvestmentRaiseType = await currentSTO.methods.convertFromUSD(gbl.constants.FUND_RAISE_TYPES[raiseType], minimumInvestmentFiat).call();
         }
 
-        let minimumCost = web3.utils.fromWei((new BigNumber(minimumInvestmentRaiseType).minus(new BigNumber(investorInvestedUSD))).toString());
+        let minimumCost = web3.utils.fromWei((new BigNumber(minimumInvestmentRaiseType).minus(new BigNumber(investorInvestedFiat))).toString());
         cost = input.readNumberGreaterThan(minimumCost, (chalk.yellow(`Enter the amount of ${raiseType} you would like to invest or press 'Enter' to exit: `)));
     } else {
         cost = amount;
@@ -670,7 +673,7 @@ async function investUsdTieredSTO(currency, amount) {
       }
 
     let minTokenToBuy = tokensToBuy[2];
-    console.log(chalk.yellow(`You are going to spend ${web3.utils.fromWei(tokensToBuy[1])} ${raiseType} (${web3.utils.fromWei(tokensToBuy[0])} USD) to buy ${web3.utils.fromWei(minTokenToBuy)} ${STSymbol} approx.`));
+    console.log(chalk.yellow(`You are going to spend ${web3.utils.fromWei(tokensToBuy[1])} ${raiseType} (${web3.utils.fromWei(tokensToBuy[0])} ${denominatedCurrency}) to buy ${web3.utils.fromWei(minTokenToBuy)} ${STSymbol} approx.`));
     console.log(chalk.yellow(`Due to ${raiseType} price changes and network delays, it is possible that the final amount of purchased tokens is lower.`));
     if (typeof amount !== 'undefined' || !readlineSync.keyInYNStrict(`Do you want the transaction to fail if this happens?`)) {
         minTokenToBuy = 0;
@@ -679,19 +682,19 @@ async function investUsdTieredSTO(currency, amount) {
     if (raiseType == POLY) {
         let actionBuyWithPoly = currentSTO.methods.buyWithPOLYRateLimited(User.address, costWei, minTokenToBuy);
         let receipt = await common.sendTransaction(actionBuyWithPoly, { from: User, factor: 2 });
-        logTokensPurchasedUSDTieredSTO(receipt);
+        logTokensPurchasedTieredSTO(receipt, denominatedCurrency);
     } else if ((raiseType != POLY) && (raiseType != ETH)) {
-        let actionBuyWithUSD = currentSTO.methods.buyWithUSDRateLimited(User.address, costWei, minTokenToBuy, stableInfo.address);
-        let receipt = await common.sendTransaction(actionBuyWithUSD, { from: User, factor: 1.5 });
-        logTokensPurchasedUSDTieredSTO(receipt);
+        let actionBuyWithFiat = currentSTO.methods.buyWithUSDRateLimited(User.address, costWei, minTokenToBuy, stableInfo.address);
+        let receipt = await common.sendTransaction(actionBuyWithFiat, { from: User, factor: 1.5 });
+        logTokensPurchasedTieredSTO(receipt, denominatedCurrency);
     } else {
         let actionBuyWithETH = currentSTO.methods.buyWithETHRateLimited(User.address, minTokenToBuy);
         let receipt = await common.sendTransaction(actionBuyWithETH, { from: User, value: costWei });
-        logTokensPurchasedUSDTieredSTO(receipt);
+        logTokensPurchasedTieredSTO(receipt, denominatedCurrency);
     }
 
     await showTokenInfo();
-    await showUserInfoForUSDTieredSTO();
+    await showUserInfoForTieredSTO();
 }
 
 function selectRaiseType(msg) {
@@ -703,14 +706,14 @@ async function polyBalance(_user) {
     return web3.utils.fromWei(balance);
 }
 
-function logTokensPurchasedUSDTieredSTO(receipt) {
+function logTokensPurchasedTieredSTO(receipt, denominatedCurrency) {
     console.log(chalk.green(`Congratulations! The token purchase was successfully completed.`));
     let events = common.getMultipleEventsFromLogs(currentSTO._jsonInterface, receipt.logs, 'TokenPurchase');
     for (event of events) {
         console.log(`
   Account ${event._purchaser}
-  invested ${web3.utils.fromWei(event._usdAmount)} USD
-  purchasing ${web3.utils.fromWei(event._tokens)} ${STSymbol.toUpperCase()} at ${web3.utils.fromWei(event._tierPrice)} USD
+  invested ${web3.utils.fromWei(event._usdAmount)} ${denominatedCurrency}
+  purchasing ${web3.utils.fromWei(event._tokens)} ${STSymbol.toUpperCase()} at ${web3.utils.fromWei(event._tierPrice)} ${denominatedCurrency}
   for beneficiary account ${event._beneficiary}`);
     };
 }

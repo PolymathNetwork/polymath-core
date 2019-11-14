@@ -24,7 +24,7 @@ async function executeApp() {
   let nonArchivedModules = pmModules.filter(m => !m.archived);
   if (nonArchivedModules.length > 0) {
     console.log(`Permission Manager modules attached:`);
-    nonArchivedModules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
+    nonArchivedModules.map(m => `${m.label}: ${m.title} (${m.version}) at ${m.address}`);
   } else {
     console.log(`There are no Permission Manager modules attached`);
   }
@@ -54,7 +54,7 @@ async function executeApp() {
 
 async function addPermissionModule() {
   let moduleList = await common.getAvailableModules(moduleRegistry, gbl.constants.MODULES_TYPES.PERMISSION, securityToken.options.address);
-  let options = moduleList.map(m => `${m.name} - ${m.version} (${m.factoryAddress})`);
+  let options = moduleList.map(m => `${m.title} - ${m.version} (${m.factoryAddress})`);
 
   let index = readlineSync.keyInSelect(options, 'Which permission manager module do you want to add? ', { cancel: 'Return' });
   if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]}? `)) {
@@ -64,7 +64,7 @@ async function addPermissionModule() {
 }
 
 async function configExistingModules(permissionModules) {
-  let options = permissionModules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
+  let options = permissionModules.map(m => `${m.label}: ${m.title} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module do you want to config? ', { cancel: 'RETURN' });
   console.log('Selected:', index != -1 ? options[index] : 'RETURN', '\n');
   currentPermissionManager = new web3.eth.Contract(abis.generalPermissionManager(), permissionModules[index].address);
@@ -293,7 +293,7 @@ async function selectDelegate() {
 async function selectModule() {
   let modules = await getModulesWithPermissions();
   let options = modules.map(function (m) {
-    return `${m.label} - ${m.name} at ${m.address}`;
+    return `${m.label} - ${m.title} at ${m.address}`;
   });
   let index = readlineSync.keyInSelect(options, 'Select a module:', { cancel: false });
   return modules[index];

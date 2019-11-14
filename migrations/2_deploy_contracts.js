@@ -123,7 +123,7 @@ module.exports = function(deployer, network, accounts) {
         PolymathAccount = accounts[0];
         PolyToken = "0xb347b9f5b56b431b2cf4e1d90a5995f7519ca792"; // PolyToken Kovan Faucet Address
         POLYOracle = "0x461d98EF2A0c7Ac1416EF065840fF5d4C946206C"; // Poly Oracle Kovan Address
-        ETHOracle = "0xCE5551FC9d43E9D2CC255139169FC889352405C8"; // ETH Oracle Kovan Address
+        ETHOracle = "0x14542627196c7dab26eb11ffd8a407ffc476de76"; // ETH Oracle Kovan Address
         StablePOLYOracle = "0xdf397a6119a549f39612358e4d215c495486f3c9"; // Stable Poly oracle
     } else if (network === "goerli") {
         web3 = new Web3(new Web3.providers.HttpProvider(process.env.GOERLI_ENDPOINT));

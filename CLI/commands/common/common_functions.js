@@ -96,15 +96,17 @@ async function getAvailableModules(moduleRegistry, moduleType, stAddress) {
     let moduleFactory = new web3.eth.Contract(moduleFactoryABI, m);
     let moduleName = web3.utils.hexToUtf8(await moduleFactory.methods.name().call());
     let moduleVersion = await moduleFactory.methods.version().call();
-    return { name: moduleName, version: moduleVersion, factoryAddress: m };
+    let moduleTitle = await moduleFactory.methods.title().call();
+    return { name: moduleName, version: moduleVersion, factoryAddress: m, title: moduleTitle };
   }));
   return moduleList;
 }
 
 async function getAllModulesByType (securityToken, type, polyToken) {
-  function ModuleInfo (_moduleType, _name, _address, _factoryAddress, _archived, _paused, _version, _label, _remainingBudget) {
+  function ModuleInfo (_moduleType, _name, _title, _address, _factoryAddress, _archived, _paused, _version, _label, _remainingBudget) {
     this.name = _name;
     this.type = _moduleType;
+    this.title = _title;
     this.address = _address;
     this.factoryAddress = _factoryAddress;
     this.archived = _archived;
@@ -127,9 +129,11 @@ async function getAllModulesByType (securityToken, type, polyToken) {
     if (usageCost !== '0') {
       remainingBudget = web3.utils.fromWei(await polyToken.methods.allowance(securityToken.options.address, details[1]).call());
     }
+    let title = await factory.methods.title().call();
     modules.push(new ModuleInfo(
       type,
       web3.utils.hexToUtf8(details[0]),
+      title,
       details[1],
       details[2],
       details[3],

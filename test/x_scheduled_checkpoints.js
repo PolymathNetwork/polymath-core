@@ -389,7 +389,7 @@ contract("ScheduledCheckpoint", async (accounts) => {
 
         it("Should get the permission", async () => {
             let perm = await I_ScheduledCheckpoint.getPermissions.call();
-            assert.equal(perm.length, 0);
+            assert.equal(perm.length, 1);
         });
 
         it("Remove daily checkpoint", async () => {
@@ -821,30 +821,30 @@ function addYears(timestamp, years) {
 
 function checkScheduleLog(log, name, startTime, interval, timeUnit) {
     assert.equal(web3.utils.toAscii(log.args._name).replace(/\u0000/g, ""), web3.utils.toAscii(name));
-    assert.equal(log.args._startTime.toString(), startTime.toString());
-    assert.equal(log.args._interval.toString(), interval.toString());
-    assert.equal(log.args._timeUint.toString(), timeUnit.toString());
+    assert.equal((log.args._startTime).toString(), startTime.toString());
+    assert.equal((log.args._frequency).toString(), interval);
+    assert.equal((log.args._frequencyUnit).toString(), timeUnit);
 }
 
 function checkSchedule(schedule, name, startTime, nextTime, interval, timeUnit, checkpoints, timestamps, periods) {
     assert.equal(web3.utils.toAscii(schedule[0]).replace(/\u0000/g, ""), web3.utils.toAscii(name));
-    assert.equal(schedule[1].toString(), startTime.toString());
-    assert.equal(schedule[2].toString(), nextTime.toString());
-    assert.equal(schedule[3].toString(), interval.toString());
-    assert.equal(schedule[4].toString(), timeUnit.toString());
-    assert.equal(schedule[5].length, checkpoints.length);
+    assert.equal((schedule.startTime).toString(), startTime.toString());
+    assert.equal((schedule.nextCheckPointCreatedAt).toString(), nextTime.toString());
+    assert.equal((schedule.frequency).toString(), interval);
+    assert.equal((schedule.frequencyUnit).toString(), timeUnit);
+    assert.equal(schedule.checkpointIds.length, checkpoints.length);
     for (let i = 0; i < checkpoints.length; i++) {
-        assert.equal(schedule[5][i].toString(), checkpoints[i].toString());
+        assert.equal(schedule.checkpointIds[i].toString(), checkpoints[i].toString());
     }
-    assert.equal(schedule[6].length, timestamps.length);
+    assert.equal(schedule.timestamps.length, timestamps.length);
     for (let i = 0; i < timestamps.length; i++) {
-        assert.equal(schedule[6][i].toString(), timestamps[i].toString());
+        assert.equal(schedule.timestamps[i].toString(), timestamps[i].toString());
     }
-    assert.equal(schedule[7].length, periods.length);
+    assert.equal(schedule.periods.length, periods.length);
     let totalPeriods = 0;
     for (let i = 0; i < periods.length; i++) {
-        assert.equal(schedule[7][i].toString(), periods[i].toString());
+        assert.equal(schedule.periods[i].toString(), periods[i].toString());
         totalPeriods += periods[i];
     }
-    assert.equal(schedule[8].toString(), totalPeriods.toString());
+    assert.equal((schedule.totalPeriods).toString(), totalPeriods.toString());
 }

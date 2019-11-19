@@ -22,7 +22,7 @@ contract ScheduledCheckpointFactory is ModuleFactory {
     )
         public ModuleFactory(_setupCost, _usageCost, _polymathRegistry, _isCostInPoly)
     {
-        initialVersion = "3.0.0";
+        initialVersion = "3.1.0";
         name = "ScheduledCheckpoint";
         title = "Schedule Checkpoints";
         description = "Allows you to schedule checkpoints in the future";

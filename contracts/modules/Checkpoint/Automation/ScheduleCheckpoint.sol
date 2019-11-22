@@ -175,8 +175,7 @@ contract ScheduleCheckpoint is ScheduleCheckpointStorage, TransferManager, IChec
      * @notice manually triggers update outside of transfer request for named schedule (can be used to reduce user gas costs)
      * @param _name name of the schedule
      */
-    function update(bytes32 _name) external {
-        _onlySecurityTokenOwner();
+    function update(bytes32 _name) withPerm(OPERATOR) external {
         _update(_name);
     }
 

@@ -1,40 +1,20 @@
 pragma solidity 0.5.8;
 
-import "./../../Checkpoint/ICheckpoint.sol";
+import "../ICheckpoint.sol";
 import "../../TransferManager/TransferManager.sol";
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "../../../libraries/BokkyPooBahsDateTimeLibrary.sol";
+import "./ScheduleCheckpointStorage.sol";
 
 /**
  * @title Burn module for burning tokens and keeping track of burnt amounts
  */
-contract ScheduledCheckpoint is ICheckpoint, TransferManager {
+contract ScheduleCheckpoint is ScheduleCheckpointStorage, TransferManager, ICheckpoint {
     using SafeMath for uint256;
 
-    bytes32 constant OPERATOR = "OPERATOR";
-
-    enum FrequencyUnit { SECONDS, DAYS, WEEKS, MONTHS, QUATER, YEARS}
-
-    struct Schedule {
-        uint256 index;
-        bytes32 name;
-        uint256 startTime;
-        uint256 endTime;
-        uint256 nextCheckPointCreatedAt;
-        uint256 frequency;
-        FrequencyUnit frequencyUnit;
-        uint256[] checkpointIds;
-        uint256[] timestamps;
-        uint256[] periods;
-        uint256 totalPeriods;
-    }
-
-    bytes32[] public names;
-
-    mapping(bytes32 => Schedule) public schedules;
-
-    event AddSchedule(bytes32 _name, uint256 _startTime, uint256 _frequency, FrequencyUnit _frequencyUnit);
+    event AddSchedule(bytes32 _name, uint256 _startTime, uint256 _endTime, uint256 _frequency, FrequencyUnit _frequencyUnit);
     event RemoveSchedule(bytes32 _name);
+    event ModifyScheduleEndTime(bytes32 _name, uint256 _oldEndTime, uint256 _newEndTime);
 
     /**
      * @notice Constructor
@@ -55,22 +35,27 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
      * @notice adds a new schedule for checkpoints
      * @param _name name of the new schedule (must be unused)
      * @param _startTime start time of the schedule (first checkpoint)
+     * @param _endTime End time of the schedule
      * @param _frequency How frequent checkpoint will being created
      * @param _frequencyUnit Unit of frequency i.e If issuer puts _frequency = 10
      * & frequency unit is DAYS then it means every 10 day frequency new checkpoint will be created
      */
-    function addSchedule(bytes32 _name, uint256 _startTime, uint256 _frequency, FrequencyUnit _frequencyUnit) withPerm(OPERATOR) external {
+    function addSchedule(bytes32 _name, uint256 _startTime, uint256 _endTime, uint256 _frequency, FrequencyUnit _frequencyUnit) withPerm(OPERATOR) external {
         require(_name != bytes32(0), "Empty name");
         require(_startTime >= now, "Start time must be in the future");
         require(schedules[_name].name == bytes32(0), "Name already in use");
+        uint256 endTime = _endTime;
+        if (_endTime <= _startTime)
+            endTime = uint256(0);
         schedules[_name].name = _name;
         schedules[_name].startTime = _startTime;
+        schedules[_name].endTime = endTime;
         schedules[_name].nextCheckPointCreatedAt = _startTime;
         schedules[_name].frequency = _frequency;
         schedules[_name].frequencyUnit = _frequencyUnit;
         schedules[_name].index = names.length;
         names.push(_name);
-        emit AddSchedule(_name, _startTime, _frequency, _frequencyUnit);
+        emit AddSchedule(_name, _startTime, endTime, _frequency, _frequencyUnit);
     }
 
     /**
@@ -78,8 +63,8 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
      * @param _name name of the schedule to be removed
      */
     function removeSchedule(bytes32 _name) withPerm(OPERATOR) external {
-        require(_name != bytes32(0), "Empty name");
-        require(schedules[_name].name == _name, "Name does not exist");
+        require(_name != bytes32(0), "Invalid schedule name");
+        require(schedules[_name].name == _name, "Schedule does not exist");
         uint256 index = schedules[_name].index;
         uint256 lengthOfNameArray = names.length;
         if (index != lengthOfNameArray - 1) {
@@ -89,6 +74,23 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
         names.length--;
         delete schedules[_name];
         emit RemoveSchedule(_name);
+    }
+
+    /**
+     * @notice Used to modify the end time of the schedule
+     * @dev new endtime can be set as 0 or any value greater than now.
+     * @param _name Name of the schedule that need to modify
+     * @param _newEndTime New end time of the schedule
+     */
+    function modifyScheduleEndTime(bytes32 _name, uint256 _newEndTime) withPerm(OPERATOR) external {
+        Schedule memory _schedule = schedules[_name];
+        require(_schedule.name != bytes32(0), "Invalid name");
+        if (_schedule.endTime > 0)
+            require(_schedule.endTime > now, "Schedule already ended");
+        if (_newEndTime > 0)
+            require(_newEndTime > now, "Invalid end time");
+        emit ModifyScheduleEndTime(_name, _schedule.endTime, _newEndTime);
+        schedules[_name].endTime = _newEndTime;
     }
 
     /**
@@ -133,6 +135,7 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
      * @param  name name of the schedule.
      * @return name Name of the schedule
      * @return startTime Unix timestamps at which schedule of creating the checkpoint will start
+     * @return endTime Unix timestamps at which schedule of creation the checkpoint will stop
      * @return nextCheckPointCreatedAt Unix timestamp at which next checkpoint will be created
      * @return frequency Frequency at which checkpoint has been created
      * @return frequencyUnit Unit of frequency
@@ -144,6 +147,7 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
     function getSchedule(bytes32 _name) external view returns(
         bytes32 name,
         uint256 startTime,
+        uint256 endTime,
         uint256 nextCheckPointCreatedAt,
         uint256 frequency,
         FrequencyUnit frequencyUnit,
@@ -156,6 +160,7 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
         return (
             schedule.name,
             schedule.startTime,
+            schedule.endTime,
             schedule.nextCheckPointCreatedAt,
             schedule.frequency,
             schedule.frequencyUnit,
@@ -177,7 +182,7 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
 
     function _update(bytes32 _name) internal {
         Schedule storage schedule = schedules[_name];
-        if (schedule.nextCheckPointCreatedAt <= now) {
+        if (_isScheduleActive(schedule.nextCheckPointCreatedAt, schedule.endTime)) {
             uint256 newCheckpointId = securityToken.createCheckpoint();
             schedule.checkpointIds.push(newCheckpointId);
             schedule.timestamps.push(schedule.nextCheckPointCreatedAt);
@@ -211,7 +216,7 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
                     .div(schedule.frequency)
                     .add(1); // 1 is added for the next period
                 schedule.nextCheckPointCreatedAt = BokkyPooBahsDateTimeLibrary.addMonths(
-                    schedule.startTime, periods.mul(schedule.frequency)
+                    schedule.nextCheckPointCreatedAt, periods.mul(schedule.frequency)
                 );
             } else if (schedule.frequencyUnit == FrequencyUnit.QUATER ) {
                 periods = BokkyPooBahsDateTimeLibrary
@@ -220,7 +225,7 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
                     .div(schedule.frequency)
                     .add(1); // 1 is added for the next period
                 schedule.nextCheckPointCreatedAt = BokkyPooBahsDateTimeLibrary.addMonths(
-                    schedule.startTime, periods.mul(schedule.frequency).mul(3)
+                    schedule.nextCheckPointCreatedAt, periods.mul(schedule.frequency).mul(3)
                 ); 
             } else if (schedule.frequencyUnit == FrequencyUnit.YEARS ) {
                 periods = BokkyPooBahsDateTimeLibrary
@@ -234,6 +239,10 @@ contract ScheduledCheckpoint is ICheckpoint, TransferManager {
             schedule.totalPeriods = schedule.totalPeriods.add(periods);
             schedule.periods.push(periods);
         }
+    }
+
+    function _isScheduleActive(uint256 _nextCheckPointCreatedAt, uint256 _endTime) internal view returns(bool isActive) {
+        isActive = _endTime > 0 ? _nextCheckPointCreatedAt <= now && _nextCheckPointCreatedAt <= _endTime : _nextCheckPointCreatedAt <= now;
     }
 
     /**

@@ -79,7 +79,7 @@ contract("ScheduleCheckpoint", async (accounts) => {
     function checkSchedule(schedule, name, startTime, nextTime, interval, timeUnit, checkpoints, timestamps, periods) {
         assert.equal(web3.utils.toAscii(schedule[0]).replace(/\u0000/g, ""), web3.utils.toAscii(name));
         assert.equal((schedule.startTime).toString(), startTime.toString());
-        assert.equal((schedule.nextCheckPointCreatedAt).toString(), nextTime.toString());
+        assert.equal((schedule.createNextCheckpointAt).toString(), nextTime.toString());
         assert.equal((schedule.frequency).toString(), interval);
         assert.equal((schedule.frequencyUnit).toString(), timeUnit);
         assert.equal(schedule.checkpointIds.length, checkpoints.length);
@@ -630,7 +630,7 @@ contract("ScheduleCheckpoint", async (accounts) => {
             let startTime = (await I_ScheduleCheckpoint.getSchedule(web3.utils.fromAscii("Schedule2"))).startTime;
             let frequencyUnit = (await I_ScheduleCheckpoint.getSchedule(web3.utils.fromAscii("Schedule2"))).frequencyUnit;
             let totalPeriods = (await I_ScheduleCheckpoint.getSchedule(web3.utils.fromAscii("Schedule2"))).totalPeriods;
-            let nextCheckpointCreatedAt_before = (await I_ScheduleCheckpoint.getSchedule(web3.utils.fromAscii("Schedule2"))).nextCheckPointCreatedAt;
+            let nextCheckpointCreatedAt_before = (await I_ScheduleCheckpoint.getSchedule(web3.utils.fromAscii("Schedule2"))).createNextCheckpointAt;
             let currentTimestamp = (await currentTime()).toNumber();
 
             await increaseTime(duration.seconds(diffMonths(currentTimestamp, frequency.toNumber())));
@@ -896,7 +896,7 @@ contract("ScheduleCheckpoint", async (accounts) => {
             let frequency = ((await I_ScheduleCheckpoint.getSchedule(name)).frequency).toNumber();
             let startTime = ((await I_ScheduleCheckpoint.getSchedule(name)).startTime).toNumber();
             let frequencyUnit = (await I_ScheduleCheckpoint.getSchedule(name)).frequencyUnit;
-            let nextScheduleAt = ((await I_ScheduleCheckpoint.getSchedule(name)).nextCheckPointCreatedAt).toNumber();
+            let nextScheduleAt = ((await I_ScheduleCheckpoint.getSchedule(name)).createNextCheckpointAt).toNumber();
             let periodsArrayLength = ((await I_ScheduleCheckpoint.getSchedule(name)).periods).length;
 
             let currentTimestamp = (await currentTime()).toNumber();
@@ -904,7 +904,7 @@ contract("ScheduleCheckpoint", async (accounts) => {
             await increaseTime(duration.seconds(diffYears(currentTimestamp, frequency * 1))); // Increase the 3 year
             await I_ScheduleCheckpoint.updateAll({from: token_owner});
 
-            let nextScheduleAt_after = ((await I_ScheduleCheckpoint.getSchedule(name)).nextCheckPointCreatedAt).toNumber();
+            let nextScheduleAt_after = ((await I_ScheduleCheckpoint.getSchedule(name)).createNextCheckpointAt).toNumber();
             let periodsArrayLength_after = ((await I_ScheduleCheckpoint.getSchedule(name)).periods).length;
 
             assert.equal(nextScheduleAt, nextScheduleAt_after);
@@ -1027,14 +1027,14 @@ contract("ScheduleCheckpoint", async (accounts) => {
 
         it("Check monthly checkpoints -- March 31", async() => {
             let days = getDaysInFebruary();
-            let nextCheckPointCreatedAt_before = ((await I_ScheduleCheckpoint.getSchedule(name)).nextCheckPointCreatedAt).toNumber();
+            let nextCheckPointCreatedAt_before = ((await I_ScheduleCheckpoint.getSchedule(name)).createNextCheckpointAt).toNumber();
             let totalPeriods = ((await I_ScheduleCheckpoint.getSchedule(name)).totalPeriods).toNumber();
             console.log(`Before nextTime ${nextCheckPointCreatedAt_before}`);
             console.log(`Before total Period ${totalPeriods}`);
             await increaseTime(duration.days(days * frequency));
             await I_ScheduleCheckpoint.updateAll({from: token_owner});
 
-            let nextCheckPointCreatedAt_after = ((await I_ScheduleCheckpoint.getSchedule(name)).nextCheckPointCreatedAt).toNumber();
+            let nextCheckPointCreatedAt_after = ((await I_ScheduleCheckpoint.getSchedule(name)).createNextCheckpointAt).toNumber();
             let totalPeriods_after = ((await I_ScheduleCheckpoint.getSchedule(name)).totalPeriods).toNumber();
             console.log(`After nextTime ${nextCheckPointCreatedAt_after}`);
             console.log(`After total Period ${totalPeriods_after}`);

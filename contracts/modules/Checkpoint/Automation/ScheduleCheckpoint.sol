@@ -42,7 +42,7 @@ contract ScheduleCheckpoint is ScheduleCheckpointStorage, TransferManager, IChec
      */
     function addSchedule(bytes32 _name, uint256 _startTime, uint256 _endTime, uint256 _frequency, FrequencyUnit _frequencyUnit) withPerm(OPERATOR) external {
         require(_name != bytes32(0), "Empty name");
-        require(_startTime >= now, "Start time must be in the future");
+        require(_startTime > now, "Start time must be in the future");
         require(schedules[_name].name == bytes32(0), "Name already in use");
         uint256 endTime = _endTime;
         if (_endTime <= _startTime)
@@ -50,7 +50,7 @@ contract ScheduleCheckpoint is ScheduleCheckpointStorage, TransferManager, IChec
         schedules[_name].name = _name;
         schedules[_name].startTime = _startTime;
         schedules[_name].endTime = endTime;
-        schedules[_name].nextCheckPointCreatedAt = _startTime;
+        schedules[_name].createNextCheckpointAt = _startTime;
         schedules[_name].frequency = _frequency;
         schedules[_name].frequencyUnit = _frequencyUnit;
         schedules[_name].index = names.length;
@@ -88,7 +88,7 @@ contract ScheduleCheckpoint is ScheduleCheckpointStorage, TransferManager, IChec
         if (_schedule.endTime > 0)
             require(_schedule.endTime > now, "Schedule already ended");
         if (_newEndTime > 0)
-            require(_newEndTime > now, "Invalid end time");
+            require(_newEndTime > now && _newEndTime > _schedule.startTime, "Invalid end time");
         emit ModifyScheduleEndTime(_name, _schedule.endTime, _newEndTime);
         schedules[_name].endTime = _newEndTime;
     }
@@ -136,7 +136,7 @@ contract ScheduleCheckpoint is ScheduleCheckpointStorage, TransferManager, IChec
      * @return name Name of the schedule
      * @return startTime Unix timestamps at which schedule of creating the checkpoint will start
      * @return endTime Unix timestamps at which schedule of creation the checkpoint will stop
-     * @return nextCheckPointCreatedAt Unix timestamp at which next checkpoint will be created
+     * @return createNextCheckpointAt Unix timestamp at which next checkpoint will be created
      * @return frequency Frequency at which checkpoint has been created
      * @return frequencyUnit Unit of frequency
      * @return checkpointIds List of checkpoint Ids that been created in the schedule
@@ -148,7 +148,7 @@ contract ScheduleCheckpoint is ScheduleCheckpointStorage, TransferManager, IChec
         bytes32 name,
         uint256 startTime,
         uint256 endTime,
-        uint256 nextCheckPointCreatedAt,
+        uint256 createNextCheckpointAt,
         uint256 frequency,
         FrequencyUnit frequencyUnit,
         uint256[] memory checkpointIds,
@@ -161,7 +161,7 @@ contract ScheduleCheckpoint is ScheduleCheckpointStorage, TransferManager, IChec
             schedule.name,
             schedule.startTime,
             schedule.endTime,
-            schedule.nextCheckPointCreatedAt,
+            schedule.createNextCheckpointAt,
             schedule.frequency,
             schedule.frequencyUnit,
             schedule.checkpointIds,
@@ -181,58 +181,60 @@ contract ScheduleCheckpoint is ScheduleCheckpointStorage, TransferManager, IChec
 
     function _update(bytes32 _name) internal {
         Schedule storage schedule = schedules[_name];
-        if (_isScheduleActive(schedule.nextCheckPointCreatedAt, schedule.endTime)) {
+        if (_isScheduleActive(schedule.createNextCheckpointAt, schedule.endTime)) {
             uint256 newCheckpointId = securityToken.createCheckpoint();
             schedule.checkpointIds.push(newCheckpointId);
-            schedule.timestamps.push(schedule.nextCheckPointCreatedAt);
+            // Checkpoint is already been create in the above two lines now `createNextCheckpointAt` treated as `lastCheckpointCreatedAt`
+            uint256 lastCheckpointCreatedAt = schedule.createNextCheckpointAt;
+            schedule.timestamps.push(lastCheckpointCreatedAt);
             uint256 periods;
             if (schedule.frequencyUnit == FrequencyUnit.SECONDS ) {
                 periods = now
-                    .sub(schedule.nextCheckPointCreatedAt)
+                    .sub(lastCheckpointCreatedAt)
                     .div(schedule.frequency)
                     .add(1); // 1 is added for the next period
-                schedule.nextCheckPointCreatedAt = periods.mul(schedule.frequency).add(schedule.nextCheckPointCreatedAt);
+                schedule.createNextCheckpointAt = periods.mul(schedule.frequency).add(lastCheckpointCreatedAt);
             } else if (schedule.frequencyUnit == FrequencyUnit.DAYS ) {
                 periods = BokkyPooBahsDateTimeLibrary
-                    .diffDays(schedule.nextCheckPointCreatedAt, now)
+                    .diffDays(lastCheckpointCreatedAt, now)
                     .div(schedule.frequency)
                     .add(1); // 1 is added for the next period
-                schedule.nextCheckPointCreatedAt = BokkyPooBahsDateTimeLibrary.addDays(
-                    schedule.nextCheckPointCreatedAt, periods.mul(schedule.frequency)
+                schedule.createNextCheckpointAt = BokkyPooBahsDateTimeLibrary.addDays(
+                    lastCheckpointCreatedAt, periods.mul(schedule.frequency)
                 );
             } else if (schedule.frequencyUnit == FrequencyUnit.WEEKS ) {
                 periods = BokkyPooBahsDateTimeLibrary
-                    .diffDays(schedule.nextCheckPointCreatedAt, now)
+                    .diffDays(lastCheckpointCreatedAt, now)
                     .div(7)
                     .div(schedule.frequency)
                     .add(1); // 1 is added for the next period
-                schedule.nextCheckPointCreatedAt = BokkyPooBahsDateTimeLibrary.addDays(
-                    schedule.nextCheckPointCreatedAt, periods.mul(schedule.frequency).mul(7)
+                schedule.createNextCheckpointAt = BokkyPooBahsDateTimeLibrary.addDays(
+                    lastCheckpointCreatedAt, periods.mul(schedule.frequency).mul(7)
                 );
             } else if (schedule.frequencyUnit == FrequencyUnit.MONTHS ) {
                 periods = BokkyPooBahsDateTimeLibrary
-                    .diffMonths(schedule.nextCheckPointCreatedAt, now)
+                    .diffMonths(lastCheckpointCreatedAt, now)
                     .div(schedule.frequency)
                     .add(1); // 1 is added for the next period
-                schedule.nextCheckPointCreatedAt = BokkyPooBahsDateTimeLibrary.addMonths(
-                    schedule.nextCheckPointCreatedAt, periods.mul(schedule.frequency)
+                schedule.createNextCheckpointAt = BokkyPooBahsDateTimeLibrary.addMonths(
+                    lastCheckpointCreatedAt, periods.mul(schedule.frequency)
                 );
             } else if (schedule.frequencyUnit == FrequencyUnit.QUATER ) {
                 periods = BokkyPooBahsDateTimeLibrary
-                    .diffMonths(schedule.nextCheckPointCreatedAt, now)
+                    .diffMonths(lastCheckpointCreatedAt, now)
                     .div(3)
                     .div(schedule.frequency)
                     .add(1); // 1 is added for the next period
-                schedule.nextCheckPointCreatedAt = BokkyPooBahsDateTimeLibrary.addMonths(
-                    schedule.nextCheckPointCreatedAt, periods.mul(schedule.frequency).mul(3)
+                schedule.createNextCheckpointAt = BokkyPooBahsDateTimeLibrary.addMonths(
+                    lastCheckpointCreatedAt, periods.mul(schedule.frequency).mul(3)
                 ); 
             } else if (schedule.frequencyUnit == FrequencyUnit.YEARS ) {
                 periods = BokkyPooBahsDateTimeLibrary
-                    .diffYears(schedule.nextCheckPointCreatedAt, now)
+                    .diffYears(lastCheckpointCreatedAt, now)
                     .div(schedule.frequency)
                     .add(1); // 1 is added for the next period
-                schedule.nextCheckPointCreatedAt = BokkyPooBahsDateTimeLibrary.addYears(
-                    schedule.nextCheckPointCreatedAt, periods.mul(schedule.frequency)
+                schedule.createNextCheckpointAt = BokkyPooBahsDateTimeLibrary.addYears(
+                    lastCheckpointCreatedAt, periods.mul(schedule.frequency)
                 );
             }
             schedule.totalPeriods = schedule.totalPeriods.add(periods);
@@ -240,8 +242,8 @@ contract ScheduleCheckpoint is ScheduleCheckpointStorage, TransferManager, IChec
         }
     }
 
-    function _isScheduleActive(uint256 _nextCheckPointCreatedAt, uint256 _endTime) internal view returns(bool isActive) {
-        isActive = _endTime > 0 ? _nextCheckPointCreatedAt <= now && _nextCheckPointCreatedAt <= _endTime : _nextCheckPointCreatedAt <= now;
+    function _isScheduleActive(uint256 _createNextCheckpointAt, uint256 _endTime) internal view returns(bool isActive) {
+        isActive = _endTime > 0 ? _createNextCheckpointAt <= now && _createNextCheckpointAt <= _endTime : _createNextCheckpointAt <= now;
     }
 
     /**

@@ -11,7 +11,7 @@ contract ScheduleCheckpointStorage {
         bytes32 name;
         uint256 startTime;
         uint256 endTime;
-        uint256 nextCheckPointCreatedAt;
+        uint256 createNextCheckpointAt;
         uint256 frequency;
         FrequencyUnit frequencyUnit;
         uint256[] checkpointIds;

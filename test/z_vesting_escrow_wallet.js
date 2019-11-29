@@ -470,7 +470,7 @@ contract('VestingEscrowWallet', accounts => {
             await I_VestingEscrowWallet.pause({from: token_owner});
             await catchRevert(
                 I_VestingEscrowWallet.pullAvailableTokens({from: account_beneficiary3}),
-                "Contract is paused"
+                "Already paused"
             );
             await I_VestingEscrowWallet.unpause({from: token_owner});
             let allowedNoOfTokens = await I_VestingEscrowWallet.getAvailableTokens.call(account_beneficiary3);

@@ -24,7 +24,7 @@ contract DummySTOFactory is UpgradableModuleFactory {
         bool _isCostInPoly
     )
         public
-        UpgradableModuleFactory("3.0.0", _setupCost, _usageCost, _logicContract, _polymathRegistry, _isCostInPoly)
+        UpgradableModuleFactory("3.1.0", _setupCost, _usageCost, _logicContract, _polymathRegistry, _isCostInPoly)
     {
         name = "DummySTO";
         title = "Dummy STO";

@@ -2,7 +2,7 @@ pragma solidity 0.5.8;
 
 import "../STO.sol";
 import "openzeppelin-solidity/contracts/utils/ReentrancyGuard.sol";
-import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "../../../libraries/DecimalMath.sol";
 import "./CappedSTOStorage.sol";
 
 /**
@@ -67,6 +67,7 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
         require(_startTime >= now && _endTime > _startTime, "Date parameters are not valid");
         require(_cap > 0, "Cap should be greater than 0");
         require(_fundRaiseTypes.length == 1, "It only selects single fund raise type");
+        _checkGranularity(cap, securityToken.granularity());
         startTime = _startTime;
         endTime = _endTime;
         cap = _cap;
@@ -101,7 +102,7 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
      * @notice Function to set allowBeneficialInvestments (allow beneficiary to be different to funder)
      * @param _allowBeneficialInvestments Boolean to allow or disallow beneficial investments
      */
-    function changeAllowBeneficialInvestments(bool _allowBeneficialInvestments) public withPerm(OPERATOR) {
+    function changeAllowBeneficialInvestments(bool _allowBeneficialInvestments) external withPerm(OPERATOR) {
         require(_allowBeneficialInvestments != allowBeneficialInvestments, "Does not change value");
         allowBeneficialInvestments = _allowBeneficialInvestments;
         emit SetAllowBeneficialInvestments(allowBeneficialInvestments);
@@ -254,8 +255,7 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
     * @return Remaining amount that should be refunded to the investor
     */
     function _getTokenAmount(uint256 _investedAmount) internal view returns(uint256 tokens, uint256 refund) {
-        tokens = _investedAmount.mul(rate);
-        tokens = tokens.div(uint256(10) ** 18);
+        tokens = DecimalMath.mul(_investedAmount, rate);
         if (totalTokensSold.add(tokens) > cap) {
             tokens = cap.sub(totalTokensSold);
         }
@@ -263,7 +263,7 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
         tokens = tokens.div(granularity);
         tokens = tokens.mul(granularity);
         require(tokens > 0, "Cap reached");
-        refund = _investedAmount.sub((tokens.mul(uint256(10) ** 18)).div(rate));
+        refund = _investedAmount.sub(DecimalMath.div(tokens, rate));
     }
 
     /**
@@ -289,7 +289,7 @@ contract CappedSTO is CappedSTOStorage, STO, ReentrancyGuard {
      * @notice Treasury wallet address must be whitelisted to successfully finalize
      */
     function finalize() external withPerm(ADMIN){
-        require(!isFinalized, "STO is finalized");
+        _checkSTOFinalized();
         isFinalized = true;
         uint256 tempTokens;
         address walletAddress;

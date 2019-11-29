@@ -858,7 +858,7 @@ contract("ERC20DividendCheckpoint", async (accounts) => {
                 "Sender is not owner");
             let tx = await I_ERC20DividendCheckpoint.pause({from: token_owner});
             await catchRevert(I_ERC20DividendCheckpoint.pullDividendPayment(3, { from: account_investor2, gasPrice: 0 }),
-                "Contract is paused");
+                "Already paused");
             await catchRevert(I_ERC20DividendCheckpoint.unpause({from: account_polymath}),
                 "Sender is not owner");
             tx = await I_ERC20DividendCheckpoint.unpause({from: token_owner});

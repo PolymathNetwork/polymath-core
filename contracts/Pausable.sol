@@ -13,7 +13,7 @@ contract Pausable {
     * @notice Modifier to make a function callable only when the contract is not paused.
     */
     modifier whenNotPaused() {
-        require(!paused, "Contract is paused");
+        require(!paused, "Already paused");
         _;
     }
 
@@ -21,7 +21,7 @@ contract Pausable {
     * @notice Modifier to make a function callable only when the contract is paused.
     */
     modifier whenPaused() {
-        require(paused, "Contract is not paused");
+        require(paused, "Not paused");
         _;
     }
 

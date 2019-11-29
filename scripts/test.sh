@@ -59,7 +59,7 @@ start_testrpc() {
   if [ "$COVERAGE" = true ]; then
     node --max-old-space-size=8192 node_modules/.bin/testrpc-sc --gasLimit 0xfffffffff --port "$testrpc_port" "${accounts[@]}" > /dev/null &
   else
-    node_modules/.bin/ganache-cli --hardfork istanbul --gasLimit 8000000 "${accounts[@]}" > /dev/null &
+    node_modules/.bin/ganache-cli --hardfork istanbul --gasLimit 9000000 "${accounts[@]}" > /dev/null &
   fi
 
   testrpc_pid=$!

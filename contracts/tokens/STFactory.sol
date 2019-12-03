@@ -58,6 +58,8 @@ contract STFactory is ISTFactory, Ownable {
         require(_dataStoreFactory != address(0), "Invalid Address");
         require(_polymathRegistry != address(0), "Invalid Address");
         require(_initializationData.length > 4, "Invalid Initialization");
+        // @TODO shall we add a proper, version string validation?
+        require(bytes(_version).length != 0, "Empty version");
         transferManagerFactory = _transferManagerFactory;
         dataStoreFactory = DataStoreFactory(_dataStoreFactory);
         polymathRegistry = IPolymathRegistry(_polymathRegistry);
@@ -139,7 +141,7 @@ contract STFactory is ISTFactory, Ownable {
      */
     function setLogicContract(string calldata _version, address _logicContract, bytes calldata _initializationData, bytes calldata _upgradeData) external onlyOwner {
         require(keccak256(abi.encodePacked(_version)) != keccak256(abi.encodePacked(logicContracts[latestUpgrade].version)), "Same version");
-        require(_logicContract != logicContracts[latestUpgrade].logicContract, "Same version");
+        require(_logicContract != logicContracts[latestUpgrade].logicContract, "Same logic contract");
         require(_logicContract != address(0), "Invalid address");
         require(_initializationData.length > 4, "Invalid Initialization");
         require(_upgradeData.length > 4, "Invalid Upgrade");
@@ -160,7 +162,7 @@ contract STFactory is ISTFactory, Ownable {
         // version & contract must differ from previous version, otherwise upgrade proxy will fail
         if (_upgrade > 1) {
           require(keccak256(abi.encodePacked(_version)) != keccak256(abi.encodePacked(logicContracts[_upgrade - 1].version)), "Same version");
-          require(_logicContract != logicContracts[_upgrade - 1].logicContract, "Same version");
+          require(_logicContract != logicContracts[_upgrade - 1].logicContract, "Same logic contract");
         }
         require(_logicContract != address(0), "Invalid address");
         require(_initializationData.length > 4, "Invalid Initialization");

@@ -146,18 +146,18 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
         ] = instances;
 
         // STEP 5: Deploy the GeneralDelegateManagerFactory
-        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0);
+        [I_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, 0, new BN(0));
         // STEP 6: Deploy the GeneralDelegateManagerFactory
-        [P_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, new BN(web3.utils.toWei("500")));
+        [P_GeneralPermissionManagerFactory] = await deployGPMAndVerifyed(account_polymath, I_MRProxied, new BN(web3.utils.toWei("500")), new BN(0));
 
         // Deploy Modules
-        [I_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, 0);
+        [I_CountTransferManagerFactory] = await deployCountTMAndVerifyed(account_polymath, I_MRProxied, 0, new BN(0));
 
-        [I_VolumeRestrictionTransferManagerFactory] = await deployLockUpTMAndVerified(account_polymath, I_MRProxied, 0);
+        [I_VolumeRestrictionTransferManagerFactory] = await deployLockUpTMAndVerified(account_polymath, I_MRProxied, 0, new BN(0));
 
-        [I_PercentageTransferManagerFactory] = await deployPercentageTMAndVerified(account_polymath, I_MRProxied, 0);
+        [I_PercentageTransferManagerFactory] = await deployPercentageTMAndVerified(account_polymath, I_MRProxied, 0, new BN(0));
 
-        [I_ManualApprovalTransferManagerFactory] = await deployManualApprovalTMAndVerifyed(account_polymath, I_MRProxied, 0);
+        [I_ManualApprovalTransferManagerFactory] = await deployManualApprovalTMAndVerifyed(account_polymath, I_MRProxied, 0, new BN(0));
 
         // Printing all the contract addresses
         console.log(`
@@ -213,7 +213,8 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
             await catchRevert(
                 I_SecurityToken.addModule(P_GeneralPermissionManagerFactory.address, "0x", new BN(web3.utils.toWei("2000", "ether")), new BN(0), false, {
                     from: token_owner
-                })
+                }),
+                "Insufficient tokens transferable"
             );
         });
 
@@ -305,7 +306,8 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                             " for functions with require perm FLAGS passed"
                     );
                 } else {
-                    await catchRevert(I_GeneralTransferManager.changeIssuanceAddress(accounts[j], { from: accounts[j] }));
+                    await catchRevert(I_GeneralTransferManager.changeIssuanceAddress(accounts[j], { from: accounts[j] }),
+                        "Invalid permission");
                     console.log(
                         "Test number " +
                             i +
@@ -337,7 +339,8 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                 } else {
                     console.log("3.3");
                     await catchRevert(
-                        I_GeneralTransferManager.modifyKYCData(accounts[j], fromTime, toTime, expiryTime, { from: accounts[j] })
+                        I_GeneralTransferManager.modifyKYCData(accounts[j], fromTime, toTime, expiryTime, { from: accounts[j] }),
+                        "Invalid permission"
                     );
                     console.log("3.4");
                     await catchRevert(
@@ -347,7 +350,8 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                             [toTime, toTime],
                             [expiryTime, expiryTime],
                             { from: accounts[j] }
-                        )
+                        ),
+                        "Invalid permission"
                     );
                     console.log("3.5");
                 }
@@ -401,7 +405,8 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                     console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " passed");
                 } else {
                     // console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " should failed");
-                    await catchRevert(I_CountTransferManager.changeHolderCount(i + 1, { from: accounts[j] }));
+                    await catchRevert(I_CountTransferManager.changeHolderCount(i + 1, { from: accounts[j] }),
+                        "Invalid permission");
                     console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " failed as expected");
                 }
             }
@@ -476,7 +481,8 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                     console.log("Test number " + i + " with account " + j + " and perm ADMIN passed as expected");
                 } else {
                     // console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " should failed");
-                    await catchRevert(I_PercentageTransferManager.modifyWhitelist(account_investor3, 1, { from: accounts[j] }));
+                    await catchRevert(I_PercentageTransferManager.modifyWhitelist(account_investor3, 1, { from: accounts[j] }),
+                        "Invalid permission");
                     console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " failed as expected");
                 }
             }
@@ -526,7 +532,8 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                     await catchRevert(
                         I_PercentageTransferManager.modifyWhitelistMulti([account_investor3, account_investor4], [0, 1], {
                             from: accounts[j]
-                        })
+                        }),
+                        "Invalid permission"
                     );
                     console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " failed as expected");
                 }
@@ -570,7 +577,8 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                     console.log("Test number " + i + " with account " + j + " and perm ADMIN passed as expected");
                 } else {
                     console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " should failed");
-                    await catchRevert(I_PercentageTransferManager.setAllowPrimaryIssuance(!primaryIssuanceStat, { from: accounts[j] }));
+                    await catchRevert(I_PercentageTransferManager.setAllowPrimaryIssuance(!primaryIssuanceStat, { from: accounts[j] }),
+                        "Invalid permission");
                     console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " failed as expected");
                 }
                 // await revertToSnapshot(snapId);
@@ -662,7 +670,8 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                             nextTime,
                             web3.utils.fromAscii(_details),
                             { from: accounts[j] }
-                        )
+                        ),
+                        "Invalid permission"
                     );
 
                     nextTime = await latestTime() + duration.days(1);
@@ -678,7 +687,8 @@ contract("GeneralPermissionManager Fuzz", async (accounts) => {
                     await catchRevert(
                         I_ManualApprovalTransferManager.revokeManualApproval(account_investor1, account_investor4, {
                             from: accounts[j]
-                        })
+                        }),
+                        "Invalid permission"
                     );
 
                     console.log("Test number " + i + " with account " + j + " and perm " + randomPerms + " failed as expected");

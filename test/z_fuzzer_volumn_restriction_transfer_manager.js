@@ -149,9 +149,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
         ] = instances;
 
         // STEP 5: Deploy the VolumeRestrictionTMFactory
-        [I_VolumeRestrictionTMFactory] = await deployVRTMAndVerifyed(account_polymath, I_MRProxied, 0);
+        [I_VolumeRestrictionTMFactory] = await deployVRTMAndVerifyed(account_polymath, I_MRProxied, 0, new BN(0));
         // STEP 6: Deploy the VolumeRestrictionTMFactory
-        [P_VolumeRestrictionTMFactory] = await deployVRTMAndVerifyed(account_polymath, I_MRProxied, web3.utils.toWei("500"));
+        [P_VolumeRestrictionTMFactory] = await deployVRTMAndVerifyed(account_polymath, I_MRProxied, web3.utils.toWei("500"), new BN(0));
 
         // Printing all the contract addresses
         console.log(`
@@ -307,7 +307,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                         console.log("tx should fail");
 
                         await catchRevert(
-                            I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1})
+                            I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1}),
+                            "Transfer Invalid"
                         );
 
                         console.log("tx failed as expected due to over limit");
@@ -393,7 +394,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                         console.log("tx should fail");
 
                         await catchRevert(
-                            I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1})
+                            I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1}),
+                            "Transfer Invalid"
                         );
 
                         console.log("tx failed as expected due to over limit");
@@ -432,7 +434,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     if (accumulatedTxValue > defaultRestrictionAmount) {
                         console.log("tx should fail");
                         await catchRevert(
-                            I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1})
+                            I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1}),
+                            "Transfer Invalid"
                         );
                         console.log("tx failed as expected due to over limit");
                     } else if ( accumulatedTxValue <= defaultRestrictionAmount ) {
@@ -530,7 +533,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                         console.log("tx should fail");
 
                         await catchRevert(
-                            I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1})
+                            I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1}),
+                            "Transfer Invalid"
                         );
 
                         console.log("tx failed as expected due to over limit");
@@ -700,7 +704,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                         console.log("\t\t Tx should fail");
 
                         await catchRevert (
-                            I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1})
+                            I_SecurityToken.transfer(account_investor3, web3.utils.toWei(transactionAmount.toString()), {from: account_investor1}),
+                            "Transfer Invalid"
                         );
 
                         console.log("\t\t Tx failed as expected");

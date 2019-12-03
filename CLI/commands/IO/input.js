@@ -13,10 +13,10 @@ function readAddress(message, defaultValue) {
 function readMultipleAddresses(message) {
   return readlineSync.question(message, {
     limit: function (input) {
-      return input === '' || input.split(",").every(a => web3.utils.isAddress(a));
+      return input === '' || input.split(',').every(a => web3.utils.isAddress(a));
     },
     limitMessage: `All addresses must be valid`
-  });
+  }).split(',');
 }
 
 function readPercentage(message, defaultValue) {
@@ -34,7 +34,7 @@ function readNumberGreaterThan(minValue, message, defaultValue) {
     limit: function (input) {
       return parseFloat(input) > minValue;
     },
-    limitMessage: `Must be greater than ${minValue}`,
+    limitMessage: `Must be a number greater than ${minValue}`,
     defaultInput: defaultValue
   });
 }
@@ -44,7 +44,7 @@ function readNumberGreaterThanOrEqual(minValue, message, defaultValue) {
     limit: function (input) {
       return parseFloat(input) >= minValue;
     },
-    limitMessage: `Must be greater than or equal ${minValue}`,
+    limitMessage: `Must be a number greater than or equal ${minValue}`,
     defaultInput: defaultValue
   });
 }
@@ -54,7 +54,7 @@ function readNumberLessThan(maxValue, message, defaultValue) {
     limit: function (input) {
       return parseFloat(input) < maxValue;
     },
-    limitMessage: `Must be less than ${maxValue}`,
+    limitMessage: `Must be a number less than ${maxValue}`,
     defaultInput: defaultValue
   });
 }
@@ -64,7 +64,7 @@ function readNumberLessThanOrEqual(maxValue, message, defaultValue) {
     limit: function (input) {
       return parseFloat(input) < maxValue;
     },
-    limitMessage: `Must be less than or equal ${maxValue}`,
+    limitMessage: `Must be a number less than or equal ${maxValue}`,
     defaultInput: defaultValue
   });
 }
@@ -74,7 +74,13 @@ function readNumberBetween(minValue, maxValue, message, defaultValue) {
     limit: function (input) {
       return parseFloat(input) >= minValue && parseFloat(input) <= maxValue;
     },
-    limitMessage: `Must be betwwen ${minValue} and ${maxValue}`,
+    limitMessage: `Must be a number betwwen ${minValue} and ${maxValue}`,
+    defaultInput: defaultValue
+  });
+}
+
+function readString(message, defaultValue) {
+  return readlineSync.question(message, {
     defaultInput: defaultValue
   });
 }
@@ -110,6 +116,17 @@ function readDateInTheFuture(message, defaultValue) {
   });
 }
 
+function readDateInTheFutureOrZero(message, defaultValue) {
+  const now = Math.floor(Date.now() / 1000);
+  return readlineSync.question(message, {
+    limit: function (input) {
+      return parseInt(input) === 0 || parseInt(input) >= now;
+    },
+    limitMessage: `Must be a future date or zero`,
+    defaultInput: defaultValue
+  });
+}
+
 module.exports = {
   readAddress,
   readMultipleAddresses,
@@ -119,7 +136,9 @@ module.exports = {
   readNumberLessThan,
   readNumberLessThanOrEqual,
   readNumberBetween,
+  readString,
   readStringNonEmpty,
   readStringNonEmptyWithMaxBinarySize,
-  readDateInTheFuture
+  readDateInTheFuture,
+  readDateInTheFutureOrZero
 }

@@ -47,6 +47,22 @@ contract GeneralPermissionManager is GeneralPermissionManagerStorage, IPermissio
      * @param _details Details about the delegate i.e `Belongs to financial firm`
      */
     function addDelegate(address _delegate, bytes32 _details) external withPerm(ADMIN) {
+        _addDelegate(_delegate, _details);
+    }
+
+    /**
+     * @notice Used to add multiple delegates in a batch
+     * @param _delegates An array of Ethereum addresses of the delegates
+     * @param _details An array of details about the delegates i.e `Belongs to financial firm`
+     */
+    function addDelegateMulti(address[] calldata _delegates, bytes32[] calldata _details) external withPerm(ADMIN) {
+        require(_delegates.length == _details.length, "Length mismatch");
+        for (uint256 i = 0; i < _delegates.length; i++) {
+            _addDelegate(_delegates[i], _details[i]);
+        }
+    }
+
+    function _addDelegate(address _delegate, bytes32 _details) internal {
         require(_delegate != address(0), "Invalid address");
         require(_details != bytes32(0), "0 value not allowed");
         require(delegateDetails[_delegate] == bytes32(0), "Already present");
@@ -61,6 +77,20 @@ contract GeneralPermissionManager is GeneralPermissionManagerStorage, IPermissio
      * @param _delegate Ethereum address of the delegate
      */
     function deleteDelegate(address _delegate) external withPerm(ADMIN) {
+        _deleteDelegate(_delegate);
+    }
+
+    /**
+     * @notice Used to delete a list of delegates
+     * @param _delegates An array of Ethereum address of delegates
+     */
+    function deleteDelegateMulti(address[] calldata _delegates) external withPerm(ADMIN) {
+        for (uint256 i = 0; i < _delegates.length; i++) {
+            _deleteDelegate(_delegates[i]);
+        }
+    }
+
+    function _deleteDelegate(address _delegate) internal {
         require(delegateDetails[_delegate] != bytes32(0), "delegate does not exist");
         uint256 delegateLen = allDelegates.length;
         for (uint256 i = 0; i < delegateLen; i++) {

@@ -11,6 +11,7 @@ const input = require('./IO/input');
 
 // App flow
 let securityTokenRegistry;
+let moduleRegistry;
 let securityToken;
 let polyToken;
 let tokenSymbol;
@@ -24,11 +25,11 @@ const REVOKE_SCHEDULE_CSV = `${__dirname}/../data/Wallet/VEW/revoke_schedule_dat
 async function executeApp() {
   console.log('\n', chalk.blue('Wallet - Main Menu', '\n'));
   
-  let wModules = await common.getAllModulesByType(securityToken, gbl.constants.MODULES_TYPES.WALLET);
+  let wModules = await common.getAllModulesByType(securityToken, gbl.constants.MODULES_TYPES.WALLET, polyToken);
   let nonArchivedModules = wModules.filter(m => !m.archived);
   if (nonArchivedModules.length > 0) {
     console.log(`Wallet modules attached:`);
-    nonArchivedModules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
+    nonArchivedModules.map(m => `${m.label}: ${m.title} (${m.version}) at ${m.address}`);
   } else {
     console.log(`There are no Wallet modules attached`);
   }
@@ -58,7 +59,7 @@ async function executeApp() {
 
 async function addWalletModule() {
   let moduleList = await common.getAvailableModules(moduleRegistry, gbl.constants.MODULES_TYPES.WALLET, securityToken.options.address);
-  let options = moduleList.map(m => `${m.name} - ${m.version} (${m.factoryAddress})`);
+  let options = moduleList.map(m => `${m.title} - ${m.version} (${m.factoryAddress})`);
 
   let index = readlineSync.keyInSelect(options, 'Which wallet module do you want to add? ', { cancel: 'RETURN' });
   if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]}? `)) {
@@ -75,7 +76,7 @@ function getVestingEscrowWalletInitializeData(moduleABI) {
 }
 
 async function configExistingModules(walletModules) {
-  let options = walletModules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
+  let options = walletModules.map(m => `${m.label}: ${m.title} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module do you want to config? ', { cancel: 'RETURN' });
   console.log('Selected:', index != -1 ? options[index] : 'RETURN', '\n');
   currentWalletModule = new web3.eth.Contract(abis.vestingEscrowWallet(), walletModules[index].address);
@@ -90,17 +91,22 @@ async function walletManager() {
   const treasuryWallet = await currentWalletModule.methods.getTreasuryWallet().call();
   const unassignedTokens = await currentWalletModule.methods.unassignedTokens().call();
   const templates = await currentWalletModule.methods.getAllTemplateNames().call();
-  const schedulesForCurrentUser = await currentWalletModule.methods.getScheduleCount(Issuer.address).call();
+  const currentBeneficiaries = await currentWalletModule.methods.getAllBeneficiaries().call();
+  const availableTokensForCurrentUser = await currentWalletModule.methods.getAvailableTokens(Issuer.address).call();
 
-  console.log(`- Treasury wallet:        ${treasuryWallet}`);
-  console.log(`- Unassigned Tokens:      ${web3.utils.fromWei(unassignedTokens)}`);
-  console.log(`- Templates:              ${templates.length}`);
+  console.log(`- Treasury wallet:           ${treasuryWallet}`);
+  console.log(`- Unassigned Tokens:         ${web3.utils.fromWei(unassignedTokens)}`);
+  console.log(`- Current beneficiaries:     ${currentBeneficiaries.length}`);
+  console.log(`- Templates:                 ${templates.length}`);
 
   let options = ['Change treasury wallet', 'Manage templates', 'Manage schedules', 'Manage multiple schedules in batch', 'Explore account', 'Deposit tokens'];
-  if (parseInt(unassignedTokens) > 0) {
+  if (currentBeneficiaries.length > 0) {
+    options.push('Show all beneficiaries');
+  }
+  if (parseFloat(unassignedTokens) > 0) {
     options.push('Send unassigned tokens to treasury');
   }
-  if (parseInt(schedulesForCurrentUser) > 0) {
+  if (parseFloat(availableTokensForCurrentUser) > 0) {
     options.push('Pull available tokens');
   }
   let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
@@ -127,6 +133,9 @@ async function walletManager() {
     case 'Deposit tokens':
       await depositTokens();
       break;
+    case 'Show all beneficiaries':
+      await showBeneficiaries(currentBeneficiaries);
+      break;
     case 'Send unassigned tokens to treasury':
       await sendToTreasury(unassignedTokens);
       break
@@ -144,7 +153,7 @@ async function changeTreasuryWallet() {
   let newTreasuryWallet = input.readAddress('Enter the new account address for treasury wallet: ');
   let action = currentWalletModule.methods.changeTreasuryWallet(newTreasuryWallet);
   let receipt = await common.sendTransaction(action);
-  let event = common.getEventFromLogs(currentDividendsModule._jsonInterface, receipt.logs, 'TreasuryWalletChanged');
+  let event = common.getEventFromLogs(currentWalletModule._jsonInterface, receipt.logs, 'TreasuryWalletChanged');
   console.log(chalk.green(`The treasury wallet has been changed successfully to ${event._newWallet}!`));
 }
 
@@ -152,11 +161,11 @@ async function manageTemplates(templateNames) {
   console.log('\n', chalk.blue('Wallet - Template manager', '\n'));
 
   const allTemplates = await getTemplates(templateNames);
-
+  const templatesAbleToRemove = allTemplates.filter(t => t.scheduleCount == 0);
   allTemplates.map(t => console.log(formatTemplateAsString(t), '\n'));
 
   const options = ['Add template'];
-  if (templateNames.length > 0) {
+  if (templatesAbleToRemove.length > 0) {
     options.push('Remove template');
   }
   const index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
@@ -167,7 +176,7 @@ async function manageTemplates(templateNames) {
       await addTemplate();
       break;
     case 'Remove template':
-      const templateToDelete = (selectTemplate(allTemplates)).name;
+      const templateToDelete = (selectTemplate(templatesAbleToRemove)).name;
       await removeTemplate(templateToDelete);
       break;
   }
@@ -226,7 +235,8 @@ function formatTemplateAsString(template) {
   return `- ${template.name}
   Amount: ${template.amount} ${tokenSymbol}
   Duration: ${template.duration} seconds
-  Frequency: ${template.frequency} seconds`;
+  Frequency: ${template.frequency} seconds
+  Schedule count: ${template.scheduleCount}`;
 }
 
 function formatScheduleAsString(schedule) {
@@ -278,27 +288,18 @@ async function removeTemplate(templateName) {
 }
 
 async function getTemplates(templateNames) {
-  // const templateList = await Promise.all(templateNames.map(async function (t) {
-  //   const templateName = web3.utils.hexToUtf8(t);
-  //   const templateData = await currentWalletModule.methods.templates(t).call();
-  //   return {
-  //     name: templateName,
-  //     amount: web3.utils.fromWei(templateData.numberOfTokens),
-  //     duration: templateData.duration,
-  //     frequency: templateData.frequency
-  //    };
-  // }));
-
-  const templateEvents = await currentWalletModule.getPastEvents('AddTemplate', { fromBlock: 0});
-  const templateList = templateEvents.map(function (t) {
-    const templateName = web3.utils.hexToUtf8(t.returnValues._name);
+  const templateList = await Promise.all(templateNames.map(async function (t) {
+    const templateName = web3.utils.hexToUtf8(t);
+    const templateData = await currentWalletModule.methods.templates(t).call();
+    const scheduleCount = await currentWalletModule.methods.getSchedulesCountByTemplate(t).call();
     return {
       name: templateName,
-      amount: web3.utils.fromWei(t.returnValues._numberOfTokens),
-      duration: t.returnValues._duration,
-      frequency: t.returnValues._frequency
-      };
-  });
+      amount: web3.utils.fromWei(templateData.numberOfTokens),
+      duration: templateData.duration,
+      frequency: templateData.frequency,
+      scheduleCount: parseInt(scheduleCount)
+     };
+  }));
 
   return templateList;
 }
@@ -322,8 +323,7 @@ async function getSchedules(beneficiary, templateNames) {
 }
 
 async function addSchedule(beneficiary, allTemplateNames) {
-  const minuteFromNow = Math.floor(Date.now() / 1000) + 60;
-  const startTime = input.readDateInTheFuture(`Enter the start date (Unix Epoch time) of the vesting schedule (a minute from now = ${minuteFromNow}): `, minuteFromNow);
+  const startTime = input.readDateInTheFutureOrZero(`Enter the start date (Unix Epoch time) of the vesting schedule (now = 0): `, 0);
   
   const currentBalance = await securityToken.methods.balanceOf(Issuer.address).call();
   console.log(chalk.yellow(`Your current balance is ${web3.utils.fromWei(currentBalance)} ${tokenSymbol}`));
@@ -379,8 +379,7 @@ function selectSchedule(schedules, onlyCreated) {
 }
 
 async function modifySchedule(beneficiary, templateName) {
-  const minuteFromNow = Math.floor(Date.now() / 1000) + 60;
-  const startTime = input.readDateInTheFuture(`Enter the new start date (Unix Epoch time) of the vesting schedule (a minute from now = ${minuteFromNow}): `, minuteFromNow);
+  const startTime = input.readDateInTheFutureOrZero(`Enter the start date (Unix Epoch time) of the vesting schedule (now = 0): `, 0);
   const action = currentWalletModule.methods.modifySchedule(beneficiary, web3.utils.toHex(templateName), startTime);
   const receipt = await common.sendTransaction(action);
   const event = common.getEventFromLogs(currentWalletModule._jsonInterface, receipt.logs, 'ModifySchedule');
@@ -465,6 +464,8 @@ async function exploreAccount(account) {
   } else {
     console.log(`Current vesting schedules:      None`);
   }
+  const availableTokens = await currentWalletModule.methods.getAvailableTokens(account).call();
+  console.log(`Available tokens:               ${web3.utils.fromWei(availableTokens)}`);
 }
 
 async function multipleSchedules() {
@@ -605,6 +606,12 @@ async function revokeSchedulesInBatch() {
     console.log(chalk.green('Revoke multiple schedules transaction was successful.'));
     console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
   }
+}
+
+async function showBeneficiaries(beneficiaries) {
+  console.log('********* Current benefeciaries **********');
+  beneficiaries.map(address => console.log(address));
+  console.log();
 }
 
 async function initialize(_tokenSymbol) {

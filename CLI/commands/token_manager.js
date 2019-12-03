@@ -70,9 +70,10 @@ async function displayTokenData() {
   let displayCurrentCheckpointId = await securityToken.methods.currentCheckpointId().call();
   let displayTransferFrozen = await securityToken.methods.transfersFrozen().call();
   let displayIsIssuable = await securityToken.methods.isIssuable().call();
-  let displayUserTokens = await securityToken.methods.balanceOf(Issuer.address).call();
   let displayTreasuryWallet = await securityToken.methods.getTreasuryWallet().call();
   let displayDocuments = await securityToken.methods.getAllDocuments().call();
+  let displayPolyBalance = await polyToken.methods.balanceOf(securityToken.options.address).call();
+  let displayUserTokens = await securityToken.methods.balanceOf(Issuer.address).call();
 
   console.log(`
 ***************    Security Token Information    ****************
@@ -88,9 +89,11 @@ async function displayTokenData() {
 - Current checkpoint:   ${displayCurrentCheckpointId}
 - Transfer frozen:      ${displayTransferFrozen ? 'YES' : 'NO'}
 - Issuance allowed:     ${displayIsIssuable ? 'YES' : 'NO'}
-- User balance:         ${web3.utils.fromWei(displayUserTokens)} ${displayTokenSymbol.toUpperCase()}
 - Treasury wallet:      ${displayTreasuryWallet}
-- Documents attached:   ${displayDocuments.length}`);
+- Documents attached:   ${displayDocuments.length}
+- POLY balance:         ${web3.utils.fromWei(displayPolyBalance)} POLY
+- User balance:         ${web3.utils.fromWei(displayUserTokens)} ${displayTokenSymbol.toUpperCase()}
+`);
 }
 
 async function displayModules() {
@@ -122,32 +125,32 @@ async function displayModules() {
 
   if (numPM) {
     console.log(`Permission Manager Modules:`);
-    pmModules.map(m => console.log(`- ${m.label}: ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
+    pmModules.map(m => console.log(`- ${m.label}: ${m.title} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address} ${m.remainingBudget ? ` - Remaining budget: ${m.remainingBudget} POLY` : ''}`));
   }
 
   if (numTM) {
     console.log(`Transfer Manager Modules:`);
-    tmModules.map(m => console.log(`- ${m.label}: ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
+    tmModules.map(m => console.log(`- ${m.label}: ${m.title} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address} ${m.remainingBudget ? ` - Remaining budget: ${m.remainingBudget} POLY` : ''}`));
   }
 
   if (numSTO) {
     console.log(`STO Modules:`);
-    stoModules.map(m => console.log(`- ${m.label}: ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
+    stoModules.map(m => console.log(`- ${m.label}: ${m.title} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address} ${m.remainingBudget ? ` - Remaining budget: ${m.remainingBudget} POLY` : ''}`));
   }
 
   if (numCP) {
     console.log(`Checkpoint Modules:`);
-    cpModules.map(m => console.log(`- ${m.label}: ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
+    cpModules.map(m => console.log(`- ${m.label}: ${m.title} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address} ${m.remainingBudget ? ` - Remaining budget: ${m.remainingBudget} POLY` : ''}`));
   }
 
   if (numBURN) {
     console.log(`Burn Modules:`);
-    burnModules.map(m => console.log(`- ${m.label}: ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
+    burnModules.map(m => console.log(`- ${m.label}: ${m.title} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address} ${m.remainingBudget ? ` - Remaining budget: ${m.remainingBudget} POLY` : ''}`));
   }
 
   if (numW) {
     console.log(`Wallet Modules:`);
-    walletModules.map(m => console.log(`- ${m.label}: ${m.name} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address}`));
+    walletModules.map(m => console.log(`- ${m.label}: ${m.title} (${m.version}) is ${(m.archived) ? chalk.yellow('archived') : 'unarchived'} at ${m.address} ${m.remainingBudget ? ` - Remaining budget: ${m.remainingBudget} POLY` : ''}`));
   }
 }
 
@@ -440,12 +443,24 @@ async function getGeneralTransferManager() {
 
 async function issueToSingleAddress(_investor, _amount) {
   try {
-    let issueAction = securityToken.methods.issue(_investor, web3.utils.toWei(_amount), web3.utils.fromAscii(''));
+    let issueAction;
+    if (Issuer.address === await (securityToken.methods.owner().call())) {
+      issueAction = securityToken.methods.issue(_investor, web3.utils.toWei(_amount), web3.utils.fromAscii(''));
+    } else {
+      const issuanceModuleExists = (await common.getAllModulesByType(securityToken, gbl.constants.MODULES_TYPES.STO, polyToken)).find(m => m.name === 'Issuance');
+      if (issuanceModuleExists) {
+        const issuanceModuleAddress = issuanceModuleExists.address;
+        const issuanceModule = new web3.eth.Contract(abis.issuance(), issuanceModuleAddress);
+        issueAction = issuanceModule.methods.issueTokens(_investor, web3.utils.toWei(_amount), web3.utils.fromAscii(''));
+      } else {
+        console.log(chalk.red(`You are not allowed to mint tokens.`));
+        return;
+      }
+    }
     let receipt = await common.sendTransaction(issueAction);
     let event = common.getEventFromLogs(securityToken._jsonInterface, receipt.logs, 'Issued');
     console.log(chalk.green(`${web3.utils.fromWei(event._value)} tokens have been issued to ${event._to} successfully.`));
-  }
-  catch (e) {
+  } catch (e) {
     console.log(e);
     console.log(chalk.red(`Issuance was not successful - Please make sure beneficiary address has been whitelisted`));
   }
@@ -489,12 +504,26 @@ async function multiIssue(_csvFilePath, _batchSize) {
     }
   }
 
+  let issueAction;
+  if (Issuer.address === await (securityToken.methods.owner().call())) {
+    issueAction = securityToken.methods.issueMulti;
+  } else {
+    const issuanceModuleAddress = (await common.getAllModulesByType(securityToken, gbl.constants.MODULES_TYPES.STO, polyToken)).find(m => m.name === 'Issuance').address;
+    if (issuanceModuleAddress) {
+      const issuanceModule = new web3.eth.Contract(abis.issuance(), issuanceModuleAddress);
+      issueAction = issuanceModule.methods.issueTokensMulti;
+    } else {
+      console.log(chalk.red(`You are not allowed to mint tokens.`));
+      return;
+    }
+  }
+
   let batches = common.splitIntoBatches(verifiedData, batchSize);
   let [investorArray, amountArray] = common.transposeBatches(batches);
   for (let batch = 0; batch < batches.length; batch++) {
     console.log(`Batch ${batch + 1} - Attempting to issue tokens to accounts: \n\n`, investorArray[batch], '\n');
     amountArray[batch] = amountArray[batch].map(a => web3.utils.toWei(a.toString()));
-    let action = securityToken.methods.issueMulti(investorArray[batch], amountArray[batch]);
+    let action = issueAction(investorArray[batch], amountArray[batch]);
     let receipt = await common.sendTransaction(action);
     console.log(chalk.green('Multi issue transaction was successful.'));
     console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
@@ -609,7 +638,7 @@ async function addModule() {
 }
 
 async function pauseModule(modules) {
-  let options = modules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
+  let options = modules.map(m => `${m.label}: ${m.title} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module would you like to pause?');
   if (index != -1) {
     console.log("\nSelected:", options[index]);
@@ -627,12 +656,12 @@ async function pauseModule(modules) {
     let pausableModule = new web3.eth.Contract(moduleABI, modules[index].address);
     let pauseAction = pausableModule.methods.pause();
     await common.sendTransaction(pauseAction);
-    console.log(chalk.green(`${modules[index].name} has been paused successfully!`));
+    console.log(chalk.green(`${modules[index].title} has been paused successfully!`));
   }
 }
 
 async function unpauseModule(modules) {
-  let options = modules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
+  let options = modules.map(m => `${m.label}: ${m.title} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module would you like to pause?');
   if (index != -1) {
     console.log("\nSelected: ", options[index]);
@@ -650,51 +679,64 @@ async function unpauseModule(modules) {
     let pausableModule = new web3.eth.Contract(moduleABI, modules[index].address);
     let unpauseAction = pausableModule.methods.unpause();
     await common.sendTransaction(unpauseAction);
-    console.log(chalk.green(`${modules[index].name} has been unpaused successfully!`));
+    console.log(chalk.green(`${modules[index].title} has been unpaused successfully!`));
   }
 }
 
 async function archiveModule(modules) {
-  let options = modules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
+  let options = modules.map(m => `${m.label}: ${m.title} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module would you like to archive?');
   if (index != -1) {
     console.log("\nSelected: ", options[index]);
     let archiveModuleAction = securityToken.methods.archiveModule(modules[index].address);
     await common.sendTransaction(archiveModuleAction, { factor: 2 });
-    console.log(chalk.green(`${modules[index].name} has been archived successfully!`));
+    console.log(chalk.green(`${modules[index].title} has been archived successfully!`));
   }
 }
 
 async function unarchiveModule(modules) {
-  let options = modules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
+  let options = modules.map(m => `${m.label}: ${m.title} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module would you like to unarchive?');
   if (index != -1) {
     console.log("\nSelected: ", options[index]);
     let unarchiveModuleAction = securityToken.methods.unarchiveModule(modules[index].address);
     await common.sendTransaction(unarchiveModuleAction, { factor: 2 });
-    console.log(chalk.green(`${modules[index].name} has been unarchived successfully!`));
+    console.log(chalk.green(`${modules[index].title} has been unarchived successfully!`));
   }
 }
 
 async function removeModule(modules) {
-  let options = modules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
+  let options = modules.map(m => `${m.label}: ${m.title} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module would you like to remove?');
   if (index != -1) {
     console.log("\nSelected: ", options[index]);
     let removeModuleAction = securityToken.methods.removeModule(modules[index].address);
     await common.sendTransaction(removeModuleAction, { factor: 2 });
-    console.log(chalk.green(`${modules[index].name} has been removed successfully!`));
+    console.log(chalk.green(`${modules[index].title} has been removed successfully!`));
   }
 }
 
 async function changeBudget(modules) {
-  let options = modules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
+  let options = modules.map(m => `${m.label}: ${m.title} (${m.version}) at ${m.address} - Remaining budget: ${m.remainingBudget ? m.remainingBudget : 0} POLY`);
   let index = readlineSync.keyInSelect(options, 'Which module would you like to change budget for?');
   if (index != -1) {
     console.log("\nSelected: ", options[index]);
-    let increase = 0 == readlineSync.keyInSelect(['Increase', 'Decrease'], `Do you want to increase or decrease budget?`, { cancel: false });
-    let amount = readlineSync.question(`Enter the amount of POLY to change in allowance`);
-    let changeModuleBudgetAction = securityToken.methods.changeModuleBudget(modules[index].address, web3.utils.toWei(amount), increase);
+    let increase = readlineSync.keyInSelect(['Increase', 'Decrease'], `Do you want to increase or decrease budget?`, { cancel: false }) === 0;
+    let amount = web3.utils.toWei(readlineSync.question(`Enter the amount of POLY to change in allowance: `));
+    if (increase && readlineSync.keyInYNStrict(`Do you want to transfer ${web3.utils.fromWei(amount)} POLY to Security Token contract now?`)) {
+      const issuerBalance = new web3.utils.BN(await polyToken.methods.balanceOf(Issuer.address).call());
+      if (issuerBalance.lt(amount)) {
+        console.log(chalk.red(`\n**************************************************************************************************************************************************`));
+        console.log(chalk.red(`Not enough balance to set the ${modules[index].name} budget. Requires ${web3.utils.fromWei(amount)} POLY but have ${web3.utils.fromWei(issuerBalance)} POLY. Access POLY faucet to get the POLY to complete this txn`));
+        console.log(chalk.red(`**************************************************************************************************************************************************\n`));
+        process.exit(0);
+      }
+      let transferAction = polyToken.methods.transfer(securityToken._address, amount);
+      let transferReceipt = await common.sendTransaction(transferAction, { factor: 2 });
+      let transferEvent = common.getEventFromLogs(polyToken._jsonInterface, transferReceipt.logs, 'Transfer');
+      console.log(`Number of POLY sent: ${web3.utils.fromWei(new web3.utils.BN(transferEvent.value))}`);
+    }
+    let changeModuleBudgetAction = securityToken.methods.changeModuleBudget(modules[index].address, amount, increase);
     await common.sendTransaction(changeModuleBudgetAction);
     console.log(chalk.green(`Module budget has been changed successfully!`));
   }
@@ -714,7 +756,7 @@ async function getAllModules() {
   let allModules = [];
   // Iterate over all module types
   for (let type = 1; type <= 8; type++) {
-    let modules = await common.getAllModulesByType(securityToken, type);
+    let modules = await common.getAllModulesByType(securityToken, type, polyToken);
     modules.forEach(m => allModules.push(m));
   }
 

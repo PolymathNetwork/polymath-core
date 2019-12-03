@@ -30,7 +30,7 @@ contract STO is ISTO, STOStorage, Module {
      */
     function pause() public {
         /*solium-disable-next-line security/no-block-members*/
-        require(now < endTime, "STO has been finalized");
+        require(!isFinalized, "STO has been finalized");
         super.pause();
     }
 
@@ -55,4 +55,45 @@ contract STO is ISTO, STOStorage, Module {
     function _getKey(bytes32 _key1, address _key2) internal pure returns(bytes32) {
         return bytes32(keccak256(abi.encodePacked(_key1, _key2)));
     }
+
+    function _allowPreMinting(uint256 _tokenAmount) internal {
+        _isSTOStarted();
+        require(_tokenAmount > 0, "Invalid amount");
+        preMintAllowed = true;
+        securityToken.issue(address(this), _tokenAmount, "");
+        emit AllowPreMintFlag(msg.sender, _tokenAmount, preMintAllowed);
+    }
+
+    function _revokePreMintFlag(uint256 _tokenAmount) internal {
+        _isSTOStarted();
+        preMintAllowed = false;
+        securityToken.redeem(_tokenAmount, "");
+        emit RevokePreMintFlag(msg.sender, _tokenAmount, preMintAllowed);
+    }
+
+    function _isSTOStarted() internal view {
+        /*solium-disable-next-line security/no-block-members*/
+        require(now < startTime, "Already started");
+    }
+
+    /**
+     * @notice Returns to treasury wallet address
+     * @return address of the treasury wallet
+     */
+    function getTreasuryWallet() public view returns(address wallet) {
+        wallet = (treasuryWallet == address(0) ? IDataStore(getDataStore()).getAddress(TREASURY) : treasuryWallet);
+    }
+
+    /**
+    * @notice Reclaims ERC20Basic compatible tokens
+    * @dev We duplicate here due to the overriden owner & onlyOwner
+    * @param _tokenContract The address of the token contract
+    */
+    function reclaimERC20(address _tokenContract) public {
+        if (_tokenContract == address(securityToken)) {
+            require(isFinalized);
+        }
+        super.reclaimERC20(_tokenContract);
+    }
+
 }

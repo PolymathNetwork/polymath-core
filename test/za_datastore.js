@@ -126,7 +126,11 @@ contract("Data store", async (accounts) => {
         });
 
         it("Should not allow non-issuer to change security token address", async () => {
-            await catchRevert(I_DataStore.setSecurityToken(address_one, { from: account_polymath }));
+            await catchRevert(I_DataStore.setSecurityToken(address_one, { from: account_polymath }),     "Unauthorized");
+        });
+
+        it("Should not allow changing security token address to an invalid address", async () => {
+            await catchRevert(I_DataStore.setSecurityToken(address_zero, { from: token_owner }), "Invalid address");
         });
 
         it("Should allow issuer to change security token address", async () => {
@@ -140,7 +144,7 @@ contract("Data store", async (accounts) => {
 
     describe("Should set data correctly", async () => {
         it("Should set and fetch uint256 correctly", async () => {
-            await catchRevert(I_DataStore.setUint256("0x0", 1, { from: token_owner }));
+            await catchRevert(I_DataStore.setUint256("0x0", 1, { from: token_owner }), "bad key");
             await I_DataStore.setUint256(key, 1, { from: token_owner });
             assert.equal((await I_DataStore.getUint256(key)).toNumber(), 1, "Incorrect Data Inserted");
         });
@@ -223,9 +227,11 @@ contract("Data store", async (accounts) => {
             await I_DataStore.insertUint256(key, new BN(10), { from: token_owner });
             let arrElement = await I_DataStore.getUint256ArrayElement(key, arrLen.toNumber());
             let arrElements = await I_DataStore.getUint256ArrayElements(key, 0, arrLen.toNumber());
+            let arrElementsOFB = await I_DataStore.getUint256ArrayElements(key, 0, arrLen.toNumber() + 10);
             assert.equal(arrElement.toNumber(), arrElements[arrLen.toNumber()].toNumber());
             assert.equal(arrLen.toNumber() + 1, (await I_DataStore.getUint256ArrayLength(key)).toNumber(), "Incorrect Array Length");
             assert.equal(arrElement.toNumber(), 10, "Incorrect array element");
+            assert.equal(arrElementsOFB.length, arrElements.length, "Returned array size is the same despite the exaggerated endIndex");
         });
 
         it("Should insert bytes32 into Array", async () => {
@@ -233,9 +239,11 @@ contract("Data store", async (accounts) => {
             await I_DataStore.insertBytes32(key, bytes32data, { from: token_owner });
             let arrElement = await I_DataStore.getBytes32ArrayElement(key, arrLen.toNumber());
             let arrElements = await I_DataStore.getBytes32ArrayElements(key, 0, arrLen.toNumber());
+            let arrElementsOFB = await I_DataStore.getBytes32ArrayElements(key, 0, arrLen.toNumber() + 10);
             assert.equal(arrElement, arrElements[arrLen.toNumber()]);
             assert.equal(arrLen.toNumber() + 1, (await I_DataStore.getBytes32ArrayLength(key)).toNumber(), "Incorrect Array Length");
             assert.equal(arrElement, bytes32data, "Incorrect array element");
+            assert.equal(arrElementsOFB.length, arrElements.length, "Returned array size is the same despite the exaggerated endIndex");
         });
 
         it("Should insert address into Array", async () => {
@@ -253,9 +261,11 @@ contract("Data store", async (accounts) => {
             await I_DataStore.insertBool(key, true, { from: token_owner });
             let arrElement = await I_DataStore.getBoolArrayElement(key, arrLen.toNumber());
             let arrElements = await I_DataStore.getBoolArrayElements(key, 0, arrLen.toNumber());
+            let arrElementsOFB = await I_DataStore.getBoolArrayElements(key, 0, arrLen.toNumber() + 10);
             assert.equal(arrElement, arrElements[arrLen.toNumber()]);
             assert.equal(arrLen.toNumber() + 1, (await I_DataStore.getBoolArrayLength(key)).toNumber(), "Incorrect Array Length");
             assert.equal(arrElement, true, "Incorrect array element");
+            assert.equal(arrElementsOFB.length, arrElements.length, "Returned array size is the same despite the exaggerated endIndex");
         });
 
         it("Should delete uint256 from Array", async () => {
@@ -295,7 +305,7 @@ contract("Data store", async (accounts) => {
         });
 
         it("Should set and fetch multiple uint256 correctly", async () => {
-            await catchRevert(I_DataStore.setUint256Multi([key], [1,2], { from: token_owner }));
+            await catchRevert(I_DataStore.setUint256Multi([key], [1,2], { from: token_owner }), "bad length");
             await I_DataStore.setUint256Multi([key, key2], [1,2], { from: token_owner });
             assert.equal((await I_DataStore.getUint256(key)).toNumber(), 1, "Incorrect Data Inserted");
             assert.equal((await I_DataStore.getUint256(key2)).toNumber(), 2, "Incorrect Data Inserted");
@@ -370,111 +380,129 @@ contract("Data store", async (accounts) => {
 
     describe("Should not allow unautohrized modification to data", async () => {
         it("Should not allow unauthorized addresses to modify uint256", async () => {
-            await catchRevert(I_DataStore.setUint256(key, new BN(1), { from: account_polymath }));
+            await catchRevert(I_DataStore.setUint256(key, new BN(1), { from: account_polymath }), "Unauthorized");
         });
 
         it("Should not allow unauthorized addresses to modify bytes32", async () => {
-            await catchRevert(I_DataStore.setBytes32(key, bytes32data, { from: account_polymath }));
+            await catchRevert(I_DataStore.setBytes32(key, bytes32data, { from: account_polymath }), "Unauthorized");
         });
 
         it("Should not allow unauthorized addresses to modify address", async () => {
-            await catchRevert(I_DataStore.setAddress(key, address_one, { from: account_polymath }));
+            await catchRevert(I_DataStore.setAddress(key, address_one, { from: account_polymath }), "Unauthorized");
         });
 
         it("Should not allow unauthorized addresses to modify string", async () => {
-            await catchRevert(I_DataStore.setString(key, name, { from: account_polymath }));
+            await catchRevert(I_DataStore.setString(key, name, { from: account_polymath }), "Unauthorized");
         });
 
         it("Should not allow unauthorized addresses to modify bytes", async () => {
-            await catchRevert(I_DataStore.setBytes32(key, bytes32data, { from: account_polymath }));
+            await catchRevert(I_DataStore.setBytes32(key, bytes32data, { from: account_polymath }), "Unauthorized");
         });
 
         it("Should not allow unauthorized addresses to modify bool", async () => {
-            await catchRevert(I_DataStore.setBool(key, true, { from: account_polymath }));
+            await catchRevert(I_DataStore.setBool(key, true, { from: account_polymath }), "Unauthorized");
         });
 
         it("Should not allow unauthorized addresses to modify uint256 array", async () => {
             let arr = [1, 2];
-            await catchRevert(I_DataStore.setUint256Array(key, arr, { from: account_polymath }));
+            await catchRevert(I_DataStore.setUint256Array(key, arr, { from: account_polymath }), "Unauthorized");
         });
 
         it("Should not allow unauthorized addresses to modify bytes32 array", async () => {
             let arr = [bytes32data, bytes32data2];
-            await catchRevert(I_DataStore.setBytes32Array(key, arr, { from: account_polymath }));
+            await catchRevert(I_DataStore.setBytes32Array(key, arr, { from: account_polymath }), "Unauthorized");
         });
 
         it("Should not allow unauthorized addresses to modify address array", async () => {
             let arr = [address_zero, address_one];
-            await catchRevert(I_DataStore.setAddressArray(key, arr, { from: account_polymath }));
+            await catchRevert(I_DataStore.setAddressArray(key, arr, { from: account_polymath }), "Unauthorized");
         });
 
         it("Should not allow unauthorized addresses to modify bool array", async () => {
             let arr = [false, true];
-            await catchRevert(I_DataStore.setBoolArray(key, arr, { from: account_polymath }));
+            await catchRevert(I_DataStore.setBoolArray(key, arr, { from: account_polymath }), "Unauthorized");
         });
 
         it("Should not allow unauthorized addresses to insert uint256 into Array", async () => {
-            await catchRevert(I_DataStore.insertUint256(key, new BN(10), { from: account_polymath }));
+            await catchRevert(I_DataStore.insertUint256(key, new BN(10), { from: account_polymath }), "Unauthorized");
         });
 
         it("Should not allow unauthorized addresses to insert bytes32 into Array", async () => {
-            await catchRevert(I_DataStore.insertBytes32(key, bytes32data, { from: account_polymath }));
+            await catchRevert(I_DataStore.insertBytes32(key, bytes32data, { from: account_polymath }), "Unauthorized");
         });
 
         it("Should not allow unauthorized addresses to insert address into Array", async () => {
-            await catchRevert(I_DataStore.insertAddress(key, address_one, { from: account_polymath }));
+            await catchRevert(I_DataStore.insertAddress(key, address_one, { from: account_polymath }), "Unauthorized");
         });
 
         it("Should not allow unauthorized addresses to insert bool into Array", async () => {
-            await catchRevert(I_DataStore.insertBool(key, true, { from: account_polymath }));
+            await catchRevert(I_DataStore.insertBool(key, true, { from: account_polymath }), "Unauthorized");
         });
 
         it("Should not allow unauthorized addresses to delete uint256 from Array", async () => {
-            await catchRevert(I_DataStore.deleteUint256(key, 0, { from: account_polymath }));
+            await catchRevert(I_DataStore.deleteUint256(key, 0, { from: account_polymath }), "Unauthorized");
         });
 
         it("Should not allow unauthorized addresses to delete bytes32 from Array", async () => {
-            await catchRevert(I_DataStore.deleteBytes32(key, 0, { from: account_polymath }));
+            await catchRevert(I_DataStore.deleteBytes32(key, 0, { from: account_polymath }), "Unauthorized");
         });
 
         it("Should not allow unauthorized addresses to delete address from Array", async () => {
-            await catchRevert(I_DataStore.deleteAddress(key, 0, { from: account_polymath }));
+            await catchRevert(I_DataStore.deleteAddress(key, 0, { from: account_polymath }), "Unauthorized");
         });
 
         it("Should not allow unauthorized addresses to delete bool from Array", async () => {
-            await catchRevert(I_DataStore.deleteBool(key, 0, { from: account_polymath }));
+            await catchRevert(I_DataStore.deleteBool(key, 0, { from: account_polymath }), "Unauthorized");
         });
 
         it("Should not allow unauthorized addresses to modify multiple uint256", async () => {
-            await catchRevert(I_DataStore.setUint256Multi([key, key2], [1,2], { from: account_polymath }));
+            await catchRevert(I_DataStore.setUint256Multi([key, key2], [1,2], { from: account_polymath }), "Unauthorized");
         });
 
         it("Should not allow unauthorized addresses to modify multiple bytes32", async () => {
-            await catchRevert(I_DataStore.setBytes32Multi([key, key2], [bytes32data, bytes32data2], { from: account_polymath }));
+            await catchRevert(I_DataStore.setBytes32Multi([key, key2], [bytes32data, bytes32data2], { from: account_polymath }), "Unauthorized");
         });
 
         it("Should not allow unauthorized addresses to modify multiple address", async () => {
-            await catchRevert(I_DataStore.setAddressMulti([key, key2], [address_one, address_two], { from: account_polymath }));
+            await catchRevert(I_DataStore.setAddressMulti([key, key2], [address_one, address_two], { from: account_polymath }), "Unauthorized");
         });
 
         it("Should not allow unauthorized addresses to modify multiple bool", async () => {
-            await catchRevert(I_DataStore.setBoolMulti([key, key2], [true, true], { from: account_polymath }));
+            await catchRevert(I_DataStore.setBoolMulti([key, key2], [true, true], { from: account_polymath }), "Unauthorized");
         });
 
         it("Should not allow unauthorized addresses to insert multiple uint256 into multiple Array", async () => {
-            await catchRevert(I_DataStore.insertUint256Multi([key, key2], [10, 20], { from: account_polymath }));
+            await catchRevert(I_DataStore.insertUint256Multi([key, key2], [10, 20], { from: account_polymath }), "Unauthorized");
         });
 
         it("Should not allow unauthorized addresses to insert multiple bytes32 into multiple Array", async () => {
-            await catchRevert(I_DataStore.insertBytes32Multi([key, key2], [bytes32data, bytes32data2], { from: account_polymath }));
+            await catchRevert(I_DataStore.insertBytes32Multi([key, key2], [bytes32data, bytes32data2], { from: account_polymath }), "Unauthorized");
         });
 
         it("Should not allow unauthorized addresses to insert multiple address into multiple Array", async () => {
-            await catchRevert(I_DataStore.insertAddressMulti([key, key2], [address_one, address_two], { from: account_polymath }));
+            await catchRevert(I_DataStore.insertAddressMulti([key, key2], [address_one, address_two], { from: account_polymath }), "Unauthorized");
         });
 
         it("Should not allow unauthorized addresses to insert multiple bool into multiple Array", async () => {
-            await catchRevert(I_DataStore.insertBoolMulti([key, key2], [true, true], { from: account_polymath }));
+            await catchRevert(I_DataStore.insertBoolMulti([key, key2], [true, true], { from: account_polymath }), "Unauthorized");
+        });
+    });
+
+    describe("Deleting out of bound indices", async () => {
+        it("Should prevent deleting out of bound indices of uintArray", async () => {
+            await catchRevert(I_DataStore.deleteUint256(key, (await I_DataStore.getUint256ArrayLength(key)).toNumber() + 1), { from: token_owner }, "Invalid Index");
+        });
+
+        it("Should prevent deleting out of bound indices of uintArray", async () => {
+            await catchRevert(I_DataStore.deleteBytes32(key, (await I_DataStore.getBytes32ArrayLength(key)).toNumber() + 1), { from: token_owner }, "Invalid Index");
+        });
+
+        it("Should prevent deleting out of bound indices of uintArray", async () => {
+            await catchRevert(I_DataStore.deleteAddress(key, (await I_DataStore.getAddressArrayLength(key)).toNumber() + 1), { from: token_owner }, "Invalid Index");
+        });
+
+        it("Should prevent deleting out of bound indices of uintArray", async () => {
+            await catchRevert(I_DataStore.deleteBool(key, (await I_DataStore.getBoolArrayLength(key)).toNumber() + 1), { from: token_owner }, "Invalid Index");
         });
     });
 });

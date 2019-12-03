@@ -1,9 +1,10 @@
-var readlineSync = require('readline-sync');
-var chalk = require('chalk');
-var common = require('./common/common_functions');
-var gbl = require('./common/global');
-var contracts = require('./helpers/contract_addresses');
-var abis = require('./helpers/contract_abis');
+const readlineSync = require('readline-sync');
+const chalk = require('chalk');
+const common = require('./common/common_functions');
+const gbl = require('./common/global');
+const contracts = require('./helpers/contract_addresses');
+const abis = require('./helpers/contract_abis');
+const csvParse = require('./helpers/csv');
 const input = require('./IO/input');
 
 // App flow
@@ -12,14 +13,18 @@ let securityToken;
 let polyToken;
 let currentPermissionManager;
 
+const ADD_DELEGATES_DATA_CSV = `${__dirname}/../data/Permission/add_delegates_data.csv`;
+const DELETE_DELEGATES_DATA_CSV = `${__dirname}/../data/Permission/delete_delegates_data.csv`;
+const CHANGE_PERMISSIONS_DATA_CSV = `${__dirname}/../data/Permission/change_permissions_data.csv`;
+
 async function executeApp() {
   console.log('\n', chalk.blue('Permission Manager - Main Menu', '\n'));
   
-  let pmModules = await common.getAllModulesByType(securityToken, gbl.constants.MODULES_TYPES.PERMISSION);
+  let pmModules = await common.getAllModulesByType(securityToken, gbl.constants.MODULES_TYPES.PERMISSION, polyToken);
   let nonArchivedModules = pmModules.filter(m => !m.archived);
   if (nonArchivedModules.length > 0) {
     console.log(`Permission Manager modules attached:`);
-    nonArchivedModules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
+    nonArchivedModules.map(m => `${m.label}: ${m.title} (${m.version}) at ${m.address}`);
   } else {
     console.log(`There are no Permission Manager modules attached`);
   }
@@ -49,7 +54,7 @@ async function executeApp() {
 
 async function addPermissionModule() {
   let moduleList = await common.getAvailableModules(moduleRegistry, gbl.constants.MODULES_TYPES.PERMISSION, securityToken.options.address);
-  let options = moduleList.map(m => `${m.name} - ${m.version} (${m.factoryAddress})`);
+  let options = moduleList.map(m => `${m.title} - ${m.version} (${m.factoryAddress})`);
 
   let index = readlineSync.keyInSelect(options, 'Which permission manager module do you want to add? ', { cancel: 'Return' });
   if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]}? `)) {
@@ -59,7 +64,7 @@ async function addPermissionModule() {
 }
 
 async function configExistingModules(permissionModules) {
-  let options = permissionModules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
+  let options = permissionModules.map(m => `${m.label}: ${m.title} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module do you want to config? ', { cancel: 'RETURN' });
   console.log('Selected:', index != -1 ? options[index] : 'RETURN', '\n');
   currentPermissionManager = new web3.eth.Contract(abis.generalPermissionManager(), permissionModules[index].address);
@@ -77,7 +82,11 @@ async function permissionManager() {
 
   let options = ['Manage delegates'];
   if (parseInt(delegates) > 0) {
-    options.push('Explore account', 'Change permission');
+    options.push('Explore account');
+    if (!await isIssuanceDelegationAllowed()) {
+      options.push('Allow issuance delegation');
+    }
+    options.push('Change permission', 'Change multiple permission in batches');
   }
 
   let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
@@ -90,8 +99,14 @@ async function permissionManager() {
     case 'Explore account':
       await exploreAccount();
       break;
+    case 'Allow issuance delegation':
+      await allowIssuanceDelegation();
+      break;
     case 'Change permission':
       await changePermission();
+      break
+    case 'Change multiple permission in batches':
+      await changeMultiplePermissionsInBatches();
       break
     case 'RETURN':
       return;
@@ -101,9 +116,9 @@ async function permissionManager() {
 }
 
 async function manageDelegates(currentDelegates) {
-  let options = ['Add delegate'];
+  let options = ['Add delegate', 'Add multiple delegates in batches'];
   if (currentDelegates.length > 0) {
-    options.push('Delete delegate');
+    options.push('Delete delegate', 'Delete multiple delegates in batches');
   }
 
   let index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
@@ -113,11 +128,17 @@ async function manageDelegates(currentDelegates) {
     case 'Add delegate':
       await addNewDelegate();
       break;
+    case 'Add multiple delegates in batches':
+      await addDelegatesInBatches();
+      break;
     case 'Delete delegate':
       let delegateToDelete = await selectDelegate();
       if (readlineSync.keyInYNStrict(`Are you sure you want to delete delegate ${delegateToDelete}?`)) {
         await deleteDelegate(delegateToDelete);
       }
+      break;
+    case 'Delete multiple delegates in batches':
+      await deleteDelegatesInBatches();
       break;
   }
 }
@@ -138,6 +159,82 @@ async function deleteDelegate(address) {
   console.log(`Delegate ${address} deleted successfully!`);
 }
 
+async function addDelegatesInBatches() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${ADD_DELEGATES_DATA_CSV}): `, {
+    defaultInput: ADD_DELEGATES_DATA_CSV
+  });
+  let batchSize = input.readNumberGreaterThan(0, `Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, gbl.constants.DEFAULT_BATCH_SIZE);
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(
+    row => web3.utils.isAddress(row[0]) &&
+      typeof row[1] === 'string');
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [delegateArray, detailsArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to add the following delegates:\n\n`, delegateArray[batch], '\n');
+    detailsArray[batch] = detailsArray[batch].map(n => web3.utils.toHex(n));
+    let action = currentPermissionManager.methods.addDelegateMulti(delegateArray[batch], detailsArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Add multiple delegates transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
+async function deleteDelegatesInBatches() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${DELETE_DELEGATES_DATA_CSV}): `, {
+    defaultInput: DELETE_DELEGATES_DATA_CSV
+  });
+  let batchSize = input.readNumberGreaterThan(0, `Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, gbl.constants.DEFAULT_BATCH_SIZE);
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(
+    row => web3.utils.isAddress(row[0]));
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [delegateArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to delete the following delegates:\n\n`, delegateArray[batch], '\n');
+    let action = currentPermissionManager.methods.deleteDelegateMulti(delegateArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Delete multiple delegates transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
+async function changeMultiplePermissionsInBatches() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${CHANGE_PERMISSIONS_DATA_CSV}): `, {
+    defaultInput: CHANGE_PERMISSIONS_DATA_CSV
+  });
+  let batchSize = input.readNumberGreaterThan(0, `Enter the max number of records per transaction or batch size (${gbl.constants.DEFAULT_BATCH_SIZE}): `, gbl.constants.DEFAULT_BATCH_SIZE);
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(
+    row => web3.utils.isAddress(row[0]) &&
+      web3.utils.isAddress(row[1]) &&
+      (row[2] === 'ADMIN' || row[2] === 'OPERATOR') &&
+      typeof row[3] === 'boolean'
+    );
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let batches = common.splitIntoBatches(validData, batchSize);
+  let [delegateArray, moduleArray, permArray, validArray] = common.transposeBatches(batches);
+  for (let batch = 0; batch < batches.length; batch++) {
+    console.log(`Batch ${batch + 1} - Attempting to change permissions for the following delegates:\n\n`, delegateArray[batch], '\n');
+    permArray[batch] = permArray[batch].map(n => web3.utils.toHex(n));
+    let action = currentPermissionManager.methods.changePermissionMulti(delegateArray[batch][0], moduleArray[batch], permArray[batch], validArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Change multiple permissions transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
 async function exploreAccount() {
   let accountToExplore = input.readAddress('Enter the account address you want to explore: ');
 
@@ -154,6 +251,16 @@ async function exploreAccount() {
     Details: ${delegate.details}
     Permisions: ${delegate.permissions}`);
   }
+}
+
+async function allowIssuanceDelegation() {
+  const moduleList = await common.getAvailableModules(moduleRegistry, gbl.constants.MODULES_TYPES.STO, securityToken.options.address);
+  const issuanceModule = moduleList.find(m => m.name === 'Issuance');
+  const moduleABI = abis.issuance();
+  console.log(`Adding issuance module...`);
+  await common.addModule(securityToken, polyToken, issuanceModule.factoryAddress, moduleABI);
+  console.log(chalk.green(`Issuance module has been added successfully!`));
+  console.log(`Now you can change the permission as usual to any delegate.`);
 }
 
 async function changePermission() {
@@ -186,7 +293,7 @@ async function selectDelegate() {
 async function selectModule() {
   let modules = await getModulesWithPermissions();
   let options = modules.map(function (m) {
-    return `${m.label} - ${m.name} at ${m.address}`;
+    return `${m.label} - ${m.title} at ${m.address}`;
   });
   let index = readlineSync.keyInSelect(options, 'Select a module:', { cancel: false });
   return modules[index];
@@ -230,10 +337,10 @@ async function getModulesWithPermissions() {
       if (permissions.length > 0) {
         let moduleData = await securityToken.methods.getModule(m).call();
         modules.push({
-          label: web3.utils.hexToAscii(moduleData.moduleLabel),
-          name: web3.utils.hexToAscii(moduleData.moduleName),
+          label: web3.utils.hexToUtf8(moduleData.moduleLabel),
+          name: web3.utils.hexToUtf8(moduleData.moduleName),
           address: m,
-          permissions: permissions.map(function (p) { return web3.utils.hexToAscii(p) })
+          permissions: permissions.map(function (p) { return web3.utils.hexToUtf8(p) })
         })
       }
     }
@@ -285,6 +392,11 @@ function renderTable(permissions) {
     result += `-`;
   }
   return result
+}
+
+async function isIssuanceDelegationAllowed() {
+  const modulesWithPermissions = await getModulesWithPermissions();
+  return modulesWithPermissions.some(m => m.name === 'Issuance');
 }
 
 async function initialize(_tokenSymbol) {

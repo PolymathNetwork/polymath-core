@@ -1,6 +1,44 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+# v3.1.0 -Release Candidate
+
+[__3.1.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __11-07-19__
+
+## Modules
+* Add new module `RestrictedPartialSaleTM`.
+* Add new checkpoint voting module `AdvancedPLCRVotingCheckpoint`.
+* Add `addDelegateMulti()`, `deleteDelegateMulti()` batch functions in `GeneralPermissionManager` module.
+* Add `WHITELISTMODULE` constant to `GeneralTransferManager` module.
+
+## VEW
+* Add `getSchedulesCountByTemplate()`, `getAllBeneficiaries()`, `getAvailableTokens()` functions in VEW.
+* `treasuryWallet` variable of VEW is no longer publicly accessible while `templates` can be publicly accessible.
+* In VEW, `ModifySchedule()` now requires that `startTime >= now` instead of `startTime > now`.
+
+## STO
+* STO interface now includes new events `AllowPreMintFlag` and `RevokePreMintFlag`.
+* STO module `pause` function now requires `!isFinalized`.
+* Add `getTreasuryWallet()` function & `preMintAllowed`, `isFinalized` public accessible booleans in STO.
+* If `_tokenContract` param is securityToken address in `reclaimERC20` then issuer be able to reclaim tokens only after STO is finalized otherwise works same for other cases.
+* Treasury wallet is added as a new argument of `configure()` in CappedSTO.
+* Introduced `allowPreMinting()`, `revokePreMintFlag()` functions in USDTieredSTO & CappedSTO to support pre-minting functionality.
+* Add `finalize()` function in CappedSTO.
+* CappedSTO is now respecting check -`buyTokens()` will only work when STO is not finalized (i.e !isFinalized).
+* Add `ReserveTokenMint` and `ReserveTokenTransfer` events in CappedSTO.
+* `getSTODetails` now also return another boolean called `preMintAllowed` in CappedSTO & USDTieredSTO both.
+* Add `ReserveTokenTransfer` event in USDTieredSTO.
+* Removed `isFinalized` and `treasuryWallet` public variables from USDTieredSTOStorage.
+* Rename `mintedTotal, minted, mintedDiscountPoly` variables of Tier struct with `totalTokensSoldInTier, tokenSoldPerFundType, soldDiscountPoly`
+* Rename `getTokensMintedByTier()` with `getTokensSoldByTier()` & `getTokensSoldByTier()` with `getTotalTokensSoldByTier()` in USDTieredSTO.
+
+## STR
+* Now `tickerAvailable()` function is internally converting the symbol in to uppercase & performing all required checks to validate the ticker availablity in the ecosystem.    
+
+## SecurityToken
+* Add event `ModuleUpgraded` to `ISecurityToken` Interface
+
+
 # v3.0.0 - Release Candidate
 
 [__3.0.0__](https://www.npmjs.com/package/polymath-core?activeTab=readme) __10-11-18__
@@ -36,6 +74,7 @@ All notable changes to this project will be documented in this file.
 * Add document specific functions `setDocument()`, `removeDocument()`.   
 * Rename `forceTransfer()` to `controllerTransfer()` similarly `forceBurn()` to `controllerRedeem()`.   
 * Add `isControllable()` to know whether the controller functions are allowed to execute or not.    
+* Add `isIssuable()`, `getInvestorsSubsetAt()`, `getTreasuryWallet()`, `isOperator()`, `isOperatorForPartition()`, `partitionsOf()`, `getDocument()`, `getAllDocument()` functions as getters to support ST functionality.    
 * Add `isIssuable()`, `getInvestorsSubsetAt()`, `getTreasuryWallet()`, `isOperator()`, `isOperatorForPartition()`, `partitionsOf()`, `getDocument()`, `getAllDocument()` functions as getters to support ST functionality.   
 * Remove the `bool` return parameter from the `canTransfer` & `canTransferFrom` function.
 * Rename `increaseApproval()` & `decreaseApproval()` to `increaseAllowance()` & `decreaseAllowance()` respectively.   
@@ -53,7 +92,7 @@ All notable changes to this project will be documented in this file.
 * Rename `setProtocolVersion()` to `setProtocolFactory()`, Add `removeProtocolFactory()`.   
 * Add `getTokensByDelegate()`, `getSTFactoryAddressOfVersion()`, `getLatestProtocolVersion()`, `getIsFeeInPoly()` some getters.  
 * Add `RegisterTicker` event with two new parameters `_registrationFeePoly` & `_registrationFeeUsd`. (Note- there is 2 events with the same name to maintain the backwards compatibility).   
-* Add `NewSecurityToken` event with three new parameters `_usdFee`, `_polyFee` & `_protocolVersion`. (Note- there is 2 events with the same name to maintain the backwards compatibility). 
+* Add `NewSecurityToken` event with three new parameters `_usdFee`, `_polyFee` & `_protocolVersion`. (Note- there is 2 events with the same name to maintain the backwards compatibility).
 * Add `registerNewTicker()` function to register the ticker for `3.0.0` release. NB- `registerTicker()` is also present in the code to maintain the backwards compatibility.  
 * Add `modifyExistingTicker()` to modify the ticker & `modifyExistingSecurityToken()` to modify the ST.  
 * Add `tickerAvailable()` to get the status of ticker availability.  
@@ -75,9 +114,9 @@ All notable changes to this project will be documented in this file.
 * Introduced `modifyTransferRequirements()` & `modifyTransferRequirementsMulti()` to modify the transfer requirements.   
 * Add `modifyInvestorFlag()` & `modifyInvestorFlagMulti()` function to modify the flag.   
 * `modifyWhitelistSigned()` rename to `modifyKYCDataSigned()`. Add `modifyKYCDataSignedMulti`.    
-* Add `getAllInvestorFlags()`, `getInvestorFlag()`,`getInvestorFlags()`, `getAllKYCData()`, `getKYCData()` & `getTokensByPartition()`. 
+* Add `getAllInvestorFlags()`, `getInvestorFlag()`,`getInvestorFlags()`, `getAllKYCData()`, `getKYCData()` & `getTokensByPartition()`.
 
-## USDTiererdSTO
+## USDTieredSTO
 * Removed `changeAccredited()` function.    
 * `buyWithETH()`, `buyWithPOLY()`, `buyWithUSD()`, `buyWithETHRateLimited()`, `buyWithPOLYRateLimited()` & `buyWithUSDRateLimited()` will return spentUSD, spentValue & amount of mint tokens.   
 * Remove `buyTokensView()` function.  
@@ -87,13 +126,13 @@ All notable changes to this project will be documented in this file.
 * Introduced BTM, LTM, Voting and VEW modules.  
 * Remove the  `_usageCost` variable when deploying any module factory.  
 * Remove `takeUsageFee()` function from evey module.   
-* Remove `changeUsageCost()` & `usageCostInPoly()` from every module factory. 
+* Remove `changeUsageCost()` & `usageCostInPoly()` from every module factory.
 * Remove `takeFee()` function.
 * `getTreasuryWallet()` function added to `DividendCheckpoint.sol`.
 
 ## Generalize
 * Removed `_polyAddress` parameter from constructors of all modules and module factories.
-* All modules are upgradeable now. 
+* All modules are upgradeable now.
 * Permission types are only `ADMIN` and `OPERATOR` now.      
 
 # v2.1.0 - Release Candidate    

@@ -69,7 +69,7 @@ contract("Concurrent STO", async (accounts) => {
 
     // Configure function signature for STO deployment
 
-    const CappedSTOParameters = ["uint256", "uint256", "uint256", "uint256", "uint8[]", "address"];
+    const CappedSTOParameters = ["uint256", "uint256", "uint256", "uint256", "uint8[]", "address", "address"];
     const DummySTOParameters = ["uint256", "uint256", "uint256", "string"];
     const PresaleSTOParameters = ["uint256"];
 
@@ -107,9 +107,9 @@ contract("Concurrent STO", async (accounts) => {
 
         // STEP 2: Deploy the STO Factories
 
-        [I_CappedSTOFactory] = await deployCappedSTOAndVerifyed(account_polymath, I_MRProxied, STOSetupCost);
-        [I_DummySTOFactory] = await deployDummySTOAndVerifyed(account_polymath, I_MRProxied, STOSetupCost);
-        [I_PreSaleSTOFactory] = await deployPresaleSTOAndVerified(account_polymath, I_MRProxied, STOSetupCost);
+        [I_CappedSTOFactory] = await deployCappedSTOAndVerifyed(account_polymath, I_MRProxied, STOSetupCost, new BN(0));
+        [I_DummySTOFactory] = await deployDummySTOAndVerifyed(account_polymath, I_MRProxied, STOSetupCost, new BN(0));
+        [I_PreSaleSTOFactory] = await deployPresaleSTOAndVerified(account_polymath, I_MRProxied, STOSetupCost, new BN(0));
 
         // Printing all the contract addresses
         console.log(`
@@ -197,6 +197,7 @@ contract("Concurrent STO", async (accounts) => {
                 cap,
                 rate,
                 fundRaiseType,
+                account_fundsReceiver,
                 account_fundsReceiver
             ]);
             const dummyBytesSig = encodeModuleCall(DummySTOParameters, [startTime, endTime, cap, "Hello"]);

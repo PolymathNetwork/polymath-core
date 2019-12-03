@@ -27,11 +27,11 @@ let dividendsType;
 async function executeApp() {
   console.log('\n', chalk.blue('Dividends Manager - Main Menu', '\n'));
 
-  let tmModules = await common.getAllModulesByType(securityToken, gbl.constants.MODULES_TYPES.DIVIDENDS);
-  let nonArchivedModules = tmModules.filter(m => !m.archived);
+  let dmModules = await common.getAllModulesByType(securityToken, gbl.constants.MODULES_TYPES.DIVIDENDS, polyToken);
+  let nonArchivedModules = dmModules.filter(m => !m.archived);
   if (nonArchivedModules.length > 0) {
     console.log(`Dividends modules attached:`);
-    nonArchivedModules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
+    nonArchivedModules.map(m => `${m.label}: ${m.title} (${m.version}) at ${m.address}`);
   } else {
     console.log(`There are no dividends modules attached`);
   }
@@ -101,7 +101,7 @@ async function exploreAddress(currentCheckpoint) {
 }
 
 async function configExistingModules(dividendModules) {
-  let options = dividendModules.map(m => `${m.label}: ${m.name} (${m.version}) at ${m.address}`);
+  let options = dividendModules.map(m => `${m.label}: ${m.title} (${m.version}) at ${m.address}`);
   let index = readlineSync.keyInSelect(options, 'Which module do you want to config? ', { cancel: 'RETURN' });
   console.log('Selected:', index != -1 ? options[index] : 'RETURN', '\n');
   let moduleNameSelected = index != -1 ? dividendModules[index].name : 'RETURN';
@@ -326,9 +326,6 @@ async function manageExistingDividend(dividendIndex) {
     case 'Reclaim expired dividends':
       await reclaimedDividend(dividendIndex, dividendTokenSymbol, dividendTokenDecimals);
       return;
-    case 'Reclaim ETH or ERC20 tokens from contract':
-      await reclaim
-      break;
     case 'RETURN':
       return;
   }
@@ -589,8 +586,8 @@ to account ${ event._claimer} `
 }
 
 async function addDividendsModule() {
-  let moduleList = await common.getAvailableModules(moduleRegistry, gbl.constants.MODULES_TYPES.DIVIDENDS, securityToken.options.address);
-  let options = moduleList.map(m => `${m.name} - ${m.version} (${m.factoryAddress})`);
+  let moduleList = (await common.getAvailableModules(moduleRegistry, gbl.constants.MODULES_TYPES.DIVIDENDS, securityToken.options.address)).filter(m => m.name.includes('Dividend'));
+  let options = moduleList.map(m => `${m.title} - ${m.version} (${m.factoryAddress})`);
 
   let index = readlineSync.keyInSelect(options, 'Which dividends module do you want to add? ', { cancel: 'Return' });
   if (index != -1 && readlineSync.keyInYNStrict(`Are you sure you want to add ${options[index]}? `)) {

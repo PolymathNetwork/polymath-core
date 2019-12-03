@@ -65,7 +65,7 @@ jobs:
       - run: node --version
       - run: truffle version
       - run: npm run clash-check
-      - run: npm run istr-check
+      - run: npm run i-check
       - save_cache:
           key: dependency-cache-{{ checksum "package.json" }}
           paths:

@@ -22,12 +22,12 @@ contract USDTieredSTOStorage {
         uint256 tokenTotal;
         // How many token units are available in this tier (relative to totalSupply) at the ratePerTierDiscountPoly rate
         uint256 tokensDiscountPoly;
-        // How many tokens have been minted in this tier (relative to totalSupply)
-        uint256 mintedTotal;
-        // How many tokens have been minted in this tier (relative to totalSupply) for each fund raise type
-        mapping(uint8 => uint256) minted;
-        // How many tokens have been minted in this tier (relative to totalSupply) at discounted POLY rate
-        uint256 mintedDiscountPoly;
+        // How many tokens have been sold in this tier (relative to totalSupply)
+        uint256 totalTokensSoldInTier;
+        // How many tokens have been sold in this tier (relative to totalSupply) for each fund raise type
+        mapping(uint8 => uint256) tokenSoldPerFundType;
+        // How many tokens have been sold in this tier (relative to totalSupply) at discounted POLY rate
+        uint256 soldDiscountPoly;
     }
 
     mapping(address => uint256) public nonAccreditedLimitUSDOverride;
@@ -37,14 +37,8 @@ contract USDTieredSTOStorage {
     // Determine whether users can invest on behalf of a beneficiary
     bool public allowBeneficialInvestments;
 
-    // Whether or not the STO has been finalized
-    bool public isFinalized;
-
-    // Address of issuer treasury wallet for unsold tokens
-    address public treasuryWallet;
-
     // List of stable coin addresses
-    IERC20[] internal usdTokens;
+    IERC20[] internal stableTokens;
 
     // Current tier
     uint256 public currentTier;
@@ -62,7 +56,7 @@ contract USDTieredSTOStorage {
     mapping(address => mapping(uint8 => uint256)) public investorInvested;
 
     // List of active stable coin addresses
-    mapping (address => bool) internal usdTokenEnabled;
+    mapping (address => bool) internal stableTokenEnabled;
 
     // Default limit in USD for non-accredited investors multiplied by 10**18
     uint256 public nonAccreditedLimitUSD;
@@ -78,4 +72,6 @@ contract USDTieredSTOStorage {
 
     // Optional custom Oracles.
     mapping(bytes32 => mapping(bytes32 => address)) customOracles;
+
+    bytes32 public denominatedCurrency;
 }

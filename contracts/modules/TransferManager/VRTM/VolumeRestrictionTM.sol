@@ -457,7 +457,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         require(_holder != address(0));
         require(individualRestrictions.individualRestriction[_holder].endTime != 0);
         individualRestrictions.individualRestriction[_holder] = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
-        VolumeRestrictionLib.deleteHolderFromList(holderToRestrictionType, _holder, getDataStore(), TypeOfPeriod.OneDay);
+        VolumeRestrictionLib.deleteHolderFromList(holderToRestrictionType, _holder, TypeOfPeriod.OneDay);
         bucketData.userToBucket[_holder].lastTradedDayTime = 0;
         bucketData.userToBucket[_holder].sumOfLastPeriod = 0;
         bucketData.userToBucket[_holder].daysCovered = 0;
@@ -486,7 +486,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         require(_holder != address(0));
         require(individualRestrictions.individualDailyRestriction[_holder].endTime != 0);
         individualRestrictions.individualDailyRestriction[_holder] = VolumeRestriction(0, 0, 0, 0, RestrictionType(0));
-        VolumeRestrictionLib.deleteHolderFromList(holderToRestrictionType, _holder, getDataStore(), TypeOfPeriod.MultipleDays);
+        VolumeRestrictionLib.deleteHolderFromList(holderToRestrictionType, _holder, TypeOfPeriod.MultipleDays);
         bucketData.userToBucket[_holder].dailyLastTradedDayTime = 0;
         emit IndividualDailyRestrictionRemoved(_holder);
     }
@@ -789,7 +789,6 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
                 _isDefault,
                 fromTimestamp,
                 BokkyPooBahsDateTimeLibrary.diffDays(fromTimestamp, now),
-
                 daysCovered,
                 _bucketDetails
             );
@@ -911,7 +910,24 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
             // If the difference of days is greater than the rollingPeriod then sumOfLastPeriod will always be zero
             sumOfLastPeriod = 0;
             counter = counter.add(_diffDays);
-        } else {
+        }
+        else if (_diffDays > (_rollingPeriodInDays / 2)) {
+            // updating the counter
+            counter = counter + _diffDays;
+            // This condition is to check whether the first rolling period is covered or not
+            // if not then it continues and calculate the sumOfLastPeriod by summing up the trade value
+            // of the starting days of the period
+            if (counter >= _rollingPeriodInDays) {
+                sumOfLastPeriod = 0; // Re-calculation of sumOfLastPeriod
+                for (i = 0; i < (_rollingPeriodInDays - _diffDays); i++) {
+                    if (isDefault)
+                        sumOfLastPeriod = sumOfLastPeriod.add(bucketData.defaultBucket[_from][_bucketDetails.lastTradedDayTime - (i * 1 days)]);
+                    else
+                        sumOfLastPeriod = sumOfLastPeriod.add(bucketData.bucket[_from][_bucketDetails.lastTradedDayTime - (i * 1 days)]);
+                }
+            }
+        } 
+        else {
             for (i = 0; i < _diffDays; i++) {
                 counter++;
                 // This condition is to check whether the first rolling period is covered or not
@@ -1225,7 +1241,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         uint256[] memory endTime,
         RestrictionType[] memory typeOfRestriction
     ) {
-        return VolumeRestrictionLib.getRestrictionData(holderToRestrictionType, individualRestrictions, getDataStore());
+        return VolumeRestrictionLib.getRestrictionData(holderToRestrictionType, individualRestrictions, exemptions, getDataStore());
     }
 
     function _checkLengthOfArray(

@@ -143,7 +143,7 @@ contract("ModuleRegistryProxy", async (accounts) => {
                 { from: account_polymath }
             );
 
-            I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(new BN(0), I_GeneralTransferManagerLogic.address, I_PolymathRegistry.address, true, {
+            I_GeneralTransferManagerFactory = await GeneralTransferManagerFactory.new(new BN(0), new BN(0), I_GeneralTransferManagerLogic.address, I_PolymathRegistry.address, true, {
                 from: account_polymath
             });
 
@@ -192,7 +192,7 @@ contract("ModuleRegistryProxy", async (accounts) => {
     describe("Feed some data in storage", async () => {
         it("Register and verify the new module", async () => {
             I_GeneralPermissionManagerLogic = await GeneralPermissionManager.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: account_polymath });
-            I_GeneralPermissionManagerfactory = await GeneralPermissionManagerFactory.new(new BN(0), I_GeneralPermissionManagerLogic.address, I_PolymathRegistry.address, true, {
+            I_GeneralPermissionManagerfactory = await GeneralPermissionManagerFactory.new(new BN(0), new BN(0), I_GeneralPermissionManagerLogic.address, I_PolymathRegistry.address, true, {
                 from: account_polymath
             });
 
@@ -214,25 +214,30 @@ contract("ModuleRegistryProxy", async (accounts) => {
         });
 
         it("Should upgrade the version and implementation address -- Implementaion address should be a contract address", async () => {
-            await catchRevert(I_ModuleRegistryProxy.upgradeTo("1.1.0", account_temp, { from: account_polymath }));
+            await catchRevert(I_ModuleRegistryProxy.upgradeTo("1.1.0", account_temp, { from: account_polymath }),
+                "Cannot set a proxy implementation to a non-contract address");
         });
 
         it("Should upgrade the version and implementation address -- Implemenation address should not be 0x", async () => {
             await catchRevert(
-                I_ModuleRegistryProxy.upgradeTo("1.1.0", address_zero, { from: account_polymath })
+                I_ModuleRegistryProxy.upgradeTo("1.1.0", address_zero, { from: account_polymath }),
+                "Old address is not allowed and implementation address should not be 0x"
             );
         });
 
         it("Should upgrade the version and implementation address -- Implemenation address should not be the same address", async () => {
-            await catchRevert(I_ModuleRegistryProxy.upgradeTo("1.1.0", I_ModuleRegistry.address, { from: account_polymath }));
+            await catchRevert(I_ModuleRegistryProxy.upgradeTo("1.1.0", I_ModuleRegistry.address, { from: account_polymath }),
+                "Old address is not allowed and implementation address should not be 0x");
         });
 
         it("Should upgrade the version and implementation address -- same version as previous is not allowed", async () => {
-            await catchRevert(I_ModuleRegistryProxy.upgradeTo("1.0.0", I_MockModuleRegistry.address, { from: account_polymath }));
+            await catchRevert(I_ModuleRegistryProxy.upgradeTo("1.0.0", I_MockModuleRegistry.address, { from: account_polymath }),
+                "New version equals to current");
         });
 
         it("Should upgrade the version and implementation address -- empty version string is not allowed", async () => {
-            await catchRevert(I_ModuleRegistryProxy.upgradeTo("", I_MockModuleRegistry.address, { from: account_polymath }));
+            await catchRevert(I_ModuleRegistryProxy.upgradeTo("", I_MockModuleRegistry.address, { from: account_polymath }),
+                "Version should not be empty string");
         });
 
         it("Should upgrade the version and the implementation address successfully", async () => {
@@ -273,7 +278,8 @@ contract("ModuleRegistryProxy", async (accounts) => {
 
         it("Should change the ownership of the contract -- new address should not be 0x", async () => {
             await catchRevert(
-                I_ModuleRegistryProxy.transferProxyOwnership(address_zero, { from: account_polymath })
+                I_ModuleRegistryProxy.transferProxyOwnership(address_zero, { from: account_polymath }),
+                "Address should not be 0x"
             );
         });
 

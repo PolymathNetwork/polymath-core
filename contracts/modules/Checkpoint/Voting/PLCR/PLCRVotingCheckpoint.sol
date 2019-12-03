@@ -37,11 +37,11 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
     }
 
     /**
-     * @notice Use to create the ballot
-     * @param _commitDuration Unix time period till the voters commit there vote
-     * @param _revealDuration Unix time period till the voters reveal there vote starts when commit duration ends
-     * @param _noOfProposals Total number of proposal used in the ballot. In general it is 2 (For & Against)
-     * @param _quorumPercentage Minimum number of weight vote percentage requires to win a election.
+     * @notice Used to create the ballot
+     * @param _commitDuration Unix time period until the voters commit their vote
+     * @param _revealDuration Unix time period until the voters reveal their vote. Starts when commit period ends
+     * @param _noOfProposals Total number of proposals used in the ballot. In general it is two (For & Against)
+     * @param _quorumPercentage Minimum number of weighted vote percentage required to win a election.
      */
     function createBallot(
         uint256 _commitDuration,
@@ -58,11 +58,11 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
     }
 
     /**
-     * @notice Use to create the ballot
-     * @param _commitDuration Unix time period till the voters commit there vote
-     * @param _revealDuration Unix time period till the voters reveal there vote starts when commit duration ends
-     * @param _noOfProposals Total number of proposal used in the ballot. In general it is 2 (For & Against)
-     * @param _quorumPercentage Minimum number of weight vote percentage requires to win a election.
+     * @notice Used to create the ballot
+     * @param _commitDuration Unix time period until the voters commit their vote
+     * @param _revealDuration Unix time period until the voters reveal their vote. Starts when commit period ends
+     * @param _noOfProposals Total number of proposal used in the ballot. In general it is two (For & Against)
+     * @param _quorumPercentage Minimum number of weighted vote percentage required to win a election.
      * @param _checkpointId Valid checkpoint Id
      * @param _startTime startTime of the ballot
      */
@@ -125,7 +125,7 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
     /**
      * @notice Used to commit the vote
      * @param _ballotId Given ballot Id
-     * @param _secretVote It is secret hash value (hashed offchain)
+     * @param _secretVote The secret hash value (hashed offchain)
      */
     function commitVote(uint256 _ballotId, bytes32 _secretVote) external {
         // Check for the ballots array out of bound
@@ -150,8 +150,8 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
     /**
      * @notice Used to reveal the vote
      * @param _ballotId Given ballot Id
-     * @param _choiceOfProposal Proposal chossed by the voter. It varies from (1 to totalProposals)
-     * @param _salt used salt for hashing (unique for each user)
+     * @param _choiceOfProposal Proposal chosen by the voter. It varies from (1 to totalProposals)
+     * @param _salt Used salt for hashing (unique for each user)
      */
     function revealVote(uint256 _ballotId, uint256 _choiceOfProposal, uint256 _salt) external {
         // Check for the ballots array out of bound
@@ -180,7 +180,7 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
     }
 
     /**
-     * Change the given ballot exempted list
+     * @notice Change the given ballot exempted list
      * @param _ballotId Given ballot Id
      * @param _voter Address of the voter
      * @param _exempt Whether it is exempted or not
@@ -190,7 +190,7 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
     }
 
     /**
-     * Change the given ballot exempted list (Multi)
+     * @notice Change the given ballot exempted list (Multi)
      * @param _ballotId Given ballot Id
      * @param _voters Address of the voter
      * @param _exempts Whether it is exempted or not
@@ -212,7 +212,7 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
     }
 
     /**
-     * Use to check whether the voter is allowed to vote or not
+     * @notice Used to check whether the voter is allowed to vote or not
      * @param _ballotId The index of the target ballot
      * @param _voter Address of the voter
      * @return bool
@@ -223,9 +223,9 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
     }
 
     /**
-     * @notice Allows the token issuer to set the active stats of a ballot
+     * @notice Allows the token issuer to set the status of a ballot to active or not
      * @param _ballotId The index of the target ballot
-     * @param _isActive The bool value of the active stats of the ballot
+     * @param _isActive The bool value of the status of the ballot (active true or false)
      */
     function changeBallotStatus(uint256 _ballotId, bool _isActive) external withPerm(ADMIN) {
         // Check for the ballots array out of bound
@@ -353,8 +353,8 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
     }
 
     /**
-     * Return the commit relveal time duration of ballot
-     * @param _ballotId Id of a ballot
+     * @notice Return the commit reveal time duration of ballot
+     * @param _ballotId Id of the ballot
      */
     function getBallotCommitRevealDuration(uint256 _ballotId) external view returns(uint256, uint256) {
         Ballot memory ballot = ballots[_ballotId];
@@ -365,14 +365,14 @@ contract PLCRVotingCheckpoint is PLCRVotingCheckpointStorage, VotingCheckpoint {
     }
 
     /**
-     * @notice This function returns the signature of configure function
+     * @notice Returns the signature of the configure function
      */
     function getInitFunction() external pure returns(bytes4) {
         return bytes4(0);
     }
 
     /**
-     * @notice Return the permissions flag that are associated with CountTransferManager
+     * @notice Returns the permissions flag that are associated with the module
      */
     function getPermissions() external view returns(bytes32[] memory) {
         bytes32[] memory allPermissions = new bytes32[](1);

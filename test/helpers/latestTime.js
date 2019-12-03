@@ -5,5 +5,5 @@ export default async function latestTime() {
 }
 
 async function latestBlock() {
-    return web3.eth.getBlock("latest");
+    return await web3.eth.getBlock("latest");
 }

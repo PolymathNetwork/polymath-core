@@ -59,6 +59,19 @@ interface IPermissionManager {
     ) external;
 
     /**
+     * @notice Used to add multiple delegates in a batch
+     * @param _delegates An array of Ethereum addresses of the delegates
+     * @param _details An array of details about the delegates i.e `Belongs to financial firm`
+     */
+    function addDelegateMulti(address[] calldata _delegates, bytes32[] calldata _details) external;
+
+    /**
+     * @notice Used to delete a list of delegates
+     * @param _delegates An array of Ethereum address of delegates
+     */
+    function deleteDelegateMulti(address[] calldata _delegates) external;
+
+    /**
     * @notice Used to return all delegates with a given permission and module
     * @param _module Ethereum contract address of the module
     * @param _perm Permission flag

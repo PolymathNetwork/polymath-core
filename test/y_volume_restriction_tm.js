@@ -192,9 +192,9 @@ contract('VolumeRestrictionTransferManager', accounts => {
         ] = instances;
 
         // STEP 5: Deploy the VolumeRestrictionTMFactory
-        [I_VolumeRestrictionTMFactory] = await deployVRTMAndVerifyed(account_polymath, I_MRProxied, 0);
+        [I_VolumeRestrictionTMFactory] = await deployVRTMAndVerifyed(account_polymath, I_MRProxied, 0, new BN(0));
         // STEP 6: Deploy the VolumeRestrictionTMFactory
-        [P_VolumeRestrictionTMFactory] = await deployVRTMAndVerifyed(account_polymath, I_MRProxied, new BN(web3.utils.toWei("500")));
+        [P_VolumeRestrictionTMFactory] = await deployVRTMAndVerifyed(account_polymath, I_MRProxied, new BN(web3.utils.toWei("500")), new BN(0));
 
         // Printing all the contract addresses
         console.log(`
@@ -310,7 +310,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     {
                         from: account_polymath
                     }
-                )
+                ),
+                "Invalid permission"
             );
         })
 
@@ -328,7 +329,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "revert"
             );
         })
 
@@ -345,7 +347,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "revert"
             );
         })
 
@@ -363,7 +366,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "revert"
             );
         })
 
@@ -380,7 +384,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "Invalid value"
             );
         })
 
@@ -397,11 +402,12 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "Invalid startTime"
             );
         })
 
-        it("Should add the restriction -- failed because of bad parameters i.e invalid dates", async() => {
+        it("Should add the restriction -- failed because of bad parameters i.e invalid dates (start time > end time)", async() => {
             let newLatestTime = await getLatestTime();
             await catchRevert(
                 I_VolumeRestrictionTM.addIndividualRestriction(
@@ -414,7 +420,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "revert"
             );
         });
 
@@ -431,7 +438,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "Invalid rollingperiod"
             );
         });
 
@@ -448,7 +456,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "Invalid rollingperiod"
             );
         });
 
@@ -465,7 +474,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "Invalid times"
             );
         });
 
@@ -502,7 +512,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     {
                         from: account_polymath
                     }
-                )
+                ),
+                "Invalid permission"
             )
         });
 
@@ -519,7 +530,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "Length mismatch"
             )
         });
 
@@ -536,7 +548,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     {
                         from: account_polymath
                     }
-                )
+                ),
+                "Length mismatch"
             )
         });
 
@@ -553,7 +566,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "Length mismatch"
             )
         });
 
@@ -570,7 +584,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "Length mismatch"
             )
         });
 
@@ -587,7 +602,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "Length mismatch"
             )
         });
 
@@ -604,7 +620,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "Length mismatch"
             )
         });
 
@@ -637,7 +654,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "revert"
             );
         });
 
@@ -654,7 +672,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
         it("Should remove the restriction -- failed because restriction not present anymore", async() => {
             await catchRevert(
-                I_VolumeRestrictionTM.removeIndividualRestriction(account_investor2, {from: token_owner})
+                I_VolumeRestrictionTM.removeIndividualRestriction(account_investor2, {from: token_owner}),
+                "revert"
             );
         });
 
@@ -711,7 +730,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Should not successfully transact the tokens -- failed because volume is above the limit", async() => {
             await increaseTime(duration.seconds(10));
             await catchRevert(
-                I_SecurityToken.transfer(account_investor3, new BN(web3.utils.toWei("13")), { from: account_investor1})
+                I_SecurityToken.transfer(account_investor3, new BN(web3.utils.toWei("13")), { from: account_investor1}),
+                "Transfer Invalid"
             );
         });
 
@@ -762,7 +782,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     {
                         from: account_investor1
                     }
-                )
+                ),
+                "Invalid permission"
             );
         })
 
@@ -772,13 +793,14 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 I_VolumeRestrictionTM.addIndividualDailyRestriction(
                     account_investor3,
                     new BN(web3.utils.toWei("6")),
-                    newLatestTime.add(new BN(duration.seconds(1))),
+                    newLatestTime.add(new BN(duration.seconds(5))),
                     newLatestTime.add(new BN(duration.days(4))),
                     1,
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "Invalid value"
             );
         })
 
@@ -794,7 +816,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "revert"
             );
         })
 
@@ -810,7 +833,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     {
                         from: token_owner
                     }
-                )
+                ),
+                "revert"
             );
         })
 
@@ -879,7 +903,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
         it("Should fail to transfer more tokens --because of the above limit", async() => {
             await catchRevert(
-                I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei(".1")), {from: account_investor3})
+                I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei(".1")), {from: account_investor3}),
+                "Transfer Invalid"
             );
         });
 
@@ -973,7 +998,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Should fail to transfer by investor 1 -- because voilating the individual daily", async() => {
             // transfer 4 tokens -- voilate the daily restriction
             await catchRevert(
-                I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("4")), {from: account_investor1})
+                I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("4")), {from: account_investor1}),
+                "Transfer Invalid"
             );
         });
 
@@ -983,7 +1009,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
                 account_investor3,
                 new BN(1536).mul(new BN(10).pow(new BN(14))), // 15.36 tokens as totalsupply is 1000
                 newLatestTime.add(new BN(duration.seconds(2))),
-                6,
+                6,                                              // 6 days rolling period
                 newLatestTime.add(new BN(duration.days(15))),
                 1,
                 {
@@ -1039,16 +1065,18 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal(amt, 4);
         });
 
-        it("Should fail during transferring more tokens by investor3 -- Voilating the daily Limit", async() => {
+        it("Should fail during transferring more tokens by investor3 -- Violating the daily Limit", async() => {
             await catchRevert(
-                I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1")), {from: account_investor3})
+                I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1")), {from: account_investor3}),
+                "Transfer Invalid"
             );
         });
 
         it("Should remove the daily individual limit and transfer more tokens on a same day -- failed because of bad owner", async() => {
             // remove the Individual daily restriction
             await catchRevert(
-                I_VolumeRestrictionTM.removeIndividualDailyRestriction(account_investor3, {from: account_investor4})
+                I_VolumeRestrictionTM.removeIndividualDailyRestriction(account_investor3, {from: account_investor4}),
+                "Invalid permission"
             );
         })
 
@@ -1135,7 +1163,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
             // Fail to sell more tokens than the limit
             await catchRevert(
-                I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("2")), {from: account_investor3})
+                I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("2")), {from: account_investor3}),
+                "Transfer Invalid"
             );
         });
 
@@ -1151,7 +1180,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
                     {
                         from: account_polymath
                     }
-                )
+                ),
+                "Invalid permission"
             );
         });
 
@@ -1228,7 +1258,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
         it("Should fail to transfer the tokens after completion of the total amount", async() => {
             await catchRevert(
-                I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("0.3")), {from: account_investor3})
+                I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("0.3")), {from: account_investor3}),
+                "Transfer Invalid"
             );
         })
 
@@ -1267,13 +1298,13 @@ contract('VolumeRestrictionTransferManager', accounts => {
             console.log(`Diff Days: ${(newLatestTime - ((await I_VolumeRestrictionTM.getIndividualBucketDetailsToUser.call(account_investor3))[0]).toString()) / 86400}`);
             let allowedAmount = (tempArray3[0] + 1.1);
             await catchRevert(
-                I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei(allowedAmount.toString())), {from: account_investor3})
+                I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei(allowedAmount.toString())), {from: account_investor3}),
+                "Transfer Invalid"
             );
         })
 
         it("Should successfully to transact tokens in the second rolling period", async() => {
             // Should transact freely tokens daily limit is also ended
-
             let startTime = (await I_VolumeRestrictionTM.getIndividualRestriction.call(account_investor3))[1].toString();
             let startTimedaily = (await I_VolumeRestrictionTM.getIndividualDailyRestriction.call(account_investor3))[1].toString();
             let rollingPeriod = (await I_VolumeRestrictionTM.getIndividualRestriction.call(account_investor3))[2].toString();
@@ -1433,7 +1464,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Should fail to transfer above the daily limit", async() => {
             await increaseTime(2); // increase time to layoff the time gap
             await catchRevert(
-                I_SecurityToken.transfer(account_investor3, new BN(web3.utils.toWei("5")), {from: account_investor4})
+                I_SecurityToken.transfer(account_investor3, new BN(web3.utils.toWei("5")), {from: account_investor4}),
+                "Transfer Invalid"
             )
         })
 
@@ -1537,7 +1569,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
         it("Should fail to transfer more tokens than the available default limit", async() => {
             await catchRevert(
-                I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("3")), {from: account_investor3})
+                I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("3")), {from: account_investor3}),
+                "Transfer Invalid"
             );
         });
 
@@ -1572,7 +1605,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
             // Try to transact more on the same day but fail
             await catchRevert(
-                I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1")), {from: account_investor3})
+                I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("1")), {from: account_investor3}),
+                "Transfer Invalid"
             );
         });
 
@@ -1602,7 +1636,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
         it("Should not able to transfer tokens more than the default daily restriction", async() => {
             await increaseTime(duration.seconds(15));
             await catchRevert(
-                I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("3")), {from: account_investor3})
+                I_SecurityToken.transfer(account_investor2, new BN(web3.utils.toWei("3")), {from: account_investor3}),
+                "Transfer Invalid"
             );
         });
 
@@ -1634,7 +1669,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
         it("Should add the token holder in the exemption list -- failed because of bad owner", async() => {
             await catchRevert(
-                I_VolumeRestrictionTM.changeExemptWalletList(account_investor4, true, {from: account_polymath})
+                I_VolumeRestrictionTM.changeExemptWalletList(account_investor4, true, {from: account_polymath}),
+                "Invalid permission"
             );
         });
 
@@ -1675,7 +1711,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
 
         it("Should fail to unexempt the same address again", async() => {
             await catchRevert(
-                I_VolumeRestrictionTM.changeExemptWalletList(account_investor1, false, {from: token_owner})
+                I_VolumeRestrictionTM.changeExemptWalletList(account_investor1, false, {from: token_owner}),
+                "revert"
             );
         });
 
@@ -1873,7 +1910,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await increaseTime(duration.days(0.6));
             //sell tokens upto the limit
             await catchRevert(
-                I_SecurityToken.transfer(account_investor2, web3.utils.toWei("5"), {from: account_delegate2})
+                I_SecurityToken.transfer(account_investor2, web3.utils.toWei("5"), {from: account_delegate2}),
+                "Transfer Invalid"
             );
         });
 
@@ -1929,7 +1967,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await increaseTime(duration.minutes(2));
 
             // sell tokens when user restriction changes from the default restriction to individual restriction
-            await catchRevert (I_SecurityToken.transfer(account_investor1, web3.utils.toWei("5")), {from: account_delegate2});
+            await catchRevert (I_SecurityToken.transfer(account_investor1, web3.utils.toWei("5"), {from: account_delegate2}),
+                "Transfer Invalid");
 
             // allow to transact when the day limit is with in the restriction. default allow to transact maximum 5 tokens within
             // a given rolling period. 4 tokens are already sold here user trying to sell 1 more token on the same day
@@ -1971,7 +2010,7 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal(await I_VolumeRestrictionTMFactory.title.call(),
                         "Volume Restriction Transfer Manager",
                         "Wrong Module added");
-            assert.equal(await I_VolumeRestrictionTMFactory.version.call(), "3.0.0");
+            assert.equal(await I_VolumeRestrictionTMFactory.version.call(), "3.1.0");
         });
 
         it("Should get the tags of the factory", async() => {

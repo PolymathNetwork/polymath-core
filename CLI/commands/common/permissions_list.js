@@ -1,48 +1,63 @@
 function getPermissionList() {
     return {
         ERC20DividendCheckpoint: {
-            pushDividendPayment: "OPERATOR",
-            pushDividendPaymentToAddresses: "OPERATOR",
-            createCheckpoint: "OPERATOR",
-            reclaimDividend: "OPERATOR",
-            withdrawWithholding: "OPERATOR",
+            changeWallet: "ONLY_OWNER",
             setDefaultExcluded: "ADMIN",
             setWithholding: "ADMIN",
             setWithholdingFixed: "ADMIN",
             createDividend: "ADMIN",
             createDividendWithCheckpoint: "ADMIN",
             createDividendWithExclusions: "ADMIN",
-            createDividendWithCheckpointAndExclusions: "ADMIN"
+            createDividendWithCheckpointAndExclusions: "ADMIN",
+            updateDividendDates: "ADMIN",
+            pushDividendPayment: "OPERATOR",
+            pushDividendPaymentToAddresses: "OPERATOR",
+            createCheckpoint: "OPERATOR",
+            reclaimDividend: "OPERATOR",
+            withdrawWithholding: "OPERATOR"
         },
         EtherDividendCheckpoint: {
-            pushDividendPayment: "OPERATOR",
-            pushDividendPaymentToAddresses: "OPERATOR",
-            createCheckpoint: "OPERATOR",
-            reclaimDividend: "OPERATOR",
-            withdrawWithholding: "OPERATOR",
+            changeWallet: "ONLY_OWNER",
             setDefaultExcluded: "ADMIN",
             setWithholding: "ADMIN",
             setWithholdingFixed: "ADMIN",
             createDividend: "ADMIN",
             createDividendWithCheckpoint: "ADMIN",
             createDividendWithExclusions: "ADMIN",
-            createDividendWithCheckpointAndExclusions: "ADMIN"
+            createDividendWithCheckpointAndExclusions: "ADMIN",
+            updateDividendDates: "ADMIN",
+            pushDividendPayment: "OPERATOR",
+            pushDividendPaymentToAddresses: "OPERATOR",
+            createCheckpoint: "OPERATOR",
+            reclaimDividend: "OPERATOR",
+            withdrawWithholding: "OPERATOR"
         },
         GeneralPermissionManager: {
             addDelegate: "ADMIN",
+            addDelegateMulti: "ADMIN",
             deleteDelegate: "ADMIN",
+            deleteDelegateMulti: "ADMIN",
             changePermission: "ADMIN",
             changePermissionMulti: "ADMIN"
         },
+        CappedSTO: {
+            allowPreMinting: "ADMIN",
+            revokePreMintingFlag: "ADMIN",
+            finalize: "ADMIN",
+            changeAllBeneficialInvestments: "OPERATOR"
+        },
         USDTieredSTO: {
-            modifyFunding: "ONLY_OWNER",
-            modifyLimits: "ONLY_OWNER",
-            modifyTiers: "ONLY_OWNER",
-            modifyTimes: "ONLY_OWNER",
             modifyAddresses: "ONLY_OWNER",
-            finalize: "ONLY_OWNER",
-            changeNonAccreditedLimit: "ONLY_OWNER",
-            changeAllowBeneficialInvestments: "ONLY_OWNER"
+            modifyOracles: "ONLY_OWNER",
+            allowPreMinting: "ADMIN",
+            revokePreMintingFlag: "ADMIN",
+            finalize: "ADMIN",
+            modifyFunding: "OPERATOR",
+            modifyLimits: "OPERATOR",
+            modifyTiers: "OPERATOR",
+            modifyTimes: "OPERATOR",
+            changeNonAccreditedLimit: "OPERATOR",
+            changeAllowBeneficialInvestments: "OPERATOR"
         },
         PreSaleSTO: {
             allocateTokens: "ADMIN",
@@ -53,15 +68,26 @@ function getPermissionList() {
         },
         GeneralTransferManager: {
             changeIssuanceAddress: "ADMIN",
-            changeSigningAddress: "ADMIN",
-            changeAllowAllTransfers: "ADMIN",
-            changeAllowAllWhitelistTransfers: "ADMIN",
-            changeAllowAllWhitelistIssuances: "ADMIN",
-            changeAllowAllBurnTransfers: "ADMIN",
+            changeDefaults: "ADMIN",
+            modifyTransferRequirements: "ADMIN",
+            modifyTransferRequirementsMulti: "ADMIN",
             modifyKYCData: "ADMIN",
             modifyKYCDataMulti: "ADMIN",
             modifyInvestorFlag: "ADMIN",
             modifyInvestorFlagMulti: "ADMIN"
+        },
+        LockUpTransferManager: {
+            addNewLockUpTypeMulti: "ADMIN",
+            addLockUpByName: "ADMIN",
+            addLockUpByNameMulti: "ADMIN",
+            addNewLockUpToUser: "ADMIN",
+            addNewLockUpToUserMulti: "ADMIN",
+            removeLockUpFromUser: "ADMIN",
+            removeLockUpFromUserMulti: "ADMIN",
+            removeLockupType: "ADMIN",
+            removeLockupTypeMulti: "ADMIN",
+            modifyLockUpType: "ADMIN",
+            modifyLockUpTypeMulti: "ADMIN"
         },
         ManualApprovalTransferManager: {
             addManualApproval: "ADMIN",
@@ -79,18 +105,24 @@ function getPermissionList() {
         },
         VolumeRestrictionTM: {
             changeExemptWalletList: "ADMIN",
+            addDefaultRestriction: "ADMIN",
+            addDefaultDailyRestriction: "ADMIN",
             addIndividualRestriction: "ADMIN",
             addIndividualRestrictionMulti: "ADMIN",
-            addGlobalRestriction: "ADMIN",
-            addDailyGlobalRestriction: "ADMIN",
+            addIndividualDailyRestriction: "ADMIN",
+            addIndividualDailyRestrictionMulti: "ADMIN",
             removeIndividualRestriction: "ADMIN",
             removeIndividualRestrictionMulti: "ADMIN",
-            removeGlobalRestriction: "ADMIN",
-            removeDailyGlobalRestriction: "ADMIN",
+            removeIndividualDailyRestriction: "ADMIN",
+            removeIndividualDailyRestrictionMulti: "ADMIN",
+            removeDefaultDailyRestriction: "ADMIN",
+            removeDefaultRestriction: "ADMIN",
             modifyIndividualRestriction: "ADMIN",
             modifyIndividualRestrictionMulti: "ADMIN",
-            modifyGlobalRestriction: "ADMIN",
-            modifyDailyGlobalRestriction: "ADMIN"
+            modifyIndividualDailyRestriction: "ADMIN",
+            modifyIndividualDailyRestrictionMulti: "ADMIN",
+            modifyDefaultRestriction: "ADMIN",
+            modifyDefaultDailyRestriction: "ADMIN"
         },
         BlacklistTransferManager: {
             addBlacklistType: "ADMIN",
@@ -106,13 +138,14 @@ function getPermissionList() {
             deleteInvestorFromAllBlacklist: "ADMIN",
             deleteInvestorFromAllBlacklistMulti: "ADMIN",
             deleteInvestorFromBlacklist: "ADMIN",
-            deleteMultiInvestorsFromBlacklistMulti: "ADMIN",
+            deleteMultiInvestorsFromBlacklistMulti: "ADMIN"
+        },
+        RestrictedPartialSaleTM: {
+            changeExemptWalletList: "OPERATOR",
+            changeExemptWalletListMulti: "OPERATOR"
         },
         VestingEscrowWallet: {
             changeTreasuryWallet: "ONLY_OWNER",
-            sendToTreasury: "OPERATOR",
-            pushAvailableTokens: "OPERATOR",
-            pushAvailableTokensMulti: "OPERATOR",
             depositTokens: "ADMIN",
             addTemplate: "ADMIN",
             removeTemplate: "ADMIN",
@@ -124,14 +157,22 @@ function getPermissionList() {
             addScheduleMulti: "ADMIN",
             addScheduleFromTemplateMulti: "ADMIN",
             revokeSchedulesMulti: "ADMIN",
-            modifyScheduleMulti: "ADMIN"
+            modifyScheduleMulti: "ADMIN",
+            sendToTreasury: "OPERATOR",
+            pushAvailableTokens: "OPERATOR",
+            pushAvailableTokensMulti: "OPERATOR"
+        },
+        Issuance: {
+            issueTokens: "ADMIN",
+            issueTokensMulti: "ADMIN"
         }
     }
 }
 
 module.exports = {
+    getPermissionList,
     verifyPermission: function (contractName, functionName) {
-        let list = getPermissionList();
+        const list = getPermissionList();
         try {
             return list[contractName][functionName]
         } catch (e) {

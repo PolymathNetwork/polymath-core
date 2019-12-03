@@ -7,6 +7,7 @@ let securityTokenABI;
 let iSecurityTokenABI;
 let stoInterfaceABI;
 let cappedSTOABI;
+let issuanceABI;
 let usdTieredSTOABI;
 let generalTransferManagerABI;
 let manualApprovalTransferManagerABI;
@@ -15,12 +16,14 @@ let countTransferManagerABI;
 let percentageTransferManagerABI;
 let lockUpTransferManagerABI;
 let volumeRestrictionTMABI;
+let restrictedPartialSaleTMABI;
 let generalPermissionManagerABI;
 let polyTokenABI;
 let cappedSTOFactoryABI;
 let usdTieredSTOFactoryABI;
 let erc20DividendCheckpointABI;
 let etherDividendCheckpointABI;
+let advancedPLCRVotingCheckpointABI;
 let vestingEscrowWalletABI;
 let moduleInterfaceABI;
 let ownableABI;
@@ -41,12 +44,14 @@ try {
     stoInterfaceABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/ISTO.json`).toString()).abi;
     cappedSTOABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/CappedSTO.json`).toString()).abi;
     usdTieredSTOABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/USDTieredSTO.json`).toString()).abi;
+    issuanceABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/Issuance.json`).toString()).abi;
     generalTransferManagerABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/GeneralTransferManager.json`).toString()).abi;
     manualApprovalTransferManagerABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/ManualApprovalTransferManager.json`).toString()).abi;
     countTransferManagerABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/CountTransferManager.json`).toString()).abi;
     percentageTransferManagerABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/PercentageTransferManager.json`).toString()).abi;
     blacklistTransferManagerABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/BlacklistTransferManager.json`).toString()).abi;
     volumeRestrictionTMABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/VolumeRestrictionTM.json`).toString()).abi;
+    restrictedPartialSaleTMABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/RestrictedPartialSaleTM.json`).toString()).abi;
     lockUpTransferManagerABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/LockUpTransferManager.json`).toString()).abi;
     generalPermissionManagerABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/GeneralPermissionManager.json`).toString()).abi;
     polyTokenABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/PolyTokenFaucet.json`).toString()).abi;
@@ -54,6 +59,7 @@ try {
     usdTieredSTOFactoryABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/USDTieredSTOFactory.json`).toString()).abi;
     erc20DividendCheckpointABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/ERC20DividendCheckpoint.json`).toString()).abi;
     etherDividendCheckpointABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/EtherDividendCheckpoint.json`).toString()).abi;
+    advancedPLCRVotingCheckpointABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/AdvancedPLCRVotingCheckpoint.json`).toString()).abi;
     vestingEscrowWalletABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/VestingEscrowWallet.json`).toString()).abi;
     moduleInterfaceABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/IModule.json`).toString()).abi;
     ownableABI = JSON.parse(require('fs').readFileSync(`${__dirname}/../../../build/contracts/Ownable.json`).toString()).abi;
@@ -99,6 +105,9 @@ module.exports = {
     usdTieredSTO: function () {
         return usdTieredSTOABI;
     },
+    issuance: function () {
+        return issuanceABI;
+    },
     generalTransferManager: function () {
         return generalTransferManagerABI;
     },
@@ -120,6 +129,9 @@ module.exports = {
     volumeRestrictionTM: function () {
         return volumeRestrictionTMABI;
     },
+    restrictedPartialSaleTM: function () {
+        return restrictedPartialSaleTMABI;
+    },
     generalPermissionManager: function () {
         return generalPermissionManagerABI;
     },
@@ -137,6 +149,9 @@ module.exports = {
     },
     etherDividendCheckpoint: function () {
         return etherDividendCheckpointABI;
+    },
+    advancedPLCRVotingCheckpointABI: function () {
+        return advancedPLCRVotingCheckpointABI;
     },
     vestingEscrowWallet: function () {
         return vestingEscrowWalletABI;

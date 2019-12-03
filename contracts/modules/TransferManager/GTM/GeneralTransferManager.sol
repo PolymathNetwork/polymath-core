@@ -1,5 +1,6 @@
 pragma solidity 0.5.8;
 
+import "../../../interfaces/ITreasuryModule.sol";
 import "../TransferManager.sol";
 import "../../../libraries/Encoder.sol";
 import "../../../libraries/VersionUtils.sol";
@@ -115,7 +116,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
             if (target == address(this))
                 _processTransferSignature(nonce, validFrom, validTo, data);
         }
-        (Result success,) = _verifyTransfer(_from, _to);
+        (Result success,) = _verifyTransfer(_to, _from, 0, 0, 0, 0);
         return success;
     }
 
@@ -134,23 +135,107 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
      * @notice Default implementation of verifyTransfer used by SecurityToken
      * @param _from Address of the sender
      * @param _to Address of the receiver
+     * @param _data off-chain signed data
     */
     function verifyTransfer(
         address _from,
         address _to,
         uint256 /*_amount*/,
-        bytes memory /* _data */
+        bytes memory _data
     )
         public
         view
         returns(Result, bytes32)
     {
-        return _verifyTransfer(_from, _to);
+        if (_data.length > 32) {
+            address target;
+            uint256 nonce;
+            uint256 validFrom;
+            uint256 validTo;
+            bytes memory data;
+            (target, nonce, validFrom, validTo, data) = abi.decode(_data, (address, uint256, uint256, uint256, bytes));
+            if (target == address(this)) {
+                // Reusing the variable to avoid stack too deep error
+                target = _from;
+                (
+                    bool success, 
+                    address[] memory investor,
+                    uint256[] memory canSendAfter,
+                    uint256[] memory canRecieveAfter,
+                    uint256[] memory expiryTime
+                ) = _processTransferSignatureView(data, validFrom, validTo, nonce);
+                if (success) {
+                    // Reusing the variable to avoid stack too deep error
+                    (validFrom, validTo) = (MAX, MAX);
+                    for (nonce = 0; nonce < investor.length; nonce++) {
+                        // Searching the _to & _from token holder to get the required details for _verifyTransfer validation 
+                        if (investor[nonce] == _to)
+                            validTo = nonce;
+                        else if (investor[nonce] == _from)
+                            validFrom = nonce;
+                        if (validFrom != MAX && validTo != MAX)
+                            break;   
+                    }
+                    validFrom == MAX ? (validFrom, nonce) = _getKYCDataValues(target) : (validFrom, nonce) = (canSendAfter[validFrom], expiryTime[validFrom]);
+                    if (validTo != MAX) { 
+                        return _verifyTransfer(
+                            _to,
+                            target,
+                            uint64(validFrom),
+                            uint64(canRecieveAfter[validTo]),
+                            uint64(nonce),
+                            uint64(expiryTime[validTo])
+                        );
+                    } else {
+                        return (Result.NA, getAddressBytes32());
+                    }
+                }
+            }
+        }
+        return _verifyTransfer(_to, _from, 0, 0, 0, 0);
+    }
+
+    function _getKYCDataValues(address _target) internal view returns (uint64 canSendAfter, uint64 fromExpiry) {
+        if (_isValidTreasuryWallet(_target)) {
+            (canSendAfter, fromExpiry) = (uint64(now - 1), uint64(now + 1));
+        } else {
+            (canSendAfter, fromExpiry) = _getKYCValuesFrom(_target);
+        }
+    }
+
+    function _processTransferSignatureView(
+        bytes memory _data,
+        uint256 _validFrom,
+        uint256 _validTo,
+        uint256 _nonce
+    ) 
+        internal
+        view
+        returns 
+        (
+            bool verified, 
+            address[] memory investor,
+            uint256[] memory canSendAfter,
+            uint256[] memory canReceiveAfter,
+            uint256[] memory expiryTime
+        ) 
+    {
+        bytes memory signature;
+        (investor, canSendAfter, canReceiveAfter, expiryTime, signature) =
+            abi.decode(_data, (address[], uint256[], uint256[], uint256[], bytes));
+        (verified,) = _verifySignedKYCData(
+            investor, canSendAfter, canReceiveAfter, expiryTime, _validFrom, _validTo, _nonce, signature, true
+        );
+        return (verified, investor, canSendAfter, canReceiveAfter, expiryTime);
     }
 
     function _verifyTransfer(
+        address _to,
         address _from,
-        address _to
+        uint64 _canSendAfter,
+        uint64 _canReceiveAfter,
+        uint64 _toExpiry,
+        uint64 _fromExpiry
     )
         internal
         view
@@ -158,11 +243,6 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     {
         if (!paused) {
             TransferRequirements memory txReq;
-            uint64 canSendAfter;
-            uint64 fromExpiry;
-            uint64 toExpiry;
-            uint64 canReceiveAfter;
-
             if (_from == issuanceAddress) {
                 txReq = transferRequirements[uint8(TransferType.ISSUANCE)];
             } else if (_to == address(0)) {
@@ -170,22 +250,81 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
             } else {
                 txReq = transferRequirements[uint8(TransferType.GENERAL)];
             }
+            // This if condition use to differentiate the read-only call & write call
+            // Transaction will fall into the `if` only when the call is write type
+            if (_toExpiry == 0) {
 
-            (canSendAfter, fromExpiry, canReceiveAfter, toExpiry) = _getValuesForTransfer(_from, _to);
+                (_canSendAfter, _fromExpiry) = _getKYCValuesFrom(_from);
 
-            if ((txReq.fromValidKYC && !_validExpiry(fromExpiry)) || (txReq.toValidKYC && !_validExpiry(toExpiry))) {
+                (_canReceiveAfter, _toExpiry) = _getKYCValuesTo(_to);  
+
+                // Below block of code is used to know whether from or to address is treasury wallet/module address or not
+                // is any of the address is comes under the treasury wallet/module address list then we will skip the GTM restriction on
+                // that address.
+                if (_fromExpiry == 0 && _from != issuanceAddress) {
+                    if (_isWhitelistModule(_from))
+                        (_canSendAfter, _fromExpiry) = (uint64(now - 1), uint64(now + 1));
+                    else if (_isValidTreasuryWallet(_from))
+                        (_canSendAfter, _fromExpiry) = (uint64(now - 1), uint64(now + 1));
+                }
+                if (_toExpiry == 0) {
+                    if (_isWhitelistModule(_to) || _isValidTreasuryWallet(_to))
+                        (_canReceiveAfter, _toExpiry) = (uint64(now - 1), uint64(now + 1));
+                }
+            }
+
+            if ((txReq.fromValidKYC && !_validExpiry(_fromExpiry)) || (txReq.toValidKYC && !_validExpiry(_toExpiry))) {
                 return (Result.NA, bytes32(0));
             }
 
-            (canSendAfter, canReceiveAfter) = _adjustTimes(canSendAfter, canReceiveAfter);
+            (_canSendAfter, _canReceiveAfter) = _adjustTimes(_canSendAfter, _canReceiveAfter);
 
-            if ((txReq.fromRestricted && !_validLockTime(canSendAfter)) || (txReq.toRestricted && !_validLockTime(canReceiveAfter))) {
+            if ((txReq.fromRestricted && !_validLockTime(_canSendAfter)) || (txReq.toRestricted && !_validLockTime(_canReceiveAfter))) {
                 return (Result.NA, bytes32(0));
             }
 
             return (Result.VALID, getAddressBytes32());
         }
         return (Result.NA, bytes32(0));
+    }
+
+
+    function _isValidTreasuryWallet(address _wallet) internal view returns(bool) {
+        address _treasury = securityToken.getTreasuryWallet();
+        if (_treasury == _wallet) 
+            return true;
+        else {
+            address[] memory modules = securityToken.getModulesByType(WHITELISTTREASURY);
+            uint256 len = modules.length;
+            uint256 i;
+            address module;
+            bool isArchived;
+            for (i = 0; i < len; i++) {
+                (,module,,isArchived,,) = securityToken.getModule(modules[i]);
+                if (!isArchived) {
+                    _treasury = ITreasuryModule(module).getTreasuryWallet();
+                    if (_treasury == _wallet)
+                        return true;
+                }
+            }
+            return false;
+        }
+    }
+
+    function _isWhitelistModule(address _holder) internal view returns(bool) {
+        uint8[] memory types;
+        bool isArchived;
+        address module;
+        // Use getModule() function to avoid the malicious module change its factory type after adding
+        // into the securityToken 
+        (,module,,isArchived,types,)= securityToken.getModule(_holder);
+        if (module != address(0) && !isArchived) {
+            for (uint256 i = 0; i < types.length; i++) {
+                if (types[i] == WHITELISTMODULE)  // Validating the module type to allow the non whitelist address(module)
+                    return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -294,7 +433,7 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         require(_investor != address(0), "Invalid investor");
         IDataStore dataStore = getDataStore();
         if (!_isExistingInvestor(_investor, dataStore)) {
-           dataStore.insertAddress(INVESTORSKEY, _investor);
+            dataStore.insertAddress(INVESTORSKEY, _investor);
         }
         uint256 _data = VersionUtils.packKYC(_canSendAfter, _canReceiveAfter, _expiryTime, uint8(1));
         dataStore.setUint256(_getKey(WHITELIST, _investor), _data);
@@ -351,9 +490,9 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         require(_investor != address(0), "Invalid investor");
         IDataStore dataStore = getDataStore();
         if (!_isExistingInvestor(_investor, dataStore)) {
-           dataStore.insertAddress(INVESTORSKEY, _investor);
-           //KYC data can not be present if _isExistingInvestor is false and hence we can set packed KYC as uint256(1) to set `added` as true
-           dataStore.setUint256(_getKey(WHITELIST, _investor), uint256(1));
+            dataStore.insertAddress(INVESTORSKEY, _investor);
+            //KYC data can not be present if _isExistingInvestor is false and hence we can set packed KYC as uint256(1) to set `added` as true
+            dataStore.setUint256(_getKey(WHITELIST, _investor), uint256(1));
         }
         //NB Flags are packed together in a uint256 to save gas. We can have a maximum of 256 flags.
         uint256 flags = dataStore.getUint256(_getKey(INVESTORFLAGS, _investor));
@@ -480,6 +619,55 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         );
     }
 
+    function _verifySignedKYCData(
+        address[] memory _investor,
+        uint256[] memory _canSendAfter,
+        uint256[] memory _canReceiveAfter,
+        uint256[] memory _expiryTime,
+        uint256 _validFrom,
+        uint256 _validTo,
+        uint256 _nonce,
+        bytes memory _signature,
+        bool _isReadOnlyCall
+    )
+        internal
+        view
+        returns(bool isVerifiedSig, address signer)
+    {
+        if (_investor.length != _canSendAfter.length ||
+            _canSendAfter.length != _canReceiveAfter.length ||
+            _canReceiveAfter.length != _expiryTime.length
+        ) {
+            return (false, address(0));
+        }
+
+        if (_validFrom > now || _validTo < now) {
+            return (false, address(0));
+        }
+
+        bytes32 hash = keccak256(
+            abi.encodePacked(this, _investor, _canSendAfter, _canReceiveAfter, _expiryTime, _validFrom, _validTo, _nonce)
+        );
+
+        (isVerifiedSig, signer) = _checkSigView(hash, _signature, _nonce);
+        if (isVerifiedSig) {
+            for (uint256 i = 0; i < _investor.length; i++) {
+                if (uint64(_canSendAfter[i]) == _canSendAfter[i] &&
+                    uint64(_canReceiveAfter[i]) == _canReceiveAfter[i] &&
+                    uint64(_expiryTime[i]) == _expiryTime[i]
+                ) {
+                    if (_isReadOnlyCall && _investor[i] == address(0))
+                        return (false, address(0));
+                        
+                } else {
+                    return (false, address(0));
+                }
+            }
+            return (true, signer);
+        }
+        return (false, address(0));
+    }
+
     function _modifyKYCDataSignedMulti(
         address[] memory _investor,
         uint256[] memory _canSendAfter,
@@ -493,28 +681,11 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         internal
         returns(bool)
     {
-        if (_investor.length != _canSendAfter.length ||
-            _canSendAfter.length != _canReceiveAfter.length ||
-            _canReceiveAfter.length != _expiryTime.length
-        ) {
-            return false;
-        }
-
-        if (_validFrom > now || _validTo < now) {
-            return false;
-        }
-
-        bytes32 hash = keccak256(
-            abi.encodePacked(this, _investor, _canSendAfter, _canReceiveAfter, _expiryTime, _validFrom, _validTo, _nonce)
-        );
-
-        if (_checkSig(hash, _signature, _nonce)) {
+        (bool verified, address signer) = _verifySignedKYCData(_investor, _canSendAfter, _canReceiveAfter, _expiryTime, _validFrom, _validTo, _nonce, _signature, false);
+        if (verified) {
+            nonceMap[signer][_nonce] = true;
             for (uint256 i = 0; i < _investor.length; i++) {
-                if (uint64(_canSendAfter[i]) == _canSendAfter[i] &&
-                    uint64(_canReceiveAfter[i]) == _canReceiveAfter[i] &&
-                    uint64(_expiryTime[i]) == _expiryTime[i]
-                )
-                    _modifyKYCData(_investor[i], uint64(_canSendAfter[i]), uint64(_canReceiveAfter[i]), uint64(_expiryTime[i]));
+                _modifyKYCData(_investor[i], uint64(_canSendAfter[i]), uint64(_canReceiveAfter[i]), uint64(_expiryTime[i]));
             }
             return true;
         }
@@ -524,15 +695,24 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
     /**
      * @notice Used to verify the signature
      */
-    function _checkSig(bytes32 _hash, bytes memory _signature, uint256 _nonce) internal returns(bool) {
+    function _checkSigView(bytes32 _hash, bytes memory _signature, uint256 _nonce) internal view returns(bool, address) {
         //Check that the signature is valid
         //sig should be signing - _investor, _canSendAfter, _canReceiveAfter & _expiryTime and be signed by the issuer address
         address signer = _hash.toEthSignedMessageHash().recover(_signature);
         if (nonceMap[signer][_nonce] || !_checkPerm(OPERATOR, signer)) {
-            return false;
+            return (false, signer);
         }
-        nonceMap[signer][_nonce] = true;
-        return true;
+        return (true, signer);
+    }
+
+    /**
+     * @notice Used to verify the signature
+     */
+    function _checkSig(bytes32 _hash, bytes memory _signature, uint256 _nonce) internal returns(bool verified) {
+        address signer;
+        (verified, signer) = _checkSigView(_hash, _signature, _nonce);
+        if (verified)
+            nonceMap[signer][_nonce] = true;
     }
 
     /**
@@ -587,10 +767,14 @@ contract GeneralTransferManager is GeneralTransferManagerStorage, TransferManage
         return uint8(data) == 0 ? false : true;
     }
 
-    function _getValuesForTransfer(address _from, address _to) internal view returns(uint64 canSendAfter, uint64 fromExpiry, uint64 canReceiveAfter, uint64 toExpiry) {
+    function _getKYCValuesTo(address _to) internal view returns(uint64 canReceiveAfter, uint64 toExpiry) {
+        IDataStore dataStore = getDataStore();
+        (, canReceiveAfter, toExpiry, ) = _getKYCValues(_to, dataStore);
+    }
+
+    function _getKYCValuesFrom(address _from) internal view returns(uint64 canSendAfter, uint64 fromExpiry) {
         IDataStore dataStore = getDataStore();
         (canSendAfter, , fromExpiry, ) = _getKYCValues(_from, dataStore);
-        (, canReceiveAfter, toExpiry, ) = _getKYCValues(_to, dataStore);
     }
 
     /**

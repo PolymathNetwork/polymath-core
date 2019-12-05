@@ -4,11 +4,11 @@ title: Proxy
 original_id: Proxy
 ---
 
-# Proxy (Proxy.sol)
+# Proxy \(Proxy.sol\)
 
-View Source: [contracts/proxy/Proxy.sol](../../contracts/proxy/Proxy.sol)
+View Source: [contracts/proxy/Proxy.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/proxy/Proxy.sol)
 
-**↘ Derived Contracts: [DataStoreProxy](DataStoreProxy.md), [SecurityToken](SecurityToken.md), [SecurityTokenRegistry](SecurityTokenRegistry.md), [UpgradeabilityProxy](UpgradeabilityProxy.md)**
+**↘ Derived Contracts:** [**DataStoreProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/DataStoreProxy.md)**,** [**SecurityToken**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/SecurityToken.md)**,** [**SecurityTokenRegistry**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/SecurityTokenRegistry.md)**,** [**UpgradeabilityProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/UpgradeabilityProxy.md)
 
 **Proxy**
 
@@ -16,18 +16,18 @@ Gives the possibility to delegate any call to a foreign implementation.
 
 ## Functions
 
-- [_implementation()](#_implementation)
-- [_fallback()](#_fallback)
-- [_delegate(address implementation)](#_delegate)
-- [()](#)
+* [\_implementation\(\)](proxy.md#_implementation)
+* [\_fallback\(\)](proxy.md#_fallback)
+* [\_delegate\(address implementation\)](proxy.md#_delegate)
+* [\(\)](proxy.md)
 
-### _implementation
+### \_implementation
 
-⤿ Overridden Implementation(s): [DataStoreProxy._implementation](DataStoreProxy.md#_implementation),[OwnedUpgradeabilityProxy._implementation](OwnedUpgradeabilityProxy.md#_implementation),[SecurityToken._implementation](SecurityToken.md#_implementation),[SecurityTokenRegistry._implementation](SecurityTokenRegistry.md#_implementation)
+⤿ Overridden Implementation\(s\): [DataStoreProxy.\_implementation](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/DataStoreProxy.md#_implementation),[OwnedUpgradeabilityProxy.\_implementation](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/OwnedUpgradeabilityProxy.md#_implementation),[SecurityToken.\_implementation](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/SecurityToken.md#_implementation),[SecurityTokenRegistry.\_implementation](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/SecurityTokenRegistry.md#_implementation)
 
 Tells the address of the implementation where every call will be delegated.
 
-```js
+```javascript
 function _implementation() internal view
 returns(address)
 ```
@@ -38,46 +38,45 @@ address of the implementation to which it will be delegated
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
 
-### _fallback
 
-Fallback function.
-Implemented entirely in `_fallback`.
+### \_fallback
 
-```js
+Fallback function. Implemented entirely in `_fallback`.
+
+```javascript
 function _fallback() internal nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
 
-### _delegate
 
-Fallback function allowing to perform a delegatecall to the given implementation.
-This function will return whatever the implementation call returns
+### \_delegate
 
-```js
+Fallback function allowing to perform a delegatecall to the given implementation. This function will return whatever the implementation call returns
+
+```javascript
 function _delegate(address implementation) internal nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| implementation | address |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| implementation | address |  |
 
-### 
-
-```js
+```javascript
 function () external payable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 

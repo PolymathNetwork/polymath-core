@@ -4,18 +4,19 @@ title: GeneralTransferManagerStorage
 original_id: GeneralTransferManagerStorage
 ---
 
-# Transfer Manager module for core transfer validation functionality (GeneralTransferManagerStorage.sol)
+# Transfer Manager module for core transfer validation functionality \(GeneralTransferManagerStorage.so
 
-View Source: [contracts/modules/TransferManager/GTM/GeneralTransferManagerStorage.sol](../../contracts/modules/TransferManager/GTM/GeneralTransferManagerStorage.sol)
+View Source: [contracts/modules/TransferManager/GTM/GeneralTransferManagerStorage.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/modules/TransferManager/GTM/GeneralTransferManagerStorage.sol)
 
-**↘ Derived Contracts: [GeneralTransferManager](GeneralTransferManager.md), [GeneralTransferManagerProxy](GeneralTransferManagerProxy.md)**
+**↘ Derived Contracts:** [**GeneralTransferManager**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/GeneralTransferManager.md)**,** [**GeneralTransferManagerProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/GeneralTransferManagerProxy.md)
 
 **GeneralTransferManagerStorage**
 
 **Enums**
+
 ### TransferType
 
-```js
+```javascript
 enum TransferType {
  GENERAL,
  ISSUANCE,
@@ -24,9 +25,10 @@ enum TransferType {
 ```
 
 ## Structs
+
 ### Defaults
 
-```js
+```javascript
 struct Defaults {
  uint64 canSendAfter,
  uint64 canReceiveAfter
@@ -35,7 +37,7 @@ struct Defaults {
 
 ### TransferRequirements
 
-```js
+```javascript
 struct TransferRequirements {
  bool fromValidKYC,
  bool toValidKYC,
@@ -45,9 +47,10 @@ struct TransferRequirements {
 ```
 
 ## Contract Members
+
 **Constants & Variables**
 
-```js
+```javascript
 //public members
 bytes32 public constant WHITELIST;
 bytes32 public constant INVESTORSKEY;
@@ -59,7 +62,6 @@ mapping(uint8 => struct GeneralTransferManagerStorage.TransferRequirements) publ
 
 //internal members
 uint256 internal constant ONE;
-
 ```
 
 ## Functions

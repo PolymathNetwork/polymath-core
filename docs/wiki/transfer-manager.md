@@ -49,7 +49,7 @@ Transfer Manager modules attached:
 [0] Exit
 ```
 
-**Verifying Transfers between addresses** 
+**Verifying Transfers between addresses**
 
 ```text
 What do you want to do? [1...5 / 0]: 1

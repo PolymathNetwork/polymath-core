@@ -48,7 +48,7 @@ An issuer can choose anyone as per the need, for simplicity, we are going to use
       _proposalTitles -> List of proposal titles i.e title1,title2,title3            
       _details -> Off chain details related to proposals i.e [0x123,0x42,0x455631]       
       _choices -> Choices of proposal i.e A1,B1,C1,D1,A3,B3,C3        
-      _noOfChoices -> Array of no. of choices i.e[4,0,3]          
+      _noOfChoices -> Array of no. of choices i.e[4,0,3]
 ```
 
 The above function will create a ballot and all investors on the current checkpoint will only be eligible participants \(If global exemption list has no addresses\) to vote for the created ballot. As `_startTime` is `now` then commit phase will be started until `_startTime + _commitDuration`.
@@ -59,7 +59,7 @@ Let’s say we have 3 voters Alice, Bob & Charlie on the current checkpoint and 
 
 ```text
        _ballotId = 1 (As above ballot is the only ballot in the ballots array).        
-       _secretVote = ****** (A secret hash) Created something like this       
+       _secretVote = ****** (A secret hash) Created something like this
 ```
 
 If Alice balance at the current checkpoint is 100 then Alice vote power will be `100 * no of proposals in a ballot` i.e 300 \(100 \* 3\). `web3.soliditySha3(100,0,0,0,150,0,0,0,50,0,salt)` where salt will be a random string used to increase the anonymity. And the sum of weight should be equal to 300.

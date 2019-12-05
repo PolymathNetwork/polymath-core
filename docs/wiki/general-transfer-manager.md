@@ -76,7 +76,7 @@ Below functionality will be released after 3.1.0 release - `verifyTransfer()` wi
   )
      public
      view
-     returns(Result, bytes32) 
+     returns(Result, bytes32)
 ```
 
 ### Change issuance address

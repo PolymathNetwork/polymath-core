@@ -6,60 +6,60 @@ original_id: DecimalMath
 
 # DecimalMath.sol
 
-View Source: [contracts/libraries/DecimalMath.sol](../../contracts/libraries/DecimalMath.sol)
+View Source: [contracts/libraries/DecimalMath.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/libraries/DecimalMath.sol)
 
 **DecimalMath**
 
 ## Contract Members
+
 **Constants & Variables**
 
-```js
+```javascript
 uint256 internal constant e18;
-
 ```
 
 ## Functions
 
-- [mul(uint256 x, uint256 y)](#mul)
-- [div(uint256 x, uint256 y)](#div)
+* [mul\(uint256 x, uint256 y\)](decimalmath.md#mul)
+* [div\(uint256 x, uint256 y\)](decimalmath.md#div)
 
 ### mul
 
-This function multiplies two decimals represented as (decimal * 10**DECIMALS)
+This function multiplies two decimals represented as \(decimal  _10\*_DECIMALS\)
 
-```js
+```javascript
 function mul(uint256 x, uint256 y) internal pure
 returns(z uint256)
 ```
 
 **Returns**
 
-uint256 Result of multiplication represented as (decimal * 10**DECIMALS)
+uint256 Result of multiplication represented as \(decimal  _10\*_DECIMALS\)
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| x | uint256 |  | 
-| y | uint256 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| x | uint256 |  |
+| y | uint256 |  |
 
 ### div
 
-This function divides two decimals represented as (decimal * 10**DECIMALS)
+This function divides two decimals represented as \(decimal  _10\*_DECIMALS\)
 
-```js
+```javascript
 function div(uint256 x, uint256 y) internal pure
 returns(z uint256)
 ```
 
 **Returns**
 
-uint256 Result of division represented as (decimal * 10**DECIMALS)
+uint256 Result of division represented as \(decimal  _10\*_DECIMALS\)
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| x | uint256 |  | 
-| y | uint256 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| x | uint256 |  |
+| y | uint256 |  |
 

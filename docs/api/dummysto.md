@@ -4,148 +4,149 @@ title: DummySTO
 original_id: DummySTO
 ---
 
-# STO module for sample implementation of a different crowdsale module (DummySTO.sol)
+# STO module for sample implementation of a different crowdsale module \(DummySTO.sol\)
 
-View Source: [contracts/mocks/Dummy/DummySTO.sol](../../contracts/mocks/Dummy/DummySTO.sol)
+View Source: [contracts/mocks/Dummy/DummySTO.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/mocks/Dummy/DummySTO.sol)
 
-**↗ Extends: [DummySTOStorage](DummySTOStorage.md), [STO](STO.md)**
+**↗ Extends:** [**DummySTOStorage**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/DummySTOStorage.md)**,** [**STO**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/STO.md)
 
 **DummySTO**
 
 **Events**
 
-```js
+```javascript
 event GenerateTokens(address  _investor, uint256  _amount);
 ```
 
 ## Functions
 
-- [(address _securityToken, address _polyToken)](#)
-- [configure(uint256 _startTime, uint256 _endTime, uint256 _cap, string _someString)](#configure)
-- [getInitFunction()](#getinitfunction)
-- [generateTokens(address _investor, uint256 _amount)](#generatetokens)
-- [getNumberInvestors()](#getnumberinvestors)
-- [getTokensSold()](#gettokenssold)
-- [getPermissions()](#getpermissions)
-- [()](#)
-
-### 
+* [\(address \_securityToken, address \_polyToken\)](dummysto.md)
+* [configure\(uint256 \_startTime, uint256 \_endTime, uint256 \_cap, string \_someString\)](dummysto.md#configure)
+* [getInitFunction\(\)](dummysto.md#getinitfunction)
+* [generateTokens\(address \_investor, uint256 \_amount\)](dummysto.md#generatetokens)
+* [getNumberInvestors\(\)](dummysto.md#getnumberinvestors)
+* [getTokensSold\(\)](dummysto.md#gettokenssold)
+* [getPermissions\(\)](dummysto.md#getpermissions)
+* [\(\)](dummysto.md)
 
 Constructor
 
-```js
-function (address _securityToken, address _polyToken) public nonpayable Module 
+```javascript
+function (address _securityToken, address _polyToken) public nonpayable Module
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _securityToken | address | Address of the security token | 
-| _polyToken | address |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_securityToken | address | Address of the security token |
+| \_polyToken | address |  |
 
 ### configure
 
 Function used to intialize the differnet variables
 
-```js
-function configure(uint256 _startTime, uint256 _endTime, uint256 _cap, string _someString) public nonpayable onlyFactory 
+```javascript
+function configure(uint256 _startTime, uint256 _endTime, uint256 _cap, string _someString) public nonpayable onlyFactory
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _startTime | uint256 | Unix timestamp at which offering get started | 
-| _endTime | uint256 | Unix timestamp at which offering get ended | 
-| _cap | uint256 | Maximum No. of tokens for sale | 
-| _someString | string | Any string that contails the details | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_startTime | uint256 | Unix timestamp at which offering get started |
+| \_endTime | uint256 | Unix timestamp at which offering get ended |
+| \_cap | uint256 | Maximum No. of tokens for sale |
+| \_someString | string | Any string that contails the details |
 
 ### getInitFunction
 
-⤾ overrides [IModule.getInitFunction](IModule.md#getinitfunction)
+⤾ overrides [IModule.getInitFunction](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IModule.md#getinitfunction)
 
 This function returns the signature of configure function
 
-```js
+```javascript
 function getInitFunction() public pure
 returns(bytes4)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### generateTokens
 
 Function used to generate the tokens
 
-```js
-function generateTokens(address _investor, uint256 _amount) public nonpayable withPerm 
+```javascript
+function generateTokens(address _investor, uint256 _amount) public nonpayable withPerm
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _investor | address | Address of the investor | 
-| _amount | uint256 | Amount of ETH or Poly invested by the investor | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_investor | address | Address of the investor |
+| \_amount | uint256 | Amount of ETH or Poly invested by the investor |
 
 ### getNumberInvestors
 
 Returns the total no. of investors
 
-```js
+```javascript
 function getNumberInvestors() public view
 returns(uint256)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### getTokensSold
 
-⤾ overrides [STO.getTokensSold](STO.md#gettokenssold)
+⤾ overrides [STO.getTokensSold](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/STO.md#gettokenssold)
 
 Returns the total no. of investors
 
-```js
+```javascript
 function getTokensSold() external view
 returns(uint256)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### getPermissions
 
-⤾ overrides [IModule.getPermissions](IModule.md#getpermissions)
+⤾ overrides [IModule.getPermissions](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IModule.md#getpermissions)
 
 Returns the permissions flag that are associated with STO
 
-```js
+```javascript
 function getPermissions() public view
 returns(bytes32[])
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
 
-### 
 
-```js
+```javascript
 function () external payable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 

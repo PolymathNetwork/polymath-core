@@ -4,20 +4,20 @@ title: CountTransferManagerStorage
 original_id: CountTransferManagerStorage
 ---
 
-# Contract used to store layout for the CountTransferManager storage (CountTransferManagerStorage.sol)
+# Contract used to store layout for the CountTransferManager storage \(CountTransferManagerStorage.sol\)
 
-View Source: [contracts/modules/TransferManager/CTM/CountTransferManagerStorage.sol](../../contracts/modules/TransferManager/CTM/CountTransferManagerStorage.sol)
+View Source: [contracts/modules/TransferManager/CTM/CountTransferManagerStorage.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/modules/TransferManager/CTM/CountTransferManagerStorage.sol)
 
-**↘ Derived Contracts: [CountTransferManager](CountTransferManager.md), [CountTransferManagerProxy](CountTransferManagerProxy.md)**
+**↘ Derived Contracts:** [**CountTransferManager**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/CountTransferManager.md)**,** [**CountTransferManagerProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/CountTransferManagerProxy.md)
 
 **CountTransferManagerStorage**
 
 ## Contract Members
+
 **Constants & Variables**
 
-```js
+```javascript
 uint256 public maxHolderCount;
-
 ```
 
 ## Functions

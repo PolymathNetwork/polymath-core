@@ -6,74 +6,74 @@ original_id: VotingCheckpoint
 
 # VotingCheckpoint.sol
 
-View Source: [contracts/modules/Checkpoint/Voting/VotingCheckpoint.sol](../../contracts/modules/Checkpoint/Voting/VotingCheckpoint.sol)
+View Source: [contracts/modules/Checkpoint/Voting/VotingCheckpoint.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/modules/Checkpoint/Voting/VotingCheckpoint.sol)
 
-**↗ Extends: [VotingCheckpointStorage](VotingCheckpointStorage.md), [ICheckpoint](ICheckpoint.md), [IVoting](IVoting.md), [Module](Module.md)**
-**↘ Derived Contracts: [PLCRVotingCheckpoint](PLCRVotingCheckpoint.md), [WeightedVoteCheckpoint](WeightedVoteCheckpoint.md)**
+**↗ Extends:** [**VotingCheckpointStorage**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/VotingCheckpointStorage.md)**,** [**ICheckpoint**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ICheckpoint.md)**,** [**IVoting**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IVoting.md)**,** [**Module**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/Module.md) **↘ Derived Contracts:** [**PLCRVotingCheckpoint**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/PLCRVotingCheckpoint.md)**,** [**WeightedVoteCheckpoint**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/WeightedVoteCheckpoint.md)
 
 **VotingCheckpoint**
 
 **Events**
 
-```js
+```javascript
 event ChangedDefaultExemptedVotersList(address indexed _voter, bool  _exempt);
 ```
 
 ## Functions
 
-- [changeDefaultExemptedVotersList(address _voter, bool _exempt)](#changedefaultexemptedvoterslist)
-- [changeDefaultExemptedVotersListMulti(address[] _voters, bool[] _exempts)](#changedefaultexemptedvoterslistmulti)
-- [_changeDefaultExemptedVotersList(address _voter, bool _exempt)](#_changedefaultexemptedvoterslist)
-- [getDefaultExemptionVotersList()](#getdefaultexemptionvoterslist)
+* [changeDefaultExemptedVotersList\(address \_voter, bool \_exempt\)](votingcheckpoint.md#changedefaultexemptedvoterslist)
+* [changeDefaultExemptedVotersListMulti\(address\[\] \_voters, bool\[\] \_exempts\)](votingcheckpoint.md#changedefaultexemptedvoterslistmulti)
+* [\_changeDefaultExemptedVotersList\(address \_voter, bool \_exempt\)](votingcheckpoint.md#_changedefaultexemptedvoterslist)
+* [getDefaultExemptionVotersList\(\)](votingcheckpoint.md#getdefaultexemptionvoterslist)
 
 ### changeDefaultExemptedVotersList
 
-```js
-function changeDefaultExemptedVotersList(address _voter, bool _exempt) external nonpayable withPerm 
+```javascript
+function changeDefaultExemptedVotersList(address _voter, bool _exempt) external nonpayable withPerm
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _voter | address | Address of the voter | 
-| _exempt | bool | Whether it is exempted or not | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_voter | address | Address of the voter |
+| \_exempt | bool | Whether it is exempted or not |
 
 ### changeDefaultExemptedVotersListMulti
 
-```js
-function changeDefaultExemptedVotersListMulti(address[] _voters, bool[] _exempts) external nonpayable withPerm 
+```javascript
+function changeDefaultExemptedVotersListMulti(address[] _voters, bool[] _exempts) external nonpayable withPerm
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _voters | address[] | Address of the voter | 
-| _exempts | bool[] | Whether it is exempted or not | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_voters | address\[\] | Address of the voter |
+| \_exempts | bool\[\] | Whether it is exempted or not |
 
-### _changeDefaultExemptedVotersList
+### \_changeDefaultExemptedVotersList
 
-```js
+```javascript
 function _changeDefaultExemptedVotersList(address _voter, bool _exempt) internal nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _voter | address |  | 
-| _exempt | bool |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_voter | address |  |
+| \_exempt | bool |  |
 
 ### getDefaultExemptionVotersList
 
-```js
+```javascript
 function getDefaultExemptionVotersList() external view
 returns(address[])
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 

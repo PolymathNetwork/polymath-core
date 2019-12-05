@@ -349,7 +349,7 @@ Allows admins to add or remove users from blacklists at any time using listed fu
      * @notice get the list of blacklist names
      * @return bytes32 Array of blacklist names
      */
-    function getAllBlacklists() external view returns(bytes32[] memory) 
+    function getAllBlacklists() external view returns(bytes32[] memory)
 ```
 
 **Summary:** Use to get the balance of token holder for a given partition

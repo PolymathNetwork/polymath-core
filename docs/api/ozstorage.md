@@ -6,65 +6,66 @@ original_id: OZStorage
 
 # OZStorage.sol
 
-View Source: [contracts/tokens/OZStorage.sol](../../contracts/tokens/OZStorage.sol)
+View Source: [contracts/tokens/OZStorage.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/tokens/OZStorage.sol)
 
-**↘ Derived Contracts: [SecurityTokenProxy](SecurityTokenProxy.md), [STGetter](STGetter.md)**
+**↘ Derived Contracts:** [**SecurityTokenProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/SecurityTokenProxy.md)**,** [**STGetter**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/STGetter.md)
 
 **OZStorage**
 
 ## Contract Members
+
 **Constants & Variables**
 
-```js
+```javascript
 mapping(address => uint256) private _balances;
 mapping(address => mapping(address => uint256)) private _allowed;
 uint256 private _totalSupply;
 uint256 private _guardCounter;
-
 ```
 
 ## Functions
 
-- [totalSupply()](#totalsupply)
-- [balanceOf(address _investor)](#balanceof)
-- [_allowance(address owner, address spender)](#_allowance)
+* [totalSupply\(\)](ozstorage.md#totalsupply)
+* [balanceOf\(address \_investor\)](ozstorage.md#balanceof)
+* [\_allowance\(address owner, address spender\)](ozstorage.md#_allowance)
 
 ### totalSupply
 
-```js
+```javascript
 function totalSupply() internal view
 returns(uint256)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### balanceOf
 
-```js
+```javascript
 function balanceOf(address _investor) internal view
 returns(uint256)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _investor | address |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_investor | address |  |
 
-### _allowance
+### \_allowance
 
-```js
+```javascript
 function _allowance(address owner, address spender) internal view
 returns(uint256)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| owner | address |  | 
-| spender | address |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| owner | address |  |
+| spender | address |  |
 

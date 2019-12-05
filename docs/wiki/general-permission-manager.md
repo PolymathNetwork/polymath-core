@@ -88,7 +88,7 @@ Once delegates are added, this module can change the permissions assigned to the
     function changePermission(address _delegate, address _module, bytes32 _perm, bool _valid) public withPerm(ADMIN)
   ```
 
-* Change multiple permissions for multiple modules for a delegate by calling: 
+* Change multiple permissions for multiple modules for a delegate by calling:
 
 ```text
     /**

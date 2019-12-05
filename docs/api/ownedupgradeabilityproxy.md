@@ -4,80 +4,79 @@ title: OwnedUpgradeabilityProxy
 original_id: OwnedUpgradeabilityProxy
 ---
 
-# OwnedUpgradeabilityProxy (OwnedUpgradeabilityProxy.sol)
+# OwnedUpgradeabilityProxy \(OwnedUpgradeabilityProxy.sol\)
 
-View Source: [contracts/proxy/OwnedUpgradeabilityProxy.sol](../../contracts/proxy/OwnedUpgradeabilityProxy.sol)
+View Source: [contracts/proxy/OwnedUpgradeabilityProxy.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/proxy/OwnedUpgradeabilityProxy.sol)
 
-**↗ Extends: [UpgradeabilityProxy](UpgradeabilityProxy.md)**
-**↘ Derived Contracts: [BlacklistTransferManagerProxy](BlacklistTransferManagerProxy.md), [CappedSTOProxy](CappedSTOProxy.md), [CountTransferManagerProxy](CountTransferManagerProxy.md), [DummySTOProxy](DummySTOProxy.md), [ERC20DividendCheckpointProxy](ERC20DividendCheckpointProxy.md), [EtherDividendCheckpointProxy](EtherDividendCheckpointProxy.md), [GeneralPermissionManagerProxy](GeneralPermissionManagerProxy.md), [GeneralTransferManagerProxy](GeneralTransferManagerProxy.md), [LockUpTransferManagerProxy](LockUpTransferManagerProxy.md), [ManualApprovalTransferManagerProxy](ManualApprovalTransferManagerProxy.md), [ModuleRegistryProxy](ModuleRegistryProxy.md), [PercentageTransferManagerProxy](PercentageTransferManagerProxy.md), [PLCRVotingCheckpointProxy](PLCRVotingCheckpointProxy.md), [PreSaleSTOProxy](PreSaleSTOProxy.md), [SecurityTokenProxy](SecurityTokenProxy.md), [SecurityTokenRegistryProxy](SecurityTokenRegistryProxy.md), [USDTieredSTOProxy](USDTieredSTOProxy.md), [VestingEscrowWalletProxy](VestingEscrowWalletProxy.md), [VolumeRestrictionTMProxy](VolumeRestrictionTMProxy.md), [WeightedVoteCheckpointProxy](WeightedVoteCheckpointProxy.md)**
+**↗ Extends:** [**UpgradeabilityProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/UpgradeabilityProxy.md) **↘ Derived Contracts:** [**BlacklistTransferManagerProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/BlacklistTransferManagerProxy.md)**,** [**CappedSTOProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/CappedSTOProxy.md)**,** [**CountTransferManagerProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/CountTransferManagerProxy.md)**,** [**DummySTOProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/DummySTOProxy.md)**,** [**ERC20DividendCheckpointProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ERC20DividendCheckpointProxy.md)**,** [**EtherDividendCheckpointProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/EtherDividendCheckpointProxy.md)**,** [**GeneralPermissionManagerProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/GeneralPermissionManagerProxy.md)**,** [**GeneralTransferManagerProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/GeneralTransferManagerProxy.md)**,** [**LockUpTransferManagerProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/LockUpTransferManagerProxy.md)**,** [**ManualApprovalTransferManagerProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ManualApprovalTransferManagerProxy.md)**,** [**ModuleRegistryProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ModuleRegistryProxy.md)**,** [**PercentageTransferManagerProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/PercentageTransferManagerProxy.md)**,** [**PLCRVotingCheckpointProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/PLCRVotingCheckpointProxy.md)**,** [**PreSaleSTOProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/PreSaleSTOProxy.md)**,** [**SecurityTokenProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/SecurityTokenProxy.md)**,** [**SecurityTokenRegistryProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/SecurityTokenRegistryProxy.md)**,** [**USDTieredSTOProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/USDTieredSTOProxy.md)**,** [**VestingEscrowWalletProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/VestingEscrowWalletProxy.md)**,** [**VolumeRestrictionTMProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/VolumeRestrictionTMProxy.md)**,** [**WeightedVoteCheckpointProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/WeightedVoteCheckpointProxy.md)
 
 **OwnedUpgradeabilityProxy**
 
 This contract combines an upgradeability proxy with basic authorization control functionalities
 
 ## Contract Members
+
 **Constants & Variables**
 
-```js
+```javascript
 address private __upgradeabilityOwner;
-
 ```
 
 **Events**
 
-```js
+```javascript
 event ProxyOwnershipTransferred(address  _previousOwner, address  _newOwner);
 ```
 
 ## Modifiers
 
-- [ifOwner](#ifowner)
+* [ifOwner](ownedupgradeabilityproxy.md#ifowner)
 
 ### ifOwner
 
 Throws if called by any account other than the owner.
 
-```js
+```javascript
 modifier ifOwner() internal
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ## Functions
 
-- [()](#)
-- [_upgradeabilityOwner()](#_upgradeabilityowner)
-- [_setUpgradeabilityOwner(address _newUpgradeabilityOwner)](#_setupgradeabilityowner)
-- [_implementation()](#_implementation)
-- [proxyOwner()](#proxyowner)
-- [version()](#version)
-- [implementation()](#implementation)
-- [transferProxyOwnership(address _newOwner)](#transferproxyownership)
-- [upgradeTo(string _newVersion, address _newImplementation)](#upgradeto)
-- [upgradeToAndCall(string _newVersion, address _newImplementation, bytes _data)](#upgradetoandcall)
-- [_upgradeToAndCall(string _newVersion, address _newImplementation, bytes _data)](#_upgradetoandcall)
-
-### 
+* [\(\)](ownedupgradeabilityproxy.md)
+* [\_upgradeabilityOwner\(\)](ownedupgradeabilityproxy.md#_upgradeabilityowner)
+* [\_setUpgradeabilityOwner\(address \_newUpgradeabilityOwner\)](ownedupgradeabilityproxy.md#_setupgradeabilityowner)
+* [\_implementation\(\)](ownedupgradeabilityproxy.md#_implementation)
+* [proxyOwner\(\)](ownedupgradeabilityproxy.md#proxyowner)
+* [version\(\)](ownedupgradeabilityproxy.md#version)
+* [implementation\(\)](ownedupgradeabilityproxy.md#implementation)
+* [transferProxyOwnership\(address \_newOwner\)](ownedupgradeabilityproxy.md#transferproxyownership)
+* [upgradeTo\(string \_newVersion, address \_newImplementation\)](ownedupgradeabilityproxy.md#upgradeto)
+* [upgradeToAndCall\(string \_newVersion, address \_newImplementation, bytes \_data\)](ownedupgradeabilityproxy.md#upgradetoandcall)
+* [\_upgradeToAndCall\(string \_newVersion, address \_newImplementation, bytes \_data\)](ownedupgradeabilityproxy.md#_upgradetoandcall)
 
 the constructor sets the original owner of the contract to the sender account.
 
-```js
+```javascript
 function () public nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
 
-### _upgradeabilityOwner
+
+### \_upgradeabilityOwner
 
 Tells the address of the owner
 
-```js
+```javascript
 function _upgradeabilityOwner() internal view
 returns(address)
 ```
@@ -88,44 +87,46 @@ the address of the owner
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
 
-### _setUpgradeabilityOwner
+
+### \_setUpgradeabilityOwner
 
 Sets the address of the owner
 
-```js
+```javascript
 function _setUpgradeabilityOwner(address _newUpgradeabilityOwner) internal nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _newUpgradeabilityOwner | address |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_newUpgradeabilityOwner | address |  |
 
-### _implementation
+### \_implementation
 
-⤾ overrides [Proxy._implementation](Proxy.md#_implementation)
+⤾ overrides [Proxy.\_implementation](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/Proxy.md#_implementation)
 
 Internal function to provide the address of the implementation contract
 
-```js
+```javascript
 function _implementation() internal view
 returns(address)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### proxyOwner
 
 Tells the address of the proxy owner
 
-```js
+```javascript
 function proxyOwner() external nonpayable ifOwner 
 returns(address)
 ```
@@ -136,14 +137,15 @@ the address of the proxy owner
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### version
 
 Tells the version name of the current implementation
 
-```js
+```javascript
 function version() external nonpayable ifOwner 
 returns(string)
 ```
@@ -154,14 +156,15 @@ string representing the name of the current version
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### implementation
 
 Tells the address of the current implementation
 
-```js
+```javascript
 function implementation() external nonpayable ifOwner 
 returns(address)
 ```
@@ -172,67 +175,68 @@ address of the current implementation
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### transferProxyOwnership
 
 Allows the current owner to transfer control of the contract to a newOwner.
 
-```js
-function transferProxyOwnership(address _newOwner) external nonpayable ifOwner 
+```javascript
+function transferProxyOwnership(address _newOwner) external nonpayable ifOwner
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _newOwner | address | The address to transfer ownership to. | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_newOwner | address | The address to transfer ownership to. |
 
 ### upgradeTo
 
 Allows the upgradeability owner to upgrade the current version of the proxy.
 
-```js
-function upgradeTo(string _newVersion, address _newImplementation) external nonpayable ifOwner 
+```javascript
+function upgradeTo(string _newVersion, address _newImplementation) external nonpayable ifOwner
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _newVersion | string | representing the version name of the new implementation to be set. | 
-| _newImplementation | address | representing the address of the new implementation to be set. | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_newVersion | string | representing the version name of the new implementation to be set. |
+| \_newImplementation | address | representing the address of the new implementation to be set. |
 
 ### upgradeToAndCall
 
-Allows the upgradeability owner to upgrade the current version of the proxy and call the new implementation
-to initialize whatever is needed through a low level call.
+Allows the upgradeability owner to upgrade the current version of the proxy and call the new implementation to initialize whatever is needed through a low level call.
 
-```js
-function upgradeToAndCall(string _newVersion, address _newImplementation, bytes _data) external payable ifOwner 
+```javascript
+function upgradeToAndCall(string _newVersion, address _newImplementation, bytes _data) external payable ifOwner
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _newVersion | string | representing the version name of the new implementation to be set. | 
-| _newImplementation | address | representing the address of the new implementation to be set. | 
-| _data | bytes | represents the msg.data to bet sent in the low level call. This parameter may include the function
-signature of the implementation to be called with the needed payload | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_newVersion | string | representing the version name of the new implementation to be set. |
+| \_newImplementation | address | representing the address of the new implementation to be set. |
+| \_data | bytes | represents the msg.data to bet sent in the low level call. This parameter may include the function |
 
-### _upgradeToAndCall
+signature of the implementation to be called with the needed payload \|
 
-```js
+### \_upgradeToAndCall
+
+```javascript
 function _upgradeToAndCall(string _newVersion, address _newImplementation, bytes _data) internal nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _newVersion | string |  | 
-| _newImplementation | address |  | 
-| _data | bytes |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_newVersion | string |  |
+| \_newImplementation | address |  |
+| \_data | bytes |  |
 

@@ -4,48 +4,47 @@ title: MockWrongTypeFactory
 original_id: MockWrongTypeFactory
 ---
 
-# Mock Contract Not fit for production environment (MockWrongTypeFactory.sol)
+# Mock Contract Not fit for production environment \(MockWrongTypeFactory.sol\)
 
-View Source: [contracts/mocks/MockWrongTypeFactory.sol](../../contracts/mocks/MockWrongTypeFactory.sol)
+View Source: [contracts/mocks/MockWrongTypeFactory.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/mocks/MockWrongTypeFactory.sol)
 
-**↗ Extends: [MockBurnFactory](MockBurnFactory.md)**
+**↗ Extends:** [**MockBurnFactory**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/MockBurnFactory.md)
 
 **MockWrongTypeFactory**
 
 ## Functions
 
-- [(uint256 _setupCost, address _polymathRegistry, bool _isFeeInPoly)](#)
-- [getTypes()](#gettypes)
-
-### 
+* [\(uint256 \_setupCost, address \_polymathRegistry, bool \_isFeeInPoly\)](mockwrongtypefactory.md)
+* [getTypes\(\)](mockwrongtypefactory.md#gettypes)
 
 Constructor
 
-```js
-function (uint256 _setupCost, address _polymathRegistry, bool _isFeeInPoly) public nonpayable MockBurnFactory 
+```javascript
+function (uint256 _setupCost, address _polymathRegistry, bool _isFeeInPoly) public nonpayable MockBurnFactory
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _setupCost | uint256 | Setup cost of the module | 
-| _polymathRegistry | address | Address of the Polymath Registry | 
-| _isFeeInPoly | bool |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_setupCost | uint256 | Setup cost of the module |
+| \_polymathRegistry | address | Address of the Polymath Registry |
+| \_isFeeInPoly | bool |  |
 
 ### getTypes
 
-⤾ overrides [ModuleFactory.getTypes](ModuleFactory.md#gettypes)
+⤾ overrides [ModuleFactory.getTypes](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ModuleFactory.md#gettypes)
 
 Type of the Module factory
 
-```js
+```javascript
 function getTypes() external view
 returns(uint8[])
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 

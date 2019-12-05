@@ -4,20 +4,20 @@ title: ERC20DividendCheckpointStorage
 original_id: ERC20DividendCheckpointStorage
 ---
 
-# It holds the storage variables related to ERC20DividendCheckpoint module (ERC20DividendCheckpointStorage.sol)
+# It holds the storage variables related to ERC20DividendCheckpoint module \(ERC20DividendCheckpointSto
 
-View Source: [contracts/modules/Checkpoint/Dividend/ERC20/ERC20DividendCheckpointStorage.sol](../../contracts/modules/Checkpoint/Dividend/ERC20/ERC20DividendCheckpointStorage.sol)
+View Source: [contracts/modules/Checkpoint/Dividend/ERC20/ERC20DividendCheckpointStorage.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/modules/Checkpoint/Dividend/ERC20/ERC20DividendCheckpointStorage.sol)
 
-**↘ Derived Contracts: [ERC20DividendCheckpoint](ERC20DividendCheckpoint.md), [ERC20DividendCheckpointProxy](ERC20DividendCheckpointProxy.md)**
+**↘ Derived Contracts:** [**ERC20DividendCheckpoint**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ERC20DividendCheckpoint.md)**,** [**ERC20DividendCheckpointProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ERC20DividendCheckpointProxy.md)
 
 **ERC20DividendCheckpointStorage**
 
 ## Contract Members
+
 **Constants & Variables**
 
-```js
+```javascript
 mapping(uint256 => address) public dividendTokens;
-
 ```
 
 ## Functions

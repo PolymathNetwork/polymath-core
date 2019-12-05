@@ -4,152 +4,154 @@ title: IPoly
 original_id: IPoly
 ---
 
-# ERC20 interface (IPoly.sol)
+# ERC20 interface \(IPoly.sol\)
 
-View Source: [contracts/interfaces/IPoly.sol](../../contracts/interfaces/IPoly.sol)
+View Source: [contracts/interfaces/IPoly.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/interfaces/IPoly.sol)
 
 **IPoly**
 
-see https://github.com/ethereum/EIPs/issues/20
+see [https://github.com/ethereum/EIPs/issues/20](https://github.com/ethereum/EIPs/issues/20)
 
 **Events**
 
-```js
+```javascript
 event Transfer(address indexed from, address indexed to, uint256  value);
 event Approval(address indexed owner, address indexed spender, uint256  value);
 ```
 
 ## Functions
 
-- [decimals()](#decimals)
-- [totalSupply()](#totalsupply)
-- [balanceOf(address _owner)](#balanceof)
-- [allowance(address _owner, address _spender)](#allowance)
-- [transfer(address _to, uint256 _value)](#transfer)
-- [transferFrom(address _from, address _to, uint256 _value)](#transferfrom)
-- [approve(address _spender, uint256 _value)](#approve)
-- [decreaseApproval(address _spender, uint256 _subtractedValue)](#decreaseapproval)
-- [increaseApproval(address _spender, uint256 _addedValue)](#increaseapproval)
+* [decimals\(\)](ipoly.md#decimals)
+* [totalSupply\(\)](ipoly.md#totalsupply)
+* [balanceOf\(address \_owner\)](ipoly.md#balanceof)
+* [allowance\(address \_owner, address \_spender\)](ipoly.md#allowance)
+* [transfer\(address \_to, uint256 \_value\)](ipoly.md#transfer)
+* [transferFrom\(address \_from, address \_to, uint256 \_value\)](ipoly.md#transferfrom)
+* [approve\(address \_spender, uint256 \_value\)](ipoly.md#approve)
+* [decreaseApproval\(address \_spender, uint256 \_subtractedValue\)](ipoly.md#decreaseapproval)
+* [increaseApproval\(address \_spender, uint256 \_addedValue\)](ipoly.md#increaseapproval)
 
 ### decimals
 
-```js
+```javascript
 function decimals() external view
 returns(uint8)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### totalSupply
 
-```js
+```javascript
 function totalSupply() external view
 returns(uint256)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### balanceOf
 
-```js
+```javascript
 function balanceOf(address _owner) external view
 returns(uint256)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _owner | address |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_owner | address |  |
 
 ### allowance
 
-```js
+```javascript
 function allowance(address _owner, address _spender) external view
 returns(uint256)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _owner | address |  | 
-| _spender | address |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_owner | address |  |
+| \_spender | address |  |
 
 ### transfer
 
-```js
+```javascript
 function transfer(address _to, uint256 _value) external nonpayable
 returns(bool)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _to | address |  | 
-| _value | uint256 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_to | address |  |
+| \_value | uint256 |  |
 
 ### transferFrom
 
-```js
+```javascript
 function transferFrom(address _from, address _to, uint256 _value) external nonpayable
 returns(bool)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _from | address |  | 
-| _to | address |  | 
-| _value | uint256 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_from | address |  |
+| \_to | address |  |
+| \_value | uint256 |  |
 
 ### approve
 
-```js
+```javascript
 function approve(address _spender, uint256 _value) external nonpayable
 returns(bool)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _spender | address |  | 
-| _value | uint256 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_spender | address |  |
+| \_value | uint256 |  |
 
 ### decreaseApproval
 
-```js
+```javascript
 function decreaseApproval(address _spender, uint256 _subtractedValue) external nonpayable
 returns(bool)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _spender | address |  | 
-| _subtractedValue | uint256 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_spender | address |  |
+| \_subtractedValue | uint256 |  |
 
 ### increaseApproval
 
-```js
+```javascript
 function increaseApproval(address _spender, uint256 _addedValue) external nonpayable
 returns(bool)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _spender | address |  | 
-| _addedValue | uint256 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_spender | address |  |
+| \_addedValue | uint256 |  |
 

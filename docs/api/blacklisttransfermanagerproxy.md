@@ -4,32 +4,30 @@ title: BlacklistTransferManagerProxy
 original_id: BlacklistTransferManagerProxy
 ---
 
-# CountTransferManager module Proxy (BlacklistTransferManagerProxy.sol)
+# CountTransferManager module Proxy \(BlacklistTransferManagerProxy.sol\)
 
-View Source: [contracts/modules/TransferManager/BTM/BlacklistTransferManagerProxy.sol](../../contracts/modules/TransferManager/BTM/BlacklistTransferManagerProxy.sol)
+View Source: [contracts/modules/TransferManager/BTM/BlacklistTransferManagerProxy.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/modules/TransferManager/BTM/BlacklistTransferManagerProxy.sol)
 
-**↗ Extends: [BlacklistTransferManagerStorage](BlacklistTransferManagerStorage.md), [ModuleStorage](ModuleStorage.md), [Pausable](Pausable.md), [OwnedUpgradeabilityProxy](OwnedUpgradeabilityProxy.md)**
+**↗ Extends:** [**BlacklistTransferManagerStorage**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/BlacklistTransferManagerStorage.md)**,** [**ModuleStorage**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ModuleStorage.md)**,** [**Pausable**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/Pausable.md)**,** [**OwnedUpgradeabilityProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/OwnedUpgradeabilityProxy.md)
 
 **BlacklistTransferManagerProxy**
 
 ## Functions
 
-- [(string _version, address _securityToken, address _polyAddress, address _implementation)](#)
-
-### 
+* [\(string \_version, address \_securityToken, address \_polyAddress, address \_implementation\)](blacklisttransfermanagerproxy.md)
 
 Constructor
 
-```js
-function (string _version, address _securityToken, address _polyAddress, address _implementation) public nonpayable ModuleStorage 
+```javascript
+function (string _version, address _securityToken, address _polyAddress, address _implementation) public nonpayable ModuleStorage
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _version | string |  | 
-| _securityToken | address | Address of the security token | 
-| _polyAddress | address | Address of the polytoken | 
-| _implementation | address | representing the address of the new implementation to be set | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_version | string |  |
+| \_securityToken | address | Address of the security token |
+| \_polyAddress | address | Address of the polytoken |
+| \_implementation | address | representing the address of the new implementation to be set |
 

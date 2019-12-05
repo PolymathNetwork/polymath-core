@@ -4,42 +4,40 @@ title: ScheduledCheckpointFactory
 original_id: ScheduledCheckpointFactory
 ---
 
-# Factory for deploying EtherDividendCheckpoint module (ScheduledCheckpointFactory.sol)
+# Factory for deploying EtherDividendCheckpoint module \(ScheduledCheckpointFactory.sol\)
 
-View Source: [contracts/modules/Experimental/Mixed/ScheduledCheckpointFactory.sol](../../contracts/modules/Experimental/Mixed/ScheduledCheckpointFactory.sol)
+View Source: [contracts/modules/Experimental/Mixed/ScheduledCheckpointFactory.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/modules/Experimental/Mixed/ScheduledCheckpointFactory.sol)
 
-**↗ Extends: [ModuleFactory](ModuleFactory.md)**
+**↗ Extends:** [**ModuleFactory**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ModuleFactory.md)
 
 **ScheduledCheckpointFactory**
 
 ## Functions
 
-- [(uint256 _setupCost, address _polymathRegistry, bool _isCostInPoly)](#)
-- [deploy(bytes _data)](#deploy)
-
-### 
+* [\(uint256 \_setupCost, address \_polymathRegistry, bool \_isCostInPoly\)](scheduledcheckpointfactory.md)
+* [deploy\(bytes \_data\)](scheduledcheckpointfactory.md#deploy)
 
 Constructor
 
-```js
-function (uint256 _setupCost, address _polymathRegistry, bool _isCostInPoly) public nonpayable ModuleFactory 
+```javascript
+function (uint256 _setupCost, address _polymathRegistry, bool _isCostInPoly) public nonpayable ModuleFactory
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _setupCost | uint256 | Setup cost of the module | 
-| _polymathRegistry | address | Address of the Polymath registry | 
-| _isCostInPoly | bool | true = cost in Poly, false = USD | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_setupCost | uint256 | Setup cost of the module |
+| \_polymathRegistry | address | Address of the Polymath registry |
+| \_isCostInPoly | bool | true = cost in Poly, false = USD |
 
 ### deploy
 
-⤾ overrides [IModuleFactory.deploy](IModuleFactory.md#deploy)
+⤾ overrides [IModuleFactory.deploy](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IModuleFactory.md#deploy)
 
 used to launch the Module with the help of factory
 
-```js
+```javascript
 function deploy(bytes _data) external nonpayable
 returns(address)
 ```
@@ -50,7 +48,7 @@ address Contract address of the Module
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _data | bytes |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_data | bytes |  |
 

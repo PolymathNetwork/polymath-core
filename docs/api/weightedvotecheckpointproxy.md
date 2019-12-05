@@ -4,32 +4,30 @@ title: WeightedVoteCheckpointProxy
 original_id: WeightedVoteCheckpointProxy
 ---
 
-# Voting module for governance (WeightedVoteCheckpointProxy.sol)
+# Voting module for governance \(WeightedVoteCheckpointProxy.sol\)
 
-View Source: [contracts/modules/Checkpoint/Voting/Transparent/WeightedVoteCheckpointProxy.sol](../../contracts/modules/Checkpoint/Voting/Transparent/WeightedVoteCheckpointProxy.sol)
+View Source: [contracts/modules/Checkpoint/Voting/Transparent/WeightedVoteCheckpointProxy.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/modules/Checkpoint/Voting/Transparent/WeightedVoteCheckpointProxy.sol)
 
-**↗ Extends: [WeightedVoteCheckpointStorage](WeightedVoteCheckpointStorage.md), [VotingCheckpointStorage](VotingCheckpointStorage.md), [ModuleStorage](ModuleStorage.md), [Pausable](Pausable.md), [OwnedUpgradeabilityProxy](OwnedUpgradeabilityProxy.md)**
+**↗ Extends:** [**WeightedVoteCheckpointStorage**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/WeightedVoteCheckpointStorage.md)**,** [**VotingCheckpointStorage**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/VotingCheckpointStorage.md)**,** [**ModuleStorage**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ModuleStorage.md)**,** [**Pausable**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/Pausable.md)**,** [**OwnedUpgradeabilityProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/OwnedUpgradeabilityProxy.md)
 
 **WeightedVoteCheckpointProxy**
 
 ## Functions
 
-- [(string _version, address _securityToken, address _polyAddress, address _implementation)](#)
-
-### 
+* [\(string \_version, address \_securityToken, address \_polyAddress, address \_implementation\)](weightedvotecheckpointproxy.md)
 
 Constructor
 
-```js
-function (string _version, address _securityToken, address _polyAddress, address _implementation) public nonpayable ModuleStorage 
+```javascript
+function (string _version, address _securityToken, address _polyAddress, address _implementation) public nonpayable ModuleStorage
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _version | string |  | 
-| _securityToken | address | Address of the security token | 
-| _polyAddress | address | Address of the polytoken | 
-| _implementation | address | representing the address of the new implementation to be set | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_version | string |  |
+| \_securityToken | address | Address of the security token |
+| \_polyAddress | address | Address of the polytoken |
+| \_implementation | address | representing the address of the new implementation to be set |
 

@@ -4,18 +4,19 @@ title: USDTieredSTOStorage
 original_id: USDTieredSTOStorage
 ---
 
-# Contract used to store layout for the USDTieredSTO storage (USDTieredSTOStorage.sol)
+# Contract used to store layout for the USDTieredSTO storage \(USDTieredSTOStorage.sol\)
 
-View Source: [contracts/modules/STO/USDTiered/USDTieredSTOStorage.sol](../../contracts/modules/STO/USDTiered/USDTieredSTOStorage.sol)
+View Source: [contracts/modules/STO/USDTiered/USDTieredSTOStorage.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/modules/STO/USDTiered/USDTieredSTOStorage.sol)
 
-**↘ Derived Contracts: [USDTieredSTO](USDTieredSTO.md), [USDTieredSTOProxy](USDTieredSTOProxy.md)**
+**↘ Derived Contracts:** [**USDTieredSTO**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/USDTieredSTO.md)**,** [**USDTieredSTOProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/USDTieredSTOProxy.md)
 
 **USDTieredSTOStorage**
 
 ## Structs
+
 ### Tier
 
-```js
+```javascript
 struct Tier {
  uint256 rate,
  uint256 rateDiscountPoly,
@@ -28,9 +29,10 @@ struct Tier {
 ```
 
 ## Contract Members
+
 **Constants & Variables**
 
-```js
+```javascript
 //internal members
 bytes32 internal constant INVESTORSKEY;
 mapping(bytes32 => mapping(bytes32 => string)) internal oracleKeys;
@@ -52,7 +54,6 @@ uint256 public nonAccreditedLimitUSD;
 uint256 public minimumInvestmentUSD;
 uint256 public finalAmountReturned;
 struct USDTieredSTOStorage.Tier[] public tiers;
-
 ```
 
 ## Functions

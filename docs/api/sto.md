@@ -4,110 +4,111 @@ title: STO
 original_id: STO
 ---
 
-# Base abstract contract to be extended by all STO modules (STO.sol)
+# Base abstract contract to be extended by all STO modules \(STO.sol\)
 
-View Source: [contracts/modules/STO/STO.sol](../../contracts/modules/STO/STO.sol)
+View Source: [contracts/modules/STO/STO.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/modules/STO/STO.sol)
 
-**↗ Extends: [ISTO](ISTO.md), [STOStorage](STOStorage.md), [Module](Module.md)**
-**↘ Derived Contracts: [CappedSTO](CappedSTO.md), [DummySTO](DummySTO.md), [PreSaleSTO](PreSaleSTO.md), [USDTieredSTO](USDTieredSTO.md)**
+**↗ Extends:** [**ISTO**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ISTO.md)**,** [**STOStorage**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/STOStorage.md)**,** [**Module**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/Module.md) **↘ Derived Contracts:** [**CappedSTO**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/CappedSTO.md)**,** [**DummySTO**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/DummySTO.md)**,** [**PreSaleSTO**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/PreSaleSTO.md)**,** [**USDTieredSTO**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/USDTieredSTO.md)
 
 **STO**
 
 ## Functions
 
-- [getRaised(enum ISTO.FundRaiseType _fundRaiseType)](#getraised)
-- [getTokensSold()](#gettokenssold)
-- [pause()](#pause)
-- [_setFundRaiseType(enum ISTO.FundRaiseType[] _fundRaiseTypes)](#_setfundraisetype)
-- [_canBuy(address _investor)](#_canbuy)
-- [_getKey(bytes32 _key1, address _key2)](#_getkey)
+* [getRaised\(enum ISTO.FundRaiseType \_fundRaiseType\)](sto.md#getraised)
+* [getTokensSold\(\)](sto.md#gettokenssold)
+* [pause\(\)](sto.md#pause)
+* [\_setFundRaiseType\(enum ISTO.FundRaiseType\[\] \_fundRaiseTypes\)](sto.md#_setfundraisetype)
+* [\_canBuy\(address \_investor\)](sto.md#_canbuy)
+* [\_getKey\(bytes32 \_key1, address \_key2\)](sto.md#_getkey)
 
 ### getRaised
 
-⤾ overrides [ISTO.getRaised](ISTO.md#getraised)
+⤾ overrides [ISTO.getRaised](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ISTO.md#getraised)
 
 Returns funds raised by the STO
 
-```js
+```javascript
 function getRaised(enum ISTO.FundRaiseType _fundRaiseType) public view
 returns(uint256)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _fundRaiseType | enum ISTO.FundRaiseType |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_fundRaiseType | enum ISTO.FundRaiseType |  |
 
 ### getTokensSold
 
-⤾ overrides [ISTO.getTokensSold](ISTO.md#gettokenssold)
+⤾ overrides [ISTO.getTokensSold](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ISTO.md#gettokenssold)
 
-⤿ Overridden Implementation(s): [CappedSTO.getTokensSold](CappedSTO.md#gettokenssold),[DummySTO.getTokensSold](DummySTO.md#gettokenssold),[PreSaleSTO.getTokensSold](PreSaleSTO.md#gettokenssold),[USDTieredSTO.getTokensSold](USDTieredSTO.md#gettokenssold)
+⤿ Overridden Implementation\(s\): [CappedSTO.getTokensSold](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/CappedSTO.md#gettokenssold),[DummySTO.getTokensSold](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/DummySTO.md#gettokenssold),[PreSaleSTO.getTokensSold](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/PreSaleSTO.md#gettokenssold),[USDTieredSTO.getTokensSold](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/USDTieredSTO.md#gettokenssold)
 
 Returns the total no. of tokens sold
 
-```js
+```javascript
 function getTokensSold() external view
 returns(uint256)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### pause
 
-⤾ overrides [Module.pause](Module.md#pause)
+⤾ overrides [Module.pause](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/Module.md#pause)
 
-Pause (overridden function)
+Pause \(overridden function\)
 
-```js
+```javascript
 function pause() public nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
 
-### _setFundRaiseType
 
-```js
+### \_setFundRaiseType
+
+```javascript
 function _setFundRaiseType(enum ISTO.FundRaiseType[] _fundRaiseTypes) internal nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _fundRaiseTypes | enum ISTO.FundRaiseType[] |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_fundRaiseTypes | enum ISTO.FundRaiseType\[\] |  |
 
-### _canBuy
+### \_canBuy
 
-```js
+```javascript
 function _canBuy(address _investor) internal view
 returns(bool)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _investor | address |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_investor | address |  |
 
-### _getKey
+### \_getKey
 
-```js
+```javascript
 function _getKey(bytes32 _key1, address _key2) internal pure
 returns(bytes32)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key1 | bytes32 |  | 
-| _key2 | address |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key1 | bytes32 |  |
+| \_key2 | address |  |
 

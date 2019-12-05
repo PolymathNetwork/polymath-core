@@ -4,18 +4,19 @@ title: LockUpTransferManagerStorage
 original_id: LockUpTransferManagerStorage
 ---
 
-# Wallet for core vesting escrow functionality (LockUpTransferManagerStorage.sol)
+# Wallet for core vesting escrow functionality \(LockUpTransferManagerStorage.sol\)
 
-View Source: [contracts/modules/TransferManager/LTM/LockUpTransferManagerStorage.sol](../../contracts/modules/TransferManager/LTM/LockUpTransferManagerStorage.sol)
+View Source: [contracts/modules/TransferManager/LTM/LockUpTransferManagerStorage.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/modules/TransferManager/LTM/LockUpTransferManagerStorage.sol)
 
-**↘ Derived Contracts: [LockUpTransferManager](LockUpTransferManager.md), [LockUpTransferManagerProxy](LockUpTransferManagerProxy.md)**
+**↘ Derived Contracts:** [**LockUpTransferManager**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/LockUpTransferManager.md)**,** [**LockUpTransferManagerProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/LockUpTransferManagerProxy.md)
 
 **LockUpTransferManagerStorage**
 
 ## Structs
+
 ### LockUp
 
-```js
+```javascript
 struct LockUp {
  uint256 lockupAmount,
  uint256 startTime,
@@ -25,9 +26,10 @@ struct LockUp {
 ```
 
 ## Contract Members
+
 **Constants & Variables**
 
-```js
+```javascript
 //public members
 mapping(bytes32 => struct LockUpTransferManagerStorage.LockUp) public lockups;
 
@@ -37,7 +39,6 @@ mapping(bytes32 => address[]) internal lockupToUsers;
 mapping(address => mapping(bytes32 => uint256)) internal userToLockupIndex;
 mapping(bytes32 => mapping(address => uint256)) internal lockupToUserIndex;
 bytes32[] internal lockupArray;
-
 ```
 
 ## Functions

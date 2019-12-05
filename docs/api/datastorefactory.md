@@ -6,45 +6,43 @@ original_id: DataStoreFactory
 
 # DataStoreFactory.sol
 
-View Source: [contracts/datastore/DataStoreFactory.sol](../../contracts/datastore/DataStoreFactory.sol)
+View Source: [contracts/datastore/DataStoreFactory.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/datastore/DataStoreFactory.sol)
 
 **DataStoreFactory**
 
 ## Contract Members
+
 **Constants & Variables**
 
-```js
+```javascript
 address public implementation;
-
 ```
 
 ## Functions
 
-- [(address _implementation)](#)
-- [generateDataStore(address _securityToken)](#generatedatastore)
+* [\(address \_implementation\)](datastorefactory.md)
+* [generateDataStore\(address \_securityToken\)](datastorefactory.md#generatedatastore)
 
-### 
-
-```js
+```javascript
 function (address _implementation) public nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _implementation | address |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_implementation | address |  |
 
 ### generateDataStore
 
-```js
+```javascript
 function generateDataStore(address _securityToken) public nonpayable
 returns(address)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _securityToken | address |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_securityToken | address |  |
 

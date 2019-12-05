@@ -33,7 +33,7 @@ _**Call the `addIndividualRestriction()` function with following data.**_
      startTime → now
      rollingPeriodInDays → 5
      endTime → now + 12 days
-     restrictionType → 0 . (Fixed restriction) 
+     restrictionType → 0 . (Fixed restriction)
 ```
 
 Now Alice starts trading with the following assumptions.
@@ -41,7 +41,7 @@ Now Alice starts trading with the following assumptions.
 ```text
      Alice’s Address != 0x0 ,      
      paused = false ,     
-     exemptionList[0xabc] = false    
+     exemptionList[0xabc] = false
 ```
 
 _**Day1: Alice tries to sell 1000 tokens**_
@@ -89,7 +89,7 @@ _**Day 8: Alice tries to sell 4000 tokens**_
        amount = 4000  
        sumOfLastPeriod = 8000 - 5000(amount sold on day 2) - 0 (amount sold on day 3) => 3000 or (Day  4, 5,6,7, 8 trade sum which is 3000).
             10000 >= 4000 + 3000   — yes tx processed   sumOfLastPeriod = 7000
-      continues ...   
+      continues ...
 ```
 
 ## Transfer Verification
@@ -105,7 +105,7 @@ _**Day 8: Alice tries to sell 4000 tokens**_
 ### First Case :-
 
 * If `_from` has Individual restriction only & transaction time is between `startTime` and `endTime` of the restriction, then transaction will go through only when:
-  * `_amount` is less than or equal to the `_allowedAmount - sumOfLastPeriod`, where `_allowedAmount` is the fixed number of tokens \(`allowedTokens`\) allowed to transact in a given rolling period when restriction type is `Fixed` . If not, then `allowedAmount` will be calculated at the tx processing time according to the current totalSupply of the ST. i.e  `_allowedAmount = (_restriction.allowedTokens.mul(ISecurityToken(securityToken).totalSupply())) / uint256(10) ** 18`.
+  * `_amount` is less than or equal to the `_allowedAmount - sumOfLastPeriod`, where `_allowedAmount` is the fixed number of tokens \(`allowedTokens`\) allowed to transact in a given rolling period when restriction type is `Fixed` . If not, then `allowedAmount` will be calculated at the tx processing time according to the current totalSupply of the ST. i.e `_allowedAmount = (_restriction.allowedTokens.mul(ISecurityToken(securityToken).totalSupply())) / uint256(10) ** 18`.
 
     `sumOfLastPeriod` will be the sum of the volume traded by the `_from` in last n days, where n is always less than or equal to the `rollingPeriod`. \(given n will always be calculated after the `startTime` of the individual restriction \).
 
@@ -150,7 +150,7 @@ _**Day 8: Alice tries to sell 4000 tokens**_
         RestrictionType _restrictionType
     )
        public
-       withPerm(ADMIN)  
+       withPerm(ADMIN)
 ```
 
 _**Require checks**_
@@ -159,7 +159,7 @@ _**Require checks**_
 * `_holder` should not be a present in the exemption list.
 * `_restrictionType` could be 0 or 1. No other value allowed.
 * `_rollingPeriodInDays` always between \[1, 365\].
-* `_restrictionType == 0` then `_allowedTokens` always greater then zero otherwise `_allowedTokens` should be non zero and value lies between \(0, 100 _10\*_16 \].
+* `_restrictionType == 0` then `_allowedTokens` always greater then zero otherwise `_allowedTokens` should be non zero and value lies between \(0, 100 \_10\*\_16 \].
 * Difference of days between `_startTime`  and `_endTime` should be &gt;= `_rollingPeriodInDays`
 * If `_startTime` is 0 then it will takes current block timestamp + 1 as the startTime.
 

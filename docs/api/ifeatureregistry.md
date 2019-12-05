@@ -4,49 +4,49 @@ title: IFeatureRegistry
 original_id: IFeatureRegistry
 ---
 
-# Interface for managing polymath feature switches (IFeatureRegistry.sol)
+# Interface for managing polymath feature switches \(IFeatureRegistry.sol\)
 
-View Source: [contracts/interfaces/IFeatureRegistry.sol](../../contracts/interfaces/IFeatureRegistry.sol)
+View Source: [contracts/interfaces/IFeatureRegistry.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/interfaces/IFeatureRegistry.sol)
 
-**↘ Derived Contracts: [FeatureRegistry](FeatureRegistry.md)**
+**↘ Derived Contracts:** [**FeatureRegistry**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/FeatureRegistry.md)
 
 **IFeatureRegistry**
 
 **Events**
 
-```js
+```javascript
 event ChangeFeatureStatus(string  _nameKey, bool  _newStatus);
 ```
 
 ## Functions
 
-- [setFeatureStatus(string _nameKey, bool _newStatus)](#setfeaturestatus)
-- [getFeatureStatus(string _nameKey)](#getfeaturestatus)
+* [setFeatureStatus\(string \_nameKey, bool \_newStatus\)](ifeatureregistry.md#setfeaturestatus)
+* [getFeatureStatus\(string \_nameKey\)](ifeatureregistry.md#getfeaturestatus)
 
 ### setFeatureStatus
 
-⤿ Overridden Implementation(s): [FeatureRegistry.setFeatureStatus](FeatureRegistry.md#setfeaturestatus)
+⤿ Overridden Implementation\(s\): [FeatureRegistry.setFeatureStatus](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/FeatureRegistry.md#setfeaturestatus)
 
 change a feature status
 
-```js
+```javascript
 function setFeatureStatus(string _nameKey, bool _newStatus) external nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _nameKey | string | is the key for the feature status mapping | 
-| _newStatus | bool | is the new feature status | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_nameKey | string | is the key for the feature status mapping |
+| \_newStatus | bool | is the new feature status |
 
 ### getFeatureStatus
 
-⤿ Overridden Implementation(s): [FeatureRegistry.getFeatureStatus](FeatureRegistry.md#getfeaturestatus)
+⤿ Overridden Implementation\(s\): [FeatureRegistry.getFeatureStatus](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/FeatureRegistry.md#getfeaturestatus)
 
 Get the status of a feature
 
-```js
+```javascript
 function getFeatureStatus(string _nameKey) external view
 returns(hasFeature bool)
 ```
@@ -57,7 +57,7 @@ bool
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _nameKey | string | is the key for the feature status mapping | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_nameKey | string | is the key for the feature status mapping |
 

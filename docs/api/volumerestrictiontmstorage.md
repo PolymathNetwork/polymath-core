@@ -4,18 +4,19 @@ title: VolumeRestrictionTMStorage
 original_id: VolumeRestrictionTMStorage
 ---
 
-# Storage layout for VolumeRestrictionTM (VolumeRestrictionTMStorage.sol)
+# Storage layout for VolumeRestrictionTM \(VolumeRestrictionTMStorage.sol\)
 
-View Source: [contracts/modules/TransferManager/VRTM/VolumeRestrictionTMStorage.sol](../../contracts/modules/TransferManager/VRTM/VolumeRestrictionTMStorage.sol)
+View Source: [contracts/modules/TransferManager/VRTM/VolumeRestrictionTMStorage.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/modules/TransferManager/VRTM/VolumeRestrictionTMStorage.sol)
 
-**↘ Derived Contracts: [VolumeRestrictionTM](VolumeRestrictionTM.md), [VolumeRestrictionTMProxy](VolumeRestrictionTMProxy.md)**
+**↘ Derived Contracts:** [**VolumeRestrictionTM**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/VolumeRestrictionTM.md)**,** [**VolumeRestrictionTMProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/VolumeRestrictionTMProxy.md)
 
 **VolumeRestrictionTMStorage**
 
 **Enums**
+
 ### RestrictionType
 
-```js
+```javascript
 enum RestrictionType {
  Fixed,
  Percentage
@@ -24,7 +25,7 @@ enum RestrictionType {
 
 ### TypeOfPeriod
 
-```js
+```javascript
 enum TypeOfPeriod {
  MultipleDays,
  OneDay,
@@ -33,9 +34,10 @@ enum TypeOfPeriod {
 ```
 
 ## Structs
+
 ### VolumeRestriction
 
-```js
+```javascript
 struct VolumeRestriction {
  uint256 allowedTokens,
  uint256 startTime,
@@ -47,7 +49,7 @@ struct VolumeRestriction {
 
 ### IndividualRestrictions
 
-```js
+```javascript
 struct IndividualRestrictions {
  mapping(address => struct VolumeRestrictionTMStorage.VolumeRestriction) individualRestriction,
  mapping(address => struct VolumeRestrictionTMStorage.VolumeRestriction) individualDailyRestriction
@@ -56,7 +58,7 @@ struct IndividualRestrictions {
 
 ### GlobalRestrictions
 
-```js
+```javascript
 struct GlobalRestrictions {
  struct VolumeRestrictionTMStorage.VolumeRestriction defaultRestriction,
  struct VolumeRestrictionTMStorage.VolumeRestriction defaultDailyRestriction
@@ -65,7 +67,7 @@ struct GlobalRestrictions {
 
 ### BucketDetails
 
-```js
+```javascript
 struct BucketDetails {
  uint256 lastTradedDayTime,
  uint256 sumOfLastPeriod,
@@ -77,7 +79,7 @@ struct BucketDetails {
 
 ### BucketData
 
-```js
+```javascript
 struct BucketData {
  mapping(address => mapping(uint256 => uint256)) bucket,
  mapping(address => mapping(uint256 => uint256)) defaultBucket,
@@ -88,7 +90,7 @@ struct BucketData {
 
 ### Exemptions
 
-```js
+```javascript
 struct Exemptions {
  mapping(address => uint256) exemptIndex,
  address[] exemptAddresses
@@ -96,15 +98,15 @@ struct Exemptions {
 ```
 
 ## Contract Members
+
 **Constants & Variables**
 
-```js
+```javascript
 mapping(address => enum VolumeRestrictionTMStorage.TypeOfPeriod) internal holderToRestrictionType;
 struct VolumeRestrictionTMStorage.IndividualRestrictions internal individualRestrictions;
 struct VolumeRestrictionTMStorage.GlobalRestrictions internal globalRestrictions;
 struct VolumeRestrictionTMStorage.BucketData internal bucketData;
 struct VolumeRestrictionTMStorage.Exemptions internal exemptions;
-
 ```
 
 ## Functions

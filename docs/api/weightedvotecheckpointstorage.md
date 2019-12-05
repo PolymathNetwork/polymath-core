@@ -6,16 +6,17 @@ original_id: WeightedVoteCheckpointStorage
 
 # WeightedVoteCheckpointStorage.sol
 
-View Source: [contracts/modules/Checkpoint/Voting/Transparent/WeightedVoteCheckpointStorage.sol](../../contracts/modules/Checkpoint/Voting/Transparent/WeightedVoteCheckpointStorage.sol)
+View Source: [contracts/modules/Checkpoint/Voting/Transparent/WeightedVoteCheckpointStorage.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/modules/Checkpoint/Voting/Transparent/WeightedVoteCheckpointStorage.sol)
 
-**↘ Derived Contracts: [WeightedVoteCheckpoint](WeightedVoteCheckpoint.md), [WeightedVoteCheckpointProxy](WeightedVoteCheckpointProxy.md)**
+**↘ Derived Contracts:** [**WeightedVoteCheckpoint**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/WeightedVoteCheckpoint.md)**,** [**WeightedVoteCheckpointProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/WeightedVoteCheckpointProxy.md)
 
 **WeightedVoteCheckpointStorage**
 
 ## Structs
+
 ### Ballot
 
-```js
+```javascript
 struct Ballot {
  uint256 checkpointId,
  uint256 quorum,
@@ -31,11 +32,11 @@ struct Ballot {
 ```
 
 ## Contract Members
+
 **Constants & Variables**
 
-```js
+```javascript
 struct WeightedVoteCheckpointStorage.Ballot[] internal ballots;
-
 ```
 
 ## Functions

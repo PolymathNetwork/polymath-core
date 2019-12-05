@@ -4,74 +4,72 @@ title: Ownable
 original_id: Ownable
 ---
 
-# Ownable (Ownable.sol)
+# Ownable \(Ownable.sol\)
 
-View Source: [openzeppelin-solidity/contracts/ownership/Ownable.sol](../../openzeppelin-solidity/contracts/ownership/Ownable.sol)
+View Source: [openzeppelin-solidity/contracts/ownership/Ownable.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/openzeppelin-solidity/contracts/ownership/Ownable.sol)
 
-**↘ Derived Contracts: [MakerDAOOracle](MakerDAOOracle.md), [ModuleFactory](ModuleFactory.md), [ReclaimTokens](ReclaimTokens.md), [StableOracle](StableOracle.md), [STFactory](STFactory.md)**
+**↘ Derived Contracts:** [**MakerDAOOracle**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/MakerDAOOracle.md)**,** [**ModuleFactory**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ModuleFactory.md)**,** [**ReclaimTokens**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ReclaimTokens.md)**,** [**StableOracle**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/StableOracle.md)**,** [**STFactory**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/STFactory.md)
 
 **Ownable**
 
-The Ownable contract has an owner address, and provides basic authorization control
-functions, this simplifies the implementation of "user permissions".
+The Ownable contract has an owner address, and provides basic authorization control functions, this simplifies the implementation of "user permissions".
 
 ## Contract Members
+
 **Constants & Variables**
 
-```js
+```javascript
 address private _owner;
-
 ```
 
 **Events**
 
-```js
+```javascript
 event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 ```
 
 ## Modifiers
 
-- [onlyOwner](#onlyowner)
+* [onlyOwner](ownable.md#onlyowner)
 
 ### onlyOwner
 
 Throws if called by any account other than the owner.
 
-```js
+```javascript
 modifier onlyOwner() internal
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ## Functions
 
-- [()](#)
-- [owner()](#owner)
-- [isOwner()](#isowner)
-- [renounceOwnership()](#renounceownership)
-- [transferOwnership(address newOwner)](#transferownership)
-- [_transferOwnership(address newOwner)](#_transferownership)
+* [\(\)](ownable.md)
+* [owner\(\)](ownable.md#owner)
+* [isOwner\(\)](ownable.md#isowner)
+* [renounceOwnership\(\)](ownable.md#renounceownership)
+* [transferOwnership\(address newOwner\)](ownable.md#transferownership)
+* [\_transferOwnership\(address newOwner\)](ownable.md#_transferownership)
 
-### 
+The Ownable constructor sets the original `owner` of the contract to the sender account.
 
-The Ownable constructor sets the original `owner` of the contract to the sender
-account.
-
-```js
+```javascript
 function () internal nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### owner
 
-```js
+```javascript
 function owner() public view
 returns(address)
 ```
@@ -82,12 +80,13 @@ the address of the owner.
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### isOwner
 
-```js
+```javascript
 function isOwner() public view
 returns(bool)
 ```
@@ -98,48 +97,49 @@ true if `msg.sender` is the owner of the contract.
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### renounceOwnership
 
-Renouncing ownership will leave the contract without an owner,
-thereby removing any functionality that is only available to the owner.
+Renouncing ownership will leave the contract without an owner, thereby removing any functionality that is only available to the owner.
 
-```js
-function renounceOwnership() public nonpayable onlyOwner 
+```javascript
+function renounceOwnership() public nonpayable onlyOwner
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### transferOwnership
 
 Allows the current owner to transfer control of the contract to a newOwner.
 
-```js
-function transferOwnership(address newOwner) public nonpayable onlyOwner 
+```javascript
+function transferOwnership(address newOwner) public nonpayable onlyOwner
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| newOwner | address | The address to transfer ownership to. | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| newOwner | address | The address to transfer ownership to. |
 
-### _transferOwnership
+### \_transferOwnership
 
 Transfers control of the contract to a newOwner.
 
-```js
+```javascript
 function _transferOwnership(address newOwner) internal nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| newOwner | address | The address to transfer ownership to. | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| newOwner | address | The address to transfer ownership to. |
 

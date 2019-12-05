@@ -101,7 +101,7 @@ If Alice has multiple lockups then `totalRemainingLockedAmount` will be calculat
       bytes32 _lockupName
    )
       external
-      withPerm(ADMIN) 
+      withPerm(ADMIN)
 ```
 
 _**Note:**_ 1. Tokens are locked as soon as the Lockup is created, but only start vesting from \_startTime.  
@@ -285,7 +285,7 @@ Like other functions, the issuer or the designated delegate having `ADMIN` permi
        bytes32 _lockupName
    ) 
       external 
-      withPerm(ADMIN) 
+      withPerm(ADMIN)
 ```
 
 **For a batch transaction -**

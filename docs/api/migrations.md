@@ -6,72 +6,72 @@ original_id: Migrations
 
 # Migrations.sol
 
-View Source: [contracts/Migrations.sol](../../contracts/Migrations.sol)
+View Source: [contracts/Migrations.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/Migrations.sol)
 
 **Migrations**
 
 ## Contract Members
+
 **Constants & Variables**
 
-```js
+```javascript
 address public owner;
 uint256 public lastCompletedMigration;
-
 ```
 
 ## Modifiers
 
-- [restricted](#restricted)
+* [restricted](migrations.md#restricted)
 
 ### restricted
 
-```js
+```javascript
 modifier restricted() internal
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ## Functions
 
-- [()](#)
-- [setCompleted(uint256 _completed)](#setcompleted)
-- [upgrade(address _newAddress)](#upgrade)
+* [\(\)](migrations.md)
+* [setCompleted\(uint256 \_completed\)](migrations.md#setcompleted)
+* [upgrade\(address \_newAddress\)](migrations.md#upgrade)
 
-### 
-
-```js
+```javascript
 function () public nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### setCompleted
 
-```js
-function setCompleted(uint256 _completed) public nonpayable restricted 
+```javascript
+function setCompleted(uint256 _completed) public nonpayable restricted
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _completed | uint256 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_completed | uint256 |  |
 
 ### upgrade
 
-```js
-function upgrade(address _newAddress) public nonpayable restricted 
+```javascript
+function upgrade(address _newAddress) public nonpayable restricted
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _newAddress | address |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_newAddress | address |  |
 

@@ -4,18 +4,19 @@ title: ISTO
 original_id: ISTO
 ---
 
-# Interface to be implemented by all STO modules (ISTO.sol)
+# Interface to be implemented by all STO modules \(ISTO.sol\)
 
-View Source: [contracts/interfaces/ISTO.sol](../../contracts/interfaces/ISTO.sol)
+View Source: [contracts/interfaces/ISTO.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/interfaces/ISTO.sol)
 
-**↘ Derived Contracts: [STO](STO.md)**
+**↘ Derived Contracts:** [**STO**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/STO.md)
 
 **ISTO**
 
 **Enums**
+
 ### FundRaiseType
 
-```js
+```javascript
 enum FundRaiseType {
  ETH,
  POLY,
@@ -25,61 +26,63 @@ enum FundRaiseType {
 
 **Events**
 
-```js
+```javascript
 event SetFundRaiseTypes(enum ISTO.FundRaiseType[]  _fundRaiseTypes);
 ```
 
 ## Functions
 
-- [getTokensSold()](#gettokenssold)
-- [getRaised(enum ISTO.FundRaiseType _fundRaiseType)](#getraised)
-- [pause()](#pause)
+* [getTokensSold\(\)](isto.md#gettokenssold)
+* [getRaised\(enum ISTO.FundRaiseType \_fundRaiseType\)](isto.md#getraised)
+* [pause\(\)](isto.md#pause)
 
 ### getTokensSold
 
-⤿ Overridden Implementation(s): [CappedSTO.getTokensSold](CappedSTO.md#gettokenssold),[DummySTO.getTokensSold](DummySTO.md#gettokenssold),[PreSaleSTO.getTokensSold](PreSaleSTO.md#gettokenssold),[STO.getTokensSold](STO.md#gettokenssold),[USDTieredSTO.getTokensSold](USDTieredSTO.md#gettokenssold)
+⤿ Overridden Implementation\(s\): [CappedSTO.getTokensSold](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/CappedSTO.md#gettokenssold),[DummySTO.getTokensSold](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/DummySTO.md#gettokenssold),[PreSaleSTO.getTokensSold](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/PreSaleSTO.md#gettokenssold),[STO.getTokensSold](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/STO.md#gettokenssold),[USDTieredSTO.getTokensSold](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/USDTieredSTO.md#gettokenssold)
 
 Returns the total no. of tokens sold
 
-```js
+```javascript
 function getTokensSold() external view
 returns(soldTokens uint256)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### getRaised
 
-⤿ Overridden Implementation(s): [STO.getRaised](STO.md#getraised)
+⤿ Overridden Implementation\(s\): [STO.getRaised](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/STO.md#getraised)
 
 Returns funds raised by the STO
 
-```js
+```javascript
 function getRaised(enum ISTO.FundRaiseType _fundRaiseType) external view
 returns(raisedAmount uint256)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _fundRaiseType | enum ISTO.FundRaiseType |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_fundRaiseType | enum ISTO.FundRaiseType |  |
 
 ### pause
 
-⤿ Overridden Implementation(s): [Module.pause](Module.md#pause),[STO.pause](STO.md#pause)
+⤿ Overridden Implementation\(s\): [Module.pause](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/Module.md#pause),[STO.pause](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/STO.md#pause)
 
-Pause (overridden function)
+Pause \(overridden function\)
 
-```js
+```javascript
 function pause() external nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 

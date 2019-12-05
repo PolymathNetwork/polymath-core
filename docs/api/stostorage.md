@@ -4,18 +4,19 @@ title: STOStorage
 original_id: STOStorage
 ---
 
-# Storage layout for the STO contract (STOStorage.sol)
+# Storage layout for the STO contract \(STOStorage.sol\)
 
-View Source: [contracts/storage/modules/STO/STOStorage.sol](../../contracts/storage/modules/STO/STOStorage.sol)
+View Source: [contracts/storage/modules/STO/STOStorage.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/storage/modules/STO/STOStorage.sol)
 
-**↘ Derived Contracts: [CappedSTOProxy](CappedSTOProxy.md), [DummySTOProxy](DummySTOProxy.md), [PreSaleSTOProxy](PreSaleSTOProxy.md), [STO](STO.md), [USDTieredSTOProxy](USDTieredSTOProxy.md)**
+**↘ Derived Contracts:** [**CappedSTOProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/CappedSTOProxy.md)**,** [**DummySTOProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/DummySTOProxy.md)**,** [**PreSaleSTOProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/PreSaleSTOProxy.md)**,** [**STO**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/STO.md)**,** [**USDTieredSTOProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/USDTieredSTOProxy.md)
 
 **STOStorage**
 
 ## Contract Members
+
 **Constants & Variables**
 
-```js
+```javascript
 //internal members
 bytes32 internal constant INVESTORFLAGS;
 
@@ -28,7 +29,6 @@ uint256 public pausedTime;
 uint256 public investorCount;
 address payable public wallet;
 uint256 public totalTokensSold;
-
 ```
 
 ## Functions

@@ -4,17 +4,17 @@ title: ManualApprovalTransferManager
 original_id: ManualApprovalTransferManager
 ---
 
-# Transfer Manager module for manually approving transactions between accounts (ManualApprovalTransferManager.sol)
+# Transfer Manager module for manually approving transactions between accounts \(ManualApprovalTransfer
 
-View Source: [contracts/modules/TransferManager/MATM/ManualApprovalTransferManager.sol](../../contracts/modules/TransferManager/MATM/ManualApprovalTransferManager.sol)
+View Source: [contracts/modules/TransferManager/MATM/ManualApprovalTransferManager.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/modules/TransferManager/MATM/ManualApprovalTransferManager.sol)
 
-**↗ Extends: [ManualApprovalTransferManagerStorage](ManualApprovalTransferManagerStorage.md), [TransferManager](TransferManager.md)**
+**↗ Extends:** [**ManualApprovalTransferManagerStorage**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ManualApprovalTransferManagerStorage.md)**,** [**TransferManager**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/TransferManager.md)
 
 **ManualApprovalTransferManager**
 
 **Events**
 
-```js
+```javascript
 event AddManualApproval(address indexed _from, address indexed _to, uint256  _allowance, uint256  _expiryTime, bytes32  _description, address indexed _addedBy);
 event ModifyManualApproval(address indexed _from, address indexed _to, uint256  _expiryTime, uint256  _allowance, bytes32  _description, address indexed _editedBy);
 event RevokeManualApproval(address indexed _from, address indexed _to, address indexed _addedBy);
@@ -22,306 +22,308 @@ event RevokeManualApproval(address indexed _from, address indexed _to, address i
 
 ## Functions
 
-- [(address _securityToken, address _polyToken)](#)
-- [getInitFunction()](#getinitfunction)
-- [executeTransfer(address _from, address _to, uint256 _amount, bytes )](#executetransfer)
-- [verifyTransfer(address _from, address _to, uint256 _amount, bytes )](#verifytransfer)
-- [_verifyTransfer(address _from, address _to, uint256 _amount)](#_verifytransfer)
-- [addManualApproval(address _from, address _to, uint256 _allowance, uint256 _expiryTime, bytes32 _description)](#addmanualapproval)
-- [_addManualApproval(address _from, address _to, uint256 _allowance, uint256 _expiryTime, bytes32 _description)](#_addmanualapproval)
-- [addManualApprovalMulti(address[] _from, address[] _to, uint256[] _allowances, uint256[] _expiryTimes, bytes32[] _descriptions)](#addmanualapprovalmulti)
-- [modifyManualApproval(address _from, address _to, uint256 _expiryTime, uint256 _changeInAllowance, bytes32 _description, bool _increase)](#modifymanualapproval)
-- [_modifyManualApproval(address _from, address _to, uint256 _expiryTime, uint256 _changeInAllowance, bytes32 _description, bool _increase)](#_modifymanualapproval)
-- [modifyManualApprovalMulti(address[] _from, address[] _to, uint256[] _expiryTimes, uint256[] _changeInAllowance, bytes32[] _descriptions, bool[] _increase)](#modifymanualapprovalmulti)
-- [revokeManualApproval(address _from, address _to)](#revokemanualapproval)
-- [_revokeManualApproval(address _from, address _to)](#_revokemanualapproval)
-- [revokeManualApprovalMulti(address[] _from, address[] _to)](#revokemanualapprovalmulti)
-- [_checkInputLengthArray(address[] _from, address[] _to, uint256[] _expiryTimes, uint256[] _allowances, bytes32[] _descriptions)](#_checkinputlengtharray)
-- [getActiveApprovalsToUser(address _user)](#getactiveapprovalstouser)
-- [getApprovalDetails(address _from, address _to)](#getapprovaldetails)
-- [getTotalApprovalsLength()](#gettotalapprovalslength)
-- [getAllApprovals()](#getallapprovals)
-- [getPermissions()](#getpermissions)
-
-### 
+* [\(address \_securityToken, address \_polyToken\)](manualapprovaltransfermanager.md)
+* [getInitFunction\(\)](manualapprovaltransfermanager.md#getinitfunction)
+* [executeTransfer\(address \_from, address \_to, uint256 \_amount, bytes \)](manualapprovaltransfermanager.md#executetransfer)
+* [verifyTransfer\(address \_from, address \_to, uint256 \_amount, bytes \)](manualapprovaltransfermanager.md#verifytransfer)
+* [\_verifyTransfer\(address \_from, address \_to, uint256 \_amount\)](manualapprovaltransfermanager.md#_verifytransfer)
+* [addManualApproval\(address \_from, address \_to, uint256 \_allowance, uint256 \_expiryTime, bytes32 \_description\)](manualapprovaltransfermanager.md#addmanualapproval)
+* [\_addManualApproval\(address \_from, address \_to, uint256 \_allowance, uint256 \_expiryTime, bytes32 \_description\)](manualapprovaltransfermanager.md#_addmanualapproval)
+* [addManualApprovalMulti\(address\[\] \_from, address\[\] \_to, uint256\[\] \_allowances, uint256\[\] \_expiryTimes, bytes32\[\] \_descriptions\)](manualapprovaltransfermanager.md#addmanualapprovalmulti)
+* [modifyManualApproval\(address \_from, address \_to, uint256 \_expiryTime, uint256 \_changeInAllowance, bytes32 \_description, bool \_increase\)](manualapprovaltransfermanager.md#modifymanualapproval)
+* [\_modifyManualApproval\(address \_from, address \_to, uint256 \_expiryTime, uint256 \_changeInAllowance, bytes32 \_description, bool \_increase\)](manualapprovaltransfermanager.md#_modifymanualapproval)
+* [modifyManualApprovalMulti\(address\[\] \_from, address\[\] \_to, uint256\[\] \_expiryTimes, uint256\[\] \_changeInAllowance, bytes32\[\] \_descriptions, bool\[\] \_increase\)](manualapprovaltransfermanager.md#modifymanualapprovalmulti)
+* [revokeManualApproval\(address \_from, address \_to\)](manualapprovaltransfermanager.md#revokemanualapproval)
+* [\_revokeManualApproval\(address \_from, address \_to\)](manualapprovaltransfermanager.md#_revokemanualapproval)
+* [revokeManualApprovalMulti\(address\[\] \_from, address\[\] \_to\)](manualapprovaltransfermanager.md#revokemanualapprovalmulti)
+* [\_checkInputLengthArray\(address\[\] \_from, address\[\] \_to, uint256\[\] \_expiryTimes, uint256\[\] \_allowances, bytes32\[\] \_descriptions\)](manualapprovaltransfermanager.md#_checkinputlengtharray)
+* [getActiveApprovalsToUser\(address \_user\)](manualapprovaltransfermanager.md#getactiveapprovalstouser)
+* [getApprovalDetails\(address \_from, address \_to\)](manualapprovaltransfermanager.md#getapprovaldetails)
+* [getTotalApprovalsLength\(\)](manualapprovaltransfermanager.md#gettotalapprovalslength)
+* [getAllApprovals\(\)](manualapprovaltransfermanager.md#getallapprovals)
+* [getPermissions\(\)](manualapprovaltransfermanager.md#getpermissions)
 
 Constructor
 
-```js
-function (address _securityToken, address _polyToken) public nonpayable Module 
+```javascript
+function (address _securityToken, address _polyToken) public nonpayable Module
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _securityToken | address | Address of the security token | 
-| _polyToken | address |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_securityToken | address | Address of the security token |
+| \_polyToken | address |  |
 
 ### getInitFunction
 
-⤾ overrides [IModule.getInitFunction](IModule.md#getinitfunction)
+⤾ overrides [IModule.getInitFunction](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IModule.md#getinitfunction)
 
 This function returns the signature of configure function
 
-```js
+```javascript
 function getInitFunction() public pure
 returns(bytes4)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### executeTransfer
 
-⤾ overrides [ITransferManager.executeTransfer](ITransferManager.md#executetransfer)
+⤾ overrides [ITransferManager.executeTransfer](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ITransferManager.md#executetransfer)
 
 Used to verify the transfer transaction and allow a manually approved transqaction to bypass other restrictions
 
-```js
+```javascript
 function executeTransfer(address _from, address _to, uint256 _amount, bytes ) external nonpayable onlySecurityToken 
 returns(enum ITransferManager.Result)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _from | address | Address of the sender | 
-| _to | address | Address of the receiver | 
-| _amount | uint256 | The amount of tokens to transfer | 
-|  | bytes | _from Address of the sender | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_from | address | Address of the sender |
+| \_to | address | Address of the receiver |
+| \_amount | uint256 | The amount of tokens to transfer |
+|  | bytes | \_from Address of the sender |
 
 ### verifyTransfer
 
-⤾ overrides [ITransferManager.verifyTransfer](ITransferManager.md#verifytransfer)
+⤾ overrides [ITransferManager.verifyTransfer](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ITransferManager.md#verifytransfer)
 
 Used to verify the transfer transaction and allow a manually approved transqaction to bypass other restrictions
 
-```js
+```javascript
 function verifyTransfer(address _from, address _to, uint256 _amount, bytes ) public view
 returns(enum ITransferManager.Result, bytes32)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _from | address | Address of the sender | 
-| _to | address | Address of the receiver | 
-| _amount | uint256 | The amount of tokens to transfer | 
-|  | bytes | _from Address of the sender | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_from | address | Address of the sender |
+| \_to | address | Address of the receiver |
+| \_amount | uint256 | The amount of tokens to transfer |
+|  | bytes | \_from Address of the sender |
 
-### _verifyTransfer
+### \_verifyTransfer
 
-```js
+```javascript
 function _verifyTransfer(address _from, address _to, uint256 _amount) internal view
 returns(enum ITransferManager.Result, bytes32)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _from | address |  | 
-| _to | address |  | 
-| _amount | uint256 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_from | address |  |
+| \_to | address |  |
+| \_amount | uint256 |  |
 
 ### addManualApproval
 
 Adds a pair of addresses to manual approvals
 
-```js
-function addManualApproval(address _from, address _to, uint256 _allowance, uint256 _expiryTime, bytes32 _description) external nonpayable withPerm 
+```javascript
+function addManualApproval(address _from, address _to, uint256 _allowance, uint256 _expiryTime, bytes32 _description) external nonpayable withPerm
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _from | address | is the address from which transfers are approved | 
-| _to | address | is the address to which transfers are approved | 
-| _allowance | uint256 | is the approved amount of tokens | 
-| _expiryTime | uint256 | is the time until which the transfer is allowed | 
-| _description | bytes32 | Description about the manual approval | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_from | address | is the address from which transfers are approved |
+| \_to | address | is the address to which transfers are approved |
+| \_allowance | uint256 | is the approved amount of tokens |
+| \_expiryTime | uint256 | is the time until which the transfer is allowed |
+| \_description | bytes32 | Description about the manual approval |
 
-### _addManualApproval
+### \_addManualApproval
 
-```js
+```javascript
 function _addManualApproval(address _from, address _to, uint256 _allowance, uint256 _expiryTime, bytes32 _description) internal nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _from | address |  | 
-| _to | address |  | 
-| _allowance | uint256 |  | 
-| _expiryTime | uint256 |  | 
-| _description | bytes32 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_from | address |  |
+| \_to | address |  |
+| \_allowance | uint256 |  |
+| \_expiryTime | uint256 |  |
+| \_description | bytes32 |  |
 
 ### addManualApprovalMulti
 
 Adds mutiple manual approvals in batch
 
-```js
-function addManualApprovalMulti(address[] _from, address[] _to, uint256[] _allowances, uint256[] _expiryTimes, bytes32[] _descriptions) public nonpayable withPerm 
+```javascript
+function addManualApprovalMulti(address[] _from, address[] _to, uint256[] _allowances, uint256[] _expiryTimes, bytes32[] _descriptions) public nonpayable withPerm
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _from | address[] | is the address array from which transfers are approved | 
-| _to | address[] | is the address array to which transfers are approved | 
-| _allowances | uint256[] | is the array of approved amounts | 
-| _expiryTimes | uint256[] | is the array of the times until which eath transfer is allowed | 
-| _descriptions | bytes32[] | is the description array for these manual approvals | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_from | address\[\] | is the address array from which transfers are approved |
+| \_to | address\[\] | is the address array to which transfers are approved |
+| \_allowances | uint256\[\] | is the array of approved amounts |
+| \_expiryTimes | uint256\[\] | is the array of the times until which eath transfer is allowed |
+| \_descriptions | bytes32\[\] | is the description array for these manual approvals |
 
 ### modifyManualApproval
 
 Modify the existing manual approvals
 
-```js
-function modifyManualApproval(address _from, address _to, uint256 _expiryTime, uint256 _changeInAllowance, bytes32 _description, bool _increase) external nonpayable withPerm 
+```javascript
+function modifyManualApproval(address _from, address _to, uint256 _expiryTime, uint256 _changeInAllowance, bytes32 _description, bool _increase) external nonpayable withPerm
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _from | address | is the address from which transfers are approved | 
-| _to | address | is the address to which transfers are approved | 
-| _expiryTime | uint256 | is the time until which the transfer is allowed | 
-| _changeInAllowance | uint256 | is the change in allowance | 
-| _description | bytes32 | Description about the manual approval | 
-| _increase | bool | tells whether the allowances will be increased (true) or decreased (false).
-or any value when there is no change in allowances | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_from | address | is the address from which transfers are approved |
+| \_to | address | is the address to which transfers are approved |
+| \_expiryTime | uint256 | is the time until which the transfer is allowed |
+| \_changeInAllowance | uint256 | is the change in allowance |
+| \_description | bytes32 | Description about the manual approval |
+| \_increase | bool | tells whether the allowances will be increased \(true\) or decreased \(false\). |
 
-### _modifyManualApproval
+or any value when there is no change in allowances \|
 
-```js
+### \_modifyManualApproval
+
+```javascript
 function _modifyManualApproval(address _from, address _to, uint256 _expiryTime, uint256 _changeInAllowance, bytes32 _description, bool _increase) internal nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _from | address |  | 
-| _to | address |  | 
-| _expiryTime | uint256 |  | 
-| _changeInAllowance | uint256 |  | 
-| _description | bytes32 |  | 
-| _increase | bool |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_from | address |  |
+| \_to | address |  |
+| \_expiryTime | uint256 |  |
+| \_changeInAllowance | uint256 |  |
+| \_description | bytes32 |  |
+| \_increase | bool |  |
 
 ### modifyManualApprovalMulti
 
 Adds mutiple manual approvals in batch
 
-```js
-function modifyManualApprovalMulti(address[] _from, address[] _to, uint256[] _expiryTimes, uint256[] _changeInAllowance, bytes32[] _descriptions, bool[] _increase) public nonpayable withPerm 
+```javascript
+function modifyManualApprovalMulti(address[] _from, address[] _to, uint256[] _expiryTimes, uint256[] _changeInAllowance, bytes32[] _descriptions, bool[] _increase) public nonpayable withPerm
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _from | address[] | is the address array from which transfers are approved | 
-| _to | address[] | is the address array to which transfers are approved | 
-| _expiryTimes | uint256[] | is the array of the times until which eath transfer is allowed | 
-| _changeInAllowance | uint256[] | is the array of change in allowances | 
-| _descriptions | bytes32[] | is the description array for these manual approvals | 
-| _increase | bool[] | Array of bools that tells whether the allowances will be increased (true) or decreased (false).
-or any value when there is no change in allowances | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_from | address\[\] | is the address array from which transfers are approved |
+| \_to | address\[\] | is the address array to which transfers are approved |
+| \_expiryTimes | uint256\[\] | is the array of the times until which eath transfer is allowed |
+| \_changeInAllowance | uint256\[\] | is the array of change in allowances |
+| \_descriptions | bytes32\[\] | is the description array for these manual approvals |
+| \_increase | bool\[\] | Array of bools that tells whether the allowances will be increased \(true\) or decreased \(false\). |
+
+or any value when there is no change in allowances \|
 
 ### revokeManualApproval
 
 Removes a pairs of addresses from manual approvals
 
-```js
-function revokeManualApproval(address _from, address _to) external nonpayable withPerm 
+```javascript
+function revokeManualApproval(address _from, address _to) external nonpayable withPerm
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _from | address | is the address from which transfers are approved | 
-| _to | address | is the address to which transfers are approved | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_from | address | is the address from which transfers are approved |
+| \_to | address | is the address to which transfers are approved |
 
-### _revokeManualApproval
+### \_revokeManualApproval
 
-```js
+```javascript
 function _revokeManualApproval(address _from, address _to) internal nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _from | address |  | 
-| _to | address |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_from | address |  |
+| \_to | address |  |
 
 ### revokeManualApprovalMulti
 
 Removes mutiple pairs of addresses from manual approvals
 
-```js
-function revokeManualApprovalMulti(address[] _from, address[] _to) external nonpayable withPerm 
+```javascript
+function revokeManualApprovalMulti(address[] _from, address[] _to) external nonpayable withPerm
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _from | address[] | is the address array from which transfers are approved | 
-| _to | address[] | is the address array to which transfers are approved | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_from | address\[\] | is the address array from which transfers are approved |
+| \_to | address\[\] | is the address array to which transfers are approved |
 
-### _checkInputLengthArray
+### \_checkInputLengthArray
 
-```js
+```javascript
 function _checkInputLengthArray(address[] _from, address[] _to, uint256[] _expiryTimes, uint256[] _allowances, bytes32[] _descriptions) internal pure
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _from | address[] |  | 
-| _to | address[] |  | 
-| _expiryTimes | uint256[] |  | 
-| _allowances | uint256[] |  | 
-| _descriptions | bytes32[] |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_from | address\[\] |  |
+| \_to | address\[\] |  |
+| \_expiryTimes | uint256\[\] |  |
+| \_allowances | uint256\[\] |  |
+| \_descriptions | bytes32\[\] |  |
 
 ### getActiveApprovalsToUser
 
 Returns the all active approvals corresponds to an address
 
-```js
+```javascript
 function getActiveApprovalsToUser(address _user) external view
 returns(address[], address[], uint256[], uint256[], uint256[], bytes32[])
 ```
 
 **Returns**
 
-address[] addresses from
+address\[\] addresses from
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _user | address | Address of the holder corresponds to whom list of manual approvals
-need to return | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_user | address | Address of the holder corresponds to whom list of manual approvals |
+
+need to return \|
 
 ### getApprovalDetails
 
-Get the details of the approval corresponds to _from & _to addresses
+Get the details of the approval corresponds to \_from & \_to addresses
 
-```js
+```javascript
 function getApprovalDetails(address _from, address _to) external view
 returns(uint256, uint256, uint256, bytes32)
 ```
@@ -332,56 +334,59 @@ uint256 expiryTime of the approval
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _from | address | Address of the sender | 
-| _to | address | Address of the receiver | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_from | address | Address of the sender |
+| \_to | address | Address of the receiver |
 
 ### getTotalApprovalsLength
 
 Returns the current number of active approvals
 
-```js
+```javascript
 function getTotalApprovalsLength() external view
 returns(uint256)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### getAllApprovals
 
 Get the details of all approvals
 
-```js
+```javascript
 function getAllApprovals() external view
 returns(address[], address[], uint256[], uint256[], uint256[], bytes32[])
 ```
 
 **Returns**
 
-address[] addresses from
+address\[\] addresses from
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### getPermissions
 
-⤾ overrides [IModule.getPermissions](IModule.md#getpermissions)
+⤾ overrides [IModule.getPermissions](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IModule.md#getpermissions)
 
 Returns the permissions flag that are associated with ManualApproval transfer manager
 
-```js
+```javascript
 function getPermissions() public view
 returns(bytes32[])
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 

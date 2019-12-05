@@ -4,45 +4,42 @@ title: TrackedRedemptionFactory
 original_id: TrackedRedemptionFactory
 ---
 
-# Factory for deploying GeneralTransferManager module (TrackedRedemptionFactory.sol)
+# Factory for deploying GeneralTransferManager module \(TrackedRedemptionFactory.sol\)
 
-View Source: [contracts/modules/Experimental/Burn/TrackedRedemptionFactory.sol](../../contracts/modules/Experimental/Burn/TrackedRedemptionFactory.sol)
+View Source: [contracts/modules/Experimental/Burn/TrackedRedemptionFactory.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/modules/Experimental/Burn/TrackedRedemptionFactory.sol)
 
-**↗ Extends: [ModuleFactory](ModuleFactory.md)**
-**↘ Derived Contracts: [MockBurnFactory](MockBurnFactory.md)**
+**↗ Extends:** [**ModuleFactory**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ModuleFactory.md) **↘ Derived Contracts:** [**MockBurnFactory**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/MockBurnFactory.md)
 
 **TrackedRedemptionFactory**
 
 ## Functions
 
-- [(uint256 _setupCost, address _polymathRegistry, bool _isCostInPoly)](#)
-- [deploy(bytes _data)](#deploy)
-
-### 
+* [\(uint256 \_setupCost, address \_polymathRegistry, bool \_isCostInPoly\)](trackedredemptionfactory.md)
+* [deploy\(bytes \_data\)](trackedredemptionfactory.md#deploy)
 
 Constructor
 
-```js
-function (uint256 _setupCost, address _polymathRegistry, bool _isCostInPoly) public nonpayable ModuleFactory 
+```javascript
+function (uint256 _setupCost, address _polymathRegistry, bool _isCostInPoly) public nonpayable ModuleFactory
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _setupCost | uint256 | Setup cost of module | 
-| _polymathRegistry | address | Address of the Polymath registry | 
-| _isCostInPoly | bool | true = cost in Poly, false = USD | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_setupCost | uint256 | Setup cost of module |
+| \_polymathRegistry | address | Address of the Polymath registry |
+| \_isCostInPoly | bool | true = cost in Poly, false = USD |
 
 ### deploy
 
-⤾ overrides [IModuleFactory.deploy](IModuleFactory.md#deploy)
+⤾ overrides [IModuleFactory.deploy](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IModuleFactory.md#deploy)
 
-⤿ Overridden Implementation(s): [MockBurnFactory.deploy](MockBurnFactory.md#deploy)
+⤿ Overridden Implementation\(s\): [MockBurnFactory.deploy](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/MockBurnFactory.md#deploy)
 
 Used to launch the Module with the help of factory
 
-```js
+```javascript
 function deploy(bytes _data) external nonpayable
 returns(address)
 ```
@@ -53,7 +50,7 @@ Address Contract address of the Module
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _data | bytes |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_data | bytes |  |
 

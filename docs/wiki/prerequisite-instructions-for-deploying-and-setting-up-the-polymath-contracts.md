@@ -29,7 +29,7 @@ The following instructions will allow you to run the CLI on a local test network
 5. When CLI is run for the first time, it will try to create a local key store. It will prompt for the user private key and a password to encrypt it using the web3 key store V3 JSON standard. After that, the next time the user runs a CLI command, only his password will be prompted.
 6. Starting working with the CLI
 
-**Note 1:** You can access Ethereum testnets and mainnet via the Infura load-balanced nodes. You have to save your private key to ./privKey file and run CLI command adding --remote-node  option. Example: `node CLI/polymath-cli <command> --remote-node https://mainnet.infura.io/v3/111111111111111111111`
+**Note 1:** You can access Ethereum testnets and mainnet via the Infura load-balanced nodes. You have to save your private key to ./privKey file and run CLI command adding --remote-node option. Example: `node CLI/polymath-cli <command> --remote-node https://mainnet.infura.io/v3/111111111111111111111`
 
 **Note 2:** Parity can be used to run this on a testnet or mainnet. We recommend using Kovan due to gas limits: `parity --chain kovan --rpcapi "eth,net,web3,personal,parity" --unlock [YOUR ACCOUNT] --password $HOME/password.file`
 

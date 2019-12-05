@@ -6,16 +6,17 @@ original_id: SecurityTokenStorage
 
 # SecurityTokenStorage.sol
 
-View Source: [contracts/tokens/SecurityTokenStorage.sol](../../contracts/tokens/SecurityTokenStorage.sol)
+View Source: [contracts/tokens/SecurityTokenStorage.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/tokens/SecurityTokenStorage.sol)
 
-**↘ Derived Contracts: [SecurityToken](SecurityToken.md), [SecurityTokenProxy](SecurityTokenProxy.md), [STGetter](STGetter.md)**
+**↘ Derived Contracts:** [**SecurityToken**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/SecurityToken.md)**,** [**SecurityTokenProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/SecurityTokenProxy.md)**,** [**STGetter**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/STGetter.md)
 
 **SecurityTokenStorage**
 
 ## Structs
+
 ### Document
 
-```js
+```javascript
 struct Document {
  bytes32 docHash,
  uint256 lastModified,
@@ -25,7 +26,7 @@ struct Document {
 
 ### SemanticVersion
 
-```js
+```javascript
 struct SemanticVersion {
  uint8 major,
  uint8 minor,
@@ -35,7 +36,7 @@ struct SemanticVersion {
 
 ### ModuleData
 
-```js
+```javascript
 struct ModuleData {
  bytes32 name,
  address module,
@@ -50,7 +51,7 @@ struct ModuleData {
 
 ### Checkpoint
 
-```js
+```javascript
 struct Checkpoint {
  uint256 checkpointId,
  uint256 value
@@ -58,9 +59,10 @@ struct Checkpoint {
 ```
 
 ## Contract Members
+
 **Constants & Variables**
 
-```js
+```javascript
 //internal members
 uint8 internal constant PERMISSION_KEY;
 uint8 internal constant TRANSFER_KEY;
@@ -106,7 +108,6 @@ string public tokenDetails;
 bool public controllerDisabled;
 bool public transfersFrozen;
 uint256 public holderCount;
-
 ```
 
 ## Functions

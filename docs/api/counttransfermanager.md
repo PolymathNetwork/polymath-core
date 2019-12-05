@@ -4,160 +4,159 @@ title: CountTransferManager
 original_id: CountTransferManager
 ---
 
-# Transfer Manager for limiting maximum number of token holders (CountTransferManager.sol)
+# Transfer Manager for limiting maximum number of token holders \(CountTransferManager.sol\)
 
-View Source: [contracts/modules/TransferManager/CTM/CountTransferManager.sol](../../contracts/modules/TransferManager/CTM/CountTransferManager.sol)
+View Source: [contracts/modules/TransferManager/CTM/CountTransferManager.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/modules/TransferManager/CTM/CountTransferManager.sol)
 
-**↗ Extends: [CountTransferManagerStorage](CountTransferManagerStorage.md), [TransferManager](TransferManager.md)**
-**↘ Derived Contracts: [MockCountTransferManager](MockCountTransferManager.md)**
+**↗ Extends:** [**CountTransferManagerStorage**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/CountTransferManagerStorage.md)**,** [**TransferManager**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/TransferManager.md) **↘ Derived Contracts:** [**MockCountTransferManager**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/MockCountTransferManager.md)
 
 **CountTransferManager**
 
 **Events**
 
-```js
+```javascript
 event ModifyHolderCount(uint256  _oldHolderCount, uint256  _newHolderCount);
 ```
 
 ## Functions
 
-- [(address _securityToken, address _polyToken)](#)
-- [executeTransfer(address _from, address _to, uint256 _amount, bytes )](#executetransfer)
-- [verifyTransfer(address _from, address _to, uint256 _amount, bytes )](#verifytransfer)
-- [_verifyTransfer(address _from, address _to, uint256 _amount, uint256 _holderCount)](#_verifytransfer)
-- [configure(uint256 _maxHolderCount)](#configure)
-- [changeHolderCount(uint256 _maxHolderCount)](#changeholdercount)
-- [getInitFunction()](#getinitfunction)
-- [getPermissions()](#getpermissions)
-
-### 
+* [\(address \_securityToken, address \_polyToken\)](counttransfermanager.md)
+* [executeTransfer\(address \_from, address \_to, uint256 \_amount, bytes \)](counttransfermanager.md#executetransfer)
+* [verifyTransfer\(address \_from, address \_to, uint256 \_amount, bytes \)](counttransfermanager.md#verifytransfer)
+* [\_verifyTransfer\(address \_from, address \_to, uint256 \_amount, uint256 \_holderCount\)](counttransfermanager.md#_verifytransfer)
+* [configure\(uint256 \_maxHolderCount\)](counttransfermanager.md#configure)
+* [changeHolderCount\(uint256 \_maxHolderCount\)](counttransfermanager.md#changeholdercount)
+* [getInitFunction\(\)](counttransfermanager.md#getinitfunction)
+* [getPermissions\(\)](counttransfermanager.md#getpermissions)
 
 Constructor
 
-```js
-function (address _securityToken, address _polyToken) public nonpayable Module 
+```javascript
+function (address _securityToken, address _polyToken) public nonpayable Module
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _securityToken | address | Address of the security token | 
-| _polyToken | address |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_securityToken | address | Address of the security token |
+| \_polyToken | address |  |
 
 ### executeTransfer
 
-⤾ overrides [ITransferManager.executeTransfer](ITransferManager.md#executetransfer)
+⤾ overrides [ITransferManager.executeTransfer](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ITransferManager.md#executetransfer)
 
 Used to verify the transfer transaction and prevent a transfer if it passes the allowed amount of token holders
 
-```js
+```javascript
 function executeTransfer(address _from, address _to, uint256 _amount, bytes ) external nonpayable
 returns(enum ITransferManager.Result)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _from | address | Address of the sender | 
-| _to | address | Address of the receiver | 
-| _amount | uint256 | Amount to send | 
-|  | bytes | _from Address of the sender | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_from | address | Address of the sender |
+| \_to | address | Address of the receiver |
+| \_amount | uint256 | Amount to send |
+|  | bytes | \_from Address of the sender |
 
 ### verifyTransfer
 
-⤾ overrides [ITransferManager.verifyTransfer](ITransferManager.md#verifytransfer)
+⤾ overrides [ITransferManager.verifyTransfer](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ITransferManager.md#verifytransfer)
 
 Used to verify the transfer transaction and prevent a transfer if it passes the allowed amount of token holders
 
-```js
+```javascript
 function verifyTransfer(address _from, address _to, uint256 _amount, bytes ) public view
 returns(enum ITransferManager.Result, bytes32)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _from | address | Address of the sender | 
-| _to | address | Address of the receiver | 
-| _amount | uint256 | Amount to send | 
-|  | bytes | _from Address of the sender | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_from | address | Address of the sender |
+| \_to | address | Address of the receiver |
+| \_amount | uint256 | Amount to send |
+|  | bytes | \_from Address of the sender |
 
-### _verifyTransfer
+### \_verifyTransfer
 
-```js
+```javascript
 function _verifyTransfer(address _from, address _to, uint256 _amount, uint256 _holderCount) internal view
 returns(enum ITransferManager.Result, bytes32)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _from | address |  | 
-| _to | address |  | 
-| _amount | uint256 |  | 
-| _holderCount | uint256 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_from | address |  |
+| \_to | address |  |
+| \_amount | uint256 |  |
+| \_holderCount | uint256 |  |
 
 ### configure
 
 Used to initialize the variables of the contract
 
-```js
-function configure(uint256 _maxHolderCount) public nonpayable onlyFactory 
+```javascript
+function configure(uint256 _maxHolderCount) public nonpayable onlyFactory
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _maxHolderCount | uint256 | Maximum no. of holders this module allows the SecurityToken to have | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_maxHolderCount | uint256 | Maximum no. of holders this module allows the SecurityToken to have |
 
 ### changeHolderCount
 
 Sets the cap for the amount of token holders there can be
 
-```js
-function changeHolderCount(uint256 _maxHolderCount) public nonpayable withPerm 
+```javascript
+function changeHolderCount(uint256 _maxHolderCount) public nonpayable withPerm
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _maxHolderCount | uint256 | is the new maximum amount of token holders | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_maxHolderCount | uint256 | is the new maximum amount of token holders |
 
 ### getInitFunction
 
-⤾ overrides [IModule.getInitFunction](IModule.md#getinitfunction)
+⤾ overrides [IModule.getInitFunction](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IModule.md#getinitfunction)
 
 This function returns the signature of configure function
 
-```js
+```javascript
 function getInitFunction() public pure
 returns(bytes4)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### getPermissions
 
-⤾ overrides [IModule.getPermissions](IModule.md#getpermissions)
+⤾ overrides [IModule.getPermissions](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IModule.md#getpermissions)
 
 Returns the permissions flag that are associated with CountTransferManager
 
-```js
+```javascript
 function getPermissions() public view
 returns(bytes32[])
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 

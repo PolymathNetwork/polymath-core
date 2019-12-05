@@ -4,17 +4,17 @@ title: IModuleFactory
 original_id: IModuleFactory
 ---
 
-# Interface that every module factory contract should implement (IModuleFactory.sol)
+# Interface that every module factory contract should implement \(IModuleFactory.sol\)
 
-View Source: [contracts/interfaces/IModuleFactory.sol](../../contracts/interfaces/IModuleFactory.sol)
+View Source: [contracts/interfaces/IModuleFactory.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/interfaces/IModuleFactory.sol)
 
-**↘ Derived Contracts: [ModuleFactory](ModuleFactory.md)**
+**↘ Derived Contracts:** [**ModuleFactory**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ModuleFactory.md)
 
 **IModuleFactory**
 
 **Events**
 
-```js
+```javascript
 event ChangeSetupCost(uint256  _oldSetupCost, uint256  _newSetupCost);
 event ChangeCostType(bool  _isOldCostInPoly, bool  _isNewCostInPoly);
 event GenerateModuleFromFactory(address  _module, bytes32 indexed _moduleName, address indexed _moduleFactory, address  _creator, uint256  _setupCost, uint256  _setupCostInPoly);
@@ -23,217 +23,225 @@ event ChangeSTVersionBound(string  _boundType, uint8  _major, uint8  _minor, uin
 
 ## Functions
 
-- [deploy(bytes _data)](#deploy)
-- [version()](#version)
-- [name()](#name)
-- [title()](#title)
-- [description()](#description)
-- [setupCost()](#setupcost)
-- [getTypes()](#gettypes)
-- [getTags()](#gettags)
-- [changeSetupCost(uint256 _newSetupCost)](#changesetupcost)
-- [changeCostAndType(uint256 _setupCost, bool _isCostInPoly)](#changecostandtype)
-- [changeSTVersionBounds(string _boundType, uint8[] _newVersion)](#changestversionbounds)
-- [setupCostInPoly()](#setupcostinpoly)
-- [getLowerSTVersionBounds()](#getlowerstversionbounds)
-- [getUpperSTVersionBounds()](#getupperstversionbounds)
-- [changeTags(bytes32[] _tagsData)](#changetags)
-- [changeName(bytes32 _name)](#changename)
-- [changeDescription(string _description)](#changedescription)
-- [changeTitle(string _title)](#changetitle)
+* [deploy\(bytes \_data\)](imodulefactory.md#deploy)
+* [version\(\)](imodulefactory.md#version)
+* [name\(\)](imodulefactory.md#name)
+* [title\(\)](imodulefactory.md#title)
+* [description\(\)](imodulefactory.md#description)
+* [setupCost\(\)](imodulefactory.md#setupcost)
+* [getTypes\(\)](imodulefactory.md#gettypes)
+* [getTags\(\)](imodulefactory.md#gettags)
+* [changeSetupCost\(uint256 \_newSetupCost\)](imodulefactory.md#changesetupcost)
+* [changeCostAndType\(uint256 \_setupCost, bool \_isCostInPoly\)](imodulefactory.md#changecostandtype)
+* [changeSTVersionBounds\(string \_boundType, uint8\[\] \_newVersion\)](imodulefactory.md#changestversionbounds)
+* [setupCostInPoly\(\)](imodulefactory.md#setupcostinpoly)
+* [getLowerSTVersionBounds\(\)](imodulefactory.md#getlowerstversionbounds)
+* [getUpperSTVersionBounds\(\)](imodulefactory.md#getupperstversionbounds)
+* [changeTags\(bytes32\[\] \_tagsData\)](imodulefactory.md#changetags)
+* [changeName\(bytes32 \_name\)](imodulefactory.md#changename)
+* [changeDescription\(string \_description\)](imodulefactory.md#changedescription)
+* [changeTitle\(string \_title\)](imodulefactory.md#changetitle)
 
 ### deploy
 
-⤿ Overridden Implementation(s): [BlacklistTransferManagerFactory.deploy](BlacklistTransferManagerFactory.md#deploy),[CappedSTOFactory.deploy](CappedSTOFactory.md#deploy),[CountTransferManagerFactory.deploy](CountTransferManagerFactory.md#deploy),[DummySTOFactory.deploy](DummySTOFactory.md#deploy),[ERC20DividendCheckpointFactory.deploy](ERC20DividendCheckpointFactory.md#deploy),[EtherDividendCheckpointFactory.deploy](EtherDividendCheckpointFactory.md#deploy),[GeneralPermissionManagerFactory.deploy](GeneralPermissionManagerFactory.md#deploy),[GeneralTransferManagerFactory.deploy](GeneralTransferManagerFactory.md#deploy),[KYCTransferManagerFactory.deploy](KYCTransferManagerFactory.md#deploy),[LockUpTransferManagerFactory.deploy](LockUpTransferManagerFactory.md#deploy),[ManualApprovalTransferManagerFactory.deploy](ManualApprovalTransferManagerFactory.md#deploy),[MockBurnFactory.deploy](MockBurnFactory.md#deploy),[PercentageTransferManagerFactory.deploy](PercentageTransferManagerFactory.md#deploy),[PLCRVotingCheckpointFactory.deploy](PLCRVotingCheckpointFactory.md#deploy),[PreSaleSTOFactory.deploy](PreSaleSTOFactory.md#deploy),[ScheduledCheckpointFactory.deploy](ScheduledCheckpointFactory.md#deploy),[SignedTransferManagerFactory.deploy](SignedTransferManagerFactory.md#deploy),[TrackedRedemptionFactory.deploy](TrackedRedemptionFactory.md#deploy),[USDTieredSTOFactory.deploy](USDTieredSTOFactory.md#deploy),[VestingEscrowWalletFactory.deploy](VestingEscrowWalletFactory.md#deploy),[VolumeRestrictionTMFactory.deploy](VolumeRestrictionTMFactory.md#deploy),[WeightedVoteCheckpointFactory.deploy](WeightedVoteCheckpointFactory.md#deploy)
+⤿ Overridden Implementation\(s\): [BlacklistTransferManagerFactory.deploy](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/BlacklistTransferManagerFactory.md#deploy),[CappedSTOFactory.deploy](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/CappedSTOFactory.md#deploy),[CountTransferManagerFactory.deploy](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/CountTransferManagerFactory.md#deploy),[DummySTOFactory.deploy](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/DummySTOFactory.md#deploy),[ERC20DividendCheckpointFactory.deploy](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ERC20DividendCheckpointFactory.md#deploy),[EtherDividendCheckpointFactory.deploy](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/EtherDividendCheckpointFactory.md#deploy),[GeneralPermissionManagerFactory.deploy](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/GeneralPermissionManagerFactory.md#deploy),[GeneralTransferManagerFactory.deploy](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/GeneralTransferManagerFactory.md#deploy),[KYCTransferManagerFactory.deploy](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/KYCTransferManagerFactory.md#deploy),[LockUpTransferManagerFactory.deploy](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/LockUpTransferManagerFactory.md#deploy),[ManualApprovalTransferManagerFactory.deploy](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ManualApprovalTransferManagerFactory.md#deploy),[MockBurnFactory.deploy](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/MockBurnFactory.md#deploy),[PercentageTransferManagerFactory.deploy](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/PercentageTransferManagerFactory.md#deploy),[PLCRVotingCheckpointFactory.deploy](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/PLCRVotingCheckpointFactory.md#deploy),[PreSaleSTOFactory.deploy](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/PreSaleSTOFactory.md#deploy),[ScheduledCheckpointFactory.deploy](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ScheduledCheckpointFactory.md#deploy),[SignedTransferManagerFactory.deploy](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/SignedTransferManagerFactory.md#deploy),[TrackedRedemptionFactory.deploy](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/TrackedRedemptionFactory.md#deploy),[USDTieredSTOFactory.deploy](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/USDTieredSTOFactory.md#deploy),[VestingEscrowWalletFactory.deploy](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/VestingEscrowWalletFactory.md#deploy),[VolumeRestrictionTMFactory.deploy](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/VolumeRestrictionTMFactory.md#deploy),[WeightedVoteCheckpointFactory.deploy](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/WeightedVoteCheckpointFactory.md#deploy)
 
-```js
+```javascript
 function deploy(bytes _data) external nonpayable
 returns(moduleAddress address)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _data | bytes |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_data | bytes |  |
 
 ### version
 
-⤿ Overridden Implementation(s): [ModuleFactory.version](ModuleFactory.md#version),[UpgradableModuleFactory.version](UpgradableModuleFactory.md#version)
+⤿ Overridden Implementation\(s\): [ModuleFactory.version](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ModuleFactory.md#version),[UpgradableModuleFactory.version](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/UpgradableModuleFactory.md#version)
 
 Get the tags related to the module factory
 
-```js
+```javascript
 function version() external view
 returns(moduleVersion string)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### name
 
 Get the tags related to the module factory
 
-```js
+```javascript
 function name() external view
 returns(moduleName bytes32)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### title
 
 Returns the title associated with the module
 
-```js
+```javascript
 function title() external view
 returns(moduleTitle string)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### description
 
 Returns the description associated with the module
 
-```js
+```javascript
 function description() external view
 returns(moduleDescription string)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### setupCost
 
 Get the setup cost of the module in USD
 
-```js
+```javascript
 function setupCost() external nonpayable
 returns(usdSetupCost uint256)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### getTypes
 
-⤿ Overridden Implementation(s): [MockFactory.getTypes](MockFactory.md#gettypes),[MockWrongTypeFactory.getTypes](MockWrongTypeFactory.md#gettypes),[ModuleFactory.getTypes](ModuleFactory.md#gettypes)
+⤿ Overridden Implementation\(s\): [MockFactory.getTypes](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/MockFactory.md#gettypes),[MockWrongTypeFactory.getTypes](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/MockWrongTypeFactory.md#gettypes),[ModuleFactory.getTypes](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ModuleFactory.md#gettypes)
 
 Type of the Module factory
 
-```js
+```javascript
 function getTypes() external view
 returns(moduleTypes uint8[])
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### getTags
 
-⤿ Overridden Implementation(s): [ModuleFactory.getTags](ModuleFactory.md#gettags),[TestSTOFactory.getTags](TestSTOFactory.md#gettags)
+⤿ Overridden Implementation\(s\): [ModuleFactory.getTags](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ModuleFactory.md#gettags),[TestSTOFactory.getTags](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/TestSTOFactory.md#gettags)
 
 Get the tags related to the module factory
 
-```js
+```javascript
 function getTags() external view
 returns(moduleTags bytes32[])
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### changeSetupCost
 
-⤿ Overridden Implementation(s): [ModuleFactory.changeSetupCost](ModuleFactory.md#changesetupcost)
+⤿ Overridden Implementation\(s\): [ModuleFactory.changeSetupCost](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ModuleFactory.md#changesetupcost)
 
 Used to change the setup fee
 
-```js
+```javascript
 function changeSetupCost(uint256 _newSetupCost) external nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _newSetupCost | uint256 | New setup fee | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_newSetupCost | uint256 | New setup fee |
 
 ### changeCostAndType
 
-⤿ Overridden Implementation(s): [ModuleFactory.changeCostAndType](ModuleFactory.md#changecostandtype)
+⤿ Overridden Implementation\(s\): [ModuleFactory.changeCostAndType](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ModuleFactory.md#changecostandtype)
 
 Used to change the currency and amount setup cost
 
-```js
+```javascript
 function changeCostAndType(uint256 _setupCost, bool _isCostInPoly) external nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _setupCost | uint256 | new setup cost | 
-| _isCostInPoly | bool | new setup cost currency. USD or POLY | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_setupCost | uint256 | new setup cost |
+| \_isCostInPoly | bool | new setup cost currency. USD or POLY |
 
 ### changeSTVersionBounds
 
-⤿ Overridden Implementation(s): [ModuleFactory.changeSTVersionBounds](ModuleFactory.md#changestversionbounds)
+⤿ Overridden Implementation\(s\): [ModuleFactory.changeSTVersionBounds](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ModuleFactory.md#changestversionbounds)
 
 Function use to change the lower and upper bound of the compatible version st
 
-```js
+```javascript
 function changeSTVersionBounds(string _boundType, uint8[] _newVersion) external nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _boundType | string | Type of bound | 
-| _newVersion | uint8[] | New version array | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_boundType | string | Type of bound |
+| \_newVersion | uint8\[\] | New version array |
 
 ### setupCostInPoly
 
-⤿ Overridden Implementation(s): [ModuleFactory.setupCostInPoly](ModuleFactory.md#setupcostinpoly)
+⤿ Overridden Implementation\(s\): [ModuleFactory.setupCostInPoly](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ModuleFactory.md#setupcostinpoly)
 
 Get the setup cost of the module
 
-```js
+```javascript
 function setupCostInPoly() external nonpayable
 returns(polySetupCost uint256)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### getLowerSTVersionBounds
 
-⤿ Overridden Implementation(s): [ModuleFactory.getLowerSTVersionBounds](ModuleFactory.md#getlowerstversionbounds)
+⤿ Overridden Implementation\(s\): [ModuleFactory.getLowerSTVersionBounds](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ModuleFactory.md#getlowerstversionbounds)
 
 Used to get the lower bound
 
-```js
+```javascript
 function getLowerSTVersionBounds() external view
 returns(lowerBounds uint8[])
 ```
@@ -244,16 +252,17 @@ Lower bound
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### getUpperSTVersionBounds
 
-⤿ Overridden Implementation(s): [ModuleFactory.getUpperSTVersionBounds](ModuleFactory.md#getupperstversionbounds)
+⤿ Overridden Implementation\(s\): [ModuleFactory.getUpperSTVersionBounds](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ModuleFactory.md#getupperstversionbounds)
 
 Used to get the upper bound
 
-```js
+```javascript
 function getUpperSTVersionBounds() external view
 returns(upperBounds uint8[])
 ```
@@ -264,70 +273,71 @@ Upper bound
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### changeTags
 
-⤿ Overridden Implementation(s): [ModuleFactory.changeTags](ModuleFactory.md#changetags)
+⤿ Overridden Implementation\(s\): [ModuleFactory.changeTags](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ModuleFactory.md#changetags)
 
 Updates the tags of the ModuleFactory
 
-```js
+```javascript
 function changeTags(bytes32[] _tagsData) external nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _tagsData | bytes32[] | New list of tags | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_tagsData | bytes32\[\] | New list of tags |
 
 ### changeName
 
-⤿ Overridden Implementation(s): [ModuleFactory.changeName](ModuleFactory.md#changename)
+⤿ Overridden Implementation\(s\): [ModuleFactory.changeName](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ModuleFactory.md#changename)
 
 Updates the name of the ModuleFactory
 
-```js
+```javascript
 function changeName(bytes32 _name) external nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _name | bytes32 | New name that will replace the old one. | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_name | bytes32 | New name that will replace the old one. |
 
 ### changeDescription
 
-⤿ Overridden Implementation(s): [ModuleFactory.changeDescription](ModuleFactory.md#changedescription)
+⤿ Overridden Implementation\(s\): [ModuleFactory.changeDescription](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ModuleFactory.md#changedescription)
 
 Updates the description of the ModuleFactory
 
-```js
+```javascript
 function changeDescription(string _description) external nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _description | string | New description that will replace the old one. | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_description | string | New description that will replace the old one. |
 
 ### changeTitle
 
-⤿ Overridden Implementation(s): [ModuleFactory.changeTitle](ModuleFactory.md#changetitle)
+⤿ Overridden Implementation\(s\): [ModuleFactory.changeTitle](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ModuleFactory.md#changetitle)
 
 Updates the title of the ModuleFactory
 
-```js
+```javascript
 function changeTitle(string _title) external nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _title | string | New Title that will replace the old one. | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_title | string | New Title that will replace the old one. |
 

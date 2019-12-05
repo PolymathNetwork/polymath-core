@@ -6,120 +6,122 @@ original_id: MockOracle
 
 # MockOracle.sol
 
-View Source: [contracts/mocks/MockOracle.sol](../../contracts/mocks/MockOracle.sol)
+View Source: [contracts/mocks/MockOracle.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/mocks/MockOracle.sol)
 
-**↗ Extends: [IOracle](IOracle.md)**
+**↗ Extends:** [**IOracle**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IOracle.md)
 
 **MockOracle**
 
 ## Contract Members
+
 **Constants & Variables**
 
-```js
+```javascript
 address public currency;
 bytes32 public currencySymbol;
 bytes32 public denominatedCurrency;
 uint256 public price;
-
 ```
 
 ## Functions
 
-- [(address _currency, bytes32 _currencySymbol, bytes32 _denominatedCurrency, uint256 _price)](#)
-- [changePrice(uint256 _price)](#changeprice)
-- [getCurrencyAddress()](#getcurrencyaddress)
-- [getCurrencySymbol()](#getcurrencysymbol)
-- [getCurrencyDenominated()](#getcurrencydenominated)
-- [getPrice()](#getprice)
+* [\(address \_currency, bytes32 \_currencySymbol, bytes32 \_denominatedCurrency, uint256 \_price\)](mockoracle.md)
+* [changePrice\(uint256 \_price\)](mockoracle.md#changeprice)
+* [getCurrencyAddress\(\)](mockoracle.md#getcurrencyaddress)
+* [getCurrencySymbol\(\)](mockoracle.md#getcurrencysymbol)
+* [getCurrencyDenominated\(\)](mockoracle.md#getcurrencydenominated)
+* [getPrice\(\)](mockoracle.md#getprice)
 
-### 
-
-```js
+```javascript
 function (address _currency, bytes32 _currencySymbol, bytes32 _denominatedCurrency, uint256 _price) public nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _currency | address |  | 
-| _currencySymbol | bytes32 |  | 
-| _denominatedCurrency | bytes32 |  | 
-| _price | uint256 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_currency | address |  |
+| \_currencySymbol | bytes32 |  |
+| \_denominatedCurrency | bytes32 |  |
+| \_price | uint256 |  |
 
 ### changePrice
 
-```js
+```javascript
 function changePrice(uint256 _price) external nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _price | uint256 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_price | uint256 |  |
 
 ### getCurrencyAddress
 
-⤾ overrides [IOracle.getCurrencyAddress](IOracle.md#getcurrencyaddress)
+⤾ overrides [IOracle.getCurrencyAddress](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IOracle.md#getcurrencyaddress)
 
-Returns address of oracle currency (0x0 for ETH)
+Returns address of oracle currency \(0x0 for ETH\)
 
-```js
+```javascript
 function getCurrencyAddress() external view
 returns(address)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### getCurrencySymbol
 
-⤾ overrides [IOracle.getCurrencySymbol](IOracle.md#getcurrencysymbol)
+⤾ overrides [IOracle.getCurrencySymbol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IOracle.md#getcurrencysymbol)
 
-Returns symbol of oracle currency (0x0 for ETH)
+Returns symbol of oracle currency \(0x0 for ETH\)
 
-```js
+```javascript
 function getCurrencySymbol() external view
 returns(bytes32)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### getCurrencyDenominated
 
-⤾ overrides [IOracle.getCurrencyDenominated](IOracle.md#getcurrencydenominated)
+⤾ overrides [IOracle.getCurrencyDenominated](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IOracle.md#getcurrencydenominated)
 
 Returns denomination of price
 
-```js
+```javascript
 function getCurrencyDenominated() external view
 returns(bytes32)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### getPrice
 
-⤾ overrides [IOracle.getPrice](IOracle.md#getprice)
+⤾ overrides [IOracle.getPrice](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IOracle.md#getprice)
 
 Returns price - should throw if not valid
 
-```js
+```javascript
 function getPrice() external nonpayable
 returns(uint256)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 

@@ -4,18 +4,19 @@ title: VestingEscrowWalletStorage
 original_id: VestingEscrowWalletStorage
 ---
 
-# Wallet for core vesting escrow functionality (VestingEscrowWalletStorage.sol)
+# Wallet for core vesting escrow functionality \(VestingEscrowWalletStorage.sol\)
 
-View Source: [contracts/modules/Wallet/VestingEscrowWalletStorage.sol](../../contracts/modules/Wallet/VestingEscrowWalletStorage.sol)
+View Source: [contracts/modules/Wallet/VestingEscrowWalletStorage.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/modules/Wallet/VestingEscrowWalletStorage.sol)
 
-**↘ Derived Contracts: [VestingEscrowWallet](VestingEscrowWallet.md), [VestingEscrowWalletProxy](VestingEscrowWalletProxy.md)**
+**↘ Derived Contracts:** [**VestingEscrowWallet**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/VestingEscrowWallet.md)**,** [**VestingEscrowWalletProxy**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/VestingEscrowWalletProxy.md)
 
 **VestingEscrowWalletStorage**
 
 ## Structs
+
 ### Schedule
 
-```js
+```javascript
 struct Schedule {
  bytes32 templateName,
  uint256 claimedTokens,
@@ -25,7 +26,7 @@ struct Schedule {
 
 ### Template
 
-```js
+```javascript
 struct Template {
  uint256 numberOfTokens,
  uint256 duration,
@@ -35,9 +36,10 @@ struct Template {
 ```
 
 ## Contract Members
+
 **Constants & Variables**
 
-```js
+```javascript
 //public members
 uint256 public unassignedTokens;
 address public treasuryWallet;
@@ -52,7 +54,6 @@ mapping(address => mapping(bytes32 => uint256)) internal userToTemplateIndex;
 mapping(bytes32 => address[]) internal templateToUsers;
 mapping(bytes32 => mapping(address => uint256)) internal templateToUserIndex;
 mapping(bytes32 => struct VestingEscrowWalletStorage.Template) internal templates;
-
 ```
 
 ## Functions

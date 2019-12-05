@@ -4,34 +4,34 @@ title: FeatureRegistry
 original_id: FeatureRegistry
 ---
 
-# Registry for managing polymath feature switches (FeatureRegistry.sol)
+# Registry for managing polymath feature switches \(FeatureRegistry.sol\)
 
-View Source: [contracts/FeatureRegistry.sol](../../contracts/FeatureRegistry.sol)
+View Source: [contracts/FeatureRegistry.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/FeatureRegistry.sol)
 
-**↗ Extends: [IFeatureRegistry](IFeatureRegistry.md), [ReclaimTokens](ReclaimTokens.md)**
+**↗ Extends:** [**IFeatureRegistry**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IFeatureRegistry.md)**,** [**ReclaimTokens**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/ReclaimTokens.md)
 
 **FeatureRegistry**
 
 ## Contract Members
+
 **Constants & Variables**
 
-```js
+```javascript
 mapping(bytes32 => bool) public featureStatus;
-
 ```
 
 ## Functions
 
-- [getFeatureStatus(string _nameKey)](#getfeaturestatus)
-- [setFeatureStatus(string _nameKey, bool _newStatus)](#setfeaturestatus)
+* [getFeatureStatus\(string \_nameKey\)](featureregistry.md#getfeaturestatus)
+* [setFeatureStatus\(string \_nameKey, bool \_newStatus\)](featureregistry.md#setfeaturestatus)
 
 ### getFeatureStatus
 
-⤾ overrides [IFeatureRegistry.getFeatureStatus](IFeatureRegistry.md#getfeaturestatus)
+⤾ overrides [IFeatureRegistry.getFeatureStatus](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IFeatureRegistry.md#getfeaturestatus)
 
 Get the status of a feature
 
-```js
+```javascript
 function getFeatureStatus(string _nameKey) external view
 returns(bool)
 ```
@@ -42,24 +42,24 @@ bool
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _nameKey | string | is the key for the feature status mapping | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_nameKey | string | is the key for the feature status mapping |
 
 ### setFeatureStatus
 
-⤾ overrides [IFeatureRegistry.setFeatureStatus](IFeatureRegistry.md#setfeaturestatus)
+⤾ overrides [IFeatureRegistry.setFeatureStatus](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IFeatureRegistry.md#setfeaturestatus)
 
 change a feature status
 
-```js
-function setFeatureStatus(string _nameKey, bool _newStatus) external nonpayable onlyOwner 
+```javascript
+function setFeatureStatus(string _nameKey, bool _newStatus) external nonpayable onlyOwner
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _nameKey | string | is the key for the feature status mapping | 
-| _newStatus | bool | is the new feature status | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_nameKey | string | is the key for the feature status mapping |
+| \_newStatus | bool | is the new feature status |
 

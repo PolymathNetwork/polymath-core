@@ -4,1084 +4,1085 @@ title: DataStore
 original_id: DataStore
 ---
 
-# Data store contract that stores data for all the modules in a central contract. (DataStore.sol)
+# Data store contract that stores data for all the modules in a central contract. \(DataStore.sol\)
 
-View Source: [contracts/datastore/DataStore.sol](../../contracts/datastore/DataStore.sol)
+View Source: [contracts/datastore/DataStore.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/datastore/DataStore.sol)
 
-**↗ Extends: [DataStoreStorage](DataStoreStorage.md), [IDataStore](IDataStore.md)**
+**↗ Extends:** [**DataStoreStorage**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/DataStoreStorage.md)**,** [**IDataStore**](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md)
 
 **DataStore**
 
 **Events**
 
-```js
+```javascript
 event SecurityTokenChanged(address indexed _oldSecurityToken, address indexed _newSecurityToken);
 ```
 
 ## Modifiers
 
-- [validKey](#validkey)
-- [validArrayLength](#validarraylength)
-- [onlyOwner](#onlyowner)
+* [validKey](datastore.md#validkey)
+* [validArrayLength](datastore.md#validarraylength)
+* [onlyOwner](datastore.md#onlyowner)
 
 ### validKey
 
-```js
+```javascript
 modifier validKey(bytes32 _key) internal
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
 
 ### validArrayLength
 
-```js
+```javascript
 modifier validArrayLength(uint256 _keyLength, uint256 _dataLength) internal
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _keyLength | uint256 |  | 
-| _dataLength | uint256 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_keyLength | uint256 |  |
+| \_dataLength | uint256 |  |
 
 ### onlyOwner
 
-```js
+```javascript
 modifier onlyOwner() internal
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ## Functions
 
-- [_isAuthorized()](#_isauthorized)
-- [setSecurityToken(address _securityToken)](#setsecuritytoken)
-- [setUint256(bytes32 _key, uint256 _data)](#setuint256)
-- [setBytes32(bytes32 _key, bytes32 _data)](#setbytes32)
-- [setAddress(bytes32 _key, address _data)](#setaddress)
-- [setBool(bytes32 _key, bool _data)](#setbool)
-- [setString(bytes32 _key, string _data)](#setstring)
-- [setBytes(bytes32 _key, bytes _data)](#setbytes)
-- [setUint256Array(bytes32 _key, uint256[] _data)](#setuint256array)
-- [setBytes32Array(bytes32 _key, bytes32[] _data)](#setbytes32array)
-- [setAddressArray(bytes32 _key, address[] _data)](#setaddressarray)
-- [setBoolArray(bytes32 _key, bool[] _data)](#setboolarray)
-- [insertUint256(bytes32 _key, uint256 _data)](#insertuint256)
-- [insertBytes32(bytes32 _key, bytes32 _data)](#insertbytes32)
-- [insertAddress(bytes32 _key, address _data)](#insertaddress)
-- [insertBool(bytes32 _key, bool _data)](#insertbool)
-- [deleteUint256(bytes32 _key, uint256 _index)](#deleteuint256)
-- [deleteBytes32(bytes32 _key, uint256 _index)](#deletebytes32)
-- [deleteAddress(bytes32 _key, uint256 _index)](#deleteaddress)
-- [deleteBool(bytes32 _key, uint256 _index)](#deletebool)
-- [setUint256Multi(bytes32[] _keys, uint256[] _data)](#setuint256multi)
-- [setBytes32Multi(bytes32[] _keys, bytes32[] _data)](#setbytes32multi)
-- [setAddressMulti(bytes32[] _keys, address[] _data)](#setaddressmulti)
-- [setBoolMulti(bytes32[] _keys, bool[] _data)](#setboolmulti)
-- [insertUint256Multi(bytes32[] _keys, uint256[] _data)](#insertuint256multi)
-- [insertBytes32Multi(bytes32[] _keys, bytes32[] _data)](#insertbytes32multi)
-- [insertAddressMulti(bytes32[] _keys, address[] _data)](#insertaddressmulti)
-- [insertBoolMulti(bytes32[] _keys, bool[] _data)](#insertboolmulti)
-- [getUint256(bytes32 _key)](#getuint256)
-- [getBytes32(bytes32 _key)](#getbytes32)
-- [getAddress(bytes32 _key)](#getaddress)
-- [getString(bytes32 _key)](#getstring)
-- [getBytes(bytes32 _key)](#getbytes)
-- [getBool(bytes32 _key)](#getbool)
-- [getUint256Array(bytes32 _key)](#getuint256array)
-- [getBytes32Array(bytes32 _key)](#getbytes32array)
-- [getAddressArray(bytes32 _key)](#getaddressarray)
-- [getBoolArray(bytes32 _key)](#getboolarray)
-- [getUint256ArrayLength(bytes32 _key)](#getuint256arraylength)
-- [getBytes32ArrayLength(bytes32 _key)](#getbytes32arraylength)
-- [getAddressArrayLength(bytes32 _key)](#getaddressarraylength)
-- [getBoolArrayLength(bytes32 _key)](#getboolarraylength)
-- [getUint256ArrayElement(bytes32 _key, uint256 _index)](#getuint256arrayelement)
-- [getBytes32ArrayElement(bytes32 _key, uint256 _index)](#getbytes32arrayelement)
-- [getAddressArrayElement(bytes32 _key, uint256 _index)](#getaddressarrayelement)
-- [getBoolArrayElement(bytes32 _key, uint256 _index)](#getboolarrayelement)
-- [getUint256ArrayElements(bytes32 _key, uint256 _startIndex, uint256 _endIndex)](#getuint256arrayelements)
-- [getBytes32ArrayElements(bytes32 _key, uint256 _startIndex, uint256 _endIndex)](#getbytes32arrayelements)
-- [getAddressArrayElements(bytes32 _key, uint256 _startIndex, uint256 _endIndex)](#getaddressarrayelements)
-- [getBoolArrayElements(bytes32 _key, uint256 _startIndex, uint256 _endIndex)](#getboolarrayelements)
-- [_setData(bytes32 _key, uint256 _data, bool _insert)](#_setdata)
-- [_setData(bytes32 _key, bytes32 _data, bool _insert)](#_setdata)
-- [_setData(bytes32 _key, address _data, bool _insert)](#_setdata)
-- [_setData(bytes32 _key, bool _data, bool _insert)](#_setdata)
-- [_setData(bytes32 _key, string _data)](#_setdata)
-- [_setData(bytes32 _key, bytes _data)](#_setdata)
-- [_setData(bytes32 _key, uint256[] _data)](#_setdata)
-- [_setData(bytes32 _key, bytes32[] _data)](#_setdata)
-- [_setData(bytes32 _key, address[] _data)](#_setdata)
-- [_setData(bytes32 _key, bool[] _data)](#_setdata)
-- [_deleteUint(bytes32 _key, uint256 _index)](#_deleteuint)
-- [_deleteBytes32(bytes32 _key, uint256 _index)](#_deletebytes32)
-- [_deleteAddress(bytes32 _key, uint256 _index)](#_deleteaddress)
-- [_deleteBool(bytes32 _key, uint256 _index)](#_deletebool)
+* [\_isAuthorized\(\)](datastore.md#_isauthorized)
+* [setSecurityToken\(address \_securityToken\)](datastore.md#setsecuritytoken)
+* [setUint256\(bytes32 \_key, uint256 \_data\)](datastore.md#setuint256)
+* [setBytes32\(bytes32 \_key, bytes32 \_data\)](datastore.md#setbytes32)
+* [setAddress\(bytes32 \_key, address \_data\)](datastore.md#setaddress)
+* [setBool\(bytes32 \_key, bool \_data\)](datastore.md#setbool)
+* [setString\(bytes32 \_key, string \_data\)](datastore.md#setstring)
+* [setBytes\(bytes32 \_key, bytes \_data\)](datastore.md#setbytes)
+* [setUint256Array\(bytes32 \_key, uint256\[\] \_data\)](datastore.md#setuint256array)
+* [setBytes32Array\(bytes32 \_key, bytes32\[\] \_data\)](datastore.md#setbytes32array)
+* [setAddressArray\(bytes32 \_key, address\[\] \_data\)](datastore.md#setaddressarray)
+* [setBoolArray\(bytes32 \_key, bool\[\] \_data\)](datastore.md#setboolarray)
+* [insertUint256\(bytes32 \_key, uint256 \_data\)](datastore.md#insertuint256)
+* [insertBytes32\(bytes32 \_key, bytes32 \_data\)](datastore.md#insertbytes32)
+* [insertAddress\(bytes32 \_key, address \_data\)](datastore.md#insertaddress)
+* [insertBool\(bytes32 \_key, bool \_data\)](datastore.md#insertbool)
+* [deleteUint256\(bytes32 \_key, uint256 \_index\)](datastore.md#deleteuint256)
+* [deleteBytes32\(bytes32 \_key, uint256 \_index\)](datastore.md#deletebytes32)
+* [deleteAddress\(bytes32 \_key, uint256 \_index\)](datastore.md#deleteaddress)
+* [deleteBool\(bytes32 \_key, uint256 \_index\)](datastore.md#deletebool)
+* [setUint256Multi\(bytes32\[\] \_keys, uint256\[\] \_data\)](datastore.md#setuint256multi)
+* [setBytes32Multi\(bytes32\[\] \_keys, bytes32\[\] \_data\)](datastore.md#setbytes32multi)
+* [setAddressMulti\(bytes32\[\] \_keys, address\[\] \_data\)](datastore.md#setaddressmulti)
+* [setBoolMulti\(bytes32\[\] \_keys, bool\[\] \_data\)](datastore.md#setboolmulti)
+* [insertUint256Multi\(bytes32\[\] \_keys, uint256\[\] \_data\)](datastore.md#insertuint256multi)
+* [insertBytes32Multi\(bytes32\[\] \_keys, bytes32\[\] \_data\)](datastore.md#insertbytes32multi)
+* [insertAddressMulti\(bytes32\[\] \_keys, address\[\] \_data\)](datastore.md#insertaddressmulti)
+* [insertBoolMulti\(bytes32\[\] \_keys, bool\[\] \_data\)](datastore.md#insertboolmulti)
+* [getUint256\(bytes32 \_key\)](datastore.md#getuint256)
+* [getBytes32\(bytes32 \_key\)](datastore.md#getbytes32)
+* [getAddress\(bytes32 \_key\)](datastore.md#getaddress)
+* [getString\(bytes32 \_key\)](datastore.md#getstring)
+* [getBytes\(bytes32 \_key\)](datastore.md#getbytes)
+* [getBool\(bytes32 \_key\)](datastore.md#getbool)
+* [getUint256Array\(bytes32 \_key\)](datastore.md#getuint256array)
+* [getBytes32Array\(bytes32 \_key\)](datastore.md#getbytes32array)
+* [getAddressArray\(bytes32 \_key\)](datastore.md#getaddressarray)
+* [getBoolArray\(bytes32 \_key\)](datastore.md#getboolarray)
+* [getUint256ArrayLength\(bytes32 \_key\)](datastore.md#getuint256arraylength)
+* [getBytes32ArrayLength\(bytes32 \_key\)](datastore.md#getbytes32arraylength)
+* [getAddressArrayLength\(bytes32 \_key\)](datastore.md#getaddressarraylength)
+* [getBoolArrayLength\(bytes32 \_key\)](datastore.md#getboolarraylength)
+* [getUint256ArrayElement\(bytes32 \_key, uint256 \_index\)](datastore.md#getuint256arrayelement)
+* [getBytes32ArrayElement\(bytes32 \_key, uint256 \_index\)](datastore.md#getbytes32arrayelement)
+* [getAddressArrayElement\(bytes32 \_key, uint256 \_index\)](datastore.md#getaddressarrayelement)
+* [getBoolArrayElement\(bytes32 \_key, uint256 \_index\)](datastore.md#getboolarrayelement)
+* [getUint256ArrayElements\(bytes32 \_key, uint256 \_startIndex, uint256 \_endIndex\)](datastore.md#getuint256arrayelements)
+* [getBytes32ArrayElements\(bytes32 \_key, uint256 \_startIndex, uint256 \_endIndex\)](datastore.md#getbytes32arrayelements)
+* [getAddressArrayElements\(bytes32 \_key, uint256 \_startIndex, uint256 \_endIndex\)](datastore.md#getaddressarrayelements)
+* [getBoolArrayElements\(bytes32 \_key, uint256 \_startIndex, uint256 \_endIndex\)](datastore.md#getboolarrayelements)
+* [\_setData\(bytes32 \_key, uint256 \_data, bool \_insert\)](datastore.md#_setdata)
+* [\_setData\(bytes32 \_key, bytes32 \_data, bool \_insert\)](datastore.md#_setdata)
+* [\_setData\(bytes32 \_key, address \_data, bool \_insert\)](datastore.md#_setdata)
+* [\_setData\(bytes32 \_key, bool \_data, bool \_insert\)](datastore.md#_setdata)
+* [\_setData\(bytes32 \_key, string \_data\)](datastore.md#_setdata)
+* [\_setData\(bytes32 \_key, bytes \_data\)](datastore.md#_setdata)
+* [\_setData\(bytes32 \_key, uint256\[\] \_data\)](datastore.md#_setdata)
+* [\_setData\(bytes32 \_key, bytes32\[\] \_data\)](datastore.md#_setdata)
+* [\_setData\(bytes32 \_key, address\[\] \_data\)](datastore.md#_setdata)
+* [\_setData\(bytes32 \_key, bool\[\] \_data\)](datastore.md#_setdata)
+* [\_deleteUint\(bytes32 \_key, uint256 \_index\)](datastore.md#_deleteuint)
+* [\_deleteBytes32\(bytes32 \_key, uint256 \_index\)](datastore.md#_deletebytes32)
+* [\_deleteAddress\(bytes32 \_key, uint256 \_index\)](datastore.md#_deleteaddress)
+* [\_deleteBool\(bytes32 \_key, uint256 \_index\)](datastore.md#_deletebool)
 
-### _isAuthorized
+### \_isAuthorized
 
-```js
+```javascript
 function _isAuthorized() internal view
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
+| Name | Type | Description |
+| :--- | :--- | :--- |
+
 
 ### setSecurityToken
 
-⤾ overrides [IDataStore.setSecurityToken](IDataStore.md#setsecuritytoken)
+⤾ overrides [IDataStore.setSecurityToken](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#setsecuritytoken)
 
 Changes security token atatched to this data store
 
-```js
-function setSecurityToken(address _securityToken) external nonpayable onlyOwner 
+```javascript
+function setSecurityToken(address _securityToken) external nonpayable onlyOwner
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _securityToken | address | address of the security token | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_securityToken | address | address of the security token |
 
 ### setUint256
 
-⤾ overrides [IDataStore.setUint256](IDataStore.md#setuint256)
+⤾ overrides [IDataStore.setUint256](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#setuint256)
 
 Stores a uint256 data against a key
 
-```js
+```javascript
 function setUint256(bytes32 _key, uint256 _data) external nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 | Unique key to identify the data | 
-| _data | uint256 | Data to be stored against the key | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 | Unique key to identify the data |
+| \_data | uint256 | Data to be stored against the key |
 
 ### setBytes32
 
-⤾ overrides [IDataStore.setBytes32](IDataStore.md#setbytes32)
+⤾ overrides [IDataStore.setBytes32](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#setbytes32)
 
-```js
+```javascript
 function setBytes32(bytes32 _key, bytes32 _data) external nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _data | bytes32 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_data | bytes32 |  |
 
 ### setAddress
 
-⤾ overrides [IDataStore.setAddress](IDataStore.md#setaddress)
+⤾ overrides [IDataStore.setAddress](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#setaddress)
 
-```js
+```javascript
 function setAddress(bytes32 _key, address _data) external nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _data | address |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_data | address |  |
 
 ### setBool
 
-⤾ overrides [IDataStore.setBool](IDataStore.md#setbool)
+⤾ overrides [IDataStore.setBool](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#setbool)
 
-```js
+```javascript
 function setBool(bytes32 _key, bool _data) external nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _data | bool |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_data | bool |  |
 
 ### setString
 
-⤾ overrides [IDataStore.setString](IDataStore.md#setstring)
+⤾ overrides [IDataStore.setString](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#setstring)
 
-```js
+```javascript
 function setString(bytes32 _key, string _data) external nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _data | string |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_data | string |  |
 
 ### setBytes
 
-⤾ overrides [IDataStore.setBytes](IDataStore.md#setbytes)
+⤾ overrides [IDataStore.setBytes](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#setbytes)
 
-```js
+```javascript
 function setBytes(bytes32 _key, bytes _data) external nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _data | bytes |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_data | bytes |  |
 
 ### setUint256Array
 
-⤾ overrides [IDataStore.setUint256Array](IDataStore.md#setuint256array)
+⤾ overrides [IDataStore.setUint256Array](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#setuint256array)
 
 Stores a uint256 array against a key
 
-```js
+```javascript
 function setUint256Array(bytes32 _key, uint256[] _data) external nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 | Unique key to identify the array | 
-| _data | uint256[] | Array to be stored against the key | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 | Unique key to identify the array |
+| \_data | uint256\[\] | Array to be stored against the key |
 
 ### setBytes32Array
 
-⤾ overrides [IDataStore.setBytes32Array](IDataStore.md#setbytes32array)
+⤾ overrides [IDataStore.setBytes32Array](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#setbytes32array)
 
-```js
+```javascript
 function setBytes32Array(bytes32 _key, bytes32[] _data) external nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _data | bytes32[] |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_data | bytes32\[\] |  |
 
 ### setAddressArray
 
-⤾ overrides [IDataStore.setAddressArray](IDataStore.md#setaddressarray)
+⤾ overrides [IDataStore.setAddressArray](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#setaddressarray)
 
-```js
+```javascript
 function setAddressArray(bytes32 _key, address[] _data) external nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _data | address[] |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_data | address\[\] |  |
 
 ### setBoolArray
 
-⤾ overrides [IDataStore.setBoolArray](IDataStore.md#setboolarray)
+⤾ overrides [IDataStore.setBoolArray](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#setboolarray)
 
-```js
+```javascript
 function setBoolArray(bytes32 _key, bool[] _data) external nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _data | bool[] |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_data | bool\[\] |  |
 
 ### insertUint256
 
-⤾ overrides [IDataStore.insertUint256](IDataStore.md#insertuint256)
+⤾ overrides [IDataStore.insertUint256](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#insertuint256)
 
 Inserts a uint256 element to the array identified by the key
 
-```js
+```javascript
 function insertUint256(bytes32 _key, uint256 _data) external nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 | Unique key to identify the array | 
-| _data | uint256 | Element to push into the array | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 | Unique key to identify the array |
+| \_data | uint256 | Element to push into the array |
 
 ### insertBytes32
 
-⤾ overrides [IDataStore.insertBytes32](IDataStore.md#insertbytes32)
+⤾ overrides [IDataStore.insertBytes32](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#insertbytes32)
 
-```js
+```javascript
 function insertBytes32(bytes32 _key, bytes32 _data) external nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _data | bytes32 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_data | bytes32 |  |
 
 ### insertAddress
 
-⤾ overrides [IDataStore.insertAddress](IDataStore.md#insertaddress)
+⤾ overrides [IDataStore.insertAddress](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#insertaddress)
 
-```js
+```javascript
 function insertAddress(bytes32 _key, address _data) external nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _data | address |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_data | address |  |
 
 ### insertBool
 
-⤾ overrides [IDataStore.insertBool](IDataStore.md#insertbool)
+⤾ overrides [IDataStore.insertBool](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#insertbool)
 
-```js
+```javascript
 function insertBool(bytes32 _key, bool _data) external nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _data | bool |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_data | bool |  |
 
 ### deleteUint256
 
-⤾ overrides [IDataStore.deleteUint256](IDataStore.md#deleteuint256)
+⤾ overrides [IDataStore.deleteUint256](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#deleteuint256)
 
-Deletes an element from the array identified by the key.
-When an element is deleted from an Array, last element of that array is moved to the index of deleted element.
+Deletes an element from the array identified by the key. When an element is deleted from an Array, last element of that array is moved to the index of deleted element.
 
-```js
+```javascript
 function deleteUint256(bytes32 _key, uint256 _index) external nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 | Unique key to identify the array | 
-| _index | uint256 | Index of the element to delete | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 | Unique key to identify the array |
+| \_index | uint256 | Index of the element to delete |
 
 ### deleteBytes32
 
-⤾ overrides [IDataStore.deleteBytes32](IDataStore.md#deletebytes32)
+⤾ overrides [IDataStore.deleteBytes32](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#deletebytes32)
 
-```js
+```javascript
 function deleteBytes32(bytes32 _key, uint256 _index) external nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _index | uint256 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_index | uint256 |  |
 
 ### deleteAddress
 
-⤾ overrides [IDataStore.deleteAddress](IDataStore.md#deleteaddress)
+⤾ overrides [IDataStore.deleteAddress](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#deleteaddress)
 
-```js
+```javascript
 function deleteAddress(bytes32 _key, uint256 _index) external nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _index | uint256 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_index | uint256 |  |
 
 ### deleteBool
 
-⤾ overrides [IDataStore.deleteBool](IDataStore.md#deletebool)
+⤾ overrides [IDataStore.deleteBool](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#deletebool)
 
-```js
+```javascript
 function deleteBool(bytes32 _key, uint256 _index) external nonpayable
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _index | uint256 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_index | uint256 |  |
 
 ### setUint256Multi
 
-⤾ overrides [IDataStore.setUint256Multi](IDataStore.md#setuint256multi)
+⤾ overrides [IDataStore.setUint256Multi](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#setuint256multi)
 
 Stores multiple uint256 data against respective keys
 
-```js
-function setUint256Multi(bytes32[] _keys, uint256[] _data) public nonpayable validArrayLength 
+```javascript
+function setUint256Multi(bytes32[] _keys, uint256[] _data) public nonpayable validArrayLength
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _keys | bytes32[] | Array of keys to identify the data | 
-| _data | uint256[] | Array of data to be stored against the respective keys | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_keys | bytes32\[\] | Array of keys to identify the data |
+| \_data | uint256\[\] | Array of data to be stored against the respective keys |
 
 ### setBytes32Multi
 
-⤾ overrides [IDataStore.setBytes32Multi](IDataStore.md#setbytes32multi)
+⤾ overrides [IDataStore.setBytes32Multi](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#setbytes32multi)
 
-```js
-function setBytes32Multi(bytes32[] _keys, bytes32[] _data) public nonpayable validArrayLength 
+```javascript
+function setBytes32Multi(bytes32[] _keys, bytes32[] _data) public nonpayable validArrayLength
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _keys | bytes32[] |  | 
-| _data | bytes32[] |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_keys | bytes32\[\] |  |
+| \_data | bytes32\[\] |  |
 
 ### setAddressMulti
 
-⤾ overrides [IDataStore.setAddressMulti](IDataStore.md#setaddressmulti)
+⤾ overrides [IDataStore.setAddressMulti](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#setaddressmulti)
 
-```js
-function setAddressMulti(bytes32[] _keys, address[] _data) public nonpayable validArrayLength 
+```javascript
+function setAddressMulti(bytes32[] _keys, address[] _data) public nonpayable validArrayLength
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _keys | bytes32[] |  | 
-| _data | address[] |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_keys | bytes32\[\] |  |
+| \_data | address\[\] |  |
 
 ### setBoolMulti
 
-⤾ overrides [IDataStore.setBoolMulti](IDataStore.md#setboolmulti)
+⤾ overrides [IDataStore.setBoolMulti](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#setboolmulti)
 
-```js
-function setBoolMulti(bytes32[] _keys, bool[] _data) public nonpayable validArrayLength 
+```javascript
+function setBoolMulti(bytes32[] _keys, bool[] _data) public nonpayable validArrayLength
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _keys | bytes32[] |  | 
-| _data | bool[] |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_keys | bytes32\[\] |  |
+| \_data | bool\[\] |  |
 
 ### insertUint256Multi
 
-⤾ overrides [IDataStore.insertUint256Multi](IDataStore.md#insertuint256multi)
+⤾ overrides [IDataStore.insertUint256Multi](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#insertuint256multi)
 
 Inserts multiple uint256 elements to the array identified by the respective keys
 
-```js
-function insertUint256Multi(bytes32[] _keys, uint256[] _data) public nonpayable validArrayLength 
+```javascript
+function insertUint256Multi(bytes32[] _keys, uint256[] _data) public nonpayable validArrayLength
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _keys | bytes32[] | Array of keys to identify the data | 
-| _data | uint256[] | Array of data to be inserted in arrays of the respective keys | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_keys | bytes32\[\] | Array of keys to identify the data |
+| \_data | uint256\[\] | Array of data to be inserted in arrays of the respective keys |
 
 ### insertBytes32Multi
 
-⤾ overrides [IDataStore.insertBytes32Multi](IDataStore.md#insertbytes32multi)
+⤾ overrides [IDataStore.insertBytes32Multi](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#insertbytes32multi)
 
-```js
-function insertBytes32Multi(bytes32[] _keys, bytes32[] _data) public nonpayable validArrayLength 
+```javascript
+function insertBytes32Multi(bytes32[] _keys, bytes32[] _data) public nonpayable validArrayLength
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _keys | bytes32[] |  | 
-| _data | bytes32[] |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_keys | bytes32\[\] |  |
+| \_data | bytes32\[\] |  |
 
 ### insertAddressMulti
 
-⤾ overrides [IDataStore.insertAddressMulti](IDataStore.md#insertaddressmulti)
+⤾ overrides [IDataStore.insertAddressMulti](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#insertaddressmulti)
 
-```js
-function insertAddressMulti(bytes32[] _keys, address[] _data) public nonpayable validArrayLength 
+```javascript
+function insertAddressMulti(bytes32[] _keys, address[] _data) public nonpayable validArrayLength
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _keys | bytes32[] |  | 
-| _data | address[] |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_keys | bytes32\[\] |  |
+| \_data | address\[\] |  |
 
 ### insertBoolMulti
 
-⤾ overrides [IDataStore.insertBoolMulti](IDataStore.md#insertboolmulti)
+⤾ overrides [IDataStore.insertBoolMulti](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#insertboolmulti)
 
-```js
-function insertBoolMulti(bytes32[] _keys, bool[] _data) public nonpayable validArrayLength 
+```javascript
+function insertBoolMulti(bytes32[] _keys, bool[] _data) public nonpayable validArrayLength
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _keys | bytes32[] |  | 
-| _data | bool[] |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_keys | bytes32\[\] |  |
+| \_data | bool\[\] |  |
 
 ### getUint256
 
-⤾ overrides [IDataStore.getUint256](IDataStore.md#getuint256)
+⤾ overrides [IDataStore.getUint256](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#getuint256)
 
-```js
+```javascript
 function getUint256(bytes32 _key) external view
 returns(uint256)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
 
 ### getBytes32
 
-⤾ overrides [IDataStore.getBytes32](IDataStore.md#getbytes32)
+⤾ overrides [IDataStore.getBytes32](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#getbytes32)
 
-```js
+```javascript
 function getBytes32(bytes32 _key) external view
 returns(bytes32)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
 
 ### getAddress
 
-⤾ overrides [IDataStore.getAddress](IDataStore.md#getaddress)
+⤾ overrides [IDataStore.getAddress](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#getaddress)
 
-```js
+```javascript
 function getAddress(bytes32 _key) external view
 returns(address)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
 
 ### getString
 
-⤾ overrides [IDataStore.getString](IDataStore.md#getstring)
+⤾ overrides [IDataStore.getString](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#getstring)
 
-```js
+```javascript
 function getString(bytes32 _key) external view
 returns(string)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
 
 ### getBytes
 
-⤾ overrides [IDataStore.getBytes](IDataStore.md#getbytes)
+⤾ overrides [IDataStore.getBytes](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#getbytes)
 
-```js
+```javascript
 function getBytes(bytes32 _key) external view
 returns(bytes)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
 
 ### getBool
 
-⤾ overrides [IDataStore.getBool](IDataStore.md#getbool)
+⤾ overrides [IDataStore.getBool](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#getbool)
 
-```js
+```javascript
 function getBool(bytes32 _key) external view
 returns(bool)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
 
 ### getUint256Array
 
-⤾ overrides [IDataStore.getUint256Array](IDataStore.md#getuint256array)
+⤾ overrides [IDataStore.getUint256Array](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#getuint256array)
 
-```js
+```javascript
 function getUint256Array(bytes32 _key) external view
 returns(uint256[])
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
 
 ### getBytes32Array
 
-⤾ overrides [IDataStore.getBytes32Array](IDataStore.md#getbytes32array)
+⤾ overrides [IDataStore.getBytes32Array](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#getbytes32array)
 
-```js
+```javascript
 function getBytes32Array(bytes32 _key) external view
 returns(bytes32[])
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
 
 ### getAddressArray
 
-⤾ overrides [IDataStore.getAddressArray](IDataStore.md#getaddressarray)
+⤾ overrides [IDataStore.getAddressArray](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#getaddressarray)
 
-```js
+```javascript
 function getAddressArray(bytes32 _key) external view
 returns(address[])
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
 
 ### getBoolArray
 
-⤾ overrides [IDataStore.getBoolArray](IDataStore.md#getboolarray)
+⤾ overrides [IDataStore.getBoolArray](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#getboolarray)
 
-```js
+```javascript
 function getBoolArray(bytes32 _key) external view
 returns(bool[])
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
 
 ### getUint256ArrayLength
 
-⤾ overrides [IDataStore.getUint256ArrayLength](IDataStore.md#getuint256arraylength)
+⤾ overrides [IDataStore.getUint256ArrayLength](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#getuint256arraylength)
 
-```js
+```javascript
 function getUint256ArrayLength(bytes32 _key) external view
 returns(uint256)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
 
 ### getBytes32ArrayLength
 
-⤾ overrides [IDataStore.getBytes32ArrayLength](IDataStore.md#getbytes32arraylength)
+⤾ overrides [IDataStore.getBytes32ArrayLength](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#getbytes32arraylength)
 
-```js
+```javascript
 function getBytes32ArrayLength(bytes32 _key) external view
 returns(uint256)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
 
 ### getAddressArrayLength
 
-⤾ overrides [IDataStore.getAddressArrayLength](IDataStore.md#getaddressarraylength)
+⤾ overrides [IDataStore.getAddressArrayLength](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#getaddressarraylength)
 
-```js
+```javascript
 function getAddressArrayLength(bytes32 _key) external view
 returns(uint256)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
 
 ### getBoolArrayLength
 
-⤾ overrides [IDataStore.getBoolArrayLength](IDataStore.md#getboolarraylength)
+⤾ overrides [IDataStore.getBoolArrayLength](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#getboolarraylength)
 
-```js
+```javascript
 function getBoolArrayLength(bytes32 _key) external view
 returns(uint256)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
 
 ### getUint256ArrayElement
 
-⤾ overrides [IDataStore.getUint256ArrayElement](IDataStore.md#getuint256arrayelement)
+⤾ overrides [IDataStore.getUint256ArrayElement](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#getuint256arrayelement)
 
-```js
+```javascript
 function getUint256ArrayElement(bytes32 _key, uint256 _index) external view
 returns(uint256)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _index | uint256 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_index | uint256 |  |
 
 ### getBytes32ArrayElement
 
-⤾ overrides [IDataStore.getBytes32ArrayElement](IDataStore.md#getbytes32arrayelement)
+⤾ overrides [IDataStore.getBytes32ArrayElement](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#getbytes32arrayelement)
 
-```js
+```javascript
 function getBytes32ArrayElement(bytes32 _key, uint256 _index) external view
 returns(bytes32)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _index | uint256 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_index | uint256 |  |
 
 ### getAddressArrayElement
 
-⤾ overrides [IDataStore.getAddressArrayElement](IDataStore.md#getaddressarrayelement)
+⤾ overrides [IDataStore.getAddressArrayElement](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#getaddressarrayelement)
 
-```js
+```javascript
 function getAddressArrayElement(bytes32 _key, uint256 _index) external view
 returns(address)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _index | uint256 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_index | uint256 |  |
 
 ### getBoolArrayElement
 
-⤾ overrides [IDataStore.getBoolArrayElement](IDataStore.md#getboolarrayelement)
+⤾ overrides [IDataStore.getBoolArrayElement](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#getboolarrayelement)
 
-```js
+```javascript
 function getBoolArrayElement(bytes32 _key, uint256 _index) external view
 returns(bool)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _index | uint256 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_index | uint256 |  |
 
 ### getUint256ArrayElements
 
-⤾ overrides [IDataStore.getUint256ArrayElements](IDataStore.md#getuint256arrayelements)
+⤾ overrides [IDataStore.getUint256ArrayElements](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#getuint256arrayelements)
 
-```js
+```javascript
 function getUint256ArrayElements(bytes32 _key, uint256 _startIndex, uint256 _endIndex) public view
 returns(array uint256[])
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _startIndex | uint256 |  | 
-| _endIndex | uint256 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_startIndex | uint256 |  |
+| \_endIndex | uint256 |  |
 
 ### getBytes32ArrayElements
 
-⤾ overrides [IDataStore.getBytes32ArrayElements](IDataStore.md#getbytes32arrayelements)
+⤾ overrides [IDataStore.getBytes32ArrayElements](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#getbytes32arrayelements)
 
-```js
+```javascript
 function getBytes32ArrayElements(bytes32 _key, uint256 _startIndex, uint256 _endIndex) public view
 returns(array bytes32[])
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _startIndex | uint256 |  | 
-| _endIndex | uint256 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_startIndex | uint256 |  |
+| \_endIndex | uint256 |  |
 
 ### getAddressArrayElements
 
-⤾ overrides [IDataStore.getAddressArrayElements](IDataStore.md#getaddressarrayelements)
+⤾ overrides [IDataStore.getAddressArrayElements](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#getaddressarrayelements)
 
-```js
+```javascript
 function getAddressArrayElements(bytes32 _key, uint256 _startIndex, uint256 _endIndex) public view
 returns(array address[])
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _startIndex | uint256 |  | 
-| _endIndex | uint256 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_startIndex | uint256 |  |
+| \_endIndex | uint256 |  |
 
 ### getBoolArrayElements
 
-⤾ overrides [IDataStore.getBoolArrayElements](IDataStore.md#getboolarrayelements)
+⤾ overrides [IDataStore.getBoolArrayElements](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/docs/api/IDataStore.md#getboolarrayelements)
 
-```js
+```javascript
 function getBoolArrayElements(bytes32 _key, uint256 _startIndex, uint256 _endIndex) public view
 returns(array bool[])
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _startIndex | uint256 |  | 
-| _endIndex | uint256 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_startIndex | uint256 |  |
+| \_endIndex | uint256 |  |
 
-### _setData
+### \_setData
 
-```js
-function _setData(bytes32 _key, uint256 _data, bool _insert) internal nonpayable validKey 
+```javascript
+function _setData(bytes32 _key, uint256 _data, bool _insert) internal nonpayable validKey
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _data | uint256 |  | 
-| _insert | bool |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_data | uint256 |  |
+| \_insert | bool |  |
 
-### _setData
+### \_setData
 
-```js
-function _setData(bytes32 _key, bytes32 _data, bool _insert) internal nonpayable validKey 
+```javascript
+function _setData(bytes32 _key, bytes32 _data, bool _insert) internal nonpayable validKey
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _data | bytes32 |  | 
-| _insert | bool |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_data | bytes32 |  |
+| \_insert | bool |  |
 
-### _setData
+### \_setData
 
-```js
-function _setData(bytes32 _key, address _data, bool _insert) internal nonpayable validKey 
+```javascript
+function _setData(bytes32 _key, address _data, bool _insert) internal nonpayable validKey
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _data | address |  | 
-| _insert | bool |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_data | address |  |
+| \_insert | bool |  |
 
-### _setData
+### \_setData
 
-```js
-function _setData(bytes32 _key, bool _data, bool _insert) internal nonpayable validKey 
+```javascript
+function _setData(bytes32 _key, bool _data, bool _insert) internal nonpayable validKey
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _data | bool |  | 
-| _insert | bool |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_data | bool |  |
+| \_insert | bool |  |
 
-### _setData
+### \_setData
 
-```js
-function _setData(bytes32 _key, string _data) internal nonpayable validKey 
+```javascript
+function _setData(bytes32 _key, string _data) internal nonpayable validKey
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _data | string |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_data | string |  |
 
-### _setData
+### \_setData
 
-```js
-function _setData(bytes32 _key, bytes _data) internal nonpayable validKey 
+```javascript
+function _setData(bytes32 _key, bytes _data) internal nonpayable validKey
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _data | bytes |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_data | bytes |  |
 
-### _setData
+### \_setData
 
-```js
-function _setData(bytes32 _key, uint256[] _data) internal nonpayable validKey 
+```javascript
+function _setData(bytes32 _key, uint256[] _data) internal nonpayable validKey
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _data | uint256[] |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_data | uint256\[\] |  |
 
-### _setData
+### \_setData
 
-```js
-function _setData(bytes32 _key, bytes32[] _data) internal nonpayable validKey 
+```javascript
+function _setData(bytes32 _key, bytes32[] _data) internal nonpayable validKey
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _data | bytes32[] |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_data | bytes32\[\] |  |
 
-### _setData
+### \_setData
 
-```js
-function _setData(bytes32 _key, address[] _data) internal nonpayable validKey 
+```javascript
+function _setData(bytes32 _key, address[] _data) internal nonpayable validKey
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _data | address[] |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_data | address\[\] |  |
 
-### _setData
+### \_setData
 
-```js
-function _setData(bytes32 _key, bool[] _data) internal nonpayable validKey 
+```javascript
+function _setData(bytes32 _key, bool[] _data) internal nonpayable validKey
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _data | bool[] |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_data | bool\[\] |  |
 
-### _deleteUint
+### \_deleteUint
 
-```js
-function _deleteUint(bytes32 _key, uint256 _index) internal nonpayable validKey 
+```javascript
+function _deleteUint(bytes32 _key, uint256 _index) internal nonpayable validKey
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _index | uint256 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_index | uint256 |  |
 
-### _deleteBytes32
+### \_deleteBytes32
 
-```js
-function _deleteBytes32(bytes32 _key, uint256 _index) internal nonpayable validKey 
+```javascript
+function _deleteBytes32(bytes32 _key, uint256 _index) internal nonpayable validKey
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _index | uint256 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_index | uint256 |  |
 
-### _deleteAddress
+### \_deleteAddress
 
-```js
-function _deleteAddress(bytes32 _key, uint256 _index) internal nonpayable validKey 
+```javascript
+function _deleteAddress(bytes32 _key, uint256 _index) internal nonpayable validKey
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _index | uint256 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_index | uint256 |  |
 
-### _deleteBool
+### \_deleteBool
 
-```js
-function _deleteBool(bytes32 _key, uint256 _index) internal nonpayable validKey 
+```javascript
+function _deleteBool(bytes32 _key, uint256 _index) internal nonpayable validKey
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | bytes32 |  | 
-| _index | uint256 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | bytes32 |  |
+| \_index | uint256 |  |
 

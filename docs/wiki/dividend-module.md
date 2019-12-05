@@ -146,7 +146,7 @@ This function allows investors to pull their own issued dividends. Note: If the 
      * @notice Investors can pull their own dividends
      * @param _dividendIndex Dividend to pull
      */
-    function pullDividendPayment(uint256 _dividendIndex) public whenNotPaused 
+    function pullDividendPayment(uint256 _dividendIndex) public whenNotPaused
 ```
 
 #### Pay Dividend
@@ -216,7 +216,7 @@ This function allows the issuer to withdraw withheld tax from the dividend index
      * @notice Allows issuer to withdraw withheld tax
      * @param _dividendIndex Dividend to withdraw from
      */
-    function withdrawWithholding(uint256 _dividendIndex) external;    
+    function withdrawWithholding(uint256 _dividendIndex) external;
 ```
 
 #### Update dividend dates

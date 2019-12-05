@@ -6,99 +6,99 @@ original_id: Encoder
 
 # Encoder.sol
 
-View Source: [contracts/libraries/Encoder.sol](../../contracts/libraries/Encoder.sol)
+View Source: [contracts/libraries/Encoder.sol](https://github.com/PolymathNetwork/polymath-core/tree/096ba240a927c98e1f1a182d2efee7c4c4c1dfc5/contracts/libraries/Encoder.sol)
 
 **Encoder**
 
 ## Functions
 
-- [getKey(string _key)](#getkey)
-- [getKey(string _key1, address _key2)](#getkey)
-- [getKey(string _key1, string _key2)](#getkey)
-- [getKey(string _key1, uint256 _key2)](#getkey)
-- [getKey(string _key1, bytes32 _key2)](#getkey)
-- [getKey(string _key1, bool _key2)](#getkey)
+* [getKey\(string \_key\)](encoder.md#getkey)
+* [getKey\(string \_key1, address \_key2\)](encoder.md#getkey)
+* [getKey\(string \_key1, string \_key2\)](encoder.md#getkey)
+* [getKey\(string \_key1, uint256 \_key2\)](encoder.md#getkey)
+* [getKey\(string \_key1, bytes32 \_key2\)](encoder.md#getkey)
+* [getKey\(string \_key1, bool \_key2\)](encoder.md#getkey)
 
 ### getKey
 
-```js
+```javascript
 function getKey(string _key) internal pure
 returns(bytes32)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key | string |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key | string |  |
 
 ### getKey
 
-```js
+```javascript
 function getKey(string _key1, address _key2) internal pure
 returns(bytes32)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key1 | string |  | 
-| _key2 | address |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key1 | string |  |
+| \_key2 | address |  |
 
 ### getKey
 
-```js
+```javascript
 function getKey(string _key1, string _key2) internal pure
 returns(bytes32)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key1 | string |  | 
-| _key2 | string |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key1 | string |  |
+| \_key2 | string |  |
 
 ### getKey
 
-```js
+```javascript
 function getKey(string _key1, uint256 _key2) internal pure
 returns(bytes32)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key1 | string |  | 
-| _key2 | uint256 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key1 | string |  |
+| \_key2 | uint256 |  |
 
 ### getKey
 
-```js
+```javascript
 function getKey(string _key1, bytes32 _key2) internal pure
 returns(bytes32)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key1 | string |  | 
-| _key2 | bytes32 |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key1 | string |  |
+| \_key2 | bytes32 |  |
 
 ### getKey
 
-```js
+```javascript
 function getKey(string _key1, bool _key2) internal pure
 returns(bytes32)
 ```
 
 **Arguments**
 
-| Name        | Type           | Description  |
-| ------------- |------------- | -----|
-| _key1 | string |  | 
-| _key2 | bool |  | 
+| Name | Type | Description |
+| :--- | :--- | :--- |
+| \_key1 | string |  |
+| \_key2 | bool |  |
 

@@ -6,14 +6,14 @@ To avoid replay attacks, Oraclize associates a particular encrypted string with 
 
 This is possible as the encryption scheme used by Oraclize generates a new key each time its run, and so the same text will generate different output on each encryption.
 
-This means we need to avoid encrypted key clash when running on testnet, mainnet & through the ethereum-bridge (their website says they don't enforce this on testnets, but on Kovan it seems to be, and I'm seeing similar behaviour in ethereum-bridge).
+This means we need to avoid encrypted key clash when running on testnet, mainnet & through the ethereum-bridge \(their website says they don't enforce this on testnets, but on Kovan it seems to be, and I'm seeing similar behaviour in ethereum-bridge\).
 
 Every time we redeploy the PolyOracle we therefore need to regenerate the partially encrypted Oraclize URL. For test cases I hardcoded a particular instance of a free API key - we may need to reconsider this if we see testing failures due to rate limits on free accounts, but it would be better not to use the prod key for this.
 
 ## Dependencies
 
 Download Oraclize tool:  
-https://github.com/oraclize/encrypted-queries
+[https://github.com/oraclize/encrypted-queries](https://github.com/oraclize/encrypted-queries)
 
 On OS X I needed the following python2 dependencies:  
 `pip install cryptography --force-reinstall`  
@@ -42,3 +42,4 @@ where `{encrypted_key}` is the output from the above step.
 
 e.g. for the above key, this would be:  
 `string public oracleURL = '[URL] json(https://pro-api.coinmarketcap.com/v1/cryptocurrency/quotes/latest?id=2496&convert=USD&CMC_PRO_API_KEY=${[decrypt] BDUKwVRCqHlmgo4dCWoghzrhwQ8XhKuxDEY8vedTqAcLEpJ7yyTYSkiIttqp6SJaMMk7j0toxjD/Y22AmdcJeeLulPTAk4lTWmIuobjtDUFUZmu9yQC7toiIMfMf0Tzy7ujfAw8m96RJJEs5IpYUt3owgfsh}).data."2496".quote.USD.price';`
+

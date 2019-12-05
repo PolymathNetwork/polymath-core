@@ -1,0 +1,22 @@
+# Table of contents
+
+* [README](README.md)
+* [PULL\_REQUEST\_TEMPLATE](pull_request_template.md)
+* [scripts](scripts/README.md)
+  * [wincov](scripts/wincov.md)
+  * [wintest](scripts/wintest.md)
+* [docs](docs/README.md)
+  * [Multiple Transfer Managers](docs/multiple_transfer_managers.md)
+  * [PolyOracle Encrypted URL](docs/polyoracle.md)
+  * [Flags List](docs/investor_flags.md)
+  * [Permissions List](docs/permissions_list.md)
+  * [ethereum\_status\_codes](docs/ethereum_status_codes.md)
+* [.github](.github/README.md)
+  * [ISSUE\_TEMPLATE](.github/issue_template/README.md)
+    * [Issue Template](.github/issue_template/feature_request.md)
+* [Mainnet](network-history.md)
+* [CHANGELOG](changelog.md)
+* [UPGRADE-PROCEDURES](upgrade-procedures.md)
+* [Polymath: Code of Conduct](code_of_conduct.md)
+* [CONTRIBUTING](contributing.md)
+

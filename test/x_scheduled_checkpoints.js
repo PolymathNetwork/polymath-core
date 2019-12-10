@@ -303,6 +303,44 @@ contract("ScheduleCheckpoint", async (accounts) => {
             );
         });
 
+        it("Should fail to exceed schedules limit (10)", async () => {
+            const snap_Id = await takeSnapshot();
+            const tx = await I_SecurityToken.addModule(I_ScheduledCheckpointFactory.address, "0x0", new BN(0), new BN(0), false, { from: token_owner });
+            const I_ScheduleCheckpointLimits = await ScheduleCheckpoint.at(tx.logs[2].args._module);
+
+            const startTime = (await currentTime()).add(new BN(duration.seconds(100)));
+            const frequency = new BN(duration.seconds(24*60*60)); // Frequency of 86400 seconds
+            const endTime = new BN(0);
+            const frequencyUnit = SECONDS;
+
+            for (let i = 1; i <= 10; i++) {
+                await I_ScheduleCheckpointLimits.addSchedule(
+                    web3.utils.fromAscii(`Schedule${i}`),
+                    startTime,
+                    endTime,
+                    frequency,
+                    frequencyUnit,
+                    {
+                        from: token_owner
+                    }
+                );
+            }
+
+            // Adding further schedules should fail.
+            await catchRevert(I_ScheduleCheckpointLimits.addSchedule(
+                web3.utils.fromAscii("Schedule11"),
+                startTime,
+                endTime,
+                frequency,
+                frequencyUnit,
+                {
+                    from: token_owner
+                }
+            ), "Max Limit Reached");
+
+            await revertToSnapshot(snap_Id);
+        });
+
         it("Remove (temp) daily checkpoint", async () => {
             let snap_Id = await takeSnapshot();
             await I_ScheduleCheckpoint.removeSchedule(web3.utils.fromAscii("Schedule1"), { from: token_owner });

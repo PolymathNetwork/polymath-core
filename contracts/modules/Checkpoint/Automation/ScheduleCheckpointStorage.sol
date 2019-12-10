@@ -3,8 +3,9 @@ pragma solidity 0.5.8;
 contract ScheduleCheckpointStorage {
 
     enum FrequencyUnit { SECONDS, DAYS, WEEKS, MONTHS, QUATER, YEARS }
-    
+
     bytes32 constant OPERATOR = "OPERATOR";
+    uint256 internal constant MAXLIMIT = uint256(10);
 
     struct Schedule {
         uint256 index;

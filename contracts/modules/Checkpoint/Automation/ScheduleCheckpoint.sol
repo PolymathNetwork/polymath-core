@@ -44,6 +44,7 @@ contract ScheduleCheckpoint is ScheduleCheckpointStorage, TransferManager, IChec
         require(_name != bytes32(0), "Empty name");
         require(_startTime > now, "Start time must be in the future");
         require(schedules[_name].name == bytes32(0), "Name already in use");
+        _validateMaximumLimitCount();
         uint256 endTime = _endTime;
         if (_endTime <= _startTime)
             endTime = uint256(0);
@@ -244,6 +245,10 @@ contract ScheduleCheckpoint is ScheduleCheckpointStorage, TransferManager, IChec
 
     function _isScheduleActive(uint256 _createNextCheckpointAt, uint256 _endTime) internal view returns(bool isActive) {
         isActive = _endTime > 0 ? _createNextCheckpointAt <= now && _createNextCheckpointAt <= _endTime : _createNextCheckpointAt <= now;
+    }
+
+    function _validateMaximumLimitCount() internal view {
+        require(names.length < MAXLIMIT, "Max Limit Reached");
     }
 
     /**

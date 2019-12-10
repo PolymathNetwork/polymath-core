@@ -13,8 +13,9 @@
     "gas": "scripts/gasUsage.sh",
     "wintest": "scripts\\wintest.cmd",
     "wincov": "scripts\\wincov.cmd",
-    "docs": "scripts/docs.sh",
     "lint": "eslint .",
+    "docs": "NO_COMPILE=false scripts/docs.sh",
+    "docs:nocompile": "NO_COMPILE=true scripts/docs.sh",
     "lint:fix": "eslint . --fix",
     "lint:sol": "solium -d .",
     "lint:sol:fix": "solium -d . --fix",
@@ -62,6 +63,7 @@
   "dependencies": {
     "dotenv": "^8.0.0",
     "openzeppelin-solidity": "2.2.0",
+    "solidoc": "PolymathNetwork/solidoc",
     "truffle": "^5.0.4",
     "truffle-hdwallet-provider": "^1.0.4",
     "web3-provider-engine": "^14.1.0"
@@ -91,7 +93,6 @@
     "request-promise": "^4.2.2",
     "sol-merger": "^0.1.2",
     "solidity-coverage": "^0.5.11",
-    "solidity-docgen": "^0.1.1",
     "solium": "^1.1.6",
     "table": "^5.2.3",
     "web3": "1.0.0-beta.35"

@@ -332,7 +332,7 @@ contract("SecurityToken", async (accounts) => {
             let id2 = await takeSnapshot();
             let mockInvestors = [];
             let mockAmount = [];
-            for (let i = 0; i < 38; i++) {
+            for (let i = 0; i < 30; i++) {
                 mockInvestors.push("0x1000000000000000000000000000000000000000".substring(0, 42 - i.toString().length) + i.toString());
                 mockAmount.push(new BN(10).pow(new BN(18)));
             }
@@ -341,16 +341,15 @@ contract("SecurityToken", async (accounts) => {
                 from: token_owner
             });
 
-            console.log("Cost for issuing to 38 addresses without checkpoint: " + tx.receipt.gasUsed);
+            console.log("Cost for issuing to 30 addresses without checkpoint: " + tx.receipt.gasUsed);
             await revertToSnapshot(id2);
 
             await I_SecurityToken.createCheckpoint({ from: token_owner });
-
             tx = await I_SecurityToken.issueMulti(mockInvestors, mockAmount, {
                 from: token_owner
             });
 
-            console.log("Cost for issuing to 38 addresses with checkpoint: " + tx.receipt.gasUsed);
+            console.log("Cost for issuing to 30 addresses with checkpoint: " + tx.receipt.gasUsed);
             await revertToSnapshot(id);
         });
 
@@ -2256,7 +2255,7 @@ contract("SecurityToken", async (accounts) => {
             });
         });
 
-        describe("Test cases for the returnPartition", async() => {
+        describe.skip("Test cases for the returnPartition", async() => {
             // It will work once the balanceOfByPartition function fixed added
             it.skip("Should add the lockup Transfer manager and create a lockup for investor 1", async() => {
 

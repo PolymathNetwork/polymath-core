@@ -497,7 +497,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
 
     function _getSpentvalues(address _beneficiary, uint256 _amount, FundRaiseType _fundRaiseType, uint256 _minTokens) internal returns(uint256 rate, uint256 spentUSD, uint256 spentValue, uint256 initialMinted) {
         initialMinted = getTokensMinted();
-        rate = getRate(_fundRaiseType);
+        rate = _getRate(_fundRaiseType);
         (spentUSD, spentValue) = _buyTokens(_beneficiary, _amount, rate, _fundRaiseType);
         require(getTokensMinted().sub(initialMinted) >= _minTokens, "Insufficient minted");
     }
@@ -702,7 +702,7 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @dev returns current conversion rate of funds
      * @param _fundRaiseType Fund raise type to get rate of
      */
-    function getRate(FundRaiseType _fundRaiseType) public returns (uint256) {
+    function _getRate(FundRaiseType _fundRaiseType) internal returns (uint256) {
         if (_fundRaiseType == FundRaiseType.ETH) {
             return IOracle(_getOracle(bytes32("ETH"))).getPrice();
         } else if (_fundRaiseType == FundRaiseType.POLY) {
@@ -710,6 +710,16 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         } else if (_fundRaiseType == FundRaiseType.SC) {
             return 10**18;
         }
+    }
+
+    /**
+     * @dev returns current conversion rate of funds
+     * @param _fundRaiseType Fund raise type to get rate of
+     */
+    function getRate(FundRaiseType _fundRaiseType) external returns (uint256) {
+        // Check to make sure that function can't be called on chain
+        _checkZeroAddress(msg.sender);
+        return _getRate(_fundRaiseType);
     }
 
     /**
@@ -730,8 +740,10 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @param _amount Value to convert to USD
      * @return uint256 Value in USD
      */
-    function convertToUSD(FundRaiseType _fundRaiseType, uint256 _amount) public returns(uint256) {
-        return DecimalMath.mul(_amount, getRate(_fundRaiseType));
+    function convertToUSD(FundRaiseType _fundRaiseType, uint256 _amount) external returns(uint256) {
+        // Check to make sure that function can't be called on chain
+        _checkZeroAddress(msg.sender);
+        return DecimalMath.mul(_amount, _getRate(_fundRaiseType));
     }
 
     /**
@@ -741,7 +753,9 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
      * @return uint256 Value in ETH or POLY
      */
     function convertFromUSD(FundRaiseType _fundRaiseType, uint256 _amount) public returns(uint256) {
-        return DecimalMath.div(_amount, getRate(_fundRaiseType));
+        // Check to make sure that function can't be called on chain
+        _checkZeroAddress(msg.sender);
+        return DecimalMath.div(_amount, _getRate(_fundRaiseType));
     }
 
     /**
@@ -877,5 +891,9 @@ contract USDTieredSTO is USDTieredSTOStorage, STO {
         oracleAddress = customOracles[_currency][denominatedCurrency];
         if (oracleAddress == address(0) && denominatedCurrency == bytes32("USD"))
             oracleAddress =  IPolymathRegistry(securityToken.polymathRegistry()).getAddress(oracleKeys[_currency][denominatedCurrency]);
+    }
+
+    function _checkZeroAddress(address _reader) pure internal {
+        require(_reader == address(0));
     }
 }

@@ -14,4 +14,9 @@ interface IModule {
      */
     function getPermissions() external view returns(bytes32[] memory permissions);
 
+    /**
+     * @notice Return the securityToken address
+     */
+    function securityToken() external view returns(address securityTokenAddress);
+
 }

@@ -22,7 +22,7 @@ const PercentageTransferManagerFactory = artifacts.require("./PercentageTransfer
 const PercentageTransferManager = artifacts.require("./PercentageTransferManager.sol");
 const BlacklistTransferManager = artifacts.require("./BlacklistTransferManager.sol");
 const BlacklistTransferManagerFactory = artifacts.require("./BlacklistTransferManagerFactory.sol");
-const ScheduledCheckpointFactory = artifacts.require('./ScheduledCheckpointFactory.sol');
+const ScheduleCheckpointFactory = artifacts.require('./ScheduleCheckpointFactory.sol');
 const USDTieredSTOFactory = artifacts.require("./USDTieredSTOFactory.sol");
 const USDTieredSTO = artifacts.require("./USDTieredSTO");
 const FeatureRegistry = artifacts.require("./FeatureRegistry.sol");
@@ -61,6 +61,7 @@ const AdvancedPLCRVotingCheckpointFactory = artifacts.require("./AdvancedPLCRVot
 const AdvancedPLCRVotingCheckpoint = artifacts.require("./AdvancedPLCRVotingCheckpoint");
 const Issuance = artifacts.require("./Issuance.sol");
 const IssuanceFactory = artifacts.require("./IssuanceFactory.sol");
+const ScheduleCheckpoint = artifacts.require("./ScheduleCheckpoint.sol");
 
 const Web3 = require("web3");
 let BN = Web3.utils.BN;
@@ -71,7 +72,7 @@ let I_RestrictedPartialSaleTMFactory;
 let I_USDTieredSTOProxyFactory;
 let I_USDTieredSTOFactory;
 let I_TrackedRedemptionFactory;
-let I_ScheduledCheckpointFactory;
+let I_ScheduleCheckpointFactory;
 let I_MockBurnFactory;
 let I_MockWrongTypeBurnFactory;
 let I_ManualApprovalTransferManagerLogic;
@@ -130,6 +131,7 @@ let I_PLCRVotingCheckpointLogic;
 let I_RestrictedPartialSaleTMLogic;
 let I_AdvancedPLCRVotingCheckpointFactory;
 let I_AdvancedPLCRVotingCheckpointLogic;
+let I_ScheduleCheckpointLogic;
 
 // Initial fee for ticker registry and security token registry
 const initRegFee = new BN(web3.utils.toWei("250"));
@@ -444,15 +446,16 @@ export async function deployRestrictedPartialSaleTMAndVerifyed(accountPolymath, 
 
 
 export async function deployScheduleCheckpointAndVerified(accountPolymath, MRProxyInstance, setupCost, usageCost, feeInPoly = false) {
-    I_ScheduledCheckpointFactory = await ScheduledCheckpointFactory.new(setupCost, usageCost, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
+    I_ScheduleCheckpointLogic = await ScheduleCheckpoint.new("0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: accountPolymath });
+    I_ScheduleCheckpointFactory = await ScheduleCheckpointFactory.new(setupCost, usageCost, I_ScheduleCheckpointLogic.address, I_PolymathRegistry.address, feeInPoly, { from: accountPolymath });
     assert.notEqual(
-        I_ScheduledCheckpointFactory.address.valueOf(),
+        I_ScheduleCheckpointFactory.address.valueOf(),
         "0x0000000000000000000000000000000000000000",
         "ScheduledCheckpointFactory contract was not deployed"
     );
 
-    await registerAndVerifyByMR(I_ScheduledCheckpointFactory.address, accountPolymath, MRProxyInstance);
-    return Promise.all(new Array(I_ScheduledCheckpointFactory));
+    await registerAndVerifyByMR(I_ScheduleCheckpointFactory.address, accountPolymath, MRProxyInstance);
+    return Promise.all(new Array(I_ScheduleCheckpointFactory));
 }
 
 /// Deploy the Permission Manager

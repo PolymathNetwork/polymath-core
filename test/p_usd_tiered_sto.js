@@ -297,7 +297,7 @@ contract("USDTieredSTO", async (accounts) => {
         `);
     });
 
-    describe.skip("Generate the SecurityToken", async () => {
+    describe("Generate the SecurityToken", async () => {
         it("Should register the ticker before the generation of the security token", async () => {
             await I_PolyToken.getTokens(REGFEE, ISSUER);
             await I_PolyToken.approve(I_STRProxied.address, REGFEE, { from: ISSUER });
@@ -329,7 +329,7 @@ contract("USDTieredSTO", async (accounts) => {
         });
     });
 
-    describe.skip("Test sto deployment", async () => {
+    describe("Test sto deployment", async () => {
         it("Should successfully attach the first STO module to the security token", async () => {
             let stoId = 0; // No discount
 
@@ -1046,7 +1046,7 @@ contract("USDTieredSTO", async (accounts) => {
         });
     });
 
-    describe.skip("Test modifying configuration", async () => {
+    describe("Test modifying configuration", async () => {
         it("Should not allow unauthorized address to change oracle address", async () => {
             let stoId = 3;
             await catchRevert(I_USDTieredSTO_Array[stoId].modifyOracles([], "0x0", { from: ACCREDITED1 }), "revert Sender is not owner");
@@ -1266,7 +1266,7 @@ contract("USDTieredSTO", async (accounts) => {
         });
     });
 
-    describe.skip("Test buying failure conditions", async () => {
+    describe("Test buying failure conditions", async () => {
         it("should fail if before STO start time", async () => {
             let stoId = 0;
             let snapId = await takeSnapshot();
@@ -1789,7 +1789,7 @@ contract("USDTieredSTO", async (accounts) => {
         });
     });
 
-    describe.skip("Prep STO", async () => {
+    describe("Prep STO", async () => {
         it("should jump forward to after STO start", async () => {
             let stoId = 0;
             await increaseTime(duration.days(3));
@@ -1828,7 +1828,7 @@ contract("USDTieredSTO", async (accounts) => {
         });
     });
 
-    describe.skip("Buy Tokens with no discount", async () => {
+    describe("Buy Tokens with no discount", async () => {
         it("Should prevent buying 0 amount", async () => {
             let stoId = 0;
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, 0, I_DaiToken.address, { from: NONACCREDITED1 }),
@@ -3546,7 +3546,7 @@ contract("USDTieredSTO", async (accounts) => {
         });
     });
 
-    describe.skip("Buy Tokens with POLY discount", async () => {
+    describe("Buy Tokens with POLY discount", async () => {
         it("should successfully buy using fallback at tier 0 for NONACCREDITED1", async () => {
             let stoId = 2;
             let tierId = 0;
@@ -5052,7 +5052,7 @@ contract("USDTieredSTO", async (accounts) => {
         });
     });
 
-    describe.skip("Test getter functions", async () => {
+    describe("Test getter functions", async () => {
         describe("Generic", async () => {
             it("should get the right number of investors", async () => {
                 assert.equal(
@@ -5109,7 +5109,7 @@ contract("USDTieredSTO", async (accounts) => {
             });
         });
 
-        describe.skip("convertToUSD", async () => {
+        describe("convertToUSD", async () => {
             it("should reset exchange rates", async () => {
                 // Reset exchange rates
                 await I_USDOracle.changePrice(USDETH, { from: POLYMATH });
@@ -5143,7 +5143,7 @@ contract("USDTieredSTO", async (accounts) => {
             });
         });
 
-        describe.skip("convertFromUSD", async () => {
+        describe("convertFromUSD", async () => {
             it("should get the right conversion for USD to ETH", async () => {
                 // 10000 USD to 20 ETH
                 let usdInWei = new BN(web3.utils.toWei("10000", "ether"));

@@ -1055,7 +1055,7 @@ contract("USDTieredSTO", async (accounts) => {
         it("Should fail to change oracle address because of Invalid length of oracles addresses", async () => {
             let stoId = 3;
             let I_EUROracle = await MockOracle.new(address_zero, web3.utils.fromAscii("ETH"), web3.utils.fromAscii("EUR"), e18, { from: POLYMATH });
-            await catchRevert(I_USDTieredSTO_Array[stoId].modifyOracles([I_EUROracle.address], web3.utils.fromAscii("EUR"), { from: ISSUER }), "Invalid no. of oracles");
+            await catchRevert(I_USDTieredSTO_Array[stoId].modifyOracles([I_EUROracle.address], web3.utils.fromAscii("EUR"), { from: ISSUER }));
         });
 
         it("Should allow to change oracle address for ETH", async () => {
@@ -1600,13 +1600,13 @@ contract("USDTieredSTO", async (accounts) => {
             // NONACCREDITED DAI
             await catchRevert(
                 I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, I_DaiToken.address, { from: NONACCREDITED1 }), 
-                "Fiat not allowed"
+                "Invalid Fund type"
             );
 
             // ACCREDITED DAI
             await catchRevert(
                 I_USDTieredSTO_Array[stoId].buyWithUSD(ACCREDITED1, investment_DAI, I_DaiToken.address, { from: ACCREDITED1 }),
-                "Fiat not allowed"
+                "Invalid Fund type"
             );
 
             // Revert stable coin address
@@ -1704,19 +1704,19 @@ contract("USDTieredSTO", async (accounts) => {
 
             // NONACCREDITED ETH
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(NONACCREDITED1, { from: NONACCREDITED1, value: investment_ETH }),
-                "ETH not allowed");
+                "Invalid Fund type");
             // NONACCREDITED POLY
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(NONACCREDITED1, investment_POLY, { from: NONACCREDITED1 }),
-                "POLY not allowed");
+                "Invalid Fund type");
             // NONACCREDITED DAI
             await I_USDTieredSTO_Array[stoId].buyWithUSD(NONACCREDITED1, investment_DAI, I_DaiToken.address, { from: NONACCREDITED1 });
 
             // ACCREDITED ETH
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithETH(ACCREDITED1, { from: ACCREDITED1, value: investment_ETH }),
-                "ETH not allowed");
+                "Invalid Fund type");
             // ACCREDITED POLY
             await catchRevert(I_USDTieredSTO_Array[stoId].buyWithPOLY(ACCREDITED1, investment_POLY, { from: ACCREDITED1 }),
-                "POLY not allowed");
+                "Invalid Fund type");
             // ACCREDITED DAI
             await I_USDTieredSTO_Array[stoId].buyWithUSD(ACCREDITED1, investment_DAI, I_DaiToken.address, { from: ACCREDITED1 });
 

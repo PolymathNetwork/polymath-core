@@ -404,7 +404,7 @@ contract("CappedSTO", async (accounts) => {
                     gas: 2100000,
                     value: new BN(web3.utils.toWei("1", "ether"))
                 }),
-                "Contract is paused"
+                "Already paused"
             );
         });
 
@@ -800,7 +800,7 @@ contract("CappedSTO", async (accounts) => {
                         from: account_investor1,
                         gas: 6000000
                     }),
-                    "Contract is paused"
+                    "Already paused"
                 );
                 await I_CappedSTO_Array_POLY[0].unpause({ from: account_issuer });
             });

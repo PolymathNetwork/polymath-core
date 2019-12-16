@@ -21,13 +21,13 @@ contract ModuleFactory is IModuleFactory, Ownable {
 
     IPolymathRegistry public polymathRegistry;
 
-    string initialVersion;
+    string internal initialVersion;
     bytes32 public name;
     string public title;
     string public description;
 
-    uint8[] typesData;
-    bytes32[] tagsData;
+    uint8[] internal typesData;
+    bytes32[] internal tagsData;
 
     bool public isCostInPoly;
     uint256 public setupCost;
@@ -86,7 +86,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
      * @notice Used to change the fee of the setup cost
      * @param _setupCost new setup cost
      */
-    function changeSetupCost(uint256 _setupCost) public onlyOwner {
+    function changeSetupCost(uint256 _setupCost) external onlyOwner {
         emit ChangeSetupCost(setupCost, _setupCost);
         setupCost = _setupCost;
     }
@@ -94,7 +94,7 @@ contract ModuleFactory is IModuleFactory, Ownable {
     /**
      * @notice Used to change the usage cost
      */
-    function changeUsageCost() public onlyOwner {
+    function changeUsageCost() external onlyOwner {
         require(now > usageCostProposedAt.add(COLDPERIOD), "Proposal is in unmatured state");
         emit ChangeUsageCost(usageCost, proposedUsageCost);
         usageCost = proposedUsageCost;

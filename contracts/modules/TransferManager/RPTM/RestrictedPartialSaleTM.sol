@@ -2,7 +2,6 @@ pragma solidity ^0.5.0;
 
 import "../TransferManager.sol";
 import "./RestrictedPartialSaleTMStorage.sol";
-import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 /**
  * @title This TransferManager is used to validate the transaction where partial balance of an 

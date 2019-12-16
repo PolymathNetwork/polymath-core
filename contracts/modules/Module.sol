@@ -6,7 +6,6 @@ import "../interfaces/IModuleFactory.sol";
 import "../interfaces/IDataStore.sol";
 import "../interfaces/ISecurityToken.sol";
 import "../interfaces/ICheckPermission.sol";
-import "../interfaces/IPolymathRegistry.sol";
 import "../storage/modules/ModuleStorage.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";

@@ -30,13 +30,17 @@ contract STO is ISTO, STOStorage, Module {
      */
     function pause() public {
         /*solium-disable-next-line security/no-block-members*/
-        require(!isFinalized, "STO has been finalized");
+        _checkSTOFinalized();
         super.pause();
+    }
+
+    function _checkSTOFinalized() internal view {
+        require(!isFinalized, "STO is finalized");
     }
 
     function _setFundRaiseType(FundRaiseType[] memory _fundRaiseTypes) internal {
         // FundRaiseType[] parameter type ensures only valid values for _fundRaiseTypes
-        require(_fundRaiseTypes.length > 0 && _fundRaiseTypes.length <= 3, "Raise type is not specified");
+        require(_fundRaiseTypes.length > 0 && _fundRaiseTypes.length <= 3, "Invalid Raise type");
         fundRaiseTypes[uint8(FundRaiseType.ETH)] = false;
         fundRaiseTypes[uint8(FundRaiseType.POLY)] = false;
         fundRaiseTypes[uint8(FundRaiseType.SC)] = false;
@@ -58,7 +62,7 @@ contract STO is ISTO, STOStorage, Module {
 
     function _allowPreMinting(uint256 _tokenAmount) internal {
         _isSTOStarted();
-        require(_tokenAmount > 0, "Invalid amount");
+        // Not checking whether _tokenAmount > 0 or not because cap will always be > 0 
         preMintAllowed = true;
         securityToken.issue(address(this), _tokenAmount, "");
         emit AllowPreMintFlag(msg.sender, _tokenAmount, preMintAllowed);
@@ -74,6 +78,10 @@ contract STO is ISTO, STOStorage, Module {
     function _isSTOStarted() internal view {
         /*solium-disable-next-line security/no-block-members*/
         require(now < startTime, "Already started");
+    }
+
+    function _checkGranularity(uint256 _value, uint256 _granularity) internal pure {
+        require(_value % _granularity == 0, "Invalid granularity");
     }
 
     /**

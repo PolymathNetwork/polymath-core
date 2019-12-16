@@ -32,7 +32,7 @@ contract USDTieredSTOStorage {
 
     mapping(address => uint256) public nonAccreditedLimitUSDOverride;
 
-    mapping(bytes32 => mapping(bytes32 => string)) oracleKeys;
+    mapping(bytes32 => mapping(bytes32 => string)) public oracleKeys;
 
     // Determine whether users can invest on behalf of a beneficiary
     bool public allowBeneficialInvestments;

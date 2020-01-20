@@ -2035,7 +2035,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
             `);
         });
 
-        it("Should transfer funds using the controller trasnfer", async() => {
+        it("Should transfer funds using the controller transfer", async() => {
+            await increaseTime(duration.minutes(123));
             await I_SecurityToken.setController(token_owner, {from: token_owner});
             console.log(`Balance of the account investor 1: ${await I_SecurityToken.balanceOf.call(account_investor1)}`);
             await I_SecurityToken.controllerTransfer(account_investor1, account_investor2, new BN(web3.utils.toWei("11")), "0x0", "0x0", {from: token_owner});

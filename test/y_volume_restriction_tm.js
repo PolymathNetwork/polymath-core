@@ -1938,8 +1938,8 @@ contract('VolumeRestrictionTransferManager', accounts => {
             await print(data, account_delegate2);
             console.log(data[4].toString());
 
-             // get the trade amount using the timestamp
-             let amt = web3.utils.fromWei(await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_delegate2, data[0].toString()));
+            // get the trade amount using the timestamp
+            let amt = web3.utils.fromWei(await I_VolumeRestrictionTM.getTotalTradedByUser.call(account_delegate2, data[0].toString()));
             // Verify the storage changes
             assert.equal(data[0].toNumber(), startTime + duration.days(data[2].toNumber()));
             assert.equal(data[2].toNumber(), 6);
@@ -1993,6 +1993,58 @@ contract('VolumeRestrictionTransferManager', accounts => {
             assert.equal(data[0].toNumber(), startTime + duration.days(data[2].toNumber()));
             assert.equal(data[2].toNumber(), 6);
         });
+    });
+
+    describe("Test the edge case which cause transfer revert instead of INVALID return because of controllerTransfer", async() => {
+
+        it("Archiving the existing VRTM and add a new one", async() => {
+            await I_SecurityToken.archiveModule(I_VolumeRestrictionTM.address, {from: token_owner});
+            let tx = await I_SecurityToken.addModule(I_VolumeRestrictionTMFactory.address, "0x0", new BN(0), new BN(0), false, {from: token_owner });
+            assert.equal(tx.logs[2].args._moduleFactory, I_VolumeRestrictionTMFactory.address);
+            assert.equal(
+                web3.utils.toUtf8(tx.logs[2].args._name),
+                "VolumeRestrictionTM",
+                "VolumeRestrictionTMFactory doesn not added");
+            I_VolumeRestrictionTM = await VolumeRestrictionTM.at(tx.logs[2].args._module);
+        });
+
+        it("Add default restriction", async() => {
+            let newLatestTime = await getLatestTime();
+            await I_VolumeRestrictionTM.addDefaultRestriction(
+                new BN(web3.utils.toWei("10")),
+                0,
+                5,
+                newLatestTime.add(new BN(duration.days(10))),
+                0,
+                {
+                    from: token_owner
+                }
+            );
+
+            let data = await I_VolumeRestrictionTM.getDefaultRestriction.call();
+            assert.equal(data[0].toString(), new BN(web3.utils.toWei("10")));
+            assert.equal(data[2].toString(), 5);
+            let dataRestriction = await I_VolumeRestrictionTM.getDefaultRestriction.call();
+            console.log(`
+                *** Add Individual restriction data ***
+                Allowed Tokens:          ${dataRestriction[0].div(new BN(10).pow(new BN(18))).toString()}
+                StartTime :              ${dataRestriction[1].toString()}
+                Rolling Period in days : ${dataRestriction[2].toString()}
+                EndTime :                ${dataRestriction[3].toString()}
+                Type of Restriction:     ${dataRestriction[4].toString()}
+            `);
+        });
+
+        it("Should transfer funds using the controller trasnfer", async() => {
+            await I_SecurityToken.setController(token_owner, {from: token_owner});
+            console.log(`Balance of the account investor 1: ${await I_SecurityToken.balanceOf.call(account_investor1)}`);
+            await I_SecurityToken.controllerTransfer(account_investor1, account_investor2, new BN(web3.utils.toWei("11")), "0x0", "0x0", {from: token_owner});
+        });
+
+        it("Should also allow transfer the funds using the controller transfer even it surpasses the restriction limit", async() => {
+            await I_SecurityToken.controllerTransfer(account_investor1, account_investor2, new BN(web3.utils.toWei("5")), "0x0", "0x0", {from: token_owner});
+        });
+
     });
 
     describe("VolumeRestriction Transfer Manager Factory test cases", async() => {

@@ -988,7 +988,11 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
         } else {
             _allowedAmount = _restriction.allowedTokens;
         }
-        return _allowedAmount.sub(_sumOfLastPeriod);
+        // Due to `controllerTransfer()` function there is a chances where sumOfLastPeriod can be greater than
+        // allowedAmount, because of this if another transaction is performed it get reverted if we directly rely
+        // on the SafeMath sub method. So to avoid revert here we are first checking whether the substration is valid or
+        // not if not then return 0 as allowed amount otherwise the actual value of allowed amount.
+        return  _sumOfLastPeriod >_allowedAmount ? 0 : _allowedAmount - _sumOfLastPeriod;
     }
 
     function _updateStorage(
@@ -1120,7 +1124,7 @@ contract VolumeRestrictionTM is VolumeRestrictionTMStorage, TransferManager {
             else if (allowedAmountToTransact == 0)
                 return currentBalance;
             else
-                return (currentBalance.sub(allowedAmountToTransact));
+                return currentBalance > allowedAmountToTransact ? currentBalance - allowedAmountToTransact : 0;
         }
         else if (_partition == UNLOCKED) {
             if (allowedAmountToTransact == 0 && fromTimestamp == 0 && dailyTime == 0)

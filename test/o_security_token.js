@@ -2305,7 +2305,28 @@ contract("SecurityToken", async (accounts) => {
                 assert.equal(web3.utils.hexToUtf8(partition), "LOCKED");
             });
         })
-    })
+
+        describe("Test suite to reproduce the issue caused by the transferOwnership of the token", async() => {
+
+            it("Should transfer ownership of the token", async() => {
+                // Transfer Ownership
+                await I_SecurityToken.transferOwnership(account_investor1, {from: token_owner});
+                // Check the ticker ownership that is not transferred and it remains with the previous owner
+                let tickers = await I_STRGetter.getTickersByOwner(token_owner);
+                assert.equal(await I_SecurityToken.symbol.call(), web3.utils.hexToUtf8(tickers[0]));
+                // Check whether the new owner posses the ticker ownership or not
+                tickers = await I_STRGetter.getTickersByOwner(account_investor1);
+                assert.notequal(tickers.length, 0);
+                // Check the ownership of the token for the new owner
+                let list_of_tokens = await I_STRGetter.getTokensByOwner(account_investor1);
+                assert.equal(list_of_tokens.length, 1);
+                assert.equal(list_of_tokens[0], I_SecurityToken.address);
+                // Check the ownership of the token for the previous owner
+                list_of_tokens = await I_STRGetter.getTokensByOwner(token_owner);
+                assert.equal(list_of_tokens.length, 0);
+            });
+        });
+    });
     });
 
 });

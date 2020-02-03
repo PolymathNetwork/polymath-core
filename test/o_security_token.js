@@ -2316,7 +2316,7 @@ contract("SecurityToken", async (accounts) => {
                 assert.equal(await I_SecurityToken.symbol.call(), web3.utils.hexToUtf8(tickers[0]));
                 // Check whether the new owner posses the ticker ownership or not
                 tickers = await I_STRGetter.getTickersByOwner(account_investor1);
-                assert.notequal(tickers.length, 0);
+                assert.notEqual(tickers.length, 0);
                 // Check the ownership of the token for the new owner
                 let list_of_tokens = await I_STRGetter.getTokensByOwner(account_investor1);
                 assert.equal(list_of_tokens.length, 1);

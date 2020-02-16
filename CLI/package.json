@@ -13,7 +13,7 @@
     "chalk": "^2.4.1",
     "commander": "^4.0.1",
     "csv-parse": "^4.4.6",
-    "ethers": "^4.0.7",
+    "ethers": "^4.0.45",
     "moment": "^2.22.2",
     "readline-sync": "^1.4.9",
     "request": "^2.88.0",

@@ -112,6 +112,15 @@ You can easily navigate through it with the sidebar directory in order to run th
 6. Work with the Dividends module
 7. Using other CLI features
 
+## Un-audited functionality/Code [NOT USED FOR PRODUCTION/MAINNET PURPOSE].  
+1. [ScheduleCheckpoint module](./contracts/modules/Checkpoint/Automation/).    
+2. [AdvancedPLCR module](./contracts/modules/Checkpoint/Voting/APLCR).    
+3. [GeneralPermissionModule's batch features i.e addDelegateMulti & deleteDelegateMulti](./contracts/modules/PermissionManager/GeneralPermissionManager.sol#L58).    
+4. [Issuance Module](./contracts/modules/STO/Issuance).    
+5. [Automatic whitelisting of treasury wallet](./contracts/modules/TransferManager/GTM/GeneralTransferManager.sol#L292).    
+6. [Automatic whitelisting of modules which can hold ST](./contracts/modules/TransferManager/GTM/GeneralTransferManager.sol#L314).    
+7. [Verify the data param in the state less call of VerifyTransfer() function](./contracts/modules/TransferManager/GTM/GeneralTransferManager.sol#L140).    
+8. [Optimization in the bucket algorithm of VRTM](contracts/modules/TransferManager/VRTM/VolumeRestrictionTM.sol#L894).    
 
 # Setting up Polymath Core
 

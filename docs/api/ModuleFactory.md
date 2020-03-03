@@ -9,7 +9,7 @@ original_id: ModuleFactory
 View Source: [contracts/modules/ModuleFactory.sol](../../contracts/modules/ModuleFactory.sol)
 
 **↗ Extends: [IModuleFactory](IModuleFactory.md), [Ownable](Ownable.md)**
-**↘ Derived Contracts: [KYCTransferManagerFactory](KYCTransferManagerFactory.md), [ScheduledCheckpointFactory](ScheduledCheckpointFactory.md), [SignedTransferManagerFactory](SignedTransferManagerFactory.md), [TrackedRedemptionFactory](TrackedRedemptionFactory.md), [UpgradableModuleFactory](UpgradableModuleFactory.md)**
+**↘ Derived Contracts: [KYCTransferManagerFactory](KYCTransferManagerFactory.md), [SignedTransferManagerFactory](SignedTransferManagerFactory.md), [TrackedRedemptionFactory](TrackedRedemptionFactory.md), [UpgradableModuleFactory](UpgradableModuleFactory.md)**
 
 **ModuleFactory**
 
@@ -145,7 +145,7 @@ returns(string)
 Used to change the fee of the setup cost
 
 ```js
-function changeSetupCost(uint256 _setupCost) public nonpayable onlyOwner 
+function changeSetupCost(uint256 _setupCost) external nonpayable onlyOwner 
 ```
 
 **Arguments**
@@ -161,7 +161,7 @@ function changeSetupCost(uint256 _setupCost) public nonpayable onlyOwner
 Used to change the usage cost
 
 ```js
-function changeUsageCost() public nonpayable onlyOwner 
+function changeUsageCost() external nonpayable onlyOwner 
 ```
 
 **Arguments**

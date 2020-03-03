@@ -33,13 +33,13 @@ struct Tier {
 ```js
 //internal members
 bytes32 internal constant INVESTORSKEY;
-mapping(bytes32 => mapping(bytes32 => string)) internal oracleKeys;
 contract IERC20[] internal stableTokens;
 mapping(address => bool) internal stableTokenEnabled;
 mapping(bytes32 => mapping(bytes32 => address)) internal customOracles;
 
 //public members
 mapping(address => uint256) public nonAccreditedLimitUSDOverride;
+mapping(bytes32 => mapping(bytes32 => string)) public oracleKeys;
 bool public allowBeneficialInvestments;
 uint256 public currentTier;
 uint256 public fundsRaisedUSD;

@@ -138,7 +138,7 @@ function revokePreMintFlag() external nonpayable withPerm
 Function to set allowBeneficialInvestments (allow beneficiary to be different to funder)
 
 ```js
-function changeAllowBeneficialInvestments(bool _allowBeneficialInvestments) public nonpayable withPerm 
+function changeAllowBeneficialInvestments(bool _allowBeneficialInvestments) external nonpayable withPerm 
 ```
 
 **Arguments**

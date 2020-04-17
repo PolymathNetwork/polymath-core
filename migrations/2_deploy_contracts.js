@@ -294,7 +294,7 @@ module.exports = function(deployer, network, accounts) {
         .then(() => {
             // B) Deploy the VolumeRestrictionTMLogic Contract (Factory used to generate the VolumeRestrictionTM contract and this
             // manager attach with the securityToken contract at the time of deployment)
-            return deployer.deploy(VolumeRestrictionTMLogic, "0x0000000000000000000000000000000000000000", "0x0000000000000000000000000000000000000000", { from: PolymathAccount });
+            return deployer.deploy(VolumeRestrictionTMLogic, nullAddress, nullAddress, { from: PolymathAccount });
         })
         .then(() => {
             // B) Deploy the CappedSTOLogic Contract (Factory used to generate the CappedSTO contract and this

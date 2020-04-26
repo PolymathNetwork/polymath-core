@@ -91,7 +91,7 @@
     "ethereumjs-abi": "^0.6.7",
     "fs": "0.0.2",
     "ganache-cli": "6.5.0",
-    "mocha": "^6.2.0",
+    "mocha": "^7.1.2",
     "mocha-junit-reporter": "^1.23.1",
     "prettier": "^1.18.2",
     "request": "^2.88.0",

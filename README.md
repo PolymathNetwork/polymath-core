@@ -138,6 +138,8 @@ V3 Audit Report by Consensys Diligence: https://github.com/PolymathNetwork/polym
 | Count Transfer Manager Factory:                               | [0xA8e0a4E7f0cdECF43AFbA0360B6f64412Df2e6B0](https://etherscan.io/address/0xA8e0a4E7f0cdECF43AFbA0360B6f64412Df2e6B0)                                              |
 | Percentage Transfer Manager Factory:                             | [0x5732ee7ef44dc5ab7b7cbac8ada5268c96895ca5](https://etherscan.io/address/0x5732ee7ef44dc5ab7b7cbac8ada5268c96895ca5)                                              |
 | Manual Approval Transfer Manager Factory:                        | [0x156389b30ae9e5ca8ec9e55ff529738480e42214](https://etherscan.io/address/0x156389b30ae9e5ca8ec9e55ff529738480e42214)                                              |
+| Restricted Partial Transfer Manager Factory:                        | [0x782ce66e80d5a81697dc4a8140f0b2e48071a020](https://etherscan.io/address/0x782ce66e80d5a81697dc4a8140f0b2e48071a020)                                              |
+| Restricted Partial Transfer Manager (Logic):                        | [0x5cd5a84c4b6024fb722f6b942ff25ce969a07a92](https://etherscan.io/address/0x5cd5a84c4b6024fb722f6b942ff25ce969a07a92)                                              |
 
 
 

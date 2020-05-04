@@ -63,7 +63,7 @@
   "dependencies": {
     "dotenv": "^8.0.0",
     "openzeppelin-solidity": "2.2.0",
-    "solc": "0.5.8",
+    "solc": "0.6.7",
     "solidity-coverage": "^0.6.3",
     "solidoc": "PolymathNetwork/solidoc",
     "truffle": "^5.0.29",

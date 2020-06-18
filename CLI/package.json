@@ -15,6 +15,7 @@
     "csv-parse": "^4.4.6",
     "ethers": "^4.0.7",
     "moment": "^2.22.2",
+    "objects-to-csv": "^1.3.6",
     "readline-sync": "^1.4.9",
     "request": "^2.88.0",
     "request-promise": "^4.2.2",

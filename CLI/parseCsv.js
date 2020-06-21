@@ -67,52 +67,32 @@ function assignTemplate(_startDate, _alreadyPassedMonths, _unVestedShares, _alre
     let timestampDate = (composedDate.getTime())/1000 + + 19800; // for 5 and half hour time
     let alreadyPassedTimestamp = 0;
     let templateName;
+    let dustTokens;
     if (timestampDate < LAUNCH_TIME_STAMP) {
         alreadyPassedTimestamp = LAUNCH_TIME_STAMP - timestampDate;
     }
-    if (_alreadyPassedMonths > 0) {
-        templateName = createUniqueTemplate({
-                "numberOfTokens": _alreadyVestedShares,
-                "duration": 1, // for 1 sec
-                "frequency": 1
-            });
-        Schedules.push({
-            "Beneficiary": _beneficiary,
-            "TemplateName": templateName,
-            "StartDate": 0,
-        });
-    }
-    if (_alreadyPassedMonths >= NON_LINEAR_TEMPLATE_DURATION) {
-        let duration = noOfSeconds(_remainingMonths);
-        templateName = createUniqueTemplate({
-            "numberOfTokens": _unVestedShares,
-            "duration": duration, // Remaining months in seconds
-            "frequency": duration / _remainingMonths
-            });
-        Schedules.push({
-            "Beneficiary": _beneficiary,
-            "TemplateName": templateName,
-            "StartDate": LAUNCH_TIME_STAMP,
-        });
-    }
-    // In this case two schedule will be created with 2 templates
-    // Ex - only 6 months being passed then 6 template will be created to first 6 months as the non-linear
-    // while for the other remaining months it will be linear of having 1 month frequency
-    else if (_alreadyPassedMonths < NON_LINEAR_TEMPLATE_DURATION) {
-        let months_remaining_for_non_linear = NON_LINEAR_TEMPLATE_DURATION - _alreadyPassedMonths;
-        let months_remaining_for_linear = _remainingMonths - months_remaining_for_non_linear;
 
-        let duration_for_non_linear = noOfSeconds(months_remaining_for_non_linear);
-        let duration_for_linear = noOfSeconds(months_remaining_for_linear);
+    if (_remainingMonths == TOTAL_VESTING_DURATION) {
+        let non_linear_duration = noOfSeconds(NON_LINEAR_TEMPLATE_DURATION);
+        let months_for_linear_duration = TOTAL_VESTING_DURATION - NON_LINEAR_TEMPLATE_DURATION;
+        let linear_duration = noOfSeconds(months_for_linear_duration);
 
-        let no_of_tokens_for_non_linear = (parseInt(_unVestedShares / _remainingMonths)) * months_remaining_for_non_linear;
-        let no_of_tokens_for_linear = _unVestedShares - no_of_tokens_for_non_linear;
+        if (_unVestedShares % TOTAL_VESTING_DURATION != 0) {
+            let remainder = _unVestedShares % TOTAL_VESTING_DURATION;
+            dustTokens += remainder;
+            _unVestedShares = _unVestedShares - remainder;
+        }
+
+        let tokens_per_period = (_unVestedShares / TOTAL_VESTING_DURATION);
+
+        let no_of_tokens_for_non_linear_vesting = tokens_per_period * NON_LINEAR_TEMPLATE_DURATION;
+        let no_of_tokens_for_linear_vesting = tokens_per_period * months_for_linear_duration;
 
         // Non-linear
         templateName = createUniqueTemplate({
-            "numberOfTokens": no_of_tokens_for_non_linear,
-            "duration": duration_for_non_linear, // Remaining months in seconds
-            "frequency": duration_for_non_linear / months_remaining_for_non_linear
+            "numberOfTokens": no_of_tokens_for_non_linear_vesting,
+            "duration": non_linear_duration, // Remaining months in seconds
+            "frequency": non_linear_duration
             });
         Schedules.push({
             "Beneficiary": _beneficiary,
@@ -122,14 +102,108 @@ function assignTemplate(_startDate, _alreadyPassedMonths, _unVestedShares, _alre
 
         // Linear
         templateName = createUniqueTemplate({
-            "numberOfTokens": no_of_tokens_for_linear,
-            "duration": duration_for_linear, // Remaining months in seconds
-            "frequency": duration_for_linear / months_remaining_for_linear
+            "numberOfTokens": no_of_tokens_for_linear_vesting,
+            "duration": linear_duration, // Remaining months in seconds
+            "frequency": linear_duration / months_for_linear_duration
             });
         Schedules.push({
             "Beneficiary": _beneficiary,
             "TemplateName": templateName,
-            "StartDate": LAUNCH_TIME_STAMP + duration_for_non_linear
+            "StartDate": LAUNCH_TIME_STAMP + non_linear_duration
+        });
+    }
+    else if (_alreadyPassedMonths > 0) {
+
+        if (_alreadyVestedShares != 0) {
+            templateName = createUniqueTemplate({
+                "numberOfTokens": _alreadyVestedShares,
+                "duration": 1, // for 1 sec
+                "frequency": 1
+            });
+            Schedules.push({
+                "Beneficiary": _beneficiary,
+                "TemplateName": templateName,
+                "StartDate": 0,
+            });
+        }
+
+        if (_alreadyPassedMonths >= NON_LINEAR_TEMPLATE_DURATION) {
+
+            if (_unVestedShares % _remainingMonths != 0) {
+                let remainder = _unVestedShares % _remainingMonths;
+                dustTokens += remainder;
+                _unVestedShares = _unVestedShares - remainder;
+            }
+            let duration = noOfSeconds(_remainingMonths);
+            templateName = createUniqueTemplate({
+                "numberOfTokens": _unVestedShares,
+                "duration": duration, // Remaining months in seconds
+                "frequency": duration / _remainingMonths
+                });
+            Schedules.push({
+                "Beneficiary": _beneficiary,
+                "TemplateName": templateName,
+                "StartDate": LAUNCH_TIME_STAMP,
+            });
+        }
+        // In this case two schedule will be created with 2 templates
+        // Ex - only 6 months being passed then 6 template will be created to first 6 months as the non-linear
+        // while for the other remaining months it will be linear of having 1 month frequency
+        else if (_alreadyPassedMonths < NON_LINEAR_TEMPLATE_DURATION) {
+            let months_remaining_for_non_linear = NON_LINEAR_TEMPLATE_DURATION - _alreadyPassedMonths;
+            let months_remaining_for_linear = _remainingMonths - months_remaining_for_non_linear;
+
+            let duration_for_non_linear = noOfSeconds(months_remaining_for_non_linear);
+            let duration_for_linear = noOfSeconds(months_remaining_for_linear);
+
+            if (_unVestedShares % _remainingMonths != 0) {
+                let remainder = _unVestedShares % _remainingMonths;
+                dustTokens += remainder;
+                _unVestedShares = _unVestedShares - remainder;
+            }
+
+            let tokens_per_period = (_unVestedShares / _remainingMonths);
+
+            let no_of_tokens_for_non_linear = tokens_per_period * months_remaining_for_non_linear;
+            let no_of_tokens_for_linear = tokens_per_period * months_remaining_for_linear;
+
+            // Non-linear
+            templateName = createUniqueTemplate({
+                "numberOfTokens": no_of_tokens_for_non_linear,
+                "duration": duration_for_non_linear, // Remaining months in seconds
+                "frequency": duration_for_non_linear
+                });
+            Schedules.push({
+                "Beneficiary": _beneficiary,
+                "TemplateName": templateName,
+                "StartDate": LAUNCH_TIME_STAMP,
+            });
+
+            // Linear
+            templateName = createUniqueTemplate({
+                "numberOfTokens": no_of_tokens_for_linear,
+                "duration": duration_for_linear, // Remaining months in seconds
+                "frequency": duration_for_linear / months_remaining_for_linear
+                });
+            Schedules.push({
+                "Beneficiary": _beneficiary,
+                "TemplateName": templateName,
+                "StartDate": (LAUNCH_TIME_STAMP + duration_for_non_linear)
+            });
+        }
+    }
+
+    if (dustTokens > 0) {
+        let finalDuration = noOfSeconds(finalDuration);
+        templateName = createUniqueTemplate({
+            "numberOfTokens": dustTokens,
+            "duration": 1, // only runs for 1 seconds
+            "frequency": 1 // only runs for 1 seconds
+            });
+        Schedules.push({
+            "Beneficiary": _beneficiary,
+            "TemplateName": templateName,
+            "StartDate": (LAUNCH_TIME_STAMP + finalDuration),
         });
     }
 }

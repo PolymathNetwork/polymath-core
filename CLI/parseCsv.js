@@ -12,6 +12,10 @@ let Templates = [];
 
 let Schedules = [];
 
+let SchedulesWithTemplate = [];
+
+let DisplayData = [];
+
 program
     .version('1.0.1')
     .description('CLI for parsing CSV')
@@ -46,18 +50,58 @@ async function makeDataProducible(filePath) {
 
     // Create template structure
     for(let i = 0; i < data.length; i++) {
-        assignTemplate(data[i]['Vesting start date'], data[i]['Month elapsed'], data[i]['Unvested share'], data[i]['Already vested'], data[i]['Remaining months'], data[i]['ETH address']);
+        assignTemplate(data[i]['Vesting start date'], data[i]['Month elapsed'], data[i]['Unvested share'], data[i]['Already vested'], data[i]['Remaining months'], data[i]['ETH address'], data[i]['Name']);
     }
 
     let csv = new ObjectsToCsv(Templates);
     await csv.toDisk('./data/Wallet/VEW/templates.csv');
     csv = new ObjectsToCsv(Schedules);
     await csv.toDisk('./data/Wallet/VEW/schedules.csv');
-    console.log("CSV Segregation is successfully done");
+
+    for (let i = 0; i < Schedules.length; i++) {
+        let tempObj = {};
+        for(let j = 0; j < Templates.length; j++) {
+            if (Schedules[i]["TemplateName"] == Templates[j]["TemplateName"]) {
+                tempObj = Templates[j];
+                break;
+            }
+        }
+        SchedulesWithTemplate.push({
+            "BeneficiaryName": Schedules[i]["BeneficiaryName"],
+            "Beneficiary": Schedules[i]["Beneficiary"],
+            "TemplateName": tempObj.TemplateName,
+            "NumberOfTokens": tempObj.numberOfTokens,
+            "Duration": tempObj.duration,
+            "Frequency": tempObj.frequency,
+            "StartTimestamp": Schedules[i]["StartDate"]
+        });
+        let frequencyInDays = tempObj.frequency > 86400 ? parseInt(tempObj.frequency) / 86400 : null;
+        let durationInDays = tempObj.duration > 86400 ? parseInt(tempObj.duration) / 86400 : null;
+        let startDate = Schedules[i]["StartDate"] == 0 ? 0 : new Date( Schedules[i]["StartDate"] * 1000);
+        DisplayData.push({
+            "BeneficiaryName": Schedules[i]["BeneficiaryName"],
+            "Beneficiary": Schedules[i]["Beneficiary"],
+            "TemplateName": tempObj.TemplateName,
+            "NumberOfTokens": tempObj.numberOfTokens,
+            "Duration": tempObj.duration,
+            "Frequency": tempObj.frequency,
+            "StartTimestamp": Schedules[i]["StartDate"],
+            "StartDate": startDate,
+            "FrequencyInDays": frequencyInDays,
+            "DurationInDays": durationInDays
+        });
+    }
+    csv = new ObjectsToCsv(SchedulesWithTemplate);
+    await csv.toDisk('./data/Wallet/VEW/scheduleWithTemplates.csv');
+
+    csv = new ObjectsToCsv(DisplayData);
+    await csv.toDisk('./data/Wallet/VEW/displayData.csv');
+    console.log("CSV parsing is successfully done");
+
 }
 
 
-function assignTemplate(_startDate, _alreadyPassedMonths, _unVestedShares, _alreadyVestedShares, _remainingMonths, _beneficiary) {
+function assignTemplate(_startDate, _alreadyPassedMonths, _unVestedShares, _alreadyVestedShares, _remainingMonths, _beneficiary, _beneficiaryName) {
     if (!/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/.test(_startDate)) {
         console.error("Not a proper date format i.e dd/mm/yy");
         process.exit(1);
@@ -67,7 +111,7 @@ function assignTemplate(_startDate, _alreadyPassedMonths, _unVestedShares, _alre
     let timestampDate = (composedDate.getTime())/1000 + + 19800; // for 5 and half hour time
     let alreadyPassedTimestamp = 0;
     let templateName;
-    let dustTokens;
+    let dustTokens = 0;
     if (timestampDate < LAUNCH_TIME_STAMP) {
         alreadyPassedTimestamp = LAUNCH_TIME_STAMP - timestampDate;
     }
@@ -95,6 +139,7 @@ function assignTemplate(_startDate, _alreadyPassedMonths, _unVestedShares, _alre
             "frequency": non_linear_duration
             });
         Schedules.push({
+            "BeneficiaryName": _beneficiaryName,
             "Beneficiary": _beneficiary,
             "TemplateName": templateName,
             "StartDate": LAUNCH_TIME_STAMP,
@@ -107,6 +152,7 @@ function assignTemplate(_startDate, _alreadyPassedMonths, _unVestedShares, _alre
             "frequency": linear_duration / months_for_linear_duration
             });
         Schedules.push({
+            "BeneficiaryName": _beneficiaryName,
             "Beneficiary": _beneficiary,
             "TemplateName": templateName,
             "StartDate": LAUNCH_TIME_STAMP + non_linear_duration
@@ -121,6 +167,7 @@ function assignTemplate(_startDate, _alreadyPassedMonths, _unVestedShares, _alre
                 "frequency": 1
             });
             Schedules.push({
+                "BeneficiaryName": _beneficiaryName,
                 "Beneficiary": _beneficiary,
                 "TemplateName": templateName,
                 "StartDate": 0,
@@ -141,6 +188,7 @@ function assignTemplate(_startDate, _alreadyPassedMonths, _unVestedShares, _alre
                 "frequency": duration / _remainingMonths
                 });
             Schedules.push({
+                "BeneficiaryName": _beneficiaryName,
                 "Beneficiary": _beneficiary,
                 "TemplateName": templateName,
                 "StartDate": LAUNCH_TIME_STAMP,
@@ -174,6 +222,7 @@ function assignTemplate(_startDate, _alreadyPassedMonths, _unVestedShares, _alre
                 "frequency": duration_for_non_linear
                 });
             Schedules.push({
+                "BeneficiaryName": _beneficiaryName,
                 "Beneficiary": _beneficiary,
                 "TemplateName": templateName,
                 "StartDate": LAUNCH_TIME_STAMP,
@@ -186,39 +235,40 @@ function assignTemplate(_startDate, _alreadyPassedMonths, _unVestedShares, _alre
                 "frequency": duration_for_linear / months_remaining_for_linear
                 });
             Schedules.push({
+                "BeneficiaryName": _beneficiaryName,
                 "Beneficiary": _beneficiary,
                 "TemplateName": templateName,
                 "StartDate": (LAUNCH_TIME_STAMP + duration_for_non_linear)
             });
         }
     }
-
     if (dustTokens > 0) {
-        let finalDuration = noOfSeconds(finalDuration);
+        let finalDuration = noOfSeconds(_remainingMonths);
         templateName = createUniqueTemplate({
             "numberOfTokens": dustTokens,
             "duration": 1, // only runs for 1 seconds
             "frequency": 1 // only runs for 1 seconds
             });
         Schedules.push({
+            "BeneficiaryName": _beneficiaryName,
             "Beneficiary": _beneficiary,
             "TemplateName": templateName,
             "StartDate": (LAUNCH_TIME_STAMP + finalDuration),
         });
     }
 }
-
+// lots of fixation to work with timing
 function noOfSeconds(_remainingMonths) {
     let date = new Date(LAUNCH_TIME_STAMP * 1000);
-    let newYear = date.getUTCFullYear();
-    let newMonth = date.getUTCMonth() + _remainingMonths;
-    let newDate = date.getUTCDay();
+    let newYear = parseInt(date.getUTCFullYear());
+    let newMonth = parseInt(date.getUTCMonth()) + parseInt(_remainingMonths) + 1;
+    let newDate = parseInt(date.getUTCDay());
     if (newMonth > 12) {
-        newMonth = newMonth % 12 == 0 ? date.getUTCMonth() :  newMonth % 12;
-        newYear = date.getFullYear() + parseInt(_remainingMonths / 12);
+        newMonth = newMonth % 12 == 0 ? parseInt(date.getUTCMonth()) + 1 : newMonth % 12;
+        newYear = newYear + parseInt(_remainingMonths / 12);
     }
-    let composedDate = new Date(newYear, newMonth - 1, newDate);
-    let timestampDate = (composedDate.getTime())/1000 + + 19800;
+    let composedDate = new Date(newYear, newMonth, newDate);
+    let timestampDate = (composedDate.getTime())/1000 + 19800 - 172800;  // Deduct the 2 day
     let duration = timestampDate - LAUNCH_TIME_STAMP;
     duration = duration % _remainingMonths == 0 ? duration : duration - (duration % _remainingMonths); // To make it completely divisible
     return duration;
@@ -226,16 +276,18 @@ function noOfSeconds(_remainingMonths) {
 
 function createUniqueTemplate(obj) {
     if (Templates.length == 0) {
-        Templates.push(getTemplateObject(obj));
-        return getTemplateObject(obj).TemplateName;
+        let templateObject = getTemplateObject(obj);
+        Templates.push(templateObject);
+        return templateObject.TemplateName;
     } else {
         for (let i = 0; i < Templates.length; i++) {
             if (Templates[i].numberOfTokens == obj.numberOfTokens && Templates[i].duration == obj.duration && Templates[i].frequency == obj.frequency) {
                 return Templates[i].TemplateName;
             }
         }
-        Templates.push(getTemplateObject(obj));
-        return getTemplateObject(obj).TemplateName;
+        let templateObject = getTemplateObject(obj);
+        Templates.push(templateObject);
+        return templateObject.TemplateName;
     }
 }
 

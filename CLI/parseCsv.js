@@ -97,7 +97,6 @@ async function makeDataProducible(filePath) {
     csv = new ObjectsToCsv(DisplayData);
     await csv.toDisk('./data/Wallet/VEW/displayData.csv');
     console.log("CSV parsing is successfully done");
-
 }
 
 
@@ -265,7 +264,16 @@ function noOfSeconds(_remainingMonths) {
     let newDate = parseInt(date.getUTCDay());
     if (newMonth > 12) {
         newMonth = newMonth % 12 == 0 ? parseInt(date.getUTCMonth()) + 1 : newMonth % 12;
-        newYear = newYear + parseInt(_remainingMonths / 12);
+        let extraYear = 0;
+        let temp = newMonth + _remainingMonths % 12;
+        if (temp > 12) {
+            extraYear = 1;
+            newMonth = temp - 12;
+        }
+        else if (temp == 12) {
+            
+        }
+        newYear = newYear + parseInt(_remainingMonths / 12) + extraYear;
     }
     let composedDate = new Date(newYear, newMonth, newDate);
     let timestampDate = (composedDate.getTime())/1000 + 19800 - 172800;  // Deduct the 2 day

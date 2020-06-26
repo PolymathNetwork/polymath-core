@@ -1,75 +1,39 @@
 ---
-id: version-3.0.0-ScheduledCheckpoint
-title: ScheduledCheckpoint
-original_id: ScheduledCheckpoint
+id: version-3.0.0-ScheduleCheckpoint
+title: ScheduleCheckpoint
+original_id: ScheduleCheckpoint
 ---
 
-# Burn module for burning tokens and keeping track of burnt amounts (ScheduledCheckpoint.sol)
+# Burn module for burning tokens and keeping track of burnt amounts (ScheduleCheckpoint.sol)
 
-View Source: [contracts/modules/Experimental/Mixed/ScheduledCheckpoint.sol](../../contracts/modules/Experimental/Mixed/ScheduledCheckpoint.sol)
+View Source: [contracts/modules/Checkpoint/Automation/ScheduleCheckpoint.sol](../../contracts/modules/Checkpoint/Automation/ScheduleCheckpoint.sol)
 
-**↗ Extends: [ICheckpoint](ICheckpoint.md), [TransferManager](TransferManager.md)**
+**↗ Extends: [ScheduleCheckpointStorage](ScheduleCheckpointStorage.md), [TransferManager](TransferManager.md), [ICheckpoint](ICheckpoint.md)**
 
-**ScheduledCheckpoint**
-
-**Enums**
-### TimeUnit
-
-```js
-enum TimeUnit {
- SECONDS,
- DAYS,
- WEEKS,
- MONTHS,
- YEARS
-}
-```
-
-## Structs
-### Schedule
-
-```js
-struct Schedule {
- bytes32 name,
- uint256 startTime,
- uint256 nextTime,
- uint256 interval,
- enum ScheduledCheckpoint.TimeUnit timeUnit,
- uint256 index,
- uint256[] checkpointIds,
- uint256[] timestamps,
- uint256[] periods,
- uint256 totalPeriods
-}
-```
-
-## Contract Members
-**Constants & Variables**
-
-```js
-bytes32[] public names;
-mapping(bytes32 => struct ScheduledCheckpoint.Schedule) public schedules;
-
-```
+**ScheduleCheckpoint**
 
 **Events**
 
 ```js
-event AddSchedule(bytes32  _name, uint256  _startTime, uint256  _interval, enum ScheduledCheckpoint.TimeUnit  _timeUint);
+event AddSchedule(bytes32  _name, uint256  _startTime, uint256  _endTime, uint256  _frequency, enum ScheduleCheckpointStorage.FrequencyUnit  _frequencyUnit);
 event RemoveSchedule(bytes32  _name);
+event ModifyScheduleEndTime(bytes32  _name, uint256  _oldEndTime, uint256  _newEndTime);
 ```
 
 ## Functions
 
 - [(address _securityToken, address _polyToken)](#)
 - [getInitFunction()](#getinitfunction)
-- [addSchedule(bytes32 _name, uint256 _startTime, uint256 _interval, enum ScheduledCheckpoint.TimeUnit _timeUnit)](#addschedule)
+- [addSchedule(bytes32 _name, uint256 _startTime, uint256 _endTime, uint256 _frequency, enum ScheduleCheckpointStorage.FrequencyUnit _frequencyUnit)](#addschedule)
 - [removeSchedule(bytes32 _name)](#removeschedule)
+- [modifyScheduleEndTime(bytes32 _name, uint256 _newEndTime)](#modifyscheduleendtime)
 - [executeTransfer(address , address , uint256 , bytes )](#executetransfer)
 - [verifyTransfer(address , address , uint256 , bytes )](#verifytransfer)
 - [getSchedule(bytes32 _name)](#getschedule)
 - [update(bytes32 _name)](#update)
 - [_update(bytes32 _name)](#_update)
+- [_isScheduleActive(uint256 _createNextCheckpointAt, uint256 _endTime)](#_isscheduleactive)
+- [_validateMaximumLimitCount()](#_validatemaximumlimitcount)
 - [updateAll()](#updateall)
 - [_updateAll()](#_updateall)
 - [getPermissions()](#getpermissions)
@@ -110,7 +74,7 @@ returns(bytes4)
 adds a new schedule for checkpoints
 
 ```js
-function addSchedule(bytes32 _name, uint256 _startTime, uint256 _interval, enum ScheduledCheckpoint.TimeUnit _timeUnit) external nonpayable
+function addSchedule(bytes32 _name, uint256 _startTime, uint256 _endTime, uint256 _frequency, enum ScheduleCheckpointStorage.FrequencyUnit _frequencyUnit) external nonpayable withPerm 
 ```
 
 **Arguments**
@@ -119,15 +83,17 @@ function addSchedule(bytes32 _name, uint256 _startTime, uint256 _interval, enum 
 | ------------- |------------- | -----|
 | _name | bytes32 | name of the new schedule (must be unused) | 
 | _startTime | uint256 | start time of the schedule (first checkpoint) | 
-| _interval | uint256 | interval at which checkpoints should be created | 
-| _timeUnit | enum ScheduledCheckpoint.TimeUnit | unit of time at which checkpoints should be created | 
+| _endTime | uint256 | End time of the schedule | 
+| _frequency | uint256 | How frequent checkpoint will being created | 
+| _frequencyUnit | enum ScheduleCheckpointStorage.FrequencyUnit | Unit of frequency i.e If issuer puts _frequency = 10
+& frequency unit is DAYS then it means every 10 day frequency new checkpoint will be created | 
 
 ### removeSchedule
 
 removes a schedule for checkpoints
 
 ```js
-function removeSchedule(bytes32 _name) external nonpayable
+function removeSchedule(bytes32 _name) external nonpayable withPerm 
 ```
 
 **Arguments**
@@ -135,6 +101,21 @@ function removeSchedule(bytes32 _name) external nonpayable
 | Name        | Type           | Description  |
 | ------------- |------------- | -----|
 | _name | bytes32 | name of the schedule to be removed | 
+
+### modifyScheduleEndTime
+
+Used to modify the end time of the schedule
+
+```js
+function modifyScheduleEndTime(bytes32 _name, uint256 _newEndTime) external nonpayable withPerm 
+```
+
+**Arguments**
+
+| Name        | Type           | Description  |
+| ------------- |------------- | -----|
+| _name | bytes32 | Name of the schedule that need to modify | 
+| _newEndTime | uint256 | New end time of the schedule | 
 
 ### executeTransfer
 
@@ -190,21 +171,25 @@ gets schedule details
 
 ```js
 function getSchedule(bytes32 _name) external view
-returns(bytes32, uint256, uint256, uint256, enum ScheduledCheckpoint.TimeUnit, uint256[], uint256[], uint256[], uint256)
+returns(name bytes32, startTime uint256, endTime uint256, createNextCheckpointAt uint256, frequency uint256, frequencyUnit enum ScheduleCheckpointStorage.FrequencyUnit, checkpointIds uint256[], timestamps uint256[], periods uint256[], totalPeriods uint256)
 ```
+
+**Returns**
+
+name Name of the schedule
 
 **Arguments**
 
 | Name        | Type           | Description  |
 | ------------- |------------- | -----|
-| _name | bytes32 | name of the schedule | 
+| _name | bytes32 |  | 
 
 ### update
 
 manually triggers update outside of transfer request for named schedule (can be used to reduce user gas costs)
 
 ```js
-function update(bytes32 _name) external nonpayable
+function update(bytes32 _name) external nonpayable withPerm 
 ```
 
 **Arguments**
@@ -225,12 +210,37 @@ function _update(bytes32 _name) internal nonpayable
 | ------------- |------------- | -----|
 | _name | bytes32 |  | 
 
+### _isScheduleActive
+
+```js
+function _isScheduleActive(uint256 _createNextCheckpointAt, uint256 _endTime) internal view
+returns(isActive bool)
+```
+
+**Arguments**
+
+| Name        | Type           | Description  |
+| ------------- |------------- | -----|
+| _createNextCheckpointAt | uint256 |  | 
+| _endTime | uint256 |  | 
+
+### _validateMaximumLimitCount
+
+```js
+function _validateMaximumLimitCount() internal view
+```
+
+**Arguments**
+
+| Name        | Type           | Description  |
+| ------------- |------------- | -----|
+
 ### updateAll
 
 manually triggers update outside of transfer request for all schedules (can be used to reduce user gas costs)
 
 ```js
-function updateAll() external nonpayable
+function updateAll() external nonpayable withPerm 
 ```
 
 **Arguments**

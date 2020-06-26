@@ -18,12 +18,14 @@ View Source: [contracts/modules/STO/STO.sol](../../contracts/modules/STO/STO.sol
 - [getRaised(enum ISTO.FundRaiseType _fundRaiseType)](#getraised)
 - [getTokensSold()](#gettokenssold)
 - [pause()](#pause)
+- [_checkSTOFinalized()](#_checkstofinalized)
 - [_setFundRaiseType(enum ISTO.FundRaiseType[] _fundRaiseTypes)](#_setfundraisetype)
 - [_canBuy(address _investor)](#_canbuy)
 - [_getKey(bytes32 _key1, address _key2)](#_getkey)
 - [_allowPreMinting(uint256 _tokenAmount)](#_allowpreminting)
 - [_revokePreMintFlag(uint256 _tokenAmount)](#_revokepremintflag)
 - [_isSTOStarted()](#_isstostarted)
+- [_checkGranularity(uint256 _value, uint256 _granularity)](#_checkgranularity)
 - [getTreasuryWallet()](#gettreasurywallet)
 - [reclaimERC20(address _tokenContract)](#reclaimerc20)
 
@@ -70,6 +72,17 @@ Pause (overridden function)
 
 ```js
 function pause() public nonpayable
+```
+
+**Arguments**
+
+| Name        | Type           | Description  |
+| ------------- |------------- | -----|
+
+### _checkSTOFinalized
+
+```js
+function _checkSTOFinalized() internal view
 ```
 
 **Arguments**
@@ -150,6 +163,19 @@ function _isSTOStarted() internal view
 
 | Name        | Type           | Description  |
 | ------------- |------------- | -----|
+
+### _checkGranularity
+
+```js
+function _checkGranularity(uint256 _value, uint256 _granularity) internal pure
+```
+
+**Arguments**
+
+| Name        | Type           | Description  |
+| ------------- |------------- | -----|
+| _value | uint256 |  | 
+| _granularity | uint256 |  | 
 
 ### getTreasuryWallet
 

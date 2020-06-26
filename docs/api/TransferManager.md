@@ -9,7 +9,7 @@ original_id: TransferManager
 View Source: [contracts/modules/TransferManager/TransferManager.sol](../../contracts/modules/TransferManager/TransferManager.sol)
 
 **↗ Extends: [ITransferManager](ITransferManager.md), [Module](Module.md)**
-**↘ Derived Contracts: [BlacklistTransferManager](BlacklistTransferManager.md), [CountTransferManager](CountTransferManager.md), [GeneralTransferManager](GeneralTransferManager.md), [KYCTransferManager](KYCTransferManager.md), [LockUpTransferManager](LockUpTransferManager.md), [ManualApprovalTransferManager](ManualApprovalTransferManager.md), [PercentageTransferManager](PercentageTransferManager.md), [RestrictedPartialSaleTM](RestrictedPartialSaleTM.md), [ScheduledCheckpoint](ScheduledCheckpoint.md), [SignedTransferManager](SignedTransferManager.md), [VolumeRestrictionTM](VolumeRestrictionTM.md)**
+**↘ Derived Contracts: [BlacklistTransferManager](BlacklistTransferManager.md), [CountTransferManager](CountTransferManager.md), [GeneralTransferManager](GeneralTransferManager.md), [KYCTransferManager](KYCTransferManager.md), [LockUpTransferManager](LockUpTransferManager.md), [ManualApprovalTransferManager](ManualApprovalTransferManager.md), [PercentageTransferManager](PercentageTransferManager.md), [RestrictedPartialSaleTM](RestrictedPartialSaleTM.md), [ScheduleCheckpoint](ScheduleCheckpoint.md), [SignedTransferManager](SignedTransferManager.md), [VolumeRestrictionTM](VolumeRestrictionTM.md)**
 
 **TransferManager**
 

@@ -83,6 +83,7 @@ modifier validSC(address _stableToken) internal
 
 ## Functions
 
+- [_checkValidFundType(bool isValid)](#_checkvalidfundtype)
 - [(address _securityToken, address _polyAddress)](#)
 - [configure(uint256 _startTime, uint256 _endTime, uint256[] _ratePerTier, uint256[] _ratePerTierDiscountPoly, uint256[] _tokensPerTierTotal, uint256[] _tokensPerTierDiscountPoly, uint256 _nonAccreditedLimitUSD, uint256 _minimumInvestmentUSD, enum ISTO.FundRaiseType[] _fundRaiseTypes, address payable _wallet, address _treasuryWallet, IERC20[] _stableTokens, address[] _customOracleAddresses, bytes32 _denominatedCurrency)](#configure)
 - [allowPreMinting()](#allowpreminting)
@@ -95,7 +96,7 @@ modifier validSC(address _stableToken) internal
 - [modifyAddresses(address payable _wallet, address _treasuryWallet, IERC20[] _stableTokens)](#modifyaddresses)
 - [modifyOracles(address[] _customOracleAddresses, bytes32 _denominatedCurrencySymbol)](#modifyoracles)
 - [_modifyOracles(address[] _customOracleAddresses, bytes32 _denominatedCurrencySymbol)](#_modifyoracles)
-- [_checkZeroOracleAddress(address _addressForCheck)](#_checkzerooracleaddress)
+- [_checkZeroAddress(address _addressForCheck)](#_checkzeroaddress)
 - [_modifyLimits(uint256 _nonAccreditedLimitUSD, uint256 _minimumInvestmentUSD)](#_modifylimits)
 - [_modifyTiers(uint256[] _ratePerTier, uint256[] _ratePerTierDiscountPoly, uint256[] _tokensPerTierTotal, uint256[] _tokensPerTierDiscountPoly)](#_modifytiers)
 - [_modifyTimes(uint256 _startTime, uint256 _endTime)](#_modifytimes)
@@ -137,6 +138,18 @@ modifier validSC(address _stableToken) internal
 - [getSTODetails()](#getstodetails)
 - [getInitFunction()](#getinitfunction)
 - [_getOracle(bytes32 _currency)](#_getoracle)
+
+### _checkValidFundType
+
+```js
+function _checkValidFundType(bool isValid) internal pure
+```
+
+**Arguments**
+
+| Name        | Type           | Description  |
+| ------------- |------------- | -----|
+| isValid | bool |  | 
 
 ### 
 
@@ -321,10 +334,10 @@ function _modifyOracles(address[] _customOracleAddresses, bytes32 _denominatedCu
 | _customOracleAddresses | address[] |  | 
 | _denominatedCurrencySymbol | bytes32 |  | 
 
-### _checkZeroOracleAddress
+### _checkZeroAddress
 
 ```js
-function _checkZeroOracleAddress(address _addressForCheck) internal pure
+function _checkZeroAddress(address _addressForCheck) internal pure
 ```
 
 **Arguments**
@@ -883,7 +896,7 @@ param _tier The tier to calculate sold tokens for
 
 ```js
 function getTotalTokensSoldByTier(uint256 _tier) external view
-returns(uint256)
+returns(tokensSold uint256)
 ```
 
 **Returns**

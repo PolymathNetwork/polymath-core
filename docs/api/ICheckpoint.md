@@ -8,7 +8,7 @@ original_id: ICheckpoint
 
 View Source: [contracts/modules/Checkpoint/ICheckpoint.sol](../../contracts/modules/Checkpoint/ICheckpoint.sol)
 
-**↘ Derived Contracts: [DividendCheckpoint](DividendCheckpoint.md), [ScheduledCheckpoint](ScheduledCheckpoint.md), [VotingCheckpoint](VotingCheckpoint.md)**
+**↘ Derived Contracts: [DividendCheckpoint](DividendCheckpoint.md), [ScheduleCheckpoint](ScheduleCheckpoint.md), [VotingCheckpoint](VotingCheckpoint.md)**
 
 **ICheckpoint**
 

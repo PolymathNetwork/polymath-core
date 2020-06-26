@@ -203,7 +203,9 @@ New ManualApprovalTransferManager 0x6af2afad53cb334e62b90ddbdcf3a086f654c298
 | Percentage Transfer Manager Factory:                             | [0x127dcA5040f5B943100D4c4154fA4F7744e9482D](https://kovan.etherscan.io/address/0x127dcA5040f5B943100D4c4154fA4F7744e9482D)                                              |
 | Manual Approval Transfer Manager Factory:                        | [0xFcd05Ab2B494577AbE0a4549b2FBec6e1bce32C9](https://kovan.etherscan.io/address/0xFcd05Ab2B494577AbE0a4549b2FBec6e1bce32C9)                                              |
 
-
+**Added v3.1.0**
+VestingEscrowWalletFactory - https://kovan.etherscan.io/address/0x865655b0fdb38a2b4d3fe163d02d20d4aaa15a8d#code
+VestingEscrowWallet - https://kovan.etherscan.io/address/0x71150034f6781a1361b0fd28e2b2cf17f261cddf#code
 
 ### v2.0.0 
 New Kovan PolyTokenFaucet: 0xb347b9f5b56b431b2cf4e1d90a5995f7519ca792

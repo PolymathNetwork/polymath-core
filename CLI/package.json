@@ -20,6 +20,8 @@
     "request": "^2.88.0",
     "request-promise": "^4.2.2",
     "table": "^5.1.1",
+    "time-stamp": "^2.2.0",
+    "unix-timestamp": "^0.2.0",
     "web3": "1.0.0-beta.35"
   }
 }

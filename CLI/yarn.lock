@@ -1798,6 +1798,10 @@ through@^2.3.8:
   version "2.3.8"
   resolved "https://registry.yarnpkg.com/through/-/through-2.3.8.tgz#0dd4c9ffaabc357960b1b724115d7e0e86a2e1f5"
 
+time-stamp@^2.2.0:
+  version "2.2.0"
+  resolved "https://registry.yarnpkg.com/time-stamp/-/time-stamp-2.2.0.tgz#917e0a66905688790ec7bbbde04046259af83f57"
+
 timed-out@^4.0.0, timed-out@^4.0.1:
   version "4.0.1"
   resolved "https://registry.yarnpkg.com/timed-out/-/timed-out-4.0.1.tgz#f32eacac5a175bea25d7fab565ab3ed8741ef56f"
@@ -1861,6 +1865,10 @@ unbzip2-stream@^1.0.9:
 underscore@1.8.3:
   version "1.8.3"
   resolved "https://registry.yarnpkg.com/underscore/-/underscore-1.8.3.tgz#4f3fb53b106e6097fcf9cb4109f2a5e9bdfa5022"
+
+unix-timestamp@^0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/unix-timestamp/-/unix-timestamp-0.2.0.tgz#e1cdc2808df6327d27e635d9351e72815288733e"
 
 unpipe@1.0.0, unpipe@~1.0.0:
   version "1.0.0"

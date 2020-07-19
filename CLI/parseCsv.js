@@ -3,10 +3,13 @@ const ObjectsToCsv = require('objects-to-csv');
 const fs = require('fs');
 const program = require('commander');
 const path = require('path');
+const timestamp = require('unix-timestamp');
 
 const TOTAL_VESTING_DURATION = 48; // in months
+const TOTAL_VESTING_DURATION_REMAIN = 47; // In months
 const NON_LINEAR_TEMPLATE_DURATION = 12; // in months
 const LAUNCH_TIME_STAMP = 1593475200; // 30-JUNE-2020
+const NEW_LAUNCH_TIME_STAMP = 1596240000; // 01-AUG-2020
 
 let Templates = [];
 
@@ -111,13 +114,13 @@ function assignTemplate(_startDate, _alreadyPassedMonths, _unVestedShares, _alre
     let alreadyPassedTimestamp = 0;
     let templateName;
     let dustTokens = 0;
-    if (timestampDate < LAUNCH_TIME_STAMP) {
-        alreadyPassedTimestamp = LAUNCH_TIME_STAMP - timestampDate;
-    }
+    // if (timestampDate < LAUNCH_TIME_STAMP) {
+    //     alreadyPassedTimestamp = LAUNCH_TIME_STAMP - timestampDate;
+    // }
 
-    if (_remainingMonths == TOTAL_VESTING_DURATION) {
-        let non_linear_duration = noOfSeconds(NON_LINEAR_TEMPLATE_DURATION);
-        let months_for_linear_duration = TOTAL_VESTING_DURATION - NON_LINEAR_TEMPLATE_DURATION;
+    if (_remainingMonths == TOTAL_VESTING_DURATION_REMAIN) {
+        let non_linear_duration = noOfSeconds(NON_LINEAR_TEMPLATE_DURATION - 1);
+        let months_for_linear_duration = TOTAL_VESTING_DURATION - NON_LINEAR_TEMPLATE_DURATION - 1;
         let linear_duration = noOfSeconds(months_for_linear_duration);
 
         if (_unVestedShares % TOTAL_VESTING_DURATION != 0) {
@@ -141,7 +144,7 @@ function assignTemplate(_startDate, _alreadyPassedMonths, _unVestedShares, _alre
             "BeneficiaryName": _beneficiaryName,
             "Beneficiary": _beneficiary,
             "TemplateName": templateName,
-            "StartDate": LAUNCH_TIME_STAMP,
+            "StartDate": NEW_LAUNCH_TIME_STAMP,
         });
 
         // Linear
@@ -154,10 +157,10 @@ function assignTemplate(_startDate, _alreadyPassedMonths, _unVestedShares, _alre
             "BeneficiaryName": _beneficiaryName,
             "Beneficiary": _beneficiary,
             "TemplateName": templateName,
-            "StartDate": LAUNCH_TIME_STAMP + non_linear_duration
+            "StartDate": NEW_LAUNCH_TIME_STAMP + non_linear_duration
         });
     }
-    else if (_alreadyPassedMonths > 0) {
+    else if (_alreadyPassedMonths > 1) {
 
         if (_alreadyVestedShares != 0) {
             templateName = createUniqueTemplate({
@@ -181,6 +184,7 @@ function assignTemplate(_startDate, _alreadyPassedMonths, _unVestedShares, _alre
                 _unVestedShares = _unVestedShares - remainder;
             }
             let duration = noOfSeconds(_remainingMonths);
+
             templateName = createUniqueTemplate({
                 "numberOfTokens": _unVestedShares,
                 "duration": duration, // Remaining months in seconds
@@ -190,7 +194,7 @@ function assignTemplate(_startDate, _alreadyPassedMonths, _unVestedShares, _alre
                 "BeneficiaryName": _beneficiaryName,
                 "Beneficiary": _beneficiary,
                 "TemplateName": templateName,
-                "StartDate": LAUNCH_TIME_STAMP,
+                "StartDate": NEW_LAUNCH_TIME_STAMP,
             });
         }
         // In this case two schedule will be created with 2 templates
@@ -224,7 +228,7 @@ function assignTemplate(_startDate, _alreadyPassedMonths, _unVestedShares, _alre
                 "BeneficiaryName": _beneficiaryName,
                 "Beneficiary": _beneficiary,
                 "TemplateName": templateName,
-                "StartDate": LAUNCH_TIME_STAMP,
+                "StartDate": NEW_LAUNCH_TIME_STAMP,
             });
 
             // Linear
@@ -237,7 +241,7 @@ function assignTemplate(_startDate, _alreadyPassedMonths, _unVestedShares, _alre
                 "BeneficiaryName": _beneficiaryName,
                 "Beneficiary": _beneficiary,
                 "TemplateName": templateName,
-                "StartDate": (LAUNCH_TIME_STAMP + duration_for_non_linear)
+                "StartDate": (NEW_LAUNCH_TIME_STAMP + duration_for_non_linear)
             });
         }
     }
@@ -252,32 +256,22 @@ function assignTemplate(_startDate, _alreadyPassedMonths, _unVestedShares, _alre
             "BeneficiaryName": _beneficiaryName,
             "Beneficiary": _beneficiary,
             "TemplateName": templateName,
-            "StartDate": (LAUNCH_TIME_STAMP + finalDuration),
+            "StartDate": (NEW_LAUNCH_TIME_STAMP + finalDuration),
         });
     }
 }
+
 // lots of fixation to work with timing
 function noOfSeconds(_remainingMonths) {
-    let date = new Date(LAUNCH_TIME_STAMP * 1000);
-    let newYear = parseInt(date.getUTCFullYear());
-    let newMonth = parseInt(date.getUTCMonth()) + parseInt(_remainingMonths) + 1;
-    let newDate = parseInt(date.getUTCDay());
+    const MONTH = 8;
+    let newYear = 2020
+    let newMonth = MONTH + parseInt(_remainingMonths);
+    let newDate = 1;
     if (newMonth > 12) {
-        newMonth = newMonth % 12 == 0 ? parseInt(date.getUTCMonth()) + 1 : newMonth % 12;
-        let extraYear = 0;
-        let temp = newMonth + _remainingMonths % 12;
-        if (temp > 12) {
-            extraYear = 1;
-            newMonth = temp - 12;
-        }
-        else if (temp == 12) {
-            
-        }
-        newYear = newYear + parseInt(_remainingMonths / 12) + extraYear;
+        newYear = newYear + parseInt(newMonth / 12);
+        newMonth = newMonth % 12;
     }
-    let composedDate = new Date(newYear, newMonth, newDate);
-    let timestampDate = (composedDate.getTime())/1000 + 19800 - 172800;  // Deduct the 2 day
-    let duration = timestampDate - LAUNCH_TIME_STAMP;
+    let duration = timestamp.fromDate(`${newYear}/${newMonth}/${newDate}`) - NEW_LAUNCH_TIME_STAMP;
     duration = duration % _remainingMonths == 0 ? duration : duration - (duration % _remainingMonths); // To make it completely divisible
     return duration;
 }

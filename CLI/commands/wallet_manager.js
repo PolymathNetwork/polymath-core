@@ -20,6 +20,7 @@ const ADD_SCHEDULE_CSV = `${__dirname}/../data/Wallet/VEW/add_schedule_data.csv`
 const ADD_SCHEDULE_FROM_TEMPLATE_CSV = `${__dirname}/../data/Wallet/VEW/add_schedule_from_template_data.csv`;
 const MODIFY_SCHEDULE_CSV = `${__dirname}/../data/Wallet/VEW/modify_schedule_data.csv`;
 const REVOKE_SCHEDULE_CSV = `${__dirname}/../data/Wallet/VEW/revoke_schedule_data.csv`;
+const ADD_TEMPLATE_CSV = `${__dirname}/../data/Wallet/VEW/templates.csv`;
 
 async function executeApp() {
   console.log('\n', chalk.blue('Wallet - Main Menu', '\n'));
@@ -470,7 +471,7 @@ async function exploreAccount(account) {
 async function multipleSchedules() {
   console.log('\n', chalk.blue('Wallet - Schedules in batch', '\n'));
 
-  const options = ['Add multiple schedules', 'Add multiple schedules from template', 'Modify multiple schedules', 'Revoke multiple schedules'];
+  const options = ['Add multiple schedules', 'Add multiple schedules from template', 'Modify multiple schedules', 'Revoke multiple schedules', 'Add multiple templates'];
   const index = readlineSync.keyInSelect(options, 'What do you want to do?', { cancel: 'RETURN' });
   const selected = index != -1 ? options[index] : 'RETURN';
   console.log('Selected:', selected, '\n');
@@ -486,6 +487,9 @@ async function multipleSchedules() {
       break;
     case 'Revoke multiple schedules':
       await revokeSchedulesInBatch();
+      break;
+    case 'Add multiple templates':
+      await addTemplatesInBatch();
       break;
     case 'RETURN':
       return;
@@ -522,6 +526,34 @@ async function addSchedulesInBatch() {
     let action = currentWalletModule.methods.addScheduleMulti(beneficiaryArray[batch], templateNameArray[batch], amountArray[batch], durationArray[batch], frequencyArray[batch], startTimeArray[batch]);
     let receipt = await common.sendTransaction(action);
     console.log(chalk.green('Add multiple schedules transaction was successful.'));
+    console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
+  }
+}
+
+
+async function addTemplatesInBatch() {
+  let csvFilePath = readlineSync.question(`Enter the path for csv data file (${ADD_TEMPLATE_CSV}): `, {
+    defaultInput: ADD_TEMPLATE_CSV
+  });
+  let parsedData = csvParse(csvFilePath);
+  let validData = parsedData.filter(
+    row => typeof row[0] === 'string' &&
+      (!isNaN(row[1])) &&
+      (!isNaN(row[2])) && (!isNaN(row[3]))
+  );
+
+  let invalidRows = parsedData.filter(row => !validData.includes(row));
+  if (invalidRows.length > 0) {
+    console.log(chalk.red(`The following lines from csv file are not valid: ${invalidRows.map(r => parsedData.indexOf(r) + 1).join(',')} `));
+  }
+  let [templateNameArray, noOfTokensArray, durationArray, frequencyArray] = common.transposeBatches(validData);
+  for (let batch = 0; batch < validData.length; batch++) {
+    console.log(`Txn ${batch + 1} - Attempting to add template:\n\n`, templateNameArray[batch], '\n');
+    templateNameArray[batch] = templateNameArray[batch].map(n => web3.utils.toHex(n));
+    noOfTokensArray[batch] = noOfTokensArray[batch].map(n => web3.utils.toWei(n.toString()));
+    let action = currentWalletModule.methods.addTemplate(templateNameArray[batch], noOfTokensArray[batch], durationArray[batch], durationArray[batch], frequencyArray[batch]);
+    let receipt = await common.sendTransaction(action);
+    console.log(chalk.green('Adding template transaction was successful.'));
     console.log(`${receipt.gasUsed} gas used.Spent: ${web3.utils.fromWei((new web3.utils.BN(receipt.gasUsed)).mul(new web3.utils.BN(defaultGasPrice)))} ETH`);
   }
 }

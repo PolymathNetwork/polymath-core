@@ -55,7 +55,7 @@ async function getInfo() {
             csv = csv + tokenData[i*18 + j] + ",";
         }
         for(let j = 13; j < 17; j++) {
-            csv = csv + tokenData[i*18 + j].length + ",";
+            csv = csv + tokenData[i*18 + j].toString().replace(/(\r\n|\n|\r|,)/gm, " AND ") + ",";
         }
         csv = csv + tokenData[i*18 + 17].length + "\n";
     }
@@ -77,7 +77,7 @@ async function getInfo() {
             csv = csv + tokenData[i*18 + j] + ",";
         }
         for(let j = 13; j < 17; j++) {
-            csv = csv + tokenData[i*18 + j].length + ",";
+            csv = csv + tokenData[i*18 + j].toString().replace(/(\r\n|\n|\r|,)/gm, " AND ") + ",";
         }
         csv = csv + tokenData[i*18 + 17].length + "\n";
     }

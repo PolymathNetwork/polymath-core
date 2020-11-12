@@ -272,7 +272,7 @@ $ truffle migrate --network NETWORKHERE (see truffle-config.js)
 ## Contract Interactions in Development
 
 ```bash
-$ truffle console (whilte running ganache-cli)
+$ truffle console (while running ganache-cli)
 ...
 ```
 

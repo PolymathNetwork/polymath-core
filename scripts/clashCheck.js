@@ -46,7 +46,7 @@ async function checkClashes() {
         }
     });
     if (clashesFound) {
-        console.log(chalk.yellow("The clash(es) might be in two different contracts and hence not be am Issue.\nThis script can not detect this (yet) because of proxy contracts"));
+        console.log(chalk.yellow("The clash(es) might be in two different contracts and hence not be an Issue.\nThis script can not detect this (yet) because of proxy contracts"));
         console.log(chalk.red("Clash(es) found! Please fix."));
         process.exit(1);
     }

@@ -242,7 +242,7 @@ $ npm install --global truffle
 $ npm install --global --production windows-build-tools
 
 # Install local node dependencies:
-$ yarn
+$ 'yarn' or 'npm i'
 ```
 
 ## Testing
@@ -257,6 +257,24 @@ $ npm run test
 $ npm run wintest
 ```
 
+## Migration for Local Testing/Deployment 
+```bash
+# Run Ganache-cli on your localhost
+$ ganache-cli
+
+# Use Truffle To Compile Your Polymath Contracts
+$ truffle compile
+
+# Use Truffle to Deploy Your Contracts On Ganache-cli
+$ truffle migrate --network NETWORKHERE (see truffle-config.js)
+```
+
+## Contract Interactions in Development
+
+```bash
+$ truffle console (while running ganache-cli)
+...
+```
 
 # Extending Polymath Core
 

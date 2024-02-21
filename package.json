@@ -61,7 +61,7 @@
   },
   "homepage": "https://github.com/PolymathNetwork/polymath-core#readme",
   "dependencies": {
-    "dotenv": "^8.0.0",
+    "dotenv": "^8.6.0",
     "openzeppelin-solidity": "2.2.0",
     "solc": "0.5.8",
     "solidity-coverage": "^0.6.3",
